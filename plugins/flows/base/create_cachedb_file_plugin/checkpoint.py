@@ -28,6 +28,8 @@ managers, no bind parameters.
 import re
 from dataclasses import dataclass
 
+from .errors import FreshCopyResetError
+
 COPY_STATUS_TABLE_NAME = "table_copy_status"
 COPY_RUN_TABLE_NAME = "copy_run_status"
 
@@ -258,3 +260,138 @@ def drop_status_tables(conn, database: str, schema: str) -> None:
     """Drop both bookkeeping tables; called once a schema copy has succeeded."""
     conn.execute(f"DROP TABLE IF EXISTS {_status_table(database, schema)}")
     conn.execute(f"DROP TABLE IF EXISTS {_run_table(database, schema)}")
+
+
+# --------------------------------------------------------------------------
+# Discarding progress on purpose
+# --------------------------------------------------------------------------
+
+
+def reset_table(conn, database: str, schema: str, table: str, logger) -> int:
+    """Discard everything already copied for ``table``; return the row count lost.
+
+    Drops the target table and deletes its checkpoint row, so the next run
+    treats the table as never started. Returns 0 when the target does not exist.
+
+    This is the one place allowed to destroy copied data, and it has two
+    callers: the operator-driven ``freshCopy`` override, and the plan_id
+    mismatch path -- when the chunk plan changes between runs the existing
+    partial data was written under different chunk boundaries and cannot be
+    resumed against the new ones. Keep it free of assumptions about which.
+    """
+    target = _qualified(database, schema, table)
+
+    discarded = 0
+    if _existing_columns(conn, database, schema, table):
+        conn.execute(f"SELECT COUNT(*) FROM {target}")
+        row = conn.fetchone()
+        discarded = 0 if row is None or row[0] is None else int(row[0])
+
+    conn.execute(f"DROP TABLE IF EXISTS {target}")
+    conn.execute(
+        f"DELETE FROM {_status_table(database, schema)} "
+        f"WHERE table_name = {_sql_string(table)}"
+    )
+    logger.warning(
+        f"Reset table '{schema}.{table}': dropped the target and discarded "
+        f"{discarded} already-copied rows. It will be copied again from the start."
+    )
+    return discarded
+
+
+def apply_fresh_copy(
+    conn,
+    database: str,
+    schema: str,
+    flow_run_id: str,
+    dry_run: bool,
+    logger,
+) -> list[str]:
+    """Discard every non-COMPLETE table in ``schema``, at most once per run.
+
+    Returns the sorted names of the tables discarded, or under ``dry_run`` the
+    names that would be discarded.
+
+    **Why once per run is load-bearing.** ``create_schema_tables_task`` carries
+    ``retries=3``. Without arbitration the reset would run again at the top of
+    attempt 2, deleting everything attempt 1 managed to copy before it timed
+    out -- and again on attempt 3. A large table would then make no net
+    progress across the whole run, silently undoing the chunk-level resume that
+    this change exists to provide, while still looking like it was working.
+    So the first application writes a row into ``copy_run_status`` and every
+    later call for the same key returns ``[]`` without touching anything.
+
+    **Why the key is composite.** One flow run can copy more than one schema:
+    ``create_results_cache_flow`` re-enters ``create_cache_flow`` so the results
+    schema is copied under the same ``flow_run_id`` as the datamart schema.
+    Keying on the run alone would let the datamart's reset consume the token
+    and leave the results schema silently un-reset, which is the failure mode
+    ``freshCopy`` was requested to avoid. Keying on
+    ``(flow_run_id, target_schema)`` gives each schema exactly one reset.
+
+    A ``dry_run`` reports the discard set and deliberately does *not* consume
+    the token, so the real run that follows still performs its reset.
+
+    Any failure is wrapped in :class:`FreshCopyResetError`: a half-applied reset
+    must abort the copy rather than let it proceed over an unknown mix of stale
+    and fresh data.
+    """
+    try:
+        _check_identifier(database, "database")
+        _check_identifier(schema, "schema")
+
+        if not dry_run and _fresh_copy_already_applied(conn, database, schema, flow_run_id):
+            logger.info(
+                f"freshCopy was already applied for flow run '{flow_run_id}' and schema "
+                f"'{schema}'; leaving this attempt's progress alone."
+            )
+            return []
+
+        conn.execute(
+            "SELECT table_name FROM "
+            f"{_status_table(database, schema)} "
+            f"WHERE status IS DISTINCT FROM {_sql_string(STATUS_COMPLETE)} "
+            "ORDER BY table_name"
+        )
+        tables = [row[0] for row in conn.fetchall()]
+
+        if dry_run:
+            logger.info(
+                f"freshCopy dry run for schema '{schema}': would discard "
+                f"{len(tables)} incomplete table(s): {tables}. Nothing was changed."
+            )
+            return tables
+
+        for table in tables:
+            reset_table(conn, database, schema, table, logger)
+
+        _record_fresh_copy_applied(conn, database, schema, flow_run_id)
+        logger.info(
+            f"freshCopy discarded {len(tables)} incomplete table(s) in schema "
+            f"'{schema}': {tables}. Completed tables were kept."
+        )
+        return tables
+    except Exception as exc:
+        raise FreshCopyResetError(
+            f"freshCopy reset failed for schema '{schema}' in flow run "
+            f"'{flow_run_id}': {exc}"
+        ) from exc
+
+
+def _fresh_copy_already_applied(conn, database: str, schema: str, flow_run_id: str) -> bool:
+    conn.execute(
+        f"SELECT COUNT(*) FROM {_run_table(database, schema)} "
+        f"WHERE flow_run_id = {_sql_string(flow_run_id)} "
+        f"AND target_schema = {_sql_string(schema)}"
+    )
+    row = conn.fetchone()
+    return bool(row and row[0])
+
+
+def _record_fresh_copy_applied(conn, database: str, schema: str, flow_run_id: str) -> None:
+    conn.execute(
+        f"INSERT INTO {_run_table(database, schema)} "
+        "(flow_run_id, target_schema, reset_applied_at) VALUES ("
+        f"{_sql_string(flow_run_id)}, {_sql_string(schema)}, CAST(NOW() AS TIMESTAMP)) "
+        "ON CONFLICT DO NOTHING"
+    )
