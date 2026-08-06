@@ -50,6 +50,11 @@ export const TerminologyWithEventListener = ({
         setOpen(false);
         return;
       }}
+      onApprove={(value: FhirValueSetExpansionContainsWithExt) => {
+        props?.onApprove?.(value);
+        setOpen(false);
+        return;
+      }}
       selectedConceptSetId={props?.selectedConceptSetId}
       mode={props?.mode}
       selectedDatasetId={props?.selectedDatasetId}
@@ -57,6 +62,7 @@ export const TerminologyWithEventListener = ({
       initialSelectedConcepts={props?.initialSelectedConcepts}
       isAtlas={isAtlas}
       sourceRow={props?.sourceRow}
+      suggestedConcepts={props?.suggestedConcepts}
     />
   );
 };
