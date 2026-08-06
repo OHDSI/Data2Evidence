@@ -1,4 +1,5 @@
 import express, { Request, Response, Router } from "express";
+import { getUser } from "@alp/alp-base-utils";
 import { env } from "./env.ts";
 
 const logger = console;
@@ -554,15 +555,18 @@ router.post("/", async (req: Request, res: Response) => {
 
     // @ts-ignore Trex global
     const dbm = Trex.databaseManager();
+    const userObj = getUser(req);
+    const sessionVariables = {
+      APPLICATION: `${env.PROJECT_NAME}-WIZARD_${type}_${name}_${templateId}`,
+      APPLICATIONUSER: userObj.getEmail() || userObj.getUser(),
+    };
     const conn = dbm.getConnection(
       dataset.cacheId ?? dataset.databaseCode,
       dataset.schemaName,
       dataset.vocabSchemaName,
       dataset.resultsSchemaName,
       { duckdb: (e: unknown) => e, hana: (e: unknown) => e },
-      {
-        APPLICATION: `${env.PROJECT_NAME}-WIZARD_${type}_${name}_${templateId}`,
-      },
+      sessionVariables,
     );
 
     try {
