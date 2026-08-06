@@ -1,11 +1,18 @@
 """Pure chunk planning. This module must never import prefect or touch a database."""
 
-from collections.abc import Iterable
+import hashlib
+from collections.abc import Iterable, Sequence
 from datetime import date, datetime
 from decimal import Decimal
 
 from .errors import PlannerError
-from .planner_types import ChunkColumnCandidate, ChunkConfig
+from .planner_types import (
+    ChunkColumnCandidate,
+    ChunkConfig,
+    ChunkPlan,
+    ChunkStats,
+    ChunkStrategy,
+)
 
 PLANNER_VERSION = 2
 
@@ -107,6 +114,111 @@ def build_predicates(column: ChunkColumnCandidate, raw_boundaries: Iterable) -> 
         predicates.append(f"{col} IS NULL")
 
     return tuple(predicates)
+
+
+def _thin_boundaries(values: Sequence, max_values: int) -> list:
+    """Evenly drop boundaries until at most ``max_values`` remain.
+
+    An adapter may hand back more quantiles than the capped chunk count allows.
+    Thinning here -- rather than truncating -- keeps the retained cuts spread
+    across the whole range, so the chunks stay roughly equal in size while the
+    cap on chunk count is still honoured.
+    """
+    if max_values < 2 or len(values) <= max_values:
+        return list(values)
+    step = (len(values) - 1) / (max_values - 1)
+    picked = [values[round(i * step)] for i in range(max_values)]
+    # round() can land on the same index twice for tiny steps; de-duplicate
+    # while preserving order. That only ever lowers the count.
+    seen = []
+    for value in picked:
+        if not seen or value != seen[-1]:
+            seen.append(value)
+    return seen
+
+
+def compute_plan_id(
+    dialect: str,
+    schema: str,
+    table: str,
+    column_name: str | None,
+    chunk_count: int,
+    boundaries: Iterable,
+) -> str:
+    """Stable identity for a plan.
+
+    Anything that changes which rows land in which chunk changes this id, so a
+    resumed copy can tell whether its recorded checkpoints still describe the
+    plan it is about to execute.
+    """
+    parts = [
+        str(PLANNER_VERSION),
+        dialect,
+        schema,
+        table,
+        str(column_name),
+        str(chunk_count),
+    ]
+    parts.extend(repr(value) for value in boundaries)
+    return hashlib.sha256("\x1f".join(parts).encode("utf-8")).hexdigest()
+
+
+def plan_chunks(
+    dialect: str,
+    schema: str,
+    table: str,
+    stats: ChunkStats,
+    config: ChunkConfig,
+) -> ChunkPlan:
+    """Decide how a table will be copied. Pure: no database access."""
+    if stats.row_count < config.small_table_threshold:
+        return ChunkPlan(
+            plan_id=compute_plan_id(dialect, schema, table, None, 1, ()),
+            strategy=ChunkStrategy.SINGLE_STATEMENT,
+            column_name=None,
+            column_kind=None,
+            predicates=(),
+            estimated_rows_per_chunk=stats.row_count,
+            includes_null_chunk=False,
+        )
+
+    if stats.column is None:
+        raise PlannerError(
+            f"{schema}.{table} has {stats.row_count:,} rows but no usable chunk column. "
+            "Refusing to fall back to an unbounded single-statement copy: on a table "
+            "this size that is what exhausts the worker rather than failing cleanly "
+            "(issue 3033). Provide a chunk column or raise the small-table threshold."
+        )
+
+    chunk_count = resolve_chunk_count(stats.row_count, config)
+    # n boundaries yield n-1 predicates, so cap the boundaries at chunk_count+1
+    # to keep the plan inside max_chunks (plus the NULL chunk, if any).
+    boundaries = _thin_boundaries(normalise_boundaries(stats.boundaries), chunk_count + 1)
+    predicates = build_predicates(stats.column, boundaries)
+
+    return ChunkPlan(
+        plan_id=compute_plan_id(
+            dialect, schema, table, stats.column.name, chunk_count, boundaries
+        ),
+        strategy=ChunkStrategy.CHUNKED,
+        column_name=stats.column.name,
+        column_kind=stats.column.kind,
+        predicates=predicates,
+        estimated_rows_per_chunk=max(1, stats.row_count // max(1, len(predicates))),
+        includes_null_chunk=stats.column.nullable,
+    )
+
+
+def describe_plan(plan: ChunkPlan, schema: str, table: str) -> str:
+    """One-line summary of a plan, for the copy log."""
+    if plan.strategy is ChunkStrategy.SINGLE_STATEMENT:
+        return f"{schema}.{table}: single statement (below small-table threshold)"
+    kind = plan.column_kind.value if plan.column_kind is not None else "UNKNOWN"
+    return (
+        f"{schema}.{table}: {len(plan.predicates)} chunks on {plan.column_name} ({kind}), "
+        f"~{plan.estimated_rows_per_chunk:,} rows/chunk, "
+        f"null_chunk={plan.includes_null_chunk}, plan_id={plan.plan_id[:12]}"
+    )
 
 
 def find_column_case_insensitive(columns: list[str], target: str) -> str | None:

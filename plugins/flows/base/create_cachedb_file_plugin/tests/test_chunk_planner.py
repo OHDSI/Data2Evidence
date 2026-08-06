@@ -124,3 +124,57 @@ def test_date_boundaries_are_supported():
         "\"measurement_date\" < '2020-01-01'",
         "\"measurement_date\" >= '2020-01-01'",
     )
+
+
+from create_cachedb_file_plugin.chunk_utils import compute_plan_id, plan_chunks
+from create_cachedb_file_plugin.planner_types import ChunkStats
+
+
+def _stats(row_count, boundaries=(), column=None, nullable=False):
+    return ChunkStats(
+        row_count=row_count,
+        row_count_is_exact=True,
+        column=column if column is not None else _column(nullable=nullable),
+        boundaries=tuple(boundaries),
+    )
+
+
+def test_small_table_uses_a_single_statement():
+    config = ChunkConfig(target_chunk_rows=5_000_000)
+    plan = plan_chunks("bigquery", "cdm", "person", _stats(499_999), config)
+    assert plan.strategy is ChunkStrategy.SINGLE_STATEMENT
+    assert plan.predicates == ()
+
+
+def test_large_table_without_a_chunk_column_raises_rather_than_single_copying():
+    config = ChunkConfig(target_chunk_rows=5_000_000)
+    stats = ChunkStats(row_count=900_000_000, row_count_is_exact=True, column=None, boundaries=())
+    with pytest.raises(PlannerError, match="no usable chunk column"):
+        plan_chunks("bigquery", "cdm", "measurement", stats, config)
+
+
+def test_large_table_is_chunked():
+    config = ChunkConfig(target_chunk_rows=5_000_000)
+    boundaries = tuple(range(0, 181))
+    plan = plan_chunks("bigquery", "cdm", "measurement", _stats(900_000_000, boundaries), config)
+    assert plan.strategy is ChunkStrategy.CHUNKED
+    assert plan.column_name == "measurement_id"
+    assert len(plan.predicates) == 180
+    assert plan.includes_null_chunk is False
+
+
+def test_plan_never_exceeds_the_cap_plus_null_chunk():
+    config = ChunkConfig(target_chunk_rows=5_000_000, max_chunks=10)
+    boundaries = tuple(range(0, 12))
+    plan = plan_chunks(
+        "bigquery", "cdm", "measurement", _stats(900_000_000, boundaries, nullable=True), config
+    )
+    assert len(plan.predicates) <= config.max_chunks + 1
+
+
+def test_plan_id_is_stable_and_distribution_sensitive():
+    a = compute_plan_id("bigquery", "cdm", "measurement", "measurement_id", 3, (1, 2, 3))
+    b = compute_plan_id("bigquery", "cdm", "measurement", "measurement_id", 3, (1, 2, 3))
+    c = compute_plan_id("bigquery", "cdm", "measurement", "measurement_id", 3, (1, 2, 4))
+    assert a == b
+    assert a != c
