@@ -31,7 +31,7 @@ export const AccountTab: FC<AccountTabProps> = ({ portalType }) => {
   }, [getLink, location.pathname]);
 
   return (
-    <li className={isActiveTab}>
+    <li className={`${isActiveTab} header__menu-item--pin-right`}>
       <Link to={getLink()}>{getText(i18nKeys.ACCOUNT_TAB__LINK)}</Link>
     </li>
   );

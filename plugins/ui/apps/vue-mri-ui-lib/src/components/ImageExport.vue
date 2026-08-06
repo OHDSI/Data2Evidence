@@ -8,7 +8,7 @@
 import { mapActions, mapGetters } from 'vuex'
 import MessageBox from './MessageBox.vue'
 import Constants from '../utils/Constants'
-import { createChartCanvas } from '../utils/ExportUtils'
+import { createChartCanvas, buildXAxisTitle } from '../utils/ExportUtils'
 import { generateDownloadFileName } from '../utils/generateDownloadFileName'
 
 export default {
@@ -136,7 +136,17 @@ export default {
                 }
               : null
 
-          const chartCanvas = createChartCanvas(chartId, chartType, targetHeight, targetWidth, pdfConst, kmLegendInput)
+          const xAxisTitle = buildXAxisTitle(response?.categories)
+
+          const chartCanvas = createChartCanvas(
+            chartId,
+            chartType,
+            targetHeight,
+            targetWidth,
+            pdfConst,
+            kmLegendInput,
+            xAxisTitle
+          )
 
           this.imageURL = chartCanvas.toDataURL('image/png')
           this.$refs.imgDownloadBtn.href = this.imageURL

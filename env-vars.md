@@ -21,12 +21,17 @@
 | `LOGTO__D2E_SVC__CLIENT_SECRET`                 | password       | Logto Alp Svc Client Secret                                                         |
 | `LOGTO__CLIENTID_PASSWORD__BASIC_AUTH`          | base64 encoded | From `LOGTO_API_M2M_CLIENT_ID` & `LOGTO_API_M2M_CLIENT_SECRET`                      |
 | `MINIO__SECRET_KEY`                             | password       | Meilisearch Secret_Key                                                              |
+| `OTEL_EXPORTER_OTLP_ENDPOINT`                   | url            | OTLP collector endpoint, e.g. `http://jaeger:4318`. Empty disables export.          |
+| `OTEL_EXPORTER_OTLP_HEADERS`                    | string         | Optional OTLP exporter headers, e.g. `key=value,key2=value2`.                       |
+| `OTEL_EXPORTER_OTLP_PROTOCOL`                   | string         | OTLP wire protocol, e.g. `grpc` or `http/protobuf`.                                 |
+| `OTEL_SERVICE_NAME`                             | string         | Service name reported in emitted spans.                                             |
 | `PG_ADMIN_PASSWORD`                             | password       | Admin Permissions                                                                   |
 | `PG_SUPER_PASSWORD`                             | password       | All Permissions                                                                     |
 | `PG_WRITE_PASSWORD`                             | password       | Write Permissions Only                                                              |
 | `PG__LOGTO_MANAGER_PASSWORD`                    | string         |
 | `REDIS_PASSWORD`                                | string         | Redis Password                                                                      |
 | `TLS__CADDY_DIRECTIVE`                          | string         | Generate self-signed or public x509 certificate                                     |
+| `TREX_OTEL_ENABLED`                             | bool           | Passes `--enable-otel` to trex; empty/unset keeps telemetry off (default).          |
 | `USERMGMT__AUTO_PROVISION_ENABLED`              | bool           | Auto-create a usermgmt.user row on first federated OIDC login (default `false`).    |
 | `USERMGMT__AUTO_PROVISION_CONNECTORS`           | csv            | Logto social-connector targets allowed to auto-provision (e.g. `physionet,oidc`).   |
 | `USERMGMT__AUTO_PROVISION_DEFAULT_TENANT_ID`    | uuid           | Tenant for the default TENANT_VIEWER group; falls back to `APP__TENANT_ID`.         |
