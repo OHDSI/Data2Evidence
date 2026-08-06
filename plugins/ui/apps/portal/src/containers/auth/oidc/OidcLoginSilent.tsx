@@ -1,4 +1,4 @@
-import { FC, useCallback, useEffect } from "react";
+import { FC, useCallback, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useOidc, useOidcAccessToken, useOidcIdToken } from "@axa-fr/react-oidc";
 import { api } from "../../../axios/api";
@@ -27,18 +27,26 @@ export const OidcLoginSilent: FC<OidcLoginSilentProps> = ({ onReady }) => {
   const { setUserGroup, clearUser } = useUser();
   useDisclaimerHook();
 
+  // `useOidcAccessToken()` and `useOidc()` return fresh identities on every render.
+  // Reading them through refs keeps `loggedIn` stable, otherwise the effect below
+  // re-runs on every render and its unconditional token writes re-render forever.
+  const accessTokenPayloadRef = useRef(accessTokenPayload);
+  accessTokenPayloadRef.current = accessTokenPayload;
+  const loginRef = useRef(login);
+  loginRef.current = login;
+
   const loggedIn = useCallback(
     async (idpUserId: string) => {
       try {
         const userGroups = await api.userMgmt.getUserGroupList(idpUserId, true);
-        const currentRoles = (accessTokenPayload as { roles?: string[] } | undefined)?.roles;
+        const currentRoles = (accessTokenPayloadRef.current as { roles?: string[] } | undefined)?.roles;
         const tokenMissingRoles = (currentRoles?.length || 0) === 0;
         const alreadyReloggedIn = sessionStorage.getItem(RELOGIN_GUARD_KEY) === "1";
 
         if (tokenMissingRoles && !alreadyReloggedIn) {
           console.info("[OidcLoginSilent] token has no roles after sync; re-login to refresh claims");
           sessionStorage.setItem(RELOGIN_GUARD_KEY, "1");
-          login();
+          loginRef.current();
 
           await new Promise<void>((resolve) => setTimeout(resolve, 8000));
           return;
@@ -55,7 +63,7 @@ export const OidcLoginSilent: FC<OidcLoginSilentProps> = ({ onReady }) => {
         navigate(err?.status === 403 ? config.ROUTES.noAccess : config.ROUTES.logout);
       }
     },
-    [navigate, setUserGroup, clearUser, login, accessTokenPayload]
+    [navigate, setUserGroup, clearUser]
   );
 
   useEffect(() => {
