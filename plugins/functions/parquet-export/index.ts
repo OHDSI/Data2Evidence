@@ -560,7 +560,9 @@ router.post("/", async (req: Request, res: Response) => {
       dataset.vocabSchemaName,
       dataset.resultsSchemaName,
       { duckdb: (e: unknown) => e, hana: (e: unknown) => e },
-      { APPLICATION: `WIZARD_${templateId}` },
+      {
+        APPLICATION: `${env.PROJECT_NAME}-WIZARD_${type}_${name}_${templateId}`,
+      },
     );
 
     try {
