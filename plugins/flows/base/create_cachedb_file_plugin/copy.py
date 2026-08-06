@@ -11,11 +11,29 @@ from prefect.logging import get_run_logger
 from prefect.tasks import exponential_backoff
 
 from .types import CopyParameters, QueryColumns
-from .filter import filter_tables, CDM_COLUMN_FILTER_MAP, CHUNK_COLUMN_MAP
+from .filter import filter_tables, CDM_COLUMN_FILTER_MAP
 from .utils import execute_statement, set_bigquery_global_settings, VOCAB_TABLES
-from .chunk_utils import find_column_case_insensitive
-
-COPY_STATUS_TABLE_NAME = "table_copy_status"
+from .chunk_utils import (
+    describe_plan,
+    find_column_case_insensitive,
+    plan_chunks,
+    resolve_target_chunk_rows,
+)
+from .checkpoint import (
+    COPY_STATUS_TABLE_NAME,
+    apply_fresh_copy,
+    drop_status_tables,
+    ensure_status_tables,
+    mark_complete,
+    mark_failed,
+    mark_in_progress,
+    read_checkpoint,
+    record_chunk_progress,
+    reset_table,
+)
+from .errors import ChunkCopyError, ReconciliationError
+from .planner_types import ChunkConfig, ChunkStrategy
+from .source_stats import build_source_adapter
 
 from _shared_flow_utils.types import SupportedDatabaseDialects
 
@@ -32,56 +50,7 @@ def get_trex_connection(database_code: str):
     return conn
 
 
-@task(log_prints=True, task_run_name="create_cache_status_table", cache_policy=NONE)
-def create_cache_status_table(con, copy_params):
-    # Create status table
-    execute_statement(con, f'''
-        CREATE TABLE IF NOT EXISTS "{copy_params.target_database}"."{copy_params.target_schema}"."{COPY_STATUS_TABLE_NAME}" (
-          table_name TEXT PRIMARY KEY,
-          status TEXT,
-          started_at TIMESTAMP,
-          completed_at TIMESTAMP
-        );
-    ''')
-
-
-def mark_in_progress(con, table: str, copy_params):
-    execute_statement(con, f"""
-        INSERT INTO "{copy_params.target_database}"."{copy_params.target_schema}"."{COPY_STATUS_TABLE_NAME}"
-        (table_name, status, started_at)
-        VALUES ('{table}', 'IN_PROGRESS', CAST(NOW() AS TIMESTAMP))
-        ON CONFLICT(table_name) DO UPDATE
-        SET status = 'IN_PROGRESS',
-            started_at = CAST(NOW() AS TIMESTAMP),
-            completed_at = NULL
-        """
-    )
-
-
-def mark_complete(con, table: str, copy_params):
-    execute_statement(con, f""" UPDATE "{copy_params.target_database}"."{copy_params.target_schema}"."{COPY_STATUS_TABLE_NAME}"
-        SET status = 'COMPLETE', completed_at = CAST(NOW() AS TIMESTAMP)
-        WHERE table_name = '{table}'
-        """
-    )
-
-
-def cleanup(con, table: str, copy_params):
-    execute_statement(con, f"DROP TABLE IF EXISTS \"{copy_params.target_database}\".\"{copy_params.target_schema}\".\"{table}\"")
-    execute_statement(con, f"""
-        UPDATE "{copy_params.target_database}"."{copy_params.target_schema}"."{COPY_STATUS_TABLE_NAME}"
-        SET status = 'FAILED'
-        WHERE table_name = '{table}'
-        """
-    )
-
-
-@task(log_prints=True, task_run_name="drop_cache_status_table", cache_policy=NONE)
-def drop_cache_status_table(con, copy_params):
-    execute_statement(con, f'DROP TABLE "{copy_params.target_database}"."{copy_params.target_schema}"."{COPY_STATUS_TABLE_NAME}";') 
-
-
-@task(retries=3, 
+@task(retries=3,
       retry_delay_seconds=exponential_backoff(backoff_factor=2),
       log_prints=True, 
       task_run_name="create_schema_if_not_exists_{copy_params.target_schema}",
@@ -270,54 +239,158 @@ def create_schema_tables(write_conn: Any, read_conn: Any, copy_params: CopyParam
     drop_cache_status_table(write_conn, copy_params)
 
 
-def create_empty_target_table(write_conn: Any, copy_params: CopyParameters, query_columns: QueryColumns, source_schema: str):
-    select_sql = create_select_query(copy_params, query_columns, source_schema, None)
-    execute_statement(write_conn, f'DROP TABLE IF EXISTS "{copy_params.target_database}"."{copy_params.target_schema}"."{query_columns.table}";')
-    sql = f"""
-    CREATE TABLE "{copy_params.target_database}"."{copy_params.target_schema}"."{query_columns.table}" AS
-    SELECT * FROM ({select_sql}) WHERE 1=0;
+def create_empty_target_table_if_absent(write_conn: Any, copy_params: CopyParameters, query_columns: QueryColumns, source_schema: str):
+    """Create the target's empty shell, but only when it is missing.
+
+    IF NOT EXISTS is load-bearing. This runs on every attempt, including a
+    resume, and the DROP + CREATE that the pre-rewrite helper did here would
+    throw away exactly the chunks ``chunks_completed`` says are already
+    durably copied -- which is how a large table used to restart from chunk 0
+    on every retry (issue 3033).
     """
-    execute_statement(write_conn, sql)
+    target = (
+        f'"{copy_params.target_database}"."{copy_params.target_schema}"'
+        f'."{query_columns.table}"'
+    )
+    select_sql = create_select_query(copy_params, query_columns, source_schema, None)
+    execute_statement(
+        write_conn,
+        f"CREATE TABLE IF NOT EXISTS {target} AS SELECT * FROM ({select_sql}) WHERE 1=0;",
+    )
 
 
-def copy_table_chunk(write_conn: Any, copy_params: CopyParameters, query_columns: QueryColumns, source_schema: str, where_sql: str | tuple, chunk_id: int, total_chunks: int, logger=None):
-    logger.info(f"Copying chunk {chunk_id + 1}/{total_chunks} for table '{query_columns.table}'")
-    select_sql = create_select_query(copy_params, query_columns, source_schema, where_sql)
-    insert_sql = f"""INSERT INTO "{copy_params.target_database}"."{copy_params.target_schema}"."{query_columns.table}"{select_sql};"""
-    execute_statement(write_conn, insert_sql)
+@task(retries=3,
+      retry_delay_seconds=exponential_backoff(backoff_factor=2),
+      log_prints=True,
+      task_run_name="copy_chunk_{query_columns.table}_{chunk_index}",
+      timeout_seconds=int(Variable.get("cache_chunk_timeout")),
+      cache_policy=NONE)
+def copy_table_chunk(write_conn: Any, copy_params: CopyParameters, query_columns: QueryColumns,
+                     source_schema: str, predicate: str, chunk_index: int, total_chunks: int):
+    logger = get_run_logger()
+    target = (
+        f'"{copy_params.target_database}"."{copy_params.target_schema}"'
+        f'."{query_columns.table}"'
+    )
+    logger.info(
+        f"Chunk {chunk_index + 1}/{total_chunks} for '{query_columns.table}': {predicate}"
+    )
+    try:
+        # DELETE before INSERT, in that order. DuckDB over pgwire autocommits
+        # every statement, so a crash between the INSERT and the progress
+        # update leaves the chunk copied but recorded as incomplete; the
+        # replay's leading DELETE removes that copy before reinserting it.
+        # Swapping these two lines reintroduces duplicate rows on resume.
+        # The plan's predicates are pairwise disjoint, so this DELETE can
+        # never remove another chunk's rows.
+        execute_statement(write_conn, f"DELETE FROM {target} WHERE {predicate};")
+        select_sql = create_select_query(copy_params, query_columns, source_schema, predicate)
+        execute_statement(write_conn, f"INSERT INTO {target} {select_sql};")
+    except Exception as exc:
+        raise ChunkCopyError(
+            f"Chunk {chunk_index + 1}/{total_chunks} of '{query_columns.table}' "
+            f"failed ({predicate}): {exc}"
+        ) from exc
+
 
 @task(log_prints=True, task_run_name="copy_table_{query_columns.table}", tags=["table-level-concurrency"], cache_policy=NONE)
 def copy_table_task(write_conn: Any, read_conn: Any, copy_params: CopyParameters, query_columns: QueryColumns, source_schema: str):
     logger = get_run_logger()
     copy_table(write_conn, read_conn, copy_params, query_columns, source_schema, logger)
 
+
+def build_chunk_config(dialect: str, copy_params: CopyParameters) -> ChunkConfig:
+    """The planner's tuning knobs for one copy. chunkSize overrides the default."""
+    return ChunkConfig(
+        target_chunk_rows=resolve_target_chunk_rows(dialect, copy_params.chunk_size),
+        dry_run=copy_params.dry_run,
+    )
+
+
 def copy_table(write_conn: Any, read_conn: Any, copy_params: CopyParameters, query_columns: QueryColumns, source_schema: str, logger=None):
     table = query_columns.table
+    database = copy_params.target_database
+    schema = copy_params.target_schema
     dialect = read_conn.tenant_configs.dialect
-    try:
-        mark_in_progress(write_conn, table, copy_params)
-        row_count = read_conn.get_table_row_count(source_schema, table)
-        logger.info(f"Starting copy of table '{table}' with {row_count} rows")
-        chunks = None
-        if row_count < 500000:
-            logger.info(f"Copying table '{table}' (small, {row_count} rows)")
-            select_sql = create_select_query(copy_params, query_columns, source_schema)
-            execute_statement(write_conn, f'DROP TABLE IF EXISTS "{copy_params.target_database}"."{copy_params.target_schema}"."{table}";')
-            execute_statement(write_conn, f'CREATE TABLE "{copy_params.target_database}"."{copy_params.target_schema}"."{table}" AS {select_sql}')
-            mark_complete(write_conn, table, copy_params)
-            return row_count
-        else:
-            logger.info(f"Copying table '{table}' (large, {row_count} rows)")
-            raise NotImplementedError(
-                "Chunked copy is being rewritten for issue 3033; wired up in Task 12"
-            )
 
-            mark_complete(write_conn, table, copy_params)
-            return row_count
-    except Exception as e:
-        logger.error(f"Table copy for table '{table}' failed with error: {e}")
-        cleanup(write_conn, table, copy_params)
-        raise e
+    adapter = build_source_adapter(read_conn)
+    config = build_chunk_config(dialect, copy_params)
+
+    stats = adapter.collect(source_schema, table, config, logger)
+    plan = plan_chunks(dialect, source_schema, table, stats, config)
+    logger.info(describe_plan(plan, source_schema, table))
+
+    if config.dry_run:
+        logger.info(
+            f"[dry run] skipping the copy of '{source_schema}.{table}'; "
+            "nothing was created, copied or dropped."
+        )
+        return stats.row_count
+
+    if plan.strategy is ChunkStrategy.SINGLE_STATEMENT:
+        target = f'"{database}"."{schema}"."{table}"'
+        select_sql = create_select_query(copy_params, query_columns, source_schema)
+        mark_in_progress(write_conn, database, schema, table, plan.plan_id, 1, stats.row_count)
+        execute_statement(write_conn, f"DROP TABLE IF EXISTS {target};")
+        execute_statement(write_conn, f"CREATE TABLE {target} AS {select_sql}")
+        record_chunk_progress(write_conn, database, schema, table, 1)
+        return stats.row_count
+
+    # Expand "*" so the chunk SELECT lists real columns, and recompute the
+    # filter columns against them: the CDM map's casing does not always match
+    # the source catalog's.
+    if query_columns.columns_to_copy == ["*"]:
+        actual_columns = read_conn.get_columns(source_schema, table)
+        query_columns = QueryColumns(
+            table=table,
+            columns_to_copy=actual_columns,
+            patient_filter_col=find_column_case_insensitive(
+                actual_columns, CDM_COLUMN_FILTER_MAP.get(table, {}).get("person_id_column")
+            ),
+            timestamp_filter_col=find_column_case_insensitive(
+                actual_columns, CDM_COLUMN_FILTER_MAP.get(table, {}).get("timestamp_column")
+            ),
+        )
+
+    checkpoint = read_checkpoint(write_conn, database, schema, table)
+    start_at = 0
+    if checkpoint is not None and checkpoint.plan_id == plan.plan_id:
+        # min(): chunks_completed can exceed the plan length only if the stored
+        # counter is corrupt, and range() would then silently copy nothing.
+        start_at = min(checkpoint.chunks_completed, len(plan.predicates))
+        logger.info(
+            f"Resuming '{table}' at chunk {start_at + 1}/{len(plan.predicates)} "
+            f"(plan {plan.plan_id[:12]})"
+        )
+    elif checkpoint is not None:
+        # The rows already copied were written under different chunk
+        # boundaries, so mixing them with the new predicates could duplicate
+        # or drop rows. Start this table again.
+        logger.warning(
+            f"Plan for '{table}' changed ({checkpoint.plan_id} -> {plan.plan_id}); "
+            "discarding the partial copy and starting from chunk 1."
+        )
+        reset_table(write_conn, database, schema, table, logger)
+
+    mark_in_progress(
+        write_conn, database, schema, table, plan.plan_id, len(plan.predicates), stats.row_count
+    )
+    if start_at:
+        # mark_in_progress writes chunks_completed = 0 when it inserts, so the
+        # resume point has to be written back before the loop begins.
+        record_chunk_progress(write_conn, database, schema, table, start_at)
+
+    create_empty_target_table_if_absent(write_conn, copy_params, query_columns, source_schema)
+
+    for index in range(start_at, len(plan.predicates)):
+        copy_table_chunk(
+            write_conn, copy_params, query_columns, source_schema,
+            plan.predicates[index], index, len(plan.predicates),
+        )
+        record_chunk_progress(write_conn, database, schema, table, index + 1)
+
+    return stats.row_count
+
 
 def create_select_query(copy_params: CopyParameters, query_columns: QueryColumns, source_schema: str, where_sql: str | tuple = None) -> str:
     columns_to_copy = query_columns.columns_to_copy
