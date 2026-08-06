@@ -13,7 +13,9 @@ from prefect.tasks import exponential_backoff
 from .types import CopyParameters, QueryColumns
 from .filter import filter_tables, CDM_COLUMN_FILTER_MAP, CHUNK_COLUMN_MAP
 from .utils import execute_statement, set_bigquery_global_settings, VOCAB_TABLES
-from .chunk_utils import determine_chunk_size, plan_chunks, find_column_case_insensitive, COPY_STATUS_TABLE_NAME
+from .chunk_utils import find_column_case_insensitive
+
+COPY_STATUS_TABLE_NAME = "table_copy_status"
 
 from _shared_flow_utils.types import SupportedDatabaseDialects
 
@@ -306,51 +308,9 @@ def copy_table(write_conn: Any, read_conn: Any, copy_params: CopyParameters, que
             return row_count
         else:
             logger.info(f"Copying table '{table}' (large, {row_count} rows)")
-            create_empty_target_table(write_conn, copy_params, query_columns, source_schema)
-            # If columns_to_copy is "*", replace with actual column names for proper chunking
-            if query_columns.columns_to_copy == ["*"]:
-                actual_columns = read_conn.get_columns(source_schema, table)
-                # Update filter columns based on actual columns (case-insensitive match)
-                patient_col = CDM_COLUMN_FILTER_MAP.get(table, {}).get("person_id_column")
-                timestamp_col = CDM_COLUMN_FILTER_MAP.get(table, {}).get("timestamp_column")
-                
-                updated_patient_filter_col = find_column_case_insensitive(actual_columns, patient_col) or query_columns.patient_filter_col
-                updated_timestamp_filter_col = find_column_case_insensitive(actual_columns, timestamp_col) or query_columns.timestamp_filter_col
-                
-                query_columns = QueryColumns(
-                    table=query_columns.table,
-                    columns_to_copy=actual_columns,
-                    patient_filter_col=updated_patient_filter_col,
-                    timestamp_filter_col=updated_timestamp_filter_col
-                )
-
-            # Determine chunk column from CHUNK_COLUMN_MAP
-            chunk_col_name = CHUNK_COLUMN_MAP.get(table)
-            if chunk_col_name:
-                chunk_col = find_column_case_insensitive(query_columns.columns_to_copy, chunk_col_name)
-            else:
-                chunk_col = None
-                logger.info(f"Table '{table}': no chunk_col_name in map")
-
-            if chunk_col:
-                chunk_size = determine_chunk_size(dialect, row_count, chunk_size=copy_params.chunk_size)
-                logger.info(f"Table '{table}': using chunk column '{chunk_col}' with chunk size {chunk_size}")
-                chunks = plan_chunks(read_conn, copy_params.source_database, source_schema, table, chunk_col, chunk_size, row_count, logger)
-
-                if chunks is None:
-                    # Chunking failed or inefficient - fallback to one-go copy
-                    logger.warning(f"Cannot chunk table '{table}' ({row_count} rows) efficiently. Falling back to one-go copy.")
-                    select_sql = create_select_query(copy_params, query_columns, source_schema)
-                    execute_statement(write_conn, f'CREATE OR REPLACE TABLE "{copy_params.target_database}"."{copy_params.target_schema}"."{table}" AS {select_sql}')
-                else:
-                    # Loop over chunks sequentially
-                    for i, chunk_where in enumerate(chunks):
-                        copy_table_chunk(write_conn, copy_params, query_columns, source_schema, chunk_where, i, len(chunks), logger)
-            else:
-                # No suitable chunk column, copy the whole table in one go
-                logger.info(f"Copying table '{table}' in one go (no chunk column)")
-                select_sql = create_select_query(copy_params, query_columns, source_schema)
-                execute_statement(write_conn, f'CREATE OR REPLACE TABLE "{copy_params.target_database}"."{copy_params.target_schema}"."{table}" AS {select_sql}')
+            raise NotImplementedError(
+                "Chunked copy is being rewritten for issue 3033; wired up in Task 12"
+            )
 
             mark_complete(write_conn, table, copy_params)
             return row_count
