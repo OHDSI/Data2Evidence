@@ -1,5 +1,11 @@
 import React, { FC, useCallback, useContext, useEffect, useMemo, useState } from "react";
-import { MaterialReactTable, MRT_ColumnDef, MRT_RowData, useMaterialReactTable } from "material-react-table";
+import {
+  MaterialReactTable,
+  MRT_ColumnDef,
+  MRT_Row,
+  MRT_RowData,
+  useMaterialReactTable,
+} from "material-react-table";
 import { Box, Button, Chip } from "@portal/components";
 import { IconButton, Tooltip } from "@mui/material";
 import TaskAltIcon from "@mui/icons-material/TaskAlt";
@@ -112,7 +118,10 @@ export const MappingTable: FC<MappingTableProps> = ({
     [csvData, suggestionsByRowId]
   );
 
-  const handleApprove = useCallback(
+  // Per-row action "cores" perform a single backend write and DON'T refetch, so the bulk
+  // handlers can batch many rows and refetch once at the end. The single-row handlers below
+  // wrap a core with a refetch.
+  const approveRowCore = useCallback(
     async (row: { [key: string]: any }) => {
       if (!dataflowId || !nodeId || !row.sourceRowId) {
         return;
@@ -120,7 +129,11 @@ export const MappingTable: FC<MappingTableProps> = ({
       let suggestionId: string | undefined = row._suggestions?.[0]?.id;
       if (!suggestionId) {
         // No backend suggestion yet - this is a Recommend-filled, client-only concept.
-        // Persist it first, then approve the suggestion just created.
+        // Persist it first, then approve the suggestion just created. Nothing to approve if
+        // the row has neither a suggestion nor a client concept.
+        if (!row.conceptId) {
+          return;
+        }
         const concept: ConceptInput = {
           conceptId: row.conceptId,
           conceptName: row.conceptName,
@@ -132,32 +145,85 @@ export const MappingTable: FC<MappingTableProps> = ({
         suggestionId = dto.id;
       }
       await api.conceptMappingSuggestions.approve(suggestionId);
+    },
+    [dataflowId, nodeId]
+  );
+
+  const unapproveRowCore = useCallback(async (row: { [key: string]: any }) => {
+    const suggestionId: string | undefined = row._suggestions?.find((s: SuggestionDto) => s.isApproved)?.id;
+    if (!suggestionId) {
+      return;
+    }
+    await api.conceptMappingSuggestions.unapprove(suggestionId);
+  }, []);
+
+  const flagRowCore = useCallback(
+    async (row: { [key: string]: any }, flagged: boolean) => {
+      if (!dataflowId || !nodeId || !row.sourceRowId) {
+        return;
+      }
+      await api.conceptMappingSuggestions.setRowFlag(dataflowId, nodeId, row.sourceRowId, flagged);
+    },
+    [dataflowId, nodeId]
+  );
+
+  const handleApprove = useCallback(
+    async (row: { [key: string]: any }) => {
+      await approveRowCore(row);
       await loadSuggestions();
     },
-    [dataflowId, nodeId, loadSuggestions]
+    [approveRowCore, loadSuggestions]
   );
 
   const handleUncheck = useCallback(
     async (row: { [key: string]: any }) => {
-      const suggestionId: string | undefined = row._suggestions?.find((s: SuggestionDto) => s.isApproved)?.id;
-      if (!suggestionId) {
-        return;
-      }
-      await api.conceptMappingSuggestions.unapprove(suggestionId);
+      await unapproveRowCore(row);
+      await loadSuggestions();
+    },
+    [unapproveRowCore, loadSuggestions]
+  );
+
+  const handleFlag = useCallback(
+    async (row: { [key: string]: any }) => {
+      await flagRowCore(row, !row.flagged);
+      await loadSuggestions();
+    },
+    [flagRowCore, loadSuggestions]
+  );
+
+  // Approve a specific suggestion from the expanded sub-table (approving deletes the row's
+  // competing suggestions, per the backend rule).
+  const handleApproveSuggestion = useCallback(
+    async (suggestionId: string) => {
+      await api.conceptMappingSuggestions.approve(suggestionId);
       await loadSuggestions();
     },
     [loadSuggestions]
   );
 
-  const handleFlag = useCallback(
-    async (row: { [key: string]: any }) => {
-      if (!dataflowId || !nodeId || !row.sourceRowId) {
-        return;
-      }
-      await api.conceptMappingSuggestions.setRowFlag(dataflowId, nodeId, row.sourceRowId, !row.flagged);
+  // Bulk actions: batch the cores over the selected rows, refetch once, then clear selection.
+  const bulkApprove = useCallback(
+    async (rows: MRT_Row<{ [key: string]: any }>[]) => {
+      await Promise.all(rows.map((r) => approveRowCore(r.original)));
       await loadSuggestions();
     },
-    [dataflowId, nodeId, loadSuggestions]
+    [approveRowCore, loadSuggestions]
+  );
+
+  const bulkUncheck = useCallback(
+    async (rows: MRT_Row<{ [key: string]: any }>[]) => {
+      await Promise.all(rows.map((r) => unapproveRowCore(r.original)));
+      await loadSuggestions();
+    },
+    [unapproveRowCore, loadSuggestions]
+  );
+
+  const bulkFlag = useCallback(
+    async (rows: MRT_Row<{ [key: string]: any }>[]) => {
+      await Promise.all(rows.map((r) => flagRowCore(r.original, true)));
+      await loadSuggestions();
+    },
+    [flagRowCore, loadSuggestions]
   );
 
   // Status is displayed as a chip (unchecked/suggested/approved) plus an optional flag
@@ -173,18 +239,73 @@ export const MappingTable: FC<MappingTableProps> = ({
     (original: { [key: string]: any }) => {
       const status: MappingStatus = original.status ?? "unchecked";
       const config = statusChipConfig[status] ?? statusChipConfig.unchecked;
+      const count = original._suggestions?.length ?? 0;
+      // "Suggested (N)" surfaces how many competing suggestions the row has (expand the row
+      // to see them). Approved/Unchecked show no count.
+      const label = status === "suggested" ? `${config.label} (${count})` : config.label;
       // Flagged state is shown only by the Flag action button (filled orange), not by a
       // separate indicator in front of the row.
       return (
         <Chip
           size="small"
-          label={config.label}
+          label={label}
           color={config.color}
           icon={status === "approved" ? <TaskAltIcon fontSize="small" /> : undefined}
         />
       );
     },
     [getText, statusChipConfig]
+  );
+
+  // Expanded sub-table: one row per suggestion for a source row, each with an Approve action.
+  // Approving deletes the row's other suggestions (backend rule) - the way to resolve a
+  // row with multiple competing suggestions.
+  const renderSuggestionsPanel = useCallback(
+    (row: MRT_Row<{ [key: string]: any }>) => {
+      const suggestions: SuggestionDto[] = row.original._suggestions ?? [];
+      if (suggestions.length === 0) {
+        return null;
+      }
+      return (
+        <Box sx={{ pl: 6, py: 1, display: "flex", flexDirection: "column", gap: "4px" }}>
+          {suggestions.map((s) => (
+            <Box
+              key={s.id}
+              sx={{ display: "flex", alignItems: "center", gap: 2, fontSize: "14px", color: "#000080" }}
+            >
+              <Box sx={{ width: 90 }}>{s.conceptId}</Box>
+              <Box sx={{ flex: 1, minWidth: 120 }}>{s.conceptName}</Box>
+              <Box sx={{ width: 120 }}>{s.conceptCode}</Box>
+              <Box sx={{ width: 120 }}>{s.domainId}</Box>
+              <Box sx={{ width: 120 }}>{s.vocabularyId}</Box>
+              <Box sx={{ width: 200, opacity: 0.7 }}>
+                {getText(i18nKeys.MAPPING_TABLE__SUGGESTED_BY)}: {s.suggestedBy}
+              </Box>
+              {s.isApproved ? (
+                <Chip
+                  size="small"
+                  color="success"
+                  label={getText(i18nKeys.STATUS__APPROVED)}
+                  icon={<TaskAltIcon fontSize="small" />}
+                />
+              ) : (
+                <Tooltip title={getText(i18nKeys.ACTION__APPROVE)}>
+                  <IconButton
+                    size="small"
+                    sx={{ color: "#000080" }}
+                    aria-label={getText(i18nKeys.ACTION__APPROVE)}
+                    onClick={() => handleApproveSuggestion(s.id)}
+                  >
+                    <TaskAltIcon fontSize="small" />
+                  </IconButton>
+                </Tooltip>
+              )}
+            </Box>
+          ))}
+        </Box>
+      );
+    },
+    [getText, handleApproveSuggestion]
   );
 
   const renderActionsCell = useCallback(
@@ -350,6 +471,17 @@ export const MappingTable: FC<MappingTableProps> = ({
     // and Recommend (fills concept columns) both rebuild `mergedData`, and TanStack Table's
     // default `autoResetPageIndex: true` would otherwise snap the table back to page 1.
     autoResetPageIndex: false,
+    enableRowSelection: true,
+    // We render our own "N selected" bulk toolbar in renderTopToolbarCustomActions, so suppress
+    // MRT's default selection alert banner to avoid a duplicate.
+    positionToolbarAlertBanner: "none",
+    // Stable per-row id (the source row's UUID) so selection survives the post-action refetch.
+    getRowId: (originalRow: { [key: string]: any }, index: number) => originalRow.sourceRowId ?? String(index),
+    renderDetailPanel: ({ row }) => renderSuggestionsPanel(row),
+    // Only rows that actually have suggestions can expand; hide the toggle for the rest.
+    muiExpandButtonProps: ({ row }) => ({
+      sx: { visibility: (row.original._suggestions?.length ?? 0) > 0 ? "visible" : "hidden" },
+    }),
     enableColumnResizing: true,
     layoutMode: "grid",
     muiTableHeadCellProps: {
@@ -375,22 +507,58 @@ export const MappingTable: FC<MappingTableProps> = ({
         backgroundColor: "#fbfbfd",
       },
     },
-    renderTopToolbarCustomActions: () => (
-      <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%", p: "4px" }}>
-        <Box sx={{ fontWeight: 500 }}>
-          {getText(i18nKeys.MAPPING_TABLE__DATASET_REFERENCE)}
-          {datasetName ? `: ${datasetName}` : ""}
+    renderTopToolbarCustomActions: ({ table }) => {
+      const selectedRows = table.getSelectedRowModel().rows;
+      if (selectedRows.length > 0) {
+        // Bulk Approve is only offered when every selected row is unambiguous (<=1 suggestion);
+        // a row with competing suggestions must be resolved individually via its sub-table.
+        const approveDisabled = selectedRows.some((r) => (r.original._suggestions?.length ?? 0) > 1);
+        const uncheckDisabled = !selectedRows.some((r) => r.original.status === "approved");
+        return (
+          <Box sx={{ display: "flex", alignItems: "center", gap: "1rem", width: "100%", p: "4px" }}>
+            <Box sx={{ fontWeight: 500 }}>
+              {selectedRows.length} {getText(i18nKeys.MAPPING_TABLE__SELECTED)}
+            </Box>
+            <Tooltip title={getText(i18nKeys.ACTION__FLAG)}>
+              <IconButton
+                size="small"
+                sx={{ color: "#000080" }}
+                aria-label={getText(i18nKeys.ACTION__FLAG)}
+                onClick={() => bulkFlag(selectedRows).then(() => table.resetRowSelection())}
+              >
+                <FlagOutlinedIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
+            <Button
+              onClick={() => bulkApprove(selectedRows).then(() => table.resetRowSelection())}
+              text={getText(i18nKeys.ACTION__APPROVE)}
+              disabled={approveDisabled}
+            />
+            <Button
+              onClick={() => bulkUncheck(selectedRows).then(() => table.resetRowSelection())}
+              text={getText(i18nKeys.ACTION__UNCHECK)}
+              disabled={uncheckDisabled}
+            />
+          </Box>
+        );
+      }
+      return (
+        <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%", p: "4px" }}>
+          <Box sx={{ fontWeight: 500 }}>
+            {getText(i18nKeys.MAPPING_TABLE__DATASET_REFERENCE)}
+            {datasetName ? `: ${datasetName}` : ""}
+          </Box>
+          <Box sx={{ display: "flex", gap: "1rem" }}>
+            <Button
+              onClick={() => recommendConcepts()}
+              text={getText(i18nKeys.MAPPING_TABLE__RECOMMEND_CONCEPT)}
+              loading={isLoading}
+              disabled={getAvailableRows().length === 0}
+            />
+          </Box>
         </Box>
-        <Box sx={{ display: "flex", gap: "1rem" }}>
-          <Button
-            onClick={() => recommendConcepts()}
-            text={getText(i18nKeys.MAPPING_TABLE__RECOMMEND_CONCEPT)}
-            loading={isLoading}
-            disabled={getAvailableRows().length === 0}
-          />
-        </Box>
-      </Box>
-    ),
+      );
+    },
   });
 
   // Recommend targets rows that don't have a concept assigned yet - unlike the old

@@ -120,7 +120,8 @@ describe("MappingTable", () => {
 
     // r1 has no matching backend row -> derives unchecked, regardless of any stale local field.
     expect(within(rowFor("A1")).getByText("Unchecked")).toBeInTheDocument();
-    await waitFor(() => expect(within(rowFor("B2")).getByText("Suggested")).toBeInTheDocument());
+    // "Suggested (N)" carries the suggestion count.
+    await waitFor(() => expect(within(rowFor("B2")).getByText("Suggested (1)")).toBeInTheDocument());
     expect(within(rowFor("C3")).getByText("Approved")).toBeInTheDocument();
   });
 
@@ -150,7 +151,7 @@ describe("MappingTable", () => {
     ]);
 
     renderWithProviders(<MappingTable selectedDatasetId="ds-1" dataflowId="df-1" nodeId="node-1" />, { state });
-    await waitFor(() => expect(within(rowFor("B2")).getByText("Suggested")).toBeInTheDocument());
+    await waitFor(() => expect(within(rowFor("B2")).getByText("Suggested (1)")).toBeInTheDocument());
 
     within(rowFor("B2")).getByRole("button", { name: "Approve" }).click();
 
@@ -253,5 +254,72 @@ describe("MappingTable", () => {
     renderWithProviders(<MappingTable selectedDatasetId="ds-1" />, { state: allMapped });
 
     expect(screen.getByText("Recommend concept").closest("button")).toBeDisabled();
+  });
+
+  test("shows the suggestion count in the status chip", async () => {
+    getSuggestions.mockResolvedValue([
+      backendRow({
+        sourceRowId: "r2",
+        suggestions: [suggestion({ id: "s1" }), suggestion({ id: "s2" }), suggestion({ id: "s3" })],
+      }),
+    ]);
+
+    renderWithProviders(<MappingTable selectedDatasetId="ds-1" dataflowId="df-1" nodeId="node-1" />, { state });
+
+    await waitFor(() => expect(within(rowFor("B2")).getByText("Suggested (3)")).toBeInTheDocument());
+  });
+
+  test("expanding a row reveals each suggestion; approving one calls approve with its id", async () => {
+    getSuggestions.mockResolvedValue([
+      backendRow({
+        sourceRowId: "r2",
+        suggestions: [
+          suggestion({ id: "s1", conceptId: 111, conceptName: "First concept", isApproved: false }),
+          suggestion({ id: "s2", conceptId: 222, conceptName: "Second concept", isApproved: false }),
+        ],
+      }),
+    ]);
+
+    renderWithProviders(<MappingTable selectedDatasetId="ds-1" dataflowId="df-1" nodeId="node-1" />, { state });
+    await waitFor(() => expect(within(rowFor("B2")).getByText("Suggested (2)")).toBeInTheDocument());
+
+    within(rowFor("B2")).getByRole("button", { name: "Expand" }).click();
+
+    const firstSub = (await screen.findByText("First concept")).parentElement as HTMLElement;
+    expect(screen.getByText("Second concept")).toBeInTheDocument();
+
+    within(firstSub).getByRole("button", { name: "Approve" }).click();
+
+    await waitFor(() => expect(approve).toHaveBeenCalledWith("s1"));
+    await waitFor(() => expect(getSuggestions).toHaveBeenCalledTimes(2));
+  });
+
+  test("selecting rows shows the bulk toolbar; bulk Flag flags every selected row then refetches", async () => {
+    renderWithProviders(<MappingTable selectedDatasetId="ds-1" dataflowId="df-1" nodeId="node-1" />, { state });
+    await waitFor(() => expect(getSuggestions).toHaveBeenCalledTimes(1));
+
+    // The first checkbox is MRT's select-all in the header.
+    screen.getAllByRole("checkbox")[0].click();
+
+    const toolbar = (await screen.findByText(/selected/)).parentElement as HTMLElement;
+    within(toolbar).getByLabelText("Flag").click();
+
+    await waitFor(() => expect(setRowFlag).toHaveBeenCalledWith("df-1", "node-1", "r1", true));
+    expect(setRowFlag).toHaveBeenCalledWith("df-1", "node-1", "r2", true);
+    await waitFor(() => expect(getSuggestions).toHaveBeenCalledTimes(2));
+  });
+
+  test("bulk Approve is disabled when a selected row has more than one suggestion", async () => {
+    getSuggestions.mockResolvedValue([
+      backendRow({ sourceRowId: "r2", suggestions: [suggestion({ id: "s1" }), suggestion({ id: "s2" })] }),
+    ]);
+
+    renderWithProviders(<MappingTable selectedDatasetId="ds-1" dataflowId="df-1" nodeId="node-1" />, { state });
+    await waitFor(() => expect(within(rowFor("B2")).getByText("Suggested (2)")).toBeInTheDocument());
+
+    screen.getAllByRole("checkbox")[0].click();
+
+    const toolbar = (await screen.findByText(/selected/)).parentElement as HTMLElement;
+    expect(within(toolbar).getByText("Approve").closest("button")).toBeDisabled();
   });
 });
