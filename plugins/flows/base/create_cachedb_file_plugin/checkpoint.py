@@ -271,6 +271,34 @@ def mark_failed(conn, database: str, schema: str, table: str) -> None:
     )
 
 
+def clear_resume_point(conn, database: str, schema: str, table: str) -> None:
+    """Forget where ``table``'s copy got to, so the next run replans it.
+
+    The one failure the resume point cannot help with is a reconciliation
+    mismatch. By the time reconciliation runs, ``chunks_completed`` already
+    equals ``chunks_total``, so the next run computes
+    ``start_at = len(predicates)``, executes ``range(N, N)`` -- zero chunks --
+    and reconciles to the identical mismatch. Every retry then fails the same
+    way having done no work: the never-converges pathology of issue 3033, one
+    layer up from the chunk loop.
+
+    Setting ``plan_id`` to NULL is what breaks the loop: no computed plan id
+    can equal NULL, so the next run takes ``copy_table``'s plan-mismatch branch
+    and calls ``reset_table`` properly, which is the only place allowed to drop
+    the partial target. This function itself leaves the copied rows alone.
+
+    Deliberately *not* called for a ``ChunkCopyError``. There the resume point
+    is exactly what we want to keep -- it is what stops a 900M-row table
+    restarting at chunk 0 on every retry.
+    """
+    _check_identifier(table, "table")
+    conn.execute(
+        f"UPDATE {_status_table(database, schema)} "
+        "SET chunks_completed = 0, plan_id = NULL "
+        f"WHERE table_name = {_sql_string(table)}"
+    )
+
+
 def drop_status_tables(conn, database: str, schema: str) -> None:
     """Drop both bookkeeping tables; called once a schema copy has succeeded."""
     conn.execute(f"DROP TABLE IF EXISTS {_status_table(database, schema)}")

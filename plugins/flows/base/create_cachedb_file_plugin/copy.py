@@ -23,6 +23,7 @@ from .chunk_utils import (
 from .checkpoint import (
     COPY_STATUS_TABLE_NAME,
     apply_fresh_copy,
+    clear_resume_point,
     drop_status_tables,
     ensure_status_tables,
     mark_complete,
@@ -343,13 +344,30 @@ def copy_table_task(write_conn: Any, read_conn: Any, copy_params: CopyParameters
         reconcile_table(write_conn, read_conn, copy_params, source_schema, table, logger)
         mark_complete(write_conn, database, schema, table)
         return expected
+    except ReconciliationError as exc:
+        # The one failure the resume point cannot survive. Reconciliation runs
+        # only after every chunk has completed, so chunks_completed already
+        # equals chunks_total: the next run would resume at range(N, N), copy
+        # nothing and reconcile to the identical mismatch, forever. Clearing
+        # the resume point makes the next run replan the table from scratch.
+        # The rows stay: clear_resume_point nulls plan_id, so copy_table's
+        # plan-mismatch branch calls reset_table, the one place allowed to drop
+        # a partial target.
+        logger.error(
+            f"Copy of table '{table}' failed reconciliation: {exc}. Clearing the "
+            "resume point so the next attempt copies the table again from the start."
+        )
+        mark_failed(write_conn, database, schema, table)
+        clear_resume_point(write_conn, database, schema, table)
+        raise
     except Exception as exc:
         logger.error(f"Copy of table '{table}' failed: {exc}")
-        # Deliberately NO DROP of the target table here. The partial rows plus
-        # the chunks_completed counter are the resume point; the cleanup()
-        # this replaces dropped the target on the way out, which is precisely
-        # what made a retry restart a large table from chunk 0 and never
-        # converge (issue 3033). Never reintroduce a DROP on this path.
+        # Deliberately NO DROP of the target table here, and deliberately no
+        # clear_resume_point either. The partial rows plus the chunks_completed
+        # counter are the resume point; the cleanup() this replaces dropped the
+        # target on the way out, which is precisely what made a retry restart a
+        # large table from chunk 0 and never converge (issue 3033). Never
+        # reintroduce a DROP on this path.
         mark_failed(write_conn, database, schema, table)
         raise
 

@@ -17,6 +17,7 @@ from create_cachedb_file_plugin.checkpoint import (
     COPY_STATUS_TABLE_NAME,
     REQUIRED_STATUS_COLUMNS,
     TableCheckpoint,
+    clear_resume_point,
     drop_status_tables,
     ensure_status_tables,
     mark_complete,
@@ -163,6 +164,69 @@ def test_mark_failed_keeps_the_resume_point_of_a_started_copy(conn, logger):
     assert checkpoint.plan_id == "plan-xyz"
     assert checkpoint.chunks_total == 180
     assert checkpoint.chunks_completed == 42
+
+
+# ---------------------------------------------------------------------------
+# clear_resume_point
+# ---------------------------------------------------------------------------
+#
+# A reconciliation mismatch is the one failure the resume point cannot help
+# with: chunks_completed already equals chunks_total, so the next run computes
+# start_at == len(predicates), executes range(N, N) -- zero chunks -- and
+# reconciles to the identical mismatch, forever. Clearing the resume point is
+# what makes the next attempt redo the table instead.
+
+
+def test_clear_resume_point_forgets_the_plan_and_the_progress(conn, logger):
+    ensure_status_tables(conn, DATABASE, SCHEMA, logger)
+    mark_in_progress(conn, DATABASE, SCHEMA, "measurement", "plan-xyz", 180, 900_000_000)
+    record_chunk_progress(conn, DATABASE, SCHEMA, "measurement", 180)
+    mark_failed(conn, DATABASE, SCHEMA, "measurement")
+
+    clear_resume_point(conn, DATABASE, SCHEMA, "measurement")
+
+    checkpoint = read_checkpoint(conn, DATABASE, SCHEMA, "measurement")
+    assert checkpoint.plan_id is None
+    assert checkpoint.chunks_completed == 0
+    assert checkpoint.status == "FAILED", "the table is still a failure, just a replannable one"
+
+
+def test_a_cleared_resume_point_misses_the_next_plan_id(conn, logger):
+    """A NULL plan_id can never equal the next run's, so reset_table is called."""
+    ensure_status_tables(conn, DATABASE, SCHEMA, logger)
+    mark_in_progress(conn, DATABASE, SCHEMA, "measurement", "plan-xyz", 180, 900_000_000)
+    record_chunk_progress(conn, DATABASE, SCHEMA, "measurement", 180)
+
+    clear_resume_point(conn, DATABASE, SCHEMA, "measurement")
+
+    checkpoint = read_checkpoint(conn, DATABASE, SCHEMA, "measurement")
+    assert checkpoint.plan_id != "plan-xyz"
+    assert min(checkpoint.chunks_completed, 180) == 0, "the next run redoes every chunk"
+
+
+def test_clear_resume_point_leaves_the_copied_rows_alone(conn, logger):
+    """Only reset_table may destroy data; this just forgets where we got to."""
+    ensure_status_tables(conn, DATABASE, SCHEMA, logger)
+    conn.execute(f'CREATE TABLE "{DATABASE}"."{SCHEMA}"."measurement" (id BIGINT)')
+    conn.execute(f'INSERT INTO "{DATABASE}"."{SCHEMA}"."measurement" VALUES (1), (2), (3)')
+    mark_in_progress(conn, DATABASE, SCHEMA, "measurement", "plan-xyz", 4, 3)
+
+    clear_resume_point(conn, DATABASE, SCHEMA, "measurement")
+
+    conn.execute(f'SELECT COUNT(*) FROM "{DATABASE}"."{SCHEMA}"."measurement"')
+    assert conn.fetchone()[0] == 3
+
+
+def test_clear_resume_point_on_a_table_with_no_row_is_a_no_op(conn, logger):
+    ensure_status_tables(conn, DATABASE, SCHEMA, logger)
+    clear_resume_point(conn, DATABASE, SCHEMA, "never_copied")
+    assert read_checkpoint(conn, DATABASE, SCHEMA, "never_copied") is None
+
+
+def test_clear_resume_point_rejects_hostile_table_names(conn, logger):
+    ensure_status_tables(conn, DATABASE, SCHEMA, logger)
+    with pytest.raises(ValueError):
+        clear_resume_point(conn, DATABASE, SCHEMA, 'x"; DROP TABLE y; --')
 
 
 def test_mark_in_progress_preserves_chunks_completed_on_retry(conn, logger):

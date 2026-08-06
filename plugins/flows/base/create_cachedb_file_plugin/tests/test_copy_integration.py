@@ -28,11 +28,14 @@ import pytest
 
 from create_cachedb_file_plugin.chunk_utils import plan_chunks, resolve_chunk_count
 from create_cachedb_file_plugin.checkpoint import (
+    clear_resume_point,
     ensure_status_tables,
     mark_complete,
+    mark_failed,
     mark_in_progress,
     read_checkpoint,
     record_chunk_progress,
+    reset_table,
 )
 from create_cachedb_file_plugin.planner_types import (
     ChunkColumnCandidate,
@@ -151,6 +154,34 @@ def _distinct_target_ids(con) -> int:
     return int(con.fetchone()[0])
 
 
+def _start_at(conn, plan):
+    """Where the next run begins, exactly as ``copy.copy_table`` decides it.
+
+    A checkpoint whose plan_id matches resumes; one that does not is discarded
+    through ``reset_table``, because its rows were written under different
+    chunk boundaries.
+    """
+    checkpoint = read_checkpoint(conn, DATABASE, TARGET_SCHEMA, TABLE)
+    if checkpoint is None:
+        return 0
+    if checkpoint.plan_id == plan.plan_id:
+        return min(checkpoint.chunks_completed, len(plan.predicates))
+    reset_table(conn, DATABASE, TARGET_SCHEMA, TABLE, LOGGER)
+    return 0
+
+
+def _run_copy(conn, plan, start_at):
+    mark_in_progress(
+        conn, DATABASE, TARGET_SCHEMA, TABLE, plan.plan_id, len(plan.predicates), ROW_COUNT
+    )
+    if start_at:
+        record_chunk_progress(conn, DATABASE, TARGET_SCHEMA, TABLE, start_at)
+    _create_empty_target(conn)
+    for index in range(start_at, len(plan.predicates)):
+        _copy_chunk(conn, plan.predicates[index])
+        record_chunk_progress(conn, DATABASE, TARGET_SCHEMA, TABLE, index + 1)
+
+
 def test_the_sparse_key_still_plans_a_bounded_number_of_chunks(conn):
     """The span of the key must not drive the chunk count (issue 3033)."""
     plan = _plan(conn)
@@ -216,3 +247,68 @@ def test_resume_after_a_kill_replays_one_chunk_without_duplicating(conn):
 
     assert _target_count(conn) == ROW_COUNT
     assert _distinct_target_ids(conn) == ROW_COUNT
+
+
+# ---------------------------------------------------------------------------
+# A reconciliation mismatch has to be recoverable
+# ---------------------------------------------------------------------------
+#
+# When reconciliation fails, chunks_completed already equals chunks_total. If
+# the next run reads that resume point it starts at range(N, N), copies nothing
+# and reconciles to the identical mismatch -- the same never-converges
+# pathology, one layer up, that this branch was written to kill. Realistic
+# triggers: rows inserted between collect() and reconcile_table, and BigQuery
+# __TABLES__ not counting rows still in the streaming buffer.
+#
+# The plan is deliberately reused across both runs. One row appended past the
+# column maximum does not move the interior quantile cuts, so a real second run
+# computes the same plan_id; reusing it keeps these tests about the resume
+# point rather than about quantile jitter.
+
+
+def _source_count(conn) -> int:
+    conn.execute(f"SELECT COUNT(*) FROM {SOURCE}")
+    return int(conn.fetchone()[0])
+
+
+def _append_one_source_row(conn):
+    """A row inserted after collect() measured the table -- the usual trigger."""
+    conn.execute(
+        f"INSERT INTO {SOURCE} VALUES "
+        f"(({ROW_COUNT} * {ID_STRIDE} + {ID_BASE})::BIGINT, 'late')"
+    )
+
+
+def test_keeping_the_resume_point_after_a_mismatch_never_converges(conn):
+    """Characterises the bug clear_resume_point exists to break."""
+    plan = _plan(conn)
+    _run_copy(conn, plan, 0)
+    _append_one_source_row(conn)
+    assert _target_count(conn) != _source_count(conn), "reconciliation would fail here"
+
+    # The old handler: mark_failed alone, which preserves plan_id and
+    # chunks_completed == chunks_total.
+    mark_failed(conn, DATABASE, TARGET_SCHEMA, TABLE)
+
+    start_at = _start_at(conn, plan)
+    assert start_at == len(plan.predicates), "the next run would copy zero chunks"
+    _run_copy(conn, plan, start_at)
+    assert _target_count(conn) != _source_count(conn), "and reconcile to the same mismatch"
+
+
+def test_clearing_the_resume_point_makes_the_next_run_redo_the_table(conn):
+    plan = _plan(conn)
+    _run_copy(conn, plan, 0)
+    _append_one_source_row(conn)
+
+    mark_failed(conn, DATABASE, TARGET_SCHEMA, TABLE)
+    clear_resume_point(conn, DATABASE, TARGET_SCHEMA, TABLE)
+
+    start_at = _start_at(conn, plan)
+    assert start_at == 0, "a cleared plan_id cannot match, so reset_table runs"
+
+    _run_copy(conn, plan, start_at)
+    mark_complete(conn, DATABASE, TARGET_SCHEMA, TABLE)
+
+    assert _target_count(conn) == _source_count(conn) == ROW_COUNT + 1
+    assert _distinct_target_ids(conn) == ROW_COUNT + 1

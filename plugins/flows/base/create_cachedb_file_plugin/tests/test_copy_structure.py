@@ -8,6 +8,8 @@ from .copy_source import (
     calls_to,
     dry_run_guarded_branch,
     function_node,
+    handled_exception_names,
+    handlers_for,
     string_constants,
 )
 
@@ -38,3 +40,33 @@ def test_skipping_index_creation_is_logged():
     message = string_constants(skipped_branch).lower()
     assert "dry run" in message
     assert "index" in message
+
+
+# ---------------------------------------------------------------------------
+# A reconciliation mismatch must clear the resume point; a chunk failure must not
+# ---------------------------------------------------------------------------
+#
+# On ReconciliationError chunks_completed already equals chunks_total, so
+# keeping the resume point makes the next run copy zero chunks and reconcile to
+# the same mismatch forever. On ChunkCopyError the resume point is the entire
+# point of the branch -- it is what stops a 900M-row table restarting at chunk
+# 0 on every retry (issue 3033).
+
+
+def test_reconciliation_mismatch_clears_the_resume_point():
+    func = function_node(COPY_SOURCE_PATH, "copy_table_task")
+    handlers = handlers_for(func, "ReconciliationError")
+    assert handlers, "copy_table_task needs a handler for ReconciliationError specifically"
+    assert any(calls_to(handler, "clear_resume_point") for handler in handlers)
+
+
+def test_only_the_reconciliation_handler_clears_the_resume_point():
+    func = function_node(COPY_SOURCE_PATH, "copy_table_task")
+    for handler in handlers_for(func, "ChunkCopyError") + handlers_for(func, "Exception"):
+        names = handled_exception_names(handler)
+        if "ReconciliationError" in names:
+            continue
+        assert not calls_to(handler, "clear_resume_point"), (
+            f"the 'except {'/'.join(sorted(names))}' handler must keep the resume point: "
+            "it is what makes a retried chunk copy resume instead of restarting"
+        )
