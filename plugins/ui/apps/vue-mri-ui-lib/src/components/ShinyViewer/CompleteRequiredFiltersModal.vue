@@ -8,130 +8,211 @@
           {{ getText('MRI_PA_REQUIRED_FILTERS_DESC') }}
         </p>
 
+        <p v-if="displayedFormNote" class="form-note">{{ displayedFormNote }}</p>
+
         <p v-if="error" class="error-text">{{ error }}</p>
 
-        <div v-for="field in allFields" :key="field.id" class="field-row">
-          <div class="field-label-wrapper">
-            <label class="field-label" :for="field.id">
-              {{ field.label }}
-              <span v-if="field.required !== false" class="required-indicator">*</span>
-            </label>
-          </div>
-
-          <div class="field-input-wrapper">
-            <!-- Date types -->
-            <template v-if="isDateType(field.type)">
-              <div class="date-range-group">
-                <input
-                  :id="`${field.id}_from`"
-                  class="form-control"
-                  type="date"
-                  v-model="formValues[field.id].from"
-                  @change="markFieldDirty(field.id)"
-                />
-                <span>to</span>
-                <input
-                  :id="`${field.id}_to`"
-                  class="form-control"
-                  type="date"
-                  v-model="formValues[field.id].to"
-                  @change="markFieldDirty(field.id)"
-                />
-              </div>
-            </template>
-
-            <!-- Year Range - matches Wizards implementation -->
-            <template v-else-if="field.type === 'yearRange'">
-              <div class="year-range-group">
-                <select
-                  :id="`${field.id}_from`"
-                  v-model="formValues[`${field.id}_from` as string]"
-                  class="form-control"
-                  :class="{ 'is-invalid': yearErrors[field.id] }"
-                  @blur="validateYearRange(field.id)"
-                  @change="markFieldDirty(`${field.id}_from`)"
-                >
-                  <option value="">{{ getText('MRI_PA_YEAR_FROM_PLACEHOLDER') }}</option>
-                  <option v-for="year in yearOptions" :key="`from-${year}`" :value="String(year)">
-                    {{ year }}
-                  </option>
-                </select>
-                <span>-</span>
-                <select
-                  :id="`${field.id}_to`"
-                  v-model="formValues[`${field.id}_to` as string]"
-                  class="form-control"
-                  :class="{ 'is-invalid': yearErrors[field.id] }"
-                  @blur="validateYearRange(field.id)"
-                  @change="markFieldDirty(`${field.id}_to`)"
-                >
-                  <option value="">{{ getText('MRI_PA_YEAR_TO_PLACEHOLDER') }}</option>
-                  <option v-for="year in yearOptions" :key="`to-${year}`" :value="String(year)">
-                    {{ year }}
-                  </option>
-                </select>
-              </div>
-              <p v-if="yearErrors[field.id]" class="field-error">{{ yearErrors[field.id] }}</p>
-            </template>
-
-            <!-- Numeric input with operator support -->
-            <template v-else-if="field.type === 'num'">
-              <input
-                :id="field.id"
-                class="form-control"
-                :class="{ 'is-invalid': numericErrors[field.id] }"
-                type="text"
-                :placeholder="field.placeholder || getText('MRI_PA_NUMERIC_INPUT_PLACEHOLDER')"
-                v-model="formValues[field.id]"
-                @input="onNumericInput(field.id)"
-                @blur="validateNumericField(field.id, formValues[field.id])"
-              />
-              <p v-if="numericErrors[field.id]" class="field-error">{{ numericErrors[field.id] }}</p>
-            </template>
-
-            <!-- Typeahead for conceptSet or text with configPath -->
-            <template v-else-if="shouldUseTypeahead(field)">
-              <div class="typeahead-wrapper">
-                <ConceptSetTypeaheadField
-                  :field-id="field.id"
-                  :label="field.label || field.id"
-                  :config-path="field.configPath!"
-                  :required="field.required !== false"
-                  :allow-free-text="field.allowFreeText"
-                  :placeholder="field.placeholder"
-                  :model-value="formValues[field.id]"
-                  :display-value="displayValues[field.id]"
-                  @update:model-value="
-                    (val: string | null) => {
-                      formValues[field.id] = val
-                      handleDisplayValueChange(field.id, val)
-                      markFieldDirty(field.id)
-                    }
-                  "
-                />
-                <!-- Condition fields store includeDescendants, but the UI exposes an exclude opt-out. -->
-                <div v-if="isConditionField(field.id) && formValues[field.id]" class="include-descendants-toggle">
-                  <label class="checkbox-label">
-                    <input type="checkbox" v-model="formValues[`${field.id}_excludeDescendants` as string]" />
-                    <span>{{ getText('MRI_PA_EXCLUDE_DESCENDANTS') }}</span>
-                  </label>
+        <section
+          v-for="(section, sectionIndex) in displaySections"
+          :key="section.id"
+          class="form-section"
+          :class="{ 'configured-section': section.configured, 'legacy-section': !section.configured }"
+        >
+          <h3 v-if="section.configured" class="section-title">
+            <span class="section-number">{{ sectionIndex + 1 }}</span>
+            {{ section.title }}
+          </h3>
+          <div class="section-content">
+            <div v-for="group in section.groups" :key="group.id" class="form-group">
+              <div v-if="group.label" class="group-header">
+                <div class="group-title-row">
+                  <h4 :aria-label="isGroupRequired(group) ? `${group.label}, required group` : undefined">
+                    {{ group.label
+                    }}<span v-if="isGroupRequired(group)" class="group-required-indicator" aria-hidden="true">*</span>
+                  </h4>
+                  <span v-if="getGroupCompletionHint(group)" class="info-tooltip">
+                    <button
+                      type="button"
+                      class="info-button"
+                      :aria-label="`${group.label} requirements`"
+                      :aria-describedby="`${group.id}-requirements`"
+                    >
+                      i
+                    </button>
+                    <span :id="`${group.id}-requirements`" role="tooltip" class="info-tooltip-content">
+                      {{ getGroupCompletionHint(group) }}
+                    </span>
+                  </span>
                 </div>
               </div>
-            </template>
+              <div class="field-grid" :class="getColumnsClass(group.columns)">
+                <div v-for="field in group.fields" :key="field.id" class="field-row">
+                  <div class="field-label-wrapper">
+                    <label class="field-label" :for="field.id">
+                      {{ field.label }}
+                      <span v-if="field.required !== false" class="required-indicator">*</span>
+                    </label>
+                    <span v-if="field.type === 'num'" class="info-tooltip">
+                      <button
+                        type="button"
+                        class="info-button"
+                        :aria-label="`${field.label} valid formats`"
+                        :aria-describedby="`${field.id}-numeric-help`"
+                      >
+                        i
+                      </button>
+                      <span :id="`${field.id}-numeric-help`" role="tooltip" class="info-tooltip-content">
+                        <span>Valid format:</span>
+                        <ul>
+                          <li>Enter a single value</li>
+                          <li>&gt; or &lt; for greater/less than</li>
+                          <li>&gt;= or &lt;= for greater than or equal to/less than or equal to</li>
+                          <li>[x-y] or ]x-y[ for an interval including or excluding the endpoints</li>
+                          <li>(-x) for negative values</li>
+                        </ul>
+                        <span>E.g: &gt;=60, [50-80]</span>
+                      </span>
+                    </span>
+                  </div>
 
-            <!-- Plain text input -->
-            <template v-else>
-              <input
-                :id="field.id"
-                class="form-control"
-                type="text"
-                :placeholder="field.placeholder || getText('MRI_PA_SEARCH_PLACEHOLDER', field.label)"
-                v-model="formValues[field.id]"
-                @input="markFieldDirty(field.id)"
-              />
-            </template>
+                  <div class="field-input-wrapper">
+                    <!-- Date types -->
+                    <template v-if="isDateType(field.type)">
+                      <div class="date-range-group">
+                        <input
+                          :id="`${field.id}_from`"
+                          class="form-control"
+                          type="date"
+                          v-model="formValues[field.id].from"
+                          @change="markFieldDirty(field.id)"
+                        />
+                        <span>to</span>
+                        <input
+                          :id="`${field.id}_to`"
+                          class="form-control"
+                          type="date"
+                          v-model="formValues[field.id].to"
+                          @change="markFieldDirty(field.id)"
+                        />
+                      </div>
+                    </template>
+
+                    <!-- Year Range - matches Wizards implementation -->
+                    <template v-else-if="field.type === 'yearRange'">
+                      <div class="year-range-group">
+                        <select
+                          :id="`${field.id}_from`"
+                          v-model="formValues[`${field.id}_from` as string]"
+                          class="form-control"
+                          :class="{ 'is-invalid': yearErrors[field.id] }"
+                          @blur="validateYearRange(field.id)"
+                          @change="markFieldDirty(`${field.id}_from`)"
+                        >
+                          <option value="">{{ getText('MRI_PA_YEAR_FROM_PLACEHOLDER') }}</option>
+                          <option v-for="year in yearOptions" :key="`from-${year}`" :value="String(year)">
+                            {{ year }}
+                          </option>
+                        </select>
+                        <span>-</span>
+                        <select
+                          :id="`${field.id}_to`"
+                          v-model="formValues[`${field.id}_to` as string]"
+                          class="form-control"
+                          :class="{ 'is-invalid': yearErrors[field.id] }"
+                          @blur="validateYearRange(field.id)"
+                          @change="markFieldDirty(`${field.id}_to`)"
+                        >
+                          <option value="">{{ getText('MRI_PA_YEAR_TO_PLACEHOLDER') }}</option>
+                          <option v-for="year in yearOptions" :key="`to-${year}`" :value="String(year)">
+                            {{ year }}
+                          </option>
+                        </select>
+                      </div>
+                      <p v-if="yearErrors[field.id]" class="field-error">{{ yearErrors[field.id] }}</p>
+                    </template>
+
+                    <!-- Numeric input with operator support -->
+                    <template v-else-if="field.type === 'num'">
+                      <div
+                        class="numeric-input-anchor"
+                        :tabindex="isFieldDisabled(group, field.id) ? 0 : undefined"
+                        :aria-describedby="isFieldDisabled(group, field.id) ? `${field.id}-limit-help` : undefined"
+                      >
+                        <input
+                          :id="field.id"
+                          class="form-control"
+                          :class="{ 'is-invalid': numericErrors[field.id] }"
+                          type="text"
+                          :placeholder="field.placeholder || getText('MRI_PA_NUMERIC_INPUT_PLACEHOLDER')"
+                          :disabled="isFieldDisabled(group, field.id)"
+                          :aria-describedby="isFieldDisabled(group, field.id) ? `${field.id}-limit-help` : undefined"
+                          v-model="formValues[field.id]"
+                          @input="onNumericInput(field.id)"
+                          @blur="validateNumericField(field.id, formValues[field.id])"
+                        />
+                        <span
+                          v-if="isFieldDisabled(group, field.id)"
+                          :id="`${field.id}-limit-help`"
+                          role="tooltip"
+                          class="info-tooltip-content limit-tooltip-content"
+                        >
+                          <strong>{{ getGroupLimitTitle(group) }}</strong>
+                          <span>{{ getGroupLimitBody(group) }}</span>
+                        </span>
+                      </div>
+                      <p v-if="numericErrors[field.id]" class="field-error">{{ numericErrors[field.id] }}</p>
+                    </template>
+
+                    <!-- Typeahead for conceptSet or text with configPath -->
+                    <template v-else-if="shouldUseTypeahead(field)">
+                      <div class="typeahead-wrapper">
+                        <ConceptSetTypeaheadField
+                          :field-id="field.id"
+                          :label="field.label || field.id"
+                          :config-path="field.configPath!"
+                          :required="field.required !== false"
+                          :allow-free-text="field.allowFreeText"
+                          :placeholder="field.placeholder"
+                          :model-value="formValues[field.id]"
+                          :display-value="displayValues[field.id]"
+                          @update:model-value="
+                            (val: string | null) => {
+                              formValues[field.id] = val
+                              handleDisplayValueChange(field.id, val)
+                              markFieldDirty(field.id)
+                            }
+                          "
+                        />
+                        <!-- Condition fields store includeDescendants, but the UI exposes an exclude opt-out. -->
+                        <div
+                          v-if="isConditionField(field.id) && formValues[field.id]"
+                          class="include-descendants-toggle"
+                        >
+                          <label class="checkbox-label">
+                            <input type="checkbox" v-model="formValues[`${field.id}_excludeDescendants` as string]" />
+                            <span>{{ getText('MRI_PA_EXCLUDE_DESCENDANTS') }}</span>
+                          </label>
+                        </div>
+                      </div>
+                    </template>
+
+                    <!-- Plain text input -->
+                    <template v-else>
+                      <input
+                        :id="field.id"
+                        class="form-control"
+                        type="text"
+                        :placeholder="field.placeholder || getText('MRI_PA_SEARCH_PLACEHOLDER', field.label)"
+                        v-model="formValues[field.id]"
+                        @input="markFieldDirty(field.id)"
+                      />
+                    </template>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
-        </div>
+        </section>
       </div>
     </template>
 
@@ -153,8 +234,20 @@ import { useStore } from 'vuex'
 import MessageBox from '../MessageBox.vue'
 import appButton from '@/lib/ui/app-button.vue'
 import ConceptSetTypeaheadField from './ConceptSetTypeaheadField.vue'
-import type { WizardFieldDefinition } from '@/utils/dashboardFlowUtils'
-import { isConditionField, normalizeWizardFieldValueForComparison } from '@/utils/dashboardFlowUtils'
+import type {
+  ResolvedWizardFieldGroup,
+  ResolvedWizardFormSection,
+  WizardFieldDefinition,
+  WizardFormSection,
+} from '@/utils/dashboardFlowUtils'
+import {
+  getWizardGroupCompletionHint,
+  getWizardGroupValidationMessage,
+  isWizardFieldDisabledByGroupLimit,
+  isConditionField,
+  normalizeWizardFieldValueForComparison,
+  resolveWizardFormLayout,
+} from '@/utils/dashboardFlowUtils'
 import InputParser from '@/lib/utils/InputParser'
 import RangeConstraintTokenDefinition from '@/lib/utils/RangeConstraintTokenDefinition'
 import RangeConstraintPatternDefinition from '@/lib/utils/RangeConstraintPatternDefinition'
@@ -165,6 +258,8 @@ const getText = (key: string, param?: string | string[]) => store.getters.getTex
 const props = defineProps<{
   isOpen: boolean
   allFields: WizardFieldDefinition[]
+  sections?: WizardFormSection[]
+  formNote?: string | null
   initialValues: Record<string, any>
   initialDisplayValues: Record<string, string>
   loading: boolean
@@ -187,6 +282,81 @@ const yearErrors = reactive<Record<string, string>>({})
 const numericErrors = reactive<Record<string, string>>({})
 const dirtyFields = reactive<Set<string>>(new Set())
 const initialSnapshot = reactive<Record<string, any>>({})
+
+interface DisplayWizardSection extends ResolvedWizardFormSection {
+  configured: boolean
+}
+
+const resolvedLayout = computed(() => resolveWizardFormLayout(props.allFields, props.sections))
+const displayedFormNote = computed(() => props.formNote?.trim() || null)
+const displaySections = computed<DisplayWizardSection[]>(() => {
+  if (resolvedLayout.value.sections.length === 0) {
+    return [
+      {
+        id: 'legacy',
+        title: '',
+        configured: false,
+        groups: [
+          {
+            id: 'legacy-fields',
+            fieldIds: props.allFields.map(field => field.id),
+            columns: 1,
+            fields: props.allFields,
+          },
+        ],
+      },
+    ]
+  }
+
+  const sections = resolvedLayout.value.sections.map(section => ({ ...section, configured: true }))
+  if (resolvedLayout.value.ungroupedFields.length > 0) {
+    sections.push({
+      id: 'additional',
+      title: 'Additional',
+      configured: true,
+      groups: [
+        {
+          id: 'additional-fields',
+          fieldIds: resolvedLayout.value.ungroupedFields.map(field => field.id),
+          columns: 2,
+          fields: resolvedLayout.value.ungroupedFields,
+        },
+      ],
+    })
+  }
+  return sections
+})
+
+function getColumnsClass(columns: number = 2): string {
+  return `columns-${columns}`
+}
+
+function isGroupRequired(group: ResolvedWizardFieldGroup): boolean {
+  return (group.validation?.minAnswered ?? 0) > 0
+}
+
+function getGroupCompletionHint(group: ResolvedWizardFieldGroup): string | null {
+  return getWizardGroupCompletionHint(group)
+}
+
+function isFieldDisabled(group: ResolvedWizardFieldGroup, fieldId: string): boolean {
+  return isWizardFieldDisabledByGroupLimit(group, fieldId, formValues)
+}
+
+function getGroupLimitTitle(group: ResolvedWizardFieldGroup): string {
+  const fieldCount = group.fields.length === 3 ? 'three' : String(group.fields.length)
+  return `Only ${group.validation?.maxAnswered} of the ${fieldCount} fields`
+}
+
+function getGroupLimitBody(group: ResolvedWizardFieldGroup): string {
+  return `(${group.fields.map(field => field.label || field.id).join(', ')}) can be filled in at the same time.`
+}
+
+const hasGroupValidationErrors = computed(() =>
+  resolvedLayout.value.sections.some(section =>
+    section.groups.some(group => getWizardGroupValidationMessage(group, formValues) !== null)
+  )
+)
 
 // Initialize InputParser for numeric field validation
 const numericParser = new InputParser(
@@ -215,7 +385,7 @@ function validateAllFields(): boolean {
   // Clear year errors
   Object.keys(yearErrors).forEach(key => delete yearErrors[key])
 
-  let isValid = true
+  let isValid = !hasGroupValidationErrors.value
 
   for (const field of props.allFields) {
     // yearRange validation - matches Wizards
@@ -290,6 +460,10 @@ function validateAllFields(): boolean {
 
 // Check if all required fields are filled correctly (pure computed, no side effects)
 const isFormValid = computed(() => {
+  if (hasGroupValidationErrors.value) {
+    return false
+  }
+
   if (!props.allFields.length) {
     return true
   }
@@ -595,9 +769,135 @@ function validateYearRange(fieldId: string): void {
   margin-bottom: 14px;
 }
 
+.form-note {
+  margin: -4px 0 14px;
+  color: #333;
+  font-style: italic;
+  line-height: 1.45;
+}
+
 .error-text {
   color: var(--color-feedback-error, #a3293d);
   margin-bottom: 12px;
+}
+
+.form-section {
+  overflow: visible;
+  margin-bottom: 16px;
+  border: 1px solid #dfe5ef;
+  border-radius: 6px;
+  background: #fff;
+}
+
+.section-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  padding: 9px 12px;
+  background: #eaf3ff;
+  border-radius: 5px 5px 0 0;
+  color: var(--color-mri-brand, #000080);
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.section-number {
+  display: inline-flex;
+  width: 20px;
+  height: 20px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: #d8e8ff;
+  font-size: 0.75rem;
+}
+
+.section-content {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding: 14px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.group-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  border-bottom: 1px solid #e5e7eb;
+  padding-bottom: 5px;
+}
+
+.group-header h4 {
+  margin: 0;
+  color: #4b5563;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.group-title-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.group-required-indicator {
+  margin-left: 2px;
+  color: var(--color-feedback-error, #a3293d);
+}
+
+.field-grid {
+  display: grid;
+  gap: 12px;
+}
+
+.field-grid.columns-1 {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.field-grid.columns-2 {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.field-grid.columns-3 {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.configured-section .field-row {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 5px;
+  margin-bottom: 0;
+}
+
+.configured-section .field-label-wrapper {
+  padding-top: 0;
+}
+
+.legacy-section {
+  overflow: visible;
+  margin-bottom: 0;
+  border: 0;
+  border-radius: 0;
+}
+
+.legacy-section .section-content {
+  gap: 0;
+  padding: 0;
+}
+
+.legacy-section .field-grid {
+  display: block;
 }
 
 .field-row {
@@ -613,6 +913,111 @@ function validateYearRange(fieldId: string): void {
   align-items: center;
   gap: 4px;
   padding-top: 6px;
+}
+
+.info-tooltip {
+  position: relative;
+  display: inline-flex;
+  flex: 0 0 auto;
+}
+
+.info-button {
+  display: inline-flex;
+  width: 15px;
+  height: 15px;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 1px solid #7b8492;
+  border-radius: 50%;
+  background: #fff;
+  color: #606975;
+  cursor: help;
+  font-family: serif;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.info-button:focus-visible {
+  outline: 2px solid var(--color-mri-brand, #000080);
+  outline-offset: 2px;
+}
+
+.info-tooltip-content {
+  position: absolute;
+  top: calc(100% + 9px);
+  left: 50%;
+  z-index: 30;
+  display: none;
+  width: max-content;
+  max-width: 300px;
+  padding: 12px 14px;
+  border-radius: 5px;
+  background: #fff;
+  box-shadow: 0 5px 18px rgba(0, 0, 0, 0.2);
+  color: #555;
+  font-size: 0.75rem;
+  font-weight: 400;
+  line-height: 1.45;
+  transform: translateX(-18px);
+}
+
+.info-tooltip-content::before {
+  position: absolute;
+  top: -6px;
+  left: 12px;
+  width: 12px;
+  height: 12px;
+  background: #fff;
+  content: '';
+  transform: rotate(45deg);
+}
+
+.field-grid.columns-3 .field-row:nth-child(3n) .info-tooltip-content {
+  right: 0;
+  left: auto;
+  transform: none;
+}
+
+.field-grid.columns-3 .field-row:nth-child(3n) .info-tooltip-content::before {
+  right: 12px;
+  left: auto;
+}
+
+.info-tooltip-content ul {
+  margin: 4px 0 10px;
+  padding-left: 20px;
+}
+
+.info-tooltip-content strong {
+  display: block;
+  margin-bottom: 2px;
+  color: var(--color-mri-brand, #000080);
+}
+
+.info-tooltip:hover .info-tooltip-content,
+.info-tooltip:focus-within .info-tooltip-content {
+  display: block;
+}
+
+.numeric-input-anchor {
+  position: relative;
+  width: 100%;
+}
+
+.numeric-input-anchor .form-control {
+  width: 100%;
+}
+
+.numeric-input-anchor:focus-visible {
+  outline: 2px solid var(--color-mri-brand, #000080);
+  outline-offset: 2px;
+}
+
+.numeric-input-anchor:hover .limit-tooltip-content,
+.numeric-input-anchor:focus-within .limit-tooltip-content {
+  display: block;
 }
 
 .field-label {
@@ -656,6 +1061,13 @@ function validateYearRange(fieldId: string): void {
   border-color: var(--color-feedback-error, #a3293d);
 }
 
+.form-control:disabled {
+  border-color: #e1e3e6;
+  background: #f6f6f6;
+  color: #a0a4aa;
+  cursor: not-allowed;
+}
+
 .field-error {
   color: var(--color-feedback-error, #a3293d);
   font-size: 0.875rem;
@@ -694,6 +1106,11 @@ function validateYearRange(fieldId: string): void {
 }
 
 @media (max-width: 720px) {
+  .field-grid.columns-2,
+  .field-grid.columns-3 {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
   .field-row {
     grid-template-columns: 1fr;
   }
