@@ -64,3 +64,63 @@ def test_target_chunk_rows_defaults_per_dialect(dialect, expected):
 
 def test_target_chunk_rows_override_wins():
     assert resolve_target_chunk_rows("bigquery", 250_000) == 250_000
+
+
+from datetime import date
+
+from create_cachedb_file_plugin.chunk_utils import build_predicates, sql_literal
+from create_cachedb_file_plugin.errors import PlannerError
+
+
+def _column(nullable=False, name="measurement_id", data_type="INT64"):
+    return ChunkColumnCandidate(
+        name=name, kind=ColumnKind.MAPPED_ID, data_type=data_type, nullable=nullable
+    )
+
+
+def test_sql_literal_quotes_and_escapes():
+    assert sql_literal(42) == "42"
+    assert sql_literal("o'brien") == "'o''brien'"
+    assert sql_literal(date(2020, 1, 31)) == "'2020-01-31'"
+
+
+def test_sql_literal_rejects_unsupported_types():
+    with pytest.raises(PlannerError):
+        sql_literal(None)
+    with pytest.raises(PlannerError):
+        sql_literal(1.5)
+    with pytest.raises(PlannerError):
+        sql_literal(True)
+
+
+def test_predicates_are_half_open_and_drop_outer_endpoints():
+    predicates = build_predicates(_column(), [0, 10, 20, 30])
+    assert predicates == (
+        '"measurement_id" < 10',
+        '"measurement_id" >= 10 AND "measurement_id" < 20',
+        '"measurement_id" >= 20',
+    )
+
+
+def test_nullable_column_gets_an_explicit_null_chunk():
+    predicates = build_predicates(_column(nullable=True), [0, 10, 20])
+    assert predicates[-1] == '"measurement_id" IS NULL'
+
+
+def test_ties_collapse_to_a_single_chunk():
+    assert build_predicates(_column(), [7, 7, 7, 7]) == ('"measurement_id" IS NOT NULL',)
+
+
+def test_two_distinct_values_collapse_to_a_single_chunk():
+    assert build_predicates(_column(), [1, 9]) == ('"measurement_id" IS NOT NULL',)
+
+
+def test_date_boundaries_are_supported():
+    predicates = build_predicates(
+        _column(name="measurement_date", data_type="DATE"),
+        [date(2019, 1, 1), date(2020, 1, 1), date(2021, 1, 1)],
+    )
+    assert predicates == (
+        "\"measurement_date\" < '2020-01-01'",
+        "\"measurement_date\" >= '2020-01-01'",
+    )
