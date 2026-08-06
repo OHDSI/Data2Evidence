@@ -437,6 +437,7 @@ def test_non_finite_decimal_boundaries_are_rejected(value):
 
 def test_planner_modules_do_not_drag_in_prefect():
     """tests/README.md calls this import discipline load-bearing; enforce it."""
+    import create_cachedb_file_plugin.checkpoint  # noqa: F401
     import create_cachedb_file_plugin.chunk_utils  # noqa: F401
     import create_cachedb_file_plugin.errors  # noqa: F401
     import create_cachedb_file_plugin.planner_types  # noqa: F401
