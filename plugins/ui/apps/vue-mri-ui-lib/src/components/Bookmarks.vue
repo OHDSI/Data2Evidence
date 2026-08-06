@@ -136,8 +136,19 @@
           <d4l-spinner />
         </div>
         <div v-else>
-          <div v-if="!bookmarksDisplay || bookmarksDisplay.length === 0" class="bookmark-noContent">
-            {{ getText('MRI_PA_NO_BOOKMARKS_TEXT') }}
+          <div v-if="getBookmarksLoadError" class="bookmark-empty-state bookmark-empty-state--error">
+            <LoadErrorIllustration class="bookmark-empty-state__icon bookmark-empty-state__illustration" />
+            <div class="bookmark-empty-state__title">{{ getText('MRI_PA_BOOKMARKS_ERROR_TITLE') }}</div>
+            <div class="bookmark-empty-state__body">{{ getText('MRI_PA_BOOKMARKS_ERROR_TEXT') }}</div>
+            <button class="bookmark-empty-state__refresh" type="button" @click="loadBookmarks">
+              <RefreshIcon class="bookmark-empty-state__refresh-icon" />
+              {{ getText('MRI_PA_BOOKMARKS_REFRESH') }}
+            </button>
+          </div>
+          <div v-else-if="!bookmarksDisplay || bookmarksDisplay.length === 0" class="bookmark-empty-state">
+            <UsersIcon class="bookmark-empty-state__icon bookmark-empty-state__icon--users" />
+            <div class="bookmark-empty-state__title">{{ getText('MRI_PA_BOOKMARKS_EMPTY_TITLE') }}</div>
+            <div class="bookmark-empty-state__body">{{ getText('MRI_PA_NO_BOOKMARKS_TEXT') }}</div>
           </div>
           <div v-else class="bookmark-content__list">
             <BookmarkItems
@@ -219,6 +230,9 @@ import BookmarkItems from './BookmarkItems.vue'
 import SlideToggle from './SlideToggle.vue'
 import { getBookmarkType } from '../utils/BookmarkUtils'
 import Button from './Button.vue'
+import UsersIcon from './icons/UsersIcon.vue'
+import LoadErrorIllustration from './icons/LoadErrorIllustration.vue'
+import RefreshIcon from './icons/RefreshIcon.vue'
 import ImportAtlasCohortDefinitionDialog from './ImportAtlasCohortDefinitionDialog.vue'
 import { useAtlasStore } from '../stores/atlas'
 import { usePortalContext } from '../composables/usePortalContext'
@@ -294,6 +308,7 @@ export default {
       'getDisplayBookmarks',
       'getSelectedDataset',
       'getBookmarksLoading',
+      'getBookmarksLoadError',
       'getCanDatasetMaterializeCohorts',
     ]),
     enableAtlasCohortDefinition() {
@@ -764,7 +779,9 @@ export default {
       this.bookmarkBodyOffset = Math.max(offset, 0)
     },
     loadBookmarks() {
-      this.fireBookmarkQuery({ method: 'get', params: { cmd: 'loadAll' } })
+      // Failures are tracked in the store (loadError) and rendered as the in-list
+      // error state, so swallow the rethrown error here to avoid unhandled rejections.
+      this.fireBookmarkQuery({ method: 'get', params: { cmd: 'loadAll' } }).catch(() => {})
     },
   },
   components: {
@@ -779,6 +796,9 @@ export default {
     SlideToggle,
     Button,
     ImportAtlasCohortDefinitionDialog,
+    UsersIcon,
+    LoadErrorIllustration,
+    RefreshIcon,
   },
 }
 </script>
