@@ -26,6 +26,20 @@ from .planner_types import ChunkColumnCandidate, ChunkConfig, ChunkStats, Column
 # only defence is to refuse anything that is not a plain unquoted identifier.
 _IDENTIFIER_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_$]*$")
 
+#: An inexact row count below ``small_table_threshold * this`` is confirmed
+#: with a real ``COUNT(*)`` before the planner is allowed to act on it.
+#:
+#: Only Postgres produces an inexact count, and its ``reltuples`` is a planner
+#: estimate that is stale between autovacuum runs: it reads 0 for a table
+#: analysed while empty and then bulk-loaded, and for any never-analysed table
+#: on PG <= 13. Believing such an estimate drops the table below the threshold,
+#: which makes ``plan_chunks`` choose SINGLE_STATEMENT and ``copy_table`` run
+#: ``DROP TABLE`` + ``CREATE TABLE ... AS SELECT *`` over the whole table --
+#: the unbounded copy issue 3033 exists to eliminate, with the target dropped
+#: on the way in. A COUNT(*) on a genuinely small table costs nothing next to
+#: that, so the band is deliberately wider than the threshold itself.
+SMALL_TABLE_CONFIRM_FACTOR = 1.2
+
 
 def _check_identifier(value: str, what: str) -> str:
     if not isinstance(value, str) or not _IDENTIFIER_RE.match(value):
@@ -435,6 +449,20 @@ class _BaseAdapter:
         """
         row_count, is_exact = self.count_rows(schema, table)
 
+        # ``row_count_is_exact`` is read here and nowhere else: it is what says
+        # the number below is safe to compare against the threshold. An
+        # estimate near the threshold is not, so it is confirmed with a real
+        # count before anything is decided on it. See
+        # SMALL_TABLE_CONFIRM_FACTOR for what a wrong answer costs.
+        if not is_exact and row_count < config.small_table_threshold * SMALL_TABLE_CONFIRM_FACTOR:
+            exact = self.count_rows_exact(schema, table)
+            logger.info(
+                f"{schema}.{table}: the estimated row count ({row_count:,}) is near the "
+                f"{config.small_table_threshold:,}-row small-table threshold, so it was "
+                f"confirmed with an exact count: {exact:,} rows."
+            )
+            row_count, is_exact = exact, True
+
         if row_count < config.small_table_threshold:
             # Below the threshold the planner copies in one statement, so
             # neither a chunk column nor a boundary scan is worth paying for.
@@ -498,9 +526,10 @@ class PostgresSourceAdapter(_BaseAdapter):
 
     def count_rows(self, schema: str, table: str) -> tuple[int, bool]:
         # reltuples is the planner's estimate, and is stale between autovacuum
-        # runs, so it can land on the wrong side of small_table_threshold. A
-        # later task calls count_rows_exact whenever the estimate is within
-        # 20% of the threshold.
+        # runs, so it can land on the wrong side of small_table_threshold.
+        # Returning False for is_exact is what makes ``_BaseAdapter.collect``
+        # confirm it with count_rows_exact when it lands anywhere near that
+        # threshold; see SMALL_TABLE_CONFIRM_FACTOR.
         estimate = self._scalar(pg_row_count_estimate_sql(schema, table))
         if estimate is None or int(estimate) < 0:
             # -1 means the table has never been analysed. Guessing "small"
