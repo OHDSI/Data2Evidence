@@ -558,7 +558,8 @@ router.post("/", async (req: Request, res: Response) => {
     const userObj = getUser(req);
     const sessionVariables = {
       APPLICATION: `${env.PROJECT_NAME}-WIZARD_${type}_${name}_${templateId}`,
-      APPLICATIONUSER: userObj.getEmail() || userObj.getUser(),
+      APPLICATIONUSER:
+        userObj.getEmail() || userObj.userObject.name || userObj.getUser(),
     };
     const conn = dbm.getConnection(
       dataset.cacheId ?? dataset.databaseCode,
