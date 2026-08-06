@@ -8,6 +8,7 @@ from prefect.variables import Variable
 from prefect.blocks.system import Secret
 from prefect.context import TaskRunContext
 from prefect.logging import get_run_logger
+from prefect.runtime import flow_run as prefect_flow_run
 from prefect.tasks import exponential_backoff
 
 from .types import CopyParameters, QueryColumns
@@ -133,8 +134,23 @@ def create_schema_tables_task(use_trex_conn: bool, read_conn: Any, copy_params: 
 def create_schema_tables(write_conn: Any, read_conn: Any, copy_params: CopyParameters, logger):
     source_schema = copy_params.source_schema
 
-    # Create status table if it doesn't exist
-    create_cache_status_table(write_conn, copy_params)
+    # Create both bookkeeping tables if they don't exist, migrating a
+    # pre-chunking status table first.
+    ensure_status_tables(write_conn, copy_params.target_database, copy_params.target_schema, logger)
+
+    if copy_params.fresh_copy:
+        # Keyed on (flow_run_id, target_schema): that is what makes this safe
+        # under create_schema_tables_task's retries=3 -- attempt 2 must not
+        # destroy what attempt 1 copied -- and what gives the datamart schema
+        # and the results schema each their own reset inside one flow run.
+        apply_fresh_copy(
+            write_conn,
+            copy_params.target_database,
+            copy_params.target_schema,
+            str(prefect_flow_run.id),
+            dry_run=copy_params.dry_run,
+            logger=logger,
+        )
 
     # Determine tables to copy
     source_tables = copy_params.table_filter.keys() if copy_params.table_filter else read_conn.get_table_names(source_schema)
@@ -176,20 +192,16 @@ def create_schema_tables(write_conn: Any, read_conn: Any, copy_params: CopyParam
     original_count = len(tables_to_copy)
 
     # Check for already completed tables
-    completed_tables = set()
-    try:
-        write_conn.execute(f"""
-            SELECT table_name
-            FROM "{copy_params.target_database}"."{copy_params.target_schema}"."{COPY_STATUS_TABLE_NAME}"
-            WHERE status = 'COMPLETE'
-        """)
-        result = write_conn.fetchall()
-        completed_tables = list({row[0] for row in result})
-        logger.info(f"Found {len(completed_tables)} already completed tables: {completed_tables}")
-    except Exception:
-        logger.error("Could not fetch completed tables from status tracking table.")
-        raise
-
+    completed_tables = [
+        row[0]
+        for row in _fetchall_rows(
+            write_conn,
+            f'SELECT table_name FROM "{copy_params.target_database}"'
+            f'."{copy_params.target_schema}"."{COPY_STATUS_TABLE_NAME}" '
+            "WHERE status = 'COMPLETE'",
+        )
+    ]
+    logger.info(f"Found {len(completed_tables)} already completed tables: {completed_tables}")
 
     # Filter out already completed tables
     tables_left_to_copy = [t for t in tables_to_copy if t not in completed_tables]
@@ -235,8 +247,11 @@ def create_schema_tables(write_conn: Any, read_conn: Any, copy_params: CopyParam
         # Call copy_indexes directly
         copy_indexes(write_conn, read_conn, copy_params, query_columns, source_schema_for_table, logger)
 
-    # All tables copied successfully, drop the status tracking table
-    drop_cache_status_table(write_conn, copy_params)
+    # All tables copied successfully, drop the ephemeral bookkeeping tables.
+    # Under dryRun nothing was written, so there is nothing to clean up -- and
+    # dropping them would destroy the checkpoints a real run needs to resume.
+    if not copy_params.dry_run:
+        drop_status_tables(write_conn, copy_params.target_database, copy_params.target_schema)
 
 
 def create_empty_target_table_if_absent(write_conn: Any, copy_params: CopyParameters, query_columns: QueryColumns, source_schema: str):
@@ -439,6 +454,17 @@ def copy_table(write_conn: Any, read_conn: Any, copy_params: CopyParameters, que
         record_chunk_progress(write_conn, database, schema, table, index + 1)
 
     return stats.row_count
+
+
+def _fetchall_rows(conn: Any, statement: str):
+    """Run a query and return its rows.
+
+    execute() then fetchall() is the whole surface a psycopg2 cursor against
+    Trex pgwire and a plain duckdb connection have in common, which is why
+    every read in this plugin is spelled this way.
+    """
+    conn.execute(statement)
+    return conn.fetchall()
 
 
 def create_select_query(copy_params: CopyParameters, query_columns: QueryColumns, source_schema: str, where_sql: str | tuple = None) -> str:
