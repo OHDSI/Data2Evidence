@@ -552,28 +552,30 @@ export const MappingTable: FC<MappingTableProps> = ({
     getRowId: (originalRow: { [key: string]: any }, index: number) => originalRow.sourceRowId ?? String(index),
     enableColumnResizing: true,
     layoutMode: "grid",
-    muiTableHeadCellProps: {
+    muiTableHeadCellProps: ({ column }) => ({
       style: {
         fontWeight: "bold",
         fontSize: "16px",
       },
-    },
+      // Kill MRT's right-pinned-column separator shadow on the actions column.
+      ...(column.id === "actions" ? { sx: { boxShadow: "none !important" } } : {}),
+    }),
     muiTableBodyCellProps: ({ row, column }) => {
       const selected = row.getIsSelected();
       const rowBg = selected ? "#c5cae9" : row.index % 2 === 0 ? "#f5f5f5" : "#ffffff";
+      const isActions = column.id === "actions";
       return {
         // Top-align so a single-value cell (status/source/…) lines up with the first stacked
-        // concept line in a multi-suggestion row.
-        sx: { alignItems: "flex-start" },
+        // concept line in a multi-suggestion row. `!important` on the actions column defeats
+        // MRT's pinned-column separator shadow (applied with high specificity).
+        sx: { alignItems: "flex-start", ...(isActions ? { boxShadow: "none !important" } : {}) },
         style: {
           fontSize: "14px",
           color: "#000080",
           // Non-pinned cells stay transparent so the row's (selection/alternating) background
           // shows through. The right-pinned actions column needs an opaque background matching
           // the row - and no pinning shadow, which layered wrongly over a selected row.
-          ...(column.id === "actions"
-            ? { backgroundColor: rowBg, boxShadow: "none" }
-            : { backgroundColor: "transparent" }),
+          ...(isActions ? { backgroundColor: rowBg } : { backgroundColor: "transparent" }),
         },
       };
     },
