@@ -379,7 +379,7 @@ export const Step1Source: FC<Step1SourceProps> = ({
                       onFileSelected={handleCsvFileSelected}
                       onFileLoaded={handleCsvLoaded}
                       onError={handleCsvError}
-                      parseOptions={{ header: true }}
+                      parseOptions={{ header: true, skipEmptyLines: true }}
                     />
                   </Box>
                 )}

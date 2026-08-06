@@ -87,12 +87,26 @@ export const MappingTable: FC<MappingTableProps> = ({
     () =>
       csvData.map((row) => {
         const backendRow = row.sourceRowId ? suggestionsByRowId[row.sourceRowId] : undefined;
-        const derived = deriveRowStatus({ flagged: backendRow?.flagged, suggestions: backendRow?.suggestions });
+        const suggestions = backendRow?.suggestions ?? [];
+        const derived = deriveRowStatus({ flagged: backendRow?.flagged, suggestions });
+        // Concept columns: show the row's backend suggestion (the approved one, else the
+        // first) so a Suggest/Approve surfaces its concept here. Fall back to the client-side
+        // concept that Recommend filled into csvData when there's no backend suggestion yet.
+        const chosen = suggestions.find((s) => s.isApproved) ?? suggestions[0];
         return {
           ...row,
+          ...(chosen
+            ? {
+                conceptId: chosen.conceptId,
+                conceptName: chosen.conceptName,
+                conceptCode: chosen.conceptCode,
+                domainId: chosen.domainId,
+                vocabularyId: chosen.vocabularyId,
+              }
+            : {}),
           status: derived.status,
           flagged: derived.flagged,
-          _suggestions: backendRow?.suggestions ?? [],
+          _suggestions: suggestions,
         };
       }),
     [csvData, suggestionsByRowId]
@@ -332,6 +346,10 @@ export const MappingTable: FC<MappingTableProps> = ({
     enableDensityToggle: false,
     columns,
     data: mergedData,
+    // Keep the user on their current page when the data reference changes. Suggest (refetch)
+    // and Recommend (fills concept columns) both rebuild `mergedData`, and TanStack Table's
+    // default `autoResetPageIndex: true` would otherwise snap the table back to page 1.
+    autoResetPageIndex: false,
     enableColumnResizing: true,
     layoutMode: "grid",
     muiTableHeadCellProps: {
@@ -384,13 +402,19 @@ export const MappingTable: FC<MappingTableProps> = ({
   }, [tableInstance]);
 
   const recommendConcepts = useCallback(async () => {
-    const formattedRows = getAvailableRows().map((row: MRT_RowData) => {
-      const formattedRow: RowObject = { index: row.index, searchText: row.original[sourceName] };
-      if (domainId) {
-        formattedRow["domainId"] = row.original[domainId];
-      }
-      return formattedRow;
-    });
+    const formattedRows = getAvailableRows()
+      .map((row: MRT_RowData) => {
+        const formattedRow: RowObject = { index: row.index, searchText: row.original[sourceName] };
+        if (domainId) {
+          formattedRow["domainId"] = row.original[domainId];
+        }
+        return formattedRow;
+      })
+      // Skip rows with no source-name text: the terminology endpoint 400s the whole batch on a
+      // blank searchText, and an empty row (e.g. a trailing newline in the CSV) has nothing to map.
+      .filter((row) => typeof row.searchText === "string" && row.searchText.trim() !== "");
+
+    if (formattedRows.length === 0) return;
 
     setIsLoading(true);
     const result = await api.terminology.getStandardConcepts(formattedRows, selectedDatasetId!);
