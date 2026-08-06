@@ -307,10 +307,11 @@ test(TEST_NAME, async ({ page }) => {
     await page.getByRole('link', { name: 'Exclusion (0)' }).click()
     await page.getByTitle('Add Filter Card').getByRole('button').click()
     await page.getByRole('menuitem', { name: 'Death' }).click()
-    //Save filter
+    //Save filter - the allow-sharing checkbox now lives in the filter card footer
+    //rather than the save dialog, so it has to be set before the dialog opens.
+    await page.getByTestId('pa-share-cohort-checkbox').click()
     await page.getByRole('button', { name: 'Save' }).click()
     await page.getByRole('textbox', { name: 'Enter name' }).fill(NAME.patientListFilters)
-    await page.getByTitle('Allow bookmark to be visible').locator('div').click()
     await page.locator('footer').getByRole('button', { name: 'Save' }).click()
     //Verify Cohort is saved
     await page.locator('#pane-left').getByRole('link', { name: 'Cohorts' }).click()
