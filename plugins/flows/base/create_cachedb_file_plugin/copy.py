@@ -388,7 +388,19 @@ def copy_table(write_conn: Any, read_conn: Any, copy_params: CopyParameters, que
     adapter = build_source_adapter(read_conn)
     config = build_chunk_config(dialect, copy_params)
 
-    stats = adapter.collect(source_schema, table, config, logger)
+    # A snapshot table_filter can narrow the copy to a subset of columns. The
+    # chunk column has to come from that subset: every chunk runs
+    # "DELETE FROM <target> WHERE <predicate>" before its INSERT, and the
+    # target only has the copied columns, so chunking on one that was filtered
+    # out makes every chunk fail as a ChunkCopyError. ["*"] means the whole row
+    # is copied, so any column is fair game.
+    allowed_columns = (
+        query_columns.columns_to_copy
+        if query_columns.columns_to_copy and query_columns.columns_to_copy != ["*"]
+        else None
+    )
+
+    stats = adapter.collect(source_schema, table, config, logger, allowed_columns)
     plan = plan_chunks(dialect, source_schema, table, stats, config)
     logger.info(describe_plan(plan, source_schema, table))
 

@@ -233,7 +233,26 @@ def _is_yes(value) -> bool:
     return str(value).strip().upper() == "YES"
 
 
-def pick_bq_candidate(rows: Iterable[Sequence], mapped_column: str | None):
+def normalise_allowed_columns(allowed_columns: Iterable | None) -> set[str] | None:
+    """Case-folded lookup set, or ``None`` when no restriction applies.
+
+    Source catalogues disagree with the CDM map about casing, so the
+    comparison has to be case-insensitive in both directions.
+    """
+    if allowed_columns is None:
+        return None
+    return {str(name).lower() for name in allowed_columns}
+
+
+def _is_allowed(name, allowed: set[str] | None) -> bool:
+    return allowed is None or str(name).lower() in allowed
+
+
+def pick_bq_candidate(
+    rows: Iterable[Sequence],
+    mapped_column: str | None,
+    allowed_columns: Iterable | None = None,
+):
     """Choose a chunk column from BigQuery column metadata.
 
     ``rows`` are ``(column_name, data_type, is_nullable,
@@ -244,7 +263,11 @@ def pick_bq_candidate(rows: Iterable[Sequence], mapped_column: str | None):
     partitions, the clustering column lets it prune blocks, and only if
     neither exists do we fall back to the surrogate id, where every chunk
     still scans the whole table.
+
+    ``allowed_columns``, when given, restricts the choice to columns the copy
+    will actually write. See :meth:`_BaseAdapter.collect` for why.
     """
+    allowed = normalise_allowed_columns(allowed_columns)
     partition = None
     cluster = None
     cluster_ordinal = None
@@ -253,6 +276,8 @@ def pick_bq_candidate(rows: Iterable[Sequence], mapped_column: str | None):
     for row in rows:
         name, data_type, is_nullable, is_partitioning, clustering_ordinal = row[:5]
         if not is_orderable_bq_type(data_type):
+            continue
+        if not _is_allowed(name, allowed):
             continue
         nullable = _is_yes(is_nullable)
 
@@ -294,6 +319,7 @@ def pick_pg_candidate(
     pk_rows: Iterable[Sequence],
     mapped_column: str | None,
     mapped_meta: Sequence | None = None,
+    allowed_columns: Iterable | None = None,
 ):
     """Choose a chunk column from Postgres catalog metadata.
 
@@ -301,10 +327,17 @@ def pick_pg_candidate(
     :func:`pg_candidates_sql`, so they are already restricted to single-column
     primary keys. A primary key is preferred over the mapped surrogate id
     because its btree index makes the boundary query an index scan.
+
+    ``allowed_columns``, when given, restricts the choice to columns the copy
+    will actually write. See :meth:`_BaseAdapter.collect` for why.
     """
+    allowed = normalise_allowed_columns(allowed_columns)
+
     for row in pk_rows:
         name, data_type, nullable = row[:3]
         if not is_orderable_pg_type(data_type):
+            continue
+        if not _is_allowed(name, allowed):
             continue
         return ChunkColumnCandidate(
             name=name,
@@ -313,7 +346,7 @@ def pick_pg_candidate(
             nullable=bool(nullable),
         )
 
-    if mapped_column and mapped_meta:
+    if mapped_column and mapped_meta and _is_allowed(mapped_column, allowed):
         data_type, nullable = mapped_meta[:2]
         if is_orderable_pg_type(data_type):
             return ChunkColumnCandidate(
@@ -368,7 +401,7 @@ class _BaseAdapter:
     def count_rows_exact(self, schema: str, table: str) -> int:
         raise NotImplementedError
 
-    def pick_chunk_column(self, schema: str, table: str):
+    def pick_chunk_column(self, schema: str, table: str, allowed_columns=None):
         raise NotImplementedError
 
     def column_boundaries(self, schema: str, table: str, column: str, chunk_count: int) -> list:
@@ -376,8 +409,30 @@ class _BaseAdapter:
 
     # ----------------------------------------------------------------------
 
-    def collect(self, schema: str, table: str, config: ChunkConfig, logger) -> ChunkStats:
-        """Measure a table. The only method the copier needs to call."""
+    def collect(
+        self,
+        schema: str,
+        table: str,
+        config: ChunkConfig,
+        logger,
+        allowed_columns: Iterable | None = None,
+    ) -> ChunkStats:
+        """Measure a table. The only method the copier needs to call.
+
+        ``allowed_columns`` is the set of columns the copy will write, and is
+        passed whenever a snapshot ``table_filter`` narrows the copy to a
+        subset. The chunk column has to be one of them: each chunk runs
+        ``DELETE FROM <target> WHERE <predicate>`` before its INSERT, and the
+        target only has the copied columns, so a predicate on a column that was
+        left out turns every chunk into a ChunkCopyError. ``None`` means the
+        whole row is being copied and any column may be chosen.
+
+        If the restriction leaves nothing chunkable this returns a ``None``
+        column, and ``plan_chunks`` fails the table. That is deliberate: an
+        unbounded copy of a table too large to chunk is the failure mode issue
+        3033 exists to stop, and it must not be reached by way of a column
+        filter either.
+        """
         row_count, is_exact = self.count_rows(schema, table)
 
         if row_count < config.small_table_threshold:
@@ -385,7 +440,7 @@ class _BaseAdapter:
             # neither a chunk column nor a boundary scan is worth paying for.
             return ChunkStats(row_count, is_exact, None, ())
 
-        column = self.pick_chunk_column(schema, table)
+        column = self.pick_chunk_column(schema, table, allowed_columns)
         if column is None:
             # Reported honestly; plan_chunks is what decides that a large
             # table without a chunk column is a hard failure (issue 3033).
@@ -421,9 +476,13 @@ class BigQuerySourceAdapter(_BaseAdapter):
         # this to bq_exact_count_sql.
         return self.count_rows(schema, table)[0]
 
-    def pick_chunk_column(self, schema: str, table: str):
+    def pick_chunk_column(self, schema: str, table: str, allowed_columns=None):
         rows = self._rows(bq_candidates_sql(schema, table))
-        return pick_bq_candidate(rows, mapped_column=CHUNK_COLUMN_MAP.get(table))
+        return pick_bq_candidate(
+            rows,
+            mapped_column=CHUNK_COLUMN_MAP.get(table),
+            allowed_columns=allowed_columns,
+        )
 
     def column_boundaries(self, schema: str, table: str, column: str, chunk_count: int) -> list:
         rows = self._rows(bq_boundaries_sql(schema, table, column, chunk_count))
@@ -453,15 +512,18 @@ class PostgresSourceAdapter(_BaseAdapter):
     def count_rows_exact(self, schema: str, table: str) -> int:
         return int(self._scalar(pg_exact_count_sql(schema, table)) or 0)
 
-    def pick_chunk_column(self, schema: str, table: str):
+    def pick_chunk_column(self, schema: str, table: str, allowed_columns=None):
+        allowed = normalise_allowed_columns(allowed_columns)
         pk_rows = self._rows(pg_candidates_sql(schema, table))
         mapped_column = CHUNK_COLUMN_MAP.get(table)
         mapped_meta = None
-        if mapped_column:
+        # Skip the metadata round trip when the mapped column is not being
+        # copied: its type cannot change the answer.
+        if mapped_column and _is_allowed(mapped_column, allowed):
             meta_rows = self._rows(pg_column_meta_sql(schema, table, mapped_column))
             if meta_rows:
                 mapped_meta = tuple(meta_rows[0])
-        return pick_pg_candidate(pk_rows, mapped_column, mapped_meta)
+        return pick_pg_candidate(pk_rows, mapped_column, mapped_meta, allowed)
 
     def column_boundaries(self, schema: str, table: str, column: str, chunk_count: int) -> list:
         rows = self._rows(pg_boundaries_sql(schema, table, column, chunk_count))
