@@ -153,6 +153,8 @@ export interface UseDashboardFlowReturn {
   initialFormValues: Ref<Record<string, string | number | object>>
   initialDisplayValues: Ref<Record<string, string>>
 
+  savedCohortId: Ref<number | null>
+
   // Computed
   dashboardContext: ComputedRef<DashboardContext>
 
@@ -169,7 +171,7 @@ export interface UseDashboardFlowReturn {
     _displayValues: Record<string, string>,
     _dirtyFieldIds: Set<string>
   ) => Promise<void>
-  handleSaveCohortSuccess: () => void
+  handleSaveCohortSuccess: (_payload?: { cohortId?: number | null }) => void
   handleCancelSaveCohort: () => void
   closeDashboardFlow: () => void
   closeDashboardModal: () => void
@@ -182,6 +184,10 @@ export function useDashboardFlow(
 ): UseDashboardFlowReturn {
   // State
   const showDashboardModal = ref(false)
+  // Id reported by the save, used in preference to getActiveCohortMaterializedId:
+  // that getter derives from the refreshed bookmark list, which can still be
+  // missing the cohort that was just materialized.
+  const savedCohortId = ref<number | null>(null)
   const showSaveCohortModal = ref(false)
   const saveCohortModalMode = ref<'full' | 'bookmark-only' | 'materialize-only'>('full')
   const showDashboardSelectionModal = ref(false)
@@ -1094,7 +1100,9 @@ export function useDashboardFlow(
     showSaveCohortModal.value = true
   }
 
-  function handleSaveCohortSuccess() {
+  function handleSaveCohortSuccess(payload?: { cohortId?: number | null }) {
+    const cohortId = Number(payload?.cohortId)
+    savedCohortId.value = Number.isInteger(cohortId) ? cohortId : null
     showSaveCohortModal.value = false
     showDashboardModal.value = true
     isProcessingDashboardFlow = false
@@ -1125,6 +1133,7 @@ export function useDashboardFlow(
 
   function closeDashboardModal() {
     showDashboardModal.value = false
+    savedCohortId.value = null
   }
 
   function isProcessingDashboardFlowFn() {
@@ -1142,6 +1151,7 @@ export function useDashboardFlow(
 
   return {
     showDashboardModal,
+    savedCohortId,
     showSaveCohortModal,
     saveCohortModalMode,
     showDashboardSelectionModal,

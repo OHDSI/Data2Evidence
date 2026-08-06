@@ -138,7 +138,7 @@
       v-if="dashboardFlow.showDashboardModal"
       :is-open="dashboardFlow.showDashboardModal"
       :dataset-id="getSelectedDataset.id"
-      :cohort-id="getActiveCohortMaterializedId?.toString() || ''"
+      :cohort-id="(dashboardFlow.savedCohortId ?? getActiveCohortMaterializedId)?.toString() || ''"
       :wizard-config="dashboardFlow.dashboardContext.wizardConfig"
       :conditions="dashboardFlow.dashboardContext.conditions"
       :mriquery="dashboardFlow.dashboardContext.mriquery"
