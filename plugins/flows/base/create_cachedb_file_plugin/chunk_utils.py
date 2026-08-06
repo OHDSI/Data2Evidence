@@ -54,7 +54,7 @@ def resolve_chunk_count(row_count: int, config: ChunkConfig) -> int:
     return max(1, n)
 
 
-def sql_literal(value) -> str:
+def sql_literal(value: object) -> str:
     """Render a boundary value as a SQL literal.
 
     The accepted set is deliberately narrow. Anything a chunk boundary should
@@ -124,6 +124,12 @@ def build_predicates(column: ChunkColumnCandidate, raw_boundaries: Iterable) -> 
     sampled range are still copied. The remaining cuts become half-open
     intervals, which is what keeps a row from landing in two chunks when a
     value sits exactly on a boundary.
+
+    On quoting: identifiers here are double-quoted (``"col" < 5``) on purpose,
+    for every dialect. These predicates are evaluated by DuckDB against an
+    ATTACHed source table -- they are never sent to BigQuery as SQL -- so
+    DuckDB's quoting rules are the ones that apply. Backticks would be a bug,
+    not a portability fix; this has now been "corrected" twice in review.
     """
     cuts = normalise_boundaries(raw_boundaries)
     cuts = cuts[1:-1] if len(cuts) > 2 else []
@@ -271,7 +277,7 @@ def plan_chunks(
         column_name=stats.column.name,
         column_kind=stats.column.kind,
         predicates=predicates,
-        estimated_rows_per_chunk=max(1, stats.row_count // max(1, len(predicates))),
+        estimated_rows_per_chunk=max(1, stats.row_count // interval_count),
         includes_null_chunk=stats.column.nullable,
     )
 
@@ -280,9 +286,10 @@ def describe_plan(plan: ChunkPlan, schema: str, table: str) -> str:
     """One-line summary of a plan, for the copy log."""
     if plan.strategy is ChunkStrategy.SINGLE_STATEMENT:
         return f"{schema}.{table}: single statement (below small-table threshold)"
-    kind = plan.column_kind.value if plan.column_kind is not None else "UNKNOWN"
+    # A CHUNKED plan always carries the column it was chunked on.
     return (
-        f"{schema}.{table}: {len(plan.predicates)} chunks on {plan.column_name} ({kind}), "
+        f"{schema}.{table}: {len(plan.predicates)} chunks on {plan.column_name} "
+        f"({plan.column_kind.value}), "
         f"~{plan.estimated_rows_per_chunk:,} rows/chunk, "
         f"null_chunk={plan.includes_null_chunk}, plan_id={plan.plan_id[:12]}"
     )

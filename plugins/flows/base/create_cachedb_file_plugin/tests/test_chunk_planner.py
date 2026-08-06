@@ -1,8 +1,37 @@
+"""Unit tests for the pure chunk planner."""
+
+import sys
+from datetime import date, datetime
+from decimal import Decimal
+
+import pytest
+
+from create_cachedb_file_plugin.chunk_utils import (
+    _thin_boundaries,
+    build_predicates,
+    compute_plan_id,
+    describe_plan,
+    find_column_case_insensitive,
+    normalise_boundaries,
+    plan_chunks,
+    quote_identifier,
+    resolve_chunk_count,
+    resolve_target_chunk_rows,
+    sql_literal,
+)
 from create_cachedb_file_plugin.errors import (
-    CacheCopyError, ChunkCopyError, FreshCopyResetError, PlannerError, ReconciliationError,
+    CacheCopyError,
+    ChunkCopyError,
+    FreshCopyResetError,
+    PlannerError,
+    ReconciliationError,
 )
 from create_cachedb_file_plugin.planner_types import (
-    ChunkColumnCandidate, ChunkConfig, ChunkStrategy, ColumnKind,
+    ChunkColumnCandidate,
+    ChunkConfig,
+    ChunkStats,
+    ChunkStrategy,
+    ColumnKind,
 )
 
 
@@ -25,11 +54,6 @@ def test_chunk_column_candidate_is_hashable():
     )
     assert {column}
     assert ChunkStrategy.CHUNKED.value == "CHUNKED"
-
-
-import pytest
-
-from create_cachedb_file_plugin.chunk_utils import resolve_chunk_count, resolve_target_chunk_rows
 
 
 def test_chunk_count_follows_row_count_not_span():
@@ -64,12 +88,6 @@ def test_target_chunk_rows_defaults_per_dialect(dialect, expected):
 
 def test_target_chunk_rows_override_wins():
     assert resolve_target_chunk_rows("bigquery", 250_000) == 250_000
-
-
-from datetime import date
-
-from create_cachedb_file_plugin.chunk_utils import build_predicates, sql_literal
-from create_cachedb_file_plugin.errors import PlannerError
 
 
 def _column(nullable=False, name="measurement_id", data_type="INT64"):
@@ -124,10 +142,6 @@ def test_date_boundaries_are_supported():
         "\"measurement_date\" < '2020-01-01'",
         "\"measurement_date\" >= '2020-01-01'",
     )
-
-
-from create_cachedb_file_plugin.chunk_utils import compute_plan_id, plan_chunks
-from create_cachedb_file_plugin.planner_types import ChunkStats
 
 
 def _stats(row_count, boundaries=(), column=None, nullable=False):
@@ -264,9 +278,6 @@ def test_small_table_with_degenerate_boundaries_still_single_statements(boundari
     assert plan.predicates == ()
 
 
-from create_cachedb_file_plugin.chunk_utils import _thin_boundaries
-
-
 def _cut_values(predicates):
     """The integer boundary values a plan's interval predicates actually cut on."""
     cuts = []
@@ -379,12 +390,6 @@ def test_target_chunk_rows_rejects_non_positive_override(override):
         resolve_target_chunk_rows("bigquery", override)
 
 
-from datetime import datetime
-from decimal import Decimal
-
-from create_cachedb_file_plugin.chunk_utils import normalise_boundaries, quote_identifier
-
-
 def test_normalise_boundaries_sorts_dedupes_and_drops_nulls():
     assert normalise_boundaries([3, None, 1, 3, 2]) == [1, 2, 3]
     assert normalise_boundaries([]) == []
@@ -428,3 +433,65 @@ def test_non_finite_decimal_boundaries_are_rejected(value):
     """DuckDB parses a bare NaN/Infinity as a column reference, not a number."""
     with pytest.raises(PlannerError):
         sql_literal(Decimal(value))
+
+
+def test_planner_modules_do_not_drag_in_prefect():
+    """tests/README.md calls this import discipline load-bearing; enforce it."""
+    import create_cachedb_file_plugin.chunk_utils  # noqa: F401
+    import create_cachedb_file_plugin.errors  # noqa: F401
+    import create_cachedb_file_plugin.planner_types  # noqa: F401
+
+    assert "prefect" not in sys.modules
+
+
+def test_describe_plan_reports_a_single_statement():
+    config = ChunkConfig(target_chunk_rows=5_000_000)
+    plan = plan_chunks("bigquery", "cdm", "person", _stats(499_999), config)
+    assert describe_plan(plan, "cdm", "person") == (
+        "cdm.person: single statement (below small-table threshold)"
+    )
+
+
+def test_describe_plan_reports_the_chunked_shape():
+    config = ChunkConfig(target_chunk_rows=5_000_000)
+    plan = plan_chunks(
+        "bigquery", "cdm", "measurement", _stats(900_000_000, range(181), nullable=True), config
+    )
+    line = describe_plan(plan, "cdm", "measurement")
+    assert line.startswith("cdm.measurement: 181 chunks on measurement_id (MAPPED_ID)")
+    assert "~5,000,000 rows/chunk" in line
+    assert "null_chunk=True" in line
+    assert f"plan_id={plan.plan_id[:12]}" in line
+
+
+def test_estimated_rows_per_chunk_excludes_the_null_chunk():
+    """The NULL chunk is not a slice of the value range, so it is not a divisor."""
+    config = ChunkConfig(target_chunk_rows=5_000_000)
+    boundaries = tuple(range(181))
+    not_null = plan_chunks(
+        "bigquery", "cdm", "measurement", _stats(900_000_000, boundaries), config
+    )
+    nullable = plan_chunks(
+        "bigquery", "cdm", "measurement", _stats(900_000_000, boundaries, nullable=True), config
+    )
+    assert not_null.estimated_rows_per_chunk == 5_000_000
+    assert nullable.estimated_rows_per_chunk == not_null.estimated_rows_per_chunk
+
+
+@pytest.mark.parametrize(
+    "target,expected",
+    [
+        ("PERSON_ID", "person_id"),
+        ("person_id", "person_id"),
+        ("Measurement_Date", "measurement_date"),
+        ("missing", None),
+        ("", None),
+    ],
+)
+def test_find_column_case_insensitive(target, expected):
+    columns = ["person_id", "measurement_date", "value_as_number"]
+    assert find_column_case_insensitive(columns, target) == expected
+
+
+def test_find_column_case_insensitive_returns_the_source_spelling():
+    assert find_column_case_insensitive(["PersonId"], "personid") == "PersonId"
