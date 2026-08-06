@@ -9,6 +9,7 @@ from pathlib import Path
 import pytest
 
 from create_cachedb_file_plugin.chunk_utils import (
+    MAX_NULL_CHUNK_MULTIPLE,
     _thin_boundaries,
     build_predicates,
     compute_plan_id,
@@ -533,3 +534,80 @@ def test_create_select_query_has_no_limit_offset_branch():
     body = _function_source(COPY_SOURCE_PATH, "create_select_query")
     assert "OFFSET" not in body
     assert "isinstance(where_sql, tuple)" not in body
+
+
+# ---------------------------------------------------------------------------
+# The NULL chunk is unbounded, so an oversized one has to be rejected
+# ---------------------------------------------------------------------------
+#
+# build_predicates appends exactly one '"col" IS NULL' predicate and nothing
+# ever sizes or splits it -- it cannot be split, since every row in it has the
+# same key. A 95%-NULL chunk column therefore puts ~19x the target rows into
+# one INSERT. That bites hardest on BigQuery, where INFORMATION_SCHEMA reports
+# almost every column is_nullable = 'YES', so a NULL-heavy partition or cluster
+# column produces one chunk holding most of a multi-hundred-million-row table:
+# straight through the 1h cache_chunk_timeout, and a plausible OOM.
+
+
+def _nullable_stats(row_count, boundaries, null_count):
+    return ChunkStats(
+        row_count=row_count,
+        row_count_is_exact=True,
+        column=_column(nullable=True),
+        boundaries=tuple(boundaries),
+        null_count=null_count,
+    )
+
+
+def test_an_oversized_null_chunk_is_rejected():
+    config = ChunkConfig(target_chunk_rows=5_000_000)
+    stats = _nullable_stats(900_000_000, range(181), null_count=855_000_000)
+    with pytest.raises(PlannerError) as excinfo:
+        plan_chunks("bigquery", "cdm", "measurement", stats, config)
+
+    message = str(excinfo.value)
+    assert "measurement_id" in message, "the message must name the column"
+    assert "855,000,000" in message, "and how many NULLs are in it"
+    assert "chunk column" in message.lower(), "and suggest picking a different one"
+
+
+def test_the_null_chunk_limit_is_a_multiple_of_the_target():
+    config = ChunkConfig(target_chunk_rows=5_000_000)
+    limit = MAX_NULL_CHUNK_MULTIPLE * config.target_chunk_rows
+
+    at_the_limit = _nullable_stats(900_000_000, range(181), null_count=limit)
+    plan = plan_chunks("bigquery", "cdm", "measurement", at_the_limit, config)
+    assert plan.includes_null_chunk is True
+
+    over_the_limit = _nullable_stats(900_000_000, range(181), null_count=limit + 1)
+    with pytest.raises(PlannerError):
+        plan_chunks("bigquery", "cdm", "measurement", over_the_limit, config)
+
+
+def test_nulls_on_a_non_nullable_column_cannot_fail_the_plan():
+    """There is no NULL chunk to be oversized when the column is NOT NULL."""
+    config = ChunkConfig(target_chunk_rows=5_000_000)
+    stats = ChunkStats(
+        row_count=900_000_000,
+        row_count_is_exact=True,
+        column=_column(nullable=False),
+        boundaries=tuple(range(181)),
+        null_count=855_000_000,
+    )
+    plan = plan_chunks("bigquery", "cdm", "measurement", stats, config)
+    assert plan.includes_null_chunk is False
+
+
+def test_an_unmeasured_null_count_does_not_fail_the_plan():
+    """null_count is None when nothing counted; that is not evidence of a problem."""
+    config = ChunkConfig(target_chunk_rows=5_000_000)
+    stats = _nullable_stats(900_000_000, range(181), null_count=None)
+    assert plan_chunks("bigquery", "cdm", "measurement", stats, config).includes_null_chunk
+
+
+def test_a_small_table_is_never_failed_by_its_null_count():
+    """Below the threshold there are no chunks at all, so there is no NULL chunk."""
+    config = ChunkConfig(target_chunk_rows=5_000_000)
+    stats = _nullable_stats(499_999, (), null_count=499_999)
+    plan = plan_chunks("bigquery", "cdm", "person", stats, config)
+    assert plan.strategy is ChunkStrategy.SINGLE_STATEMENT

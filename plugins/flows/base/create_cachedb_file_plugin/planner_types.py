@@ -79,12 +79,18 @@ class ChunkStats:
 
     ``boundaries`` is the adapter's quantile output and includes the minimum
     and maximum values.
+
+    ``null_count`` is how many rows have a NULL chunk column, and sizes the one
+    chunk the planner cannot split. ``None`` means nothing counted it -- the
+    table was below the small-table threshold, or no chunk column was chosen --
+    which is not the same as counting zero.
     """
 
     row_count: int
     row_count_is_exact: bool
     column: ChunkColumnCandidate | None
     boundaries: tuple = field(default_factory=tuple)
+    null_count: int | None = None
 
 
 @dataclass(frozen=True)

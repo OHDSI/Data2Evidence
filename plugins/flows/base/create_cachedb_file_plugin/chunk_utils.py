@@ -22,6 +22,18 @@ DEFAULT_TARGET_CHUNK_ROWS = {
 }
 FALLBACK_TARGET_CHUNK_ROWS = 1_000_000
 
+#: A plan is rejected when its NULL chunk holds more than this many times
+#: ``target_chunk_rows``.
+#:
+#: ``build_predicates`` emits exactly one ``"col" IS NULL`` predicate, and
+#: nothing sizes or splits it -- nothing *can* split it, since every row in it
+#: has the same key. So an oversized NULL chunk cannot be fixed, only detected
+#: and refused. It matters most on BigQuery, where INFORMATION_SCHEMA reports
+#: nearly every column ``is_nullable = 'YES'``: a NULL-heavy partition or
+#: cluster column produces a single INSERT holding most of a multi-hundred-
+#: million-row table, straight through the one-hour ``cache_chunk_timeout``.
+MAX_NULL_CHUNK_MULTIPLE = 3
+
 
 def resolve_target_chunk_rows(dialect: str, override: int | None) -> int:
     """Rows per chunk. An explicit chunkSize from the caller always wins.
@@ -250,6 +262,20 @@ def plan_chunks(
             "this size that is what exhausts the worker rather than failing cleanly "
             "(issue 3033). Provide a chunk column or raise the small-table threshold."
         )
+
+    if stats.column.nullable and stats.null_count is not None:
+        null_chunk_limit = MAX_NULL_CHUNK_MULTIPLE * config.target_chunk_rows
+        if stats.null_count > null_chunk_limit:
+            raise PlannerError(
+                f"{schema}.{table}: chunking on {stats.column.name} would put "
+                f"{stats.null_count:,} NULL rows into a single chunk, more than "
+                f"{MAX_NULL_CHUNK_MULTIPLE}x the {config.target_chunk_rows:,}-row "
+                f"target ({null_chunk_limit:,}). The NULL chunk cannot be split -- "
+                "every row in it has the same key -- so this would run as one "
+                "oversized INSERT and blow the per-chunk timeout. Choose a chunk "
+                f"column with fewer NULLs than {stats.column.name}, or exclude this "
+                "table from the copy."
+            )
 
     chunk_count = resolve_chunk_count(stats.row_count, config)
     # n boundaries yield n-1 predicates, so cap the boundaries at chunk_count+1

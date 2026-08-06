@@ -222,3 +222,73 @@ def test_a_large_table_with_no_copyable_chunk_column_fails_planning():
     )
     with pytest.raises(PlannerError, match="no usable chunk column"):
         plan_chunks("postgres", "cdm", "measurement", stats, config)
+
+
+# ---------------------------------------------------------------------------
+# NULL counting, and preferring a non-nullable column at equal priority
+# ---------------------------------------------------------------------------
+
+from create_cachedb_file_plugin.source_stats import bq_null_count_sql, pg_null_count_sql
+
+
+def test_bq_null_count_scans_one_column():
+    assert bq_null_count_sql("cdm", "measurement", "measurement_date") == (
+        "SELECT COUNT(*) FROM `cdm.measurement` WHERE `measurement_date` IS NULL"
+    )
+
+
+def test_pg_null_count_scans_one_column():
+    assert pg_null_count_sql("cdm", "measurement", "measurement_date") == (
+        'SELECT COUNT(*) FROM "cdm"."measurement" WHERE "measurement_date" IS NULL'
+    )
+
+
+def test_null_count_sql_rejects_hostile_columns():
+    with pytest.raises(PlannerError):
+        pg_null_count_sql("cdm", "measurement", 'x" IS NULL OR "1')
+
+
+def test_bq_prefers_a_non_nullable_column_at_equal_priority():
+    """Two clustering columns at the same ordinal: the NOT NULL one wins."""
+    rows = [
+        ("nullable_key", "INT64", "YES", "NO", 1),
+        ("solid_key", "INT64", "NO", "NO", 1),
+    ]
+    candidate = pick_bq_candidate(rows, mapped_column=None)
+    assert candidate.name == "solid_key"
+    assert candidate.nullable is False
+
+
+def test_bq_partition_priority_still_beats_nullability():
+    """A nullable partition column prunes; a NOT NULL cluster column does less."""
+    rows = [
+        ("event_date", "DATE", "YES", "YES", None),
+        ("person_id", "INT64", "NO", "NO", 1),
+    ]
+    candidate = pick_bq_candidate(rows, mapped_column=None)
+    assert candidate.name == "event_date"
+    assert candidate.kind is ColumnKind.PARTITION
+
+
+def test_bq_cluster_ordinal_still_beats_nullability():
+    rows = [
+        ("first_cluster", "INT64", "YES", "NO", 1),
+        ("second_cluster", "INT64", "NO", "NO", 2),
+    ]
+    assert pick_bq_candidate(rows, mapped_column=None).name == "first_cluster"
+
+
+def test_pg_prefers_a_non_nullable_primary_key_column():
+    rows = [("nullable_key", "bigint", True), ("solid_key", "bigint", False)]
+    candidate = pick_pg_candidate(rows, mapped_column=None)
+    assert candidate.name == "solid_key"
+
+
+def test_pg_primary_key_priority_still_beats_nullability():
+    candidate = pick_pg_candidate(
+        [("nullable_key", "bigint", True)],
+        mapped_column="measurement_id",
+        mapped_meta=("bigint", False),
+    )
+    assert candidate.name == "nullable_key"
+    assert candidate.kind is ColumnKind.PRIMARY_KEY

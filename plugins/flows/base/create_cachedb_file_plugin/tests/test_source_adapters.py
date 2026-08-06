@@ -11,6 +11,7 @@ import logging
 import pytest
 
 from create_cachedb_file_plugin.chunk_utils import plan_chunks
+from create_cachedb_file_plugin.errors import PlannerError
 from create_cachedb_file_plugin.planner_types import ChunkConfig, ChunkStrategy
 from create_cachedb_file_plugin.source_stats import (
     SMALL_TABLE_CONFIRM_FACTOR,
@@ -163,3 +164,66 @@ def test_bigquery_metadata_counts_are_exact_and_are_not_re_counted():
     assert stats.row_count == 1_000
     assert stats.row_count_is_exact is True
     assert not any("COUNT(*)" in s for s in adapter.statements)
+
+
+# ---------------------------------------------------------------------------
+# Counting NULLs in the chosen chunk column
+# ---------------------------------------------------------------------------
+
+
+class StubNullCountingAdapter(StubPostgresAdapter):
+    def __init__(self, nulls, pk_rows):
+        super().__init__(estimate=900_000_000, exact=900_000_000, pk_rows=pk_rows)
+        self.nulls = nulls
+
+    def _scalar(self, statement):
+        if "IS NULL" in statement:
+            self.statements.append(statement)
+            return self.nulls
+        return super()._scalar(statement)
+
+
+def test_collect_counts_the_nulls_in_a_nullable_chunk_column():
+    adapter = StubNullCountingAdapter(
+        nulls=855_000_000, pk_rows=[("measurement_id", "bigint", True)]
+    )
+
+    stats = adapter.collect(SCHEMA, TABLE, CONFIG, LOGGER)
+
+    assert stats.null_count == 855_000_000
+    assert any("IS NULL" in s for s in adapter.statements)
+
+
+def test_collect_skips_the_null_scan_for_a_not_null_column():
+    """A NOT NULL column has no NULL chunk, so the scan buys nothing."""
+    adapter = StubNullCountingAdapter(
+        nulls=0, pk_rows=[("measurement_id", "bigint", False)]
+    )
+
+    stats = adapter.collect(SCHEMA, TABLE, CONFIG, LOGGER)
+
+    assert stats.null_count == 0
+    assert not any("IS NULL" in s for s in adapter.statements)
+
+
+def test_a_null_heavy_chunk_column_fails_planning_end_to_end():
+    adapter = StubNullCountingAdapter(
+        nulls=855_000_000, pk_rows=[("measurement_id", "bigint", True)]
+    )
+    stats = adapter.collect(SCHEMA, TABLE, CONFIG, LOGGER)
+
+    with pytest.raises(PlannerError, match="NULL"):
+        plan_chunks("postgres", SCHEMA, TABLE, stats, CONFIG)
+
+
+def test_a_small_table_never_pays_for_the_null_scan():
+    adapter = StubNullCountingAdapter(
+        nulls=0, pk_rows=[("measurement_id", "bigint", True)]
+    )
+    adapter.estimate = 1_000
+    adapter.exact = 1_000
+
+    stats = adapter.collect(SCHEMA, TABLE, CONFIG, LOGGER)
+
+    assert stats.null_count is None, "nothing was measured, and nothing needed to be"
+    assert not any("IS NULL" in s for s in adapter.statements)

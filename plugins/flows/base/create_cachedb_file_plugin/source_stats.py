@@ -76,6 +76,19 @@ def bq_exact_count_sql(dataset: str, table: str) -> str:
     return f"SELECT COUNT(*) FROM `{dataset}.{table}`"
 
 
+def bq_null_count_sql(dataset: str, table: str, column: str) -> str:
+    """How many rows land in the unsplittable NULL chunk.
+
+    One pass over a single column. Only worth issuing when the catalog says
+    the column is nullable, which on BigQuery is nearly always -- so the answer
+    is what actually decides whether the plan is usable.
+    """
+    _check_identifier(dataset, "dataset")
+    _check_identifier(table, "table")
+    _check_identifier(column, "column")
+    return f"SELECT COUNT(*) FROM `{dataset}.{table}` WHERE `{column}` IS NULL"
+
+
 def bq_candidates_sql(dataset: str, table: str) -> str:
     """Columns of one table, with the partition and cluster metadata."""
     _check_identifier(dataset, "dataset")
@@ -129,6 +142,14 @@ def pg_exact_count_sql(schema: str, table: str) -> str:
     _check_identifier(schema, "schema")
     _check_identifier(table, "table")
     return f'SELECT COUNT(*) FROM "{schema}"."{table}"'
+
+
+def pg_null_count_sql(schema: str, table: str, column: str) -> str:
+    """How many rows land in the unsplittable NULL chunk. See the BigQuery twin."""
+    _check_identifier(schema, "schema")
+    _check_identifier(table, "table")
+    _check_identifier(column, "column")
+    return f'SELECT COUNT(*) FROM "{schema}"."{table}" WHERE "{column}" IS NULL'
 
 
 def pg_candidates_sql(schema: str, table: str) -> str:
@@ -280,6 +301,14 @@ def pick_bq_candidate(
 
     ``allowed_columns``, when given, restricts the choice to columns the copy
     will actually write. See :meth:`_BaseAdapter.collect` for why.
+
+    Nullability is only ever a tie-break, never a promotion. Partition and
+    cluster priority still win outright over it: pruning saves whole partitions
+    on every chunk, while a nullable column costs at most one extra NULL chunk,
+    which ``plan_chunks`` sizes and rejects if it is too big. So a nullable
+    partition column beats a NOT NULL cluster column, and the lowest clustering
+    ordinal beats a NOT NULL column at a higher one -- nullability only decides
+    between two candidates that are otherwise equal.
     """
     allowed = normalise_allowed_columns(allowed_columns)
     partition = None
@@ -295,7 +324,9 @@ def pick_bq_candidate(
             continue
         nullable = _is_yes(is_nullable)
 
-        if _is_yes(is_partitioning) and partition is None:
+        if _is_yes(is_partitioning) and (
+            partition is None or (partition.nullable and not nullable)
+        ):
             partition = ChunkColumnCandidate(
                 name=name,
                 kind=ColumnKind.PARTITION,
@@ -303,10 +334,17 @@ def pick_bq_candidate(
                 nullable=nullable,
             )
         if clustering_ordinal is not None and (
-            cluster_ordinal is None or clustering_ordinal < cluster_ordinal
-        ):
+            cluster_ordinal is None
             # Only the first clustering column prunes usefully on its own, so
-            # the lowest ordinal wins.
+            # the lowest ordinal wins -- ahead of nullability, which breaks
+            # the tie only between columns at the same ordinal.
+            or clustering_ordinal < cluster_ordinal
+            or (
+                clustering_ordinal == cluster_ordinal
+                and cluster.nullable
+                and not nullable
+            )
+        ):
             cluster_ordinal = clustering_ordinal
             cluster = ChunkColumnCandidate(
                 name=name,
@@ -344,21 +382,33 @@ def pick_pg_candidate(
 
     ``allowed_columns``, when given, restricts the choice to columns the copy
     will actually write. See :meth:`_BaseAdapter.collect` for why.
+
+    As on BigQuery, nullability is only a tie-break within one priority tier.
+    Primary-key priority still wins over it: the btree index makes the boundary
+    query an index scan, which is worth far more than avoiding a NULL chunk
+    that ``plan_chunks`` will size and reject anyway. In practice a Postgres
+    primary key is NOT NULL by definition, so this tie-break rarely fires.
     """
     allowed = normalise_allowed_columns(allowed_columns)
 
+    primary_key = None
     for row in pk_rows:
         name, data_type, nullable = row[:3]
         if not is_orderable_pg_type(data_type):
             continue
         if not _is_allowed(name, allowed):
             continue
-        return ChunkColumnCandidate(
+        candidate = ChunkColumnCandidate(
             name=name,
             kind=ColumnKind.PRIMARY_KEY,
             data_type=str(data_type),
             nullable=bool(nullable),
         )
+        if primary_key is None or (primary_key.nullable and not candidate.nullable):
+            primary_key = candidate
+
+    if primary_key is not None:
+        return primary_key
 
     if mapped_column and mapped_meta and _is_allowed(mapped_column, allowed):
         data_type, nullable = mapped_meta[:2]
@@ -421,6 +471,9 @@ class _BaseAdapter:
     def column_boundaries(self, schema: str, table: str, column: str, chunk_count: int) -> list:
         raise NotImplementedError
 
+    def count_nulls(self, schema: str, table: str, column: str) -> int:
+        raise NotImplementedError
+
     # ----------------------------------------------------------------------
 
     def collect(
@@ -479,8 +532,18 @@ class _BaseAdapter:
             f"{schema}.{table}: chunking on '{column.name}' ({column.kind.value}, "
             f"{column.data_type}, nullable={column.nullable}) into {chunk_count} chunks"
         )
+        # One extra single-column scan, and only when the catalog says the
+        # column can be NULL: a NOT NULL column gets no NULL chunk at all, so
+        # there is nothing for plan_chunks to size. See MAX_NULL_CHUNK_MULTIPLE
+        # for what an unsized NULL chunk costs.
+        null_count = self.count_nulls(schema, table, column.name) if column.nullable else 0
+        if null_count:
+            logger.info(
+                f"{schema}.{table}: '{column.name}' is NULL in {null_count:,} rows, "
+                "which will be copied as one unsplittable chunk."
+            )
         boundaries = self.column_boundaries(schema, table, column.name, chunk_count)
-        return ChunkStats(row_count, is_exact, column, tuple(boundaries))
+        return ChunkStats(row_count, is_exact, column, tuple(boundaries), null_count)
 
 
 class BigQuerySourceAdapter(_BaseAdapter):
@@ -520,6 +583,9 @@ class BigQuerySourceAdapter(_BaseAdapter):
         bounds = rows[0][0]
         return list(bounds) if bounds is not None else []
 
+    def count_nulls(self, schema: str, table: str, column: str) -> int:
+        return int(self._scalar(bq_null_count_sql(schema, table, column)) or 0)
+
 
 class PostgresSourceAdapter(_BaseAdapter):
     dialect = "postgres"
@@ -557,6 +623,9 @@ class PostgresSourceAdapter(_BaseAdapter):
     def column_boundaries(self, schema: str, table: str, column: str, chunk_count: int) -> list:
         rows = self._rows(pg_boundaries_sql(schema, table, column, chunk_count))
         return [row[0] for row in rows]
+
+    def count_nulls(self, schema: str, table: str, column: str) -> int:
+        return int(self._scalar(pg_null_count_sql(schema, table, column)) or 0)
 
 
 def build_source_adapter(read_conn) -> _BaseAdapter:
