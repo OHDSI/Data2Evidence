@@ -296,7 +296,56 @@ def copy_table_chunk(write_conn: Any, copy_params: CopyParameters, query_columns
 @task(log_prints=True, task_run_name="copy_table_{query_columns.table}", tags=["table-level-concurrency"], cache_policy=NONE)
 def copy_table_task(write_conn: Any, read_conn: Any, copy_params: CopyParameters, query_columns: QueryColumns, source_schema: str):
     logger = get_run_logger()
-    copy_table(write_conn, read_conn, copy_params, query_columns, source_schema, logger)
+    table = query_columns.table
+    database = copy_params.target_database
+    schema = copy_params.target_schema
+    try:
+        expected = copy_table(
+            write_conn, read_conn, copy_params, query_columns, source_schema, logger
+        )
+        if copy_params.dry_run:
+            return expected
+        # COMPLETE is written only after the target has been reconciled
+        # against the source, so a later run can trust it and skip the table.
+        reconcile_table(write_conn, read_conn, copy_params, source_schema, table, logger)
+        mark_complete(write_conn, database, schema, table)
+        return expected
+    except Exception as exc:
+        logger.error(f"Copy of table '{table}' failed: {exc}")
+        # Deliberately NO DROP of the target table here. The partial rows plus
+        # the chunks_completed counter are the resume point; the cleanup()
+        # this replaces dropped the target on the way out, which is precisely
+        # what made a retry restart a large table from chunk 0 and never
+        # converge (issue 3033). Never reintroduce a DROP on this path.
+        mark_failed(write_conn, database, schema, table)
+        raise
+
+
+def reconcile_table(write_conn: Any, read_conn: Any, copy_params: CopyParameters, source_schema: str, table: str, logger):
+    """Fail the copy unless the target holds exactly as many rows as the source."""
+    if copy_params.patient_filter or copy_params.timestamp_filter:
+        # The target is intentionally a subset under a snapshot config, so
+        # there is no count to reconcile it against.
+        logger.info(
+            f"Skipping reconciliation for '{table}': snapshot filters are active."
+        )
+        return
+
+    adapter = build_source_adapter(read_conn)
+    source_count = adapter.count_rows_exact(source_schema, table)
+
+    target = f'"{copy_params.target_database}"."{copy_params.target_schema}"."{table}"'
+    write_conn.execute(f"SELECT COUNT(*) FROM {target}")
+    target_count = int(write_conn.fetchone()[0])
+
+    if source_count != target_count:
+        raise ReconciliationError(
+            f"Row count mismatch for '{source_schema}.{table}': "
+            f"source={source_count:,} target={target_count:,} "
+            f"delta={target_count - source_count:,}"
+        )
+
+    logger.info(f"Reconciled '{table}': {target_count:,} rows")
 
 
 def build_chunk_config(dialect: str, copy_params: CopyParameters) -> ChunkConfig:
