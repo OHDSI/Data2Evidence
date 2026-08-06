@@ -315,7 +315,14 @@ export const Step1Source: FC<Step1SourceProps> = ({
               <>
                 <Typography sx={{ mb: 2 }}>{getText(i18nKeys.STEP1__IMPORT_TWO_WAYS)}</Typography>
 
-                <Box className="concept-mapping__step1-card">
+                {/* Connecting an upstream SQL/Python node is disabled for now: the node's
+                    input handle is removed (see ConceptMappingNode), so this option is greyed
+                    out and non-interactive. CSV upload is the only supported source. */}
+                <Box
+                  className="concept-mapping__step1-card"
+                  sx={{ opacity: 0.5, pointerEvents: "none", cursor: "not-allowed" }}
+                  aria-disabled
+                >
                   <AccountTreeOutlinedIcon className="concept-mapping__step1-card-icon" />
                   <Typography className="concept-mapping__step1-card-title">
                     {getText(i18nKeys.STEP1__CONNECT_NODE_OPTION)}

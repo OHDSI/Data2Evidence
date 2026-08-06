@@ -5,7 +5,7 @@ import { NodeDataState } from "../../../../types";
 import { NodeLayout } from "../../NodeLayout/NodeLayout";
 import { ResultsDrawer } from "../../../Flow/FlowRunResults/ResultsDrawer";
 import { ConceptMappingDrawer } from "./ConceptMappingDrawer";
-import { SourceHandle, TargetHandle } from "../../CustomHandle/CustomHandle";
+import { SourceHandle } from "../../CustomHandle/CustomHandle";
 import { HandleIOType } from "../type";
 import "./ConceptMappingNode.scss";
 
@@ -27,7 +27,11 @@ export const ConceptMappingNode = (node: NodeProps<ConceptMappingNodeData>) => {
         resultType={data.error ? "error" : "success"}
         onResultClick={data.result ? openResult : null}
         node={node}
-        LeftHandle={<TargetHandle ioType={HandleIOType.Dataframe} nodeId={node.id} />}
+        // Input handle removed for now — connecting an upstream SQL/Python output node is
+        // disabled (CSV upload is the only supported source); Step 1's connect-node card is
+        // greyed out to match. `null` (not omitted) so NodeLayout renders no handle rather
+        // than falling back to its "default" one.
+        LeftHandle={null}
         RightHandle={
           <SourceHandle ioType={HandleIOType.Dataframe} nodeId={node.id} />
         }
