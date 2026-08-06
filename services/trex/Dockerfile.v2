@@ -67,7 +67,8 @@ RUN cd /root/.duckdb/extensions/v${DUCKDB_VERSION}/linux_${TARGETARCH} && \
       gzip -df snowflake.duckdb_extension.gz && echo "snowflake extension preinstalled for v${DUCKDB_VERSION}/linux_${TARGETARCH}" ) || \
     echo "WARN: snowflake community extension not prebuilt for v${DUCKDB_VERSION}/linux_${TARGETARCH}; relying on runtime INSTALL"
 
-RUN mkdir -p /usr/src/data/cache /usr/src/data/plugins /usr/src/cdw_data/built_in ./cert /var/log/d2e/audit
+RUN mkdir -p /usr/src/data/cache /usr/src/data/plugins /usr/src/data/flow_staging /usr/src/cdw_data/built_in ./cert /var/log/d2e/audit \
+ && chmod 1777 /usr/src/data/flow_staging
 
 # Bundle CI-built plugins from plugin-artifacts/*.tgz. Two-pass extract handles
 # cross-directory hardlinks in Deno-packed tarballs that GNU tar -x rejects.
