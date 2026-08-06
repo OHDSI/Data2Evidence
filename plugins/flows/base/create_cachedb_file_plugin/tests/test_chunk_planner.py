@@ -377,3 +377,54 @@ def test_target_chunk_rows_rejects_non_positive_override(override):
     """chunkSize: -1 used to silently yield one unbounded chunk."""
     with pytest.raises(PlannerError):
         resolve_target_chunk_rows("bigquery", override)
+
+
+from datetime import datetime
+from decimal import Decimal
+
+from create_cachedb_file_plugin.chunk_utils import normalise_boundaries, quote_identifier
+
+
+def test_normalise_boundaries_sorts_dedupes_and_drops_nulls():
+    assert normalise_boundaries([3, None, 1, 3, 2]) == [1, 2, 3]
+    assert normalise_boundaries([]) == []
+
+
+@pytest.mark.parametrize(
+    "raw",
+    [
+        [1, "two"],
+        [date(2020, 1, 1), datetime(2020, 1, 1)],
+        [[1], [2]],
+    ],
+)
+def test_normalise_boundaries_keeps_type_errors_inside_the_taxonomy(raw):
+    """The orchestration layer catches CacheCopyError; a bare TypeError escapes it."""
+    with pytest.raises(PlannerError) as excinfo:
+        normalise_boundaries(raw)
+    assert isinstance(excinfo.value, CacheCopyError)
+
+
+def test_build_predicates_reports_mixed_boundary_types_as_planner_errors():
+    with pytest.raises(PlannerError):
+        build_predicates(_column(), [1, "two", 3])
+
+
+def test_quote_identifier_escapes_embedded_quotes():
+    assert quote_identifier("measurement_id") == '"measurement_id"'
+    assert quote_identifier('we"ird') == '"we""ird"'
+
+
+def test_decimal_boundaries_render_in_plain_notation():
+    """1E+3 would be typed DOUBLE by DuckDB -- the lossy float case we reject."""
+    assert sql_literal(Decimal("1E+3")) == "1000"
+    assert sql_literal(Decimal("1.50")) == "1.50"
+    assert sql_literal(Decimal("-2E-3")) == "-0.002"
+    assert "E" not in sql_literal(Decimal("1E+30"))
+
+
+@pytest.mark.parametrize("value", ["NaN", "-NaN", "Infinity", "-Infinity"])
+def test_non_finite_decimal_boundaries_are_rejected(value):
+    """DuckDB parses a bare NaN/Infinity as a column reference, not a number."""
+    with pytest.raises(PlannerError):
+        sql_literal(Decimal(value))

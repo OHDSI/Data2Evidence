@@ -72,7 +72,18 @@ def sql_literal(value) -> str:
             "Float chunk boundaries are not supported: rounding would make chunk "
             "edges overlap or leave gaps."
         )
-    if isinstance(value, (int, Decimal)):
+    if isinstance(value, Decimal):
+        if not value.is_finite():
+            raise PlannerError(
+                f"Non-finite chunk boundary: {value}. DuckDB reads a bare NaN or "
+                "Infinity as a column reference, so this would fail mid-copy "
+                "rather than during planning."
+            )
+        # str() would render Decimal('1E+3') in scientific notation, which
+        # DuckDB types as DOUBLE -- the same lossy-float boundary that floats
+        # are rejected to avoid. format(..., "f") keeps it exact.
+        return format(value, "f")
+    if isinstance(value, int):
         return str(value)
     if isinstance(value, (datetime, date)):
         return f"'{value.isoformat()}'"
@@ -88,8 +99,20 @@ def quote_identifier(name: str) -> str:
 
 
 def normalise_boundaries(raw_boundaries: Iterable) -> list:
-    """Sorted, de-duplicated, NULL-free boundary values."""
-    return sorted({value for value in raw_boundaries if value is not None})
+    """Sorted, de-duplicated, NULL-free boundary values.
+
+    Mixed or unhashable boundary values are a planning failure, not a bug in
+    the caller's control flow: they arrive from a source catalog. Raising the
+    raw TypeError would escape the ``except CacheCopyError`` the orchestration
+    layer wraps a table copy in, so it is translated here.
+    """
+    try:
+        return sorted({value for value in raw_boundaries if value is not None})
+    except TypeError as exc:
+        raise PlannerError(
+            f"Chunk boundaries could not be sorted or de-duplicated: {exc}. "
+            "The source returned values of mixed or unorderable types."
+        ) from exc
 
 
 def build_predicates(column: ChunkColumnCandidate, raw_boundaries: Iterable) -> tuple[str, ...]:
