@@ -3,11 +3,20 @@
 Two layers:
 
 - **Pure suite** — `test_chunk_planner.py`, `test_planner_properties.py`,
-  `test_source_adapter_sql.py`, `test_checkpoint.py`, `test_fresh_copy.py`,
-  `test_options.py`. These import only `pytest`, `duckdb` and `pydantic`; the
-  modules under test never import `prefect`. Safe to run anywhere.
+  `test_source_adapter_sql.py`, `test_source_adapters.py`, `test_checkpoint.py`,
+  `test_fresh_copy.py`, `test_options.py`. These import only `pytest`, `duckdb`
+  and `pydantic`; the modules under test never import `prefect`. Safe to run
+  anywhere. `test_source_adapters.py` drives the real `collect` orchestration by
+  stubbing the adapters' two statement-executing methods, so no sqlalchemy and
+  no database are needed.
 - **Integration** — `test_copy_integration.py`. Uses local DuckDB as both source
   and target. Slower; still no external services.
+- **Structure** — `test_copy_structure.py`, with helpers in `copy_source.py`.
+  `copy.py` imports prefect and cannot be imported here, so the control flow
+  that has to hold in it — what a dryRun must not do, which exception clears the
+  resume point — is asserted by parsing the module with `ast`. Structural
+  assertions are used only where behaviour cannot be reached; anything testable
+  by running it lives in a pure helper these tests call directly.
 
 ## Running
 

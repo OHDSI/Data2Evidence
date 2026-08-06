@@ -15,6 +15,7 @@ from .types import CopyParameters, QueryColumns
 from .filter import filter_tables, CDM_COLUMN_FILTER_MAP
 from .utils import execute_statement, set_bigquery_global_settings, VOCAB_TABLES
 from .chunk_utils import (
+    describe_chunk_progress,
     describe_dry_run_summary,
     describe_plan,
     find_column_case_insensitive,
@@ -370,14 +371,60 @@ def copy_table_chunk(write_conn: Any, copy_params: CopyParameters, query_columns
         # Swapping these two lines reintroduces duplicate rows on resume.
         # The plan's predicates are pairwise disjoint, so this DELETE can
         # never remove another chunk's rows.
-        execute_statement(write_conn, f"DELETE FROM {target} WHERE {predicate};")
+        delete_seconds = execute_statement(write_conn, f"DELETE FROM {target} WHERE {predicate};")
         select_sql = create_select_query(copy_params, query_columns, source_schema, predicate)
-        execute_statement(write_conn, f"INSERT INTO {target} {select_sql};")
+        insert_seconds = execute_statement(write_conn, f"INSERT INTO {target} {select_sql};")
     except Exception as exc:
         raise ChunkCopyError(
             f"Chunk {chunk_index + 1}/{total_chunks} of '{query_columns.table}' "
             f"failed ({predicate}): {exc}"
         ) from exc
+
+    # On BigQuery's total_bytes_processed: it is NOT available here. The source
+    # is read through the DuckDB BigQuery extension, which surfaces no job
+    # statistics, so there is nothing to log and nothing worth inventing. It
+    # has to be read from the BigQuery job history during the canary run.
+    logger.info(
+        describe_chunk_progress(
+            query_columns.table,
+            chunk_index,
+            total_chunks,
+            _count_rows_in(write_conn, target, predicate, logger),
+            _elapsed_seconds(delete_seconds, insert_seconds),
+        )
+    )
+
+
+def _elapsed_seconds(*timings) -> float:
+    """Total seconds from ``execute_statement``'s ``@time_execution`` strings."""
+    total = 0.0
+    for timing in timings:
+        try:
+            total += float(timing)
+        except (TypeError, ValueError):
+            continue
+    return total
+
+
+def _count_rows_in(write_conn: Any, target: str, predicate: str, logger) -> int | None:
+    """Rows this chunk left in the target, or ``None`` if that could not be read.
+
+    A COUNT(*) over one chunk's predicate, against the local cache rather than
+    the source. Neither a psycopg2 cursor against Trex pgwire nor a duckdb
+    connection reports affected rows through a surface the other shares, so the
+    count is the portable answer.
+
+    Never allowed to fail the chunk: the rows are already durably copied by the
+    time this runs, and turning a successful chunk into a ChunkCopyError over a
+    log line would cost the whole table a retry.
+    """
+    try:
+        write_conn.execute(f"SELECT COUNT(*) FROM {target} WHERE {predicate};")
+        row = write_conn.fetchone()
+        return None if row is None or row[0] is None else int(row[0])
+    except Exception as exc:
+        logger.warning(f"Could not count the rows copied into {target}: {exc}")
+        return None
 
 
 @task(log_prints=True, task_run_name="copy_table_{query_columns.table}", tags=["table-level-concurrency"], cache_policy=NONE)

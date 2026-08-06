@@ -14,6 +14,7 @@ from create_cachedb_file_plugin.chunk_utils import (
     _thin_boundaries,
     build_predicates,
     compute_plan_id,
+    describe_chunk_progress,
     describe_dry_run_summary,
     describe_plan,
     find_column_case_insensitive,
@@ -727,3 +728,34 @@ def test_dry_run_summary_lists_every_failure_not_just_the_first():
     line = describe_dry_run_summary("cdm", planned=1, unplannable=["a", "b", "c"])
     for table in ("a", "b", "c"):
         assert table in line
+
+
+# ---------------------------------------------------------------------------
+# Per-chunk observability (acceptance criterion 14)
+# ---------------------------------------------------------------------------
+#
+# copy_table_chunk logged only the predicate, and did so *before* doing the
+# work, so a chunk that ran for an hour and copied nothing looked identical to
+# one that copied 5M rows in 40 seconds.
+
+
+def test_chunk_progress_reports_position_rows_and_time():
+    line = describe_chunk_progress("measurement", 2, 20, 5_000_000, 42.5)
+    assert "measurement" in line
+    assert "3/20" in line, "chunk_index is zero-based; operators count from one"
+    assert "5,000,000" in line
+    assert "42.5" in line
+
+
+def test_chunk_progress_survives_an_uncountable_chunk():
+    """Observability may never turn a chunk that succeeded into a failure."""
+    line = describe_chunk_progress("measurement", 0, 1, None, 3.0)
+    assert "3.0" in line
+    assert "unknown" in line.lower()
+
+
+def test_chunk_progress_reports_a_zero_row_chunk_as_zero():
+    """Not as 'unknown': an empty chunk is a real and interesting answer."""
+    line = describe_chunk_progress("measurement", 0, 4, 0, 0.2)
+    assert "0 rows" in line
+    assert "unknown" not in line.lower()

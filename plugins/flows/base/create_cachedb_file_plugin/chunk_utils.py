@@ -375,6 +375,25 @@ def describe_plan(plan: ChunkPlan, schema: str, table: str) -> str:
     )
 
 
+def describe_chunk_progress(
+    table: str, chunk_index: int, total_chunks: int, rows: int | None, seconds: float
+) -> str:
+    """One line per finished chunk: how much moved, and how long it took.
+
+    ``chunk_index`` is zero-based, as the copy loop counts; the line is
+    one-based, as an operator reading it does.
+
+    ``rows`` is ``None`` when the count could not be taken. That is reported as
+    unknown rather than as zero: a genuinely empty chunk is a real and
+    interesting answer, and conflating the two hides it.
+    """
+    counted = "unknown rows" if rows is None else f"{rows:,} rows"
+    return (
+        f"Chunk {chunk_index + 1}/{total_chunks} of '{table}' copied "
+        f"{counted} in {seconds:.1f}s"
+    )
+
+
 def describe_dry_run_summary(schema: str, planned: int, unplannable: Sequence[str]) -> str:
     """Closing line of a dry run: how much of the schema is actually copyable.
 

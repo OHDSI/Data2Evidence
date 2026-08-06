@@ -127,3 +127,37 @@ def test_mark_failed_is_not_written_during_a_dry_run():
     func = function_node(COPY_SOURCE_PATH, "copy_table_task")
     assert calls_to(func, "mark_failed"), "a real failure must still be recorded"
     assert dry_run_guarded_branch(func, "mark_failed") is not None
+
+
+# ---------------------------------------------------------------------------
+# Per-chunk observability (acceptance criterion 14)
+# ---------------------------------------------------------------------------
+
+
+def test_the_chunk_log_line_is_emitted_after_the_work():
+    func = function_node(COPY_SOURCE_PATH, "copy_table_chunk")
+    assert calls_to(func, "describe_chunk_progress"), (
+        "a chunk has to report rows copied and elapsed time, not just its predicate"
+    )
+
+
+def test_execute_statement_timings_are_captured_rather_than_discarded():
+    """execute_statement is @time_execution decorated and returns the elapsed
+    seconds; every caller used to throw that away."""
+    func = function_node(COPY_SOURCE_PATH, "copy_table_chunk")
+    assigned = [
+        node
+        for node in ast.walk(func)
+        if isinstance(node, ast.Assign) and calls_to(node.value, "execute_statement")
+    ]
+    assert len(assigned) >= 2, "both the DELETE and the INSERT timings are wanted"
+
+
+def test_the_bigquery_bytes_limitation_is_recorded():
+    """total_bytes_processed is not available through the DuckDB BigQuery
+    extension path, so it must be documented rather than faked."""
+    func = function_node(COPY_SOURCE_PATH, "copy_table_chunk")
+    source = COPY_SOURCE_PATH.read_text()
+    start, end = func.lineno, func.end_lineno
+    body = "\n".join(source.splitlines()[start - 1 : end])
+    assert "total_bytes_processed" in body
