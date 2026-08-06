@@ -178,3 +178,50 @@ def test_plan_id_is_stable_and_distribution_sensitive():
     c = compute_plan_id("bigquery", "cdm", "measurement", "measurement_id", 3, (1, 2, 4))
     assert a == b
     assert a != c
+
+
+DEGENERATE_BOUNDARIES = [(), (5,), (1, 9), (7, 7, 7), (None, None)]
+
+
+@pytest.mark.parametrize("boundaries", DEGENERATE_BOUNDARIES)
+def test_large_table_with_degenerate_boundaries_raises(boundaries):
+    """A single interval predicate on a huge table is the unbounded copy again."""
+    config = ChunkConfig(target_chunk_rows=5_000_000)
+    with pytest.raises(PlannerError) as excinfo:
+        plan_chunks("bigquery", "cdm", "measurement", _stats(900_000_000, boundaries), config)
+    message = str(excinfo.value)
+    assert "cdm.measurement" in message
+    assert "900,000,000" in message
+    assert "measurement_id" in message
+    assert "low-cardinality" in message
+
+
+@pytest.mark.parametrize("boundaries", DEGENERATE_BOUNDARIES)
+def test_degenerate_boundaries_raise_for_nullable_columns_too(boundaries):
+    """The NULL chunk does not make a one-interval plan any less unbounded."""
+    config = ChunkConfig(target_chunk_rows=5_000_000)
+    with pytest.raises(PlannerError):
+        plan_chunks(
+            "bigquery",
+            "cdm",
+            "measurement",
+            _stats(900_000_000, boundaries, nullable=True),
+            config,
+        )
+
+
+def test_degenerate_boundary_error_reports_the_distinct_count():
+    config = ChunkConfig(target_chunk_rows=5_000_000)
+    with pytest.raises(PlannerError, match="1 distinct"):
+        plan_chunks("bigquery", "cdm", "measurement", _stats(900_000_000, (7, 7, 7)), config)
+    with pytest.raises(PlannerError, match="0 distinct"):
+        plan_chunks("bigquery", "cdm", "measurement", _stats(900_000_000, (None, None)), config)
+
+
+@pytest.mark.parametrize("boundaries", DEGENERATE_BOUNDARIES)
+def test_small_table_with_degenerate_boundaries_still_single_statements(boundaries):
+    """Below the threshold an unbounded copy is fine, so nothing may raise."""
+    config = ChunkConfig(target_chunk_rows=5_000_000)
+    plan = plan_chunks("bigquery", "cdm", "person", _stats(499_999, boundaries), config)
+    assert plan.strategy is ChunkStrategy.SINGLE_STATEMENT
+    assert plan.predicates == ()

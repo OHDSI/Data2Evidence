@@ -116,6 +116,15 @@ def build_predicates(column: ChunkColumnCandidate, raw_boundaries: Iterable) -> 
     return tuple(predicates)
 
 
+def count_interval_predicates(predicates: Sequence[str], includes_null_chunk: bool) -> int:
+    """How many predicates describe a value interval, excluding the NULL chunk.
+
+    The NULL chunk is bookkeeping, not a slice of the value range, so it must
+    not be counted when judging whether a plan actually divides the table.
+    """
+    return len(predicates) - (1 if includes_null_chunk else 0)
+
+
 def _thin_boundaries(values: Sequence, max_values: int) -> list:
     """Evenly drop boundaries until at most ``max_values`` remain.
 
@@ -195,6 +204,18 @@ def plan_chunks(
     # to keep the plan inside max_chunks (plus the NULL chunk, if any).
     boundaries = _thin_boundaries(normalise_boundaries(stats.boundaries), chunk_count + 1)
     predicates = build_predicates(stats.column, boundaries)
+
+    interval_count = count_interval_predicates(predicates, stats.column.nullable)
+    if interval_count < 2:
+        raise PlannerError(
+            f"{schema}.{table} has {stats.row_count:,} rows but chunking on "
+            f"{stats.column.name} collapsed to a single unbounded predicate: the "
+            f"source returned {len(boundaries)} distinct boundary value(s), so the "
+            "column is too low-cardinality to chunk on. Refusing to run what would "
+            "be an unbounded whole-table copy mislabelled as CHUNKED (issue 3033). "
+            "Pick a higher-cardinality chunk column or raise the small-table "
+            "threshold above this row count."
+        )
 
     return ChunkPlan(
         plan_id=compute_plan_id(
