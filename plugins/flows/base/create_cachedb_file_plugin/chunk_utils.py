@@ -151,14 +151,19 @@ def compute_plan_id(
     schema: str,
     table: str,
     column_name: str | None,
-    chunk_count: int,
-    boundaries: Iterable,
+    strategy: ChunkStrategy,
+    predicates: Sequence[str],
 ) -> str:
     """Stable identity for a plan.
 
-    Anything that changes which rows land in which chunk changes this id, so a
-    resumed copy can tell whether its recorded checkpoints still describe the
-    plan it is about to execute.
+    The hash covers the predicates that will actually be executed, not the
+    boundaries they were derived from. Those are not the same thing in either
+    direction: two different boundary lists can yield byte-identical predicates
+    (``build_predicates`` discards the outer endpoints), and one boundary list
+    can yield two different predicate lists (a nullable column gains a NULL
+    chunk). Since ``plan_id`` is the resume key -- a different id means the
+    stored checkpoints no longer describe the work about to be done -- it has
+    to track the executed predicates exactly.
     """
     parts = [
         str(PLANNER_VERSION),
@@ -166,9 +171,10 @@ def compute_plan_id(
         schema,
         table,
         str(column_name),
-        str(chunk_count),
+        strategy.value,
+        str(len(predicates)),
     ]
-    parts.extend(repr(value) for value in boundaries)
+    parts.extend(predicates)
     return hashlib.sha256("\x1f".join(parts).encode("utf-8")).hexdigest()
 
 
@@ -182,7 +188,9 @@ def plan_chunks(
     """Decide how a table will be copied. Pure: no database access."""
     if stats.row_count < config.small_table_threshold:
         return ChunkPlan(
-            plan_id=compute_plan_id(dialect, schema, table, None, 1, ()),
+            plan_id=compute_plan_id(
+                dialect, schema, table, None, ChunkStrategy.SINGLE_STATEMENT, ()
+            ),
             strategy=ChunkStrategy.SINGLE_STATEMENT,
             column_name=None,
             column_kind=None,
@@ -219,7 +227,7 @@ def plan_chunks(
 
     return ChunkPlan(
         plan_id=compute_plan_id(
-            dialect, schema, table, stats.column.name, chunk_count, boundaries
+            dialect, schema, table, stats.column.name, ChunkStrategy.CHUNKED, predicates
         ),
         strategy=ChunkStrategy.CHUNKED,
         column_name=stats.column.name,

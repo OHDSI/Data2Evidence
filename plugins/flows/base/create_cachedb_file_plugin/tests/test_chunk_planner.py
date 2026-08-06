@@ -173,11 +173,48 @@ def test_plan_never_exceeds_the_cap_plus_null_chunk():
 
 
 def test_plan_id_is_stable_and_distribution_sensitive():
-    a = compute_plan_id("bigquery", "cdm", "measurement", "measurement_id", 3, (1, 2, 3))
-    b = compute_plan_id("bigquery", "cdm", "measurement", "measurement_id", 3, (1, 2, 3))
-    c = compute_plan_id("bigquery", "cdm", "measurement", "measurement_id", 3, (1, 2, 4))
+    """Identical inputs hash the same; a different plan hashes differently."""
+    predicates = ('"measurement_id" < 10', '"measurement_id" >= 10')
+    other = ('"measurement_id" < 11', '"measurement_id" >= 11')
+    args = ("bigquery", "cdm", "measurement", "measurement_id")
+    a = compute_plan_id(*args, ChunkStrategy.CHUNKED, predicates)
+    b = compute_plan_id(*args, ChunkStrategy.CHUNKED, predicates)
+    c = compute_plan_id(*args, ChunkStrategy.CHUNKED, other)
     assert a == b
     assert a != c
+
+
+def test_plan_id_changes_with_the_strategy():
+    a = compute_plan_id("bigquery", "cdm", "person", None, ChunkStrategy.SINGLE_STATEMENT, ())
+    b = compute_plan_id("bigquery", "cdm", "person", None, ChunkStrategy.CHUNKED, ())
+    assert a != b
+
+
+def test_plan_id_changes_when_the_null_chunk_appears():
+    """The resume key must not collide across different predicate sets."""
+    config = ChunkConfig(target_chunk_rows=5_000_000, max_chunks=10)
+    boundaries = tuple(range(0, 12))
+    not_null = plan_chunks(
+        "bigquery", "cdm", "measurement", _stats(900_000_000, boundaries), config
+    )
+    nullable = plan_chunks(
+        "bigquery", "cdm", "measurement", _stats(900_000_000, boundaries, nullable=True), config
+    )
+    assert len(nullable.predicates) == len(not_null.predicates) + 1
+    assert nullable.plan_id != not_null.plan_id
+
+
+def test_plan_id_ignores_boundaries_that_do_not_reach_the_predicates():
+    """Appending rows past the table max must not invalidate the checkpoints."""
+    config = ChunkConfig(target_chunk_rows=5_000_000)
+    first = plan_chunks(
+        "bigquery", "cdm", "measurement", _stats(900_000_000, (0, 10, 20, 30)), config
+    )
+    grown = plan_chunks(
+        "bigquery", "cdm", "measurement", _stats(900_000_000, (-100, 10, 20, 9_999)), config
+    )
+    assert first.predicates == grown.predicates
+    assert first.plan_id == grown.plan_id
 
 
 DEGENERATE_BOUNDARIES = [(), (5,), (1, 9), (7, 7, 7), (None, None)]
