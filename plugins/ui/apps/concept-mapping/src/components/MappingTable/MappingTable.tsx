@@ -514,18 +514,19 @@ export const MappingTable: FC<MappingTableProps> = ({
   // Whole-row click used to open the terminology search drawer; that's now an explicit
   // "Suggest" action icon instead (see renderActionsCell), so this only supplies the
   // alternating-row / selected-row styling.
-  const TableBodyRowProps = ({ row }: { row: MRT_RowData }) => ({
-    sx: {
-      "&:nth-of-type(even)": {
-        backgroundColor: "#fafafa",
+  const TableBodyRowProps = ({ row }: { row: MRT_Row<{ [key: string]: any }> }) => {
+    const selected = row.getIsSelected();
+    return {
+      sx: {
+        backgroundColor: selected ? "#c5cae9" : row.index % 2 === 0 ? "#f5f5f5" : "#ffffff",
         "&.MuiTableRow-root:hover": {
-          backgroundColor: "#ebf1f8",
+          backgroundColor: selected ? "#c5cae9" : "#ebf1f8",
         },
+        // Distinct client "selected for terminology search" highlight (not row selection).
+        boxShadow: row.original == conceptMappingState.selectedData ? "inset 0px 0px 0px 2px #3b438c" : "none",
       },
-      backgroundColor: row.index % 2 === 0 ? "#f5f5f5" : "#ffffff",
-      boxShadow: row.original == conceptMappingState.selectedData ? "inset 0px 0px 0px 2px #3b438c" : "none",
-    },
-  });
+    };
+  };
 
   const tableInstance = useMaterialReactTable({
     initialState: { density: "compact", columnPinning: { right: ["actions"] } },
@@ -550,14 +551,24 @@ export const MappingTable: FC<MappingTableProps> = ({
         fontSize: "16px",
       },
     },
-    muiTableBodyCellProps: {
-      // Top-align so a single-value cell (status/source/…) lines up with the first stacked
-      // concept line in a multi-suggestion row.
-      sx: { alignItems: "flex-start" },
-      style: {
-        fontSize: "14px",
-        color: "#000080",
-      },
+    muiTableBodyCellProps: ({ row, column }) => {
+      const selected = row.getIsSelected();
+      const rowBg = selected ? "#c5cae9" : row.index % 2 === 0 ? "#f5f5f5" : "#ffffff";
+      return {
+        // Top-align so a single-value cell (status/source/…) lines up with the first stacked
+        // concept line in a multi-suggestion row.
+        sx: { alignItems: "flex-start" },
+        style: {
+          fontSize: "14px",
+          color: "#000080",
+          // Non-pinned cells stay transparent so the row's (selection/alternating) background
+          // shows through. The right-pinned actions column needs an opaque background matching
+          // the row - and no pinning shadow, which layered wrongly over a selected row.
+          ...(column.id === "actions"
+            ? { backgroundColor: rowBg, boxShadow: "none" }
+            : { backgroundColor: "transparent" }),
+        },
+      };
     },
     muiTableBodyRowProps: TableBodyRowProps,
     muiTableHeadRowProps: {
