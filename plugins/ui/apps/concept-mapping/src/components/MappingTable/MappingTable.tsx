@@ -525,9 +525,9 @@ export const MappingTable: FC<MappingTableProps> = ({
     const selected = row.getIsSelected();
     return {
       sx: {
-        backgroundColor: selected ? "#c5cae9" : row.index % 2 === 0 ? "#f5f5f5" : "#ffffff",
+        backgroundColor: selected ? "#E5E6F2" : row.index % 2 === 0 ? "#f5f5f5" : "#ffffff",
         "&.MuiTableRow-root:hover": {
-          backgroundColor: selected ? "#c5cae9" : "#ebf1f8",
+          backgroundColor: selected ? "#E5E6F2" : "#ebf1f8",
         },
         // Distinct client "selected for terminology search" highlight (not row selection).
         boxShadow: row.original == conceptMappingState.selectedData ? "inset 0px 0px 0px 2px #3b438c" : "none",
@@ -562,7 +562,7 @@ export const MappingTable: FC<MappingTableProps> = ({
     }),
     muiTableBodyCellProps: ({ row, column }) => {
       const selected = row.getIsSelected();
-      const rowBg = selected ? "#c5cae9" : row.index % 2 === 0 ? "#f5f5f5" : "#ffffff";
+      const rowBg = selected ? "#E5E6F2" : row.index % 2 === 0 ? "#f5f5f5" : "#ffffff";
       const isActions = column.id === "actions";
       return {
         // Top-align so a single-value cell (status/source/…) lines up with the first stacked
