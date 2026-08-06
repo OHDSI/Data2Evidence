@@ -7,6 +7,8 @@ from a bare virtualenv.
 from dataclasses import dataclass, field
 from enum import Enum
 
+from .errors import PlannerError
+
 
 class ColumnKind(str, Enum):
     """Why a column was considered a chunking candidate, best first."""
@@ -37,6 +39,28 @@ class ChunkConfig:
     min_chunk_rows: int = 100_000
     small_table_threshold: int = 500_000
     dry_run: bool = False
+
+    def __post_init__(self) -> None:
+        """Reject bounds that make the planner's arithmetic meaningless.
+
+        These four all feed divisions or caps in ``resolve_chunk_count``. A
+        zero or negative value coming from a user-supplied ``chunkSize`` used
+        to surface as a ZeroDivisionError mid-flow, or as a single unbounded
+        chunk -- both far from the config mistake that caused them. Assigning
+        nothing here keeps the dataclass frozen.
+        """
+        for name in (
+            "target_chunk_rows",
+            "max_chunks",
+            "min_chunk_rows",
+            "small_table_threshold",
+        ):
+            value = getattr(self, name)
+            # bool is a subclass of int, and True as a row count is a bug.
+            if not isinstance(value, int) or isinstance(value, bool) or value < 1:
+                raise PlannerError(
+                    f"ChunkConfig.{name} must be a positive integer, got {value!r}."
+                )
 
 
 @dataclass(frozen=True)

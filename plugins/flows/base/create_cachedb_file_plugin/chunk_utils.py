@@ -24,8 +24,17 @@ FALLBACK_TARGET_CHUNK_ROWS = 1_000_000
 
 
 def resolve_target_chunk_rows(dialect: str, override: int | None) -> int:
-    """Rows per chunk. An explicit chunkSize from the caller always wins."""
+    """Rows per chunk. An explicit chunkSize from the caller always wins.
+
+    It only wins if it is usable: a zero or negative override is a config
+    mistake, and accepting one produces either a ZeroDivisionError or a single
+    unbounded chunk rather than the smaller chunks the caller asked for.
+    """
     if override is not None:
+        if not isinstance(override, int) or isinstance(override, bool) or override < 1:
+            raise PlannerError(
+                f"chunkSize must be a positive integer, got {override!r}."
+            )
         return override
     return DEFAULT_TARGET_CHUNK_ROWS.get(dialect, FALLBACK_TARGET_CHUNK_ROWS)
 

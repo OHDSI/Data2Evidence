@@ -338,3 +338,42 @@ def test_thinning_spaces_the_retained_cuts_evenly():
     cuts = _cut_values(_thinning_plan().predicates)
     gaps = _gaps(cuts)
     assert max(gaps) - min(gaps) <= 1
+
+
+@pytest.mark.parametrize(
+    "kwargs",
+    [
+        {"target_chunk_rows": 0},
+        {"target_chunk_rows": -1},
+        {"target_chunk_rows": 1_000, "max_chunks": 0},
+        {"target_chunk_rows": 1_000, "max_chunks": -5},
+        {"target_chunk_rows": 1_000, "min_chunk_rows": 0},
+        {"target_chunk_rows": 1_000, "min_chunk_rows": -5},
+        {"target_chunk_rows": 1_000, "small_table_threshold": 0},
+        {"target_chunk_rows": 1_000, "small_table_threshold": -5},
+    ],
+)
+def test_chunk_config_rejects_non_positive_bounds(kwargs):
+    """chunkSize: 0 used to reach resolve_chunk_count and raise ZeroDivisionError."""
+    with pytest.raises(PlannerError):
+        ChunkConfig(**kwargs)
+
+
+@pytest.mark.parametrize("bad", [1.5, "1000", True, None])
+def test_chunk_config_rejects_non_integer_bounds(bad):
+    with pytest.raises(PlannerError):
+        ChunkConfig(target_chunk_rows=bad)
+
+
+def test_chunk_config_accepts_positive_bounds():
+    config = ChunkConfig(
+        target_chunk_rows=1, max_chunks=1, min_chunk_rows=1, small_table_threshold=1
+    )
+    assert config.target_chunk_rows == 1
+
+
+@pytest.mark.parametrize("override", [0, -1])
+def test_target_chunk_rows_rejects_non_positive_override(override):
+    """chunkSize: -1 used to silently yield one unbounded chunk."""
+    with pytest.raises(PlannerError):
+        resolve_target_chunk_rows("bigquery", override)
