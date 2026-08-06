@@ -46,6 +46,18 @@ export interface TerminologyProps {
     description?: string;
     status?: string;
   };
+  // CONCEPT_MAPPING only: the row's existing suggestions, rendered as a "Suggested concepts"
+  // section above the search results.
+  suggestedConcepts?: {
+    conceptId: number;
+    conceptName: string;
+    conceptCode: string;
+    domainId: string;
+    vocabularyId: string;
+  }[];
+  // CONCEPT_MAPPING only: approve the picked concept for the row (the drawer adds it as a
+  // suggestion first if it isn't one yet).
+  onApprove?: (concept: any) => void;
 }
 
 export type FilterOptions = {

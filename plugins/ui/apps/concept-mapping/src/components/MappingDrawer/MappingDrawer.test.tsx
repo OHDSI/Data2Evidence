@@ -10,11 +10,13 @@ vi.mock("../../axios/api", () => ({
   api: {
     conceptMappingSuggestions: {
       addSuggestion: vi.fn().mockResolvedValue({ id: "new-id" }),
+      approve: vi.fn().mockResolvedValue(undefined),
     },
   },
 }));
 
 const addSuggestion = api.conceptMappingSuggestions.addSuggestion as ReturnType<typeof vi.fn>;
+const approve = api.conceptMappingSuggestions.approve as ReturnType<typeof vi.fn>;
 
 // MappingDrawer talks to the terminology search widget over a window CustomEvent (it lives
 // in a separate module-federated remote); capture the props it dispatches so we can drive
@@ -83,5 +85,56 @@ describe("MappingDrawer", () => {
     });
 
     expect(dispatch).toHaveBeenCalledWith({ type: "CLEAR_SELECTED_DATA" });
+  });
+
+  test("exposes the row's suggestions as suggestedConcepts; onApprove approves an existing one directly", async () => {
+    const onSuggestionAdded = vi.fn();
+    const propsPromise = captureTerminologyProps();
+    const stateWithSuggestion = {
+      ...state,
+      selectedData: {
+        sourceRowId: "r1",
+        code: "A1",
+        name: "Aspirin",
+        _suggestions: [
+          { id: "s1", conceptId: 111, conceptName: "Aspirin", conceptCode: "1191", domainId: "Drug", vocabularyId: "RxNorm", isApproved: false },
+        ],
+      } as any,
+    };
+
+    renderWithProviders(
+      <MappingDrawer selectedDatasetId="ds-1" dataflowId="df-1" nodeId="node-1" onSuggestionAdded={onSuggestionAdded} />,
+      { state: stateWithSuggestion }
+    );
+
+    const props = await propsPromise;
+    expect(props.suggestedConcepts).toEqual([
+      { conceptId: 111, conceptName: "Aspirin", conceptCode: "1191", domainId: "Drug", vocabularyId: "RxNorm" },
+    ]);
+
+    props.onApprove?.({ conceptId: 111, conceptName: "Aspirin", conceptCode: "1191", domainId: "Drug", vocabularyId: "RxNorm" } as any);
+
+    await waitFor(() => expect(approve).toHaveBeenCalledWith("s1"));
+    expect(addSuggestion).not.toHaveBeenCalled();
+    await waitFor(() => expect(onSuggestionAdded).toHaveBeenCalledTimes(1));
+  });
+
+  test("onApprove on a not-yet-suggested concept adds it first, then approves the new suggestion", async () => {
+    const propsPromise = captureTerminologyProps();
+    renderWithProviders(<MappingDrawer selectedDatasetId="ds-1" dataflowId="df-1" nodeId="node-1" />, { state });
+
+    const props = await propsPromise;
+    props.onApprove?.({ conceptId: 222, conceptName: "Ibuprofen", conceptCode: "5640", domainId: "Drug", vocabularyId: "RxNorm" } as any);
+
+    await waitFor(() =>
+      expect(addSuggestion).toHaveBeenCalledWith("df-1", "node-1", "r1", {
+        conceptId: 222,
+        conceptName: "Ibuprofen",
+        conceptCode: "5640",
+        domainId: "Drug",
+        vocabularyId: "RxNorm",
+      })
+    );
+    await waitFor(() => expect(approve).toHaveBeenCalledWith("new-id"));
   });
 });
