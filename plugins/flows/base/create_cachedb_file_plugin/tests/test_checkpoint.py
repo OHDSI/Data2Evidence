@@ -132,6 +132,39 @@ def test_read_checkpoint_returns_none_for_unknown_table(conn, logger):
     assert read_checkpoint(conn, DATABASE, SCHEMA, "never_copied") is None
 
 
+def test_mark_failed_creates_a_row_when_the_copy_never_started(conn, logger):
+    """A planning failure happens before mark_in_progress, so there is no row.
+
+    ``copy_table`` measures the source and plans the chunks first; a
+    ``PlannerError`` there reaches ``mark_failed`` with nothing inserted yet.
+    An UPDATE would match zero rows and leave the table looking never-started.
+    """
+    ensure_status_tables(conn, DATABASE, SCHEMA, logger)
+
+    mark_failed(conn, DATABASE, SCHEMA, "measurement")
+
+    checkpoint = read_checkpoint(conn, DATABASE, SCHEMA, "measurement")
+    assert checkpoint is not None
+    assert checkpoint.status == "FAILED"
+    assert checkpoint.plan_id is None
+    assert checkpoint.chunks_completed == 0
+
+
+def test_mark_failed_keeps_the_resume_point_of_a_started_copy(conn, logger):
+    """A failure is exactly when plan_id and chunks_completed matter most."""
+    ensure_status_tables(conn, DATABASE, SCHEMA, logger)
+    mark_in_progress(conn, DATABASE, SCHEMA, "measurement", "plan-xyz", 180, 900_000_000)
+    record_chunk_progress(conn, DATABASE, SCHEMA, "measurement", 42)
+
+    mark_failed(conn, DATABASE, SCHEMA, "measurement")
+
+    checkpoint = read_checkpoint(conn, DATABASE, SCHEMA, "measurement")
+    assert checkpoint.status == "FAILED"
+    assert checkpoint.plan_id == "plan-xyz"
+    assert checkpoint.chunks_total == 180
+    assert checkpoint.chunks_completed == 42
+
+
 def test_mark_in_progress_preserves_chunks_completed_on_retry(conn, logger):
     """Resume depends on this: attempt 2 must not zero attempt 1's progress."""
     ensure_status_tables(conn, DATABASE, SCHEMA, logger)

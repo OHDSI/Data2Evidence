@@ -247,12 +247,27 @@ def mark_failed(conn, database: str, schema: str, table: str) -> None:
     with nothing and overran the timeout again, forever (issue #3033). The
     partial data plus the ``chunks_completed`` counter is the resume point.
     Never reintroduce a DROP on this path.
+
+    An upsert, not a bare UPDATE. A copy can fail *before* it has a status row:
+    ``copy_table`` measures the source and plans the chunks first, and a
+    ``PlannerError`` there -- no usable chunk column, or a chunk column too
+    low-cardinality to cut a large table on -- reaches this function with
+    nothing yet inserted. An UPDATE would match zero rows and leave the table
+    with no status at all, silently reported as never-started rather than as
+    FAILED.
+
+    On conflict only ``status`` changes. ``plan_id`` and ``chunks_completed``
+    are the resume point and a failure is exactly when they matter most.
     """
     _check_identifier(table, "table")
     conn.execute(
-        f"UPDATE {_status_table(database, schema)} "
-        f"SET status = {_sql_string(STATUS_FAILED)} "
-        f"WHERE table_name = {_sql_string(table)}"
+        f"INSERT INTO {_status_table(database, schema)} "
+        "(table_name, status, started_at, completed_at, plan_id, chunks_total, "
+        "chunks_completed, rows_expected) VALUES ("
+        f"{_sql_string(table)}, {_sql_string(STATUS_FAILED)}, "
+        "CAST(NOW() AS TIMESTAMP), NULL, NULL, NULL, 0, NULL) "
+        "ON CONFLICT(table_name) DO UPDATE SET "
+        f"status = {_sql_string(STATUS_FAILED)}"
     )
 
 
