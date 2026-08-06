@@ -133,7 +133,13 @@ def _thin_boundaries(values: Sequence, max_values: int) -> list:
     across the whole range, so the chunks stay roughly equal in size while the
     cap on chunk count is still honoured.
     """
-    if max_values < 2 or len(values) <= max_values:
+    if max_values < 2:
+        # Asking for fewer than two boundaries is asking for something no
+        # interval can be built from. Returning the caller's list unchanged
+        # would be the opposite of what was asked, so keep only the outer pair
+        # and let plan_chunks reject the degenerate plan that results.
+        max_values = 2
+    if len(values) <= max_values:
         return list(values)
     step = (len(values) - 1) / (max_values - 1)
     picked = [values[round(i * step)] for i in range(max_values)]

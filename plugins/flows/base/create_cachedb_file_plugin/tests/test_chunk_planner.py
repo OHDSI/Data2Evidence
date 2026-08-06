@@ -262,3 +262,79 @@ def test_small_table_with_degenerate_boundaries_still_single_statements(boundari
     plan = plan_chunks("bigquery", "cdm", "person", _stats(499_999, boundaries), config)
     assert plan.strategy is ChunkStrategy.SINGLE_STATEMENT
     assert plan.predicates == ()
+
+
+from create_cachedb_file_plugin.chunk_utils import _thin_boundaries
+
+
+def _cut_values(predicates):
+    """The integer boundary values a plan's interval predicates actually cut on."""
+    cuts = []
+    for predicate in predicates:
+        for token in predicate.replace("AND", " ").split():
+            if token.lstrip("-").isdigit() and int(token) not in cuts:
+                cuts.append(int(token))
+    return sorted(cuts)
+
+
+def _gaps(values):
+    return [b - a for a, b in zip(values, values[1:])]
+
+
+def test_thin_boundaries_keeps_the_outer_values_and_spreads_the_rest():
+    values = list(range(20_000))
+    thinned = _thin_boundaries(values, 11)
+    assert len(thinned) == 11
+    assert thinned[0] == values[0]
+    assert thinned[-1] == values[-1]
+    # values == indices here, so the gaps are the retained-index gaps.
+    assert max(_gaps(thinned)) - min(_gaps(thinned)) <= 1
+
+
+def test_thin_boundaries_leaves_short_input_alone():
+    assert _thin_boundaries([1, 2, 3], 11) == [1, 2, 3]
+    assert _thin_boundaries([], 11) == []
+
+
+def test_thin_boundaries_never_returns_more_than_asked_for():
+    """max_values < 2 asked for fewer boundaries, not for the whole list back."""
+    values = list(range(20_000))
+    assert _thin_boundaries(values, 1) == [0, 19_999]
+    assert _thin_boundaries(values, 0) == [0, 19_999]
+
+
+def test_thin_boundaries_deduplicates_repeated_picks():
+    assert _thin_boundaries([1, 1, 1, 1, 1, 1], 4) == [1]
+
+
+def _thinning_plan(nullable=False):
+    config = ChunkConfig(target_chunk_rows=5_000_000, max_chunks=10)
+    boundaries = tuple(range(20_000))
+    return plan_chunks(
+        "bigquery",
+        "cdm",
+        "measurement",
+        _stats(900_000_000, boundaries, nullable=nullable),
+        config,
+    )
+
+
+def test_thinning_makes_max_chunks_bind():
+    """chunk_count+1 boundaries survive, so 20,000 quantiles become 10 chunks."""
+    assert len(_thinning_plan().predicates) == 10
+    # The NULL chunk is the eleventh, and is the only thing allowed above the cap.
+    assert len(_thinning_plan(nullable=True).predicates) == 11
+
+
+def test_thinning_retains_cuts_from_across_the_whole_range():
+    """Head-truncating to values[:max_values] would cut only on 1..9."""
+    cuts = _cut_values(_thinning_plan().predicates)
+    assert len(cuts) == 9
+    assert cuts[0] <= 0.2 * 19_999
+    assert cuts[-1] >= 0.8 * 19_999
+
+
+def test_thinning_spaces_the_retained_cuts_evenly():
+    cuts = _cut_values(_thinning_plan().predicates)
+    gaps = _gaps(cuts)
+    assert max(gaps) - min(gaps) <= 1
