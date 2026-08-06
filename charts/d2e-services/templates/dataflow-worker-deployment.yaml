@@ -19,13 +19,6 @@ spec:
     spec:
       serviceAccountName: dataflow-gen-svc-acc
       restartPolicy: Always
-      affinity:
-        podAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-            - labelSelector:
-                matchLabels:
-                  profile: d2e-functions
-              topologyKey: kubernetes.io/hostname
       # nodeSelector:
       #   "kubernetes.io/os": linux
       #   "system": "d2e"
@@ -147,9 +140,6 @@ spec:
         - name: d2e-worker-cm
           configMap:
             name: "{{ .Release.Name }}-{{ .Chart.Name }}"
-        - name: trex-volume
-          persistentVolumeClaim:
-            claimName: trex-pvc
       containers:
         - name: dataflow-gen-worker
           env:
@@ -309,8 +299,8 @@ spec:
           args:
             - >-
               rm -rf /root/.prefect/storage/run_cache.db /root/.prefect/storage/events.db;
-              prefect work-pool create '${PREFECT_POOL:-process-pool}' --type ${WORKPOOL_TYPE:-process};
-              prefect worker start --pool '${PREFECT_POOL:-process-pool}' --type ${WORKPOOL_TYPE:-process}
+              prefect work-pool create "${PREFECT_POOL:-process-pool}" --type ${WORKPOOL_TYPE:-process};
+              prefect worker start --pool "${PREFECT_POOL:-process-pool}" --type ${WORKPOOL_TYPE:-process}
               --name prefect-${WORKPOOL_TYPE:-process}-worker --with-healthcheck
               --limit {{ .Values.dataflowWorker.flowRunLimit | default 3 }}
           image: ghcr.io/ohdsi/d2e-dataflow-gen-worker:{{ .Values.global.image.tag }}
@@ -319,8 +309,6 @@ spec:
             - mountPath: /opt/prefect/libs/baseJobTemplate.json
               name: d2e-worker-cm
               subPath: baseJobTemplate.json
-            - mountPath: /app/duckdb_data
-              name: trex-volume
           resources:
             {{- toYaml .Values.global.resources.dataflowGenWorker | nindent 12 }}
           livenessProbe:
