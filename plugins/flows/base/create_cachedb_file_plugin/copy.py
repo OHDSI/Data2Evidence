@@ -248,8 +248,18 @@ def create_schema_tables(write_conn: Any, read_conn: Any, copy_params: CopyParam
         # Call copy_table directly
         copy_table_task(write_conn, read_conn, copy_params, query_columns, source_schema_for_table)
 
-        # Call copy_indexes directly
-        copy_indexes(write_conn, read_conn, copy_params, query_columns, source_schema_for_table, logger)
+        # Call copy_indexes directly. Not under dryRun: copy_table returns
+        # before the target is created, so CREATE INDEX ... ON <target> would
+        # hit a table that does not exist. On Postgres get_indexes_for_pk
+        # always reports a real primary key, so that fired on the very first
+        # table, burnt this task's three retries and killed the flow.
+        if not copy_params.dry_run:
+            copy_indexes(write_conn, read_conn, copy_params, query_columns, source_schema_for_table, logger)
+        else:
+            logger.info(
+                f"[dry run] skipped index creation for '{table}': the target table "
+                "was not created, so there is nothing to index."
+            )
 
     # All tables copied successfully, drop the ephemeral bookkeeping tables.
     # Under dryRun nothing was written, so there is nothing to clean up -- and
