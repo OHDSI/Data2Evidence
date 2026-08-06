@@ -62,3 +62,55 @@ def test_pg_exact_count():
 def test_identifiers_with_quotes_are_rejected_not_interpolated():
     with pytest.raises(PlannerError):
         pg_exact_count_sql("cdm", 'measurement"; DROP TABLE x --')
+
+
+from create_cachedb_file_plugin.planner_types import ColumnKind
+from create_cachedb_file_plugin.source_stats import (
+    ORDERABLE_BQ_TYPES, ORDERABLE_PG_TYPES, pick_bq_candidate, pick_pg_candidate,
+)
+
+# (column_name, data_type, is_nullable, is_partitioning_column, clustering_ordinal_position)
+BQ_ROWS = [
+    ("measurement_id", "INT64", "NO", "NO", None),
+    ("person_id", "INT64", "NO", "NO", 1),
+    ("measurement_date", "DATE", "YES", "YES", None),
+    ("value_source_value", "STRING", "YES", "NO", None),
+    ("payload", "JSON", "YES", "NO", None),
+]
+
+
+def test_bq_prefers_the_partition_column():
+    candidate = pick_bq_candidate(BQ_ROWS, mapped_column="measurement_id")
+    assert candidate.name == "measurement_date"
+    assert candidate.kind is ColumnKind.PARTITION
+    assert candidate.nullable is True
+
+
+def test_bq_falls_back_to_the_cluster_column():
+    rows = [r for r in BQ_ROWS if r[0] != "measurement_date"]
+    candidate = pick_bq_candidate(rows, mapped_column="measurement_id")
+    assert candidate.name == "person_id"
+    assert candidate.kind is ColumnKind.CLUSTER
+
+
+def test_bq_falls_back_to_the_mapped_surrogate_id():
+    rows = [r for r in BQ_ROWS if r[0] not in {"measurement_date", "person_id"}]
+    candidate = pick_bq_candidate(rows, mapped_column="measurement_id")
+    assert candidate.name == "measurement_id"
+    assert candidate.kind is ColumnKind.MAPPED_ID
+
+
+def test_bq_returns_none_when_no_orderable_candidate_exists():
+    assert pick_bq_candidate([("payload", "JSON", "YES", "NO", None)], mapped_column=None) is None
+
+
+def test_non_orderable_types_are_excluded():
+    assert "JSON" not in ORDERABLE_BQ_TYPES
+    assert "BOOL" not in ORDERABLE_BQ_TYPES
+    assert "boolean" not in ORDERABLE_PG_TYPES
+
+
+def test_pg_prefers_the_single_column_primary_key():
+    candidate = pick_pg_candidate([("measurement_id", "bigint", False)], mapped_column="measurement_id")
+    assert candidate.kind is ColumnKind.PRIMARY_KEY
+    assert candidate.name == "measurement_id"
