@@ -1,18 +1,22 @@
 # Cache creation — distribution-aware chunk planning, chunk-level resume, and fresh-copy override
 
-- **Date:** 2026-08-06
+- **Date:** 2026-08-06 (revised after implementation)
 - **Issue:** https://github.com/OHDSI/Data2Evidence/issues/3033
 - **Component:** `plugins/flows/base/create_cachedb_file_plugin`
 - **Selected approach:** Option B (distribution-aware chunks + chunk-level resume), plus an
   operator-controlled fresh-copy override
-- **Status:** design agreed, not implemented
+- **Status:** **as-built.** The design was implemented on branch
+  `claw/4a5319e3-0458-4676-a5f4-96b6cce89967`; 237 tests pass. This revision folds in the
+  divergences that implementation and two review rounds forced. §14 lists every one of them with
+  its reason, so the spec and the code no longer disagree.
+- **Plan:** `trex/plans/2026-08-06-cache-chunking-resume.md`
 
 ---
 
 ## 1. Problem
 
-`plan_chunks()` in `chunk_utils.py` derives the number of chunks from the **span of the chunk
-column**, not from the row count:
+`plan_chunks()` derived the number of chunks from the **span** of the chunk column, not from the
+row count:
 
 ```
 current = min_val
@@ -22,69 +26,62 @@ while current <= max_val:
     current = end + 1
 ```
 
-`len(chunks) == ceil((max_val - min_val + 1) / chunk_size)`. `row_count` is passed into the
-function but used only for a post-hoc validation at lines 67-71. With BigQuery's fixed
-`chunk_size = 5_000_000` and a hash-generated `INT64` surrogate key, the span approaches the full
-`INT64` range, giving on the order of `3.7e12` loop iterations, each appending a predicate string.
-The worker exhausts memory **inside the planner, before any row is copied**.
+`len(chunks) == ceil((max_val - min_val + 1) / chunk_size)`. `row_count` was a parameter, consulted
+only afterwards for a post-hoc sanity check. With BigQuery's fixed `chunk_size = 5_000_000` and a
+hash-generated `INT64` surrogate key the span approaches the full `INT64` range, giving ~3.7e12 loop
+iterations, each appending a predicate string. The worker exhausted memory **inside the planner,
+before any row was copied**.
 
-Three coupled defects must be fixed at the same time, because the chosen approach removes the
-escape hatch the current code depends on:
+Three coupled defects had to be fixed together, because closing the first removes the escape hatch
+the others relied on:
 
-1. **The density guard cannot detect this failure.** It trips when
+1. **The density guard could not detect this failure.** It tripped when
    `row_count / len(chunks) > 2 * chunk_size` — chunks that are too *dense*. Sparsity makes that
-   ratio smaller, so the guard is silent in exactly the failing case.
-2. **Every `plan_chunks` failure routes to an unbounded whole-table copy.** `copy.py:340-344`
-   falls back to `CREATE OR REPLACE TABLE … AS <select>`. Three paths reach it: a missing
-   `CHUNK_COLUMN_MAP` entry, the `int()` cast bail at `chunk_utils.py:49-54` (any date or string
-   chunk column), and the density guard. The team has ruled this fallback out after it failed on a
-   BigQuery table above ~900M rows.
-3. **Progress is checkpointed per table, not per chunk.** `cleanup()` (`copy.py:67-74`) drops the
-   target table on failure; `retries=3` sits on `create_schema_tables_task`, whose
-   `timeout_seconds` (`cache_task_timeout`, default 10800s) covers the *entire schema loop*. A
-   table that cannot finish inside one attempt restarts from chunk 0 on every retry and never
-   converges.
+   ratio smaller, so the guard was silent in exactly the failing case.
+2. **Every `plan_chunks` failure routed to an unbounded whole-table copy** via
+   `CREATE OR REPLACE TABLE … AS <select>`. Three paths reached it: a missing `CHUNK_COLUMN_MAP`
+   entry, the `int()` cast bail (any date or string chunk column), and the density guard. The team
+   banned that fallback after it failed on a BigQuery table above ~900M rows.
+3. **Progress was checkpointed per table, not per chunk.** `cleanup()` dropped the target on
+   failure; `retries=3` sat on `create_schema_tables_task`, whose `timeout_seconds`
+   (`cache_task_timeout`, default 10800s) covered the *entire schema loop*. A table that could not
+   finish in one attempt restarted from chunk 0 on every retry and never converged.
 
-Once resume exists, operators need a way to **deliberately discard** a resumable checkpoint —
-when the previous failure left data they do not trust, or when a fix has landed and the partial
-result is stale. That is the new `freshCopy` requirement, specified in §4.3.
+Once resume exists, operators need a way to **deliberately discard** a resumable checkpoint — when
+the previous failure left data they do not trust, or when a fix has landed and the partial result is
+stale. That is `freshCopy` (§4.3).
 
 ### Verified constraints
 
-- Source dialects for this plugin are exactly **Postgres and BigQuery** (`check_supported_dialects`
-  in `utils.py`; the only `case` arms in `attach_to_source_db`). HANA has its own plugin; DuckDB is
-  target-only.
-- `use_trex_connection` is hardcoded `True` (`types.py:121-122`), so the write path is always Trex
-  pgwire → DuckDB with the source `ATTACH`ed as `<database_code>__srcdb`. The
-  `if not options.use_trex_connection:` branch in `flow.py` is unreachable.
+- Source dialects for this plugin are exactly **Postgres and BigQuery** (`check_supported_dialects`;
+  the only `case` arms in `attach_to_source_db`). HANA has its own plugin; DuckDB is target-only.
+- `use_trex_connection` is hardcoded `True`, so the write path is always Trex pgwire → DuckDB with
+  the source `ATTACH`ed as `<database_code>__srcdb`. The `if not options.use_trex_connection:`
+  branch in `flow.py` is unreachable.
+- At runtime `write_conn` is a **psycopg2 cursor**; in tests it is a **duckdb connection**. Both
+  expose `execute()` then `fetchall()`/`fetchone()`, and nothing in `checkpoint.py` may use more
+  than that shared surface.
 - Planning queries run on a **separate direct SQLAlchemy connection to the source**
-  (`read_conn.engine`), not through Trex. This design keeps that split.
-- The status table is **ephemeral**: `drop_cache_status_table` removes it after a successful schema
-  copy (`copy.py:268`). It exists only between a failure and the next run.
-- **One flow run can copy two schemas.** `create_cachedb_file_plugin` calls `create_cache_flow`,
-  then conditionally `create_results_cache_flow`, which re-enters `create_cache_flow` with a
-  different `schema_name` / target schema inside the *same* Prefect flow run (`flow.py:26-31`,
-  `43-48`). Any run-scoped state must be keyed accordingly.
-- There is currently **no test package** for this plugin. `plugins/flows/` has `tests/` directories
-  for `_shared_flow_utils`, `strategus_plugin`, `cohort_discovery_plugin`, and
-  `dataflow_ui_plugin`, but not for `create_cachedb_file_plugin`.
-- Toolchain (`plugins/flows/base/pyproject.toml`): Python 3.12, `duckdb==1.4.0`,
-  `sqlalchemy==2.0.38`, `sqlalchemy-bigquery==1.14.1`, `google-cloud-bigquery==3.6.0`,
-  `pytest==9.0.3` (dev group).
+  (`read_conn.engine`), not through Trex.
+- Both status tables are **ephemeral**: dropped after a successful schema copy, so they exist only
+  between a failure and the next run.
+- **One flow run can copy two schemas.** `create_results_cache_flow` re-enters `create_cache_flow`
+  as a plain function call inside the *same* Prefect flow run, so it shares `flow_run.id`. Any
+  run-scoped state must be keyed on `(flow_run_id, target_schema)`.
+- Toolchain: Python 3.12, `duckdb==1.4.0`, `sqlalchemy==2.0.38`, `sqlalchemy-bigquery==1.14.1`,
+  `prefect==3.6.10`, `pytest==9.0.3`.
 
 ---
 
 ## 2. Goals
 
-1. Chunk **count** is derived from row count and hard-capped, so the planner cannot allocate an
+1. Chunk **count** derives from row count and is hard-capped, so the planner cannot allocate an
    unbounded list regardless of chunk-column distribution.
-2. Chunk **size** is derived from the observed value distribution, so a bounded chunk count does
-   not silently produce oversized chunks on skewed or sharded keys.
-3. No code path performs an unbounded whole-table copy for a table at or above the small-table
-   threshold.
+2. Chunk **size** derives from the observed value distribution, so a bounded count does not silently
+   produce oversized chunks on skewed or sharded keys.
+3. No code path performs an unbounded whole-table copy at or above the small-table threshold.
 4. A large table's copy **converges across retries**: work already done is not repeated.
-5. An operator can **explicitly discard** a resumable checkpoint and start clean, without
-   hand-editing the status table.
+5. An operator can **explicitly discard** a resumable checkpoint without hand-editing SQL.
 6. Every copied table is reconciled against the source row count before being marked complete.
 7. BigQuery planning is scan-cost aware and observable.
 
@@ -92,31 +89,34 @@ result is stale. That is the new `freshCopy` requirement, specified in §4.3.
 
 ## 3. Architecture
 
-Four focused modules replace the current two-function arrangement.
-
 ```
 copy.py                     orchestration: reset? -> plan -> checkpoint -> execute -> reconcile
   |
   +-- source_stats.py       dialect adapters; ALL source-side SQL lives here
-  |     BigQuerySourceAdapter
-  |     PostgresSourceAdapter
+  |     BigQuerySourceAdapter / PostgresSourceAdapter
   |
   +-- chunk_utils.py        PURE planner: (ChunkStats, ChunkConfig) -> ChunkPlan
-  |                         no database access, no I/O, fully unit-testable
   |
-  +-- checkpoint.py         status tables, plan hashing, reset routine, fresh-copy arbitration
+  +-- checkpoint.py         status tables, plan hashing, reset, fresh-copy arbitration
+  |
+  +-- planner_types.py      dataclasses and enums
+  +-- errors.py             exception taxonomy
 ```
 
-`chunk_utils.py` keeps its name — it is the file the issue names — but loses all I/O. Its only
-responsibility becomes turning statistics into predicates.
+**Import discipline is load-bearing and enforced by a test.** `errors.py`, `planner_types.py`,
+`chunk_utils.py`, `source_stats.py` and `checkpoint.py` must never import `prefect` — directly or
+transitively. They take a `logger` argument instead of calling `get_run_logger()`. `sqlalchemy` and
+`_shared_flow_utils.types` are imported lazily inside the adapter methods that need them, because
+`_shared_flow_utils.types` itself imports prefect. This is what lets the suite run in a bare
+virtualenv with only `pytest`, `duckdb` and `pydantic`.
 
 ### Connection roles
 
-| Concern | Connection | Notes |
-|---|---|---|
-| Row counts, boundaries, column metadata | `read_conn.engine` (SQLAlchemy, direct to source) | Same as today |
-| Chunk `DELETE`/`INSERT`, target DDL, resets | `write_conn` (psycopg2 → Trex pgwire → DuckDB) | Source attached as `<code>__srcdb` |
-| Status tables | `write_conn` | Live in `<target_database>.<target_schema>` |
+| Concern | Connection |
+|---|---|
+| Row counts, boundaries, NULL counts, column metadata | `read_conn.engine` (SQLAlchemy, direct to source) |
+| Chunk `DELETE`/`INSERT`, target DDL, resets | `write_conn` (psycopg2 → Trex pgwire → DuckDB) |
+| Status tables | `write_conn` |
 
 ---
 
@@ -126,41 +126,53 @@ responsibility becomes turning statistics into predicates.
 
 | Field | Default | Meaning |
 |---|---|---|
-| `target_chunk_rows` | BigQuery 5_000_000; Postgres 1_000_000 | Desired rows per chunk |
+| `target_chunk_rows` | BigQuery 5_000_000; else 1_000_000 | Desired rows per chunk |
 | `max_chunks` | 2_000 | Hard cap on chunk count |
 | `min_chunk_rows` | 100_000 | Floor; prevents thousands of tiny chunks |
-| `small_table_threshold` | 500_000 | Below this, copy in one statement (existing behaviour) |
-| `dry_run` | `false` | Plan and log only; execute and destroy nothing |
+| `small_table_threshold` | 500_000 | Below this, copy in one statement |
+| `dry_run` | `false` | Plan and log only |
 
-`copy_params.chunk_size` (`chunkSize`) continues to override `target_chunk_rows`. With
-`max_chunks = 2000` and a 5M target, tables up to 10B rows chunk without raising chunk size.
+`__post_init__` rejects non-positive or non-integer values for the four bounds with `PlannerError`;
+`resolve_target_chunk_rows` rejects a non-positive `chunkSize` override. Without this,
+`chunkSize: 0` raised `ZeroDivisionError` at import-adjacent depth and `chunkSize: -1` silently
+produced one unbounded chunk.
+
+**`chunkSize` does not always win.** `min_chunk_rows` floors the effective chunk size, so any
+override below 100_000 is absorbed. That is deliberate — thousands of tiny chunks cost more in
+Prefect task overhead than they save — but it is a real limit on the knob.
+
+Guard constants, all named in code:
+
+| Constant | Value | Purpose |
+|---|---|---|
+| `MAX_NULL_CHUNK_MULTIPLE` | 3 | Reject a plan whose NULL chunk exceeds 3× target |
+| `MAX_CHUNK_SIZE_MULTIPLE` | 5 | Reject a plan whose chunks exceed 5× the planned size |
+| `SMALL_TABLE_CONFIRM_FACTOR` | 1.2 | Confirm an estimated count with an exact one near the threshold |
+| `PLANNER_VERSION` | 2 | Mixed into `plan_id`; bump to invalidate every checkpoint |
 
 ### 4.2 Planner and adapter types
 
-**`ChunkColumnCandidate`** — `name`, `kind` (`PARTITION` | `CLUSTER` | `PRIMARY_KEY` | `MAPPED_ID`),
-`data_type`, `nullable`, `orderable`.
+- `ColumnKind` — `PARTITION | CLUSTER | PRIMARY_KEY | MAPPED_ID`
+- `ChunkStrategy` — `SINGLE_STATEMENT | CHUNKED`
+- `ChunkColumnCandidate(name, kind, data_type, nullable)`
+- `ChunkStats(row_count, row_count_is_exact, column, boundaries, null_count)`
+- `ChunkPlan(plan_id, strategy, column_name, column_kind, predicates, estimated_rows_per_chunk, includes_null_chunk)`
 
-**`ChunkStats`** — `row_count`, `row_count_is_exact`, `column`, `boundaries` (ascending cut
-values), `has_nulls`.
-
-**`ChunkPlan`** — `plan_id` (hash), `strategy` (`SINGLE_STATEMENT` | `CHUNKED`), `column_name`,
-`column_kind`, `predicates` (ordered SQL fragments), `estimated_rows_per_chunk`,
-`includes_null_chunk`.
-
-**`SourceAdapter`** protocol — the only dialect seam: `count_rows`, `count_rows_exact`,
-`list_chunk_candidates`, `column_boundaries`, `quote_table`, `quote_column`.
+`SourceAdapter` surface — the only dialect seam: `count_rows`, `count_rows_exact`,
+`pick_chunk_column(schema, table, allowed_columns=None)`, `column_boundaries`, `count_nulls`,
+and `collect(schema, table, config, logger, allowed_columns=None) -> ChunkStats`.
 
 ### 4.3 `freshCopy` — the fresh-copy override
 
-**Surface.** A new optional field on `CreateCacheOptions`, following the existing camelCase-alias
+**Surface.** Two new optional fields on `CreateCacheOptions`, following the existing camelCase-alias
 convention used by `chunkSize`:
 
 ```
 fresh_copy: Optional[bool] = Field(default=False, alias="freshCopy")
+dry_run:    Optional[bool] = Field(default=False, alias="dryRun")
 ```
 
-It is threaded into `CopyParameters` alongside `chunk_size`. No UI or API change beyond accepting
-the new key; omitting it preserves today's behaviour exactly.
+Both are threaded into `CopyParameters`. Omitting them reproduces today's behaviour exactly.
 
 **Semantics.** When `freshCopy` is true, then **once per (flow run, target schema)**, before any
 planning:
@@ -168,19 +180,17 @@ planning:
 - every table whose status is **not** `COMPLETE` has its target table dropped and its status row
   deleted;
 - tables whose status **is** `COMPLETE` are left untouched — they were reconciled against the
-  source, so re-copying them is pure waste;
-- the reset is logged at WARNING with the list of tables discarded and the row count discarded per
-  table (a cheap `COUNT(*)` on the local DuckDB target before dropping);
-- copying then proceeds normally, re-planning each discarded table from scratch.
+  source, so re-copying them is waste;
+- the reset is logged at WARNING with the tables discarded and the row count discarded per table;
+- copying proceeds normally, re-planning each discarded table from scratch.
 
 **Why "once per (flow run, target schema)" is load-bearing.** `create_schema_tables_task` carries
-`retries=3`. If the reset ran on every task attempt, attempt 2 would destroy the progress attempt 1
-made, and the parameter would silently undo the convergence property this whole design exists to
-provide. So the reset is recorded and arbitrated, not re-evaluated. The key is composite because
-one flow run can copy two schemas — the datamart schema and then the results schema — and each
-needs its own reset (`flow.py:43-48`).
+`retries=3`. If the reset ran on every attempt, attempt 2 would destroy the progress attempt 1 made,
+and the parameter would silently undo the convergence property this design exists to provide. The
+reset is therefore recorded and arbitrated, not re-evaluated. The key is composite because one flow
+run copies the datamart schema and then the results schema, and each needs its own reset.
 
-**Arbitration record.** A second ephemeral table alongside the status table:
+**Arbitration record** — a second ephemeral table:
 
 ```
 copy_run_status (
@@ -191,98 +201,77 @@ copy_run_status (
 )
 ```
 
-If `freshCopy` is true and no row exists for `(flow_run_id, target_schema)`, perform the reset and
-insert the row. On any retry the row exists and the reset is skipped. Both tables are dropped
-together after a successful schema copy.
+**Scope limit worth stating plainly:** `apply_fresh_copy` can only see tables that *have* a status
+row. After a fully successful run the bookkeeping is dropped, so `freshCopy` on a healthy cache is a
+no-op. It discards failed work, not a finished cache; rebuilding a good cache means deleting it.
 
-**Interaction with the automatic `plan_id` reset.** A table is *already* reset automatically when
-its recomputed `plan_id` differs from the stored one — for example because the operator changed
-`chunkSize`, or because the source row count moved enough to change the chunk count. `freshCopy` is
-therefore not needed for configuration changes; it exists for the case where the plan is identical
-but the partial data is not trusted. Both paths call the same reset routine.
+**Interaction with the automatic `plan_id` reset.** A table is already reset automatically when its
+recomputed `plan_id` differs from the stored one — for example because `chunkSize` changed.
+`freshCopy` exists for the case where the plan is identical but the partial data is not trusted.
+Both paths call `reset_table`.
 
-**Interaction with `dryRun`.** `dryRun` wins. With both set, nothing is dropped; the log reports
-which tables *would* be discarded and how many rows that represents.
+**Interaction with `dryRun`.** `dryRun` wins: nothing is dropped, the discard set is reported, and
+the once-per-run token is **not** consumed.
 
-**Relationship to the "no implicit drops" rule.** §8 forbids error paths from dropping target
-tables, because implicit drops are what make retries non-convergent. `freshCopy` is an *explicit,
-operator-requested, logged* drop, scoped to non-`COMPLETE` tables. That distinction is deliberate,
-and this is the only sanctioned drop in the design.
+**Relationship to the "no implicit drops" rule.** §8 forbids error paths from dropping targets,
+because implicit drops are what make retries non-convergent. `freshCopy` is an explicit,
+operator-requested, logged drop scoped to non-`COMPLETE` tables — the only sanctioned drop in the
+design, alongside the bounded `SINGLE_STATEMENT` replace.
 
 ---
 
 ## 5. Planning algorithm
 
-Given `(schema, table, adapter, config)`:
+Given `(schema, table, adapter, config, allowed_columns)`:
 
-1. `row_count, is_exact = adapter.count_rows(...)`.
-2. If `row_count < config.small_table_threshold` → `strategy = SINGLE_STATEMENT`, done. This path
-   is bounded by the threshold and remains permitted.
-3. `candidates = adapter.list_chunk_candidates(...)`; take the first orderable candidate. If none →
-   `PlannerError(NO_CHUNK_COLUMN)` (see Decision D1).
-4. `n_desired = ceil(row_count / config.target_chunk_rows)`;
-   `n = clamp(n_desired, 1, config.max_chunks)`; then lower `n` until
-   `row_count / n >= config.min_chunk_rows` (never below 1). If `n < n_desired`, log the raised
-   effective chunk size.
-   **This is the fix for the reported defect: chunk count now derives from `row_count` and is
-   capped, never from the column span.**
-5. `raw = adapter.column_boundaries(column, n)` → up to `n + 1` quantile endpoints. Sort,
-   deduplicate, drop the outer endpoints, yielding interior cut points `b_1 … b_k`, `k <= n - 1`.
-   **This is the fix for skew: chunk size follows the value distribution, so a bounded chunk count
-   cannot silently produce a 300M-row chunk on offset-sharded keys.**
-6. Build half-open predicates:
-   - `col < b_1`
-   - `col >= b_i AND col < b_(i+1)` for `i = 1 … k-1`
-   - `col >= b_k`
-   - if `k == 0` (single distinct value or degenerate distribution) → one predicate `col IS NOT NULL`
-7. If the column is nullable, append `col IS NULL`. Rows with a NULL chunk column are otherwise
-   matched by no predicate and silently lost — the current `BETWEEN` formulation has this bug.
-8. `plan_id = sha256(dialect, schema, table, column, n, boundaries, planner_version)`.
+1. `row_count, is_exact = adapter.count_rows(...)`. If the count is an estimate and falls below
+   `small_table_threshold * SMALL_TABLE_CONFIRM_FACTOR`, confirm it with `count_rows_exact`.
+2. If `row_count < small_table_threshold` → `SINGLE_STATEMENT`, done.
+3. Pick the chunk column, restricted to `allowed_columns` when a snapshot `table_filter` narrows the
+   copied columns. No candidate → `PlannerError`.
+4. `n_desired = ceil(row_count / target_chunk_rows)`; `n = clamp(n_desired, 1, max_chunks)`; then
+   lower `n` until `row_count / n >= min_chunk_rows`. **Count comes from rows and is capped, never
+   from the column span** — this is the fix for the reported defect.
+5. Fetch boundaries — `APPROX_QUANTILES` on BigQuery, `percentile_disc`/`pg_stats` on Postgres —
+   then **thin them to at most `n + 1` values**, keeping the first and last and spreading the rest
+   evenly. Without thinning, `n` is computed and then ignored and the cap does not bind.
+6. Build half-open predicates: `col < b1`; `col >= bi AND col < bi+1`; `col >= bk`; plus an explicit
+   `col IS NULL` chunk when the column is nullable. Outer endpoints are dropped (a `col < min` chunk
+   is always empty). **Chunk size follows the distribution** — this is the fix for skew.
+7. **Three rejection guards**, each raising `PlannerError` rather than degrading:
+   - *degenerate*: fewer than 2 interval predicates — the column is too low-cardinality to chunk on,
+     and a single `IS NOT NULL` predicate is an unbounded copy wearing a `CHUNKED` label;
+   - *oversized NULL chunk*: `null_count > MAX_NULL_CHUNK_MULTIPLE * target_chunk_rows`. A NULL chunk
+     cannot be split — every row has the same key — so the only correct response is to reject and
+     tell the operator to choose a different chunk column;
+   - *oversized chunks*: `estimated_rows_per_chunk > MAX_CHUNK_SIZE_MULTIPLE * planned_chunk_rows(...)`.
+8. `plan_id = sha256(PLANNER_VERSION, dialect, schema, table, column, strategy, predicates)`.
 
-The density guard is **deleted**: tied boundaries collapse during deduplication, which is the
-correct handling of a dense non-unique column, so the guard has nothing left to detect and is one
-of the three routes to the banned fallback. The `int()` cast is **deleted**: any orderable type
-participates, which is what allows a BigQuery partitioning date column to be the chunk column.
+The old density guard and the `int()` cast are both **deleted**. Ties collapse during boundary
+deduplication, which is the correct handling of a dense non-unique column, and dropping the cast
+lets a BigQuery partitioning date column be the chunk column.
 
-### Planner invariants (asserted in code and tests)
+### Planner invariants (asserted in code and in tests)
 
 - `len(predicates) <= max_chunks + 1` (the `+1` is the NULL chunk).
-- Predicates are pairwise disjoint.
-- The union covers the column domain, including NULL.
+- Predicates are pairwise disjoint and cover the column domain including NULL.
 - Planning performs no database access and allocates memory proportional to `n`, not to the span.
 
 ---
 
 ## 6. Data flow
 
-### Per schema
+**Per schema:** ensure the status tables (with legacy-shape detection) → if `freshCopy` and no
+arbitration row for `(flow_run_id, target_schema)`, reset every non-`COMPLETE` table and record the
+token → filter out `COMPLETE` tables → copy each table → on full success drop both status tables.
 
-1. Create the status table and `copy_run_status` if absent; run legacy-shape detection (§9).
-2. If `freshCopy` and no arbitration row exists for `(flow_run_id, target_schema)` → reset all
-   non-`COMPLETE` tables, insert the arbitration row, log what was discarded.
-3. Determine tables to copy; filter out those already `COMPLETE`.
-4. For each table, run the per-table flow below.
-5. On success for all tables, drop both ephemeral tables.
+**Per table:** collect stats → plan → read checkpoint → resume from `chunks_completed` when
+`plan_id` matches, otherwise `reset_table` → `mark_in_progress` → create the target shell with
+`CREATE TABLE IF NOT EXISTS` (**`IF NOT EXISTS` is essential** — a resume must keep the rows it
+already copied) → for each remaining chunk `DELETE` then `INSERT` then record progress → reconcile →
+`mark_complete`.
 
-### Per table
-
-1. `mark_in_progress`.
-2. `stats = adapter.collect(schema, table)`.
-3. `plan = plan_chunks(stats, config)`.
-4. `checkpoint = read_checkpoint(write_conn, table)`.
-5. If `checkpoint.plan_id == plan.plan_id` → resume from `checkpoint.chunks_completed`; otherwise →
-   reset this table, `chunks_completed = 0`, store the new `plan_id`.
-6. Ensure the target exists: `CREATE TABLE IF NOT EXISTS … AS SELECT … WHERE 1=0`.
-7. For `i` in `chunks_completed … len(predicates) - 1`:
-   a. `DELETE FROM <target> WHERE <predicate_i>`
-   b. `INSERT INTO <target> SELECT <cols> FROM <srcdb>.<schema>.<table> WHERE <predicate_i>`
-   c. `UPDATE <status> SET chunks_completed = i + 1`
-   d. log rows copied, elapsed, and on BigQuery `total_bytes_processed`
-8. Reconcile the source count against the target `COUNT(*)`. Mismatch → `ReconciliationError`.
-9. `mark_complete`.
-
-Under `dryRun`, steps 6-9 and the per-schema step 2 reset are skipped; the plan and the would-be
-reset are logged.
+Under `dryRun` the plan is logged and nothing is created, copied, dropped or indexed.
 
 ---
 
@@ -292,44 +281,37 @@ reset are logged.
 
 | Concern | Approach | Cost |
 |---|---|---|
-| Row count | `SELECT SUM(row_count) FROM \`<project>.<dataset>.__TABLES__\` WHERE table_id = '<table>'` | Free, no scan; exact for tables |
-| Row count (views / external) | `COUNT(*)` with `maximum_bytes_billed` | One scan |
-| Candidates | `INFORMATION_SCHEMA.COLUMNS`: `is_partitioning_column`, `clustering_ordinal_position`, `is_nullable`, `data_type` | Free |
-| Boundaries | `SELECT APPROX_QUANTILES(<col>, <n>) FROM <table>` | One single-pass column scan |
-| Reconciliation | `__TABLES__.row_count` (see Decision D4) | Free |
+| Row count | `SUM(row_count)` from `` `<dataset>.__TABLES__` `` | Free |
+| Row count (views / external) | `COUNT(*)` fallback when `__TABLES__` is NULL | One scan |
+| Candidates | `INFORMATION_SCHEMA.COLUMNS` — partitioning, clustering ordinal, nullability, type | Free |
+| Boundaries | `APPROX_QUANTILES(col, n)` | One column scan |
+| NULL count | `COUNT(*) WHERE col IS NULL`, only when the catalog says nullable | One column scan |
 
-**Chunk-column priority: partitioning column → first clustering column → `CHUNK_COLUMN_MAP`
-surrogate ID.** This is the scan-cost lever. Chunk predicates are evaluated by DuckDB against the
-attached BigQuery table; whether they become a pruned Storage Read depends on the extension pushing
-the filter down *and* on the table's physical layout. OMOP tables on BigQuery are conventionally
-partitioned on dates and clustered on `person_id`, not on `measurement_id`, so chunking on the
-surrogate ID risks one full read per chunk.
+**Chunk-column priority: partitioning column → lowest-ordinal clustering column → `CHUNK_COLUMN_MAP`
+surrogate id**, with a non-nullable candidate preferred *within* a tier. This is the scan-cost lever:
+OMOP tables on BigQuery are conventionally partitioned on dates and clustered on `person_id`, not on
+`measurement_id`, so chunking on the surrogate id risks one full read per chunk.
 
-Planner queries carry `maximum_bytes_billed`; every chunk logs `total_bytes_processed`.
+Identifiers follow the plugin's existing convention — the `schema` value is the dataset and the
+connection supplies the project, so tables are written `` `dataset.table` ``.
 
-**Mitigation if pruning does not occur** (confirmed on the canary, AC12): raise `target_chunk_rows`
-for that table so the chunk count — and therefore the number of repeated scans — drops. This trades
-restart granularity for cost and is a configuration change, not a code change.
-
-Replacing `COUNT(*)` with `__TABLES__` removes one billed scan; `APPROX_QUANTILES` adds one. Net
-planning cost per large table is approximately unchanged.
+**Chunk predicates use double-quoted identifiers.** They are evaluated by **DuckDB** against the
+ATTACHed BigQuery table and never sent to BigQuery as SQL, so double quotes are correct and
+backticks would be wrong. Three separate reviewers have now flagged this as a bug; it is not. There
+is a comment in `build_predicates` recording why.
 
 ### PostgreSQL
 
 | Concern | Approach | Cost |
 |---|---|---|
-| Row count (planning) | `SELECT reltuples::bigint FROM pg_class WHERE oid = …::regclass` | Free estimate |
-| Row count (exact, when the estimate is within 20% of `small_table_threshold`) | `COUNT(*)` | One scan |
-| Candidates | single-column integer PK via `pg_index`/`pg_attribute`, then `CHUNK_COLUMN_MAP`; `attnotnull` for nullability | Free |
-| Boundaries (fast path) | `pg_stats.histogram_bounds` when statistics are fresh and buckets suffice | Free |
-| Boundaries (exact path) | `SELECT unnest(percentile_disc(<fractions>) WITHIN GROUP (ORDER BY col)) FROM <table>` | Ordered scan, index-only on the PK |
-| Reconciliation | `COUNT(*)` | One scan |
+| Row count | `pg_class.reltuples` estimate, confirmed exactly near the threshold | Free / one scan |
+| Candidates | single-column integer PK via `pg_index`/`pg_attribute`, then `CHUNK_COLUMN_MAP` | Free |
+| Boundaries | `pg_stats.histogram_bounds` fast path, else `percentile_disc` | Free / ordered scan |
+| NULL count, reconciliation | `COUNT(*)` | One scan each |
 
-Chunk-column priority: single-column integer primary key → `CHUNK_COLUMN_MAP`. Predicates on the PK
-are index-backed, so each chunk is a cheap range scan. Postgres has no partition-pruning concern
-equivalent to BigQuery's.
-
-`freshCopy` behaves identically on both dialects — it only touches target-side state in DuckDB.
+The estimate confirmation is not optional. A table analysed while empty and then bulk-loaded reports
+`reltuples = 0`, and PG ≤ 13 reports `0` for a never-analysed table — which would route a 900M-row
+table straight into the `SINGLE_STATEMENT` branch this design exists to prevent.
 
 ---
 
@@ -337,231 +319,204 @@ equivalent to BigQuery's.
 
 | Error | Trigger | Behaviour |
 |---|---|---|
-| `PlannerError` | No orderable chunk-column candidate; boundary query failed; row count unavailable | Table marked `FAILED`, target and checkpoint preserved, exception raised (Decision D2) |
-| `ChunkCopyError` | A chunk `DELETE`/`INSERT` failed | Retry that chunk with exponential backoff, 3 attempts; on exhaustion mark `FAILED`, preserve target and checkpoint |
-| `ReconciliationError` | Source count ≠ target count after all chunks | Mark `FAILED`, preserve the target for inspection, log the exact delta |
-| `FreshCopyResetError` | The reset could not drop a target or write the arbitration row | Abort the schema copy before any planning; never proceed with a half-applied reset |
+| `PlannerError` | No usable chunk column; degenerate, NULL-heavy or oversized plan; bad config | Table `FAILED`, target and checkpoint preserved, raised — except under `dryRun`, where it is logged per table and the run continues |
+| `ChunkCopyError` | A chunk `DELETE`/`INSERT` failed | Prefect retries the chunk with backoff; on exhaustion the table is `FAILED` with its **resume point intact** |
+| `ReconciliationError` | Source count ≠ target count | Table `FAILED`, target preserved, **resume point cleared** so the next run replans |
+| `FreshCopyResetError` | A reset could not be applied | Abort before any planning; never proceed half-reset |
 
-Rules holding for every path:
+Rules that hold everywhere:
 
-- **No error path drops the target table.** The `DROP TABLE` in `cleanup()` is removed; `cleanup`
-  becomes "mark FAILED and preserve state". The only sanctioned drop is the explicit `freshCopy`
-  reset (§4.3).
-- **`timeout_seconds` moves off `create_schema_tables_task`** onto a per-chunk timeout plus a
-  per-table budget, so one large table can no longer consume the whole schema's allowance and a
-  timeout no longer discards completed chunks.
-- **Prefect retries are safe by construction.** The task-level `retries=3` now resumes rather than
-  restarts, and the `freshCopy` arbitration row guarantees the reset is not re-applied on retry.
-- Errors log table, chunk index, predicate, and plan id, so failures are diagnosable from logs
-  alone.
+- **No error path drops the target table.** `mark_failed` is an upsert that writes status only. The
+  old `cleanup()` dropped the target, and that is precisely what made retries restart from chunk 0.
+- **The resume point is cleared on reconciliation failure only.** Without this the table parks in a
+  state where `chunks_completed == chunks_total`, every rerun copies zero chunks and re-fails
+  identically — reintroducing the never-converges pathology in a new place. On `ChunkCopyError` the
+  resume point is exactly what we want to keep, so it is preserved.
+- **The timeout budget lives on the chunk.** `cache_chunk_timeout` (new, default 3600s) replaces the
+  schema-wide `cache_task_timeout` on `create_schema_tables_task`, so one large table can no longer
+  consume the whole schema's allowance and a timeout no longer discards completed chunks. Both
+  `Variable.get` calls pass an explicit default so a worker whose variables were never re-seeded
+  degrades instead of failing at import.
 
 ### Idempotency
 
-Each chunk is `DELETE FROM <target> WHERE <predicate>` then
-`INSERT INTO <target> SELECT … WHERE <predicate>`. DuckDB over pgwire autocommits per statement, so
-the `DELETE`, the `INSERT`, and the counter update are three separate transactions. Both failure
-windows are handled by construction:
+Each chunk is `DELETE FROM <target> WHERE <predicate>` then `INSERT … WHERE <predicate>`. DuckDB
+over pgwire autocommits per statement, so the delete, the insert and the progress update are three
+transactions. Both crash windows are safe by construction:
 
-- Crash **between `DELETE` and `INSERT`** → chunk `i` is empty; the rerun replays chunk `i`.
-- Crash **between `INSERT` and the counter update** → chunk `i` is copied but recorded as
-  incomplete; the rerun replays chunk `i`, and the leading `DELETE` removes the previous copy before
-  reinserting. No duplicates.
-- Predicates are pairwise disjoint, so chunk `i`'s `DELETE` never removes chunk `j`'s rows.
-- The NULL chunk uses `col IS NULL` on both sides, symmetric with the value chunks.
+- Crash between `DELETE` and `INSERT` → the chunk is empty; the rerun replays it.
+- Crash between `INSERT` and the progress update → the chunk is copied but recorded as incomplete;
+  the rerun replays it, and the leading `DELETE` removes the previous copy first. No duplicates.
+- Predicates are disjoint, so one chunk's `DELETE` never touches another's rows.
 
-Idempotency assumes a stable source for the duration of a copy. Concurrent source mutation is a
-non-goal, partially mitigated by the `plan_id` restart rule.
+Idempotency assumes a stable source for the duration of a copy.
 
 ### Checkpoint and resume semantics
 
-`table_copy_status` gains four columns:
-
-```
-table_name       TEXT PRIMARY KEY
-status           TEXT            -- IN_PROGRESS | COMPLETE | FAILED
-started_at       TIMESTAMP
-completed_at     TIMESTAMP
-plan_id          TEXT            -- new
-chunks_total     INTEGER         -- new
-chunks_completed INTEGER         -- new: monotone high-water mark
-rows_expected    BIGINT          -- new: source count captured at plan time
-```
-
-Chunks execute in plan order, so a single high-water mark suffices; no per-chunk bitmap. A `plan_id`
-mismatch forces a full restart of that table, because mixing predicates from two plans could
-duplicate or drop rows. `COMPLETE` is written only after reconciliation passes. Resume granularity
-is one chunk.
+`table_copy_status` carries `table_name, status, started_at, completed_at, plan_id, chunks_total,
+chunks_completed, rows_expected`. Chunks execute in plan order, so a single high-water mark
+suffices — no per-chunk bitmap. `plan_id` mismatch forces a full restart of that table, because
+mixing predicates from two plans could duplicate or drop rows. `COMPLETE` is written only after
+reconciliation passes. Resume granularity is one chunk.
 
 ---
 
 ## 9. Compatibility and migration
 
-Because both ephemeral tables are dropped after a successful schema copy (`copy.py:268`), the only
-compatibility case is state left behind by a **failed pre-upgrade run**.
+Both status tables are dropped after a successful schema copy, so the only compatibility case is
+state left by a **failed pre-upgrade run**. `ensure_status_tables` introspects the status table's
+columns; if the new ones are absent it logs a WARNING, drops and recreates it, and treats every
+table as not-started. Safe, because the old code dropped target tables on failure anyway. Under
+`dryRun` it logs what it *would* migrate and skips both the drop and the creates.
 
-Handling: on startup, inspect the status table's columns. If the new columns are absent, drop and
-recreate it in the new shape and treat every table as not-started. This is safe — the old code
-dropped target tables on failure, so there is no partial data worth preserving — and it is logged.
-`copy_run_status` simply does not exist yet and is created. No versioned migration script and no
-data migration are required.
+`information_schema` is queried unqualified with a `table_catalog` predicate: DuckDB rejects a
+catalog-qualified `information_schema.columns`, and the unqualified form is valid Postgres too.
 
-Other compatibility notes:
-
-- `freshCopy` defaults to `false`; omitting it reproduces today's behaviour. No breaking change to
-  the flow's parameter contract.
-- `chunkSize` keeps its meaning (overrides `target_chunk_rows`).
-- The small-table path (`row_count < 500_000` → single `CREATE TABLE AS SELECT`) is unchanged, so
-  the large majority of OMOP tables behave exactly as before.
-- Caches produced before and after the change are identical in content; only the process differs.
-- `CHUNK_COLUMN_MAP` in `filter.py` is retained as the lowest-priority candidate source; it is not
-  re-derived here.
-- `create_cdw_validation_config_plugin` shares `create_schema_tables_task` and therefore inherits
-  the new behaviour; it does not expose `freshCopy`, which defaults to `false`.
+Other notes: `freshCopy` and `dryRun` default false, so no behaviour changes for existing callers;
+`chunkSize` keeps its meaning; the small-table path is unchanged, so most OMOP tables behave exactly
+as before; caches produced before and after are identical in content.
 
 ---
 
 ## 10. Test approach
 
-New package `plugins/flows/base/create_cachedb_file_plugin/tests/` with `__init__.py` and a
-`README.md`, matching the layout of `cohort_discovery_plugin/tests`. `pytest==9.0.3` is already in
-the `dev` dependency group.
+`plugins/flows/base/create_cachedb_file_plugin/tests/` — 237 tests, running in a bare virtualenv
+with `pytest`, `duckdb` and `pydantic`, in ~3.5s. Three layers:
 
-**`test_chunk_planner.py` — pure, no database.** The centrepiece.
+**Pure** — `test_chunk_planner.py`, `test_source_adapter_sql.py`, `test_source_adapters.py`,
+`test_checkpoint.py`, `test_fresh_copy.py`, `test_options.py`. Planner behaviour, golden-string
+assertions on both dialects' SQL (so BigQuery SQL is covered without credentials), adapter
+orchestration driven by stubbing the two statement-executing methods, checkpoint CRUD, and the
+`freshCopy` matrix — including the retry case that proves a second `apply_fresh_copy` in the same
+flow run returns `[]` and does not wipe the retry's own progress.
 
-| Case | Assertion |
-|---|---|
-| Hash-uniform `INT64` across the full range | **Regression for #3033**: completes quickly, `len(predicates) <= max_chunks + 1`, bounded memory |
-| Offset-sharded keys (clusters at 1e12 / 2e12 / 3e12) | No chunk's estimated rows exceeds 2× target |
-| Dense sequential IDs | Chunk count ≈ `row_count / target` |
-| Heavy ties on a non-unique column | Boundaries deduplicate; predicates stay disjoint |
-| All-NULL / mixed-NULL column | NULL chunk present; NULL rows counted exactly once |
-| Single distinct value | One `IS NOT NULL` predicate |
-| Empty table, `row_count = 1` | No crash; `SINGLE_STATEMENT` |
-| Either side of `small_table_threshold` | Correct strategy |
-| `DATE` and `STRING` chunk columns | Planned, not rejected |
-| `n_desired > max_chunks` | Clamped; effective chunk size logged |
-| `min_chunk_rows` floor | `n` reduced accordingly |
+**Property** — `test_planner_properties.py` builds a real DuckDB table per distribution
+(dense sequential, hash-uniform INT64, offset-sharded, heavy ties, single value) × null fraction,
+evaluates every predicate, and asserts per-predicate counts sum exactly to the total including NULLs
+and that no row matches two predicates. This mechanically proves disjointness and totality.
 
-**Property tests.** Generate synthetic distributions, materialise them in an in-memory DuckDB
-table, evaluate every predicate, and assert that per-predicate counts sum exactly to the total
-including NULLs. This mechanically proves disjointness and totality.
+**Integration** — `test_copy_integration.py`, 200k sparse offset-sharded rows through the real
+primitives: full copy reconciles; and a kill simulated *between* the `INSERT` and the progress
+update replays exactly one chunk without duplicating. Verified non-tautological by mutation —
+removing the leading `DELETE` makes it fail with a 10k-row surplus.
 
-**`test_source_adapter_sql.py`.** Golden-string assertions on the SQL each adapter emits, per
-dialect — so BigQuery SQL is covered in CI without credentials.
+**Structural** — `test_copy_structure.py` with `copy_source.py` helpers. `copy.py` imports prefect
+and cannot be imported here, so the control flow that must hold in it — what `dryRun` must not do,
+which exception clears the resume point — is asserted by parsing the module with `ast`. Used only
+where behaviour cannot be reached by running it; anything expressible as pure logic was extracted
+into `chunk_utils` helpers and tested directly.
 
-**`test_checkpoint.py`** (real local DuckDB file): plan-id match resumes; plan-id mismatch truncates
-and restarts; a legacy-shape status table is detected and recreated; a simulated crash between
-`INSERT` and the counter update replays exactly one chunk and still reconciles.
-
-**`test_fresh_copy.py`** — dedicated, because the failure modes are subtle:
-
-| Case | Assertion |
-|---|---|
-| `freshCopy=false` with a `FAILED` table | Resumes from `chunks_completed`; nothing dropped |
-| `freshCopy=true` with a `FAILED` table | Target dropped, status row deleted, copy restarts at chunk 0 |
-| `freshCopy=true` with a `COMPLETE` table | Table untouched and still skipped |
-| **`freshCopy=true` across a task retry** | Reset applied exactly once; attempt 2 resumes attempt 1's progress rather than wiping it |
-| `freshCopy=true` with datamart + results schemas in one flow run | Both schemas reset; one arbitration row each |
-| `freshCopy=true` with `dryRun=true` | Nothing dropped; discard set reported |
-| Reset fails mid-way | `FreshCopyResetError`; no planning or copying occurs |
-
-**`test_copy_integration.py`.** ~2M synthetic rows with a deliberately sparse chunk column, copied
-end to end and reconciled; a second run kills the copy mid-way and asserts resume correctness.
-Postgres source via the existing CI database service if available, otherwise DuckDB-as-source
-exercising the same orchestration.
-
-**BigQuery.** No live CI test — CI has no credentials. Adapter SQL is covered by golden tests; the
-manual canary (AC12) must be run before release.
+**BigQuery has no live CI test** — CI has no credentials. Its SQL is covered by golden strings and
+the canary in §11 is the release gate.
 
 ---
 
 ## 11. Acceptance criteria
 
-1. Planning a table whose chunk column is hash-distributed across the `INT64` range completes and
-   yields at most `max_chunks + 1` chunks. *(Direct regression for #3033.)*
-2. No code path issues an unbounded whole-table copy for a table at or above
-   `small_table_threshold`.
-3. For every distribution in the test matrix, no chunk's actual row count exceeds 3× the target.
-4. Killing the flow mid-table and rerunning resumes within one chunk of the kill point, and the
-   final target row count equals the source row count exactly.
-5. Reconciliation runs for every copied table, including tables with NULL chunk-column values; a
-   mismatch fails the table rather than marking it complete.
-6. No failure path drops the target table; the checkpoint survives a failure.
-7. `freshCopy=true` discards target data and checkpoints for non-`COMPLETE` tables only, logs what
-   was discarded, and restarts those tables at chunk 0.
-8. `freshCopy=true` applies its reset **exactly once per (flow run, target schema)**; a Prefect task
-   retry after a partial fresh copy resumes rather than wiping.
-9. `freshCopy` omitted or `false` reproduces pre-change resume behaviour exactly.
-10. Dry-run prints the plan — column, kind, rationale, chunk count, boundary summary, estimated rows
-    per chunk — and, when combined with `freshCopy`, the would-be discard set; it executes and
-    destroys nothing.
-11. BigQuery planning costs at most one billed full-column scan per large table, and every planner
-    query carries `maximum_bytes_billed`.
-12. **Canary gate (manual, pre-release):** on the affected BigQuery dataset, run dry-run, then a full
-    copy of the >900M table. Record per-chunk `total_bytes_processed`. If it approximates the
-    full-table byte size, chunk predicates are not pruning; apply the §7 mitigation and record the
-    result before closing the issue.
-13. Postgres regression: a full synpuf cache build produces the same per-table row counts as before.
-14. Per-chunk logs include rows copied, elapsed time, and — on BigQuery — `total_bytes_processed`.
+| # | Criterion | Status |
+|---|---|---|
+| 1 | Hash-distributed INT64 key yields ≤ `max_chunks + 1` chunks | met |
+| 2 | No unbounded whole-table copy at or above `small_table_threshold` | met |
+| 3 | No chunk grossly exceeds the target across skewed distributions | met via the §5 guards |
+| 4 | Kill mid-table → resume within one chunk, exact final count | met |
+| 5 | Reconciliation for every copied table incl. NULL rows | met |
+| 6 | No failure path drops the target; checkpoint survives | met |
+| 7 | `freshCopy` discards only non-`COMPLETE` tables and logs it | met |
+| 8 | `freshCopy` resets once per (flow run, target schema) | met |
+| 9 | `freshCopy` omitted reproduces pre-change behaviour | met |
+| 10 | `dryRun` destroys nothing and does not consume the token | met |
+| 11 | BigQuery planning ≤ one billed full-column scan per large table | met for tables; a view costs more (see §13 D4) |
+| 12 | **Canary (manual, release gate)** | **not run** |
+| 13 | Postgres regression: synpuf per-table row counts unchanged | not run |
+| 14 | Per-chunk logs: rows copied, elapsed, `total_bytes_processed` | partially met — see §14 |
+
+**Criterion 12 in full.** On the affected BigQuery dataset: run `dryRun` and record the plan for the
+>900M table; run the full copy; capture per-chunk `total_bytes_processed` from BigQuery job history.
+If it approximates the full-table byte size, chunk predicates are not pruning — apply the §7
+mitigation (raise `chunkSize` for that table to cut the number of repeated scans) and record the
+result before closing the issue.
 
 ---
 
 ## 12. Non-goals
 
-- Parallel chunk execution. DuckDB permits one writer per database file and the Trex path is a
-  single pgwire connection.
-- The `EXPORT DATA` → GCS Parquet path (Option C). Tracked separately; revisit only if the canary
-  shows chunk predicates do not prune and the bill is prohibitive.
-- Keyset-walk chunking. Rejected for this issue: on BigQuery `ORDER BY … LIMIT` per chunk sorts the
-  remaining rows unless the table is clustered on that column.
-- Per-table or per-chunk granularity for `freshCopy`. It is a run-level switch; finer control is not
-  requested and would multiply the arbitration cases.
-- A `freshCopy` variant that also discards `COMPLETE` tables — deleting and rebuilding the cache
-  already covers a full rebuild (Decision D5).
+- Parallel chunk execution. DuckDB permits one writer per file and the Trex path is one connection.
+- The `EXPORT DATA` → GCS Parquet path (Option C). Revisit only if the canary shows no pruning.
+- Keyset-walk chunking — on BigQuery `ORDER BY … LIMIT` per chunk sorts the remaining rows unless
+  the table is clustered on that column.
+- Per-table or per-chunk granularity for `freshCopy`; it is a run-level switch.
+- A `freshCopy` variant that also discards `COMPLETE` tables (§13 D5).
 - HANA (separate plugin) and DuckDB-as-source.
-- Index and FTS behaviour (`copy_indexes`, `fts.py`).
-- Reviving the unreachable `use_trex_connection == False` branch in `flow.py`.
+- Index and FTS behaviour beyond skipping them under `dryRun`.
+- Reviving the unreachable `use_trex_connection == False` branch.
 - Re-deriving `CHUNK_COLUMN_MAP` from actual primary keys.
-- Changing the default value of `cache_task_timeout`. This design relocates where the timeout
-  applies; tuning the number is an operations decision.
+- Changing the default `cache_task_timeout`.
 - Concurrent source mutation during a copy.
 
-Dead code removed in passing, because it sits inside functions being rewritten: the unreachable
-`LIMIT/OFFSET` tuple branch in `create_select_query` (`copy.py:383-394`) and the duplicate
-`row_count > 100_000_000` arm in `determine_chunk_size` (`chunk_utils.py:14-16`).
-
-Observed but explicitly **out of scope**: `CopyParameters.limit_statement` is set to `"LIMIT 0"` by
-`create_cdw_validation_config_plugin` (`flow.py:179`) but is never read by `create_select_query`, so
-that flow appears to copy full tables rather than empty ones. This should be filed as its own issue
-rather than folded in here.
+Observed but out of scope: `CopyParameters.limit_statement` is set to `"LIMIT 0"` by
+`create_cdw_validation_config_plugin` and never read by `create_select_query`, so that flow appears
+to copy full tables; and that same entrypoint reads `options.database_code`/`schema_name` against a
+model that declares `databaseCode`/`schemaName` with no aliases, so it raises before it gets there.
+Both predate this work and want their own issue.
 
 ---
 
 ## 13. Decisions pending team confirmation
 
-Each has a definite value chosen so the spec is implementable as written; each should be confirmed
-before implementation starts.
+- **D1 — Large table with no usable chunk column.** Chosen: fail fast with a diagnostic listing the
+  columns inspected and why each was rejected. The unbounded copy is banned, so the branch needs an
+  explicit destination; `MOD(FARM_FINGERPRINT(…), n)` pseudo-chunking costs a full scan per chunk.
+- **D2 — Scope of a `PlannerError`.** Chosen: raise and abort the schema copy (except under
+  `dryRun`). Skip-and-continue would yield a partial cache and is a product decision.
+- **D3 — BigQuery `target_chunk_rows`.** Chosen: 5,000,000. Revisit after the canary.
+- **D4 — BigQuery reconciliation source.** Chosen: the free `__TABLES__` count. It is eventually
+  consistent for tables with recent streaming inserts; if those datasets use the streaming API this
+  must switch to a billed `COUNT(*)`, or reconciliation will produce false failures.
+- **D5 — `freshCopy` scope.** Chosen: non-`COMPLETE` tables only. A variant that also rebuilds
+  `COMPLETE` tables would be a second value (`resume | failed | all`), not a change to this one.
+- **D6 — `maximum_bytes_billed`.** **Not implemented.** Applying it means touching
+  `_shared_flow_utils/dao/daobase.py`, shared with every other BigQuery flow. Confirm whether that
+  shared change is acceptable, or whether the adapter should open its own client for planner queries.
 
-- **D1 — Large table with no usable chunk column (either dialect).** Chosen: fail fast with a
-  diagnostic listing the columns inspected and why each was rejected. The unbounded single copy is
-  banned, so this branch needs an explicit destination. On BigQuery the only alternative found —
-  `MOD(FARM_FINGERPRINT(TO_JSON_STRING(t)), n)` pseudo-chunking — costs one full scan per chunk and
-  is not recommended. On Postgres a keyset walk would work but expands scope.
-- **D2 — Scope of a `PlannerError`.** Chosen: preserve current behaviour and raise, aborting the
-  schema copy. The alternative (skip, continue, report at the end) yields a partial cache and is a
-  product decision.
-- **D3 — BigQuery `target_chunk_rows` default.** Chosen: keep 5,000,000. Revisit after AC12.
-- **D4 — BigQuery reconciliation source.** Chosen: `__TABLES__.row_count` (free). It is eventually
-  consistent for tables with recent streaming inserts; if the affected datasets use the streaming
-  API this must switch to a billed `COUNT(*)`.
-- **D5 — `freshCopy` scope.** Chosen: non-`COMPLETE` tables only. If the team also wants a variant
-  that rebuilds `COMPLETE` tables, that is a third value (an enum `resume | failed | all`) rather
-  than a change to this one, and should be requested explicitly.
-- **D6 — `freshCopy` naming and exposure.** Chosen: `freshCopy` on `CreateCacheOptions`, settable by
-  whoever triggers the flow. If it should be restricted to admins, or surfaced in the portal UI
-  rather than only the flow parameters, that is a product decision not covered here.
+---
 
-The issue body itself could not be read from this environment (`gh` is unauthenticated here), so
-this spec is grounded in the repository code and the team's written direction rather than the issue
-text. If #3033 carries acceptance criteria beyond §11, reconcile them against this document before
-implementation.
+## 14. Divergences from the pre-implementation design
+
+Recorded so the spec and the code agree. Each was forced by implementation or by review.
+
+1. **Boundary thinning added.** The original algorithm computed `resolve_chunk_count` and never used
+   it, so `max_chunks` did not bind and the cap was decorative. `_thin_boundaries` caps boundaries at
+   `n + 1`, keeping the first and last.
+2. **`plan_id` hashes predicates and strategy, not boundaries.** Hashing boundaries was both unsound
+   (flipping `nullable` changed the predicate count but not the id — a collision in the very key
+   whose job is to detect that) and over-sensitive (it hashed the two outer endpoints that
+   `build_predicates` discards, so appending rows invalidated a checkpoint whose predicates were
+   byte-identical).
+3. **Three rejection guards added** (degenerate, oversized NULL chunk, oversized chunks). The
+   original design had none; review demonstrated a single `IS NOT NULL` predicate on a 900M-row
+   table, a 19× NULL chunk, and a 3-distinct-value column producing two 450M-row chunks — all of
+   which passed every original check.
+4. **The chunk-size guard compares against `planned_chunk_rows`, not `target_chunk_rows`.** Comparing
+   against the raw target would reject every plan where `max_chunks` legitimately binds, and the
+   operator has no recourse there.
+5. **`allowed_columns` added.** A snapshot `table_filter` can exclude the chosen chunk column, making
+   every chunk's `DELETE` reference a column the target lacks.
+6. **Postgres estimate confirmation added** (`SMALL_TABLE_CONFIRM_FACTOR`). `reltuples` can read 0 on
+   a large table.
+7. **`mark_failed` became an upsert.** Planning happens before `mark_in_progress`, so a
+   `PlannerError` used to update zero rows and record nothing.
+8. **`clear_resume_point` added** for `ReconciliationError` only.
+9. **`dryRun` hardened** — skips `copy_indexes` (it crashed on any source with a primary key), does
+   not migrate a legacy status table, and tolerates `PlannerError` per table so an operator sees
+   every unplannable table rather than only the first.
+10. **`ChunkConfig.__post_init__` validation added.**
+11. **`Decimal` handling tightened** — rendered with `format(value, "f")`, non-finite rejected;
+    scientific notation typed as `DOUBLE` in DuckDB, the exact hazard floats are rejected for.
+12. **`normalise_boundaries` wraps `TypeError` in `PlannerError`** so mixed boundary types stay
+    inside the taxonomy.
+13. **`total_bytes_processed` is not logged.** The DuckDB BigQuery extension surfaces no job
+    statistics, so it cannot be obtained on this path and was not faked. Rows copied and elapsed
+    time are logged per chunk; bytes must come from BigQuery job history during the canary. This is
+    why criterion 14 is *partially* met.
+14. **Structural (`ast`-based) tests introduced** for `copy.py`, which cannot be imported without
+    prefect.
