@@ -1,4 +1,24 @@
+// The font stack below is inlined on purpose to keep this vite-plugin-vuetify
+// config file self-contained; it MUST stay in sync with
+// $font-family-sans-serif in ./_mri-bootstrap-variables.scss.
+// $heading-font-family defaults to $body-font-family, so setting body also
+// covers the .text-* typography classes.
 @use 'vuetify/settings' with (
-  $reset: false
+  $reset: false,
+  $body-font-family: (
+    'GT-America',
+    'IBM Plex Sans Variable',
+    'IBM Plex Sans',
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    Roboto,
+    Oxygen,
+    Ubuntu,
+    Cantarell,
+    'Fira Sans',
+    'Droid Sans',
+    'Helvetica Neue',
+    sans-serif
+  )
 );
-

@@ -2,6 +2,7 @@ import { Logger, utils } from "@alp/alp-base-utils";
 import {
     ANALYTICS_DB_DIALECTS,
     IMRIRequest,
+    PABackendConfigResponse,
     StudyAnalyticsCredential,
     StudyDbMetadata,
 } from "../types";
@@ -41,7 +42,8 @@ export default async (req: IMRIRequest, res, next) => {
                 if (segment.length <= 4096) {
                     try {
                         const decoded = JSON.parse(decodeURIComponent(segment));
-                        if (decoded?.datasetId) return String(decoded.datasetId);
+                        if (decoded?.datasetId)
+                            return String(decoded.datasetId);
                     } catch {
                         // not JSON, ignore
                     }
@@ -51,14 +53,34 @@ export default async (req: IMRIRequest, res, next) => {
         return "";
     };
 
-    const addPAConfigIdToReq = (studyMetadata): void => {
-        //This is for scenarios where dataset is yet to be created
-        if (studyMetadata == null) {
-            log.info(`Skip injection of PA config ID for path ${req.url}`);
+    const addConfigMetadataToReq = async (datasetId: string): Promise<void> => {
+        if (!datasetId) {
+            log.info(`Skip PA/CDM metadata injection for path ${req.url}`);
             return;
         }
-        req.paConfigId = studyMetadata.paConfigId;
-        req.paConfigVersion = "A";
+
+        try {
+            const portalServerAPI = new PortalServerAPI();
+            const paBackendConfigResponse: PABackendConfigResponse =
+                await portalServerAPI.getPABackendConfig(datasetId);
+            const responseMeta = paBackendConfigResponse?.meta;
+
+            if (!responseMeta) {
+                log.info(`Skip PA/CDM metadata injection for path ${req.url}`);
+                return;
+            }
+
+            req.paConfigId = responseMeta.configId;
+            req.paConfigVersion = responseMeta.configVersion;
+            req.cdmConfigId = responseMeta.dependentConfig.configId;
+            req.cdmConfigVersion = responseMeta.dependentConfig.configVersion;
+        } catch (error) {
+            const errorMessage =
+                error instanceof Error ? error.message : "unknown error";
+            log.info(
+                `PA/CDM metadata fetch failed for datasetId ${datasetId}: ${errorMessage}`
+            );
+        }
     };
 
     const getDefaultDbConnection = (): any => {
@@ -102,11 +124,12 @@ export default async (req: IMRIRequest, res, next) => {
         // depending on how the credential was registered. Try each in order so that
         // datasets registered under the new cache_id scheme still resolve.
         const credentialLookupKey =
-            (studyMetadata.cacheId && analyticsCredentials[studyMetadata.cacheId])
+            studyMetadata.cacheId && analyticsCredentials[studyMetadata.cacheId]
                 ? studyMetadata.cacheId
-                : (studyMetadata.databaseCode && analyticsCredentials[studyMetadata.databaseCode])
-                    ? studyMetadata.databaseCode
-                    : studyDatabaseName;
+                : studyMetadata.databaseCode &&
+                    analyticsCredentials[studyMetadata.databaseCode]
+                  ? studyMetadata.databaseCode
+                  : studyDatabaseName;
         const resolvedCredential = analyticsCredentials[credentialLookupKey];
         if (!resolvedCredential) {
             throw new Error(
@@ -163,14 +186,14 @@ export default async (req: IMRIRequest, res, next) => {
             getDefaultDbConnection();
         } else if (utils.isClientCredReq(req)) {
             if (req.query.datasetId) {
-                const studyTokenCode: string = String(req.query.datasetId);
-                log.info(`Selected study ID ${studyTokenCode}`);
+                const datasetId: string = String(req.query.datasetId);
+                log.info(`Selected study ID ${datasetId}`);
 
                 const portalServerAPI = new PortalServerAPI();
                 const studies = await portalServerAPI.getStudies();
 
                 const studyMetadata: StudyDbMetadata = studies.find(
-                    (o) => o.tokenStudyCode === studyTokenCode
+                    (o) => o.tokenStudyCode === datasetId
                 );
                 log.info(
                     `Selected studyMetadata ${JSON.stringify(studyMetadata)}`
@@ -180,7 +203,7 @@ export default async (req: IMRIRequest, res, next) => {
                     req.selectedstudyDbMetadata = studyMetadata;
                 }
                 getDbConnectionByStudyMetadata(studyMetadata);
-                addPAConfigIdToReq(studyMetadata);
+                await addConfigMetadataToReq(datasetId);
             } else {
                 getDefaultDbConnection();
             }
@@ -193,13 +216,15 @@ export default async (req: IMRIRequest, res, next) => {
                 datasetId = getDatasetIdFromRequest();
             }
             const studyMetadata: StudyDbMetadata =
-                req.studiesDbMetadata.studies.find((o) => o.id === datasetId || o.tokenStudyCode === datasetId);
+                req.studiesDbMetadata.studies.find(
+                    (o) => o.id === datasetId || o.tokenStudyCode === datasetId
+                );
             // Set req.selectedstudyDbMetadata if it does not already exist
             if (!req.selectedstudyDbMetadata) {
                 req.selectedstudyDbMetadata = studyMetadata;
             }
             getDbConnectionByStudyMetadata(studyMetadata);
-            addPAConfigIdToReq(studyMetadata);
+            await addConfigMetadataToReq(datasetId);
         }
         next();
     } catch (err) {

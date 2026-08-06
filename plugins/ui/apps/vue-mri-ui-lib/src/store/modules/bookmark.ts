@@ -24,6 +24,7 @@ const state = {
   activeBookmark: null,
   addNewCohort: false,
   loading: false,
+  loadError: false,
   canDatasetMaterializeCohorts: false,
   canMaterializeCohortDatasetId: '',
   isRestoringBookmark: false,
@@ -36,6 +37,7 @@ const webApiCohortDefinitionURL = '/d2e-webapi/cohortdefinition'
 // getters
 const getters = {
   getBookmarksLoading: modulestate => modulestate.loading,
+  getBookmarksLoadError: modulestate => modulestate.loadError,
   getBookmarks: modulestate => modulestate.bookmarks,
   getCanDatasetMaterializeCohorts: modulestate => modulestate.canDatasetMaterializeCohorts,
   getIsRestoringBookmark: modulestate => modulestate.isRestoringBookmark,
@@ -368,6 +370,7 @@ const actions = {
       .then(({ data }) => {
         let toastMessage = ''
         if (params.cmd === 'loadAll') {
+          commit(types.SET_BOOKMARKS_LOAD_ERROR, { loadError: false })
           commit(types.RESET_ALL_BOOKMARKS)
           const { bookmarks, materializedCohorts, atlasCohortDefinitions } = processBookmarksData(
             data,
@@ -397,6 +400,11 @@ const actions = {
         return data
       })
       .catch(error => {
+        if (params.cmd === 'loadAll') {
+          // Cohort list load failures surface as an in-list error state (see Bookmarks.vue).
+          // Keep rethrowing so awaiting callers retain their current control flow.
+          commit(types.SET_BOOKMARKS_LOAD_ERROR, { loadError: true })
+        }
         let errorMessage = ''
         if (params.cmd === 'delete') {
           errorMessage = rootGetters.getText('MRI_PA_DELETE_BMK_ERROR')
@@ -420,7 +428,8 @@ const actions = {
       })
   },
   async refreshBookmarksForDatasetSwitch({ dispatch, rootGetters }) {
-    await dispatch('fireCheckIfDatasetCanMaterializeCohorts')
+    // Non-blocking: buttons stay disabled until the check resolves and commits.
+    dispatch('fireCheckIfDatasetCanMaterializeCohorts')
     await dispatch('fireBookmarkQuery', { method: 'get', params: { cmd: 'loadAll' } })
 
     const chartConfig = rootGetters.getAllChartConfigs
@@ -694,6 +703,11 @@ const actions = {
       method: 'GET',
     })
       .then(response => {
+        // Ignore stale responses: the user may have switched datasets while this
+        // non-blocking request was in flight.
+        if (rootGetters.getSelectedDataset.id !== currentDatasetId) {
+          return
+        }
         commit(types.SET_CAN_DATASET_MATERIALIZE_COHORTS, {
           canDatasetMaterializeCohorts: response.data,
           datasetId: currentDatasetId,
@@ -720,6 +734,9 @@ const mutations = {
   },
   [types.SET_BOOKMARKS_LOADING](modulestate, { loading }) {
     modulestate.loading = loading
+  },
+  [types.SET_BOOKMARKS_LOAD_ERROR](modulestate, { loadError }) {
+    modulestate.loadError = loadError
   },
   [types.SET_CAN_DATASET_MATERIALIZE_COHORTS](modulestate, { canDatasetMaterializeCohorts, datasetId }) {
     modulestate.canDatasetMaterializeCohorts = canDatasetMaterializeCohorts

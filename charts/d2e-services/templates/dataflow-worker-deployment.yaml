@@ -281,6 +281,31 @@ spec:
             - /opt/worker/pyproject.toml
             - sh
             - -c
+            # cohort_discovery: Hutch Relay Task API connection, shared across
+            # every dataset's poller runs
+            - name: TASK_API_BASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: TASK_API_BASE_URL
+            - name: TASK_API_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: TASK_API_USERNAME
+            - name: TASK_API_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: TASK_API_PASSWORD
+            - name: TASK_API_TYPE
+              value: "a"
+            - name: TASK_API_ENFORCE_HTTPS
+              value: "true"
+            - name: LOW_NUMBER_SUPPRESSION_THRESHOLD
+              value: "10"
+            - name: ROUNDING_TARGET
+              value: "10"
           args:
             - >-
               rm -rf /root/.prefect/storage/run_cache.db /root/.prefect/storage/events.db;

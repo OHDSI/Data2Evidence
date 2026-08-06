@@ -15,10 +15,11 @@ type StencilToReact<T> = {
     };
 };
 
-declare global {
-  export namespace JSX {
-    interface IntrinsicElements
-      extends StencilToReact<LocalJSX.IntrinsicElements> {}
+type ReactIntrinsicElements = StencilToReact<LocalJSX.IntrinsicElements>;
+
+declare module "react" {
+  namespace JSX {
+    interface IntrinsicElements extends ReactIntrinsicElements {}
   }
 }
 
