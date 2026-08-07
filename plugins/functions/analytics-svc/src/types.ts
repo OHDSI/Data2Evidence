@@ -499,4 +499,5 @@ export enum ANALYTICS_DB_DIALECTS {
     HANA = "hana",
     POSTGRES = "postgresql",
     BIGQUERY = "bigquery",
+    SNOWFLAKE = "snowflake",
 }
