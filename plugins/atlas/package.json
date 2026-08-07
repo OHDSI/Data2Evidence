@@ -15,7 +15,7 @@
     "dev": "vite"
   },
   "dependencies": {
-    "@ohdsi/atlas3": "0.1.0-20260715175307-95913ec",
+    "@ohdsi/atlas3": "0.1.0-20260806141150-765742f",
     "@ohdsi/network-plugin": "file:./trex-notebook/plugins/network",
     "@ohdsi/notebook-plugin": "file:./trex-notebook/plugins/notebook-plugin",
     "@ohdsi/pythia-plugin": "0.1.0-develop.14.gf8bbfc7",
