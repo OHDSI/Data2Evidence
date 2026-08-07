@@ -113,6 +113,7 @@ const actions = {
             text: rootGetters.getText('MRI_PA_COLL_SUCCESS_ADD_PATIENT'),
           })
         }
+        return response?.data
       })
       .catch(error => {
         if (newRequest) {

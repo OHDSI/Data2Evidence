@@ -1,8 +1,11 @@
-import React, { FC, useCallback } from "react";
+import React, { FC, useCallback, useEffect, useRef, useState } from "react";
 import classNames from "classnames";
 import { IconButton } from "../Button/IconButton";
-import { CopyIcon } from "../Icons";
+import { Tooltip } from "../Tooltip/Tooltip";
+import { CopyIcon, CheckIcon } from "../Icons";
 import "./Text.scss";
+
+const COPY_FEEDBACK_DURATION_MS = 3000;
 
 export interface TextProps {
   showCopy?: boolean;
@@ -17,9 +20,23 @@ export interface TextProps {
 export const Text: FC<TextProps> = ({ className, ...props }) => {
   const classes = classNames("alp-text__container", { [`${className}`]: !!className });
   const { showCopy, textWidth, textFormat, textStyle, buttonStyle } = props;
+  const [copied, setCopied] = useState(false);
+  const resetTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (resetTimeoutRef.current) clearTimeout(resetTimeoutRef.current);
+    };
+  }, []);
 
   const handleCopyString = useCallback((content: string) => {
     navigator.clipboard.writeText(content);
+    setCopied(true);
+    if (resetTimeoutRef.current) clearTimeout(resetTimeoutRef.current);
+    resetTimeoutRef.current = setTimeout(() => {
+      setCopied(false);
+      resetTimeoutRef.current = null;
+    }, COPY_FEEDBACK_DURATION_MS);
   }, []);
 
   return (
@@ -38,7 +55,14 @@ export const Text: FC<TextProps> = ({ className, ...props }) => {
 
       {showCopy && (
         <div className="alp-text__copy-button-container" style={{ ...(buttonStyle && buttonStyle) }}>
-          <IconButton startIcon={<CopyIcon />} onClick={() => handleCopyString(props.children)} />
+          <Tooltip title="Copy" placement="top">
+            <span>
+              <IconButton
+                startIcon={copied ? <CheckIcon width={24} height={24} /> : <CopyIcon width={24} height={24} />}
+                onClick={() => handleCopyString(props.children)}
+              />
+            </span>
+          </Tooltip>
         </div>
       )}
     </div>

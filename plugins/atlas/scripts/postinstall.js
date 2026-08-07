@@ -123,34 +123,6 @@ if (existsSync(assetsDir)) {
     if (count === 0) missedPatches.push(label);
   };
 
-  // The trexsql cache-status endpoint transiently returns status "error" during a
-  // benign attach-retry race even when the cache is built and healthy, and that
-  // terminal "error" makes the cohort builder's live patient count give up. Re-check
-  // with WebAPI a few times (2.5s backoff) at the single fetch site (Pp) so a
-  // transient error self-heals for every consumer (data-source list, count gate,
-  // config page). Anchored on the stable `/cache/status` fetch's parse/return;
-  // idempotent via the e$rt sentinel; no-op if the minified shape changes on a bump.
-  const CACHE_STATUS_SIG_FROM = 'async function ng(e){const t=`';
-  const CACHE_STATUS_SIG_TO = 'async function ng(e,e$rt=0){const t=`';
-  const CACHE_STATUS_RET_FROM =
-    'const r=await a.json(),i=DQ.safeParse(r);return i.success?i.data:OQ(e,r)}';
-  const CACHE_STATUS_RET_TO =
-    'const r=await a.json(),i=DQ.safeParse(r),e$rs=i.success?i.data:OQ(e,r);return e$rs&&e$rs.status==="error"&&e$rt<5?(await new Promise(e$rr=>setTimeout(e$rr,2500)),ng(e,e$rt+1)):e$rs}';
-  let cacheRetryPatched = 0;
-  for (const file of readdirSync(assetsDir)) {
-    if (!/\.js$/.test(file)) continue;
-    const p = join(assetsDir, file);
-    let txt = readFileSync(p, 'utf8');
-    if (txt.includes(CACHE_STATUS_SIG_TO)) continue;
-    if (!txt.includes(CACHE_STATUS_SIG_FROM) || !txt.includes(CACHE_STATUS_RET_FROM)) continue;
-    txt = txt.split(CACHE_STATUS_SIG_FROM).join(CACHE_STATUS_SIG_TO);
-    txt = txt.split(CACHE_STATUS_RET_FROM).join(CACHE_STATUS_RET_TO);
-    writeFileSync(p, txt);
-    cacheRetryPatched++;
-  }
-  console.log(`[postinstall] Added trexsql cache-status re-check on transient "error" in ${cacheRetryPatched} asset file(s)`);
-  requirePatched('trexsql cache-status re-check', cacheRetryPatched);
-
   // Tag assignment posts a bare tag id (e.g. `2`) as the JSON body, which WebAPI's
   // `/{conceptset|cohortdefinition}/{id}/tag/` endpoints require (they consume a
   // primitive int). The d2e-compat WebAPI proxy sits behind a strict express.json
@@ -163,14 +135,18 @@ if (existsSync(assetsDir)) {
   // `+json` suffix is not enough — the ConceptSet controller only consumes exactly
   // application/json. Anchored on the stable endpoint literals; idempotent via the
   // patched substring.
+  //
+  // Remove this once trex accepts the bare int itself (OHDSI/trex#212 parses the
+  // proxied body non-strict and re-serializes primitives); the header becomes
+  // unnecessary and this file has no bundle patches left.
   const TAG_POST_PATCHES = [
     [
-      'sr(`/conceptset/${e}/tag/`,{method:"POST",body:JSON.stringify(t)})',
-      'sr(`/conceptset/${e}/tag/`,{method:"POST",headers:{"Content-Type":"application/json;"},body:JSON.stringify(t)})',
+      'ur(`/conceptset/${e}/tag/`,{method:"POST",body:JSON.stringify(t)})',
+      'ur(`/conceptset/${e}/tag/`,{method:"POST",headers:{"Content-Type":"application/json;"},body:JSON.stringify(t)})',
     ],
     [
-      'Zt(`/cohortdefinition/${e}/tag/`,{method:"POST",body:JSON.stringify(t)})',
-      'Zt(`/cohortdefinition/${e}/tag/`,{method:"POST",headers:{"Content-Type":"application/json;"},body:JSON.stringify(t)})',
+      'Jt(`/cohortdefinition/${e}/tag/`,{method:"POST",body:JSON.stringify(t)})',
+      'Jt(`/cohortdefinition/${e}/tag/`,{method:"POST",headers:{"Content-Type":"application/json;"},body:JSON.stringify(t)})',
     ],
   ];
   let tagPostPatched = 0;
@@ -189,31 +165,6 @@ if (existsSync(assetsDir)) {
   }
   console.log(`[postinstall] Set body-parser-skipping content-type on tag-assign POST in ${tagPostPatched} asset file(s)`);
   requirePatched('tag-assign POST content-type', tagPostPatched);
-
-  // The ConceptSetEditor save handler updates the concept set first, then calls
-  // syncTags(id, oldTags, currentTags). The update mutates the store's concept set,
-  // whose watcher resets the tag refs to the (still tag-less) persisted value before
-  // syncTags reads them — so the newly added tag diffs to nothing and never gets
-  // assigned. Snapshot both tag refs into locals before the update await and diff
-  // against those. Anchored on the stable save-handler literal; idempotent via the
-  // snapshot-local substring.
-  const CS_SYNCTAGS_FROM =
-    'function lt(){if(C.value){P.value=!0;try{let u;if(pe.value&&s.conceptSet?.id?u=await y.update({...s.conceptSet,name:A.value.name,items:y.currentSet?.items||[]}):u=await y.create({name:A.value.name,items:y.currentSet?.items||[]}),u){const r=u?.id;if(r!=null){const I=await y.syncTags(r,j.value,$.value);I.success||h.danger(l("conceptSets.tagUpdateFailed","Failed to update tags"),{message:I.error}),j.value=[...$.value]}';
-  const CS_SYNCTAGS_TO =
-    'function lt(){if(C.value){P.value=!0;try{let u;const e$prev=[...j.value],e$next=[...$.value];if(pe.value&&s.conceptSet?.id?u=await y.update({...s.conceptSet,name:A.value.name,items:y.currentSet?.items||[]}):u=await y.create({name:A.value.name,items:y.currentSet?.items||[]}),u){const r=u?.id;if(r!=null){const I=await y.syncTags(r,e$prev,e$next);I.success||h.danger(l("conceptSets.tagUpdateFailed","Failed to update tags"),{message:I.error}),j.value=[...e$next]}';
-  let csSyncPatched = 0;
-  for (const file of readdirSync(assetsDir)) {
-    if (!/^ConceptSetEditor.*\.js$/.test(file)) continue;
-    const p = join(assetsDir, file);
-    let txt = readFileSync(p, 'utf8');
-    if (txt.includes(CS_SYNCTAGS_TO)) continue;
-    if (!txt.includes(CS_SYNCTAGS_FROM)) continue;
-    txt = txt.split(CS_SYNCTAGS_FROM).join(CS_SYNCTAGS_TO);
-    writeFileSync(p, txt);
-    csSyncPatched++;
-  }
-  console.log(`[postinstall] Snapshotted concept-set tag refs before update so syncTags persists new tags in ${csSyncPatched} asset file(s)`);
-  requirePatched('concept-set tag snapshot', csSyncPatched);
 
   if (missedPatches.length) {
     console.error('[postinstall] ERROR: no asset matched these Atlas3 patches:', missedPatches.join(', '));
