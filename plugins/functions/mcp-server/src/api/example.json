@@ -1,0 +1,65 @@
+{
+  "patient": {
+    "attributes": {
+      "Age": {
+        "name": "Age",
+        "type": "num",
+        "filtercard": {
+          "visible": true
+        }
+      }
+    },
+    "interactions": {
+      "measurement": {
+        "name": "Measurement",
+        "filtercard": {
+          "visible": true
+        },
+        "attributes": {
+          "numval": {
+            "name": "Value As Number",
+            "type": "num",
+            "filtercard": {
+              "visible": true
+            }
+          },
+          "measurementconceptset": {
+            "name": "Measurement concept set",
+            "type": "conceptSet",
+            "domainFilter": "Measurement",
+            "cohortDefinitionKey": "CodesetId",
+            "filtercard": {
+              "visible": true
+            }
+          },
+          "unitconceptset": {
+            "name": "Unit concept set",
+            "type": "conceptSet",
+            "domainFilter": "Unit",
+            "cohortDefinitionKey": "Unit",
+            "filtercard": {
+              "visible": true
+            }
+          }
+        }
+      },
+      "conditionoccurrence": {
+        "name": "Condition Occurrence",
+        "filtercard": {
+          "visible": true
+        },
+        "attributes": {
+          "conditionconceptset": {
+            "name": "Condition concept set",
+            "type": "conceptSet",
+            "domainFilter": "Condition",
+            "cohortDefinitionKey": "CodesetId",
+            "filtercard": {
+              "visible": true
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -19,7 +19,9 @@ services:
           TREX_SECRETS_DIR=/trex-secrets /usr/local/bin/trex-init || echo "[dx] trex-init failed; DevX REST may 401"
           set -a; . /trex-secrets/derived.env 2>/dev/null || true; set +a
         fi
-        exec /usr/src/entrypoint.sh
+        # This command replaces the image's own CMD, so the --enable-otel flag
+        # from Dockerfile.v2 never runs here; it must be re-added to this exec.
+        exec /usr/src/entrypoint.sh $${TREX_OTEL_ENABLED:+--enable-otel}
     build:
       context: ./services/trex
       dockerfile: ./Dockerfile.v2
@@ -75,6 +77,9 @@ services:
         required: false
     environment:
       TREX_DX_ENABLED: "true"
+      # Enable trex's native email/password IDP for local dev (off by default in
+      # the engine). Production d2e authenticates via Logto and leaves it unset.
+      TREX_IDP_ENABLED: "true"
       IS_SANDBOX: "1"
       BETTER_AUTH_URL: "https://localhost:${CADDY_PORT:-${PORT:-443}}/trex"
       PGRST_DB_URI: postgres://authenticator:authenticator_pass@${PG_HOST:-${PROJECT_NAME:-d2e}-minerva-postgres-1}:${PG_PORT:-5432}/alp
@@ -88,6 +93,11 @@ services:
       DEVX_ENCRYPTION_KEY: ${DEVX_ENCRYPTION_KEY:-}
       RUST_LOG: ${RUST_LOG:-info}
       RUST_BACKTRACE: ${RUST_BACKTRACE:-full}
+      # Local dev defaults to exporting traces to the jaeger service below.
+      TREX_OTEL_ENABLED: ${TREX_OTEL_ENABLED:-true}
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-http://jaeger:4318}
+      OTEL_EXPORTER_OTLP_PROTOCOL: ${OTEL_EXPORTER_OTLP_PROTOCOL:-http/protobuf}
+      OTEL_SERVICE_NAME: ${OTEL_SERVICE_NAME:-trex}
       LOCAL_DEBUG: "true"
       DATABASE_CREDENTIALS: ${DATABASE_CREDENTIALS:-{}}
       # Supabase Studio sidecar (LOCAL ONLY) — trex proxies /plugins/trex/studio/** to it.
@@ -97,13 +107,8 @@ services:
       # /usr/src/plugins-dev first so trex's own web/studio/notebook plugins load too.
       PLUGINS_DEV_PATH: "/usr/src/plugins-dev:/usr/src/bundled-plugins:/usr/src/plugins"
       SQL_QUERY_TEMPLATES: '{"cohort-members": "SELECT {{COHORT_ID}} AS cohort_id, CURRENT_TIMESTAMP AS exported_at", "patient-count": "SELECT COUNT(*) AS patient_count FROM {{SCHEMA}}.person"}'
-      # PhysioNet auto-provision / entitlements sync are OFF by default for local
-      # dev. To exercise the flow, set USERMGMT__AUTO_PROVISION_ENABLED=true and
-      # USERMGMT__ENTITLEMENTS_SYNC_ENABLED=true; the rest is pre-wired below.
-      USERMGMT__AUTO_PROVISION_ENABLED: ${USERMGMT__AUTO_PROVISION_ENABLED:-false}
+      # PhysioNet auto-provision / entitlements sync are OFF by default 
       USERMGMT__AUTO_PROVISION_CONNECTORS: ${USERMGMT__AUTO_PROVISION_CONNECTORS:-physionet}
-      USERMGMT__AUTO_PROVISION_DEFAULT_TENANT_ID: ${USERMGMT__AUTO_PROVISION_DEFAULT_TENANT_ID:-e0348e4d-2e17-43f2-a3c6-efd752d17c23}
-      USERMGMT__ENTITLEMENTS_SYNC_ENABLED: ${USERMGMT__ENTITLEMENTS_SYNC_ENABLED:-false}
       USERMGMT__ENTITLEMENTS_PHYSIONET_BASE_URL: ${USERMGMT__ENTITLEMENTS_PHYSIONET_BASE_URL:-http://physionet-host:8000}
       USERMGMT__ENTITLEMENTS_DATASET_MAPPING: '${USERMGMT__ENTITLEMENTS_DATASET_MAPPING:-{"demo":"demoeicu/1.0"}}'
       SWARM_CONFIG: |-
@@ -179,6 +184,8 @@ services:
     build:
       context: .
       dockerfile: ./services/alp-dataflow-gen-worker/Dockerfile
+      secrets:
+        - github_pat
     # flows-dev overlay: devx/trex writes flow source here, worker executes it.
     # Local-dev only; inert unless D2E_FLOWS_DEV_DIR is set. See run-flow.sh.
     volumes:
@@ -192,13 +199,13 @@ services:
       dockerfile: Dockerfile
     extra_hosts:
       - "physionet-host:host-gateway"
-    volumes:
+    # volumes:
       # Overlay the bundled connector-oidc with a d2e-patched version that
       # writes the upstream access/refresh tokens to globalThis.tokenMap so the
       # Logto JWT customizer can surface them as physionet_access_token /
       # physionet_refresh_token claims. Mirrors the connector-alp-azuread
       # override pattern below.
-      - ./services/alp-logto/connector-oidc-patched/lib:/etc/logto/packages/connectors/connector-oidc/lib
+      # - ./services/alp-logto/connector-oidc-patched/lib:/etc/logto/packages/connectors/connector-oidc/lib
       # - ./services/alp-logto/connector-alp-azuread/lib:/etc/logto/packages/connectors/connector-alp-azuread/lib
 
   alp-minerva-pg-mgmt-init:
@@ -293,6 +300,20 @@ services:
       retries: 3
       start_period: 10s
 
+  # Jaeger UI for local trace inspection, on http://localhost:16686. Starts with
+  # the local stack because trex defaults to exporting traces here; gating it
+  # behind a profile would leave those exports pointing at nothing.
+  jaeger:
+    image: jaegertracing/all-in-one:1.62.0
+    networks:
+      alp:
+    environment:
+      COLLECTOR_OTLP_ENABLED: "true"
+    ports:
+      - 16686:16686
+      - 4317:4317
+      - 4318:4318
+
   # trex studio sidecar — LOCAL ONLY (intentionally not in docker-compose.yml).
   # Internal-only: no host port. trex proxies /plugins/trex/studio/** to it and
   # enforces its own admin-only gate.
@@ -365,3 +386,5 @@ volumes:
 secrets:
   github_token:
     environment: GITHUB_TOKEN
+  github_pat:
+    environment: GITHUB_PAT
