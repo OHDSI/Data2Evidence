@@ -18,7 +18,7 @@ export class ShinyLiveService {
 
     const { datasetId, language, appCode, type, name } = shinyLiveFlowRunDto;
 
-    const flowRunName = `ShinyLive_${datasetId}_${language}`;
+    const flowRunName = `${name}_${datasetId}_${language}_${type}`;
     const parameters = {
       options: {
         dataset_id: datasetId,
