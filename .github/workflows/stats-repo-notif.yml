@@ -239,8 +239,9 @@ jobs:
 
           # One row per release version. Download counts are cumulative, so each run stores a
           # fresh snapshot dated when it was collected.
-          # The table is keyed on type+date, so the version goes in the partition key
-          # ("release#<version>") to keep each version's snapshots in their own series.
+          # The table is keyed on date (partition) + type (sort), so the version goes in the
+          # sort key ("release#<version>") to keep versions distinct within a day and
+          # contiguous for begins_with(type, "release#") queries.
           # `version` repeats it as a plain attribute so consumers don't have to split on "#".
           release_stats_db=$(echo "$releases" | jq -c \
             --arg date "$(date -u +'%Y-%m-%d')" \
