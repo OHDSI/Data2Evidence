@@ -54,72 +54,13 @@ for (const [from, to] of vendorFiles) {
 }
 console.log('[postinstall] Supplied single-spa/react vendor files for the Atlas3 plugin runtime');
 
-// Branding (accent, chart palettes, landing hero) is configured in
-// plugins.standalone.json under settings.theme — see OHDSI/Atlas3#184. It used
-// to be string-replaced into the minified bundle here, which silently stopped
-// matching whenever a bump remangled the build.
-const assetsDir = join(resourcesDir, 'assets');
-if (existsSync(assetsDir)) {
-  // These patches rewrite @ohdsi/atlas3's minified bundle, so their anchors embed
-  // per-build mangled names. atlas3 is pinned to an exact version in package.json;
-  // when that pin is bumped the anchors must be re-derived from the new bundle.
-  // Fail the install instead of silently skipping — a no-op patch regresses the
-  // WebAPI fix it carries, and a green build would hide that.
-  const missedPatches = [];
-  const requirePatched = (label, count) => {
-    if (count === 0) missedPatches.push(label);
-  };
-
-  // Tag assignment posts a bare tag id (e.g. `2`) as the JSON body, which WebAPI's
-  // `/{conceptset|cohortdefinition}/{id}/tag/` endpoints require (they consume a
-  // primitive int). The d2e-compat WebAPI proxy sits behind a strict express.json
-  // body-parser that rejects a non-object JSON body ("Unexpected token '2', ... is
-  // not valid JSON"), so the assign 400s before reaching WebAPI and the tag never
-  // persists. Send the assign POST with a `application/json;` content-type (note the
-  // trailing empty parameter): media-typer treats it as malformed so body-parser's
-  // `application/json` matcher skips it and forwards the body raw, while Spring
-  // leniently parses it back to application/json and accepts the bare int. A plain
-  // `+json` suffix is not enough — the ConceptSet controller only consumes exactly
-  // application/json. Anchored on the stable endpoint literals; idempotent via the
-  // patched substring.
-  //
-  // Remove this once trex accepts the bare int itself (OHDSI/trex#212 parses the
-  // proxied body non-strict and re-serializes primitives); the header becomes
-  // unnecessary and this file has no bundle patches left.
-  const TAG_POST_PATCHES = [
-    [
-      'ur(`/conceptset/${e}/tag/`,{method:"POST",body:JSON.stringify(t)})',
-      'ur(`/conceptset/${e}/tag/`,{method:"POST",headers:{"Content-Type":"application/json;"},body:JSON.stringify(t)})',
-    ],
-    [
-      'Jt(`/cohortdefinition/${e}/tag/`,{method:"POST",body:JSON.stringify(t)})',
-      'Jt(`/cohortdefinition/${e}/tag/`,{method:"POST",headers:{"Content-Type":"application/json;"},body:JSON.stringify(t)})',
-    ],
-  ];
-  let tagPostPatched = 0;
-  for (const file of readdirSync(assetsDir)) {
-    if (!/\.js$/.test(file)) continue;
-    const p = join(assetsDir, file);
-    let txt = readFileSync(p, 'utf8');
-    let changed = false;
-    for (const [from, to] of TAG_POST_PATCHES) {
-      if (txt.includes(to)) continue;
-      if (!txt.includes(from)) continue;
-      txt = txt.split(from).join(to);
-      changed = true;
-    }
-    if (changed) { writeFileSync(p, txt); tagPostPatched++; }
-  }
-  console.log(`[postinstall] Set body-parser-skipping content-type on tag-assign POST in ${tagPostPatched} asset file(s)`);
-  requirePatched('tag-assign POST content-type', tagPostPatched);
-
-  if (missedPatches.length) {
-    console.error('[postinstall] ERROR: no asset matched these Atlas3 patches:', missedPatches.join(', '));
-    console.error('[postinstall] The @ohdsi/atlas3 pin likely changed and remangled the bundle.');
-    console.error('[postinstall] Re-derive each anchor from resources/atlas/assets/ and update scripts/postinstall.js.');
-    process.exit(1);
-  }
-}
+// Atlas3's built assets are served as published. Branding comes from
+// settings.theme in plugins.standalone.json (OHDSI/Atlas3#184), and the WebAPI
+// fixes this file used to graft into the bundle are upstream: the cache-status
+// retry and concept-set tag snapshot in OHDSI/Atlas3#183, and the bare-int tag
+// body in OHDSI/trex#212, which removed the reason to rewrite the request at
+// all. Nothing here depends on the minified output any more, so an atlas3 bump
+// can no longer silently stop applying.
 
 // Overlay d2e runtime config: point Atlas3 at WebAPI through d2e.
 const configLocalSrc = join(rootDir, 'config-local.json');
