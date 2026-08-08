@@ -50,6 +50,7 @@ jobs:
       is_pr_or_mg: ${{ steps.tag.outputs.is_pr_or_mg }}
       changes_src: ${{ steps.file_changes.outputs.src }}
       changes_rkernel: ${{ steps.file_changes.outputs.rkernel }}
+      changes_dataflow: ${{ steps.file_changes.outputs.dataflow }}
       changes_plugins: ${{ steps.file_changes.outputs.plugins }}
       changes_http_tests: ${{ steps.file_changes.outputs.http_tests }}
       changes_ui: ${{ steps.file_changes.outputs.ui }}
@@ -124,6 +125,14 @@ jobs:
               - "services/**"
               - "package.json"
               - "docker-compose.yml"
+              - ".github/workflows/docker-build-push.yaml"
+            # Everything the dataflow-gen-worker image bakes. Its Dockerfile
+            # COPYs only plugins/flows/* even though the build context is the
+            # repo root, so a change anywhere else cannot alter the result — and
+            # rebuilding it is the slowest job in the matrix (~1h50m).
+            dataflow:
+              - "plugins/flows/**"
+              - "services/alp-dataflow-gen-worker/**"
               - ".github/workflows/docker-build-push.yaml"
             rkernel:
               - "services/enterprise-gateway/CustomKernelManager/**"
@@ -211,6 +220,11 @@ jobs:
             DOCKER_BUILD_CONTEXT_PATH: .
             build_disable: ${{ (needs.setup.outputs.changes_rkernel != 'true') && 'true' || 'false' }}
           - AZ_REG_REPOSITORY: d2e-dataflow-gen-worker
+            # Slowest job in the matrix (~1h50m) and it rebuilt on every run,
+            # including changes it cannot possibly bake. Gate it on the paths it
+            # actually COPYs; a skipped run still publishes the tag from the
+            # canonical image, so the image set stays complete.
+            build_disable: ${{ (needs.setup.outputs.changes_dataflow != 'true') && 'true' || 'false' }}
             DOCKER_BUILD_FILE_PATH: ./services/alp-dataflow-gen-worker/Dockerfile
             # repo-root context: the image bakes plugins/flows (pixi envs + R)
             DOCKER_BUILD_CONTEXT_PATH: .
