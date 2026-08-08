@@ -1508,8 +1508,22 @@ jobs:
           fi
           if docker manifest inspect "$SRC" >/dev/null 2>&1; then
             docker buildx imagetools create -t "$DST" "$SRC"
+          elif docker manifest inspect "$DST" >/dev/null 2>&1; then
+            # The image was skipped this run (build_disable), so no RUN_TAG was
+            # pushed for it. Publish one from the canonical tag instead of
+            # leaving a hole: consumers ask for ONE tag across the whole set —
+            # docker-compose pulls every service at DOCKER_TAG_NAME, and trex's
+            # e2e resolves the newest tag that ALL images share. A single
+            # missing tag makes the entire set unusable, which surfaces far from
+            # here as "manifest unknown" on an image nobody touched.
+            #
+            # imagetools create copies the manifest server-side, so this costs a
+            # registry call rather than a rebuild, and keeps multi-arch lists
+            # intact.
+            echo "$SRC not present (build_disable); publishing it from $DST"
+            docker buildx imagetools create -t "$SRC" "$DST"
           else
-            echo "Source manifest $SRC not present (likely build_disable=true); skipping promotion."
+            echo "Neither $SRC nor $DST present; nothing to publish."
           fi
 
       # Multi-arch-aware cleanup: the per-arch child manifests of a manifest
