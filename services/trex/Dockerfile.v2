@@ -6,7 +6,7 @@
 # env-gated D2E_COMPAT layer (merged upstream), so the core is NOT vendored here —
 # this image only adds d2e's plugins, CDW data, logto, ONNX and DuckDB extensions.
 
-FROM ghcr.io/ohdsi/trexsql:sha-31979b12ff6f851df172716c60b41c74fdedcf50@sha256:ff693804900450456e2c871d5c2a09b31fc57b754677471e493ff5a099009df9 AS base
+FROM ghcr.io/ohdsi/trexsql:sha-e5ba40f9e8715ad399230927e07a407d5617c39e@sha256:2cf917a2b54fb63a679e3d8cea0ea1a71abaaeb3ddc414ebcd4eb07aac9172a7 AS base
 
 USER root
 WORKDIR /usr/src
