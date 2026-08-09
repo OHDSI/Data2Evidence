@@ -50,6 +50,7 @@ jobs:
       is_pr_or_mg: ${{ steps.tag.outputs.is_pr_or_mg }}
       changes_src: ${{ steps.file_changes.outputs.src }}
       changes_rkernel: ${{ steps.file_changes.outputs.rkernel }}
+      changes_dataflow: ${{ steps.file_changes.outputs.dataflow }}
       changes_plugins: ${{ steps.file_changes.outputs.plugins }}
       changes_http_tests: ${{ steps.file_changes.outputs.http_tests }}
       changes_ui: ${{ steps.file_changes.outputs.ui }}
@@ -124,6 +125,14 @@ jobs:
               - "services/**"
               - "package.json"
               - "docker-compose.yml"
+              - ".github/workflows/docker-build-push.yaml"
+            # Everything the dataflow-gen-worker image bakes. Its Dockerfile
+            # COPYs only plugins/flows/* even though the build context is the
+            # repo root, so a change anywhere else cannot alter the result — and
+            # rebuilding it is the slowest job in the matrix (~1h50m).
+            dataflow:
+              - "plugins/flows/**"
+              - "services/alp-dataflow-gen-worker/**"
               - ".github/workflows/docker-build-push.yaml"
             rkernel:
               - "services/enterprise-gateway/CustomKernelManager/**"
@@ -211,6 +220,11 @@ jobs:
             DOCKER_BUILD_CONTEXT_PATH: .
             build_disable: ${{ (needs.setup.outputs.changes_rkernel != 'true') && 'true' || 'false' }}
           - AZ_REG_REPOSITORY: d2e-dataflow-gen-worker
+            # Slowest job in the matrix (~1h50m) and it rebuilt on every run,
+            # including changes it cannot possibly bake. Gate it on the paths it
+            # actually COPYs; a skipped run still publishes the tag from the
+            # canonical image, so the image set stays complete.
+            build_disable: ${{ (needs.setup.outputs.changes_dataflow != 'true') && 'true' || 'false' }}
             DOCKER_BUILD_FILE_PATH: ./services/alp-dataflow-gen-worker/Dockerfile
             # repo-root context: the image bakes plugins/flows (pixi envs + R)
             DOCKER_BUILD_CONTEXT_PATH: .
@@ -908,7 +922,7 @@ jobs:
       - name: Pull docker compose images
         if: success() || failure()
         run: |
-          ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v develop -d ./plugins/functions pull
+          ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v develop pull
           docker images --format "table {{.ID}}\t{{.Repository}}\t{{.Tag}}"
 
       - name: Start services
@@ -921,7 +935,7 @@ jobs:
           max_attempts: 2
           retry_on: any
           command: |
-            ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }}  -d ./plugins/functions -c ./docker-compose-ci.yml start
+            ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }} -c ./docker-compose-ci.yml start
             DC_EXIT_CODE=$?
             DOCKER_STATUS_FILE=../docker-status-${GITHUB_RUN_ID:-ghRunId}-$(date '+%Y%m%dT%H%M%S').txt | tee -a $GITHUB_ENV
             docker ps --format {{.Names}},{{.Status}} 2> /dev/null | sort | tee $DOCKER_STATUS_FILE | tee -a $GITHUB_STEP_SUMMARY
@@ -940,7 +954,7 @@ jobs:
       - name: Logs
         if: success() || failure()
         run: |
-          ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }} -d ./plugins/functions logs
+          ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }} logs
 
       - name: Wait for d2e-trex healthy
         if: success() || failure()
@@ -982,7 +996,7 @@ jobs:
           max_attempts: 3
           retry_on: any
           command: |
-            ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }}  -d ./plugins/functions setupdemo
+            ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }}  setupdemo
             DC_EXIT_CODE=$?
             DOCKER_STATUS_FILE=../docker-status-${GITHUB_RUN_ID:-ghRunId}-$(date '+%Y%m%dT%H%M%S').txt | tee -a $GITHUB_ENV
             docker ps --format {{.Names}},{{.Status}} 2> /dev/null | sort | tee $DOCKER_STATUS_FILE | tee -a $GITHUB_STEP_SUMMARY
@@ -991,7 +1005,7 @@ jobs:
       - name: Logs
         if: success() || failure()
         run: |
-          ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }} -d ./plugins/functions logs
+          ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }} logs
 
       - name: Checkflow
         if: success() || failure()
@@ -1003,20 +1017,15 @@ jobs:
           max_attempts: 1
           retry_on: any
           command: |
-            ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }} -d ./plugins/functions checkflow
+            ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }} checkflow
             DC_EXIT_CODE=$?
             [ $DC_EXIT_CODE = 0 ] || { echo EXIT DC_EXIT_CODE=$DC_EXIT_CODE && exit $DC_EXIT_CODE; }
-
-      - name: Flow base docker-compose-local
-        if: needs.setup.outputs.changes_flow_package_json == 'true' || contains(github.base_ref, 'release/')
-        run: |
-          sed -i 's|# - ./plugins/flows/base/package.json:/usr/src/plugins/d2e-flows/package.json|- ./plugins/flows/base/package.json:/usr/src/plugins/d2e-flows/package.json|' docker-compose-local.yml
 
       - name: Restart d2e services
         if: success() || failure()
         run: |
-          ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }} -d ./plugins/functions -c ./docker-compose-ci.yml stop
-          ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }} -d ./plugins/functions -c ./docker-compose-ci.yml start
+          ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }} -c ./docker-compose-ci.yml stop
+          ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }} -c ./docker-compose-ci.yml start
 
 
       - name: Wait for webapi-init to complete
@@ -1102,7 +1111,7 @@ jobs:
       - name: Logs
         if: success() || failure()
         run: |
-          ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }} -d ./plugins/functions logs
+          ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }} logs
 
       - name: Publish Test Report
         if: always()
@@ -1114,7 +1123,7 @@ jobs:
       - name: Stop d2e services
         if: success() || failure()
         run: |
-          ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }} -d ./plugins/functions stop
+          ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }} stop
 
       - name: Prune system
         if: always()
@@ -1527,8 +1536,22 @@ jobs:
           fi
           if docker manifest inspect "$SRC" >/dev/null 2>&1; then
             docker buildx imagetools create -t "$DST" "$SRC"
+          elif docker manifest inspect "$DST" >/dev/null 2>&1; then
+            # The image was skipped this run (build_disable), so no RUN_TAG was
+            # pushed for it. Publish one from the canonical tag instead of
+            # leaving a hole: consumers ask for ONE tag across the whole set —
+            # docker-compose pulls every service at DOCKER_TAG_NAME, and trex's
+            # e2e resolves the newest tag that ALL images share. A single
+            # missing tag makes the entire set unusable, which surfaces far from
+            # here as "manifest unknown" on an image nobody touched.
+            #
+            # imagetools create copies the manifest server-side, so this costs a
+            # registry call rather than a rebuild, and keeps multi-arch lists
+            # intact.
+            echo "$SRC not present (build_disable); publishing it from $DST"
+            docker buildx imagetools create -t "$SRC" "$DST"
           else
-            echo "Source manifest $SRC not present (likely build_disable=true); skipping promotion."
+            echo "Neither $SRC nor $DST present; nothing to publish."
           fi
 
       # Multi-arch-aware cleanup: the per-arch child manifests of a manifest
