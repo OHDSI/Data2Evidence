@@ -60,15 +60,7 @@ export const permittedUserCheck =
       if (userId) {
         if (opts.isIdpUserId) {
           const userService = Container.get(UserService)
-          let user = await userService.getUserByIdpUserId(userId)
-          // During first login, a concurrent request may be provisioning
-          // this user. Retry briefly before failing.
-          if (!user) {
-            for (let i = 0; i < 3 && !user; i++) {
-              await new Promise(r => setTimeout(r, (i + 1) * 1000))
-              user = await userService.getUserByIdpUserId(userId)
-            }
-          }
+          const user = await userService.getUserByIdpUserId(userId)
           if (!user) {
             logger.error(`IDP user ID ${userId} not found`)
             throw `IDP user ID ${userId} not found`
