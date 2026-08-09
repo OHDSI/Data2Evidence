@@ -1,0 +1,27 @@
+[project]
+name = "cohort-discovery-flow"
+version = "0.0.1"
+requires-python = "==3.12.*"
+dependencies = ["prefect"]
+
+[tool.pixi.workspace]
+channels = ["conda-forge"]
+platforms = ["linux-64"]
+
+[tool.pixi.dependencies]
+python = "3.12.*"
+
+[tool.pixi.feature.bunny.dependencies]
+python = "3.13.*"
+pytest = "*"
+
+# Bunny is a GIT dependency (not on PyPI). Pin to v1.7.0 (commit a4121dc…).
+[tool.pixi.feature.bunny.pypi-dependencies]
+hutch-bunny = { git = "https://github.com/Health-Informatics-UoN/hutch-bunny.git", rev = "a4121dc7a37660638763ed20b11d8882a7ab8edd" }
+
+[tool.pixi.environments]
+default = { solve-group = "default" }
+bunny = { features = ["bunny"], no-default-feature = true }
+
+[tool.pytest.ini_options]
+markers = ["integration: end-to-end tests requiring external fixtures (DuckDB OMOP + stub relay)"]
