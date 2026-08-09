@@ -24,7 +24,7 @@ export const defaultMetadata: ConnectorMetadata = {
     'zh-CN': 'OpenID Connect 1.0 是基于 OAuth 2.0 协议的一个简单身份层。',
   },
   readme: './README.md',
-  isStandard: true,
+  isStandard: false,
   formItems: [
     authorizationEndpointFormItem,
     tokenEndpointFormItem,

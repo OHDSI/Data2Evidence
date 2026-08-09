@@ -27,11 +27,11 @@ try {
 const root = ReactDOM.createRoot(document.getElementById("root") as HTMLElement);
 root.render(
   <StrictMode>
-    <NavigationGuardRouter basename="/d2e/portal">
-      <ThemeProvider theme={theme}>
-        <CssBaseline />
+    <ThemeProvider theme={theme}>
+      <CssBaseline />
+      <NavigationGuardRouter basename="/d2e/portal">
         <App />
-      </ThemeProvider>
-    </NavigationGuardRouter>
+      </NavigationGuardRouter>
+    </ThemeProvider>
   </StrictMode>
 );
