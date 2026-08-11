@@ -835,6 +835,11 @@ const TerminologyList: FC<TerminologyListProps> = ({
         Cell: ({ row }: { row: any }) => {
           const terminology =
             row.original as FhirValueSetExpansionContainsWithExt;
+          // Section header row ("Suggested concepts" / "All concepts") - render the label;
+          // the row props span this cell across all columns.
+          if ((terminology as any).__section) {
+            return <span>{(terminology as any).__section}</span>;
+          }
           if (mode === "CONCEPT_MAPPING") {
             const isChecked =
               mappingSelectedConcept?.conceptId === terminology.conceptId;
@@ -1031,9 +1036,11 @@ const TerminologyList: FC<TerminologyListProps> = ({
   const displayData =
     mode === "CONCEPT_MAPPING" && page === 0 && (suggestedConcepts?.length ?? 0) > 0
       ? [
+          { __section: getText(i18nKeys.TERMINOLOGY__SUGGESTED_CONCEPTS) } as unknown as FhirValueSetExpansionContainsWithExt,
           ...suggestedConcepts!.map(
             (c) => ({ ...c, _suggested: true } as unknown as FhirValueSetExpansionContainsWithExt),
           ),
+          { __section: getText(i18nKeys.TERMINOLOGY__ALL_CONCEPTS) } as unknown as FhirValueSetExpansionContainsWithExt,
           ...listData,
         ]
       : listData;
@@ -1068,35 +1075,57 @@ const TerminologyList: FC<TerminologyListProps> = ({
     manualFiltering: mode === "CONCEPT_MAPPING",
     state: { columnFilters, columnOrder, isLoading, sorting },
     enablePagination: false, // Use TablePagination instead of built in
-    muiTableBodyRowProps: ({ row, staticRowIndex }) => ({
-      onClick: () => {
-        if (isAtlas) {
-          return;
-        }
-        const terminology = row.original;
-        onConceptClick(terminology.conceptId);
-      },
-      sx: {
-        cursor: isAtlas ? "auto" : "pointer", //you might want to change the cursor too when adding an onClick
-        "&.MuiTableRow-root": {
-          backgroundColor:
-            selectedConceptId === row.original.conceptId
-              ? "#ccdef1 !important"
-              : (row.original as any)._suggested
-              ? "#eef0fb !important"
-              : staticRowIndex % 2
-              ? "#fafafa  !important"
-              : "white !important",
-          cursor:
-            selectedConceptId === row.original.conceptId || isAtlas
-              ? "auto"
-              : "pointer",
+    muiTableBodyRowProps: ({ row, staticRowIndex }) => {
+      // Full-width "Suggested concepts" / "All concepts" section header rows (injected into
+      // displayData): span the first cell across all columns, hide the rest, no click/hover.
+      if ((row.original as any).__section) {
+        return {
+          sx: {
+            cursor: "default",
+            "&.MuiTableRow-root, &.MuiTableRow-root:hover": {
+              backgroundColor: "#e6ebf3 !important",
+            },
+            "& > td": { display: "none !important" },
+            "& > td:first-of-type": {
+              display: "flex !important",
+              gridColumn: "1 / -1",
+              fontWeight: 600,
+              color: "#000080",
+              padding: "6px 8px !important",
+            },
+          },
+        };
+      }
+      return {
+        onClick: () => {
+          if (isAtlas) {
+            return;
+          }
+          const terminology = row.original;
+          onConceptClick(terminology.conceptId);
         },
-        "&.MuiTableRow-root:hover": {
-          backgroundColor: "#f2f0f1 !important",
+        sx: {
+          cursor: isAtlas ? "auto" : "pointer", //you might want to change the cursor too when adding an onClick
+          "&.MuiTableRow-root": {
+            backgroundColor:
+              selectedConceptId === row.original.conceptId
+                ? "#ccdef1 !important"
+                : (row.original as any)._suggested
+                ? "#eef0fb !important"
+                : staticRowIndex % 2
+                ? "#fafafa  !important"
+                : "white !important",
+            cursor:
+              selectedConceptId === row.original.conceptId || isAtlas
+                ? "auto"
+                : "pointer",
+          },
+          "&.MuiTableRow-root:hover": {
+            backgroundColor: "#f2f0f1 !important",
+          },
         },
-      },
-    }),
+      };
+    },
     muiTableBodyCellProps: {
       sx: {
         whiteSpace: "normal",
@@ -1148,14 +1177,6 @@ const TerminologyList: FC<TerminologyListProps> = ({
           />
         </div>
       ) : null}
-      {/* "Suggested concepts" caption; the rows themselves are injected at the top of the
-          table (see displayData) so their columns line up with the search results. Only on
-          page 1 of CONCEPT_MAPPING. */}
-      {mode === "CONCEPT_MAPPING" && page === 0 && (suggestedConcepts?.length ?? 0) > 0 && (
-        <div style={{ fontWeight: 600, color: "#000080", padding: "4px 8px", flexShrink: 0 }}>
-          {getText(i18nKeys.TERMINOLOGY__SUGGESTED_CONCEPTS)}
-        </div>
-      )}
       <MaterialReactTable table={table} />
       {terminologiesCount ? (
         <TablePagination
