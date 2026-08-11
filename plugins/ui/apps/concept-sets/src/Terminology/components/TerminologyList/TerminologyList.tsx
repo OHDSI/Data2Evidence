@@ -1114,11 +1114,6 @@ const TerminologyList: FC<TerminologyListProps> = ({
       ]
     : listData;
 
-  // Pin the "Suggested concepts" header + the suggested rows to the top (sticky). The
-  // "All concepts" header and the search results stay in the scrolling body.
-  const pinnedTopRowIds = showSuggestedSection
-    ? ["__section_suggested", ...suggestedConcepts!.map((c) => `sugg-${c.conceptId}`)]
-    : [];
 
   const table = useMaterialReactTable({
     layoutMode: "grid",
@@ -1156,17 +1151,7 @@ const TerminologyList: FC<TerminologyListProps> = ({
       if (r._suggested) return `sugg-${r.conceptId}`;
       return `row-${r.conceptId}`;
     },
-    // Pin the Suggested-concepts header + suggested rows to the top, sticky, across all pages.
-    enableRowPinning: showSuggestedSection,
-    rowPinningDisplayMode: "sticky",
-    keepPinnedRows: true,
-    state: {
-      columnFilters,
-      columnOrder,
-      isLoading,
-      sorting,
-      rowPinning: { top: pinnedTopRowIds },
-    },
+    state: { columnFilters, columnOrder, isLoading, sorting },
     enablePagination: false, // Use TablePagination instead of built in
     muiTableBodyRowProps: ({ row, staticRowIndex }) => {
       // Full-width "Suggested concepts" / "All concepts" section header rows (injected into
