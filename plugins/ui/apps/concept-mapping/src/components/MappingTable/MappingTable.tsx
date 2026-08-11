@@ -668,10 +668,18 @@ export const MappingTable: FC<MappingTableProps> = ({
     if (formattedRows.length === 0) return;
 
     setIsLoading(true);
-    const result = await api.terminology.getStandardConcepts(formattedRows, selectedDatasetId!);
-
-    dispatch({ type: ACTION_TYPES.SET_MULTIPLE_MAPPING, payload: result });
-    setIsLoading(false);
+    try {
+      const result = await api.terminology.getStandardConcepts(formattedRows, selectedDatasetId!);
+      dispatch({ type: ACTION_TYPES.SET_MULTIPLE_MAPPING, payload: result });
+    } catch (e) {
+      // Always clear loading on failure (e.g. an expired token after the drawer sat open a
+      // while) - otherwise isLoading stays true and the Recommend button is stuck disabled
+      // with a spinner on reopen.
+      // eslint-disable-next-line no-console
+      console.error("Recommend concepts failed", e);
+    } finally {
+      setIsLoading(false);
+    }
   }, [dispatch, domainId, getAvailableRows, selectedDatasetId, sourceName]);
 
   const didAutoPopulate = React.useRef(false);
