@@ -62,6 +62,8 @@ export const i18nDefault = {
     TERMINOLOGY__SELECTED_CONCEPTS: "Selected concepts",
     TERMINOLOGY__SHARED: "Shared",
     TERMINOLOGY__APPROVE: "Approve",
+    TERMINOLOGY__SUGGESTED_CONCEPTS: "Suggested concepts",
+    TERMINOLOGY__ALL_CONCEPTS: "All concepts",
     TERMINOLOGY__SUGGEST_CONCEPTS: "Suggest a concepts",
     TERMINOLOGY__SUGGEST: "Suggest",
     TERMINOLOGY__SOURCE: "Source",
