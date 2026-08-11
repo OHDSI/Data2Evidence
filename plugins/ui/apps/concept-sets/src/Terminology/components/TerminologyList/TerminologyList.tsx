@@ -1024,10 +1024,24 @@ const TerminologyList: FC<TerminologyListProps> = ({
     mappingSelectedConcept,
   ]);
 
+  // In CONCEPT_MAPPING, show the row's existing suggestions as real rows at the top of the
+  // table (page 1 only) so their columns line up with the search results. We only store
+  // id/code/name/domain/vocabulary per suggestion, so the Score/Concept/Class/Validity/RC
+  // columns render blank for them. `_suggested` drives the row tint.
+  const displayData =
+    mode === "CONCEPT_MAPPING" && page === 0 && (suggestedConcepts?.length ?? 0) > 0
+      ? [
+          ...suggestedConcepts!.map(
+            (c) => ({ ...c, _suggested: true } as unknown as FhirValueSetExpansionContainsWithExt),
+          ),
+          ...listData,
+        ]
+      : listData;
+
   const table = useMaterialReactTable({
     layoutMode: "grid",
     columns,
-    data: listData,
+    data: displayData,
     localization: {
       noRecordsToDisplay: getText(i18nKeys.TERMINOLOGY_LIST__EMPTY_TABLE)
     },
@@ -1063,6 +1077,8 @@ const TerminologyList: FC<TerminologyListProps> = ({
           backgroundColor:
             selectedConceptId === row.original.conceptId
               ? "#ccdef1 !important"
+              : (row.original as any)._suggested
+              ? "#eef0fb !important"
               : staticRowIndex % 2
               ? "#fafafa  !important"
               : "white !important",
@@ -1127,44 +1143,12 @@ const TerminologyList: FC<TerminologyListProps> = ({
           />
         </div>
       ) : null}
-      {mode === "CONCEPT_MAPPING" && (suggestedConcepts?.length ?? 0) > 0 && (
-        <div style={{ flexShrink: 0, marginBottom: 8 }}>
-          <div style={{ fontWeight: 600, color: "#000080", padding: "4px 8px" }}>
-            {getText(i18nKeys.TERMINOLOGY__SUGGESTED_CONCEPTS)}
-          </div>
-          {suggestedConcepts!.map((concept) => {
-            const isSelected = mappingSelectedConcept?.conceptId === concept.conceptId;
-            return (
-              <div
-                key={concept.conceptId}
-                onClick={() => onSelectConceptId?.(concept as unknown as FhirValueSetExpansionContainsWithExt)}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 16,
-                  padding: "4px 8px",
-                  fontSize: 14,
-                  color: "#000080",
-                  cursor: "pointer",
-                  backgroundColor: isSelected ? "#E5E6F2" : "transparent",
-                }}
-              >
-                <Radio
-                  size="small"
-                  checked={isSelected}
-                  onChange={() => onSelectConceptId?.(concept as unknown as FhirValueSetExpansionContainsWithExt)}
-                />
-                <div style={{ width: 90 }}>{concept.conceptId}</div>
-                <div style={{ width: 90 }}>{concept.conceptCode}</div>
-                <div style={{ flex: 1, minWidth: 120 }}>{concept.conceptName}</div>
-                <div style={{ width: 120 }}>{concept.vocabularyId}</div>
-                <div style={{ width: 120 }}>{concept.domainId}</div>
-              </div>
-            );
-          })}
-          <div style={{ fontWeight: 600, color: "#000080", padding: "4px 8px", marginTop: 8 }}>
-            {getText(i18nKeys.TERMINOLOGY__ALL_CONCEPTS)}
-          </div>
+      {/* "Suggested concepts" caption; the rows themselves are injected at the top of the
+          table (see displayData) so their columns line up with the search results. Only on
+          page 1 of CONCEPT_MAPPING. */}
+      {mode === "CONCEPT_MAPPING" && page === 0 && (suggestedConcepts?.length ?? 0) > 0 && (
+        <div style={{ fontWeight: 600, color: "#000080", padding: "4px 8px", flexShrink: 0 }}>
+          {getText(i18nKeys.TERMINOLOGY__SUGGESTED_CONCEPTS)}
         </div>
       )}
       <MaterialReactTable table={table} />
