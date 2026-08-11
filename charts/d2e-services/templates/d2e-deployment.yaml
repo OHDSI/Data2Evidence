@@ -411,6 +411,36 @@ spec:
                   key: AZ_AUTO_GRANT_RESEARCHER_BY_DATASET_CODES
             - name: USER_MGMT__ROLE_SOURCE
               value: "logto"
+            - name: USERMGMT__AUTO_PROVISION_ENABLED
+              value: "false"
+            - name: USERMGMT__AUTO_PROVISION_CONNECTORS
+              value: ""
+            - name: USERMGMT__AUTO_PROVISION_DEFAULT_TENANT_ID
+              value: ""
+            - name: USERMGMT__AUTO_PROVISION_ROLE_HOOK_URL
+              value: ""
+            - name: USERMGMT__AUTO_PROVISION_ROLE_HOOK_SECRET
+              value: ""
+            - name: USERMGMT__AUTO_PROVISION_ROLE_HOOK_TIMEOUT_MS
+              value: "5000"
+            - name: USERMGMT__ENTITLEMENTS_SYNC_ENABLED
+              value: "false"
+            - name: USERMGMT__ENTITLEMENTS_PHYSIONET_BASE_URL
+              value: ""
+            - name: USERMGMT__ENTITLEMENTS_TIMEOUT_MS
+              value: "10000"
+            - name: USERMGMT__ENTITLEMENTS_TOKEN_CLAIM
+              value: "physionet_access_token"
+            - name: USERMGMT__ENTITLEMENTS_REFRESH_TOKEN_CLAIM
+              value: "physionet_refresh_token"
+            - name: USERMGMT__ENTITLEMENTS_PHYSIONET_CLIENT_ID
+              value: ""
+            - name: USERMGMT__ENTITLEMENTS_PHYSIONET_CLIENT_SECRET
+              value: ""
+            - name: USERMGMT__ENTITLEMENTS_PHYSIONET_TOKEN_PATH
+              value: "/oauth/token/"
+            - name: USERMGMT__ENTITLEMENTS_DATASET_MAPPING
+              value: ""
             - name: NETWORK_COGNITO_DOMAIN
               value: ""
             - name: NETWORK_CENTRAL_API_URL
