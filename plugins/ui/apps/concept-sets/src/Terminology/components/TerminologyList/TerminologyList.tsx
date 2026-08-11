@@ -1236,6 +1236,9 @@ const TerminologyList: FC<TerminologyListProps> = ({
         wordWrap: "break-word",
         color: "#000080",
         border: "none",
+        // Kill MRT's sticky-pinned-row separator shadow, which shows as a gap/line between
+        // the pinned Suggested block and the scrolling All-concepts rows.
+        boxShadow: "none !important",
       },
     },
     muiTableContainerProps: {
