@@ -4,13 +4,14 @@ import traceback
 from typing import Any
 
 from prefect import flow, task
+from prefect.cache_policies import NONE
 from prefect.variables import Variable
 from prefect.logging import get_run_logger
 
 from .utils import *
-from .fts import create_fts_index_task
+from .fts import create_fts_index_task, create_fts_index
 from .versioninfo import update_dataset_metadata
-from .copy import create_schema_tables_task, create_schema_if_not_exists_task
+from .copy import create_schema_tables_task, create_schema_if_not_exists_task, create_schema_if_not_exists, create_schema_tables
 from .types import CreateCacheOptions, CreateCDWValidationConfig, CacheFlowAction, CopyParameters
 
 from _shared_flow_utils.dao.DBDao import DBDao
@@ -47,6 +48,38 @@ def create_results_cache_flow(options: CreateCacheOptions):
     final_options = update_parameters(new_options, 'snapshot_schema_name', new_options.schema_name)
     create_cache_flow(final_options)
 
+def normalize_columns_to_lowercase(file_conn, copy_params: CopyParameters, logger):
+    """
+    Snowflake preserves UPPERCASE identifiers, so the offline `SELECT *` copy lands
+    UPPERCASE column names in the cache (e.g. CDM_VERSION, CONCEPT_ID). Every D2E consumer
+    expects lowercase (postgres/OMOP convention) and does `row["cdm_version"]`-style lookups
+    on result sets, which miss UPPERCASE keys. Rename any non-lowercase column so the
+    Snowflake cache is a drop-in standard OMOP cache and consumers need no per-dialect casing.
+    DuckDB allows case-only renames even though identifiers resolve case-insensitively.
+    """
+    db = copy_params.target_database
+    schema = copy_params.target_schema
+    rows = file_conn.execute(
+        """
+        SELECT table_name, column_name
+        FROM information_schema.columns
+        WHERE table_catalog = ? AND table_schema = ?
+        """,
+        [db, schema],
+    ).fetchall()
+    renamed = 0
+    for table_name, column_name in rows:
+        if column_name != column_name.lower():
+            file_conn.execute(
+                f'ALTER TABLE "{db}"."{schema}"."{table_name}" '
+                f'RENAME COLUMN "{column_name}" TO "{column_name.lower()}"'
+            )
+            renamed += 1
+    logger.info(
+        f"Normalized {renamed} column name(s) to lowercase in '{db}'.'{schema}'."
+    )
+
+
 def create_cache_flow(options: CreateCacheOptions):
     logger = get_run_logger()
     # Log parameters excluding sensitive patient and timestamp data
@@ -66,9 +99,14 @@ def create_cache_flow(options: CreateCacheOptions):
         logger.info("Loading Google service account credentials for BigQuery access...")
         DaoBase.create_service_account_credentials_file(db_credentials)
 
+    # Write the cache into the portal-assigned cache_id catalog/file so that
+    # "Update metadata" (which reads the {cacheId} catalog) finds it. Fallback
+    # keeps HANA (cacheId == databaseCode) and legacy callers unchanged.
+    cache_database = options.cache_id or options.database_code
+
     copy_params = CopyParameters(
         source_database=f"{options.database_code}__srcdb",
-        target_database=options.database_code,
+        target_database=cache_database,
         source_schema=options.schema_name,
         target_schema=options.target_schema_name,
         table_filter=options.snapshot_copy_config.table_config_to_dict() if options.snapshot_copy_config else None,
@@ -81,41 +119,58 @@ def create_cache_flow(options: CreateCacheOptions):
     )
 
     duckdb_file_path = resolve_duckdb_file_path(
-        options.database_code, Variable.get("duckdb_data_folder")
+        cache_database, Variable.get("duckdb_data_folder")
     )
-    
-    if not options.use_trex_connection:
-        logger.info(f"Connecting to Cache file directly at '{duckdb_file_path}'...")
 
-        # Creates file if it does not exist
-        logger.info(f"Checking if cache file exists at '{duckdb_file_path}'...")
+    if dbdao.dialect == SupportedDatabaseDialects.SNOWFLAKE.value:
+        logger.info("Snowflake: building cache via single-connection offline DuckDB path.")
+        # trex serves and attaches caches by cache_id (<cache_id>.db + catalog <cache_id>), not
+        # database_code. Build the offline cache into that same file/catalog so every cache
+        # consumer (terminology-svc, analytics-svc, DQD/DC) resolves it. Fall back to
+        # database_code only for legacy rows without a cache_id.
+        sf_catalog = options.cache_id or options.database_code
+        duckdb_file_path = resolve_duckdb_file_path(
+            sf_catalog, Variable.get("duckdb_data_folder")
+        )
+        copy_params.target_database = sf_catalog
+        # A Snowflake source holds CDM data only; a results schema (e.g. CDM_results) has no
+        # source counterpart — results are written cache-side by DQD/DC. When the source
+        # schema is absent (the results-cache pass), create the empty schema in the cache and
+        # skip the copy; Snowflake raises on SHOW TABLES for a missing schema rather than
+        # returning an empty list. Case-insensitive match: Snowflake folds identifiers.
+        existing_schemas = [s.lower() for s in dbdao.get_schema_names()]
+        source_schema_exists = copy_params.source_schema.lower() in existing_schemas
         with duckdb.connect(duckdb_file_path) as file_conn:
             load_extensions(write_conn=file_conn, dialect=dbdao.dialect, trex_sql=False)
-
-            attach_to_source_db(dbdao, file_conn, copy_params.source_database)
-
-            duckdb_file_exists = check_if_file_exists(duckdb_file_path)
-    
-            if not duckdb_file_exists:
-                # If the file doesn't exist do a one time copy of all schemas in database
+            create_schema_if_not_exists(file_conn, copy_params, logger)
+            if source_schema_exists:
+                attach_to_source_db(dbdao, file_conn, copy_params.source_database)
+                create_schema_tables(file_conn, dbdao, copy_params, logger)
+                normalize_columns_to_lowercase(file_conn, copy_params, logger)
+                create_fts_index(file_conn, copy_params, logger)
+            else:
                 logger.info(
-                    f"Cache file does not exist. Copying all schemas from '{options.database_code}' to cache through direct file connection."
+                    f"Source schema '{copy_params.source_schema}' not found on the Snowflake "
+                    "source; created empty schema in cache and skipped table copy "
+                    "(results schema has no source counterpart)."
                 )
+    elif not options.use_trex_connection:
+        logger.info(f"Connecting to Cache file directly at '{duckdb_file_path}'...")
+        with duckdb.connect(duckdb_file_path) as file_conn:
+            load_extensions(write_conn=file_conn, dialect=dbdao.dialect, trex_sql=False)
+            attach_to_source_db(dbdao, file_conn, copy_params.source_database)
+            duckdb_file_exists = check_if_file_exists(duckdb_file_path)
+            if not duckdb_file_exists:
+                logger.info(f"Cache file does not exist. Copying all schemas from '{options.database_code}'.")
                 copy_all_schemas(duckdb_file_path, dbdao, copy_params)
-
-
-
     else:
         logger.info("Using TREX SQL connection to cache")
-
         create_schema_if_not_exists_task(options.use_trex_connection, copy_params, duckdb_file_path)
-
         create_schema_tables_task(options.use_trex_connection, dbdao, copy_params, duckdb_file_path)
-
         create_fts_index_task(options.use_trex_connection, copy_params, duckdb_file_path)
 
 
-@task(log_prints=True, task_run_name="copy_all_schemas_from_{read_conn.database_code}")
+@task(log_prints=True, task_run_name="copy_all_schemas_from_{read_conn.database_code}", cache_policy=NONE)
 def copy_all_schemas(duckdb_file_path: str, read_conn: Any, copy_params: CopyParameters):
     logger = get_run_logger()
     logger.info(f"Starting schema copy for database '{read_conn.database_code}'...")
@@ -201,7 +256,7 @@ def create_cdw_validation_config_plugin(options: CreateCDWValidationConfig):
     create_fts_index_task(options.use_trex_connection, copy_params, duckdb_file_path)
 
 
-@task(log_prints=True, task_run_name="attach_to_source_db_{read_conn.database_code}")
+@task(log_prints=True, task_run_name="attach_to_source_db_{read_conn.database_code}", cache_policy=NONE)
 def attach_to_source_db(read_conn: any, write_conn: any, database_name: str):
     logger = get_run_logger()
     logger.info(f"Attaching to source database '{read_conn.database_code}' as '{database_name}'...")
@@ -213,6 +268,40 @@ def attach_to_source_db(read_conn: any, write_conn: any, database_name: str):
             attach_query = f"ATTACH 'dbname={read_credentials.databaseName} user={read_credentials.readUser} password={read_credentials.readPassword.get_secret_value()} host={read_credentials.host} port={read_credentials.port}' AS {database_name} (TYPE postgres, READ_ONLY);"
         case SupportedDatabaseDialects.BIGQUERY.value:
             attach_query = f"ATTACH 'project={read_credentials.host}' AS {database_name} (TYPE bigquery, READ_ONLY);"
+        case SupportedDatabaseDialects.SNOWFLAKE.value:
+            # AUTH_TYPE 'key_pair' is required by the community snowflake extension for
+            # key-pair auth (matches the trex attach layer). The Snowflake user is the
+            # Admin credential username; the PEM private key travels in db_extra
+            # (read_credentials.privateKey), mirroring BigQuery's service-account key —
+            # a PEM is too long for the RSA-encrypted credential store.
+            # host carries the account identifier. Optional clauses are only emitted when
+            # set. Single quotes are escaped to keep the SECRET SQL well-formed.
+            def _sf_q(value):
+                return str(value).replace("'", "''")
+
+            secret_parts = [
+                "TYPE snowflake",
+                f"ACCOUNT '{_sf_q(read_credentials.host)}'",
+                f"USER '{_sf_q(read_credentials.adminUser)}'",
+                "AUTH_TYPE 'key_pair'",
+                f"PRIVATE_KEY '{_sf_q(read_credentials.privateKey.get_secret_value())}'",
+                f"DATABASE '{_sf_q(read_credentials.databaseName)}'",
+            ]
+            if read_credentials.privateKeyPassphrase:
+                secret_parts.append(
+                    f"PRIVATE_KEY_PASSPHRASE '{_sf_q(read_credentials.privateKeyPassphrase.get_secret_value())}'"
+                )
+            if read_credentials.warehouse:
+                secret_parts.append(f"WAREHOUSE '{_sf_q(read_credentials.warehouse)}'")
+            if read_credentials.snowflakeSchema:
+                secret_parts.append(f"SCHEMA '{_sf_q(read_credentials.snowflakeSchema)}'")
+            if read_credentials.role:
+                secret_parts.append(f"ROLE '{_sf_q(read_credentials.role)}'")
+            execute_statement(
+                write_conn,
+                f"CREATE OR REPLACE SECRET {database_name}_secret ({', '.join(secret_parts)})",
+            )
+            attach_query = f"ATTACH '' AS {database_name} (TYPE snowflake, SECRET {database_name}_secret, READ_ONLY);"
         case _:
             raise ValueError(f"Unsupported dialect: {read_conn.dialect}")
 
@@ -221,7 +310,7 @@ def attach_to_source_db(read_conn: any, write_conn: any, database_name: str):
     logger.info(f"Successfully attached to source database '{read_conn.database_code}' as '{database_name}'!")
 
 
-@task(log_prints=True, task_run_name="load_extensions_{dialect}")
+@task(log_prints=True, task_run_name="load_extensions_{dialect}", cache_policy=NONE)
 def load_extensions(write_conn: any, dialect: str, trex_sql: bool = True):
     """
     Loads the necessary extensions based on the dialect and whether Trex SQL is used.
@@ -242,6 +331,11 @@ def load_extensions(write_conn: any, dialect: str, trex_sql: bool = True):
                 execute_statement(write_conn, "INSTALL bigquery FROM community;")
                 execute_statement(write_conn, "LOAD bigquery;")
                 logger.debug("BigQuery extensions loaded successfully.")
+            case SupportedDatabaseDialects.SNOWFLAKE.value:
+                logger.debug("Installing and loading Snowflake extensions for Trex SQL.")
+                execute_statement(write_conn, "INSTALL snowflake FROM community;")
+                execute_statement(write_conn, "LOAD snowflake;")
+                logger.debug("Snowflake extensions loaded successfully.")
             case _:
                 raise ValueError(f"Scan extension not supported for dialect: {dialect}")
     else:
@@ -261,6 +355,12 @@ def load_extensions(write_conn: any, dialect: str, trex_sql: bool = True):
                 write_conn.install_extension("bigquery", repository="community")
                 write_conn.load_extension("bigquery")
                 logger.debug("BigQuery scan extension loaded successfully.")
+            case SupportedDatabaseDialects.SNOWFLAKE.value:
+                logger.debug("Installing and loading Snowflake scan extension.")
+                # Todo: Requires internet connection (community extension)
+                write_conn.install_extension("snowflake", repository="community")
+                write_conn.load_extension("snowflake")
+                logger.debug("Snowflake scan extension loaded successfully.")
             case _:
                 raise ValueError(f"Scan extension not supported for dialect: {dialect}")
 

@@ -21,6 +21,10 @@ export interface IMRIRequest extends Request {
     swagger: any;
     fileName?: string;
     usage?: "EXPORT";
+    paConfigId?: string;
+    paConfigVersion?: string;
+    cdmConfigId?: string;
+    cdmConfigVersion?: string;
 }
 export interface Map<T> {
     [key: string]: T;
@@ -401,6 +405,17 @@ export interface StudiesDbMetadata {
     studies: StudyDbMetadata[];
 }
 
+export interface PABackendConfigResponse {
+    meta: {
+        configId: string;
+        configVersion: string;
+        dependentConfig: {
+            configId: string;
+            configVersion: string;
+        };
+    };
+}
+
 export type QuerySvcResultType = {
     queryString: string;
     queryObject: QueryObjectType;
@@ -484,4 +499,5 @@ export enum ANALYTICS_DB_DIALECTS {
     HANA = "hana",
     POSTGRES = "postgresql",
     BIGQUERY = "bigquery",
+    SNOWFLAKE = "snowflake",
 }

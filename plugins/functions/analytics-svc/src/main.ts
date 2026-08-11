@@ -32,6 +32,11 @@ import PortalServerAPI from "./api/PortalServerAPI";
 import { env } from "./env";
 import addCorrelationIDToHeader from "./middleware/AddCorrelationId.ts";
 import { parseValueForPrototypePollutingAssignment } from "./utils/utils";
+import { getAuditUserIdFromRequest } from "./utils/AuditLogger.ts";
+import {
+    createCdmSqlAuditConnection,
+    createCdmSqlAuditContext,
+} from "./utils/CdmSqlAuditLogger.ts";
 dotenv.config();
 const log = console; //Logger.CreateLogger("analytics-log");
 const mriConfigConnection = new MriConfigConnection(
@@ -151,16 +156,43 @@ const initRoutes = async (app: express.Application) => {
                     credentials = req.dbCredentials.studyAnalyticsCredential;
                 }
 
-                if (credentials.dialect === ANALYTICS_DB_DIALECTS.HANA) {
-                    req.dbConnections = await getDBConnections({
-                        analyticsCredentials: credentials,
-                        userObj,
-                    });
-                } else {
-                    req.dbConnections = getTrexDbConnection({
-                        analyticsCredentials: credentials,
-                    });
-                }
+                const dbConnections =
+                    credentials.dialect === ANALYTICS_DB_DIALECTS.HANA
+                        ? await getDBConnections({
+                              analyticsCredentials: credentials,
+                              userObj,
+                              sessionVariables: {
+                                  paConfigId: req.paConfigId,
+                                  paConfigVersion: req.paConfigVersion,
+                                  cdmConfigId: req.cdmConfigId,
+                                  cdmConfigVersion: req.cdmConfigVersion,
+                              },
+                          })
+                        : getTrexDbConnection({
+                              analyticsCredentials: credentials,
+                          });
+
+                req.dbConnections = {
+                    ...dbConnections,
+                    analyticsConnection: createCdmSqlAuditConnection(
+                        dbConnections.analyticsConnection,
+                        createCdmSqlAuditContext({
+                            request: req,
+                            actorId:
+                                userObj?.getUser() ??
+                                getAuditUserIdFromRequest(req) ??
+                                "unknown",
+                            databaseCode: credentials.code,
+                            databaseDialect: credentials.dialect,
+                            databaseEngine:
+                                credentials.dialect ===
+                                ANALYTICS_DB_DIALECTS.HANA
+                                    ? "hana"
+                                    : "duckdb",
+                            schemaName: credentials.schema,
+                        })
+                    ),
+                };
             }
 
             next();
@@ -606,6 +638,10 @@ const getTrexDbConnection = ({
                 // For bigquery, do not execute any queries on sourcedb
                 direct_connection_suffix = "";
                 break;
+            case ANALYTICS_DB_DIALECTS.SNOWFLAKE:
+                // Snowflake reads target the materialized DuckDB cache. No source (__srcdb) suffix.
+                direct_connection_suffix = "";
+                break;
 
             default:
                 throw new Error(
@@ -657,6 +693,7 @@ const getTrexDbConnection = ({
 const getDBConnections = async ({
     analyticsCredentials,
     userObj,
+    sessionVariables,
 }): Promise<{
     analyticsConnection: Connection.ConnectionInterface;
 }> => {
@@ -674,6 +711,22 @@ const getDBConnections = async ({
             `${env.PROJECT_NAME}-cohorts`;
         analyticsCredentials["SESSIONVARIABLE:APPLICATIONUSER"] =
             userObj.getEmail() || userObj.getUser();
+        if (sessionVariables?.paConfigId) {
+            analyticsCredentials["SESSIONVARIABLE:PA_CONFIG_ID"] =
+                sessionVariables.paConfigId;
+        }
+        if (sessionVariables?.paConfigVersion) {
+            analyticsCredentials["SESSIONVARIABLE:PA_CONFIG_VERSION"] =
+                sessionVariables.paConfigVersion;
+        }
+        if (sessionVariables?.cdmConfigId) {
+            analyticsCredentials["SESSIONVARIABLE:CDM_CONFIG_ID"] =
+                sessionVariables.cdmConfigId;
+        }
+        if (sessionVariables?.cdmConfigVersion) {
+            analyticsCredentials["SESSIONVARIABLE:CDM_CONFIG_VERSION"] =
+                sessionVariables.cdmConfigVersion;
+        }
 
         if (analyticsCredentials.authentication_mode === "JWT") {
             delete analyticsCredentials.user;

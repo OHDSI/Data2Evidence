@@ -1,12 +1,8 @@
-.change-my-password-dialog {
-  .change-my-password-dialog__content {
-    margin: 0 25px 25px;
-    overflow: auto;
+.refresh-cache-dialog {
+  .refresh-cache-dialog__content {
+    min-height: 100px;
+    margin: 24px 25px 0;
     color: var(--color-primary);
-
-    .u-padding-vertical--normal {
-      padding-right: 20px;
-    }
   }
 
   .button-group-actions {

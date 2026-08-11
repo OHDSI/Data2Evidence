@@ -1,5 +1,17 @@
 import { describe, expect, it } from 'vitest'
-import { getWizardFlow, isWizardVisibleOnSurface, parseNumericInput, validateRequiredFields } from '../dashboardFlowUtils'
+import {
+  getWizardGroupCompletionHint,
+  getWizardGroupValidationMessage,
+  getWizardFlow,
+  isWizardFieldDisabledByGroupLimit,
+  isWizardVisibleOnSurface,
+  normalizeWizardFieldValueForComparison,
+  parseNumericInput,
+  resolveWizardFormLayout,
+  validateRequiredFields,
+  type WizardFieldDefinition,
+  type WizardFormSection,
+} from '../dashboardFlowUtils'
 
 const createExpression = (operator: string, value: string | number) => ({
   type: 'Expression' as const,
@@ -181,7 +193,14 @@ describe('parseNumericInput', () => {
   })
 
   it('parses inclusive range input', () => {
-    expect(parseNumericInput('[50-80]')).toEqual([{ and: [{ op: '>=', value: 50 }, { op: '<=', value: 80 }] }])
+    expect(parseNumericInput('[50-80]')).toEqual([
+      {
+        and: [
+          { op: '>=', value: 50 },
+          { op: '<=', value: 80 },
+        ],
+      },
+    ])
   })
 
   it('parses comma separated expressions', () => {
@@ -212,5 +231,87 @@ describe('wizard metadata helpers', () => {
   it('defaults missing flow to required-fields', () => {
     expect(getWizardFlow({})).toBe('required-fields')
     expect(getWizardFlow({ flow: 'table1-config' })).toBe('table1-config')
+  })
+})
+
+describe('wizard field value helpers', () => {
+  it('treats null, undefined, and an empty string as the same empty form value', () => {
+    expect(normalizeWizardFieldValueForComparison(null)).toBe('')
+    expect(normalizeWizardFieldValueForComparison(undefined)).toBe('')
+    expect(normalizeWizardFieldValueForComparison('')).toBe('')
+  })
+
+  it('preserves non-empty field values', () => {
+    expect(normalizeWizardFieldValueForComparison('FEMALE')).toBe('FEMALE')
+  })
+})
+
+describe('wizard form sections', () => {
+  const fields: WizardFieldDefinition[] = [
+    { id: 'height', label: 'Height', type: 'num' },
+    { id: 'weight', label: 'Weight', type: 'num' },
+    { id: 'bmi', label: 'BMI', type: 'num' },
+    { id: 'condition1', label: 'Condition 1', type: 'text' },
+  ]
+  const sections: WizardFormSection[] = [
+    {
+      id: 'measurement',
+      title: 'Measurement',
+      groups: [
+        {
+          id: 'body-measurement',
+          fieldIds: ['height', 'weight', 'bmi', 'missing-field'],
+          validation: { minAnswered: 1, maxAnswered: 2 },
+        },
+      ],
+    },
+  ]
+
+  it('resolves shared field IDs and preserves ungrouped fields', () => {
+    const layout = resolveWizardFormLayout(fields, sections)
+
+    expect(layout.sections[0].groups[0].fields.map(field => field.id)).toEqual(['height', 'weight', 'bmi'])
+    expect(layout.ungroupedFields.map(field => field.id)).toEqual(['condition1'])
+  })
+
+  it('enforces minAnswered and maxAnswered at the group level', () => {
+    const group = resolveWizardFormLayout(fields, sections).sections[0].groups[0]
+
+    expect(getWizardGroupValidationMessage(group, {})).toBe('Complete at least 1 field in this group.')
+    expect(getWizardGroupValidationMessage(group, { height: '170' })).toBeNull()
+    expect(getWizardGroupValidationMessage(group, { height: '170', weight: '70' })).toBeNull()
+    expect(getWizardGroupValidationMessage(group, { height: '170', weight: '70', bmi: '24.2' })).toBe(
+      'Complete no more than 2 fields in this group.'
+    )
+    expect(getWizardGroupCompletionHint(group)).toBe('Enter 1 to 2 of Height, Weight, and BMI.')
+  })
+
+  it('uses configured group guidance when provided', () => {
+    const configuredSections: WizardFormSection[] = [
+      {
+        ...sections[0],
+        groups: [
+          {
+            ...sections[0].groups[0],
+            validation: {
+              minAnswered: 1,
+              maxAnswered: 2,
+              message: 'Enter 1 or 2 of Height, Weight, and BMI.',
+            },
+          },
+        ],
+      },
+    ]
+    const group = resolveWizardFormLayout(fields, configuredSections).sections[0].groups[0]
+
+    expect(getWizardGroupCompletionHint(group)).toBe('Enter 1 or 2 of Height, Weight, and BMI.')
+  })
+
+  it('disables only unanswered fields after the group reaches its maximum', () => {
+    const group = resolveWizardFormLayout(fields, sections).sections[0].groups[0]
+
+    expect(isWizardFieldDisabledByGroupLimit(group, 'bmi', { height: '170', weight: '70' })).toBe(true)
+    expect(isWizardFieldDisabledByGroupLimit(group, 'height', { height: '170', weight: '70' })).toBe(false)
+    expect(isWizardFieldDisabledByGroupLimit(group, 'bmi', { height: '170' })).toBe(false)
   })
 })

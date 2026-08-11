@@ -22,6 +22,41 @@ export interface WizardFieldDefinition {
   excludeDescendantsByDefault?: boolean
 }
 
+export interface WizardFieldGroupValidation {
+  minAnswered?: number
+  maxAnswered?: number
+  message?: string
+  minMessage?: string
+  maxMessage?: string
+}
+
+export interface WizardFieldGroup {
+  id: string
+  label?: string
+  fieldIds: string[]
+  columns?: 1 | 2 | 3
+  validation?: WizardFieldGroupValidation
+}
+
+export interface WizardFormSection {
+  id: string
+  title: string
+  groups: WizardFieldGroup[]
+}
+
+export interface ResolvedWizardFieldGroup extends WizardFieldGroup {
+  fields: WizardFieldDefinition[]
+}
+
+export interface ResolvedWizardFormSection extends Omit<WizardFormSection, 'groups'> {
+  groups: ResolvedWizardFieldGroup[]
+}
+
+export interface ResolvedWizardFormLayout {
+  sections: ResolvedWizardFormSection[]
+  ungroupedFields: WizardFieldDefinition[]
+}
+
 export interface WizardDefinitionLike {
   id: string
   fields: WizardFieldDefinition[]
@@ -31,9 +66,133 @@ export interface WizardDefinition {
   id: string
   name: string
   description?: string
+  formNote?: string | null
   surfaces?: WizardSurface[]
   flow?: WizardFlow
   fields: WizardFieldDefinition[]
+  sections?: WizardFormSection[]
+}
+
+function wizardFieldHasValue(value: unknown): boolean {
+  if (value === undefined || value === null || value === '') {
+    return false
+  }
+  if (typeof value === 'object' && !Array.isArray(value)) {
+    return Object.values(value as Record<string, unknown>).some(wizardFieldHasValue)
+  }
+  return true
+}
+
+function isWizardFieldAnswered(field: WizardFieldDefinition, formValues: Record<string, unknown>): boolean {
+  if (field.type === 'yearRange') {
+    return wizardFieldHasValue(formValues[`${field.id}_from`]) || wizardFieldHasValue(formValues[`${field.id}_to`])
+  }
+  return wizardFieldHasValue(formValues[field.id])
+}
+
+export function resolveWizardFormLayout(
+  fields: WizardFieldDefinition[],
+  sections?: WizardFormSection[]
+): ResolvedWizardFormLayout {
+  if (!sections?.length) {
+    return { sections: [], ungroupedFields: fields }
+  }
+
+  const fieldsById = new Map(fields.map(field => [field.id, field]))
+  const renderedFieldIds = new Set<string>()
+  const resolvedSections = sections
+    .map(section => {
+      const groups = section.groups
+        .map(group => {
+          const resolvedFields = group.fieldIds.flatMap(fieldId => {
+            const field = fieldsById.get(fieldId)
+            if (!field || renderedFieldIds.has(fieldId)) return []
+            renderedFieldIds.add(fieldId)
+            return [field]
+          })
+          return { ...group, fields: resolvedFields }
+        })
+        .filter(group => group.fields.length > 0)
+      return { ...section, groups }
+    })
+    .filter(section => section.groups.length > 0)
+
+  return {
+    sections: resolvedSections,
+    ungroupedFields: fields.filter(field => !renderedFieldIds.has(field.id)),
+  }
+}
+
+export function getWizardGroupValidationMessage(
+  group: ResolvedWizardFieldGroup,
+  formValues: Record<string, unknown>
+): string | null {
+  const minAnswered = group.validation?.minAnswered
+  const maxAnswered = group.validation?.maxAnswered
+  if (minAnswered === undefined && maxAnswered === undefined) return null
+
+  const answeredCount = group.fields.filter(field => isWizardFieldAnswered(field, formValues)).length
+  if (minAnswered !== undefined && answeredCount < minAnswered) {
+    return (
+      group.validation?.minMessage ||
+      group.validation?.message ||
+      `Complete at least ${minAnswered} ${minAnswered === 1 ? 'field' : 'fields'} in this group.`
+    )
+  }
+  if (maxAnswered !== undefined && answeredCount > maxAnswered) {
+    return (
+      group.validation?.maxMessage ||
+      group.validation?.message ||
+      `Complete no more than ${maxAnswered} ${maxAnswered === 1 ? 'field' : 'fields'} in this group.`
+    )
+  }
+
+  return null
+}
+
+export function getWizardGroupCompletionHint(group: ResolvedWizardFieldGroup): string | null {
+  const minAnswered = group.validation?.minAnswered
+  const maxAnswered = group.validation?.maxAnswered
+  const configuredHint = group.validation?.message?.trim()
+  if (configuredHint) return configuredHint
+
+  const labels = group.fields.map(field => field.label || field.id)
+  const fieldList =
+    labels.length < 2
+      ? labels[0] || 'this group'
+      : labels.length === 2
+      ? labels.join(' and ')
+      : `${labels.slice(0, -1).join(', ')}, and ${labels[labels.length - 1]}`
+
+  if (minAnswered !== undefined && maxAnswered !== undefined) {
+    if (minAnswered === maxAnswered) {
+      return `Enter ${minAnswered} of ${fieldList}.`
+    }
+    return `Enter ${minAnswered} to ${maxAnswered} of ${fieldList}.`
+  }
+  if (minAnswered !== undefined) {
+    return `Enter at least ${minAnswered} of ${fieldList}.`
+  }
+  if (maxAnswered !== undefined) {
+    return `Enter up to ${maxAnswered} of ${fieldList}.`
+  }
+
+  return null
+}
+
+/** Keep unanswered fields unavailable once a group reaches maxAnswered. */
+export function isWizardFieldDisabledByGroupLimit(
+  group: ResolvedWizardFieldGroup,
+  fieldId: string,
+  formValues: Record<string, unknown>
+): boolean {
+  const maxAnswered = group.validation?.maxAnswered
+  if (maxAnswered === undefined) return false
+
+  const field = group.fields.find(candidate => candidate.id === fieldId)
+  if (!field || isWizardFieldAnswered(field, formValues)) return false
+
+  return group.fields.filter(candidate => isWizardFieldAnswered(candidate, formValues)).length >= maxAnswered
 }
 
 export function isWizardVisibleOnSurface(wizard: Pick<WizardDefinition, 'surfaces'>, surface: WizardSurface): boolean {
@@ -98,6 +257,10 @@ export interface FieldComparisonBreakdown {
 export interface RequiredFieldValidationResult {
   missingFields: MissingRequiredField[]
   breakdown: FieldComparisonBreakdown[]
+}
+
+export function normalizeWizardFieldValueForComparison(value: unknown): unknown {
+  return value === null || typeof value === 'undefined' ? '' : value
 }
 
 function getLastPathSegment(path: string): string {

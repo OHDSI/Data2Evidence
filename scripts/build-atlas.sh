@@ -3,9 +3,11 @@
 # tarball into services/trex/plugin-artifacts/ so the trex image bakes it in via the
 # existing plugin-artifacts extract step. Reproducible counterpart to the CI atlas job.
 #
-# The sub-plugins (network, notebook-plugin, results-viewer, strategus, studies) live in
-# the trex-notebook submodule (plugins/atlas/trex-notebook) and are not published, so
+# The sub-plugins (network, notebook-plugin, strategus, studies) live in the
+# trex-notebook submodule (plugins/atlas/trex-notebook) and are not published, so
 # they are built from source here; plugins/atlas references them via file: deps.
+# results-viewer is consumed prebuilt from GitHub Packages (@ohdsi/results-viewer)
+# with its WebR/shinylive runtime included, so no R toolchain is needed here.
 #
 # Requires a GitHub token with read:packages (public @ohdsi/atlas3, @ohdsi/atlas-ui,
 # @ohdsi/pythia-* still need auth on GitHub Packages). Reads GITHUB_TOKEN or, locally,
@@ -26,7 +28,7 @@ ATLAS_DIR="plugins/atlas"
 ARTIFACTS_DIR="services/trex/plugin-artifacts"
 
 # Atlas3 sub-plugins built from the submodule (dir name under $PLUGIN_DIR).
-SUBPLUGINS=(network notebook-plugin results-viewer strategus studies)
+SUBPLUGINS=(network notebook-plugin strategus studies)
 
 : "${GITHUB_TOKEN:=$(gh auth token 2>/dev/null || true)}"
 if [ -z "${GITHUB_TOKEN}" ]; then
@@ -47,23 +49,8 @@ if printf '%s\n' "${SUBPLUGINS[@]}" | grep -qx notebook-plugin; then
   ( cd "$PLUGIN_DIR/notebook" && npm install )
 fi
 
-build_results_viewer_shinylive() {
-  local dir="$PLUGIN_DIR/results-viewer"
-  if ! command -v Rscript >/dev/null 2>&1; then
-    echo "[build-atlas] WARN: Rscript not found; results-viewer shinylive export skipped." >&2
-    [ "${SKIP_SHINYLIVE:-0}" = "1" ] && return 0
-    echo "[build-atlas] ERROR: R toolchain required for the results-viewer viewer. Install R + shinylive, or set SKIP_SHINYLIVE=1 to build without it." >&2
-    exit 1
-  fi
-  echo "[build-atlas] Building results-viewer shinylive export (R)..."
-  ( cd "$dir" && Rscript scripts/build-shim-packages.R && Rscript scripts/build-shinylive-export.R )
-}
-
 for p in "${SUBPLUGINS[@]}"; do
   echo "[build-atlas] Building sub-plugin: $p"
-  if [ "$p" = "results-viewer" ]; then
-    build_results_viewer_shinylive
-  fi
   # Prefer build:pkg (targets dist/); the plain build targets the sibyl dev host.
   ( cd "$PLUGIN_DIR/$p" && npm install \
     && npm run "$(node -e "process.stdout.write(require('./package.json').scripts['build:pkg'] ? 'build:pkg' : 'build')")" )
