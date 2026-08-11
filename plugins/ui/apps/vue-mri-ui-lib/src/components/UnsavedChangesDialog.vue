@@ -110,7 +110,10 @@ watch(
 .unsaved-dialog {
   width: 100%;
   max-width: 540px;
-  overflow: hidden;
+  overflow: hidden !important;
+  // Vuetify's `.v-dialog > .v-overlay__content > .v-card` rule (border-radius: 4px,
+  // overflow-y: auto, specificity 0-3-0) must not win over this scoped class;
+  // 16px matches the React UnsavedChangesDialog in apps/portal.
   border-radius: 16px !important;
   box-shadow:
     0 6px 30px 5px rgba(0, 0, 0, 0.12),

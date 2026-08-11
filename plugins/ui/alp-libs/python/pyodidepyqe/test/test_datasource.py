@@ -44,7 +44,7 @@ def test_get_table_data(setup):
     assert table_data == mock_table_data
 
 
-def _get_mock_table_names(auth_api, path, params):
+def _get_mock_table_names(auth_api, path, params, headers=None, **kwargs):
     print(path)
     if path == DATASOURCE_TABLENAMES_PATH:
         return MockResponse(200, mock_table_names)

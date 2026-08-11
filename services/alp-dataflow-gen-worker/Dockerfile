@@ -38,6 +38,8 @@ for extra in renv.lock setup_assets.sh setup_r.sh rprofile_java.R; do
 done
 EOF
 RUN chmod +x /usr/local/bin/stage_group
+COPY plugins/flows/cohort_discovery /src/plugins/flows/cohort_discovery
+RUN stage_group cohort_discovery cohort-discovery-flow
 COPY plugins/flows/loyalty_score /src/plugins/flows/loyalty_score
 RUN stage_group loyalty_score loyalty-score-flow
 COPY plugins/flows/i2b2 /src/plugins/flows/i2b2
@@ -76,6 +78,10 @@ RUN chmod 755 /app/provision-envs.sh
 
 # One stage per group; marker COPYs are the dependency edges that keep the
 # heavy stages sequential (see header).
+FROM provisioner AS env-cohort-discovery
+COPY --from=staging /staged/cohort-discovery-flow /var/lib/d2e-flows/cohort-discovery-flow
+RUN MAKEFLAGS=-j2 /app/provision-envs.sh --dir /var/lib/d2e-flows/cohort-discovery-flow/baked
+
 FROM provisioner AS env-loyalty-score
 COPY --from=staging /staged/loyalty-score-flow /var/lib/d2e-flows/loyalty-score-flow
 RUN MAKEFLAGS=-j2 /app/provision-envs.sh --dir /var/lib/d2e-flows/loyalty-score-flow/baked
@@ -122,6 +128,7 @@ RUN chmod 755 /app/run-flow.sh /app/provision-envs.sh /entrypoint.sh
 # Light groups from their parallel stages (baked warm cache: release plugins
 # provisioned at build so fresh workers are instant and offline-capable;
 # runtime artifact updates land beside them).
+COPY --from=env-cohort-discovery /var/lib/d2e-flows/cohort-discovery-flow /var/lib/d2e-flows/cohort-discovery-flow
 COPY --from=env-loyalty-score /var/lib/d2e-flows/loyalty-score-flow /var/lib/d2e-flows/loyalty-score-flow
 COPY --from=env-i2b2 /var/lib/d2e-flows/i2b2-flow /var/lib/d2e-flows/i2b2-flow
 COPY --from=env-data-management /var/lib/d2e-flows/data-management-flow /var/lib/d2e-flows/data-management-flow

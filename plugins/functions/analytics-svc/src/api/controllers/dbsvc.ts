@@ -29,7 +29,15 @@ export async function getCDMVersion(req, res, next) {
             dialect === ANALYTICS_DB_DIALECTS.HANA
                 ? hanaKey
                 : dbUtils.convertNameToPg(hanaKey);
-        let cdmVersionValue = cdmVersion[0][cdmVersionKey];
+        // Result-set key casing varies by source dialect: the trex query layer surfaces the
+        // column as written in the DAO's `SELECT CDM_VERSION` literal (UPPERCASE) for a
+        // Snowflake-sourced cache, whereas postgres/hana fold to the convertNameToPg key.
+        // Resolve the key case-insensitively so the version is found regardless of dialect.
+        const cdmRow = cdmVersion[0] ?? {};
+        const matchedKey = Object.keys(cdmRow).find(
+            (k) => k.toLowerCase() === cdmVersionKey.toLowerCase()
+        );
+        let cdmVersionValue = matchedKey ? cdmRow[matchedKey] : undefined;
         if (cdmVersionValue) {
             //Cater to scenarios if vx.x is stored in the CDM schema
             cdmVersionValue = cdmVersionValue.toUpperCase().startsWith("V")

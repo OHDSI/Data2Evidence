@@ -29,7 +29,7 @@ class _StarboardApi():
 
         self._load_environment_variables()
 
-    async def _get(self, path: str, params=None, **kwargs) -> FetchResponse:
+    async def _get(self, path: str, params=None, headers=None, **kwargs) -> FetchResponse:
         """Request HTTP GET method"""
         if params:
             query_string = '?'
@@ -42,38 +42,46 @@ class _StarboardApi():
 
         url = urljoin(str(self._base_url), str(path))
         logger.debug(f'GET {url}')
-        headers = {"Authorization": f'Bearer {os.getenv("TOKEN")}'}
-        response = await pyfetch(url, method="GET", headers=headers, **kwargs)
+        request_headers = {"Authorization": f'Bearer {os.getenv("TOKEN")}'}
+        if headers:
+            request_headers.update(headers)
+        response = await pyfetch(url, method="GET", headers=request_headers, **kwargs)
         return response
 
-    async def _post(self, path: str, data=None, **kwargs) -> FetchResponse:
+    async def _post(self, path: str, data=None, headers=None, **kwargs) -> FetchResponse:
         """Request HTTP POST method"""
 
         url = urljoin(str(self._base_url), str(path))
         logger.debug(f'POST {url}')
-        headers = {
+        request_headers = {
             "Authorization": f'Bearer {os.getenv("TOKEN")}', "Content-Type": "application/json"}
+        if headers:
+            request_headers.update(headers)
 
-        response = await pyfetch(url, method="POST", body=json.dumps(data), headers=headers, **kwargs)
+        response = await pyfetch(url, method="POST", body=json.dumps(data), headers=request_headers, **kwargs)
         return response
 
-    async def _put(self, path: str, data=None) -> FetchResponse:
+    async def _put(self, path: str, data=None, headers=None) -> FetchResponse:
         """Request HTTP PUT method"""
 
         url = urljoin(str(self._base_url), str(path))
         logger.debug(f'PUT {url}')
-        headers = {"Authorization": f'Bearer {os.getenv("TOKEN")}'}
+        request_headers = {"Authorization": f'Bearer {os.getenv("TOKEN")}'}
+        if headers:
+            request_headers.update(headers)
         response = await pyfetch(
-            url, method="PUT", body=json.dumps(data), headers=headers)
+            url, method="PUT", body=json.dumps(data), headers=request_headers)
         return response
 
-    async def _delete(self, path: str, **kwargs) -> FetchResponse:
+    async def _delete(self, path: str, headers=None, **kwargs) -> FetchResponse:
         """Request HTTP DELETE method"""
 
         url = urljoin(str(self._base_url), str(path))
         logger.debug(f'DELETE {url}')
-        headers = {"Authorization": f'Bearer {os.getenv("TOKEN")}'}
-        response = await pyfetch(url, method="DELETE", headers=headers, **kwargs)
+        request_headers = {"Authorization": f'Bearer {os.getenv("TOKEN")}'}
+        if headers:
+            request_headers.update(headers)
+        response = await pyfetch(url, method="DELETE", headers=request_headers, **kwargs)
         return response
 
     def _load_environment_variables(self) -> None:
@@ -171,8 +179,10 @@ class _AuthApi(_StarboardApi):
         else:
             return {'Authorization': f'Bearer {self.id_token}'}
 
-    async def _get(self, path: str, params=None, **kwargs):
+    async def _get(self, path: str, params=None, headers=None, **kwargs):
         try:
+            if headers is not None:
+                kwargs['headers'] = headers
             response = await super()._get(path, params=params, **kwargs)
             return response
         except requests.HTTPError as e:
@@ -182,8 +192,10 @@ class _AuthApi(_StarboardApi):
             print(e)
             raise
 
-    async def _post(self, path: str, data=None, **kwargs):
+    async def _post(self, path: str, data=None, headers=None, **kwargs):
         try:
+            if headers is not None:
+                kwargs['headers'] = headers
             response = await super()._post(path, data=data, **kwargs)
             return response
         except requests.HTTPError as e:
@@ -193,9 +205,12 @@ class _AuthApi(_StarboardApi):
             print(e)
             raise
 
-    async def _put(self, path: str, data=None):
+    async def _put(self, path: str, data=None, headers=None):
         try:
-            response = await super()._put(path, data=data)
+            kwargs = {}
+            if headers is not None:
+                kwargs['headers'] = headers
+            response = await super()._put(path, data=data, **kwargs)
             return response
         except requests.HTTPError as e:
             self._validate_response(e.response)
@@ -204,8 +219,10 @@ class _AuthApi(_StarboardApi):
             print(e)
             raise
 
-    async def _delete(self, path: str, **kwargs):
+    async def _delete(self, path: str, headers=None, **kwargs):
         try:
+            if headers is not None:
+                kwargs['headers'] = headers
             response = await super()._delete(path, **kwargs)
             return response
         except requests.HTTPError as e:
