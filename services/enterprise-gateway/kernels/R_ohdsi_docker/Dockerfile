@@ -98,9 +98,18 @@ ARG POSIT_DATE=2025-09-22
 ARG CODENAME=noble
 
 # Set R repository options
+# PPM's `__linux__/<codename>` path serves precompiled binaries for x86_64 only, so on
+# arm64 fall back to the same date-pinned SOURCE snapshot (reproducibility is preserved;
+# packages compile from source instead of downloading binaries).
 COPY <<-EOF /usr/local/lib/R/etc/Rprofile.site
-    options(repos=c(CRAN='https://packagemanager.posit.co/cran/__linux__/$CODENAME/$POSIT_DATE'))
-    options(renv.config.repos.override = c(CRAN='https://packagemanager.posit.co/cran/__linux__/$CODENAME/$POSIT_DATE'))
+    local({
+      cran <- if (identical(R.version[["arch"]], "x86_64"))
+          'https://packagemanager.posit.co/cran/__linux__/$CODENAME/$POSIT_DATE'
+        else
+          'https://packagemanager.posit.co/cran/$POSIT_DATE'
+      options(repos = c(CRAN = cran))
+      options(renv.config.repos.override = c(CRAN = cran))
+    })
     options(HTTPUserAgent = sprintf("R/%s R (%s)", getRversion(), paste(getRversion(), R.version["platform"], R.version["arch"], R.version["os"])))
     options(download.file.extra = sprintf('--header "User-Agent: R (%s)"', paste(getRversion(), R.version["platform"], R.version["arch"], R.version["os"])))
 EOF
