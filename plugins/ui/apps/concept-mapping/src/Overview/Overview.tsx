@@ -63,6 +63,11 @@ export const Overview: FC<OverviewProps> = ({
         dispatch({ type: ACTION_TYPES.SET_SOURCE_DATA, payload: data.wizard.sourceData });
         dispatch({ type: ACTION_TYPES.SET_DATASET_ID, payload: data.wizard.datasetId });
         dispatch({ type: ACTION_TYPES.SET_LOAD_RECOMMENDATION, payload: data.wizard.loadRecommendationByDefault });
+        // Resume where the user left off: restore the current step and the mapping-started
+        // lock (the latter keeps the reference-dataset selector disabled once mapping began).
+        // Without these, a reopened config always lands on Step 1 with the dataset unlocked.
+        dispatch({ type: ACTION_TYPES.SET_WIZARD_STEP, payload: data.wizard.currentStep });
+        dispatch({ type: ACTION_TYPES.SET_MAPPING_STARTED, payload: data.wizard.mappingStarted });
       }
     } else {
       dispatch({ type: ACTION_TYPES.SET_COLUMN_MAPPING, payload: {} });
