@@ -1082,15 +1082,22 @@ const TerminologyList: FC<TerminologyListProps> = ({
         return {
           sx: {
             cursor: "default",
+            // Override MRT's per-row grid so the single label cell can fill the full width
+            // instead of being confined to (and truncated by) the narrow first column.
+            display: "flex !important",
             "&.MuiTableRow-root, &.MuiTableRow-root:hover": {
               backgroundColor: "#e6ebf3 !important",
             },
             "& > td": { display: "none !important" },
             "& > td:first-of-type": {
               display: "flex !important",
-              gridColumn: "1 / -1",
+              flex: 1,
+              width: "100%",
+              maxWidth: "100%",
+              whiteSpace: "nowrap",
+              fontSize: "12px",
               fontWeight: 600,
-              color: "#000080",
+              color: "#595757",
               padding: "6px 8px !important",
             },
           },
