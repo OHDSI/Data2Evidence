@@ -1033,13 +1033,72 @@ const TerminologyList: FC<TerminologyListProps> = ({
   // table (page 1 only) so their columns line up with the search results. We only store
   // id/code/name/domain/vocabulary per suggestion, so the Score/Concept/Class/Validity/RC
   // columns render blank for them. `_suggested` drives the row tint.
+  // Suggestions only store id/code/name/domain/vocabulary, so the Concept/Class/Validity
+  // columns would be blank. Enrich them by looking each up by its code via the search API
+  // (UI-only, no backend change) and merging the metadata. Score stays blank (it's a
+  // per-query relevance score that doesn't apply to a stored concept).
+  const [enrichedSuggestions, setEnrichedSuggestions] = useState<
+    Record<number, FhirValueSetExpansionContainsWithExt>
+  >({});
+
+  useEffect(() => {
+    if (mode !== "CONCEPT_MAPPING" || !datasetId || !(suggestedConcepts?.length)) {
+      setEnrichedSuggestions({});
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      const entries = await Promise.all(
+        suggestedConcepts.map(async (c) => {
+          try {
+            const raw = (await api.d2eWebapi.getTerminologies(
+              0,
+              20,
+              datasetId,
+              String(c.conceptCode).toLowerCase(),
+              [],
+              [],
+              [],
+              [],
+              [],
+            )) as any[];
+            const match = raw
+              .map(mapd2eWebapiConcept)
+              .find((m: FhirValueSetExpansionContainsWithExt) => m.conceptId === c.conceptId);
+            return match ? ([c.conceptId, match] as const) : null;
+          } catch {
+            return null;
+          }
+        }),
+      );
+      if (cancelled) return;
+      const map: Record<number, FhirValueSetExpansionContainsWithExt> = {};
+      entries.forEach((e) => {
+        if (e) map[e[0]] = e[1];
+      });
+      setEnrichedSuggestions(map);
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mode, datasetId, JSON.stringify(suggestedConcepts)]);
+
   const displayData =
     mode === "CONCEPT_MAPPING" && page === 0 && (suggestedConcepts?.length ?? 0) > 0
       ? [
           { __section: getText(i18nKeys.TERMINOLOGY__SUGGESTED_CONCEPTS) } as unknown as FhirValueSetExpansionContainsWithExt,
-          ...suggestedConcepts!.map(
-            (c) => ({ ...c, _suggested: true } as unknown as FhirValueSetExpansionContainsWithExt),
-          ),
+          ...suggestedConcepts!.map((c) => {
+            const e = enrichedSuggestions[c.conceptId];
+            return {
+              ...c,
+              concept: e?.concept,
+              conceptClassId: e?.conceptClassId,
+              validity: e?.validity,
+              standardConcept: e?.standardConcept,
+              _suggested: true,
+            } as unknown as FhirValueSetExpansionContainsWithExt;
+          }),
           { __section: getText(i18nKeys.TERMINOLOGY__ALL_CONCEPTS) } as unknown as FhirValueSetExpansionContainsWithExt,
           ...listData,
         ]
