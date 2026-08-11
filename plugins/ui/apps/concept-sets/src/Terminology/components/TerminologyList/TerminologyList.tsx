@@ -1184,14 +1184,18 @@ const TerminologyList: FC<TerminologyListProps> = ({
             "& > td": { display: "none !important" },
             "& > td:first-of-type": {
               display: "flex !important",
+              alignItems: "center",
               flex: 1,
               width: "100%",
               maxWidth: "100%",
+              minHeight: "unset",
               whiteSpace: "nowrap",
               fontSize: "12px",
               fontWeight: 600,
               color: "#595757",
               padding: "6px 8px !important",
+              border: "none !important",
+              boxShadow: "none !important",
             },
           },
         };
@@ -1211,7 +1215,7 @@ const TerminologyList: FC<TerminologyListProps> = ({
               selectedConceptId === row.original.conceptId
                 ? "#ccdef1 !important"
                 : (row.original as any)._suggested
-                ? "#eef0fb !important"
+                ? "#ffffff !important"
                 : staticRowIndex % 2
                 ? "#fafafa  !important"
                 : "white !important",
