@@ -1,0 +1,134 @@
+[2026-08-06T05:57:27.286Z] [LOG] Setting up SystemJS shared dependencies for plugins...
+[2026-08-06T05:57:31.877Z] [DEBUG] Request Successful! {data: Object, status: 200, statusText: OK, headers: Ae, config: Object}
+[2026-08-06T05:57:31.908Z] [DEBUG] Request Successful! {data: Object, status: 200, statusText: OK, headers: Ae, config: Object}
+[2026-08-06T05:57:31.932Z] [DEBUG] Request Successful! {data: Array(18), status: 200, statusText: OK, headers: Ae, config: Object}
+[2026-08-06T05:57:31.932Z] [DEBUG] Request Successful! {data: Array(0), status: 200, statusText: OK, headers: Ae, config: Object}
+[2026-08-06T05:57:32.007Z] [DEBUG] Request Successful! {data: Array(18), status: 200, statusText: OK, headers: Ae, config: Object}
+[2026-08-06T05:57:32.143Z] [DEBUG] Request Successful! {data: Array(18), status: 200, statusText: OK, headers: Ae, config: Object}
+[2026-08-06T05:57:32.154Z] [DEBUG] Request Successful! {data: Array(18), status: 200, statusText: OK, headers: Ae, config: Object}
+[2026-08-06T05:57:32.158Z] [LOG] Making a request to  e https://localhost:41100/oidc/auth?redirect_uri=https%3A%2F%2Flocalhost%3A41100%2Fd2e%2Fportal%2Flogin-callback&client_id=UpV3RpfftJgXtSJRnzUqt&response_type=code&state=Xx5lTlnOx3&scope=openid%20offline_access%20profile%20email&nonce=LXAYYJ7Wsh5D&code_challenge=CcGoFVNokkWzvJJJ950nrcmOgTQuxKVnutHshp9OgyE&code_challenge_method=S256
+[2026-08-06T05:57:35.352Z] [REQUEST FAILED] PUT https://localhost:41100/api/experience - net::ERR_ABORTED
+[2026-08-06T05:57:35.695Z] [REQUEST FAILED] POST https://localhost:41100/api/experience/identification - net::ERR_ABORTED
+[2026-08-06T05:57:36.516Z] [LOG] Setting up SystemJS shared dependencies for plugins...
+[2026-08-06T05:57:36.659Z] [LOG] Checking to see if there is an authorization response to be delivered.
+[2026-08-06T05:57:36.667Z] [LOG] Potential authorization request  https://localhost:41100/d2e/portal/login-callback {code: vpoQBXigOrnGw6FQCphR5blgWZ16nuo7zOcds2anbSz, state: Xx5lTlnOx3, iss: http://d2e-caddy:8080/oidc} Xx5lTlnOx3 vpoQBXigOrnGw6FQCphR5blgWZ16nuo7zOcds2anbSz undefined
+[2026-08-06T05:57:36.668Z] [LOG] Delivering authorization response
+[2026-08-06T05:57:37.033Z] [DEBUG] Request Successful! {data: Object, status: 200, statusText: OK, headers: Ae, config: Object}
+[2026-08-06T05:57:38.524Z] [DEBUG] Request Successful! {data: Object, status: 200, statusText: OK, headers: Ae, config: Object}
+[2026-08-06T05:57:38.712Z] [DEBUG] [ResearcherStudyPluginRenderer] Registering single-spa app: researcher-plugin--resources-concept-sets-lifecycles-js
+[2026-08-06T05:57:38.713Z] [DEBUG] [singleSpaRegistry] researcher-plugin--resources-concept-sets-lifecycles-js - register {config: Object}
+[2026-08-06T05:57:38.713Z] [DEBUG] [singleSpaRegistry] researcher-plugin--resources-concept-sets-lifecycles-js - loading module
+[2026-08-06T05:57:38.715Z] [DEBUG] [ResearcherStudyPluginRenderer] Registering single-spa app: researcher-plugin--mri-lifecycles-js
+[2026-08-06T05:57:38.716Z] [DEBUG] [singleSpaRegistry] researcher-plugin--mri-lifecycles-js - register {config: Object}
+[2026-08-06T05:57:38.716Z] [DEBUG] [singleSpaRegistry] researcher-plugin--mri-lifecycles-js - loading module
+[2026-08-06T05:57:38.716Z] [DEBUG] [ResearcherStudyPluginRenderer] Registering single-spa app: researcher-plugin--resources-notebook-ui-lifecycles-js
+[2026-08-06T05:57:38.717Z] [DEBUG] [singleSpaRegistry] researcher-plugin--resources-notebook-ui-lifecycles-js - register {config: Object}
+[2026-08-06T05:57:38.717Z] [DEBUG] [singleSpaRegistry] researcher-plugin--resources-notebook-ui-lifecycles-js - loading module
+[2026-08-06T05:57:38.717Z] [DEBUG] [ResearcherStudyPluginRenderer] Registering single-spa app: researcher-plugin--resources-notebook-lifecycles-js
+[2026-08-06T05:57:38.718Z] [DEBUG] [singleSpaRegistry] researcher-plugin--resources-notebook-lifecycles-js - register {config: Object}
+[2026-08-06T05:57:38.718Z] [DEBUG] [singleSpaRegistry] researcher-plugin--resources-notebook-lifecycles-js - loading module
+[2026-08-06T05:57:38.719Z] [DEBUG] [ResearcherStudyPluginRenderer] Registering single-spa app: researcher-plugin--resources-analysis-ui-lifecycles-js
+[2026-08-06T05:57:38.719Z] [DEBUG] [singleSpaRegistry] researcher-plugin--resources-analysis-ui-lifecycles-js - register {config: Object}
+[2026-08-06T05:57:38.719Z] [DEBUG] [singleSpaRegistry] researcher-plugin--resources-analysis-ui-lifecycles-js - loading module
+[2026-08-06T05:57:38.721Z] [DEBUG] [ResearcherStudyPluginRenderer] Registering single-spa app: researcher-plugin--resources-wizards-lifecycles-js
+[2026-08-06T05:57:38.721Z] [DEBUG] [singleSpaRegistry] researcher-plugin--resources-wizards-lifecycles-js - register {config: Object}
+[2026-08-06T05:57:38.721Z] [DEBUG] [singleSpaRegistry] researcher-plugin--resources-wizards-lifecycles-js - loading module
+[2026-08-06T05:57:38.721Z] [DEBUG] [ResearcherStudyPluginRenderer] Registering single-spa app: researcher-plugin--atlas-portal-index-js
+[2026-08-06T05:57:38.721Z] [DEBUG] [singleSpaRegistry] researcher-plugin--atlas-portal-index-js - register {config: Object}
+[2026-08-06T05:57:38.721Z] [DEBUG] [singleSpaRegistry] researcher-plugin--atlas-portal-index-js - loading module
+[2026-08-06T05:57:38.819Z] [DEBUG] Request Successful! {data: Object, status: 200, statusText: OK, headers: Ae, config: Object}
+[2026-08-06T05:57:38.819Z] [DEBUG] Request Successful! {data: Array(18), status: 200, statusText: OK, headers: Ae, config: Object}
+[2026-08-06T05:57:38.839Z] [DEBUG] [singleSpaRegistry] researcher-plugin--resources-concept-sets-lifecycles-js - updating custom props {getToken: , idpUserId: 6273t31ievhs, username: admin, datasetId: , locale: default}
+[2026-08-06T05:57:38.839Z] [DEBUG] [singleSpaRegistry] researcher-plugin--mri-lifecycles-js - updating custom props {getToken: , idpUserId: 6273t31ievhs, username: admin, datasetId: , locale: default}
+[2026-08-06T05:57:38.845Z] [DEBUG] [singleSpaRegistry] researcher-plugin--resources-notebook-ui-lifecycles-js - updating custom props {getToken: , idpUserId: 6273t31ievhs, username: admin, datasetId: , locale: default}
+[2026-08-06T05:57:38.845Z] [DEBUG] [singleSpaRegistry] researcher-plugin--resources-notebook-lifecycles-js - updating custom props {getToken: , idpUserId: 6273t31ievhs, username: admin, datasetId: , locale: default}
+[2026-08-06T05:57:38.845Z] [DEBUG] [singleSpaRegistry] researcher-plugin--resources-analysis-ui-lifecycles-js - updating custom props {getToken: , idpUserId: 6273t31ievhs, username: admin, datasetId: , locale: default}
+[2026-08-06T05:57:38.845Z] [DEBUG] [singleSpaRegistry] researcher-plugin--resources-wizards-lifecycles-js - updating custom props {getToken: , idpUserId: 6273t31ievhs, username: admin, datasetId: , locale: default}
+[2026-08-06T05:57:38.845Z] [DEBUG] [singleSpaRegistry] researcher-plugin--atlas-portal-index-js - updating custom props {getToken: , idpUserId: 6273t31ievhs, username: admin, datasetId: , locale: default}
+[2026-08-06T05:57:38.889Z] [DEBUG] Request Successful! {data: Object, status: 200, statusText: OK, headers: Ae, config: Object}
+[2026-08-06T05:57:38.889Z] [ERROR] Failed to load resource: the server responded with a status of 400 (Bad Request)
+[2026-08-06T05:57:38.914Z] [ERROR] Request Failed: {transitional: Object, adapter: Array(3), transformRequest: Array(1), transformResponse: Array(1), timeout: 0}
+[2026-08-06T05:57:38.915Z] [ERROR] Status: 400
+[2026-08-06T05:57:38.915Z] [ERROR] Data: {status: 400, name: HttpException, message: 400 - datasetId or tokenDatasetCode is required}
+[2026-08-06T05:57:38.915Z] [ERROR] Headers: Ae
+[2026-08-06T05:57:38.916Z] [DEBUG] Request Successful! {data: Object, status: 200, statusText: OK, headers: Ae, config: Object}
+[2026-08-06T05:57:38.924Z] [LOG] [singleSpaRegistry] Started monitoring URL changes
+[2026-08-06T05:57:38.927Z] [DEBUG] [ResearcherStudyPluginRenderer] single-spa already started
+[2026-08-06T05:57:38.927Z] [DEBUG] [ResearcherStudyPluginRenderer] single-spa already started
+[2026-08-06T05:57:38.927Z] [DEBUG] [ResearcherStudyPluginRenderer] single-spa already started
+[2026-08-06T05:57:38.927Z] [DEBUG] [ResearcherStudyPluginRenderer] single-spa already started
+[2026-08-06T05:57:38.927Z] [DEBUG] [ResearcherStudyPluginRenderer] single-spa already started
+[2026-08-06T05:57:38.928Z] [DEBUG] [ResearcherStudyPluginRenderer] single-spa already started
+[2026-08-06T05:57:38.932Z] [DEBUG] Request Successful! {data: Array(18), status: 200, statusText: OK, headers: Ae, config: Object}
+[2026-08-06T05:57:39.002Z] [DEBUG] Request Successful! {data: Array(18), status: 200, statusText: OK, headers: Ae, config: Object}
+[2026-08-06T05:57:39.010Z] [DEBUG] Request Successful! {data: Array(18), status: 200, statusText: OK, headers: Ae, config: Object}
+[2026-08-06T05:57:39.010Z] [DEBUG] [singleSpaRegistry] researcher-plugin--resources-concept-sets-lifecycles-js - updating custom props {getToken: , idpUserId: 6273t31ievhs, username: admin, datasetId: , locale: default}
+[2026-08-06T05:57:39.010Z] [DEBUG] [singleSpaRegistry] researcher-plugin--mri-lifecycles-js - updating custom props {getToken: , idpUserId: 6273t31ievhs, username: admin, datasetId: , locale: default}
+[2026-08-06T05:57:39.010Z] [DEBUG] [singleSpaRegistry] researcher-plugin--resources-notebook-ui-lifecycles-js - updating custom props {getToken: , idpUserId: 6273t31ievhs, username: admin, datasetId: , locale: default}
+[2026-08-06T05:57:39.019Z] [DEBUG] Request Successful! {data: Array(18), status: 200, statusText: OK, headers: Ae, config: Object}
+[2026-08-06T05:57:39.019Z] [DEBUG] Request Successful! {data: Array(18), status: 200, statusText: OK, headers: Ae, config: Object}
+[2026-08-06T05:57:39.019Z] [DEBUG] Request Successful! {data: Array(1), status: 200, statusText: OK, headers: Ae, config: Object}
+[2026-08-06T05:57:39.025Z] [DEBUG] Request Successful! {data: Array(18), status: 200, statusText: OK, headers: Ae, config: Object}
+[2026-08-06T05:57:39.358Z] [DEBUG] Request Successful! {data: Array(18), status: 200, statusText: OK, headers: Ae, config: Object}
+[2026-08-06T05:57:39.408Z] [DEBUG] Request Successful! {data: Array(18), status: 200, statusText: OK, headers: Ae, config: Object}
+[2026-08-06T05:57:39.408Z] [DEBUG] Request Successful! {data: Array(1), status: 200, statusText: OK, headers: Ae, config: Object}
+[2026-08-06T05:57:39.445Z] [DEBUG] Request Successful! {data: Array(18), status: 200, statusText: OK, headers: Ae, config: Object}
+[2026-08-06T05:57:39.446Z] [DEBUG] Request Successful! {data: Array(18), status: 200, statusText: OK, headers: Ae, config: Object}
+[2026-08-06T05:57:39.446Z] [DEBUG] Request Successful! {data: Array(18), status: 200, statusText: OK, headers: Ae, config: Object}
+[2026-08-06T05:57:39.462Z] [DEBUG] [singleSpaRegistry] researcher-plugin--resources-notebook-lifecycles-js - updating custom props {getToken: , idpUserId: 6273t31ievhs, username: admin, datasetId: , locale: default}
+[2026-08-06T05:57:39.462Z] [DEBUG] [singleSpaRegistry] researcher-plugin--resources-analysis-ui-lifecycles-js - updating custom props {getToken: , idpUserId: 6273t31ievhs, username: admin, datasetId: , locale: default}
+[2026-08-06T05:57:39.462Z] [DEBUG] [singleSpaRegistry] researcher-plugin--resources-wizards-lifecycles-js - updating custom props {getToken: , idpUserId: 6273t31ievhs, username: admin, datasetId: , locale: default}
+[2026-08-06T05:57:39.700Z] [DEBUG] [singleSpaRegistry] researcher-plugin--atlas-portal-index-js - updating custom props {getToken: , idpUserId: 6273t31ievhs, username: admin, datasetId: , locale: default}
+[2026-08-06T05:57:39.735Z] [DEBUG] [singleSpaRegistry] researcher-plugin--resources-wizards-lifecycles-js - module loaded
+[2026-08-06T05:57:39.776Z] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found)
+[2026-08-06T05:57:39.778Z] [ERROR] Refused to execute script from 'https://localhost:41100/d2e/vue' because its MIME type ('text/html') is not executable, and strict MIME type checking is enabled.
+[2026-08-06T05:57:39.778Z] [REQUEST FAILED] GET https://localhost:41100/d2e/vue - net::ERR_ABORTED
+[2026-08-06T05:57:39.808Z] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found)
+[2026-08-06T05:57:39.808Z] [ERROR] Refused to execute script from 'https://localhost:41100/d2e/single-spa-vue' because its MIME type ('text/html') is not executable, and strict MIME type checking is enabled.
+[2026-08-06T05:57:39.808Z] [REQUEST FAILED] GET https://localhost:41100/d2e/single-spa-vue - net::ERR_ABORTED
+[2026-08-06T05:57:39.888Z] [DEBUG] [singleSpaRegistry] researcher-plugin--resources-concept-sets-lifecycles-js - module loaded
+[2026-08-06T05:57:40.027Z] [DEBUG] [singleSpaRegistry] researcher-plugin--resources-notebook-lifecycles-js - module loaded
+[2026-08-06T05:57:40.158Z] [DEBUG] [singleSpaRegistry] researcher-plugin--atlas-portal-index-js - preload failed (will retry on activation): Error: Fetching https://localhost:41100/d2e/vue
+  Instantiating https://localhost:41100/d2e/vue
+  Loading https://localhost:41100/atlas-portal/index.js
+  Loading /atlas-portal/index.js
+    at HTMLScriptElement.s (https://localhost:41100/d2e/portal/static/js/main.9aefa47a.js:2:2331949)
+[2026-08-06T05:57:40.204Z] [DEBUG] [singleSpaRegistry] researcher-plugin--resources-notebook-ui-lifecycles-js - module loaded
+[2026-08-06T05:57:40.929Z] [DEBUG] [singleSpaRegistry] researcher-plugin--resources-analysis-ui-lifecycles-js - module loaded
+[2026-08-06T05:57:42.108Z] [DEBUG] [singleSpaRegistry] researcher-plugin--mri-lifecycles-js - module loaded
+[2026-08-06T05:57:42.920Z] [DEBUG] [singleSpaRegistry] researcher-plugin--resources-concept-sets-lifecycles-js - updating custom props {getToken: , idpUserId: 6273t31ievhs, username: admin, datasetId: 2aaaf28c-c76f-418d-ab2c-e91451f98c89, locale: default}
+[2026-08-06T05:57:42.922Z] [DEBUG] [singleSpaRegistry] researcher-plugin--mri-lifecycles-js - updating custom props {getToken: , idpUserId: 6273t31ievhs, username: admin, datasetId: 2aaaf28c-c76f-418d-ab2c-e91451f98c89, locale: default}
+[2026-08-06T05:57:42.922Z] [DEBUG] [singleSpaRegistry] researcher-plugin--resources-notebook-ui-lifecycles-js - updating custom props {getToken: , idpUserId: 6273t31ievhs, username: admin, datasetId: 2aaaf28c-c76f-418d-ab2c-e91451f98c89, locale: default}
+[2026-08-06T05:57:42.922Z] [DEBUG] [singleSpaRegistry] researcher-plugin--resources-notebook-lifecycles-js - updating custom props {getToken: , idpUserId: 6273t31ievhs, username: admin, datasetId: 2aaaf28c-c76f-418d-ab2c-e91451f98c89, locale: default}
+[2026-08-06T05:57:42.922Z] [DEBUG] [singleSpaRegistry] researcher-plugin--resources-analysis-ui-lifecycles-js - updating custom props {getToken: , idpUserId: 6273t31ievhs, username: admin, datasetId: 2aaaf28c-c76f-418d-ab2c-e91451f98c89, locale: default}
+[2026-08-06T05:57:42.922Z] [DEBUG] [singleSpaRegistry] researcher-plugin--resources-wizards-lifecycles-js - updating custom props {getToken: , idpUserId: 6273t31ievhs, username: admin, datasetId: 2aaaf28c-c76f-418d-ab2c-e91451f98c89, locale: default}
+[2026-08-06T05:57:42.922Z] [DEBUG] [singleSpaRegistry] researcher-plugin--atlas-portal-index-js - updating custom props {getToken: , idpUserId: 6273t31ievhs, username: admin, datasetId: 2aaaf28c-c76f-418d-ab2c-e91451f98c89, locale: default}
+[2026-08-06T05:57:43.183Z] [DEBUG] Request Successful! {data: Array(18), status: 200, statusText: OK, headers: Ae, config: Object}
+[2026-08-06T05:57:43.183Z] [DEBUG] Request Successful! {data: Object, status: 200, statusText: OK, headers: Ae, config: Object}
+[2026-08-06T05:57:43.183Z] [DEBUG] Request Successful! {data: Array(0), status: 200, statusText: OK, headers: Ae, config: Object}
+[2026-08-06T05:57:43.183Z] [DEBUG] Request Successful! {data: Object, status: 200, statusText: OK, headers: Ae, config: Object}
+[2026-08-06T05:57:43.184Z] [DEBUG] Request Successful! {data: Object, status: 200, statusText: OK, headers: Ae, config: Object}
+[2026-08-06T05:57:43.268Z] [DEBUG] Request Successful! {data: Object, status: 200, statusText: OK, headers: Ae, config: Object}
+[2026-08-06T05:57:43.369Z] [DEBUG] Request Successful! {data: Array(18), status: 200, statusText: OK, headers: Ae, config: Object}
+[2026-08-06T05:57:43.379Z] [DEBUG] Request Successful! {data: Array(18), status: 200, statusText: OK, headers: Ae, config: Object}
+[2026-08-06T05:57:43.396Z] [DEBUG] Request Successful! {data: Array(18), status: 200, statusText: OK, headers: Ae, config: Object}
+[2026-08-06T05:57:43.431Z] [DEBUG] Request Successful! {data: Array(18), status: 200, statusText: OK, headers: Ae, config: Object}
+[2026-08-06T05:57:43.445Z] [DEBUG] Request Successful! {data: Array(18), status: 200, statusText: OK, headers: Ae, config: Object}
+[2026-08-06T05:57:43.485Z] [DEBUG] Request Successful! {data: Array(0), status: 200, statusText: OK, headers: Ae, config: Object}
+[2026-08-06T05:57:43.486Z] [DEBUG] Request Successful! {data: Array(18), status: 200, statusText: OK, headers: Ae, config: Object}
+[2026-08-06T05:57:43.498Z] [DEBUG] Request Successful! {data: Array(18), status: 200, statusText: OK, headers: Ae, config: Object}
+[2026-08-06T05:57:43.500Z] [DEBUG] Request Successful! {data: Array(1), status: 200, statusText: OK, headers: Ae, config: Object}
+[2026-08-06T05:57:43.659Z] [WARNING] [WebMCP] modelContext API not available. Enable chrome://flags/#enable-webmcp-testing (Chrome 146+)
+[2026-08-06T05:57:48.356Z] [REQUEST FAILED] GET https://localhost:41100/d2e/analytics-svc/api/services/values?attributePath=conceptSets&configId=4fce3cb7-32bf-4b46-8cba-32e4f77a14dd&configVersion=A&datasetId=2aaaf28c-c76f-418d-ab2c-e91451f98c89&searchQuery=&attributeType=conceptSet - net::ERR_ABORTED
+[2026-08-06T05:57:48.361Z] [PAGE ERROR] canceled
+CanceledError: canceled
+    at Object.<anonymous> (https://localhost:41100/mri/js/lifecycles-CTcRpky6.js:39:2874)
+    at h0.loadValuesForAttributePath (https://localhost:41100/mri/js/lifecycles-CTcRpky6.js:4164:183211)
+    at Array.<anonymous> (https://localhost:41100/mri/js/lifecycles-CTcRpky6.js:28:2530)
+    at System.register.execute.h0.dispatch (https://localhost:41100/mri/js/lifecycles-CTcRpky6.js:28:10122)
+    at h0.dispatch (https://localhost:41100/mri/js/lifecycles-CTcRpky6.js:28:9092)
+    at r.<computed> (https://localhost:41100/mri/js/lifecycles-CTcRpky6.js:28:12444)
+    at Proxy.mounted (https://localhost:41100/mri/js/lifecycles-CTcRpky6.js:4258:43072)
+    at https://localhost:41100/mri/js/lifecycles-CTcRpky6.js:16:11407
+    at j2 (https://localhost:41100/mri/js/lifecycles-CTcRpky6.js:16:663)
+    at A_ (https://localhost:41100/mri/js/lifecycles-CTcRpky6.js:16:734)
