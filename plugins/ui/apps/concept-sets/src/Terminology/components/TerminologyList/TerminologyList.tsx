@@ -1061,6 +1061,11 @@ const TerminologyList: FC<TerminologyListProps> = ({
     onColumnFiltersChange: setColumnFilters,
     onSortingChange: setSorting,
     manualSorting: isAtlas ? false : true, // Let MRT handle UI, we handle data sorting
+    // The search results are already filtered server-side (fetchData sends columnFilters), so
+    // in CONCEPT_MAPPING we must stop MRT from ALSO filtering client-side — otherwise the
+    // injected "Suggested concepts" rows (which don't carry concept/domain filter fields) get
+    // dropped by the active filters (e.g. Concept = Standard).
+    manualFiltering: mode === "CONCEPT_MAPPING",
     state: { columnFilters, columnOrder, isLoading, sorting },
     enablePagination: false, // Use TablePagination instead of built in
     muiTableBodyRowProps: ({ row, staticRowIndex }) => ({
