@@ -1084,25 +1084,41 @@ const TerminologyList: FC<TerminologyListProps> = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mode, datasetId, JSON.stringify(suggestedConcepts)]);
 
-  const displayData =
-    mode === "CONCEPT_MAPPING" && page === 0 && (suggestedConcepts?.length ?? 0) > 0
-      ? [
-          { __section: getText(i18nKeys.TERMINOLOGY__SUGGESTED_CONCEPTS) } as unknown as FhirValueSetExpansionContainsWithExt,
-          ...suggestedConcepts!.map((c) => {
-            const e = enrichedSuggestions[c.conceptId];
-            return {
-              ...c,
-              concept: e?.concept,
-              conceptClassId: e?.conceptClassId,
-              validity: e?.validity,
-              standardConcept: e?.standardConcept,
-              _suggested: true,
-            } as unknown as FhirValueSetExpansionContainsWithExt;
-          }),
-          { __section: getText(i18nKeys.TERMINOLOGY__ALL_CONCEPTS) } as unknown as FhirValueSetExpansionContainsWithExt,
-          ...listData,
-        ]
-      : listData;
+  // Show the suggested section on every page (not just page 1); the rows are pinned sticky
+  // to the top (see rowPinning below) so they stay visible while the "All concepts" list
+  // scrolls underneath.
+  const showSuggestedSection = mode === "CONCEPT_MAPPING" && (suggestedConcepts?.length ?? 0) > 0;
+
+  const displayData = showSuggestedSection
+    ? [
+        {
+          __section: getText(i18nKeys.TERMINOLOGY__SUGGESTED_CONCEPTS),
+          __sectionKey: "suggested",
+        } as unknown as FhirValueSetExpansionContainsWithExt,
+        ...suggestedConcepts!.map((c) => {
+          const e = enrichedSuggestions[c.conceptId];
+          return {
+            ...c,
+            concept: e?.concept,
+            conceptClassId: e?.conceptClassId,
+            validity: e?.validity,
+            standardConcept: e?.standardConcept,
+            _suggested: true,
+          } as unknown as FhirValueSetExpansionContainsWithExt;
+        }),
+        {
+          __section: getText(i18nKeys.TERMINOLOGY__ALL_CONCEPTS),
+          __sectionKey: "all",
+        } as unknown as FhirValueSetExpansionContainsWithExt,
+        ...listData,
+      ]
+    : listData;
+
+  // Pin the "Suggested concepts" header + the suggested rows to the top (sticky). The
+  // "All concepts" header and the search results stay in the scrolling body.
+  const pinnedTopRowIds = showSuggestedSection
+    ? ["__section_suggested", ...suggestedConcepts!.map((c) => `sugg-${c.conceptId}`)]
+    : [];
 
   const table = useMaterialReactTable({
     layoutMode: "grid",
@@ -1132,7 +1148,25 @@ const TerminologyList: FC<TerminologyListProps> = ({
     // injected "Suggested concepts" rows (which don't carry concept/domain filter fields) get
     // dropped by the active filters (e.g. Concept = Standard).
     manualFiltering: mode === "CONCEPT_MAPPING",
-    state: { columnFilters, columnOrder, isLoading, sorting },
+    // Stable row ids so pinning can target the suggested rows/header (and so the same concept
+    // appearing in both the suggested and search lists doesn't collide on a shared id).
+    getRowId: (originalRow) => {
+      const r = originalRow as any;
+      if (r.__sectionKey) return `__section_${r.__sectionKey}`;
+      if (r._suggested) return `sugg-${r.conceptId}`;
+      return `row-${r.conceptId}`;
+    },
+    // Pin the Suggested-concepts header + suggested rows to the top, sticky, across all pages.
+    enableRowPinning: showSuggestedSection,
+    rowPinningDisplayMode: "sticky",
+    keepPinnedRows: true,
+    state: {
+      columnFilters,
+      columnOrder,
+      isLoading,
+      sorting,
+      rowPinning: { top: pinnedTopRowIds },
+    },
     enablePagination: false, // Use TablePagination instead of built in
     muiTableBodyRowProps: ({ row, staticRowIndex }) => {
       // Full-width "Suggested concepts" / "All concepts" section header rows (injected into
