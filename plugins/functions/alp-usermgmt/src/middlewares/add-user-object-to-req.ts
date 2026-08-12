@@ -6,6 +6,7 @@ import { CONTAINER_KEY, SERVICE_USER_ID } from '../const'
 import { env } from '../env'
 import { Container } from 'typedi'
 import { UserService } from '../services'
+import { isTokenAuthzFresh } from '../authz-freshness'
 
 const subProp = env.USER_MGMT_IDP_SUBJECT_PROP
 const logger = createLogger('AddUserObjToReq')
@@ -34,6 +35,7 @@ export const addUserObjToReq = async (req: IAppRequest, res: Response, next: Nex
     // userId with the SERVICE_USER_ID sentinel so authz middleware bypasses
     // checks only for true service tokens — not for unprovisioned end-users
     // (who get an empty userId below and must NOT bypass).
+    // Service tokens carry no user roles, so freshness does not apply to them.
     if (sub === token.client_id) {
       req.user = { userId: SERVICE_USER_ID, idpUserId: sub } as ITokenUser
       return next()
@@ -41,6 +43,34 @@ export const addUserObjToReq = async (req: IAppRequest, res: Response, next: Nex
 
     const userService = Container.get(UserService)
     const dbUser = await userService.getUserByIdpUserId(idpUserId)
+
+    // D2E issue 2410: the row above is a SELECT * this middleware already had to
+    // make on every request, so authz_changed_at costs no extra query.
+    //
+    // This runs before every router, so rejecting here also stops a stale token
+    // reaching grant-roles-by-scopes, which would otherwise reconcile the
+    // database *from* the token's outdated role claims and revert the very
+    // change that set authz_changed_at.
+    if (dbUser) {
+      const isFresh = isTokenAuthzFresh(token.iat, dbUser.authzChangedAt, env.AUTHZ_FRESHNESS_SKEW_MS)
+      if (!isFresh) {
+        const detail = `iat=${token.iat} authz_changed_at=${dbUser.authzChangedAt?.toISOString()}`
+        if (env.AUTHZ_FRESHNESS_ENFORCED) {
+          logger.info(`Rejecting stale token for ${idpUserId}: ${detail}`)
+          res.setHeader('X-D2E-Authz-Stale', '1')
+          return res.status(401).send({
+            code: 'AUTHZ_STALE_TOKEN',
+            message: 'Authorization changed; token refresh required'
+          })
+        }
+        logger.warn(`[shadow] stale token would be rejected for ${idpUserId}: ${detail}`)
+      }
+      req.isAuthzTokenFresh = isFresh
+    } else {
+      // No usermgmt row yet (first login / auto-provisioning). There is no
+      // recorded change for this user to be stale against.
+      req.isAuthzTokenFresh = true
+    }
 
     const user: ITokenUser = {
       userId: dbUser?.id || '',
