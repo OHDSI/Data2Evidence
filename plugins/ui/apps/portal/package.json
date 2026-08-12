@@ -17,6 +17,7 @@
     "prettier": "prettier --write \"**/*.{ts,tsx}\""
   },
   "dependencies": {
+    "@ai-sdk/react": "^4.0.40",
     "@fontsource-variable/ibm-plex-sans": "^5.2.8",
     "@axa-fr/react-oidc": "6.10.9",
     "@babel/runtime": "^7.18.9",
@@ -35,6 +36,7 @@
     "@types/file-saver": "^2.0.5",
     "@types/papaparse": "^5.3.2",
     "@types/react-csv": "^1.1.2",
+    "ai": "^7.0.37",
     "axios": "^1.13.4",
     "bootstrap": "^5.0.0",
     "classnames": "^2.3.2",
@@ -117,7 +119,7 @@
   },
   "jest": {
     "transformIgnorePatterns": [
-      "[/\\\\]node_modules[/\\\\](?!(react-markdown|vfile|vfile-message|markdown-table|unist-.*|unified|bail|is-plain-obj|trough|remark-.*|mdast-util-.*|escape-string-regexp|micromark.*|decode-named-character-reference|character-entities|property-information|hast-util-whitespace|space-separated-tokens|comma-separated-tokens|pretty-bytes|ccount|rehype-*|hast-util-.*|mdast-util-gfm|web-namespaces|zwitch|hast-to-hyperscript|html-void-elements|gemoji)).+\\.(js|jsx|mjs|cjs|ts|tsx)$"
+      "[/\\\\]node_modules[/\\\\](?!(react-markdown|vfile|vfile-message|markdown-table|unist-.*|unified|bail|is-plain-obj|trim-lines|trough|remark-.*|mdast-util-.*|escape-string-regexp|micromark.*|decode-named-character-reference|character-entities|property-information|hast-util-whitespace|space-separated-tokens|comma-separated-tokens|pretty-bytes|ccount|rehype-*|hast-util-.*|mdast-util-gfm|web-namespaces|zwitch|hast-to-hyperscript|html-void-elements|gemoji|ai|@ai-sdk[/\\\\].*|swr|throttleit|eventsource-parser|zod|zod[/\\\\].*|json-schema-typed|secure-json-parse|eventsource|@workflow[/\\\\].*|@standard-schema[/\\\\].*)).+\\.(js|jsx|mjs|cjs|ts|tsx)$"
     ]
   }
 }

@@ -1,0 +1,26 @@
+// "Ask D2E AI" header button — matches Figma node 1475:126205.
+// Tokens: text/icon Primary/Default #000080, border Primary/Lightest #CCCFE5.
+.ask-ai-button.MuiButton-root {
+  text-transform: none;
+  color: #000080;
+  border: 1px solid #cccfe5;
+  border-radius: 8px;
+  padding: 8px 16px;
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 16px;
+  background-color: #fff;
+  vertical-align: middle;
+  white-space: nowrap;
+
+  .MuiButton-startIcon {
+    margin-left: 0;
+    // Figma spec is an 8px gap; MUI insets the icon by -4px, so 4px nets to 8px.
+    margin-right: 4px;
+  }
+
+  &:hover {
+    border-color: #000080;
+    background-color: #f5f6fb;
+  }
+}

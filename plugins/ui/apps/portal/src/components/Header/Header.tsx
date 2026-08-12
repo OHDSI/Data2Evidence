@@ -1,4 +1,4 @@
-import React, { FC, useCallback, useMemo } from "react";
+import React, { FC, useCallback, useMemo, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { IPlugin, NavLink, Plugins } from "../../types";
 import MenuTab from "./MenuTab/MenuTab";
@@ -8,7 +8,9 @@ import { isAuthenticated } from "../../containers/auth";
 import { AccountTab } from "./AccountTab/AccountTab";
 import { SelectDataset, SelectPublicDataset } from "./SelectDataset/SelectDataset";
 import { SelectRelease } from "./SelectRelease/SelectRelease";
-import { config } from "../../config";
+import { AskAiButton } from "./AskAiButton/AskAiButton";
+import { AiAssistantDrawer } from "../AiAssistant/AiAssistantDrawer";
+import { config, FeatureGate, FEATURE_AI_ASSISTANT } from "../../config";
 import { useActiveDataset } from "../../contexts";
 import env from "../../env";
 import "./Header.scss";
@@ -26,6 +28,8 @@ export const Header: FC<HeaderProps> = ({ nav, portalType, plugins, systemAdminP
   const location = useLocation();
   const isAuth = isAuthenticated();
   const { activeDataset } = useActiveDataset();
+  const [aiAssistantOpen, setAiAssistantOpen] = useState(false);
+  const showAiAssistant = isAuth && portalType === "researcher";
 
   const subPath = useMemo(
     () =>
@@ -57,7 +61,8 @@ export const Header: FC<HeaderProps> = ({ nav, portalType, plugins, systemAdminP
   }, [navigate, subPath]);
 
   return (
-    <header className="portal__header" data-testid="header">
+    <>
+      <header className="portal__header" data-testid="header">
       <div className="header__logo-group">
         <img
           alt="Data2Evidence"
@@ -135,9 +140,24 @@ export const Header: FC<HeaderProps> = ({ nav, portalType, plugins, systemAdminP
               return "";
             })}
 
+          {showAiAssistant && (
+            <FeatureGate featureFlags={[FEATURE_AI_ASSISTANT]}>
+              <li className="ask-ai-tab">
+                <AskAiButton onClick={() => setAiAssistantOpen((open) => !open)} />
+              </li>
+            </FeatureGate>
+          )}
+
           {portalType !== "public" && <AccountTab portalType={portalType} />}
         </ul>
       </div>
-    </header>
+      </header>
+
+      {showAiAssistant && (
+        <FeatureGate featureFlags={[FEATURE_AI_ASSISTANT]}>
+          <AiAssistantDrawer open={aiAssistantOpen} onClose={() => setAiAssistantOpen(false)} />
+        </FeatureGate>
+      )}
+    </>
   );
 };
