@@ -290,6 +290,7 @@ spec:
             - name: ROUNDING_TARGET
               value: "10"
           command:
+            - /entrypoint.sh
             - pixi
             - run
             - --manifest-path
