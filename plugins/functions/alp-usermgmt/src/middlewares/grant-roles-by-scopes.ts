@@ -13,7 +13,7 @@ import {
 } from '../services'
 import { env, getAutoGrantDatasetCodes } from '../env'
 import { LogtoAPI } from '../api'
-import { IDataset, ITokenUser } from '../types'
+import { IAppRequest, IDataset, ITokenUser } from '../types'
 import { UserField } from '../repositories'
 
 const logger = createLogger('GrantRolesByScopes')
@@ -118,6 +118,25 @@ export const grantRolesByScopes = async (req: Request, res: Response, next: Next
     await entitlementsSync.sync(userId!, sub, token).catch(err => {
       logger.warn(`[Entitlements] sync threw for ${sub}: ${err}; keeping existing roles`)
     })
+
+    // D2E issue 2410: the block below reconciles the portal database *from* the
+    // token. A token minted before the most recent authorization change carries
+    // the old permission set, so replaying it here would revert the change an
+    // admin just made. Serve the request, but never let a stale token write.
+    //
+    // This guard applies in shadow mode too — it is a correctness fix, not an
+    // enforcement behaviour. With enforcement on, addUserObjToReq has already
+    // rejected the request and this is unreachable; with it off, this is the
+    // only thing standing between a stale token and a reverted change.
+    // Read through IAppRequest rather than widening this handler's signature:
+    // `IAppRequest extends Request` does not resolve express's own members under
+    // this service's type config (see the pre-existing errors on req.body/query
+    // across the routers), so changing the parameter type here would add new
+    // type errors for `req.body` and `req.headers` above.
+    if ((req as IAppRequest).isAuthzTokenFresh === false) {
+      logger.info(`Skipping role reconciliation for "${sub}": token predates the last authorization change`)
+      return next()
+    }
 
     if (isSync && env.IDP_AUTO_PROVISION_USERS) {
       const tenantId = env.APP_TENANT_ID
@@ -236,20 +255,32 @@ const grantOrRevokeResearcherRole = async (userId: string, tenantId: string, rol
   }
 }
 
+// D2E issue 2410: `skipAuthzStamp`. These two helpers serve the reconciliation
+// below, which writes the *token's own* role claims into the database. The token
+// already carries those claims, so that is not an authorization change relative
+// to the token presenting it, and stamping would mark the caller's own token
+// stale for a change it supplied. The user would be forced to renew, receive an
+// identical set of claims from Logto, and find the database already matching —
+// pure churn, on every first login. Every other caller of these two service
+// methods (admin actions, entitlements sync, access-request approval) carries a
+// change the token cannot know about, and so stamps normally.
 const addUserToGroup = async (userId: string, groupId: string) => {
   const userGroupService = Container.get(UserGroupService)
 
   logger.info(`Grant ${userId} to ${groupId}`)
-  await userGroupService.registerUserToGroup(userId, groupId, undefined, { skipUserValidation: true })
+  await userGroupService.registerUserToGroup(userId, groupId, undefined, {
+    skipUserValidation: true,
+    skipAuthzStamp: true
+  })
 }
 
 const removeUserFromGroup = async (userId: string, groupId: string) => {
   const userGroupService = Container.get(UserGroupService)
-  
+
   const member = await userGroupService.getUserGroup(userId, groupId)
   if (member?.id) {
     logger.info(`Revoke ${userId} from ${groupId}`)
-    await userGroupService.withdrawUserFromGroup(userId, groupId)
+    await userGroupService.withdrawUserFromGroup(userId, groupId, undefined, { skipAuthzStamp: true })
   }
 }
 
