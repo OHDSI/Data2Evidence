@@ -110,7 +110,7 @@ def build_shiny_live_assets(language: str, app_dir: str) -> str:
     logger = get_run_logger()
     logger.info(f"Building Shiny Live app assets in {app_dir}...")
 
-    utils_files = ["download.py", "toolbar_utils.py"]
+    utils_files = ["download.py", "toolbar_utils.py", "style_utils.py"]
 
     for utils_file in utils_files:
         shortdata_src = os.path.join(os.path.dirname(__file__), utils_file)
