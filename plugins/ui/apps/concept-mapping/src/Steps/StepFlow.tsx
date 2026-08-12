@@ -1,6 +1,4 @@
-import React, { FC, useContext, useMemo, useState } from "react";
-import { IconButton } from "@mui/material";
-import ArrowBackOutlinedIcon from "@mui/icons-material/ArrowBackOutlined";
+import React, { FC, useContext, useEffect, useMemo, useState } from "react";
 import { Button } from "@portal/components";
 import { ConceptMappingContext, ConceptMappingDispatchContext } from "../Context/ConceptMappingContext";
 import { DispatchType, ACTION_TYPES } from "../Context/reducers";
@@ -72,6 +70,17 @@ export const StepFlow: FC<StepFlowProps> = ({
   const canNext = step === 0 ? canProceedStep1(state) : step === 1 ? canProceedStep2(state) : false;
   const goTo = (n: number) => dispatch({ type: ACTION_TYPES.SET_WIZARD_STEP, payload: n });
 
+  // The back arrow now lives in the flow NodeDrawer header (left of the "Configure Concept
+  // Mapping" title), since the plugin can't render into that host chrome. It signals back via
+  // a window event; we own the actual step transition here. Re-subscribe on `step` so the
+  // handler always steps back from the current step.
+  useEffect(() => {
+    if (step <= 0) return;
+    const onBack = () => goTo(step - 1);
+    window.addEventListener("concept-mapping-back", onBack);
+    return () => window.removeEventListener("concept-mapping-back", onBack);
+  }, [step]);
+
   // Same column set as the (now removed) MappingTable download button: source columns via
   // the columnMapping accessors, plus the resolved concept fields.
   const { sourceCode, sourceName, sourceFrequency, description } = state.columnMapping;
@@ -116,18 +125,6 @@ export const StepFlow: FC<StepFlowProps> = ({
 
   return (
     <div className="concept-mapping__steps">
-      {step > 0 && (
-        <IconButton
-          aria-label={getText(i18nKeys.STEPS__BACK)}
-          onClick={() => goTo(step - 1)}
-          // Pin top-left; without alignSelf the flex column's stretch makes the button span
-          // full width and its icon renders centered.
-          sx={{ mb: 1, alignSelf: "flex-start" }}
-        >
-          <ArrowBackOutlinedIcon />
-        </IconButton>
-      )}
-
       <div className="concept-mapping__steps-body">
         {step === 0 && (
           <Step1Source
