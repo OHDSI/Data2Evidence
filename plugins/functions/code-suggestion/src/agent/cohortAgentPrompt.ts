@@ -36,7 +36,9 @@ that is already loaded; never rebuild it from scratch.
 patchOps vocabulary: \`{op:"add_card", cardConfigPath, exclude?, ref?, orWith?}\`,
 \`{op:"add_constraint", card, attributePath, value, operator?}\`,
 \`{op:"remove_card", card}\`, \`{op:"remove_constraint", card, attributePath}\`,
-\`{op:"set_card_join", card, join:"AND"|"OR"}\`.
+\`{op:"set_card_join", card, join:"AND"|"OR"}\`,
+\`{op:"set_time_relation", card, relativeTo, mode?, days?, minDays?, maxDays?,
+direction?, fromDate?, toDate?}\`, \`{op:"clear_time_relation", card, relativeTo?}\`.
 
 The Basic Data card (\`patient\`) ALWAYS exists already and holds the demographics
 (Age, Gender, …). Constrain it directly — \`{op:"add_constraint", card:"patient",
@@ -72,6 +74,46 @@ for THAT card's term, in THAT card's \`conceptDomain\` (a Visit card needs a Vis
 concept set — an Alzheimer's set is Condition-domain and matches nothing there).
 The applier rejects a concept set already used under a different domain, so a
 carried-over id fails the patch outright.
+
+### Timing — AND does not mean "then"
+
+AND-ing two cards means "both happened, at any time, in any order". It does NOT
+mean one followed the other. Timing is a SEPARATE op, and leaving it out is a
+silent clinical error: "a new statin within 90 days of an initial T2D diagnosis"
+without a time relation becomes "ever diagnosed with T2D and ever prescribed a
+statin" — a much larger, different cohort that computes and renders perfectly.
+
+**Any of these words means you owe a \`set_time_relation\` op:** within, after,
+before, following, then, subsequent, prior to, during, since, "in the N days
+…", "N-day window", concurrent, overlapping, index/anchor date.
+
+\`{op:"set_time_relation", card:"<the LATER interaction>", relativeTo:"<the
+index/anchor interaction>", mode:"within", days:90, direction:"after"}\`
+
+- \`card\` is the event being timed; \`relativeTo\` is what it is timed against.
+  Both are filterCardIds (or an \`add_card\` \`ref\` from the same patch).
+- \`mode\` defaults to \`"within"\`. **\`within\` + \`days:90\` = 0–90 days, which is
+  what "within 90 days" means. \`exactly\` + \`days:90\` = the 90th day only** —
+  never use it for a window. Others: \`at_least\`, \`at_most\`, \`between\`
+  (\`minDays\`/\`maxDays\`), \`overlaps\` (the two interactions overlap in time;
+  \`days\`/\`direction\` ignored).
+- \`direction\` defaults to \`"after"\`. \`fromDate\`/\`toDate\` default to \`"start"\`;
+  pass \`"end"\` for "within 90 days of FINISHING X".
+- \`relativeTo\` must be alone in its AND-group — you cannot time against an OR
+  group, and neither side may be Basic Data or an exclusion card.
+
+So the worked example is THREE things, not two: a card + concept set per event,
+AND-ed, PLUS the relation.
+
+\`pa_get_current_cohort\` and the patch result both report \`timeRelations\`. **An
+empty \`timeRelations\` on a cohort the user described with timing means the
+timing is not in force** — report the relation from that list, in its words, not
+from what you asked for.
+
+PA has no "first ever occurrence" flag. If the user says *initial* diagnosis or
+*new* prescription, build the timing you can and tell them plainly that
+first-occurrence semantics are not expressible in the builder — do not silently
+drop the word.
 `;
 
 const NO_LIVE_SURFACE = `
@@ -118,7 +160,12 @@ transcript:
 - \`date\` → \`value: { from, to }\`
 - \`conceptSet\` → \`value: { conceptSetId }\`; get the id from \`create_concept_set\`
   or \`list_concept_sets\` — NEVER an OMOP concept id or a phenotype/cohort id, and
-  never an id you resolved for a DIFFERENT filter. The attribute's
+  never an id you resolved for a DIFFERENT filter. \`conceptSetId\` is a plain
+  NUMBER: \`create_concept_set\` returns one directly, but \`list_concept_sets\`
+  returns compound refs, so \`legacy:49\` goes in as \`49\`. A \`webapi:\` ref cannot be
+  attached to a cohort at all — the builder resolves concept sets through
+  terminology-svc, which cannot see that store, so the card would come back with no
+  concepts. Reuse a \`legacy:\` set, or create one. The attribute's
   \`conceptDomain\` (Condition / Visit / Drug / Measurement / Procedure …) is the
   domain its concepts must come from; a set from another domain matches nothing
 - \`catalog\` / \`text\` → resolve the EXACT stored token with

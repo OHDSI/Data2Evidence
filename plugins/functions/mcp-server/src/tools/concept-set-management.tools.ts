@@ -1,10 +1,6 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
-import {
-  ConceptSetItem,
-  ConceptSetItemsNotSavedError,
-  D2EWebAPI,
-} from "../api/D2EWebAPI.ts";
+import { D2EWebAPI } from "../api/D2EWebAPI.ts";
 import { TerminologyAPI, ConceptItem } from "../api/TerminologyAPI";
 import { VocabularyAPI } from "../api/VocabularyAPI";
 import {
@@ -18,6 +14,7 @@ import {
   requireAuthAndDataset,
   createStructuredResponse,
   createTextResponse,
+  getUserName,
 } from "../utils/request-helpers";
 import {
   formatConceptSetExpression,
@@ -193,35 +190,85 @@ export function registerConceptSetManagementTools(server: McpServer) {
     {
       title: "Create Concept Set",
       description:
-        "Create a new concept set in d2e-webapi from a list of OMOP concept items. Returns the new concept set ref. Defaults to private (shared=false).",
+        "Create a new concept set from a list of OMOP concept items. Returns the new concept set ID, " +
+        "which is what a cohort clause's `conceptSetId` takes. Defaults to private (shared=false).",
       inputSchema: CreateConceptSetInput,
     },
-    async ({ name, description, items }, { requestInfo }) => {
+    async ({ name, items }, { requestInfo }) => {
       const toolStart = performance.now();
       const { authorization, datasetId } = requireAuthAndDataset(requestInfo);
 
-      let created;
-      try {
-        created = await d2eWebApi.createConceptSet(
-          authorization,
-          datasetId,
-          { name, description, shared: false, items: (items ?? []) as ConceptSetItem[] }
-        );
-      } catch (error) {
-        // Say what is actually on disk now, in the same breath as the reason. The
-        // transport-level messages ("d2e-webapi returned a server error") read like
-        // a transient hiccup, and a model that has just walked the user through
-        // approving a concept list will round that up to "created" — which is
-        // exactly the failure this wording exists to stop.
-        if (error instanceof ConceptSetItemsNotSavedError) {
-          // A half-written set is worse than none: it exists, so it can be picked
-          // and filtered on, and an empty set silently returns zero patients.
-          throw new Error(
-            `${error.message} Tell the user the set exists but is EMPTY and must be ` +
-              `deleted or repaired before use. Do not treat it as a usable concept set ` +
-              `and do not attach it to a cohort.`,
+      // Written through terminology-svc, NOT d2e-webapi. Both stores exist and
+      // d2e-webapi can read either, but everything that CONSUMES a concept set —
+      // the Concepts page, and query-gen-svc when it resolves a cohort's filters —
+      // goes through terminology-svc, which only knows this one. A set written to
+      // d2e-webapi is created correctly and then resolves to nothing downstream,
+      // which surfaces to the user as a cohort with an empty concept filter.
+      const concepts: ConceptItem[] = (items ?? []).map((item) => ({
+        id: item.conceptId,
+        useDescendants: Boolean(item.includeDescendants),
+        useMapped: Boolean(item.includeMapped),
+        isExcluded: Boolean(item.isExcluded),
+      }));
+
+      // This store has a UNIQUE index on the concept set name, so a repeated create
+      // is a hard failure rather than a harmless no-op. Re-running the same request
+      // (a retry, or a model that lost track of what it already did) should land on
+      // the set that is already there instead of erroring.
+      const existing = (
+        await terminologyApi.listConceptSets(authorization, datasetId)
+      ).find(
+        (cs) => cs.name.trim().toLowerCase() === name.trim().toLowerCase(),
+      );
+
+      if (existing) {
+        // Approximate on purpose: this endpoint enriches each concept from the
+        // dataset's vocabulary cache and drops any id the cache does not know, so a
+        // saved set holding an uncovered concept reads as shorter than it is. That
+        // only ever costs us the reuse shortcut — a false mismatch falls through to
+        // the branch below, which creates nothing and asks the user.
+        const saved = await terminologyApi
+          .getConceptSet(authorization, datasetId, existing.id)
+          .catch(() => null);
+        const savedConcepts: ConceptItem[] = Array.isArray(saved?.concepts)
+          ? saved.concepts
+          : [];
+
+        if (sameConceptDefinition(savedConcepts, concepts)) {
+          console.log(
+            `[MCP-TIMING] [create_concept_set] END total=${(performance.now() - toolStart).toFixed(1)}ms reused=${existing.id} concepts=${concepts.length}`,
+          );
+          return createTextResponse(
+            `Concept set '${name}' already exists with ID ${existing.id} and contains exactly ` +
+              `these ${concepts.length} concept${concepts.length === 1 ? "" : "s"}, so nothing was ` +
+              `created. Use ID ${existing.id}.`,
           );
         }
+
+        // Same name, different concepts. Overwriting is not ours to decide — the
+        // existing set may already be filtering someone's saved cohort.
+        throw new Error(
+          `A concept set named '${name}' already exists (ID ${existing.id}) with a DIFFERENT ` +
+            `concept list, and nothing was created. Do not report a new set. Either use ID ` +
+            `${existing.id} as it stands, or ask the user whether to pick another name.`,
+        );
+      }
+
+      let newId: number;
+      try {
+        const userName = await getUserName(authorization);
+        newId = await terminologyApi.createConceptSet(authorization, datasetId, {
+          name,
+          concepts,
+          shared: false,
+          userName,
+        });
+      } catch (error) {
+        // Say that nothing was written, in the same breath as the reason. The
+        // transport-level messages ("terminology-svc returned a server error") read
+        // like a transient hiccup, and a model that has just walked the user through
+        // approving a concept list will round that up to "created" — which is exactly
+        // the failure this wording exists to stop.
         const reason = error instanceof Error ? error.message : String(error);
         throw new Error(
           `Concept set '${name}' was NOT created and nothing was saved. ${reason} ` +
@@ -231,11 +278,12 @@ export function registerConceptSetManagementTools(server: McpServer) {
       }
 
       console.log(
-        `[MCP-TIMING] [create_concept_set] END total=${(performance.now() - toolStart).toFixed(1)}ms ref=${created.id} items=${items?.length ?? 0}`
+        `[MCP-TIMING] [create_concept_set] END total=${(performance.now() - toolStart).toFixed(1)}ms id=${newId} concepts=${concepts.length}`,
       );
 
       return createTextResponse(
-        `Successfully created concept set '${name}' with ref ${created.id}. ${items?.length ?? 0} concept item${(items?.length ?? 0) === 1 ? "" : "s"} in the expression.`
+        `Successfully created concept set '${name}' with ID ${newId}. ${concepts.length} concept ` +
+          `item${concepts.length === 1 ? "" : "s"} in the expression.`,
       );
     },
   );

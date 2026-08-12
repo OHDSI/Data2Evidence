@@ -213,15 +213,11 @@ export const CreateConceptSetInput = {
     .string()
     .min(1)
     .describe("Unique name for the concept set within this dataset"),
-  description: z
-    .string()
-    .optional()
-    .describe("Optional longer description of the concept set"),
+  // No `description`: the concept set store has no field for one, so accepting it
+  // would advertise something the tool silently discards.
   items: z
     .array(ConceptItemSchema)
-    .describe(
-      "List of OMOP concept items that define the set (d2e-webapi format)",
-    ),
+    .describe("List of OMOP concept items that define the set"),
 };
 
 export const CheckConceptCoverageInput = {

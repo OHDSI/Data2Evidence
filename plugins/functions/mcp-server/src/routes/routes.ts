@@ -1,6 +1,6 @@
 import express, { Request, Response } from "express";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
-import { server } from "../services/server";
+import { createServer } from "../services/server";
 
 export class mcpServerRouter {
   public router = express.Router();
@@ -17,19 +17,30 @@ export class mcpServerRouter {
         `[MCP-TIMING] === REQUEST START === method=${method} } === body=${JSON.stringify(req.body)} `,
       );
 
+      // A server AND a transport per request. The agent calls tools in parallel,
+      // and a server shared across those requests hands one call's result to
+      // another call's transport — see the note in ../services/server.ts.
+      const server = createServer();
+      const transport = new StreamableHTTPServerTransport({
+        sessionIdGenerator: undefined,
+        enableJsonResponse: true,
+      });
+
+      // Protocol._onerror defaults to a no-op, so a response that fails to send
+      // dies silently and the only symptom is a request that never ends. Log it.
+      server.server.onerror = (error) => {
+        console.error(`[MCP] transport error on method=${method}:`, error);
+      };
+
+      // Closing the server closes its transport too (Protocol.close).
+      res.on("close", () => {
+        void server.close();
+        console.log(
+          `[MCP-TIMING] === REQUEST END === method=${method} total=${(performance.now() - reqStart).toFixed(1)}ms`,
+        );
+      });
+
       try {
-        const transport = new StreamableHTTPServerTransport({
-          sessionIdGenerator: undefined,
-          enableJsonResponse: true,
-        });
-
-        res.on("close", () => {
-          transport.close();
-          console.log(
-            `[MCP-TIMING] === REQUEST END === method=${method} total=${(performance.now() - reqStart).toFixed(1)}ms`,
-          );
-        });
-
         await server.connect(transport);
         await transport.handleRequest(req, res, req.body);
       } catch (error) {
