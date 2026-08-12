@@ -254,7 +254,6 @@ export const Step1Source: FC<Step1SourceProps> = ({
   };
 
   const handleDataset = (e: SelectChangeEvent) => {
-    onResetDownstream();
     dispatch({ type: ACTION_TYPES.SET_DATASET_ID, payload: e.target.value });
   };
 
