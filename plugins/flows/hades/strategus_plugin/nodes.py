@@ -1367,20 +1367,6 @@ def upload_strategus_results(analysisSpec: str, path_to_results, dbSettings):
                     resultsConnectionDetails = rConnectionDetails
                 )
 
-                print(f'Creating table tb1_results in schema {results_schema}')
-                # create sql to create table tb1_results
-                create_table_sql = f"""
-                CREATE TABLE IF NOT EXISTS {results_schema}.tb1_results (
-                    token_study_code VARCHAR(100),
-                    dataset_id VARCHAR(100),
-                    cohort_id VARCHAR(100),
-                    table1_json TEXT,
-                    PRIMARY KEY (token_study_code, dataset_id, cohort_id)
-                );
-                """
-                dbdao.execute_sql(create_table_sql)
-            else:
-                print(f'Schema {results_schema} already exists, skipping creation of results datamodel')
 
             # uploadResults logs are not captured by default
             # so we override the consolewrite_print callback to capture the logs
