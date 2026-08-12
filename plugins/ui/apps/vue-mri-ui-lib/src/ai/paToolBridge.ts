@@ -9,8 +9,9 @@
 // so it needs its own channel. Both surfaces are fed by the SAME createPaTools()
 // array, so a tool never exists on one and not the other.
 //
-// The consumer side of this contract lives in the portal bundle; a change to the
-// registry shape or the change event has to land on both sides together.
+// The contract is mirrored in
+// apps/portal/src/components/AiAssistant/webmcp/paToolBridge.ts — keep the two in
+// step (same pattern as aiAssistantPaneBridge.ts ↔ aiAssistantEvents.ts).
 //
 // Shape: a registry object on `window`, not an event round-trip. Consumers must
 // read `window.__d2ePaTools` at call time and never cache it — PA deletes the

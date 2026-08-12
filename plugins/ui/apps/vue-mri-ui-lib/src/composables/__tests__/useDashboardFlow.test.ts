@@ -164,6 +164,28 @@ describe('useDashboardFlow', () => {
     expect(flow.selectedWizardDefinition.value?.id).toBe('table1')
   })
 
+  it('deletes the filter card it created when the required-filters modal is cancelled', async () => {
+    // 'removeFilterCard' is not an action the query module defines, so reverting used
+    // to dispatch into the void and leave the card the wizard added on the cohort.
+    const dispatch = vi.fn((action: string) =>
+      action === 'addFilterCard' ? Promise.resolve('card-9') : Promise.resolve(undefined)
+    )
+    const flow = useDashboardFlow(
+      dispatch,
+      createDashboardGetters({ getConstraintForAttribute: vi.fn().mockReturnValue(undefined) })
+    )
+    flow.allWizardFields.value = [
+      { id: 'gender', configPath: 'patient.attributes.gender', filterCardPath: 'patient' } as any,
+    ]
+
+    await flow.handleRequiredFiltersSubmit({ gender: 'F' }, {}, new Set(['gender']))
+    expect(dispatch).toHaveBeenCalledWith('addFilterCard', { configPath: 'patient' })
+
+    await flow.handleRequiredFiltersCancel()
+
+    expect(dispatch).toHaveBeenCalledWith('deleteFilterCard', { filterCardId: 'card-9' })
+  })
+
   it('routes table1-config flow metadata to the Table1 config modal', async () => {
     const flow = useDashboardFlow(mockDispatch, createDashboardGetters())
     flow.wizardDefinitions.value = [

@@ -169,6 +169,7 @@ const myWindow: any = window
 import { mapActions, mapGetters } from 'vuex'
 import { registerPaTools } from '@/ai/webmcpServer'
 import { publishPaTools } from '@/ai/paToolBridge'
+import { isAiAssistantOpen, notifyLeftPaneOpened, onAiAssistantToggle } from '@/utils/aiAssistantPaneBridge'
 import icon from '../lib/ui/app-icon.vue'
 import appButton from '../lib/ui/app-button.vue'
 import appIcon from '../lib/ui/app-icon.vue'
@@ -222,6 +223,9 @@ export default {
       showQueryFilter: false,
       atlasDataForQueryFilter: null,
       rightPaneEverOpened: false,
+      // Whether the portal's AI assistant drawer is docked — see the pane handshake in
+      // mounted() and collapseLeftPaneForAiAssistant().
+      aiAssistantOpen: isAiAssistantOpen(),
       atlasStore: useAtlasStore(),
     }
   },
@@ -255,6 +259,26 @@ export default {
     getActiveChart() {
       this.chartBusy = false
     },
+    hideLeftPane(hidden, wasHidden) {
+      // Re-opening the filter pane takes back the width the AI assistant drawer is docked in,
+      // so ask the portal to collapse the drawer. Only the hidden -> visible edge is reported:
+      // a collapse (including the one the drawer itself asks for) must not bounce back and
+      // close the drawer that just opened.
+      if (wasHidden && !hidden) {
+        // Drop the flag here rather than waiting for the portal's echo — the echo arrives a
+        // tick later, and until then collapseLeftPaneForAiAssistant would re-hide the pane
+        // the user just opened.
+        this.aiAssistantOpen = false
+        notifyLeftPaneOpened()
+      }
+    },
+    leftPaneCollapsible(collapsible) {
+      // The chart pane just gained content/width, so the filter pane can now give way to a
+      // drawer that was already open (e.g. opening a cohort while the assistant is docked).
+      if (collapsible) {
+        this.collapseLeftPaneForAiAssistant()
+      }
+    },
     getHasAssignedConfig(val) {
       if (val) {
         this.completeInitialLoad()
@@ -278,16 +302,21 @@ export default {
       showBuilder: () => this.toggleCohorts(false),
     }
     // Two consumers, one tool set: an external browser agent via Chrome's
-    // modelContext, and an in-page consumer via the window registry. Both wrap
-    // the same createPaTools() array.
+    // modelContext, and the portal's in-page AI assistant drawer via the window
+    // registry. Both wrap the same createPaTools() array.
     this._unregisterPaTools = registerPaTools(this.$store, paToolHooks)
     this._unpublishPaTools = publishPaTools(this.$store, paToolHooks)
+    this._unsubscribeAiAssistant = onAiAssistantToggle(open => {
+      this.aiAssistantOpen = open
+      this.collapseLeftPaneForAiAssistant()
+    })
     this.updateMinSplitterWidth()
     window.addEventListener('resize', this.updateMinSplitterWidth)
   },
   beforeUnmount() {
     this._unregisterPaTools?.()
     this._unpublishPaTools?.()
+    this._unsubscribeAiAssistant?.()
     window.removeEventListener('resize', this.updateMinSplitterWidth)
     this.chartBusy = false
   },
@@ -326,6 +355,13 @@ export default {
     },
     hideLeftPane() {
       return this.paneSize === PANE_SIZE.HIDDEN
+    },
+    // Whether the filter pane can be hidden without emptying the view. At PANE_SIZE.FULL the
+    // left pane *is* the page (cohort list, or the Atlas query filter), and the right pane
+    // renders nothing until it has been opened once — collapsing in either case would leave a
+    // blank screen.
+    leftPaneCollapsible() {
+      return this.rightPaneEverOpened && this.paneSize > PANE_SIZE.HIDDEN && this.paneSize < PANE_SIZE.FULL
     },
     hasActiveBookmark() {
       return !!this.getActiveBookmark
@@ -405,6 +441,14 @@ export default {
         }
       }
       this.displayCohorts = isDisplayCohort
+    },
+    // The AI assistant drawer docks on the right of the portal and insets the page content, so
+    // hand it the width by collapsing the filter pane while it is open. The two never share
+    // the page: re-opening the filter pane closes the drawer (see the hideLeftPane watcher).
+    collapseLeftPaneForAiAssistant() {
+      if (this.aiAssistantOpen && this.leftPaneCollapsible) {
+        this.togglePanel(PANEL.LEFT)
+      }
     },
     toggleFilterCardSummary(displayFilterCardSummary) {
       this.displayFilterCardSummary = displayFilterCardSummary

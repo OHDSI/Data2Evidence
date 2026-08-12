@@ -1,23 +1,26 @@
 // Query → stored-value matching for pa_search_attribute_values.
 //
-// A zero-row search is NOT evidence that a value is absent. The /values search runs in
+// A zero-row search is NOT evidence that a value is absent, and treating it as
+// such is how "a cohort of women who had ER visits" ended with the assistant
+// asking the user how their dataset spells "female". The /values search runs in
 // the database: a HANA/SQL LIKE is case-sensitive, and it matches the stored
-// token rather than the clinical word for it — so "women" misses "FEMALE". When a
-// search comes back empty, the tool re-reads the attribute's UNFILTERED domain and
-// matches it HERE.
+// token rather than the clinical word for it — so "female" misses "Female",
+// "women" misses "FEMALE", and "ER Visit" misses "Emergency Room Visit" (it is
+// not even a substring). When a search comes back empty, the tool re-reads the
+// attribute's UNFILTERED domain and matches it HERE, where the rules are ours.
 //
 // ---------------------------------------------------------------------------
-// This is the browser-side twin of the mcp-server's cohortValueResolver.ts,
-// which does the same job for the deep-link surface (the tools that exist when
-// PA is NOT mounted). That file is not in this branch yet. The two cannot share
-// a module — that one is Deno, this one is bundled by Vite, and nothing crosses
-// that boundary in this repo — so they are kept in step by a shared table of
-// query→expected-row vectors that both suites read. Until the backend lands,
-// that table lives in __tests__/valueResolution.test.ts; the header there says
-// where it moves to.
+// This is the browser-side twin of
+// plugins/functions/mcp-server/src/lib/cohortValueResolver.ts, which does the
+// same job for the deep-link surface (the tools that exist when PA is NOT
+// mounted). The two cannot share a module — that one is Deno, this one is
+// bundled by Vite, and nothing crosses that boundary in this repo — so they are
+// kept in step by a shared table of query→expected-row vectors that BOTH suites
+// read: mcp-server/src/lib/__fixtures__/value-resolution-vectors.json.
 //
-// Exported names deliberately match the BE file so the two are diffable side by
-// side.
+// Exported names deliberately match the BE file so the two are diffable
+// side by side. If you change the ranking here, change it there, and add the
+// case to the vectors rather than to only one suite.
 // ---------------------------------------------------------------------------
 
 /** A row as the /values endpoint returns it. `text`/`display_value` are labels. */
