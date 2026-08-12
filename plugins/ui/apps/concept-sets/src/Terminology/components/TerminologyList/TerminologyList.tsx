@@ -1265,7 +1265,7 @@ const TerminologyList: FC<TerminologyListProps> = ({
           <SearchBar
             keyword={searchText}
             onEnter={updateSearchResult}
-            width={"806px"}
+            width={"100%"}
           />
         </div>
       ) : null}

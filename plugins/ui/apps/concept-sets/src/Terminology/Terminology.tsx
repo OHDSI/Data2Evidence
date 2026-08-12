@@ -7,6 +7,8 @@ import Tabs from "@mui/material/Tabs";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import { Button, Chip } from "@portal/components";
+import TaskAltIcon from "@mui/icons-material/TaskAlt";
+import CloseIcon from "@mui/icons-material/Close";
 import React, {
   ChangeEvent,
   FC,
@@ -656,7 +658,7 @@ export const Terminology: FC<TerminologyProps> = ({
   const datasetSelectorHeightPx = 38;
   // CONCEPT_MAPPING adds a bottom "Suggest" footer; reserve its height so the search/table
   // region doesn't push it below the viewport (the drawer paper is overflowY:hidden).
-  const suggestFooterHeightPx = 56;
+  const suggestFooterHeightPx = 80;
   const searchAndDetailsHeightOffsetPx =
     (isDrawer
       ? terminologyHeaderHeightPx
@@ -829,7 +831,7 @@ export const Terminology: FC<TerminologyProps> = ({
             style={{
               minHeight: isConceptMapping ? "64px" : "40px",
               width: "100%",
-              backgroundColor: "var(--color-table-row-bg, #edf2f7)",
+              backgroundColor: isConceptMapping ? "#ffffff" : "var(--color-table-row-bg, #edf2f7)",
               display: "flex",
               alignItems: "center",
               justifyContent: "space-between",
@@ -838,7 +840,7 @@ export const Terminology: FC<TerminologyProps> = ({
           >
             <div
               style={{
-                marginLeft: 10,
+                marginLeft: 24,
                 display: "flex",
                 flexDirection: "column",
                 gap: isConceptMapping ? 4 : 0,
@@ -848,10 +850,11 @@ export const Terminology: FC<TerminologyProps> = ({
                 style={{
                   color: "var(--color-primary, #000080)",
                   fontWeight: 500,
+                  fontSize: 18,
                 }}
               >
                 {isConceptMapping
-                  ? getText(i18nKeys.TERMINOLOGY__SUGGEST_CONCEPTS)
+                  ? getText(i18nKeys.TERMINOLOGY__CONCEPTS)
                   : isConceptSet
                   ? getText(i18nKeys.TERMINOLOGY__CONCEPT_SETS)
                   : isConceptMultiSelect
@@ -864,8 +867,14 @@ export const Terminology: FC<TerminologyProps> = ({
                     display: "flex",
                     alignItems: "center",
                     gap: 6,
-                    fontSize: 12,
-                    color: "var(--color-text-secondary, #555)",
+                    fontSize: 14,
+                    // The app self-hosts the *variable* family ("IBM Plex Sans Variable" via
+                    // @fontsource-variable/ibm-plex-sans); plain "IBM Plex Sans" isn't loaded,
+                    // so name the variable family first to actually get IBM Plex.
+                    fontFamily: '"IBM Plex Sans Variable", "IBM Plex Sans", sans-serif',
+                    fontWeight: 600,
+                    lineHeight: 1.5,
+                    color: "#000000",
                   }}
                 >
                   <span>
@@ -879,7 +888,31 @@ export const Terminology: FC<TerminologyProps> = ({
                     {sourceRow.description ?? ""}
                   </span>
                   {sourceRow.status ? (
-                    <Chip label={sourceRow.status} size="small" />
+                    sourceRow.status === "approved" ? (
+                      // Match the mapping-row Approved chip (mint bg + green text/check icon).
+                      <Chip
+                        label="Approved"
+                        size="small"
+                        icon={<TaskAltIcon fontSize="small" />}
+                        sx={{
+                          backgroundColor: "#E1FFF6",
+                          color: "#00875A",
+                          "& .MuiChip-icon": { color: "#00875A" },
+                        }}
+                      />
+                    ) : sourceRow.status === "suggested" ? (
+                      // Match the mapping-row Suggested chip, incl. the "(N)" suggestion count.
+                      <Chip
+                        label={`Suggested (${suggestedConcepts?.length ?? 0})`}
+                        size="small"
+                        sx={{ backgroundColor: "#E5E6F2", color: "#000080" }}
+                      />
+                    ) : (
+                      <Chip
+                        label={sourceRow.status.charAt(0).toUpperCase() + sourceRow.status.slice(1)}
+                        size="small"
+                      />
+                    )
                   ) : null}
                 </div>
               ) : null}
@@ -887,13 +920,14 @@ export const Terminology: FC<TerminologyProps> = ({
 
             <div
               style={{
-                color: "var(--color-primary, #000080)",
-                marginRight: 10,
+                marginRight: 24,
                 cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
               }}
               onClick={onClickClose}
             >
-              x
+              <CloseIcon sx={{ width: 24, height: 24, color: "var(--color-primary, #000080)" }} />
             </div>
           </div>
         )}
@@ -1001,7 +1035,7 @@ export const Terminology: FC<TerminologyProps> = ({
               justifyContent: "flex-end",
               alignItems: "center",
               gap: "10px",
-              padding: "10px 20px",
+              padding: "10px 20px 24px",
               borderTop: "1px solid #d4d4d4",
             }}
           >
