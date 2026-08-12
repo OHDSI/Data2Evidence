@@ -1,4 +1,35 @@
 /**
+ * The card-centric clause contract the LLM produces (using NAMES from
+ * list_cohort_filters, never config paths). One clause = one filter-card
+ * occurrence; the resolver turns clauses into resolved constraints.
+ */
+
+export interface ClauseConstraint {
+  /** Catalog attribute NAME, e.g. "Age", "Value As Number", "Gender". */
+  attribute: string;
+  /** ">=" | "<=" | "=" | "<" | ">" | "!=" | "range". */
+  op: string;
+  /** number, string, or [low, high] for op "range". */
+  value: number | string | (number | string)[];
+}
+
+export interface CohortClause {
+  /** Catalog card NAME, e.g. "Basic Data", "Condition Occurrence". */
+  card: string;
+  /** Card-level include/exclude (exclude → NOT container). */
+  exclude?: boolean;
+  /**
+   * Concept-set id for an event card, already resolved by the agent (via
+   * search_concepts → check_concept_coverage_in_dataset → create_concept_set,
+   * or the phenotype library). Dropped into the card's primary concept-set
+   * attribute. The agent owns concept-set selection; this is just the id.
+   */
+  conceptSetId?: number;
+  /** Value constraints on this card's attributes. */
+  constraints?: ClauseConstraint[];
+}
+
+/**
  * Build the cohort filter catalog from a Patient Analytics frontend config
  * (the getMyConfig `config` object).
  *
@@ -56,39 +87,10 @@ export type CohortCatalog = {
   cards: CatalogCard[];
 };
 
-/**
- * The card-centric clause contract the LLM produces using names from
- * list_cohort_filters; the resolver maps these requests onto the catalog.
- */
-export interface ClauseConstraint {
-  /** Catalog attribute name, e.g. "Age", "Value As Number", "Gender". */
-  attribute: string;
-  /** ">=" | "<=" | "=" | "<" | ">" | "!=" | "range". */
-  op: string;
-  /** Number, string, or [low, high] for op "range". */
-  value: number | string | (number | string)[];
-}
-
-export interface CohortClause {
-  /** Catalog card name, e.g. "Basic Data", "Condition Occurrence". */
-  card: string;
-  /** Card-level include/exclude (exclude becomes a NOT container). */
-  exclude?: boolean;
-  /**
-   * Persisted concept-set id for an event card, resolved by the agent before
-   * the clause reaches the deterministic pipeline.
-   */
-  conceptSetId?: number;
-  /** Value constraints on this card's attributes. */
-  constraints?: ClauseConstraint[];
-}
-
 /** Config stores names as a string or an array of { lang, value }. */
 function resolveName(nameVal: unknown, fallbackKey: string): string {
   if (typeof nameVal === "string" && nameVal) return nameVal;
-  if (
-    Array.isArray(nameVal) && nameVal.length > 0 && (nameVal[0] as any)?.value
-  ) {
+  if (Array.isArray(nameVal) && nameVal.length > 0 && (nameVal[0] as any)?.value) {
     return String((nameVal[0] as any).value);
   }
   return fallbackKey.charAt(0).toUpperCase() + fallbackKey.slice(1);
@@ -172,19 +174,123 @@ export function buildCohortCatalog(config: any): CohortCatalog {
   return { cards };
 }
 
+/** Case/whitespace-insensitive comparison key for a card/attribute name. */
+export function normName(s: string): string {
+  return String(s ?? "").trim().toLowerCase();
+}
+
+/** Find a card by display name (exact ci, then substring). */
+export function findCardByName(
+  catalog: CohortCatalog,
+  name: string,
+): CatalogCard | undefined {
+  const n = normName(name);
+  return (
+    catalog.cards.find((c) => normName(c.name) === n) ??
+    catalog.cards.find(
+      (c) => normName(c.name).includes(n) || n.includes(normName(c.name)),
+    )
+  );
+}
+
+/** Find an attribute within a card by display name (exact ci, then substring). */
+export function findAttributeByName(
+  card: CatalogCard,
+  name: string,
+): CatalogAttribute | undefined {
+  const n = normName(name);
+  return (
+    card.attributes.find((a) => normName(a.name) === n) ??
+    card.attributes.find(
+      (a) => normName(a.name).includes(n) || n.includes(normName(a.name)),
+    )
+  );
+}
+
+/**
+ * Every card that exposes an attribute by this name.
+ *
+ * Used to turn "card X has no attribute Y" into "…but card Z does". The model
+ * puts demographics on the event card it is thinking about ("ER visits under
+ * 80" → Age on the Visit card), and without this hint it reads the rejection as
+ * "this dataset cannot filter on age" and gives up — the attribute is on Basic
+ * Data, one clause away.
+ */
+export function findAttributeAcrossCards(
+  catalog: CohortCatalog,
+  name: string,
+): { card: CatalogCard; attribute: CatalogAttribute }[] {
+  const out: { card: CatalogCard; attribute: CatalogAttribute }[] = [];
+  for (const card of catalog.cards) {
+    const attribute = findAttributeByName(card, name);
+    if (attribute) out.push({ card, attribute });
+  }
+  return out;
+}
+
+/** The card's primary concept-set attribute (cohortDefinitionKey "CodesetId"). */
+export function primaryConceptAttribute(
+  card: CatalogCard,
+): CatalogAttribute | undefined {
+  return card.attributes.find(
+    (a) => a.kind === "conceptSet" && a.cohortDefinitionKey === "CodesetId",
+  );
+}
+
 /**
  * Compact human/LLM-readable summary of the catalog: one line per card listing
  * each attribute as `Name[kind]`, so the model can ground its filter choices on
  * the real cards/attributes before calling the build tool.
+ *
+ * The trailing notes are not decoration. Two failure modes come straight from a
+ * bare card→attribute listing: the model looks for Age on the event card it is
+ * building and concludes the dataset cannot filter by age (demographics are
+ * patient-card attributes), and it invents a `category` token instead of looking
+ * the column up. Both are answered here, next to the data they apply to.
  */
 export function summarizeCatalog(catalog: CohortCatalog): string {
   const lines = catalog.cards.map((c) => {
-    const attrs = c.attributes.map((a) => `${a.name}[${a.kind}]`).join(", ");
+    const attrs = c.attributes
+      .map(
+        (a) =>
+          `${a.name}[${a.kind}${
+            a.kind === "conceptSet" && a.cohortDefinitionKey === "CodesetId"
+              ? "*"
+              : ""
+          }]`,
+      )
+      .join(", ");
     return `- ${c.name}: ${attrs || "(no filterable attributes)"}`;
   });
-  return (
-    "Filter cards available on this dataset (use only these cards and " +
-    "attributes when composing cohort filters):\n" +
-    lines.join("\n")
-  );
+  const patient = catalog.cards.find((c) => c.key === "patient");
+  const demographics = (patient?.attributes ?? [])
+    .filter((a) => a.kind !== "conceptSet")
+    .map((a) => a.name)
+    .join(", ");
+
+  return [
+    "Filter cards available on this dataset. Use these exact card and attribute " +
+    "NAMES in build_d2e_cohort_deeplink clauses (one clause per card occurrence, " +
+    "clauses are AND-ed):",
+    lines.join("\n"),
+    "",
+    "Attribute kinds — how to supply the value:",
+    "- num       → { attribute, op: '>='|'<='|'<'|'>'|'='|'!=', value: <number> }, " +
+    "or op 'range' with value [low, high]",
+    "- category  → the EXACT stored token. Look it up with " +
+    "list_cohort_filter_values({ card, attribute, query? }) and pass a value it " +
+    "returned; never hardcode or guess one. Use op 'in' with a list to match any " +
+    "of several tokens.",
+    "- conceptSet→ a persisted concept-set id (from list_concept_sets / " +
+    "create_concept_set), NOT an OMOP concept id. '*' marks the card's primary " +
+    "concept set, which is what a clause's `conceptSetId` attaches to.",
+    "- datetime  → not supported by the deep-link builder yet.",
+    "",
+    `"${patient?.name ?? "Basic Data"}" is the PATIENT card: ${
+      demographics || "the patient demographics"
+    } live only there. ` +
+    "A demographic filter always goes in its own clause for that card — event " +
+    "cards (encounters, conditions, drugs, …) have no age or gender attribute, " +
+    "which is how the data is modelled, not a limit on what you can filter.",
+  ].join("\n");
 }

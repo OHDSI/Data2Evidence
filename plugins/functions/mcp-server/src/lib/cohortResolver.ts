@@ -5,9 +5,13 @@ import type {
   CatalogCard,
   CatalogAttribute,
 } from "./cohortModel";
+import {
+  findAttributeAcrossCards,
+  findAttributeByName,
+  findCardByName,
+  primaryConceptAttribute,
+} from "./cohortModel";
 import type { CohortConstraint, CohortExpression } from "./cohortBookmarkTree";
-import { AnalyticsAPI } from "../api/AnalyticsAPI";
-import { TerminologyAPI } from "../api/TerminologyAPI";
 
 /**
  * Resolve card-centric clauses (LLM intent, by name) into the resolved
@@ -39,98 +43,39 @@ export interface ResolverDeps {
   conceptSetExists: (id: number) => Promise<boolean>;
 }
 
-export interface ResolverContext {
-  authorization: string;
-  datasetId: string;
-  configId: string;
-  configVersion: string;
-}
-
-/**
- * Build the live resolver adapter; tests provide an in-memory ResolverDeps
- * implementation through the same seam.
- */
-export function buildResolverDeps(
-  analyticsApi: AnalyticsAPI,
-  terminologyApi: TerminologyAPI,
-  context: ResolverContext,
-): ResolverDeps {
-  let conceptSetIds: Promise<Set<number>> | null = null;
-  const loadConceptSetIds = (): Promise<Set<number>> => {
-    if (!conceptSetIds) {
-      conceptSetIds = terminologyApi
-        .listConceptSets(context.authorization, context.datasetId)
-        .then((sets) => new Set(sets.map((set) => Number(set.id))));
-    }
-    return conceptSetIds;
-  };
-
-  return {
-    resolveValue: async (_card, attribute, raw) => {
-      const values = await analyticsApi.getAttributeValues(
-        context.authorization,
-        context.datasetId,
-        attribute.configPath,
-        context.configId,
-        context.configVersion,
-        raw,
-      );
-      if (values.length === 0) {
-        throw new Error(`No value for "${attribute.name}" matching "${raw}".`);
-      }
-      const normalized = raw.trim().toLowerCase();
-      const exact = values.find(
-        (value) =>
-          value.label.toLowerCase() === normalized ||
-          value.value.toLowerCase() === normalized,
-      );
-      return (exact ?? values[0]).value;
-    },
-    conceptSetExists: async (id) => {
-      const ids = await loadConceptSetIds();
-      return ids.has(Number(id));
-    },
-  };
-}
-
 const NUM_OPS = new Set([">=", "<=", "<", ">", "=", "!="]);
 
-function norm(s: string): string {
-  return s.trim().toLowerCase();
-}
+/** Ops a category/text attribute accepts. `in` OR-s a list of stored tokens. */
+const CATEGORY_OPS = new Set(["=", "!=", "in", "not in"]);
 
-/** Find a card by display name (exact ci, then substring). */
-function findCard(
+/**
+ * "Card X has no attribute Y" — plus, when Y exists elsewhere, where to put it.
+ *
+ * The bare version of this error is what ended a real session with "the Visit
+ * card doesn't have an age attribute" and no cohort: age is a patient
+ * attribute, one clause away, and the model had no way to know that from the
+ * rejection alone.
+ */
+function unknownAttributeError(
   catalog: CohortCatalog,
-  name: string,
-): CatalogCard | undefined {
-  const n = norm(name);
-  return (
-    catalog.cards.find((c) => norm(c.name) === n) ??
-    catalog.cards.find(
-      (c) => norm(c.name).includes(n) || n.includes(norm(c.name)),
-    )
-  );
-}
-
-/** Find an attribute within a card by display name (exact ci, then substring). */
-function findAttr(
   card: CatalogCard,
-  name: string,
-): CatalogAttribute | undefined {
-  const n = norm(name);
-  return (
-    card.attributes.find((a) => norm(a.name) === n) ??
-    card.attributes.find(
-      (a) => norm(a.name).includes(n) || n.includes(norm(a.name)),
-    )
+  requested: string,
+): Error {
+  const available = card.attributes.map((a) => a.name).join(", ") || "(none)";
+  const elsewhere = findAttributeAcrossCards(catalog, requested).filter(
+    (hit) => hit.card.key !== card.key,
   );
-}
-
-/** The card's primary concept-set attribute (cohortDefinitionKey "CodesetId"). */
-function primaryConceptAttr(card: CatalogCard): CatalogAttribute | undefined {
-  return card.attributes.find(
-    (a) => a.kind === "conceptSet" && a.cohortDefinitionKey === "CodesetId",
+  const hint = elsewhere.length
+    ? ` "${elsewhere[0].attribute.name}" IS available on card "${elsewhere[0].card.name}"` +
+      `${
+        elsewhere.length > 1
+          ? ` (also: ${elsewhere.slice(1).map((h) => `"${h.card.name}"`).join(", ")})`
+          : ""
+      } — move that constraint into its own clause for that card instead of ` +
+      `dropping it. Demographics (age, gender, race) always live on the patient card.`
+    : "";
+  return new Error(
+    `Card "${card.name}" has no attribute "${requested}". Available: ${available}.${hint}`,
   );
 }
 
@@ -208,6 +153,56 @@ function numExpressions(c: ClauseConstraint): {
 }
 
 /**
+ * Build category/text expressions, resolving each raw term to the token the
+ * dataset actually stores.
+ *
+ * A list (`op:"in"`, or an array value) becomes several OR-ed expressions on the
+ * one attribute. That matters for real questions: an encounter-type column
+ * splits "an ER visit" across several tokens ("Emergency Room Visit",
+ * "Emergency Room and Inpatient Visit"), and forcing one token per constraint
+ * would quietly answer a narrower question than the user asked. Negation is
+ * AND-ed instead — "neither A nor B" is not "not A or not B".
+ */
+async function categoryExpressions(
+  c: ClauseConstraint,
+  card: CatalogCard,
+  attr: CatalogAttribute,
+  deps: ResolverDeps,
+): Promise<{ expressions: CohortExpression[]; combine: "AND" | "OR" }> {
+  const op = String(c.op ?? "=").trim().toLowerCase();
+  if (!CATEGORY_OPS.has(op)) {
+    throw new Error(
+      `Unsupported operator "${c.op}" for text attribute "${attr.name}". Use ` +
+        `"=" (or "in" with a list of values to match any of them), or "!=" / ` +
+        `"not in" to exclude.`,
+    );
+  }
+  const raws = (Array.isArray(c.value) ? c.value : [c.value])
+    .map((v) => String(v ?? "").trim())
+    .filter(Boolean);
+  if (raws.length === 0) {
+    throw new Error(`Constraint on "${attr.name}" has no value.`);
+  }
+
+  const negate = op === "!=" || op === "not in";
+  const resolved: string[] = [];
+  // Sequential on purpose: the resolver's fetches share a per-attribute cache,
+  // so the second token reuses the first one's domain read instead of racing it.
+  for (const raw of raws) {
+    const value = await deps.resolveValue(card, attr, raw);
+    if (!resolved.includes(value)) resolved.push(value);
+  }
+
+  return {
+    expressions: resolved.map((value) => ({
+      operator: negate ? "!=" : "=",
+      value,
+    })),
+    combine: negate ? "AND" : "OR",
+  };
+}
+
+/**
  * Resolve clauses to constraints. Throws an actionable Error on any clause that
  * can't be resolved (unknown card/attribute, missing concept attribute,
  * unsupported kind) — never silently drops a filter.
@@ -239,7 +234,7 @@ export async function resolveClausesToConstraints(
 
   for (let i = 0; i < clauses.length; i++) {
     const clause = clauses[i];
-    const card = findCard(catalog, clause.card);
+    const card = findCardByName(catalog, clause.card);
     if (!card) {
       throw new Error(
         `Unknown filter card "${clause.card}". Available: ${catalog.cards
@@ -278,7 +273,7 @@ export async function resolveClausesToConstraints(
     //    the agent already resolved the id via the concept-set tools).
     if (hasConcept) {
       await assertValidConceptSetId(clause.conceptSetId, card.name, deps);
-      const attr = primaryConceptAttr(card);
+      const attr = primaryConceptAttribute(card);
       if (!attr) {
         throw new Error(
           `Card "${card.name}" has no concept set to attach concept set ${clause.conceptSetId} to.`,
@@ -297,13 +292,9 @@ export async function resolveClausesToConstraints(
 
     // 2. explicit attribute constraints.
     for (const cc of clause.constraints ?? []) {
-      const attr = findAttr(card, cc.attribute);
+      const attr = findAttributeByName(card, cc.attribute);
       if (!attr) {
-        throw new Error(
-          `Card "${card.name}" has no attribute "${cc.attribute}". Available: ${card.attributes
-            .map((a) => a.name)
-            .join(", ")}.`,
-        );
+        throw unknownAttributeError(catalog, card, cc.attribute);
       }
 
       let expressions: CohortExpression[];
@@ -311,17 +302,12 @@ export async function resolveClausesToConstraints(
       if (attr.kind === "num") {
         ({ expressions, combine } = numExpressions(cc));
       } else if (attr.kind === "category") {
-        if (cc.op !== "=" && cc.op !== "!=") {
-          throw new Error(
-            `Unsupported operator "${cc.op}" for category attribute "${cc.attribute}". ` +
-              `Use "=" or "!=".`,
-          );
-        }
-        const resolved = await deps.resolveValue(card, attr, String(cc.value));
-        expressions = [
-          { operator: cc.op, value: resolved },
-        ];
-        combine = "OR";
+        ({ expressions, combine } = await categoryExpressions(
+          cc,
+          card,
+          attr,
+          deps,
+        ));
       } else if (attr.kind === "conceptSet") {
         // value IS the concept-set id (agent-resolved), e.g. a unit set.
         await assertValidConceptSetId(cc.value, card.name, deps);

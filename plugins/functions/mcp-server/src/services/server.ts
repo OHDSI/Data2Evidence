@@ -19,6 +19,12 @@ registerCohortManagementTools(server);
 registerPhenotypeLibraryTools(server);
 registerCohortInstructionTools(server);
 registerCohortValidationTools(server);
+
+// D2E/PA cohort building. These are the "PA is not mounted" surface: the catalog
+// and the deterministic deep link are derived from the dataset's PA config on the
+// server, so the agent can still compose a cohort (and hand back a link that opens
+// it) when the browser has no live builder. While PA IS mounted, the WebMCP pa_*
+// tools are preferred — they edit the cohort on screen in place.
 registerCohortBuilderTools(server);
 
 // Register Strategus tools

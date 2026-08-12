@@ -6,18 +6,22 @@
  * tree loads the WRONG cohort, so we pin the exact shape (cards, paths,
  * instanceIDs, NOT for exclusion, compound measurement card).
  *
- * Run: deno test --allow-read --sloppy-imports --no-check src/lib/cohortPipeline.test.ts
+ * The PA frontend config it builds the catalog from is a real getMyConfig
+ * response captured as a fixture (__fixtures__/pa-frontend-config.json), so the
+ * cards/attributes under test are the ones a live dataset actually exposes.
+ *
+ * Run (deno lives in the trex container, not on the host):
+ *   docker exec d2e-trex deno test --allow-read --sloppy-imports --no-check \
+ *     /usr/src/functions/mcp-server/src/lib/cohortPipeline.test.ts
  */
 
-import {
-  buildCohortCatalog,
-  type CohortClause,
-} from "./cohortModel.ts";
+import { buildCohortCatalog } from "./cohortModel.ts";
 import {
   resolveClausesToConstraints,
   type ResolverDeps,
 } from "./cohortResolver.ts";
 import { buildCohortBookmarkTree } from "./cohortBookmarkTree.ts";
+import type { CohortClause } from "./cohortModel.ts";
 import { compress, decompress } from "./cohortDeepLink.ts";
 
 function assert(cond: unknown, msg: string): asserts cond {
@@ -59,7 +63,7 @@ const CLAUSES: CohortClause[] = [
 
 async function buildTree() {
   const configText = await Deno.readTextFile(
-    new URL("../api/example.json", import.meta.url),
+    new URL("./__fixtures__/pa-frontend-config.json", import.meta.url),
   );
   const catalog = buildCohortCatalog(JSON.parse(configText));
   const constraints = await resolveClausesToConstraints(
@@ -97,7 +101,8 @@ Deno.test(
     eq(age.constraints.content[0].value, 50, "age value");
 
     // [1] condition A (hypertension) -> primary conceptSet attr, id 111
-    const fc1: any = cards.content[1].content[0];
+    const c1: any = cards.content[1];
+    const fc1: any = c1.content[0];
     eq(fc1.name, "Condition Occurrence A", "condition A name");
     eq(
       fc1.instanceID,
@@ -117,7 +122,8 @@ Deno.test(
     );
 
     // [2] measurement A — COMPOUND: concept set + numval in ONE card
-    const fc2: any = cards.content[2].content[0];
+    const c2: any = cards.content[2];
+    const fc2: any = c2.content[0];
     eq(fc2.name, "Measurement A", "measurement name");
     eq(fc2.attributes.content.length, 2, "measurement has 2 attributes");
     const mAttrs = fc2.attributes.content.map((a: any) => a.configPath);
@@ -159,7 +165,7 @@ Deno.test(
 
 Deno.test("numeric range -> two AND expressions", async () => {
   const configText = await Deno.readTextFile(
-    new URL("../api/example.json", import.meta.url),
+    new URL("./__fixtures__/pa-frontend-config.json", import.meta.url),
   );
   const catalog = buildCohortCatalog(JSON.parse(configText));
   const constraints = await resolveClausesToConstraints(
@@ -195,7 +201,7 @@ Deno.test(
   "resolver rejects unknown card with an actionable error",
   async () => {
     const configText = await Deno.readTextFile(
-      new URL("../api/example.json", import.meta.url),
+      new URL("./__fixtures__/pa-frontend-config.json", import.meta.url),
     );
     const catalog = buildCohortCatalog(JSON.parse(configText));
     let threw = false;
@@ -220,7 +226,7 @@ Deno.test(
   "resolver rejects a non-persisted concept-set id (raw OMOP / phenotype id)",
   async () => {
     const configText = await Deno.readTextFile(
-      new URL("../api/example.json", import.meta.url),
+      new URL("./__fixtures__/pa-frontend-config.json", import.meta.url),
     );
     const catalog = buildCohortCatalog(JSON.parse(configText));
 
@@ -290,6 +296,11 @@ Deno.test(
       parser =
         await import("../../../../ui/apps/vue-mri-ui-lib/src/lib/bookmarks/BMv2Parser.ts");
     } catch (e) {
+      // The parser lives in the PA UI package, which is NOT mounted into the
+      // trex container — so this oracle only runs when the test is executed
+      // against the repo working tree (deno on the host). A skip here is not a
+      // pass: the structural assertions above are what guard the tree shape in
+      // the container.
       console.warn(
         "  [skip] real BMv2Parser not importable here:",
         String(e).slice(0, 120),

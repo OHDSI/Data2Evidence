@@ -1,0 +1,208 @@
+{
+  "$comment": [
+    "Shared contract for query -> stored-value matching. TWO implementations read this file:",
+    "  - plugins/functions/mcp-server/src/lib/cohortValueResolver.ts   (Deno, deep-link surface)",
+    "  - plugins/ui/apps/vue-mri-ui-lib/src/ai/valueResolution.ts      (browser, pa_* WebMCP tools)",
+    "They cannot share a module (different runtimes, nothing crosses that boundary in this repo), so",
+    "this table is what keeps them in step. A ranking change belongs HERE first, then in both files —",
+    "if you add it to only one suite, the other surface silently degrades and nothing fails.",
+    "",
+    "THE RULES, best match first. Each is a property of the two strings or of the column, not a list",
+    "of terms someone thought of, so they hold on a dataset nobody here has seen:",
+    "  0  the row IS the term            after casing and demographic-synonym expansion",
+    "  1  the row CONTAINS the term      as a substring, 3+ characters",
+    "  2  the term ABBREVIATES the row   read from the row's FIRST word, each query word consuming",
+    "                                    either the next row word or the initials of the next several",
+    "     …or the row IS the term's CODE the same initials rule read the other way ('F' <- Female)",
+    "  3  every DISTINCTIVE word is present",
+    "  4  some distinctive word is present",
+    "A word is distinctive when it separates one row of THIS column from another — measured as the",
+    "share of rows carrying it (>= 60%, over columns of 4+ rows, is filler). Below that the rules fall",
+    "back to a small seeded list, because a frequency over two rows means nothing.",
+    "",
+    "Two things stay seeded and cannot be derived: demographic synonyms ('women' -> 'female'; no",
+    "structure gets you there) and abbreviations whose expansion is NOT in the row ('ICU' where the",
+    "column says 'Intensive Care'). The seeds also drive the blind-retry path, which has no rows to",
+    "measure — an abbreviation cannot be inverted into a search term without a lexicon.",
+    "",
+    "`rows` use a neutral shape { value, label }; each side maps it onto its own row type. Row counts",
+    "matter: a case written with two rows is testing the seeded fallback, not the measured rule.",
+    "`expectedOrder` lists the `value` of every row that must match, best first. An empty list means",
+    "nothing may match. `alternateQueries` cases assert the retry queries used when the attribute's",
+    "domain cannot be enumerated."
+  ],
+  "ranking": [
+    {
+      "name": "an exact token beats a longer value that merely contains it",
+      "query": "F",
+      "rows": [
+        { "value": "FEMALE_RELATIVE", "label": "Female relative" },
+        { "value": "F", "label": "Female" }
+      ],
+      "expectedOrder": ["F", "FEMALE_RELATIVE"]
+    },
+    {
+      "name": "casing alone never hides a value",
+      "why": "The /values search runs a case-sensitive LIKE in the database.",
+      "query": "female",
+      "rows": [{ "value": "8532", "label": "FEMALE" }],
+      "expectedOrder": ["8532"]
+    },
+    {
+      "name": "the value column is matched too, not only the label",
+      "query": "sinusitis",
+      "rows": [{ "value": "Acute sinusitis", "label": "" }],
+      "expectedOrder": ["Acute sinusitis"]
+    },
+    {
+      "name": "a demographic synonym resolves to the stored token",
+      "why": "The user says \"women\"; the column stores \"F\". Never ask the user how their data spells it. Not derivable — this one is seeded.",
+      "query": "women",
+      "rows": [
+        { "value": "M", "label": "Male" },
+        { "value": "F", "label": "Female" }
+      ],
+      "expectedOrder": ["F"]
+    },
+
+    {
+      "name": "a term reaches a row it is not a substring of, by abbreviating it",
+      "why": "The reported failure: the /values search found nothing and the assistant reported the value absent.",
+      "query": "ER Visit",
+      "rows": [
+        { "value": "9203", "label": "Emergency Room Visit" },
+        { "value": "9201", "label": "Inpatient Visit" },
+        { "value": "9202", "label": "Outpatient Visit" }
+      ],
+      "expectedOrder": ["9203"]
+    },
+    {
+      "name": "an acronym no list contains still reaches its expansion",
+      "why": "The point of deriving the rule: NICU is in no table here, and neither will be whatever a given dataset uses (ASC, LTACH, PCP). The initials must come out of the row itself.",
+      "query": "NICU",
+      "rows": [
+        { "value": "581379", "label": "Neonatal Intensive Care Unit" },
+        { "value": "32037", "label": "Intensive Care Unit" },
+        { "value": "9201", "label": "Inpatient Visit" },
+        { "value": "8717", "label": "Nursing Home" }
+      ],
+      "expectedOrder": ["581379"]
+    },
+    {
+      "name": "initials are read from the START of the row, never from inside it",
+      "why": "Precision over recall, the same trade this module makes everywhere: reading initials from anywhere inside a row lets an acronym claim rows it does not name, and a near-miss value is a silent clinical error. A row an acronym does not reach is still shown — nothing matching returns the whole column.",
+      "query": "ASC",
+      "rows": [
+        { "value": "581379", "label": "Ambulatory Surgical Center" },
+        { "value": "8940", "label": "Hospital Ambulatory Surgical Center" },
+        { "value": "9201", "label": "Inpatient Visit" }
+      ],
+      "expectedOrder": ["581379"]
+    },
+    {
+      "name": "a seeded abbreviation covers an expansion the row does not spell out",
+      "why": "The column says \"Intensive Care\"; there is no \"U\" in the row to derive the U of ICU from. This is why the seed list still exists.",
+      "query": "ICU",
+      "rows": [
+        { "value": "32037", "label": "Intensive Care" },
+        { "value": "9201", "label": "Inpatient Visit" }
+      ],
+      "expectedOrder": ["32037"]
+    },
+    {
+      "name": "a coded column is reached by the term's own initials",
+      "why": "Not a demographics rule: marital status, discharge status and yes/no flags are all stored as bare letters, and no synonym table can enumerate them. The row's code has to be derived FROM the term.",
+      "query": "single",
+      "rows": [
+        { "value": "S", "label": "S" },
+        { "value": "M", "label": "M" },
+        { "value": "W", "label": "W" },
+        { "value": "D", "label": "D" }
+      ],
+      "expectedOrder": ["S"]
+    },
+
+    {
+      "name": "a word nearly every row carries stops discriminating",
+      "why": "\"Visit\" cannot tell you which visit type is meant when four rows in five say it.",
+      "query": "intensive care visit",
+      "rows": [
+        { "value": "9201", "label": "Inpatient Visit" },
+        { "value": "9202", "label": "Outpatient Visit" },
+        { "value": "9203", "label": "Emergency Room Visit" },
+        { "value": "581379", "label": "Inpatient Intensive Care" },
+        { "value": "262", "label": "Emergency Room and Inpatient Visit" }
+      ],
+      "expectedOrder": ["581379"]
+    },
+    {
+      "name": "the same word still discriminates in a column that does not repeat it",
+      "why": "The converse, and the reason filler is measured rather than listed: here \"visit\" is what separates one row from the other, so the row carrying it must rank first.",
+      "query": "emergency visit",
+      "rows": [
+        { "value": "9203", "label": "Emergency Room Visit" },
+        { "value": "8870", "label": "Emergency Room - Hospital" },
+        { "value": "4021", "label": "Operating Room" },
+        { "value": "32037", "label": "Intensive Care" },
+        { "value": "8717", "label": "Nursing Home" }
+      ],
+      "expectedOrder": ["9203", "8870"]
+    },
+    {
+      "name": "a column too short to measure falls back to the seeded filler words",
+      "why": "Two rows is not a frequency. Without the fallback \"visit\" would count as distinctive and the target row, which lacks it, would drop below a row that has nothing else in common.",
+      "query": "intensive care visit",
+      "rows": [
+        { "value": "581379", "label": "Inpatient Intensive Care" },
+        { "value": "9202", "label": "Outpatient Visit" }
+      ],
+      "expectedOrder": ["581379"]
+    },
+    {
+      "name": "a row sharing only one distinctive word ranks below the phrase matches",
+      "query": "emergency room",
+      "rows": [
+        { "value": "8870", "label": "Emergency Room - Hospital" },
+        { "value": "9203", "label": "Emergency Room and Inpatient Visit" },
+        { "value": "4021", "label": "Operating Room" }
+      ],
+      "expectedOrder": ["8870", "9203", "4021"]
+    },
+
+    {
+      "name": "an unrelated term matches nothing rather than something close",
+      "why": "A near-miss clinical concept is a silent clinical error; better to return the whole column.",
+      "query": "diabetes",
+      "rows": [
+        { "value": "9201", "label": "Inpatient Visit" },
+        { "value": "F", "label": "Female" }
+      ],
+      "expectedOrder": []
+    },
+    {
+      "name": "an empty query matches nothing (the caller asks for the whole domain instead)",
+      "query": "",
+      "rows": [{ "value": "F", "label": "Female" }],
+      "expectedOrder": []
+    }
+  ],
+  "alternateQueries": [
+    {
+      "name": "a phrase the endpoint cannot match is retried by its expansions",
+      "why": "Title case first: a stored concept name usually looks like \"Emergency Room Visit\".",
+      "query": "ER visit",
+      "mustInclude": ["Emergency Room Visit", "Emergency Room", "ER VISIT"],
+      "mustNotInclude": ["visit", "Visit", "VISIT"]
+    },
+    {
+      "name": "casings are swept for a case-sensitive LIKE",
+      "query": "female",
+      "mustInclude": ["Female", "FEMALE"]
+    },
+    {
+      "name": "bounded, so a failed search cannot fan out into many endpoint calls",
+      "query": "acute upper respiratory infection of the intensive care unit",
+      "maxLength": 9
+    }
+  ]
+}

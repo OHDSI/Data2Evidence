@@ -187,7 +187,18 @@ const ConceptItemSchema = z.object({
   isExcluded: z.boolean().describe("Exclude this concept and its descendants"),
 });
 
-export const ListConceptSetsInput = {};
+export const ListConceptSetsInput = {
+  // Without this the tool can only dump the first 50 sets and ask the caller to
+  // "narrow" — with nothing to narrow BY. A name filter is what makes the
+  // reuse-an-existing-set path usable on a dataset with a real concept-set library.
+  query: z
+    .string()
+    .optional()
+    .describe(
+      "Case-insensitive substring matched against concept set names, e.g. 'alzheimer'. " +
+        "Search the clinical term here BEFORE creating a new set. Omit to list everything.",
+    ),
+};
 
 export const GetConceptSetInput = {
   conceptSetRef: z

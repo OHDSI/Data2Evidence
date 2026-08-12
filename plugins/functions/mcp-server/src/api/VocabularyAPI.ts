@@ -18,6 +18,13 @@ export type ConceptHit = {
   domainId: string;
   vocabularyId: string;
   standardConcept: string | null;
+  /**
+   * The code within its own vocabulary ("44054006" in SNOMED). Optional because it
+   * depends on the search endpoint returning CONCEPT_CODE. Carried through so the
+   * concept-review card in the assistant panel can show a clinician the identifier
+   * they recognise rather than an OMOP id.
+   */
+  conceptCode?: string;
 };
 
 export class VocabularyAPI extends BaseAPI {
@@ -55,6 +62,7 @@ export class VocabularyAPI extends BaseAPI {
       domainId: c.DOMAIN_ID,
       vocabularyId: c.VOCABULARY_ID,
       standardConcept: c.STANDARD_CONCEPT,
+      conceptCode: c.CONCEPT_CODE != null ? String(c.CONCEPT_CODE) : undefined,
     }));
   }
 }

@@ -17,12 +17,35 @@ export type ConceptSetSummary = {
   createdBy: { name: string; id?: number; login?: string };
 };
 
+/**
+ * The concept set row was created, but attaching its concepts failed — so an
+ * EMPTY set is now saved under `ref`.
+ *
+ * Distinct from a failed create, and the distinction is the whole point: reporting
+ * "nothing was saved" would leave a real, empty set behind, and a cohort later
+ * filtered on it returns zero patients while looking perfectly valid.
+ */
+export class ConceptSetItemsNotSavedError extends Error {
+  constructor(
+    readonly ref: string,
+    readonly conceptSetName: string,
+    readonly reason: string,
+  ) {
+    super(
+      `Concept set '${conceptSetName}' was created as ref ${ref}, but its concepts ` +
+        `could NOT be saved, so it is EMPTY. ${reason}`,
+    );
+    this.name = "ConceptSetItemsNotSavedError";
+  }
+}
+
 export class D2EWebAPI extends BaseAPI {
   constructor() {
     super("d2e-webapi", "d2e-webapi");
   }
 
-  private mapError(error: any, nameHint?: string): never {
+  /** The human-readable reason a call failed, without throwing it. */
+  private describeError(error: any, nameHint?: string): string {
     const status = error?.response?.status;
     const bodyMessage: string | undefined = error?.response?.data?.message;
 
@@ -31,32 +54,30 @@ export class D2EWebAPI extends BaseAPI {
       (status === 409 ||
         (bodyMessage && /already exists|duplicate|unique/i.test(bodyMessage)))
     ) {
-      throw new Error(
-        `A concept set named '${nameHint}' already exists in this dataset. Pick a different name.`,
-      );
+      return `A concept set named '${nameHint}' already exists in this dataset. Pick a different name.`;
     }
     if (status === 404) {
-      throw new Error("Concept set not found. It may have been deleted.");
+      return "Concept set not found. It may have been deleted.";
     }
     if (
       bodyMessage &&
       bodyMessage.length < 200 &&
       /[A-Z]/.test(bodyMessage[0])
     ) {
-      throw new Error(bodyMessage);
+      return bodyMessage;
     }
     if (status && status >= 500) {
-      throw new Error(
-        "d2e-webapi returned a server error. Retry; if it persists, the service may be down.",
-      );
+      return "d2e-webapi returned a server error. Retry; if it persists, the service may be down.";
     }
     const msg: string = error?.message ?? "";
     if (error?.code === "ECONNABORTED" || msg.includes("timeout")) {
-      throw new Error(
-        "Request to d2e-webapi timed out. The concept set may be very large — try get_concept_set first to confirm size.",
-      );
+      return "Request to d2e-webapi timed out. The concept set may be very large — try get_concept_set first to confirm size.";
     }
-    throw new Error("Could not reach d2e-webapi. The service may be down.");
+    return "Could not reach d2e-webapi. The service may be down.";
+  }
+
+  private mapError(error: any, nameHint?: string): never {
+    throw new Error(this.describeError(error, nameHint));
   }
 
   async listConceptSets(
@@ -128,31 +149,43 @@ export class D2EWebAPI extends BaseAPI {
       items?: ConceptSetItem[];
     },
   ): Promise<{ id: string; externalId: number; source: string }> {
+    // Creating the row and attaching its concepts are two calls, so they fail
+    // differently and must be reported differently — see ConceptSetItemsNotSavedError.
+    let created: { id: string; externalId: number; source: string };
     try {
       const createPayload = {
         name: payload.name,
         description: payload.description,
         shared: payload.shared,
       };
-      const { data: created } = await this.call<any>(
+      const { data } = await this.call<any>(
         "post",
         "/conceptset",
         { authorization, datasetId },
         createPayload,
       );
+      created = data;
+    } catch (error) {
+      throw this.mapError(error, payload.name);
+    }
 
-      if (payload.items && payload.items.length > 0) {
+    if (payload.items && payload.items.length > 0) {
+      try {
         await this.call<any>(
           "put",
           `/conceptset/${encodeURIComponent(created.id)}/items`,
           { authorization, datasetId },
           payload.items,
         );
+      } catch (error) {
+        throw new ConceptSetItemsNotSavedError(
+          created.id,
+          payload.name,
+          this.describeError(error, payload.name),
+        );
       }
-
-      return created;
-    } catch (error) {
-      throw this.mapError(error, payload.name);
     }
+
+    return created;
   }
 }
