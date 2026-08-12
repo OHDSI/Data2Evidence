@@ -1,3 +1,5 @@
+import { parseSkewMs } from './authz-freshness'
+
 type LoggingLevel = 'info' | 'warn' | 'error'
 
 const _env = Deno.env.toObject();
@@ -62,7 +64,9 @@ export const env = {
   // never rejects, so behaviour can be observed in production before enforcing.
   AUTHZ_FRESHNESS_ENFORCED: Deno.env.get("USER_MGMT_AUTHZ_FRESHNESS_ENFORCED") === 'true',
   // Clock-drift allowance between Logto and this service, in milliseconds.
-  AUTHZ_FRESHNESS_SKEW_MS: Number(Deno.env.get("USER_MGMT_AUTHZ_FRESHNESS_SKEW_MS") ?? '2000'),
+  // Parsed defensively: an empty or malformed value must fall back to the
+  // default, never reach the comparison as NaN. See parseSkewMs.
+  AUTHZ_FRESHNESS_SKEW_MS: parseSkewMs(Deno.env.get("USER_MGMT_AUTHZ_FRESHNESS_SKEW_MS")),
 }
 
 export const services = JSON.parse(env.SERVICE_ROUTES)
