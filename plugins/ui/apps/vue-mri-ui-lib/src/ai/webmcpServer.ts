@@ -7,7 +7,7 @@
 // We try document first, then fall back to navigator for older builds.
 import { nextTick } from 'vue'
 import type { Store } from 'vuex'
-import { applyCohortPatch, describeCardGroups, type PatchOp } from './cohortPatch'
+import { applyCohortPatch, describeCardGroups, describeTimeRelations, type PatchOp } from './cohortPatch'
 import { alternateQueries, rankValues, DEFAULT_VALUE_LIMIT, MAX_VALUE_LIMIT, type MatchedVia } from './valueResolution'
 
 export interface PaToolResult {
@@ -300,9 +300,10 @@ export function createPaTools(store: Store<any>, hooks: PaComponentHooks = {}): 
       name: 'pa_get_current_cohort',
       description:
         'Return the active cohort / bookmark definition as JSON, plus `cardGroups`: the filter cards as the ' +
-        'builder groups them. Cards in the SAME group are OR-ed; the groups are AND-ed. Read cardGroups before ' +
-        'editing — it gives you the real filterCardIds to target and tells you whether the cohort currently ' +
-        'means "A and B" or "A or B".',
+        'builder groups them (cards in the SAME group are OR-ed; the groups are AND-ed), and `timeRelations`: ' +
+        'the temporal (Advanced Time) relations between cards. Read both before editing — they give you the ' +
+        'real filterCardIds to target and tell you whether the cohort currently means "A and B", "A or B", or ' +
+        '"A then B within N days".',
       inputSchema: { type: 'object', properties: {} },
       async execute() {
         return textResult({
@@ -313,6 +314,11 @@ export function createPaTools(store: Store<any>, hooks: PaComponentHooks = {}): 
             'Cards within one group are OR-ed; groups are AND-ed. To add an OR alternative use ' +
             'add_card with orWith:"<an existing filterCardId in that group>"; to change how two cards already ' +
             'on the cohort combine use set_card_join on the LATER card.',
+          timeRelations: describeTimeRelations(store),
+          timeRelationsNote:
+            'Temporal relations between cards. An EMPTY list means the cohort has no timing at all — AND-ed ' +
+            'cards only require that both interactions happened at some point ("ever diagnosed and ever ' +
+            'prescribed"), never that one followed the other. Add timing with set_time_relation.',
         })
       },
     },
@@ -394,11 +400,15 @@ export function createPaTools(store: Store<any>, hooks: PaComponentHooks = {}): 
       description:
         'Edit the live cohort. Preferred (and the ONLY way to add/remove a filter): pass `patchOps` — typed intent ' +
         'applied deterministically in-place (add_card / add_constraint / remove_card / remove_constraint / ' +
-        'set_card_join). Discover valid paths with pa_list_filter_options. AND/OR: cards are AND-ed by default; ' +
-        'to express "A OR B" add the second card with orWith:"<the other card>" (or regroup existing cards with ' +
-        'set_card_join). The result reports `cardGroups` — the grouping that actually landed. Legacy `bookmark`: ' +
-        'a full tree, accepted ONLY from a trusted builder — a hand-authored tree is validated and rejected (it ' +
-        'silently loads the wrong cohort). Never hand-author one.',
+        'set_card_join / set_time_relation / clear_time_relation). Discover valid paths with ' +
+        'pa_list_filter_options. AND/OR: cards are AND-ed by default; to express "A OR B" add the second card ' +
+        'with orWith:"<the other card>" (or regroup existing cards with set_card_join). TIMING IS SEPARATE FROM ' +
+        'AND/OR: AND-ed cards mean "both happened, ever" — any "within N days", "followed by", "after", ' +
+        '"before", "during" wording needs a set_time_relation op as well, or the cohort silently answers a wider ' +
+        'question. The result reports `cardGroups` (the grouping that landed) and `timeRelations` (the timing ' +
+        'that landed) — report from those. Legacy `bookmark`: a full tree, accepted ONLY from a trusted builder ' +
+        '— a hand-authored tree is validated and rejected (it silently loads the wrong cohort). Never ' +
+        'hand-author one.',
       inputSchema: {
         type: 'object',
         properties: {
@@ -409,16 +419,27 @@ export function createPaTools(store: Store<any>, hooks: PaComponentHooks = {}): 
               '{ op:"add_card", cardConfigPath, exclude?, ref?, orWith? } | ' +
               '{ op:"add_constraint", card, attributePath, value, operator? } | ' +
               '{ op:"remove_card", card } | { op:"remove_constraint", card, attributePath } | ' +
-              '{ op:"set_card_join", card, join }. ' +
+              '{ op:"set_card_join", card, join } | ' +
+              '{ op:"set_time_relation", card, relativeTo, mode?, days?, minDays?, maxDays?, direction?, ' +
+              'fromDate?, toDate? } | { op:"clear_time_relation", card, relativeTo? }. ' +
               'The Basic Data card ("patient") always exists — constrain it directly, never add_card it. ' +
               'Separate filter cards are AND-ed; two cards are OR-ed by putting them in the same group ' +
-              '(add_card orWith, or set_card_join).',
+              '(add_card orWith, or set_card_join). Neither AND nor OR carries any timing — use ' +
+              'set_time_relation for that.',
             items: {
               type: 'object',
               properties: {
                 op: {
                   type: 'string',
-                  enum: ['add_card', 'add_constraint', 'remove_card', 'remove_constraint', 'set_card_join'],
+                  enum: [
+                    'add_card',
+                    'add_constraint',
+                    'remove_card',
+                    'remove_constraint',
+                    'set_card_join',
+                    'set_time_relation',
+                    'clear_time_relation',
+                  ],
                 },
                 cardConfigPath: {
                   type: 'string',
@@ -437,8 +458,53 @@ export function createPaTools(store: Store<any>, hooks: PaComponentHooks = {}): 
                 card: {
                   type: 'string',
                   description:
-                    'add_constraint / remove_* / set_card_join: a filterCardId ("patient", ' +
-                    '"…conditionoccurrence.1") or an add_card `ref` from earlier in this same patch.',
+                    'add_constraint / remove_* / set_card_join / *_time_relation: a filterCardId ("patient", ' +
+                    '"…conditionoccurrence.1") or an add_card `ref` from earlier in this same patch. For ' +
+                    'set_time_relation this is the LATER interaction — the one whose timing is constrained.',
+                },
+                relativeTo: {
+                  type: 'string',
+                  description:
+                    'set_time_relation: the card `card` is timed against (a filterCardId or an earlier `ref`) — ' +
+                    'the index/anchor interaction. It must be alone in its own AND-group; you cannot time ' +
+                    'against an OR group. clear_time_relation: omit to drop every relation on `card`.',
+                },
+                mode: {
+                  type: 'string',
+                  enum: ['within', 'exactly', 'at_least', 'at_most', 'between', 'overlaps'],
+                  description:
+                    'set_time_relation, default "within". "within" + days:90 = 0–90 days (this is what ' +
+                    '"within 90 days" / "in the 90 days following" means). "exactly" + days:90 = the 90th day ' +
+                    'ONLY — almost never what a clinical question asks for. "at_least"/"at_most" = an open ' +
+                    'bound; "between" = minDays–maxDays; "overlaps" = the two interactions overlap in time ' +
+                    '(days and direction are ignored).',
+                },
+                days: {
+                  type: 'number',
+                  description:
+                    'set_time_relation: whole number of days for within / exactly / at_least / at_most.',
+                },
+                minDays: { type: 'number', description: 'set_time_relation mode:"between": lower bound in days.' },
+                maxDays: { type: 'number', description: 'set_time_relation mode:"between": upper bound in days.' },
+                direction: {
+                  type: 'string',
+                  enum: ['after', 'before'],
+                  description:
+                    'set_time_relation, default "after": whether `card` happens after or before `relativeTo`. ' +
+                    '"an initial diagnosis THEN a prescription within 90 days" = the prescription card, ' +
+                    'relativeTo the diagnosis card, direction "after".',
+                },
+                fromDate: {
+                  type: 'string',
+                  enum: ['start', 'end'],
+                  description: 'set_time_relation, default "start": which date of `card` is compared.',
+                },
+                toDate: {
+                  type: 'string',
+                  enum: ['start', 'end'],
+                  description:
+                    'set_time_relation, default "start": which date of `relativeTo` it is compared to. Use ' +
+                    '"end" for "within 90 days of finishing …".',
                 },
                 join: {
                   type: 'string',

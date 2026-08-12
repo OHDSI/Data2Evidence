@@ -1,5 +1,6 @@
 import { vi } from 'vitest'
 import { applyCohortPatch, type PatchOp } from '../cohortPatch'
+import AdvancedTimeFilterModel from '../../lib/models/AdvancedTimeFilterModel'
 
 // A store stand-in that models just enough of the query module for the applier:
 // filter cards, constraints, the bool-container tree that carries the AND/OR
@@ -22,9 +23,18 @@ const makeStore = ({
   axes?: any[]
   domains?: Record<string, string>
 } = {}) => {
-  const cards: Record<string, { props: { excludeFilter: boolean; name?: string } }> = {}
+  // Mirror FilterCardModel.buildLayout: every card carries an (initially empty)
+  // advanced-time layout, which is where temporal relations live.
+  const makeCard = (id: string, excludeFilter = false) => ({
+    props: {
+      excludeFilter,
+      name: id,
+      layout: { advancedTimeLayout: { props: { timeFilterModel: { timeFilters: [] as any[] } } } },
+    },
+  })
+  const cards: Record<string, ReturnType<typeof makeCard>> = {}
   const groups: string[][] = existingGroups ?? existingCards.map(id => [id])
-  for (const id of groups.flat()) cards[id] = { props: { excludeFilter: false } }
+  for (const id of groups.flat()) cards[id] = makeCard(id)
   const constraints: Record<string, any> = {}
   // Instance numbers continue past whatever is already on the cohort, as they do live.
   let cardSeq = Object.keys(cards).filter(id => id !== 'patient').length
@@ -73,7 +83,7 @@ const makeStore = ({
         // Mirror BoolFilterContainer.createFilterCard: the Basic Data card keeps its
         // config path as its instance id, interaction cards get an index suffix.
         const id = payload.configPath === 'patient' ? 'patient' : `${payload.configPath}.${++cardSeq}`
-        cards[id] = { props: { excludeFilter: payload.isExclusion ?? false } }
+        cards[id] = makeCard(id, payload.isExclusion ?? false)
         // No container id → a NEW group (AND). With one → join that group (OR).
         const target = payload.boolFilterContainerId ? groupOf(payload.boolFilterContainerId) : undefined
         if (target) {
@@ -147,6 +157,12 @@ const makeStore = ({
       }
       case 'deleteFilterCardConstraint': {
         delete constraints[payload.constraintId]
+        return Promise.resolve(undefined)
+      }
+      // Mirrors ADVANCEDTIME_SET_TIMEFILTER: the array is assigned by reference.
+      case 'updateFilterCardTimeFilter': {
+        cards[payload.filterCardId].props.layout.advancedTimeLayout.props.timeFilterModel.timeFilters =
+          payload.timeFilters
         return Promise.resolve(undefined)
       }
       case 'deleteFilterCard': {
@@ -787,5 +803,224 @@ describe('applyCohortPatch', () => {
     expect(store.dispatch).toHaveBeenCalledWith('releaseFireRequest', undefined)
     // No live refresh on failure.
     expect(store.dispatch).not.toHaveBeenCalledWith('refreshPatientCount', undefined)
+  })
+
+  describe('temporal relations', () => {
+    const DX = 'patient.interactions.conditionoccurrence.1'
+    const RX = 'patient.interactions.drugexposure.1'
+    const timeFiltersOn = (cards: any, id: string) =>
+      cards[id].props.layout.advancedTimeLayout.props.timeFilterModel.timeFilters
+
+    it('writes "within 90 days after" as a 0–90 range, not a bare 90', async () => {
+      const { store, cards } = makeStore({ existingCards: ['patient', DX, RX] })
+      const result = await applyCohortPatch(store, [
+        { op: 'set_time_relation', card: RX, relativeTo: DX, mode: 'within', days: 90, direction: 'after' },
+      ])
+
+      expect(timeFiltersOn(cards, RX)).toEqual([
+        {
+          originSelection: 'startdate',
+          targetSelection: 'after_startdate',
+          targetInteraction: DX,
+          // A bare "90" would mean the 90th day EXACTLY (see getRequest) — the
+          // single most likely way to get this wrong.
+          days: '[0-90]',
+        },
+      ])
+      expect(result.timeRelations).toEqual([
+        { card: RX, relativeTo: DX, description: `${RX} starts within 90 days after ${DX} starts` },
+      ])
+    })
+
+    // The point of building the `days` expression in the applier rather than
+    // taking it raw: prove the window the query gets is 0–90, not day 90.
+    it('round-trips through getRequest as a 0–90 day window', async () => {
+      const { store, cards } = makeStore({ existingCards: ['patient', DX, RX] })
+      await applyCohortPatch(store, [
+        { op: 'set_time_relation', card: RX, relativeTo: DX, mode: 'within', days: 90, direction: 'after' },
+      ])
+
+      const request = AdvancedTimeFilterModel.getRequest(cards[RX].props.layout.advancedTimeLayout)
+      // `after` negates the day count, so the window is [-90, 0]: the drug starts
+      // between 0 and 90 days after the diagnosis.
+      expect(request).toEqual([
+        {
+          and: [
+            {
+              value: DX,
+              filter: [
+                {
+                  this: 'startdate',
+                  other: 'startdate',
+                  and: [
+                    { op: '<=', value: -0 },
+                    { op: '>=', value: -90 },
+                  ],
+                },
+              ],
+            },
+          ],
+        },
+      ])
+    })
+
+    it('mode "exactly" is a single day, and getIFR keeps it', async () => {
+      const { store, cards } = makeStore({ existingCards: ['patient', DX, RX] })
+      await applyCohortPatch(store, [
+        { op: 'set_time_relation', card: RX, relativeTo: DX, mode: 'exactly', days: 30, direction: 'before' },
+      ])
+
+      expect(timeFiltersOn(cards, RX)[0]).toMatchObject({ days: '30', targetSelection: 'before_startdate' })
+      const ifr = AdvancedTimeFilterModel.getIFR(cards[RX].props.layout.advancedTimeLayout)
+      expect(ifr.filters).toEqual([
+        { value: DX, this: 'startdate', other: 'startdate', after_before: 'before', operator: '30' },
+      ])
+    })
+
+    it('supports end anchors, at_least/at_most/between and overlaps', async () => {
+      const { store, cards } = makeStore({ existingCards: ['patient', DX, RX] })
+      await applyCohortPatch(store, [
+        {
+          op: 'set_time_relation',
+          card: RX,
+          relativeTo: DX,
+          mode: 'between',
+          minDays: 30,
+          maxDays: 90,
+          toDate: 'end',
+        },
+      ])
+      expect(timeFiltersOn(cards, RX)[0]).toMatchObject({ days: '[30-90]', targetSelection: 'after_enddate' })
+
+      await applyCohortPatch(store, [
+        { op: 'set_time_relation', card: RX, relativeTo: DX, mode: 'at_least', days: 7, fromDate: 'end' },
+      ])
+      expect(timeFiltersOn(cards, RX)[0]).toMatchObject({ days: '>=7', originSelection: 'enddate' })
+
+      await applyCohortPatch(store, [{ op: 'set_time_relation', card: RX, relativeTo: DX, mode: 'at_most', days: 7 }])
+      expect(timeFiltersOn(cards, RX)[0]).toMatchObject({ days: '<=7' })
+
+      await applyCohortPatch(store, [{ op: 'set_time_relation', card: RX, relativeTo: DX, mode: 'overlaps' }])
+      expect(timeFiltersOn(cards, RX)[0]).toEqual({
+        originSelection: 'overlap',
+        // Never left empty: AdvancedTime.vue resolves this key against its option
+        // list on mount and throws on an unknown one.
+        targetSelection: 'before_startdate',
+        targetInteraction: DX,
+        days: '',
+      })
+    })
+
+    it('rejects a day count that is not a whole number of days', async () => {
+      const { store } = makeStore({ existingCards: ['patient', DX, RX] })
+      await expect(
+        applyCohortPatch(store, [{ op: 'set_time_relation', card: RX, relativeTo: DX, days: 1.5 }])
+      ).rejects.toThrow(/whole number of days/)
+      await expect(
+        applyCohortPatch(store, [
+          { op: 'set_time_relation', card: RX, relativeTo: DX, mode: 'between', minDays: 90, maxDays: 30 },
+        ])
+      ).rejects.toThrow(/must not be greater than/)
+    })
+
+    it('refuses to time against an OR group, or against Basic Data / an exclusion card', async () => {
+      const OTHER_DX = 'patient.interactions.conditionoccurrence.2'
+      const { store } = makeStore({ existingGroups: [['patient'], [DX, OTHER_DX], [RX]] })
+
+      // The target is OR-ed with another card: there is no single interaction to
+      // measure the days from.
+      await expect(
+        applyCohortPatch(store, [{ op: 'set_time_relation', card: RX, relativeTo: DX, days: 90 }])
+      ).rejects.toThrow(/cannot time against an OR group/)
+
+      // Both cards in the same group: the cohort only requires that ONE matched.
+      await expect(
+        applyCohortPatch(store, [{ op: 'set_time_relation', card: OTHER_DX, relativeTo: DX, days: 90 }])
+      ).rejects.toThrow(/OR-ed together in the same group/)
+
+      await expect(
+        applyCohortPatch(store, [{ op: 'set_time_relation', card: RX, relativeTo: 'patient', days: 90 }])
+      ).rejects.toThrow(/Basic Data card/)
+
+      await expect(
+        applyCohortPatch(store, [{ op: 'set_time_relation', card: RX, relativeTo: RX, days: 90 }])
+      ).rejects.toThrow(/cannot be timed against itself/)
+    })
+
+    it('rejects a relation on an exclusion card, which the builder never renders', async () => {
+      const { store } = makeStore({ existingCards: ['patient', DX] })
+      await applyCohortPatch(store, [
+        { op: 'add_card', cardConfigPath: 'patient.interactions.drugexposure', exclude: true, ref: 'no_rx' },
+      ])
+      const excluded = 'patient.interactions.drugexposure.2'
+      await expect(
+        applyCohortPatch(store, [{ op: 'set_time_relation', card: excluded, relativeTo: DX, days: 90 }])
+      ).rejects.toThrow(/exclusion card/)
+    })
+
+    it('replaces the relation to the same target and keeps relations to others', async () => {
+      const DEATH = 'patient.interactions.death.1'
+      const { store, cards } = makeStore({ existingCards: ['patient', DX, RX, DEATH] })
+      await applyCohortPatch(store, [
+        { op: 'set_time_relation', card: RX, relativeTo: DX, days: 90 },
+        { op: 'set_time_relation', card: RX, relativeTo: DEATH, days: 30, direction: 'before' },
+        // Same pair again — a correction, not a second relation.
+        { op: 'set_time_relation', card: RX, relativeTo: DX, days: 180 },
+      ])
+
+      const filters = timeFiltersOn(cards, RX)
+      expect(filters).toHaveLength(2)
+      expect(filters.find((f: any) => f.targetInteraction === DX).days).toBe('[0-180]')
+      expect(filters.find((f: any) => f.targetInteraction === DEATH).days).toBe('[0-30]')
+    })
+
+    it('clears one relation or all of them', async () => {
+      const DEATH = 'patient.interactions.death.1'
+      const { store, cards } = makeStore({ existingCards: ['patient', DX, RX, DEATH] })
+      await applyCohortPatch(store, [
+        { op: 'set_time_relation', card: RX, relativeTo: DX, days: 90 },
+        { op: 'set_time_relation', card: RX, relativeTo: DEATH, days: 30 },
+      ])
+
+      await applyCohortPatch(store, [{ op: 'clear_time_relation', card: RX, relativeTo: DX }])
+      expect(timeFiltersOn(cards, RX).map((f: any) => f.targetInteraction)).toEqual([DEATH])
+
+      const result = await applyCohortPatch(store, [{ op: 'clear_time_relation', card: RX }])
+      expect(timeFiltersOn(cards, RX)).toEqual([])
+      expect(result.timeRelations).toEqual([])
+    })
+
+    it('restores the previous relation when a later op fails', async () => {
+      const { store, cards } = makeStore({ existingCards: ['patient', DX, RX] })
+      await applyCohortPatch(store, [{ op: 'set_time_relation', card: RX, relativeTo: DX, days: 90 }])
+
+      await expect(
+        applyCohortPatch(store, [
+          { op: 'set_time_relation', card: RX, relativeTo: DX, days: 7 },
+          { op: 'add_constraint', card: 'ghost', attributePath: 'patient.attributes.age', value: 1 },
+        ])
+      ).rejects.toThrow(/Unknown card/)
+
+      // The 90-day window the user already had is back — not the 7-day one the
+      // failed patch tried to set, and not an empty relation.
+      expect(timeFiltersOn(cards, RX)).toEqual([
+        { originSelection: 'startdate', targetSelection: 'after_startdate', targetInteraction: DX, days: '[0-90]' },
+      ])
+    })
+
+    it('can time a card created earlier in the same patch, by ref', async () => {
+      const { store, cards } = makeStore({ existingCards: ['patient'] })
+      const result = await applyCohortPatch(store, [
+        { op: 'add_card', cardConfigPath: 'patient.interactions.conditionoccurrence', ref: 'dx' },
+        { op: 'add_card', cardConfigPath: 'patient.interactions.drugexposure', ref: 'rx' },
+        { op: 'set_time_relation', card: 'rx', relativeTo: 'dx', mode: 'within', days: 90 },
+      ])
+
+      expect(timeFiltersOn(cards, 'patient.interactions.drugexposure.2')[0]).toMatchObject({
+        targetInteraction: 'patient.interactions.conditionoccurrence.1',
+        days: '[0-90]',
+      })
+      expect(result.timeRelations).toHaveLength(1)
+    })
   })
 })

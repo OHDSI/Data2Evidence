@@ -20,16 +20,57 @@ export type ConstraintValue =
   // conceptSetId may arrive as a number — d2e-mcp create_concept_set returns numeric ids.
   | { conceptSetId: string | number; includeDescendants?: boolean; displayValue?: string }
 
+/** Which date of an interaction a temporal relation is measured from. */
+export type TimeAnchor = 'start' | 'end'
+
+/**
+ * How the day count is interpreted. `within` is the one clinical questions
+ * almost always mean ("a prescription within 90 days of the diagnosis") and is
+ * the default — see buildDaysExpression for why it is NOT the same as `exactly`.
+ */
+export type TimeRelationMode = 'within' | 'exactly' | 'at_least' | 'at_most' | 'between' | 'overlaps'
+
+export interface SetTimeRelationOp {
+  op: 'set_time_relation'
+  /** The card the relation is attached to — the "this" side of the comparison. */
+  card: string
+  /** The card it is measured against. Must be alone in its own AND-group. */
+  relativeTo: string
+  /** Default 'within'. */
+  mode?: TimeRelationMode
+  /** Day count for within / exactly / at_least / at_most. */
+  days?: number
+  /** Lower/upper bound for mode:"between". */
+  minDays?: number
+  maxDays?: number
+  /** Whether `card` happens after or before `relativeTo`. Default 'after'. */
+  direction?: 'after' | 'before'
+  /** Which date of `card` is compared. Default 'start'. */
+  fromDate?: TimeAnchor
+  /** Which date of `relativeTo` it is compared to. Default 'start'. */
+  toDate?: TimeAnchor
+}
+
 export type PatchOp =
   | { op: 'add_card'; cardConfigPath: string; exclude?: boolean; ref?: string; orWith?: string }
   | { op: 'add_constraint'; card: string; attributePath: string; value: ConstraintValue; operator?: string }
   | { op: 'remove_card'; card: string }
   | { op: 'remove_constraint'; card: string; attributePath: string }
   | { op: 'set_card_join'; card: string; join: 'AND' | 'OR' }
+  | SetTimeRelationOp
+  | { op: 'clear_time_relation'; card: string; relativeTo?: string }
 
 /** One OR-group of filter cards. Groups are AND-ed with each other. */
 export interface CardGroup {
   cards: Array<{ filterCardId: string; name: string; exclude?: boolean }>
+}
+
+/** A temporal relation as it stands on the cohort, read back from the store. */
+export interface TimeRelationSummary {
+  card: string
+  relativeTo: string
+  /** Plain English, for the caller to report to the user. */
+  description: string
 }
 
 export interface ApplyCohortPatchResult {
@@ -43,6 +84,13 @@ export interface ApplyCohortPatchResult {
   appliedConstraints?: Array<{ card: string; attributePath: string; value: any }>
   /** The resulting AND/OR structure: cards within a group are OR-ed, groups AND-ed. */
   cardGroups?: CardGroup[]
+  /**
+   * Every temporal (Advanced Time) relation on the cohort after the patch. Like
+   * cardGroups this is read back from the store, not echoed from the ops: a
+   * relation whose target went away is silently dropped from the query, so the
+   * caller must report what is actually there.
+   */
+  timeRelations?: TimeRelationSummary[]
   error?: string
 }
 
@@ -79,6 +127,12 @@ interface Rollback {
    * finding its container again at revert time is what makes the inverse exact.
    */
   joinChanges: Array<{ card: string; undo: 'split' | 'merge' }>
+  /**
+   * Advanced-time filter arrays as they were before this patch touched them,
+   * newest last. Deep-copied on capture: the store holds the array by reference,
+   * so a shallow snapshot would track the very edit it is meant to undo.
+   */
+  priorTimeFilters: Array<{ filterCardId: string; timeFilters: StoredTimeFilter[] }>
 }
 
 interface AxisSnapshot {
@@ -189,6 +243,203 @@ function assertNotBasicData(cards: string[], what: string): void {
         'each other; demographics stay on Basic Data, which is always AND-ed with the rest.'
     )
   }
+}
+
+// ---------------------------------------------------------------------------
+// Temporal relations (the builder's "Advanced Time" panel)
+//
+// AND/OR says WHETHER two interactions must both be present; it says nothing
+// about WHEN. "A T2D diagnosis followed by a statin within 90 days" is two
+// AND-ed cards PLUS a temporal relation — without the relation the cohort is
+// "ever diagnosed and ever prescribed", a materially wider and different cohort.
+//
+// The relation lives on the filter card, not on a constraint:
+//
+//   filterCard.props.layout.advancedTimeLayout.props.timeFilterModel.timeFilters
+//     [{ originSelection, targetSelection, targetInteraction, days }]
+//
+// and getIFR (store/modules/query.ts) turns it into the card's
+// `advanceTimeFilter`. Two things about that conversion drive the design here:
+//
+//  1. `days` is a small expression language, not a number, and a BARE NUMBER
+//     MEANS "EXACTLY N DAYS" (AdvancedTimeFilterModel.getRequest emits
+//     `>= n AND <= n`). "within 90 days" is the range `[0-90]`. Handing the
+//     model a raw string field would make that the default mistake, so this op
+//     takes `mode` + `days` and builds the expression here.
+//  2. A time filter whose `targetInteraction` is empty — or whose `days` fails
+//     validateText — is SKIPPED by getIFR without an error. A relation that
+//     never reaches the query is exactly the failure this op exists to prevent,
+//     so everything is validated up front and read back afterwards.
+// ---------------------------------------------------------------------------
+
+/** One entry of `timeFilterModel.timeFilters`, in the store's own vocabulary. */
+interface StoredTimeFilter {
+  originSelection: 'startdate' | 'enddate' | 'overlap'
+  targetSelection: 'before_startdate' | 'after_startdate' | 'before_enddate' | 'after_enddate'
+  targetInteraction: string
+  days: string
+}
+
+const timeFiltersOf = (store: Store<any>, filterCardId: string): StoredTimeFilter[] =>
+  store.getters.getFilterCard?.(filterCardId)?.props?.layout?.advancedTimeLayout?.props?.timeFilterModel
+    ?.timeFilters ?? []
+
+const cloneTimeFilters = (filters: StoredTimeFilter[]): StoredTimeFilter[] => filters.map(f => ({ ...f }))
+
+const cardName = (store: Store<any>, filterCardId: string): string =>
+  store.getters.getFilterCard?.(filterCardId)?.props?.name ?? filterCardId
+
+const anchorField = (anchor: TimeAnchor): 'startdate' | 'enddate' => (anchor === 'end' ? 'enddate' : 'startdate')
+
+/**
+ * Build the `days` expression from the op's intent.
+ *
+ * The mapping is AdvancedTimeFilterModel.getRequest read backwards:
+ *   "[a-b]" -> a <= diff <= b      "n" -> diff == n
+ *   ">=n"   -> diff >= n           "<=n" -> diff <= n
+ * `within` is a RANGE from zero, which is why it cannot be expressed as the
+ * bare number a caller would naturally reach for.
+ */
+function buildDaysExpression(op: SetTimeRelationOp, mode: TimeRelationMode): string {
+  const whole = (label: string, n: unknown): number => {
+    if (typeof n !== 'number' || !Number.isFinite(n) || !Number.isInteger(n) || n < 0) {
+      throw new Error(
+        `set_time_relation: ${label} must be a whole number of days (0 or more), got ${JSON.stringify(n)}.`
+      )
+    }
+    return n
+  }
+  switch (mode) {
+    case 'within':
+      return `[0-${whole('days', op.days)}]`
+    case 'exactly':
+      return `${whole('days', op.days)}`
+    case 'at_least':
+      return `>=${whole('days', op.days)}`
+    case 'at_most':
+      return `<=${whole('days', op.days)}`
+    case 'between': {
+      const min = whole('minDays', op.minDays)
+      const max = whole('maxDays', op.maxDays)
+      if (min > max) {
+        throw new Error(`set_time_relation: minDays (${min}) must not be greater than maxDays (${max}).`)
+      }
+      return `[${min}-${max}]`
+    }
+    default:
+      throw new Error(
+        `set_time_relation: unknown mode ${JSON.stringify(mode)}. Use within | exactly | at_least | at_most | ` +
+          'between | overlaps.'
+      )
+  }
+}
+
+/**
+ * Reject a relation the builder itself could not express, before anything is
+ * written. Mirrors the target list AdvancedTime.vue offers (getList /
+ * getFilteredList) plus the cards it renders the panel on at all.
+ */
+function assertTimeRelationIsExpressible(store: Store<any>, cardId: string, targetId: string): void {
+  if (cardId === targetId) {
+    throw new Error('set_time_relation: a card cannot be timed against itself — pass the OTHER card as relativeTo.')
+  }
+  for (const [id, role] of [
+    [cardId, 'card'],
+    [targetId, 'relativeTo'],
+  ] as const) {
+    if (id === BASIC_DATA_CARD) {
+      throw new Error(
+        `set_time_relation: ${role} "${id}" is the Basic Data card, which has no start/end dates to compare — ` +
+          'temporal relations connect interaction cards (Condition Occurrence, Drug Exposure, …). Put the ' +
+          'relation on the interaction cards and leave demographics on Basic Data.'
+      )
+    }
+    if (isExclusionCard(store, id)) {
+      throw new Error(
+        `set_time_relation: ${role} "${id}" is an exclusion card. The builder does not offer Advanced Time on ` +
+          'excluded cards, so this relation would never reach the query. Express the timing between the ' +
+          'included cards.'
+      )
+    }
+  }
+
+  const targetProps = store.getters.getFilterCard?.(targetId)?.props ?? {}
+  if (targetProps.allowAdvancedTimeFilter === false && targetProps.allowSuccessorConstraint === false) {
+    throw new Error(
+      `set_time_relation: card "${targetId}" cannot be the target of a temporal relation on this dataset.`
+    )
+  }
+
+  const cardLoc = locateCard(store, cardId)
+  if (!cardLoc) {
+    throw new Error(`set_time_relation: card "${cardId}" is not in the cohort's filter tree.`)
+  }
+  const targetLoc = locateCard(store, targetId)
+  if (!targetLoc) {
+    throw new Error(`set_time_relation: relativeTo "${targetId}" is not in the cohort's filter tree.`)
+  }
+  if (targetLoc.containerId === cardLoc.containerId) {
+    throw new Error(
+      `set_time_relation: "${cardId}" and "${targetId}" are OR-ed together in the same group, so there is no ` +
+        '"one then the other" to time — the cohort only requires that ONE of them matched. Split them with ' +
+        'set_card_join { card, join:"AND" } first, then set the relation.'
+    )
+  }
+  if (targetLoc.cards.length > 1) {
+    throw new Error(
+      `set_time_relation: relativeTo "${targetId}" is OR-ed with ${targetLoc.cards
+        .filter(id => id !== targetId)
+        .map(id => `"${id}"`)
+        .join(', ')}, and the builder cannot time against an OR group (which interaction would the days be ` +
+        'measured from?). Time against a card that is alone in its group.'
+    )
+  }
+}
+
+/** Render a stored time filter as the sentence the caller should report. */
+function describeTimeFilter(store: Store<any>, cardId: string, filter: StoredTimeFilter): string {
+  const self = cardName(store, cardId)
+  const other = cardName(store, filter.targetInteraction)
+  if (filter.originSelection === 'overlap') {
+    return `${self} overlaps in time with ${other}`
+  }
+  const selfDate = filter.originSelection === 'enddate' ? 'end' : 'start'
+  const otherDate = filter.targetSelection.endsWith('enddate') ? 'end' : 'start'
+  const direction = filter.targetSelection.startsWith('after') ? 'after' : 'before'
+  const range = /^\[(\d+)-(\d+)\]$/.exec(filter.days)
+  const bound = /^(>=|<=|>|<|=)(\d+)$/.exec(filter.days)
+  const window = range
+    ? range[1] === '0'
+      ? `within ${range[2]} days`
+      : `${range[1]}–${range[2]} days`
+    : bound
+      ? `${{ '>=': 'at least', '>': 'more than', '<=': 'at most', '<': 'less than', '=': 'exactly' }[bound[1]]} ${
+          bound[2]
+        } days`
+      : /^\d+$/.test(filter.days)
+        ? `exactly ${filter.days} days`
+        : `${filter.days} days`
+  return `${self} ${selfDate}s ${window} ${direction} ${other} ${otherDate}s`
+}
+
+/**
+ * Every temporal relation currently on the cohort. Relations whose target card
+ * is gone are reported with `relativeTo: ""` rather than dropped — getIFR skips
+ * them, so the caller needs to see that the timing it asked for is not in force.
+ */
+export function describeTimeRelations(store: Store<any>): TimeRelationSummary[] {
+  const summaries: TimeRelationSummary[] = []
+  for (const cardId of Object.keys(store.getters.getFilterCards?.() ?? {})) {
+    for (const filter of timeFiltersOf(store, cardId)) {
+      if (!filter?.targetInteraction) continue
+      summaries.push({
+        card: cardId,
+        relativeTo: filter.targetInteraction,
+        description: describeTimeFilter(store, cardId, filter),
+      })
+    }
+  }
+  return summaries
 }
 
 // ---------------------------------------------------------------------------
@@ -348,6 +599,7 @@ export async function applyCohortPatch(store: Store<any>, patchOps: PatchOp[]): 
     removedCardIds: [],
     priorAxes: snapshotAxes(store),
     joinChanges: [],
+    priorTimeFilters: [],
   }
 
   const resolveCard = (card: string): string => {
@@ -388,6 +640,7 @@ export async function applyCohortPatch(store: Store<any>, patchOps: PatchOp[]): 
     createdCards: [...rollback.createdCardIds],
     appliedConstraints,
     cardGroups: describeCardGroups(store),
+    timeRelations: describeTimeRelations(store),
   }
 }
 
@@ -608,6 +861,70 @@ async function applyOne(
       }
       return
     }
+    case 'set_time_relation': {
+      if (!op.relativeTo) {
+        throw new Error(
+          'set_time_relation needs `relativeTo`: the card the timing is measured against. `card` is the later ' +
+            'interaction, `relativeTo` the index one — e.g. card: the prescription, relativeTo: the diagnosis.'
+        )
+      }
+      const filterCardId = resolveCard(op.card)
+      const targetId = resolveCard(op.relativeTo)
+      assertTimeRelationIsExpressible(store, filterCardId, targetId)
+
+      const mode = (op.mode ?? 'within') as TimeRelationMode
+      const direction = op.direction ?? 'after'
+      if (direction !== 'after' && direction !== 'before') {
+        throw new Error(`set_time_relation: direction must be "after" or "before" (got ${JSON.stringify(direction)}).`)
+      }
+      const isOverlap = mode === 'overlaps'
+      const next: StoredTimeFilter = {
+        originSelection: isOverlap ? 'overlap' : anchorField(op.fromDate ?? 'start'),
+        // Overlap ignores the target anchor, but the field must still hold a
+        // value the panel can look up: AdvancedTime.vue resolves it against its
+        // option list on mount and throws on an unknown key. This is the same
+        // placeholder AdvancedTimeFilterModel.createAdvancedTimeFilterModel uses.
+        targetSelection: isOverlap
+          ? 'before_startdate'
+          : (`${direction}_${anchorField(op.toDate ?? 'start')}` as StoredTimeFilter['targetSelection']),
+        targetInteraction: targetId,
+        days: isOverlap ? '' : buildDaysExpression(op, mode),
+      }
+
+      const current = timeFiltersOf(store, filterCardId)
+      rollback.priorTimeFilters.push({ filterCardId, timeFilters: cloneTimeFilters(current) })
+      // Replace the relation to THIS target and keep the others: a card can be
+      // timed against several interactions, and each op should only speak for
+      // the pair it names. Entries the panel left half-filled (no target) are
+      // dropped — getIFR ignores them anyway.
+      const timeFilters = current
+        .filter(f => f?.targetInteraction && f.targetInteraction !== targetId)
+        .map(f => ({ ...f }))
+      timeFilters.push(next)
+      await dispatch('updateFilterCardTimeFilter', { filterCardId, timeFilters })
+
+      // Post-condition: getIFR drops a relation with an empty target or an
+      // unparseable `days` silently, so confirm it is really on the card.
+      const landed = timeFiltersOf(store, filterCardId).find(f => f?.targetInteraction === targetId)
+      if (!landed) {
+        throw new Error(
+          `set_time_relation: the relation between "${filterCardId}" and "${targetId}" did not land on the card.`
+        )
+      }
+      return
+    }
+    case 'clear_time_relation': {
+      const filterCardId = resolveCard(op.card)
+      const current = timeFiltersOf(store, filterCardId)
+      if (current.length === 0) return
+      const targetId = op.relativeTo ? resolveCard(op.relativeTo) : undefined
+      rollback.priorTimeFilters.push({ filterCardId, timeFilters: cloneTimeFilters(current) })
+      const timeFilters = targetId
+        ? current.filter(f => f?.targetInteraction !== targetId).map(f => ({ ...f }))
+        : []
+      await dispatch('updateFilterCardTimeFilter', { filterCardId, timeFilters })
+      return
+    }
     case 'remove_card': {
       const filterCardId = resolveCard(op.card)
       await dispatch('deleteFilterCard', { filterCardId })
@@ -646,6 +963,16 @@ async function revert(
       }
     } catch (e) {
       console.error('[cohortPatch] revert join change failed', e)
+    }
+  }
+  // Temporal relations before the cards they point at are torn down: restoring
+  // in reverse leaves the OLDEST snapshot applied last, i.e. the state this
+  // patch found.
+  for (const { filterCardId, timeFilters } of rollback.priorTimeFilters.reverse()) {
+    try {
+      await dispatch('updateFilterCardTimeFilter', { filterCardId, timeFilters: cloneTimeFilters(timeFilters) })
+    } catch (e) {
+      console.error('[cohortPatch] revert updateFilterCardTimeFilter failed', e)
     }
   }
   for (const snapshot of rollback.priorConstraintValues.reverse()) {
