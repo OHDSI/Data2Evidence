@@ -19,6 +19,8 @@ export interface NodeDrawerProps extends DrawerProps {
   className?: string;
   /** Hide the footer "Apply" button (e.g. for drawers that auto-persist on close). */
   hideFooter?: boolean;
+  /** Optional element rendered in the header to the left of the title (e.g. a back arrow). */
+  headerLeft?: React.ReactNode;
   children: React.ReactNode;
 }
 
@@ -30,6 +32,7 @@ export const NodeDrawer: FC<NodeDrawerProps> = ({
   onOk,
   onClose,
   hideFooter = false,
+  headerLeft,
   ...drawerProps
 }) => {
   const classes = classNames("node-drawer", className);
@@ -48,6 +51,7 @@ export const NodeDrawer: FC<NodeDrawerProps> = ({
       {...drawerProps}
     >
       <div className="node-drawer__header">
+        {headerLeft}
         <Box flexGrow={1}>{title}</Box>
         <Box>
           <IconButton

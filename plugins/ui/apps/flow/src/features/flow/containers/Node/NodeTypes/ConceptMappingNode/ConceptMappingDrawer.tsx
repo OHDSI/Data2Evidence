@@ -1,4 +1,6 @@
 import React, { FC, useCallback, useEffect, useMemo } from "react";
+import { IconButton } from "@mui/material";
+import ArrowBackOutlinedIcon from "@mui/icons-material/ArrowBackOutlined";
 import { Node, NodeProps } from "reactflow";
 import { useSelector, shallowEqual } from "react-redux";
 import { useFormData } from "~/features/flow/hooks";
@@ -131,6 +133,22 @@ export const ConceptMappingDrawer: FC<ConceptMappingDrawerProps> = ({
     node.id,
   ]);
 
+  // The wizard's current step lives inside the plugin, but it streams back here via the
+  // plugin's onChange (formData.data.wizard). Read it so the header can show a back arrow
+  // once the user has left Step 1; the arrow itself dispatches a window event the plugin's
+  // StepFlow listens for (it owns the step transition).
+  const currentStep = (formData.data as any)?.wizard?.currentStep ?? 0;
+  const headerLeft =
+    currentStep > 0 ? (
+      <IconButton
+        aria-label="back"
+        onClick={() => window.dispatchEvent(new CustomEvent("concept-mapping-back"))}
+        sx={{ mr: 1, color: "inherit" }}
+      >
+        <ArrowBackOutlinedIcon />
+      </IconButton>
+    ) : undefined;
+
   return (
     <NodeDrawer
       {...props}
@@ -138,6 +156,7 @@ export const ConceptMappingDrawer: FC<ConceptMappingDrawerProps> = ({
       // Width/positioning are fully controlled by SCSS now (see .concept-mapping-drawer
       // .MuiDrawer-paper in ConceptMappingNode.scss) - no `width` prop here.
       hideFooter
+      headerLeft={headerLeft}
       onClose={persistAndClose}
     >
       <PluginRenderer
