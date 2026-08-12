@@ -58,6 +58,11 @@ export const env = {
   USERMGMT_ENTITLEMENTS_PHYSIONET_CLIENT_SECRET: Deno.env.get("USERMGMT__ENTITLEMENTS_PHYSIONET_CLIENT_SECRET") || '',
   USERMGMT_ENTITLEMENTS_PHYSIONET_TOKEN_PATH: Deno.env.get("USERMGMT__ENTITLEMENTS_PHYSIONET_TOKEN_PATH") || '/oauth/token/',
   USERMGMT_ENTITLEMENTS_DATASET_MAPPING: Deno.env.get("USERMGMT__ENTITLEMENTS_DATASET_MAPPING") || '',
+  // D2E issue 2410. When false the freshness check is evaluated and logged but
+  // never rejects, so behaviour can be observed in production before enforcing.
+  AUTHZ_FRESHNESS_ENFORCED: Deno.env.get("USER_MGMT_AUTHZ_FRESHNESS_ENFORCED") === 'true',
+  // Clock-drift allowance between Logto and this service, in milliseconds.
+  AUTHZ_FRESHNESS_SKEW_MS: Number(Deno.env.get("USER_MGMT_AUTHZ_FRESHNESS_SKEW_MS") ?? '2000'),
 }
 
 export const services = JSON.parse(env.SERVICE_ROUTES)
