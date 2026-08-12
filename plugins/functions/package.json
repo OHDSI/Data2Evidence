@@ -2988,6 +2988,16 @@
           ]
         },
         {
+          "path": "^/code-suggestion/agent",
+          "scopes": [
+            "codesuggestion.read",
+            "codesuggestion.tenantview.read"
+          ],
+          "httpMethods": [
+            "POST"
+          ]
+        },
+        {
           "path": "^/mcp/chat",
           "scopes": [
             "mcpchat.read",
