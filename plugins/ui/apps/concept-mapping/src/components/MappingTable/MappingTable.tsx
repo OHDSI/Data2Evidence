@@ -526,6 +526,10 @@ export const MappingTable: FC<MappingTableProps> = ({
     return {
       sx: {
         backgroundColor: selected ? "#E5E6F2" : row.index % 2 === 0 ? "#f5f5f5" : "#ffffff",
+        // Override MRT's default (darker) row-selection highlight with our lighter tint.
+        "&.Mui-selected, &.Mui-selected:hover": {
+          backgroundColor: "#E5E6F2 !important",
+        },
         "&.MuiTableRow-root:hover": {
           backgroundColor: selected ? "#E5E6F2" : "#ebf1f8",
         },
@@ -544,6 +548,9 @@ export const MappingTable: FC<MappingTableProps> = ({
     // and Recommend (fills concept columns) both rebuild `mergedData`, and TanStack Table's
     // default `autoResetPageIndex: true` would otherwise snap the table back to page 1.
     autoResetPageIndex: false,
+    // MRT-native selected-row colour (the default is darker); this is what actually drives
+    // the checkbox-selection highlight, so set it here rather than fighting .Mui-selected.
+    mrtTheme: { selectedRowBackgroundColor: "#E5E6F2" },
     enableRowSelection: true,
     // We render our own "N selected" bulk toolbar in renderTopToolbarCustomActions, so suppress
     // MRT's default selection alert banner to avoid a duplicate.
@@ -613,12 +620,14 @@ export const MappingTable: FC<MappingTableProps> = ({
               </IconButton>
             </Tooltip>
             <Button
+              sx={{ width: "120px", fontSize: "16px" }}
               onClick={() => bulkApprove(selectedRows).then(() => table.resetRowSelection())}
               text={getText(i18nKeys.ACTION__APPROVE)}
               disabled={approveDisabled}
             />
             <Button
               variant="outlined"
+              sx={{ width: "120px", fontSize: "16px" }}
               onClick={() => bulkUncheck(selectedRows).then(() => table.resetRowSelection())}
               text={getText(i18nKeys.ACTION__UNCHECK)}
               disabled={uncheckDisabled}
