@@ -77,7 +77,7 @@ vi.mock("../components/TerminologyDetail/TerminologyDetail", () => ({
 import Terminology from "../Terminology";
 
 describe("Terminology - CONCEPT_MAPPING Suggest flow", () => {
-  it("shows the 'Suggest a concepts' header and a disabled Suggest button before any pick", () => {
+  it("shows the 'Concepts' header and a disabled Suggest button before any pick", () => {
     render(
       <Terminology
         mode="CONCEPT_MAPPING"
@@ -90,7 +90,7 @@ describe("Terminology - CONCEPT_MAPPING Suggest flow", () => {
       />,
     );
 
-    expect(screen.getByText("TERMINOLOGY__SUGGEST_CONCEPTS")).toBeTruthy();
+    expect(screen.getByText("TERMINOLOGY__CONCEPTS")).toBeTruthy();
     const suggestButton = screen
       .getByText("TERMINOLOGY__SUGGEST")
       .closest("button") as HTMLButtonElement;
