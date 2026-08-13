@@ -110,13 +110,15 @@ def build_shiny_live_assets(language: str, app_dir: str) -> str:
     logger = get_run_logger()
     logger.info(f"Building Shiny Live app assets in {app_dir}...")
 
-    utils_files = ["download.py", "toolbar_utils.py", "style_utils.py"]
+    utils_dir = os.path.join(os.path.dirname(__file__), "utils")
 
-    for utils_file in utils_files:
-        shortdata_src = os.path.join(os.path.dirname(__file__), utils_file)
-        shortdata_dest = os.path.join(app_dir, utils_file)
-        shutil.copyfile(shortdata_src, shortdata_dest)
-        logger.info(f"Bundled {utils_file} into {shortdata_dest}")
+    for utils_file in os.listdir(utils_dir):
+        utils_file_src = os.path.join(utils_dir, utils_file)
+        if not os.path.isfile(utils_file_src):
+            continue
+        utils_file_dest = os.path.join(app_dir, utils_file)
+        shutil.copyfile(utils_file_src, utils_file_dest)
+        logger.info(f"Bundled {utils_file} into {utils_file_dest}")
 
     if language == "r":
         raise NotImplementedError("Shiny Live app building for 'R' is not implemented yet.")
