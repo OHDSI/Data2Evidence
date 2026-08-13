@@ -1,5 +1,6 @@
-import React, { FC, useMemo } from "react";
+import React, { FC, useCallback, useEffect, useMemo, useState } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
+import { Loader } from "@portal/components";
 import { Researcher } from "../containers/researcher/Researcher";
 import SystemAdmin from "../containers/systemadmin/SystemAdmin";
 import Etl from "../containers/etl/Etl";
@@ -12,12 +13,20 @@ import { ResultsDialogWithEventLister } from "../plugins/SystemAdmin/DQD/Results
 import { DisclaimerDialog } from "../containers/shared/Legal/DisclaimerDialog";
 
 export const PrivateApp: FC = () => {
-  const { popPostLoginRedirectUri } = usePostLoginRedirectUri();
+  const { postLoginRedirectUri, clearPostLoginRedirectUri } = usePostLoginRedirectUri();
   const { user } = useUser();
+
+  const [isBootstrapping, setIsBootstrapping] = useState(true);
+  const handleReady = useCallback(() => setIsBootstrapping(false), []);
+
+  useEffect(() => {
+    if (!isBootstrapping && postLoginRedirectUri) {
+      clearPostLoginRedirectUri();
+    }
+  }, [isBootstrapping, postLoginRedirectUri, clearPostLoginRedirectUri]);
 
   const defaultRoute = useMemo(() => {
     let defaultRoute = config.ROUTES.researcher;
-    const postLoginRedirectUri = popPostLoginRedirectUri();
 
     if (!user) {
       defaultRoute = config.ROUTES.login;
@@ -32,26 +41,34 @@ export const PrivateApp: FC = () => {
     }
 
     return defaultRoute;
-  }, [user, popPostLoginRedirectUri]);
+  }, [user, postLoginRedirectUri]);
 
   return (
     <div className="App">
-      <ResultsDialogWithEventLister />
-      <DisclaimerDialog />
-      <LoginSilent />
-      <Routes>
-        {user?.canAccessSystemAdminPortal && (
-          <Route path={`${config.ROUTES.systemadmin}/*`} element={<SystemAdmin />} />
-        )}
-        {user?.canAccessResearcherPortal && <Route path={`${config.ROUTES.researcher}/*`} element={<Researcher />} />}
-        {user?.canAccessEtlPortal && <Route path={`${config.ROUTES.etl}/*`} element={<Etl />} />}
-        <Route path={config.ROUTES.logout} element={<Logout />} />
-        <Route path={config.ROUTES.noAccess} element={<NoAccess />} />
-        <Route path="/" element={<Navigate to={defaultRoute} />}>
-          <Route path="public" element={<Navigate to={defaultRoute} />} />
-          <Route path="login" element={<Navigate to={defaultRoute} />} />
-        </Route>
-      </Routes>
+      <LoginSilent onReady={handleReady} />
+      {isBootstrapping ? (
+        <Loader />
+      ) : (
+        <>
+          <ResultsDialogWithEventLister />
+          <DisclaimerDialog />
+          <Routes>
+            {user?.canAccessSystemAdminPortal && (
+              <Route path={`${config.ROUTES.systemadmin}/*`} element={<SystemAdmin />} />
+            )}
+            {user?.canAccessResearcherPortal && (
+              <Route path={`${config.ROUTES.researcher}/*`} element={<Researcher />} />
+            )}
+            {user?.canAccessEtlPortal && <Route path={`${config.ROUTES.etl}/*`} element={<Etl />} />}
+            <Route path={config.ROUTES.logout} element={<Logout />} />
+            <Route path={config.ROUTES.noAccess} element={<NoAccess />} />
+            <Route path="/" element={<Navigate to={defaultRoute} />}>
+              <Route path="public" element={<Navigate to={defaultRoute} />} />
+              <Route path="login" element={<Navigate to={defaultRoute} />} />
+            </Route>
+          </Routes>
+        </>
+      )}
     </div>
   );
 };

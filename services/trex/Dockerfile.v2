@@ -6,7 +6,7 @@
 # env-gated D2E_COMPAT layer (merged upstream), so the core is NOT vendored here —
 # this image only adds d2e's plugins, CDW data, logto, ONNX and DuckDB extensions.
 
-FROM ghcr.io/ohdsi/trexsql:sha-5541894bf73d70b805a48bfb7122e27c93c516f1@sha256:dff6d3794078618aa4b8ca197a97eac711336de715ab731e7a66bb6b5bb278ae AS base
+FROM ghcr.io/ohdsi/trexsql:sha-5702ac64b6873cbaa1d9ab73ae5071e43eb5e6ee@sha256:e350f17a830d8def0f195d32324c410efb7812abca812ccf1cfb4ad245347fb2 AS base
 
 USER root
 WORKDIR /usr/src
@@ -28,19 +28,44 @@ RUN /scripts/install_onnx.sh $ONNXRUNTIME_VERSION linux linux/${TARGETARCH} /roo
     cp -a /root/onnxruntime/lib/libonnxruntime.so* /usr/lib/ && \
     rm -rf /root/onnxruntime && ldconfig
 
-# DuckDB extensions under /root/.duckdb, where core TrexDB connections LOAD them.
-RUN mkdir -p /root/.duckdb/extensions/v${DUCKDB_VERSION}/linux_${TARGETARCH} && \
-    cd /root/.duckdb/extensions/v${DUCKDB_VERSION}/linux_${TARGETARCH} && \
-    for lib in autocomplete avro aws azure fts httpfs icu inet json mysql_scanner parquet postgres_scanner spatial sqlite sqlite_scanner ui vss; do \
-        wget -q https://extensions.duckdb.org/v${DUCKDB_VERSION}/linux_${TARGETARCH}/${lib}.duckdb_extension.gz && \
-        gzip -df ${lib}.duckdb_extension.gz; \
-    done && \
-    for lib in bigquery; do \
-        wget -q https://community-extensions.duckdb.org/v${DUCKDB_VERSION}/linux_${TARGETARCH}/${lib}.duckdb_extension.gz && \
-        gzip -df ${lib}.duckdb_extension.gz; \
-    done
+# NOTE: DuckDB extensions are NOT downloaded here. The base image owns that set
+# (see the trexsql Dockerfile's DUCKDB_*_EXTENSIONS) and installs it into
+# /usr/share/trexsql/extensions; the seeding step further down puts it on the
+# per-user lookup paths. Re-fetching duplicated the binaries, and for bigquery it
+# actively regressed the image: the community build lacks the DuckDB 1.4
+# write-path backport, which is why the base compiles its own from source.
+#
+# To add an extension, add it to the base image rather than fetching it here.
 
-RUN mkdir -p /usr/src/data/cache /usr/src/data/plugins /usr/src/cdw_data/built_in ./cert /var/log/d2e/audit
+# Snowflake source support
+# The community `snowflake` DuckDB extension is a thin wrapper that dlopen()s the
+# Apache Arrow ADBC Snowflake driver at ATTACH time. That native driver is NOT
+# bundled with the extension, so install it into /usr/local/lib — a
+# version-independent path the extension searches (alongside
+# ~/.duckdb/extensions/<ver>/<platform>/ and /usr/lib). The driver is DuckDB-
+# version independent; only the CPU arch must match. Wheel from Apache Arrow
+# ADBC 1.8.0 on PyPI (immutable hashed URLs).
+RUN set -eu; \
+    case "$TARGETARCH" in \
+      amd64) WHL="https://files.pythonhosted.org/packages/b8/6f/ff6d76ca035f0f2308733e7c7e96aeb094d2927a1de1e1a1721593286d3e/adbc_driver_snowflake-1.8.0-py3-none-manylinux1_x86_64.manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_5_x86_64.whl" ;; \
+      arm64) WHL="https://files.pythonhosted.org/packages/a4/14/7f448f5be225a3c596aa1a14a704fb4d8a2871e306d8725f98028af4265f/adbc_driver_snowflake-1.8.0-py3-none-manylinux2014_aarch64.manylinux_2_17_aarch64.whl" ;; \
+      *) echo "unsupported TARGETARCH=$TARGETARCH for ADBC snowflake driver" >&2; exit 1 ;; \
+    esac; \
+    cd /tmp && wget -q "$WHL" -O adbc.whl && \
+    python3 -m zipfile -e adbc.whl adbc_extract && \
+    cp "$(find adbc_extract -name 'libadbc_driver_snowflake.so' | head -n1)" /usr/local/lib/ && \
+    ldconfig && rm -rf adbc.whl adbc_extract
+
+# Best-effort offline preinstall of the snowflake extension wrapper. Non-fatal:
+# if it isn't published for this DuckDB version/arch, the engine falls back to a
+# runtime `INSTALL snowflake FROM community` (which needs network on first use).
+RUN cd /root/.duckdb/extensions/v${DUCKDB_VERSION}/linux_${TARGETARCH} && \
+    ( wget -q https://community-extensions.duckdb.org/v${DUCKDB_VERSION}/linux_${TARGETARCH}/snowflake.duckdb_extension.gz && \
+      gzip -df snowflake.duckdb_extension.gz && echo "snowflake extension preinstalled for v${DUCKDB_VERSION}/linux_${TARGETARCH}" ) || \
+    echo "WARN: snowflake community extension not prebuilt for v${DUCKDB_VERSION}/linux_${TARGETARCH}; relying on runtime INSTALL"
+
+RUN mkdir -p /usr/src/data/cache /usr/src/data/plugins /usr/src/data/flow_staging /usr/src/cdw_data/built_in ./cert /var/log/d2e/audit \
+ && chmod 1777 /usr/src/data/flow_staging
 
 # Bundle CI-built plugins from plugin-artifacts/*.tgz. Two-pass extract handles
 # cross-directory hardlinks in Deno-packed tarballs that GNU tar -x rejects.
@@ -109,11 +134,20 @@ COPY ./cdw_data/built_in /usr/src/cdw_data/built_in
 # (icu/fts) resolves — the base installs to DUCKDB_EXTENSION_DIRECTORY
 # (/usr/share/trexsql/extensions) but worker connections look in ~/.duckdb.
 # This image runs as root, so /root/.duckdb. (Belt-and-suspenders for node too.)
-RUN for HOME_DIR in /root /home/node; do \
+RUN set -eu; \
+    for HOME_DIR in /root /home/node; do \
       mkdir -p "$HOME_DIR/.duckdb/extensions" && \
       cp -r /usr/share/trexsql/extensions/* "$HOME_DIR/.duckdb/extensions/" 2>/dev/null || true; \
     done; \
-    chown -R node:node /home/node/.duckdb 2>/dev/null || true
+    chown -R node:node /home/node/.duckdb 2>/dev/null || true; \
+    # The copy stays best-effort — the base symlinks /home/node's per-arch path at
+    # the same target, so cp reports "same file" there. Assert the outcome instead:
+    # these extensions now come only from the base image, so a silent copy failure
+    # would otherwise surface much later as a LOAD error at runtime.
+    for lib in bigquery icu fts; do \
+      test -s "/root/.duckdb/extensions/v${DUCKDB_VERSION}/linux_${TARGETARCH}/${lib}.duckdb_extension" \
+        || { echo "FATAL: ${lib} missing from /root/.duckdb after seeding from the base image" >&2; exit 1; }; \
+    done
 
 # WebAPI, trexas HTTP/TLS, pgwire, gossip, FHIR.
 EXPOSE 8080 33001 33000 5433 5432 4200 8094

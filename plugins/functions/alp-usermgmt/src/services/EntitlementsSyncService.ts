@@ -46,13 +46,24 @@ export class EntitlementsSyncService {
     if (!env.USERMGMT_ENTITLEMENTS_PHYSIONET_BASE_URL) {
       return null
     }
-    const tokenClaim = env.USERMGMT_ENTITLEMENTS_TOKEN_CLAIM
-    const physionetToken = (jwtClaims as Record<string, unknown>)[tokenClaim] as string | undefined
+    const claims = jwtClaims as Record<string, unknown>
+    let physionetToken = claims[env.USERMGMT_ENTITLEMENTS_TOKEN_CLAIM] as string | undefined
     if (!physionetToken) {
-      // user wasn't federated via PhysioNet (or the connector didn't expose
-      // the upstream token); nothing to do
+      const refreshToken = claims[env.USERMGMT_ENTITLEMENTS_REFRESH_TOKEN_CLAIM] as string | undefined
+      if (refreshToken) {
+        physionetToken = await this.exchangeRefreshToken(refreshToken).catch(err => {
+          this.logger.warn(`[Entitlements] refresh-token exchange failed for ${idpUserId}: ${err}`)
+          return undefined
+        })
+      }
+    }
+    if (!physionetToken) {
+      // user wasn't federated via PhysioNet, or we have neither a usable access
+      // token nor a redeemable refresh token; nothing to do
+      this.logger.info(`[Entitlements] no PhysioNet token for ${idpUserId}; skipping`)
       return null
     }
+    this.logger.info(`[Entitlements] syncing STUDY_RESEARCHER groups for ${idpUserId} via PhysioNet`)
 
     const tenantId = env.USERMGMT_AUTO_PROVISION_DEFAULT_TENANT_ID
     if (!tenantId) {
@@ -63,12 +74,14 @@ export class EntitlementsSyncService {
     }
 
     const mapping = await this.parseDatasetMapping()
+    this.logger.debug(`[Entitlements] dataset mapping: ${JSON.stringify(mapping)}`)
     if (Object.keys(mapping).length === 0) {
       this.logger.warn(`[Entitlements] USERMGMT__ENTITLEMENTS_DATASET_MAPPING is empty; nothing to sync`)
       return null
     }
 
     const datasets = await this.loadDatasets()
+    this.logger.debug(`[Entitlements] loaded ${datasets.length} datasets from portal.dataset`)
     if (datasets.length === 0) {
       return { granted: [], revoked: [] }
     }
@@ -78,6 +91,7 @@ export class EntitlementsSyncService {
     let anyResearcher = false
 
     for (const dataset of datasets) {
+      this.logger.debug(`[Entitlements] checking dataset ${dataset.token_dataset_code}`)
       if (!dataset.token_dataset_code) continue
       const mapped = mapping[dataset.token_dataset_code]
       if (!mapped) continue
@@ -125,6 +139,18 @@ export class EntitlementsSyncService {
     return { granted, revoked }
   }
 
+  /**
+   * token_dataset_codes governed by PhysioNet entitlements sync.
+   * grant-roles-by-scopes must skip these: the token's scopes don't reflect
+   * PhysioNet access, so its researcher sync would revoke what this service just
+   * granted. Empty when sync is disabled, leaving all datasets on token scopes.
+   */
+  async getManagedDatasetCodes(): Promise<Set<string>> {
+    if (!env.USERMGMT_ENTITLEMENTS_SYNC_ENABLED) return new Set()
+    const mapping = await this.parseDatasetMapping()
+    return new Set(Object.keys(mapping))
+  }
+
   private async parseDatasetMapping(): Promise<Record<string, DatasetMapping>> {
     const db: any = Container.get(CONTAINER_KEY.DB_CONNECTION)
     try {
@@ -158,8 +184,63 @@ export class EntitlementsSyncService {
         }
       }
       return result
-    } catch {
+    } catch (err: any) {
+      this.logger.error(`[Entitlements] error parsing dataset mapping: ${err}`)
       return {}
+    }
+  }
+
+  /**
+   * Mint a fresh PhysioNet access token from the refresh token claim. Used when
+   * physionet_access_token is absent: the connector only runs on an interactive
+   * login, so refresh grants and silent SSO re-logins carry no access token.
+   * Needs the PhysioNet client id (and secret, for a confidential app).
+   */
+  private async exchangeRefreshToken(refreshToken: string): Promise<string | undefined> {
+    const clientId = env.USERMGMT_ENTITLEMENTS_PHYSIONET_CLIENT_ID
+    if (!clientId) {
+      this.logger.warn(
+        `[Entitlements] physionet_access_token absent and USERMGMT__ENTITLEMENTS_PHYSIONET_CLIENT_ID unset; cannot redeem refresh token`,
+      )
+      return undefined
+    }
+    const baseUrl = env.USERMGMT_ENTITLEMENTS_PHYSIONET_BASE_URL.replace(/\/+$/, '')
+    const path = env.USERMGMT_ENTITLEMENTS_PHYSIONET_TOKEN_PATH.startsWith('/')
+      ? env.USERMGMT_ENTITLEMENTS_PHYSIONET_TOKEN_PATH
+      : `/${env.USERMGMT_ENTITLEMENTS_PHYSIONET_TOKEN_PATH}`
+    const url = `${baseUrl}${path}`
+
+    const params = new URLSearchParams({
+      grant_type: 'refresh_token',
+      refresh_token: refreshToken,
+      client_id: clientId,
+    })
+    if (env.USERMGMT_ENTITLEMENTS_PHYSIONET_CLIENT_SECRET) {
+      params.set('client_secret', env.USERMGMT_ENTITLEMENTS_PHYSIONET_CLIENT_SECRET)
+    }
+
+    const controller = new AbortController()
+    const timer = setTimeout(() => controller.abort(), env.USERMGMT_ENTITLEMENTS_TIMEOUT_MS)
+    try {
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: { 'content-type': 'application/x-www-form-urlencoded' },
+        body: params.toString(),
+        signal: controller.signal,
+      })
+      if (!response.ok) {
+        const body = await response.text().then(t => t.slice(0, 200)).catch(() => '')
+        throw new Error(`HTTP ${response.status}: ${body}`)
+      }
+      const data = await response.json() as { access_token?: string }
+      if (!data.access_token) {
+        this.logger.warn(`[Entitlements] refresh-token exchange returned no access_token`)
+        return undefined
+      }
+      this.logger.info(`[Entitlements] minted PhysioNet access token via refresh grant`)
+      return data.access_token
+    } finally {
+      clearTimeout(timer)
     }
   }
 
@@ -168,6 +249,7 @@ export class EntitlementsSyncService {
     slug: string,
     version: string,
   ): Promise<boolean> {
+    this.logger.debug(`[Entitlements] checking PhysioNet access for ${slug}/${version}`)
     const baseUrl = env.USERMGMT_ENTITLEMENTS_PHYSIONET_BASE_URL.replace(/\/+$/, '')
     const url = `${baseUrl}/oauth/dataset-access/?slug=${encodeURIComponent(slug)}&version=${encodeURIComponent(version)}`
     const controller = new AbortController()
@@ -187,6 +269,7 @@ export class EntitlementsSyncService {
         throw new Error(`HTTP ${response.status}: ${body}`)
       }
       const data = await response.json() as { has_access: boolean }
+      this.logger.debug(`[Entitlements] PhysioNet access check for ${slug}/${version} returned: ${JSON.stringify(data)}`)
       return data.has_access === true
     } finally {
       clearTimeout(timer)
