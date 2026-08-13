@@ -986,6 +986,8 @@ spec:
               value: "false"
             - name: USE_TREX_DB_CONN
               value: "false"
+            - name: IS_AUDIT_LOG_ENABLED
+              value: {{ .Values.features.auditLog | quote }}
             - name: IS_CDM_SQL_AUDIT_LOG_ENABLED
               value: {{ .Values.features.cdmSqlAuditLog | quote }}
             - name: AUDIT_LOG_TO_CONSOLE
