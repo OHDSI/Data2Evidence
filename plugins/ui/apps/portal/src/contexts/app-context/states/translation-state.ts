@@ -205,7 +205,7 @@ export const i18nDefault = {
     CHANGE_USER_PASSWORD_DIALOG__GENERATE: "Generate",
     CHANGE_USER_PASSWORD_DIALOG__HIDE_PASSWORD: "Hide password",
     CHANGE_USER_PASSWORD_DIALOG__PASSWORD: "Password",
-    CHANGE_USER_PASSWORD_DIALOG__PASSWORD_UPDATED: "Your password has been updated successfully",
+    CHANGE_USER_PASSWORD_DIALOG__PASSWORD_UPDATED: "{0} password has been updated successfully",
     CHANGE_USER_PASSWORD_DIALOG__SHOW_PASSWORD: "Show password",
     CHANGE_USER_PASSWORD_DIALOG__UPDATE: "Change",
     CLEANUP_STRATEGUS_STUDY_DIALOG__CANCEL: "Cancel",
