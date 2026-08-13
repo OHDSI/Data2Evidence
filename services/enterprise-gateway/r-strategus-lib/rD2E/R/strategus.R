@@ -1,5 +1,3 @@
-
-
 #' Start running the Strategus flow in D2E
 #'
 #' This function creates a flow run in Prefect in D2E.
@@ -14,8 +12,8 @@ run_strategus_flow <- function(analysisSpecification, executionSettings = NULL, 
   host <- Sys.getenv("TREX__ENDPOINT_URL")
   auth_token <- Sys.getenv("TREX__AUTHORIZATION_TOKEN")
   url <- paste0(host, "/jobplugins/prefect/jupyter-kernel/flow-run/strategus")
-  json_graph = list()
-  
+  json_graph <- list()
+
   if (!is.null(analysisSpecification)) {
     json_graph$analysisSpecification <- ParallelLogger::convertSettingsToJson(
       analysisSpecification
@@ -30,7 +28,7 @@ run_strategus_flow <- function(analysisSpecification, executionSettings = NULL, 
     options <- create_options()
   }
 
-  if(options$studyId == '' || is.null(options$studyId)) {
+  if (options$studyId == "" || is.null(options$studyId)) {
     stop("Error: studyId must be set in options")
   }
 
@@ -60,22 +58,22 @@ get_deployment <- function(deployment_name = "strategus_plugin", flow_name = "st
   host <- Sys.getenv("TREX__ENDPOINT_URL")
   url <- paste0(host, "/prefect/d2e/api/deployments/name/", flow_name, "/", deployment_name)
   auth_token <- Sys.getenv("TREX__AUTHORIZATION_TOKEN")
-  
+
   response <- tryCatch(
     expr = httr::GET(url, httr::add_headers(
-        Authorization=paste0('Bearer ', auth_token)
+      Authorization = paste0("Bearer ", auth_token)
     )),
     error = function(e) {
       stop(paste0("Error occurred while getting prefect deployment: ", e$message))
     }
   )
-  
+
   if (httr::status_code(response) != 200) {
     stop(paste0(error_message, ": ", httr::status_code(response)))
   }
-  
+
   result <- jsonlite::fromJSON(httr::content(response, "text"))
-  
+
   list(
     deploymentId = result$id,
     infrastructureDocId = result$infrastructure_document_id
@@ -92,21 +90,18 @@ get_deployment <- function(deployment_name = "strategus_plugin", flow_name = "st
 #'   (default is FALSE)
 #' @param update_results_schema boolean value indicating whether to update results schema
 #'  before uploading results (default is TRUE). Any existing results in the schema will be
-#'  dropped before uploading new results. 
-#' @param run_table1 boolean value indicating whether to run Table 1 generation
-#' as part of the flow run (default is FALSE).
-#' @param study_name string value indicating the study name to be used in the flow run 
+#'  dropped before uploading new results.
+#' @param study_name string value indicating the study name to be used in the flow run
 #'    (default is an empty string). If provided, this will override the study_id parameter.
 #' @return Response object with options for the flow run
 #' @export
-create_options <- function(study_id = '', upload_results = FALSE, update_results_schema = TRUE, run_table1 = FALSE, study_name = '') {
+create_options <- function(study_id = "", upload_results = FALSE, update_results_schema = TRUE, study_name = "") {
   dataset_id <- Sys.getenv("TREX__DATASET_ID")
   return(list(
-      mode = 'kernel',
-      datasetId = dataset_id,
-      uploadResults = upload_results,
-      updateResultsSchema = update_results_schema,
-      studyId = ifelse(study_name != '', study_name, study_id),
-      runTable1 = run_table1
+    mode = "kernel",
+    datasetId = dataset_id,
+    uploadResults = upload_results,
+    updateResultsSchema = update_results_schema,
+    studyId = ifelse(study_name != "", study_name, study_id),
   ))
 }

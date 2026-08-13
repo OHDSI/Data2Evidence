@@ -1311,7 +1311,18 @@ def execute(rSpec, rExecutionSettings, rConnectionDetails):
         _patch = "/app/flows/hades/strategus_plugin/patch_treatment_patterns.R"
         if os.path.exists(_patch):
             ro.r(f'source("{_patch}")')
-        ro.r('cat("Max Java Heap Size (GB): ", .jcall(.jnew("java/lang/Runtime"), "J", "maxMemory") / 1e9, "\\n")')
+        # rJava is loaded (DatabaseConnector Imports it, and its .onLoad starts the
+        # JVM) but never attached, so bare .jcall/.jnew do not resolve here -- the
+        # pixi env's R_PROFILE_USER (rprofile_java.R) only sets java.parameters,
+        # unlike the old image's init_rjava.R which ran library(rJava).
+        # Namespace-qualify, and use the Runtime singleton rather than .jnew (which
+        # bypasses the private constructor via JNI). Diagnostic only: never fatal.
+        ro.r('''try({
+  if (requireNamespace("rJava", quietly = TRUE))
+    cat("Max Java Heap Size (GB): ",
+        rJava::.jcall(rJava::.jcall("java/lang/Runtime", "Ljava/lang/Runtime;", "getRuntime"),
+                      "J", "maxMemory") / 1e9, "\\n")
+}, silent = TRUE)''')
         rStrategus = importr('Strategus')
         rStrategus.execute(connectionDetails = rConnectionDetails, analysisSpecifications = rSpec, executionSettings = rExecutionSettings)
 
@@ -1356,20 +1367,6 @@ def upload_strategus_results(analysisSpec: str, path_to_results, dbSettings):
                     resultsConnectionDetails = rConnectionDetails
                 )
 
-                print(f'Creating table tb1_results in schema {results_schema}')
-                # create sql to create table tb1_results
-                create_table_sql = f"""
-                CREATE TABLE IF NOT EXISTS {results_schema}.tb1_results (
-                    token_study_code VARCHAR(100),
-                    dataset_id VARCHAR(100),
-                    cohort_id VARCHAR(100),
-                    table1_json TEXT,
-                    PRIMARY KEY (token_study_code, dataset_id, cohort_id)
-                );
-                """
-                dbdao.execute_sql(create_table_sql)
-            else:
-                print(f'Schema {results_schema} already exists, skipping creation of results datamodel')
 
             # uploadResults logs are not captured by default
             # so we override the consolewrite_print callback to capture the logs

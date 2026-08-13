@@ -59,7 +59,6 @@ export const startStrategusResultsViewer = async (
       .replace("$DATABASE_USER", env.TREX__SQL__USER)
       .replace("$DATABASE_PASSWORD", env.TREX__SQL__PASSWORD)
       .replaceAll("$STUDY_ID", encodeURIComponent(studyId))
-      .replace("$DATASET_ID", datasetId || "") // relevant for table1 alone; TODO: remove
       .replace("$SHINY_MODULE_CONFIG", moduleConfig);
 
     const future = await kernelConnection.requestExecute({
