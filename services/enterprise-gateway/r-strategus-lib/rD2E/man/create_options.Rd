@@ -8,7 +8,6 @@ create_options(
   study_id = "",
   upload_results = FALSE,
   update_results_schema = TRUE,
-  run_table1 = FALSE,
   study_name = ""
 )
 }
@@ -22,8 +21,6 @@ create_options(
 before uploading results (default is TRUE). Any existing results in the schema will be
 dropped before uploading new results.}
 
-\item{run_table1}{boolean value indicating whether to run Table 1 generation
-as part of the flow run (default is FALSE).}
 
 \item{study_name}{string value indicating the study name to be used in the flow run
 (default is an empty string). If provided, this will override the study_id parameter.}
