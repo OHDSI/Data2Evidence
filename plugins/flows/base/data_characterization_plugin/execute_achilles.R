@@ -34,12 +34,18 @@ execute_achilles <- function(
         excludeAnalysisIds,
         createIndices,
         cacheId = NULL,
-        translateDialect = NULL) {
+        translateDialect = NULL,
+        tempEmulationSchema = NULL) {
 
     # Set TREX and DB driver environment variables and create connection details
     eval(parse(text = set_trex_env_string))
     eval(parse(text = setDBDriverEnv))
     eval(parse(text = connectionDetailsString))
+
+    # BigQuery: no temp tables — SqlRender emulates them in this schema.
+    if (!is.null(tempEmulationSchema) && nzchar(tempEmulationSchema)) {
+        options(sqlRenderTempEmulationSchema = tempEmulationSchema)
+    }
 
     .has_cache <- !is.null(cacheId) && nzchar(cacheId)
     .has_dialect <- !is.null(translateDialect) && nzchar(translateDialect)

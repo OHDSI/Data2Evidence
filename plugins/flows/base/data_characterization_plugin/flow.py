@@ -91,6 +91,10 @@ def data_characterization_plugin(options: DCOptionsType):
     )
     # Resolve to absolute path so R uses the same directory regardless of its working directory
     achilles_params.outputFolder = os.path.abspath(achilles_params.outputFolder)
+    # Direct-BigQuery runs need SqlRender temp-table emulation (BQ has no temp
+    # tables); emulate into the results schema.
+    if not use_trex_connection and dbdao.dialect == SupportedDatabaseDialects.BIGQUERY:
+        achilles_params.tempEmulationSchema = achilles_params.resultsSchema
     # For TREX connections, set vocabSchemaName to schemaName
     if not is_hana and use_trex_connection:
         # Qualify reads against the cache catalog; resultsSchema stays unprefixed so dbdao.create_schema doesn't quote "catalog.schema" as one literal.
@@ -340,6 +344,7 @@ def execute_achilles(achilles_params: AchillesParams, flow_run_id: str):
                 # Render HANA-dialect SQL while keeping the postgres/pgwire JDBC driver:
                 # the R side overrides the connection's `dbms` attribute to this value.
                 translateDialect="hana" if achilles_params.is_hana else "",
+                tempEmulationSchema=achilles_params.tempEmulationSchema,
             )
 
         # Task might succeed if there are failed analyses so need to check for error report or failed analyses inside output folder

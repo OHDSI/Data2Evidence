@@ -40,3 +40,7 @@ class AchillesParams(DCOptionsType):
     # True when the underlying dataset is HANA served via the trex pgwire passthrough.
     # Used to render HANA-dialect SQL in Achilles while keeping the postgres/pgwire driver.
     is_hana: bool = False
+    # BigQuery has no temp tables: SqlRender emulates them in this schema
+    # (options(sqlRenderTempEmulationSchema=...)). Set only for direct-BigQuery
+    # runs; empty string disables emulation.
+    tempEmulationSchema: str = ""
