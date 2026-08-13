@@ -1239,21 +1239,16 @@ services:
         condition: service_completed_successfully
     platform: linux/amd64
     healthcheck:
-      test:
-        [
-          "CMD",
-          "wget",
-          "--proxy=off",
-          "--no-verbose",
-          "--tries=1",
-          "--spider",
-          "http://${PROJECT_NAME:-d2e}-supabase-storage-1:9000/status",
-        ]
+      # localhost is not a SAN on the internal cert, so validation is skipped here
+      # (the CA chain itself is exercised by callers on the docker network).
+      test: ["CMD-SHELL", "curl -fk https://localhost:9000/status || exit 1"]
       timeout: 30s
       interval: 10s
       retries: 20
       start_period: 40s
-    # Use custom image with postgresql-client pre-installed for offline capability
+    # Custom image: postgresql-client pre-installed for offline capability, plus
+    # nginx terminating internal TLS in front of storage-api (no native TLS).
+    hostname: ${PROJECT_NAME:-d2e}-supabase-storage-1.${TLS__INTERNAL__DOMAIN:-alp.local}
     image: ${DOCKER_IMAGE_PREFIX:-ghcr.io/ohdsi/}d2e-supabase-storage:${DOCKER_TAG_NAME:-develop}
     logging:
       options:
@@ -1266,7 +1261,9 @@ services:
     restart: ${DOCKER__RESTART_POLICY:-unless-stopped}
     volumes:
       - supabase-storage-data:/var/lib/storage
-    entrypoint: ["/bin/sh", "-c"]
+    # The image entrypoint writes the internal cert and starts nginx, then execs
+    # its arguments -- so the command below still runs exactly as before.
+    entrypoint: ["/usr/src/entrypoint.sh", "/bin/sh", "-c"]
     command: >
       "set -e;
       echo 'Waiting 30 seconds for trex migrations...';
@@ -1290,7 +1287,13 @@ services:
       <<:
         - *x-tls
       PROJECT_REF: ${PROJECT_REF:-default}
-      PORT: 9000
+      # storage-api stays on loopback, HTTP only; nginx (started by the image's
+      # entrypoint.sh) is the only thing listening on 9000/the docker network,
+      # terminating TLS with the shared TLS__INTERNAL__* cert. Resolution order in
+      # the image's config is SERVER_HOST || HOST and SERVER_PORT || PORT.
+      SERVER_HOST: 127.0.0.1
+      SERVER_PORT: 9001
+      PORT: 9001
       FILE_SIZE_LIMIT: 1048576000
       DATABASE_URL: postgres://${PG_SUPER_USER:-postgres}:${PG_SUPER_PASSWORD}@${PG_HOST:-${PROJECT_NAME:-d2e}-minerva-postgres-1}:${PG_PORT:-5432}/${PG_DB_NAME:-alp}
       PGRST_JWT_SECRET: ${SUPABASE_STORAGE_JWT_SECRET:?SUPABASE_STORAGE_JWT_SECRET must be set (run d2e init); refusing a known default secret}
@@ -1300,8 +1303,11 @@ services:
       SKIP_MIGRATIONS: "false"
       STORAGE_BACKEND: file
       GLOBAL_S3_BUCKET: stub
-      GLOBAL_S3_ENDPOINT: http://supabase-storage:9000/s3
-      GLOBAL_S3_PROTOCOL: "http"
+      # Inert under STORAGE_BACKEND=file, but kept consistent: the old value used the
+      # compose service name, which is not a SAN on the internal cert -- the FQDN is
+      # required if the S3 backend ever goes live.
+      GLOBAL_S3_ENDPOINT: https://${PROJECT_NAME:-d2e}-supabase-storage-1.${TLS__INTERNAL__DOMAIN:-alp.local}:9000/s3
+      GLOBAL_S3_PROTOCOL: "https"
       GLOBAL_S3_FORCE_PATH_STYLE: true
       FILE_STORAGE_BACKEND_PATH: /var/lib/storage
       TENANT_ID: stub
