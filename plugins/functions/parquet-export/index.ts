@@ -528,6 +528,8 @@ router.post("/", async (req: Request, res: Response) => {
       "yearRange",
       "conditions",
       "conceptIds",
+      "FOLLOWUP_DAYS",
+      "CONCEPT_CODES",
     ]);
 
     const additionalParams: Record<string, string> = {};
@@ -553,6 +555,13 @@ router.post("/", async (req: Request, res: Response) => {
           });
         }
       });
+    }
+
+    if (typeof req.body.FOLLOWUP_DAYS === "string") {
+      additionalParams["FOLLOWUP_DAYS"] = req.body.FOLLOWUP_DAYS;
+    }
+    if (typeof req.body.CONCEPT_CODES === "string") {
+      additionalParams["CONCEPT_CODES"] = req.body.CONCEPT_CODES;
     }
 
     let substitutedSql: string;
