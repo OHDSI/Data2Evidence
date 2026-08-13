@@ -39,17 +39,33 @@ fi
 # volume-mount a pre-fetched jar into /app/inst/drivers, same as ngdbc.
 bq_jdbc_url="${D2E_BIGQUERY_JDBC_URL:-}"
 bq_driver_dir="${BIGQUERY_JDBC_DRIVER_DIR:-/app/inst/drivers}"
+
+# True only when an actual BigQuery jar sits at the top level of the driver dir.
+# A plain `ls | grep -i bigquery` would also match a leftover directory or a
+# half-finished extract and make us skip a download the worker still needs.
+bq_driver_present() {
+  find "$bq_driver_dir" -maxdepth 1 -iname '*bigquery*.jar' 2>/dev/null | grep -q .
+}
+
 if [ -n "$bq_jdbc_url" ]; then
-  if ls "$bq_driver_dir" 2>/dev/null | grep -qi bigquery; then
+  if bq_driver_present; then
     echo "BigQuery JDBC driver already present in $bq_driver_dir."
   else
-    echo "Downloading BigQuery JDBC driver from $bq_jdbc_url..."
+    # Never log $bq_jdbc_url: it may be a signed / pre-authenticated URL.
+    echo "Downloading BigQuery JDBC driver into $bq_driver_dir..."
     mkdir -p "$bq_driver_dir"
     bq_tmp_zip="$(mktemp)"
+    # -j (junk paths): the Simba distribution wraps its jars in a versioned
+    # subfolder, but DatabaseConnector only scans the top level of pathToDriver,
+    # so the jars must land flat in $bq_driver_dir.
     if curl -fLsS --retry 3 -o "$bq_tmp_zip" "$bq_jdbc_url" \
-        && unzip -oq "$bq_tmp_zip" -d "$bq_driver_dir"; then
+        && unzip -joq "$bq_tmp_zip" -d "$bq_driver_dir"; then
       rm -f "$bq_tmp_zip"
-      echo "BigQuery JDBC driver provisioned from $bq_jdbc_url."
+      if bq_driver_present; then
+        echo "BigQuery JDBC driver provisioned into $bq_driver_dir."
+      else
+        echo "WARNING: archive extracted into $bq_driver_dir but no *bigquery*.jar was found; flow runs needing it will fail with a pathToDriver error." >&2
+      fi
     else
       rm -f "$bq_tmp_zip"
       echo "WARNING: BigQuery JDBC driver download failed; flow runs needing it will fail with a pathToDriver error." >&2
