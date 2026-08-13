@@ -2,6 +2,9 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useActiveDataset } from "../../../contexts";
 import { arePaToolsAvailable, getPaDatasetId, listPaTools, subscribePaTools, PaToolDescriptor } from "./paToolBridge";
 
+// How often to re-read the registry as a backstop to the availability events.
+const RESYNC_INTERVAL_MS = 1000;
+
 export interface PaToolsState {
   /** Patient Analytics is mounted, so its live cohort tools can be called. */
   available: boolean;
@@ -39,6 +42,33 @@ export function usePaTools(): PaToolsState {
   // PA can swap datasets without mounting or unmounting, which fires no
   // availability event — re-read when the portal's active dataset changes.
   useEffect(sync, [sync, activeDataset?.id]);
+
+  // Safety net for everything the events don't cover. Availability above is
+  // edge-triggered on an event PA dispatches from its own lifecycle hooks, in a
+  // bundle whose mounting the portal does not control — and one missed edge left
+  // the drawer permanently insisting the user open a cohort builder that was
+  // already on screen (the reported symptom of navigating off the cohort route
+  // and back). PA's dataset id has the same problem: it was captured at the
+  // moment of the event and can resolve a beat later, which is exactly when the
+  // mismatch guard needs to see it.
+  //
+  // Re-reading is one property access on `window`, and setState with an unchanged
+  // value does not re-render — so a timer buys eventual consistency for nothing,
+  // where the edges alone can be wrong indefinitely.
+  useEffect(() => {
+    const resyncIfVisible = () => {
+      if (document.visibilityState !== "hidden") sync();
+    };
+    const timer = window.setInterval(resyncIfVisible, RESYNC_INTERVAL_MS);
+    // A tab returning to the foreground shouldn't have to wait out the interval.
+    document.addEventListener("visibilitychange", resyncIfVisible);
+    window.addEventListener("focus", sync);
+    return () => {
+      window.clearInterval(timer);
+      document.removeEventListener("visibilitychange", resyncIfVisible);
+      window.removeEventListener("focus", sync);
+    };
+  }, [sync]);
 
   const datasetMismatch = available && !!paDatasetId && !!activeDataset?.id && paDatasetId !== activeDataset.id;
 

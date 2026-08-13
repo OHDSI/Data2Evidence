@@ -3,8 +3,12 @@ import { render, fireEvent, within } from "@testing-library/react";
 import { AiAssistantDrawer } from "../AiAssistantDrawer";
 import { AI_ASSISTANT_TOGGLE_EVENT, PA_LEFT_PANE_OPENED_EVENT } from "../aiAssistantEvents";
 import { AppProvider } from "../../../contexts";
+import { downloadFile } from "../../../utils/downloadResource";
 import type { CohortChatState } from "../hooks/useCohortChat";
 import type { ChatMessage, ConceptSelection, ConceptSetChoice, ToolActivity } from "../types";
+
+// The transcript is built for real; only the save-to-disk step is stubbed.
+jest.mock("../../../utils/downloadResource", () => ({ downloadFile: jest.fn() }));
 
 // The drawer is a shell around useCohortChat; the hook owns the agent round trip.
 // Stubbing it keeps these tests about what the drawer renders and which callbacks
@@ -47,6 +51,7 @@ const renderDrawer = (onClose = jest.fn()) => {
 
 describe("AiAssistantDrawer", () => {
   beforeEach(() => {
+    (downloadFile as jest.Mock).mockClear();
     setChat({
       messages: [],
       sendMessage: jest.fn(),
@@ -616,6 +621,50 @@ describe("AiAssistantDrawer", () => {
 
     expect(getByTestId("ai-assistant-input")).toBeDisabled();
     expect(getByTestId("ai-assistant-send")).toBeDisabled();
+  });
+
+  // The conversation lives in this tab only — a refresh, or "New conversation", takes it.
+  describe("more options menu", () => {
+    it("starts a new conversation", () => {
+      setChat({ messages: [{ id: "m1", role: "assistant", text: "Done." }] });
+      const { getByTestId } = renderDrawer();
+
+      fireEvent.click(getByTestId("ai-assistant-more"));
+      fireEvent.click(getByTestId("ai-assistant-new-conversation"));
+
+      expect(mockChatState.reset).toHaveBeenCalledTimes(1);
+    });
+
+    it("downloads the conversation as a markdown transcript", () => {
+      setChat({
+        messages: [
+          { id: "m1", role: "user", text: "Female patients over 60" },
+          { id: "m2", role: "assistant", text: "Built the cohort — 412 patients." },
+        ],
+      });
+      const { getByTestId } = renderDrawer();
+
+      fireEvent.click(getByTestId("ai-assistant-more"));
+      fireEvent.click(getByTestId("ai-assistant-download-history"));
+
+      expect(downloadFile).toHaveBeenCalledTimes(1);
+      const { data, fileName, fileType } = (downloadFile as jest.Mock).mock.calls[0][0];
+      expect(data).toContain("## You\n\nFemale patients over 60");
+      expect(data).toContain("## D2E AI assistant\n\nBuilt the cohort — 412 patients.");
+      expect(fileName).toMatch(/^d2e-ai-chat-\d{4}-\d{2}-\d{2}-\d{4}\.md$/);
+      expect(fileType).toBe("text/markdown;charset=utf-8");
+    });
+
+    // Nothing has been said yet, so the item would save an empty document.
+    it("cannot download an empty conversation", () => {
+      const { getByTestId } = renderDrawer();
+
+      fireEvent.click(getByTestId("ai-assistant-more"));
+
+      expect(getByTestId("ai-assistant-download-history")).toHaveAttribute("aria-disabled", "true");
+      fireEvent.click(getByTestId("ai-assistant-download-history"));
+      expect(downloadFile).not.toHaveBeenCalled();
+    });
   });
 
   it("calls onClose when the close button is clicked", () => {

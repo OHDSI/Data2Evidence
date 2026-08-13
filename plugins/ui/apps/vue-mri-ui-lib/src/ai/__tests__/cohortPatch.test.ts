@@ -17,11 +17,15 @@ const makeStore = ({
   // attributePath -> config `domainFilter`, the OMOP domain a conceptSet
   // attribute's concepts must come from. Only set in the tests that exercise it.
   domains,
+  // The dataset's panelOptions.cohortEntryExit flag. Left undefined for the
+  // no-config-loaded case; every seeded D2E config ships it false.
+  cohortEntryExit,
 }: {
   existingCards?: string[]
   existingGroups?: string[][]
   axes?: any[]
   domains?: Record<string, string>
+  cohortEntryExit?: boolean
 } = {}) => {
   // Mirror FilterCardModel.buildLayout: every card carries an (initially empty)
   // advanced-time layout, which is where temporal relations live.
@@ -29,6 +33,10 @@ const makeStore = ({
     props: {
       excludeFilter,
       name: id,
+      // FilterCardModel's defaults for the props the Entry/Exit menu reads.
+      inactive: false,
+      isEntry: false,
+      isExit: false,
       layout: { advancedTimeLayout: { props: { timeFilterModel: { timeFilters: [] as any[] } } } },
     },
   })
@@ -56,10 +64,12 @@ const makeStore = ({
       getBoolFilterContainer: (id: string) => ({ props: { filterCards: groupOf(id) ?? [] } }),
       getConstraintForAttribute: ({ filterCardId, key }: { filterCardId: string; key: string }) =>
         Object.values(constraints).find((c: any) => c.parent === filterCardId && c.props.attrKey === key) ?? null,
-      ...(domains
+      ...(domains || cohortEntryExit !== undefined
         ? {
             getMriFrontendConfig: {
-              getAttributeByPath: (path: string) => ({ getDomainFilter: () => domains[path] ?? '' }),
+              getAttributeByPath: (path: string) => ({ getDomainFilter: () => domains?.[path] ?? '' }),
+              // Where ChartController.vue reads the Entry/Exit gate from.
+              _internalConfig: { panelOptions: { cohortEntryExit: cohortEntryExit ?? false } },
             },
           }
         : {}),
@@ -157,6 +167,23 @@ const makeStore = ({
       }
       case 'deleteFilterCardConstraint': {
         delete constraints[payload.constraintId]
+        return Promise.resolve(undefined)
+      }
+      // Mirrors FILTERCARD_TOGGLE_IS_ENTRY_EXIT: one card, one role flag.
+      case 'updateCohortEntryExit': {
+        cards[payload.filterCardId].props[payload.key] = payload.toggle
+        return Promise.resolve(undefined)
+      }
+      // Mirrors FILTERCARD_RESET_ALL_ENTRY_EXIT: a null key clears BOTH roles.
+      case 'resetAllFilterCardEntryExit': {
+        for (const card of Object.values(cards)) {
+          if (payload.key) {
+            card.props[payload.key] = false
+          } else {
+            card.props.isEntry = false
+            card.props.isExit = false
+          }
+        }
         return Promise.resolve(undefined)
       }
       // Mirrors ADVANCEDTIME_SET_TIMEFILTER: the array is assigned by reference.
@@ -1021,6 +1048,269 @@ describe('applyCohortPatch', () => {
         days: '[0-90]',
       })
       expect(result.timeRelations).toHaveLength(1)
+    })
+  })
+
+  // The observation window behind CohortEntryExit.vue's two buttons. Distinct from
+  // the temporal relations above: those constrain the gap BETWEEN interactions,
+  // these re-anchor the window everything is measured over.
+  describe('cohort entry / exit', () => {
+    const DX = 'patient.interactions.conditionoccurrence.1'
+    const RX = 'patient.interactions.drugexposure.1'
+    const supported = (over: Record<string, unknown> = {}) =>
+      makeStore({ existingCards: ['patient', DX, RX], cohortEntryExit: true, ...over })
+
+    it('flags the entry card and reports the window that landed', async () => {
+      const { store, cards } = supported()
+      const result = await applyCohortPatch(store, [{ op: 'set_entry_exit', card: DX, role: 'entry' }])
+
+      expect(cards[DX].props.isEntry).toBe(true)
+      expect(cards[DX].props.isExit).toBe(false)
+      expect(result.cohortEntryExit).toEqual({
+        supported: true,
+        entry: { filterCardId: DX, name: DX },
+        exit: null,
+      })
+    })
+
+    it('dispatches the reset-then-flag pair the Entry/Exit menu uses', async () => {
+      const { store } = supported()
+      await applyCohortPatch(store, [{ op: 'set_entry_exit', card: DX, role: 'exit' }])
+
+      expect(store.dispatch).toHaveBeenCalledWith('resetAllFilterCardEntryExit', { key: 'isExit' })
+      expect(store.dispatch).toHaveBeenCalledWith('updateCohortEntryExit', {
+        filterCardId: DX,
+        key: 'isExit',
+        toggle: true,
+      })
+    })
+
+    it('sets both ends of the window in one patch', async () => {
+      const { store, cards } = supported()
+      const result = await applyCohortPatch(store, [
+        { op: 'set_entry_exit', card: DX, role: 'entry' },
+        { op: 'set_entry_exit', card: RX, role: 'exit' },
+      ])
+
+      expect(cards[DX].props.isEntry).toBe(true)
+      expect(cards[RX].props.isExit).toBe(true)
+      expect(result.cohortEntryExit).toMatchObject({
+        entry: { filterCardId: DX },
+        exit: { filterCardId: RX },
+      })
+    })
+
+    // Each role is single-valued: the failure this prevents is two cards claiming
+    // "entry", which the query resolves by whichever it happens to walk last.
+    it('moving a role to another card takes it off the first', async () => {
+      const { store, cards } = supported()
+      await applyCohortPatch(store, [{ op: 'set_entry_exit', card: DX, role: 'entry' }])
+      const result = await applyCohortPatch(store, [{ op: 'set_entry_exit', card: RX, role: 'entry' }])
+
+      expect(cards[DX].props.isEntry).toBe(false)
+      expect(cards[RX].props.isEntry).toBe(true)
+      expect(result.cohortEntryExit).toMatchObject({ entry: { filterCardId: RX } })
+    })
+
+    it('can anchor the window to a card created earlier in the same patch, by ref', async () => {
+      const { store, cards } = makeStore({ existingCards: ['patient'], cohortEntryExit: true })
+      await applyCohortPatch(store, [
+        { op: 'add_card', cardConfigPath: 'patient.interactions.conditionoccurrence', ref: 'dx' },
+        { op: 'set_entry_exit', card: 'dx', role: 'entry' },
+      ])
+
+      expect(cards['patient.interactions.conditionoccurrence.1'].props.isEntry).toBe(true)
+    })
+
+    describe('dataset support', () => {
+      // The common case, not an edge case: every seeded D2E config ships the flag
+      // off, and a flag written with it off is ignored by query-gen-svc — so the
+      // cohort would report a window it is not actually measured over.
+      it('refuses to write a flag the query would ignore, naming the config gate', async () => {
+        const { store, cards } = makeStore({ existingCards: ['patient', DX], cohortEntryExit: false })
+        await expect(applyCohortPatch(store, [{ op: 'set_entry_exit', card: DX, role: 'entry' }])).rejects.toThrow(
+          /does not support cohort entry\/exit.*panelOptions\.cohortEntryExit off/s
+        )
+        expect(cards[DX].props.isEntry).toBe(false)
+      })
+
+      it('fails closed when the frontend config is not loaded yet', async () => {
+        const { store } = makeStore({ existingCards: ['patient', DX] })
+        await expect(applyCohortPatch(store, [{ op: 'set_entry_exit', card: DX, role: 'entry' }])).rejects.toThrow(
+          /not loaded yet/
+        )
+      })
+
+      it('points at set_time_relation, which does work on such a dataset', async () => {
+        const { store } = makeStore({ existingCards: ['patient', DX], cohortEntryExit: false })
+        await expect(applyCohortPatch(store, [{ op: 'set_entry_exit', card: DX, role: 'entry' }])).rejects.toThrow(
+          /set_time_relation/
+        )
+      })
+
+      it('reads the gate through getPanelOptions when the config exposes it', async () => {
+        const { store, cards } = makeStore({ existingCards: ['patient', DX] })
+        store.getters.getMriFrontendConfig = { getPanelOptions: (key: string) => key === 'cohortEntryExit' }
+        await applyCohortPatch(store, [{ op: 'set_entry_exit', card: DX, role: 'entry' }])
+
+        expect(cards[DX].props.isEntry).toBe(true)
+      })
+
+      // getPanelOptions indexes panelOptions unguarded, so a half-loaded config
+      // throws rather than returning undefined.
+      it('falls back to the raw panelOptions read when getPanelOptions throws', async () => {
+        const { store, cards } = makeStore({ existingCards: ['patient', DX], cohortEntryExit: true })
+        store.getters.getMriFrontendConfig.getPanelOptions = () => {
+          throw new TypeError('panelOptions is undefined')
+        }
+        await applyCohortPatch(store, [{ op: 'set_entry_exit', card: DX, role: 'entry' }])
+
+        expect(cards[DX].props.isEntry).toBe(true)
+      })
+
+      it('omits cohortEntryExit from the result when the dataset has none and nothing is set', async () => {
+        const { store } = makeStore({ existingCards: ['patient', DX], cohortEntryExit: false })
+        const result = await applyCohortPatch(store, [
+          { op: 'add_constraint', card: 'patient', attributePath: 'patient.attributes.age', value: '>=65' },
+        ])
+
+        expect(result.cohortEntryExit).toBeUndefined()
+        expect(result.applied).toBe(true)
+      })
+    })
+
+    // Each rejection mirrors a card the builder's own Entry/Exit menu omits or
+    // greys out — a flag on any of them lands in the store, is dropped by
+    // BMGetChartableCards, and never reaches the query.
+    describe('cards the builder would not offer', () => {
+      it('rejects the Basic Data card — it has no interaction dates', async () => {
+        const { store } = supported()
+        await expect(
+          applyCohortPatch(store, [{ op: 'set_entry_exit', card: 'patient', role: 'entry' }])
+        ).rejects.toThrow(/Basic Data card cannot be the entry or exit event/)
+      })
+
+      it('rejects an exclusion card', async () => {
+        const { store, cards } = supported()
+        cards[RX].props.excludeFilter = true
+        await expect(applyCohortPatch(store, [{ op: 'set_entry_exit', card: RX, role: 'exit' }])).rejects.toThrow(
+          /exclusion card/
+        )
+      })
+
+      it('rejects an inactive card', async () => {
+        const { store, cards } = supported()
+        cards[RX].props.inactive = true
+        await expect(applyCohortPatch(store, [{ op: 'set_entry_exit', card: RX, role: 'exit' }])).rejects.toThrow(
+          /inactive/
+        )
+      })
+
+      it('rejects a card that is OR-ed with another, and says how to split it', async () => {
+        const { store } = makeStore({ existingGroups: [['patient'], [DX, RX]], cohortEntryExit: true })
+        await expect(applyCohortPatch(store, [{ op: 'set_entry_exit', card: DX, role: 'entry' }])).rejects.toThrow(
+          /OR-ed with .*set_card_join/s
+        )
+      })
+
+      it('rejects a card that already holds the other role', async () => {
+        const { store } = supported()
+        await applyCohortPatch(store, [{ op: 'set_entry_exit', card: DX, role: 'entry' }])
+        await expect(applyCohortPatch(store, [{ op: 'set_entry_exit', card: DX, role: 'exit' }])).rejects.toThrow(
+          /already the cohort entry event/
+        )
+      })
+
+      it('rejects a role that is neither entry nor exit', async () => {
+        const { store } = supported()
+        await expect(
+          applyCohortPatch(store, [{ op: 'set_entry_exit', card: DX, role: 'start' } as any])
+        ).rejects.toThrow(/role must be "entry".*or "exit"/)
+      })
+    })
+
+    describe('clear_entry_exit', () => {
+      it('clears one role and leaves the other', async () => {
+        const { store, cards } = supported()
+        await applyCohortPatch(store, [
+          { op: 'set_entry_exit', card: DX, role: 'entry' },
+          { op: 'set_entry_exit', card: RX, role: 'exit' },
+        ])
+        const result = await applyCohortPatch(store, [{ op: 'clear_entry_exit', role: 'entry' }])
+
+        expect(cards[DX].props.isEntry).toBe(false)
+        expect(cards[RX].props.isExit).toBe(true)
+        expect(result.cohortEntryExit).toMatchObject({ entry: null, exit: { filterCardId: RX } })
+      })
+
+      it('clears both roles when no role is given', async () => {
+        const { store, cards } = supported()
+        await applyCohortPatch(store, [
+          { op: 'set_entry_exit', card: DX, role: 'entry' },
+          { op: 'set_entry_exit', card: RX, role: 'exit' },
+        ])
+        const result = await applyCohortPatch(store, [{ op: 'clear_entry_exit' }])
+
+        expect(cards[DX].props.isEntry).toBe(false)
+        expect(cards[RX].props.isExit).toBe(false)
+        expect(store.dispatch).toHaveBeenCalledWith('resetAllFilterCardEntryExit', { key: null })
+        expect(result.cohortEntryExit).toMatchObject({ entry: null, exit: null })
+      })
+
+      // A bookmark saved while the dataset had the feature on still carries the
+      // flags after it is turned off; clearing can only ever remove a window, so
+      // unlike set_entry_exit it is not gated on support.
+      it('clears leftover flags even on a dataset that no longer supports the feature', async () => {
+        const { store, cards } = makeStore({ existingCards: ['patient', DX], cohortEntryExit: false })
+        cards[DX].props.isEntry = true
+
+        const result = await applyCohortPatch(store, [{ op: 'clear_entry_exit' }])
+
+        expect(cards[DX].props.isEntry).toBe(false)
+        // Reported so the caller can see the flag is gone AND that the dataset
+        // could not have honoured it anyway.
+        expect(result.cohortEntryExit).toEqual({ supported: false, entry: null, exit: null })
+      })
+
+      it('is a no-op when the role is already clear', async () => {
+        const { store } = supported()
+        await applyCohortPatch(store, [{ op: 'clear_entry_exit', role: 'entry' }])
+
+        expect(store.dispatch).not.toHaveBeenCalledWith('resetAllFilterCardEntryExit', expect.anything())
+      })
+    })
+
+    describe('rollback', () => {
+      it('puts the previous entry card back when a later op fails', async () => {
+        const { store, cards } = supported()
+        await applyCohortPatch(store, [{ op: 'set_entry_exit', card: DX, role: 'entry' }])
+
+        await expect(
+          applyCohortPatch(store, [
+            { op: 'set_entry_exit', card: RX, role: 'entry' },
+            { op: 'add_constraint', card: 'ghost', attributePath: 'patient.attributes.age', value: 1 },
+          ])
+        ).rejects.toThrow(/Unknown card/)
+
+        // Not merely "RX is no longer the entry": the window the user had is back.
+        expect(cards[DX].props.isEntry).toBe(true)
+        expect(cards[RX].props.isEntry).toBe(false)
+      })
+
+      it('leaves the window empty rather than pointing at a card the failed patch created', async () => {
+        const { store, cards } = makeStore({ existingCards: ['patient'], cohortEntryExit: true })
+
+        await expect(
+          applyCohortPatch(store, [
+            { op: 'add_card', cardConfigPath: 'patient.interactions.conditionoccurrence', ref: 'dx' },
+            { op: 'set_entry_exit', card: 'dx', role: 'entry' },
+            { op: 'add_constraint', card: 'ghost', attributePath: 'patient.attributes.age', value: 1 },
+          ])
+        ).rejects.toThrow(/Unknown card/)
+
+        expect(cards['patient.interactions.conditionoccurrence.1']).toBeUndefined()
+        expect(Object.values(cards).some((c: any) => c.props.isEntry || c.props.isExit)).toBe(false)
+      })
     })
   })
 })

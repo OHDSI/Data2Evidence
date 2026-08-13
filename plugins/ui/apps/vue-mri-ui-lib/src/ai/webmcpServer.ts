@@ -7,8 +7,15 @@
 // We try document first, then fall back to navigator for older builds.
 import { nextTick } from 'vue'
 import type { Store } from 'vuex'
-import { applyCohortPatch, describeCardGroups, describeTimeRelations, type PatchOp } from './cohortPatch'
+import {
+  applyCohortPatch,
+  describeCardGroups,
+  describeCohortEntryExit,
+  describeTimeRelations,
+  type PatchOp,
+} from './cohortPatch'
 import { alternateQueries, rankValues, DEFAULT_VALUE_LIMIT, MAX_VALUE_LIMIT, type MatchedVia } from './valueResolution'
+import { PENDING_PATIENT_COUNT } from '../utils/NumberUtils'
 
 export interface PaToolResult {
   content: Array<{ type: 'text'; text: string }>
@@ -37,6 +44,31 @@ export interface PaComponentHooks {
 const textResult = (payload: unknown): PaToolResult => ({
   content: [{ type: 'text', text: JSON.stringify(payload) }],
 })
+
+// Applying a patch does NOT compute the result: it flips the fireRequest flag and
+// returns, and the count/chart are only rewritten when the mounted chart component's
+// analytics query resolves — 7-24s on a HANA/LEAF-sized dataset. setFireRequest
+// blanks the count to PENDING_PATIENT_COUNT for that window, so pa_get_cohort_result
+// waits it out here rather than handing back either a stale number (the original bug)
+// or a sentinel every caller would have to know how to poll on.
+//
+// The ceiling is well above the worst case observed in analytics-svc logs (24s) because
+// timing out is the worse outcome: the model then has no count at all. It is bounded
+// rather than open-ended because the sentinel is not guaranteed to clear — nothing
+// fires the query while the builder is unmounted, so an unbounded wait would hang.
+const COHORT_RESULT_TIMEOUT_MS = 60_000
+const COHORT_RESULT_POLL_MS = 250
+
+const waitForCohortResult = async (store: Store<any>, timeoutMs = COHORT_RESULT_TIMEOUT_MS): Promise<boolean> => {
+  const deadline = Date.now() + timeoutMs
+  while (store.getters.getCurrentPatientCount === PENDING_PATIENT_COUNT) {
+    if (Date.now() >= deadline) {
+      return false
+    }
+    await new Promise(resolve => setTimeout(resolve, COHORT_RESULT_POLL_MS))
+  }
+  return true
+}
 
 // Query → stored-value matching lives in ./valueResolution, the browser-side
 // twin of the backend's cohortValueResolver.ts (see the note at the top of that
@@ -300,12 +332,14 @@ export function createPaTools(store: Store<any>, hooks: PaComponentHooks = {}): 
       name: 'pa_get_current_cohort',
       description:
         'Return the active cohort / bookmark definition as JSON, plus `cardGroups`: the filter cards as the ' +
-        'builder groups them (cards in the SAME group are OR-ed; the groups are AND-ed), and `timeRelations`: ' +
-        'the temporal (Advanced Time) relations between cards. Read both before editing — they give you the ' +
-        'real filterCardIds to target and tell you whether the cohort currently means "A and B", "A or B", or ' +
-        '"A then B within N days".',
+        'builder groups them (cards in the SAME group are OR-ed; the groups are AND-ed), `timeRelations`: ' +
+        'the temporal (Advanced Time) relations between cards, and `cohortEntryExit`: the observation window ' +
+        '(the Entry/Exit buttons). Read them before editing — they give you the real filterCardIds to target ' +
+        'and tell you whether the cohort currently means "A and B", "A or B", or "A then B within N days", and ' +
+        'over what window it is measured.',
       inputSchema: { type: 'object', properties: {} },
       async execute() {
+        const cohortEntryExit = describeCohortEntryExit(store)
         return textResult({
           bookmarkData: store.getters.getBookmarksData,
           ifr: store.getters.getBookmarkFromIFR,
@@ -319,6 +353,15 @@ export function createPaTools(store: Store<any>, hooks: PaComponentHooks = {}): 
             'Temporal relations between cards. An EMPTY list means the cohort has no timing at all — AND-ed ' +
             'cards only require that both interactions happened at some point ("ever diagnosed and ever ' +
             'prescribed"), never that one followed the other. Add timing with set_time_relation.',
+          cohortEntryExit,
+          cohortEntryExitNote: cohortEntryExit.supported
+            ? "The observation window the cohort is measured over: it runs from the `entry` card's interaction " +
+              "START to the `exit` card's interaction END. Both null means the window is the patient's full " +
+              'observation period. Set them with set_entry_exit — it is NOT the same as set_time_relation, ' +
+              'which constrains the gap between two interactions instead of re-anchoring the window.'
+            : 'This dataset does not support an entry/exit window (panelOptions.cohortEntryExit is off, so the ' +
+              'builder hides the buttons and the query ignores the flags). set_entry_exit will be rejected — ' +
+              'do not offer to anchor the cohort to an entry or exit event here.',
         })
       },
     },
@@ -400,15 +443,16 @@ export function createPaTools(store: Store<any>, hooks: PaComponentHooks = {}): 
       description:
         'Edit the live cohort. Preferred (and the ONLY way to add/remove a filter): pass `patchOps` — typed intent ' +
         'applied deterministically in-place (add_card / add_constraint / remove_card / remove_constraint / ' +
-        'set_card_join / set_time_relation / clear_time_relation). Discover valid paths with ' +
-        'pa_list_filter_options. AND/OR: cards are AND-ed by default; to express "A OR B" add the second card ' +
-        'with orWith:"<the other card>" (or regroup existing cards with set_card_join). TIMING IS SEPARATE FROM ' +
-        'AND/OR: AND-ed cards mean "both happened, ever" — any "within N days", "followed by", "after", ' +
-        '"before", "during" wording needs a set_time_relation op as well, or the cohort silently answers a wider ' +
-        'question. The result reports `cardGroups` (the grouping that landed) and `timeRelations` (the timing ' +
-        'that landed) — report from those. Legacy `bookmark`: a full tree, accepted ONLY from a trusted builder ' +
-        '— a hand-authored tree is validated and rejected (it silently loads the wrong cohort). Never ' +
-        'hand-author one.',
+        'set_card_join / set_time_relation / clear_time_relation / set_entry_exit / clear_entry_exit). Discover ' +
+        'valid paths with pa_list_filter_options. AND/OR: cards are AND-ed by default; to express "A OR B" add ' +
+        'the second card with orWith:"<the other card>" (or regroup existing cards with set_card_join). TIMING IS ' +
+        'SEPARATE FROM AND/OR: AND-ed cards mean "both happened, ever" — any "within N days", "followed by", ' +
+        '"after", "before", "during" wording needs a set_time_relation op as well, or the cohort silently answers ' +
+        'a wider question. "Observed FROM event A UNTIL event B" is a third, different thing — the observation ' +
+        'window — and needs set_entry_exit. The result reports `cardGroups` (the grouping that landed), ' +
+        '`timeRelations` (the timing that landed) and `cohortEntryExit` (the window that landed) — report from ' +
+        'those. Legacy `bookmark`: a full tree, accepted ONLY from a trusted builder — a hand-authored tree is ' +
+        'validated and rejected (it silently loads the wrong cohort). Never hand-author one.',
       inputSchema: {
         type: 'object',
         properties: {
@@ -421,11 +465,12 @@ export function createPaTools(store: Store<any>, hooks: PaComponentHooks = {}): 
               '{ op:"remove_card", card } | { op:"remove_constraint", card, attributePath } | ' +
               '{ op:"set_card_join", card, join } | ' +
               '{ op:"set_time_relation", card, relativeTo, mode?, days?, minDays?, maxDays?, direction?, ' +
-              'fromDate?, toDate? } | { op:"clear_time_relation", card, relativeTo? }. ' +
+              'fromDate?, toDate? } | { op:"clear_time_relation", card, relativeTo? } | ' +
+              '{ op:"set_entry_exit", card, role } | { op:"clear_entry_exit", role? }. ' +
               'The Basic Data card ("patient") always exists — constrain it directly, never add_card it. ' +
               'Separate filter cards are AND-ed; two cards are OR-ed by putting them in the same group ' +
               '(add_card orWith, or set_card_join). Neither AND nor OR carries any timing — use ' +
-              'set_time_relation for that.',
+              'set_time_relation for that, and set_entry_exit for the observation window.',
             items: {
               type: 'object',
               properties: {
@@ -439,6 +484,8 @@ export function createPaTools(store: Store<any>, hooks: PaComponentHooks = {}): 
                     'set_card_join',
                     'set_time_relation',
                     'clear_time_relation',
+                    'set_entry_exit',
+                    'clear_entry_exit',
                   ],
                 },
                 cardConfigPath: {
@@ -458,9 +505,20 @@ export function createPaTools(store: Store<any>, hooks: PaComponentHooks = {}): 
                 card: {
                   type: 'string',
                   description:
-                    'add_constraint / remove_* / set_card_join / *_time_relation: a filterCardId ("patient", ' +
-                    '"…conditionoccurrence.1") or an add_card `ref` from earlier in this same patch. For ' +
-                    'set_time_relation this is the LATER interaction — the one whose timing is constrained.',
+                    'add_constraint / remove_* / set_card_join / *_time_relation / set_entry_exit: a filterCardId ' +
+                    '("patient", "…conditionoccurrence.1") or an add_card `ref` from earlier in this same patch. ' +
+                    'For set_time_relation this is the LATER interaction — the one whose timing is constrained. ' +
+                    'For set_entry_exit it is the card whose interaction dates the window (clear_entry_exit takes ' +
+                    'no card — each role is cohort-wide).',
+                },
+                role: {
+                  type: 'string',
+                  enum: ['entry', 'exit'],
+                  description:
+                    'set_entry_exit: which end of the observation window `card` anchors — "entry" uses its ' +
+                    'interaction START date, "exit" uses its interaction END date. REQUIRED. On ' +
+                    'clear_entry_exit it is optional: omit it to clear both ends and fall back to the ' +
+                    "patient's full observation period.",
                 },
                 relativeTo: {
                   type: 'string',
@@ -815,9 +873,16 @@ export function createPaTools(store: Store<any>, hooks: PaComponentHooks = {}): 
         'Return the LIVE computed RESULT of the current cohort: matched patient count, total, active chart type, ' +
         'and the binned chart data (categories, measures, per-bin patient counts). Use this to verify what actually ' +
         'rendered after building/editing — pa_get_current_cohort returns only the definition, not the result. ' +
-        'Requires the builder to be open (pa_new_cohort / pa_open_cohort switch to it) so the chart query has run.',
+        'Requires the builder to be open (pa_new_cohort / pa_open_cohort switch to it) so the chart query has run. ' +
+        'An edit does not compute its own result, so this BLOCKS until the recompute lands (tens of seconds on a ' +
+        'large dataset) — that wait is the point, do not skip the call or race it. If it returns `pending:true` the ' +
+        'result never arrived: the counts in that response are NOT an answer, so report the cohort as not yet ' +
+        'computed rather than quoting them.',
       inputSchema: { type: 'object', properties: {} },
       async execute() {
+        // Blocks while the count reads PENDING_PATIENT_COUNT — i.e. an edit fired a
+        // new query and the previous cohort's numbers have been invalidated.
+        const settled = await waitForCohortResult(store)
         const g = store.getters
         // getResponse is a getter that returns a function; call it for the raw response.
         const resp = typeof g.getResponse === 'function' ? g.getResponse() : g.getResponse
@@ -839,6 +904,19 @@ export function createPaTools(store: Store<any>, hooks: PaComponentHooks = {}): 
           totalPatientCount: g.getDisplayTotalGuardedPatientCount ? g.getTotalPatientListCount : g.getTotalPatientCount,
           chartType: g.getActiveChart,
           chart,
+          // Timed out with the query still in flight. Say so as loudly as the failed-query
+          // case: the counts below are the pending sentinel, not a small cohort, and
+          // reporting them as a result is the exact bug this wait exists to prevent.
+          ...(settled
+            ? {}
+            : {
+                pending: true,
+                error:
+                  `The cohort is still computing after ${Math.round(COHORT_RESULT_TIMEOUT_MS / 1000)}s, so there is ` +
+                  'no count to report yet — do NOT read the counts in this response as a result. The chart query ' +
+                  'only runs while the builder is on screen: check it is open (pa_new_cohort / pa_open_cohort), ' +
+                  'then call pa_get_cohort_result again.',
+              }),
           ...(chartData?.error
             ? {
                 error: `The last chart query failed, so the count is not a real result: ${chartData.error}`,
@@ -950,6 +1028,12 @@ export function createPaTools(store: Store<any>, hooks: PaComponentHooks = {}): 
   ]
 }
 
+// Where the live registration parks its teardown, on the browser's own registry
+// object rather than in module state: the registry outlives PA (and outlives this
+// module, which a re-imported bundle would re-instantiate), so the handle has to
+// live with the thing it releases.
+const REGISTRATION_KEY = '__d2ePaToolRegistration'
+
 export function registerPaTools(store: Store<any>, hooks: PaComponentHooks = {}): () => void {
   const mc = (document as any).modelContext ?? (navigator as any).modelContext
   if (!mc) {
@@ -957,8 +1041,43 @@ export function registerPaTools(store: Store<any>, hooks: PaComponentHooks = {})
     return () => {}
   }
 
-  const regs: Array<{ unregister?: () => void }> = createPaTools(store, hooks).map(tool => mc.registerTool(tool))
+  // Release whatever a previous mount left behind before claiming the names again.
+  // PA mounts, unmounts and mounts again without a page load (single-spa
+  // re-registers the app each time the user returns to the cohort route), and a
+  // browser that hands back no unregister handle — or a teardown that never ran —
+  // leaves the names taken, which makes the *second* registerTool call throw.
+  try {
+    ;(mc[REGISTRATION_KEY] as (() => void) | undefined)?.()
+  } catch (err) {
+    console.warn('[WebMCP] Failed to release the previous tool registration', err)
+  }
 
-  // Return a cleanup function for beforeUnmount
-  return () => regs.forEach(r => r?.unregister?.())
+  const regs: Array<{ unregister?: () => void }> = []
+  for (const tool of createPaTools(store, hooks)) {
+    try {
+      regs.push(mc.registerTool(tool))
+    } catch (err) {
+      // One rejected tool must cost neither the other eight nor the caller: this
+      // runs from PatientAnalytics.vue's mounted(), where a throw skips the rest
+      // of the hook — including the in-page registry the assistant drawer reads.
+      console.warn(`[WebMCP] Failed to register ${tool.name}`, err)
+    }
+  }
+
+  // Cleanup for beforeUnmount.
+  const teardown = () => {
+    // Only disown the slot if it is still ours; a remount may already have
+    // claimed it (its registration is the live one and must survive this call).
+    if (mc[REGISTRATION_KEY] === teardown) delete mc[REGISTRATION_KEY]
+    regs.forEach(r => {
+      try {
+        r?.unregister?.()
+      } catch (err) {
+        console.warn('[WebMCP] Failed to unregister a tool', err)
+      }
+    })
+  }
+
+  mc[REGISTRATION_KEY] = teardown
+  return teardown
 }

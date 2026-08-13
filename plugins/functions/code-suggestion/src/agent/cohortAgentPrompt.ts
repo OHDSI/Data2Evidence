@@ -38,7 +38,9 @@ patchOps vocabulary: \`{op:"add_card", cardConfigPath, exclude?, ref?, orWith?}\
 \`{op:"remove_card", card}\`, \`{op:"remove_constraint", card, attributePath}\`,
 \`{op:"set_card_join", card, join:"AND"|"OR"}\`,
 \`{op:"set_time_relation", card, relativeTo, mode?, days?, minDays?, maxDays?,
-direction?, fromDate?, toDate?}\`, \`{op:"clear_time_relation", card, relativeTo?}\`.
+direction?, fromDate?, toDate?}\`, \`{op:"clear_time_relation", card, relativeTo?}\`,
+\`{op:"set_entry_exit", card, role:"entry"|"exit"}\`,
+\`{op:"clear_entry_exit", role?}\`.
 
 The Basic Data card (\`patient\`) ALWAYS exists already and holds the demographics
 (Age, Gender, …). Constrain it directly — \`{op:"add_constraint", card:"patient",
@@ -114,6 +116,29 @@ PA has no "first ever occurrence" flag. If the user says *initial* diagnosis or
 *new* prescription, build the timing you can and tell them plainly that
 first-occurrence semantics are not expressible in the builder — do not silently
 drop the word.
+
+### The observation window (Entry / Exit) — a THIRD, separate thing
+
+\`set_time_relation\` constrains the gap between two interactions.
+\`set_entry_exit\` re-anchors the window the cohort is *measured over*: it runs
+from the \`entry\` card's interaction START date to the \`exit\` card's interaction
+END date, and with neither set it is the patient's whole observation period.
+"Followed from their first diagnosis until death", "observed from index event
+until end of treatment", "study period starts at the diagnosis" → that is
+\`{op:"set_entry_exit", card:"…conditionoccurrence.1", role:"entry"}\`, not a time
+relation.
+
+- Each role is single-valued: setting \`entry\` on another card moves it there.
+  \`{op:"clear_entry_exit", role?}\` clears one end, or both if \`role\` is omitted.
+- The card must be one the builder would offer: an interaction card (never Basic
+  Data), active, not an exclusion card, and alone in its AND-group.
+- **It is gated per dataset.** \`pa_get_current_cohort\` reports
+  \`cohortEntryExit.supported\`. When it is false the builder hides the buttons and
+  the query ignores the flags, so \`set_entry_exit\` is REJECTED — most datasets
+  ship it off. Then say the cohort cannot be anchored to an entry/exit event here;
+  do not offer a window you cannot build, and do not substitute a time relation
+  and describe it as one.
+- The patch result reports \`cohortEntryExit\` — report the window from that.
 `;
 
 const NO_LIVE_SURFACE = `
@@ -408,7 +433,14 @@ ${
   \`pa_get_cohort_result\` returns the patient count. List those, not the filters
   you intended. If a filter you asked for is missing from \`appliedConstraints\`,
   it is NOT applied: fix it or say so. If the user asked for OR and \`cardGroups\`
-  shows the cards in separate groups, the cohort means AND — fix it.`
+  shows the cards in separate groups, the cohort means AND — fix it.
+- An edit does NOT compute its own result. \`pa_apply_cohort_patch\` returns as
+  soon as the cohort is edited; the count is recomputed by a query that takes
+  tens of seconds on a large dataset. \`pa_get_cohort_result\` blocks until that
+  lands — the wait is the point, so call it and let it finish rather than
+  reporting a number from anywhere else. If it returns \`pending:true\`, the
+  counts in that response are a placeholder and NOT a result: say the cohort is
+  still computing instead of quoting them.`
       : `
 - Never hand-author a bookmark / IFR tree, and never hand-write a deep link.
   Express the cohort as \`clauses\` and let \`build_d2e_cohort_deeplink\` serialise it.

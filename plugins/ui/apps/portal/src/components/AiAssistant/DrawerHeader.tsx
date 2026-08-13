@@ -12,10 +12,20 @@ interface DrawerHeaderProps {
   onClose: () => void;
   onToggleExpand: () => void;
   onNewConversation: () => void;
+  onDownloadHistory: () => void;
+  // False while the conversation is empty: there is nothing to download yet.
+  canDownloadHistory: boolean;
 }
 
 // Gradient title bar for the AI assistant drawer (Figma node 1475:128238).
-export const DrawerHeader: FC<DrawerHeaderProps> = ({ expanded, onClose, onToggleExpand, onNewConversation }) => {
+export const DrawerHeader: FC<DrawerHeaderProps> = ({
+  expanded,
+  onClose,
+  onToggleExpand,
+  onNewConversation,
+  onDownloadHistory,
+  canDownloadHistory,
+}) => {
   const { getText, i18nKeys } = useTranslation();
   const [menuAnchor, setMenuAnchor] = useState<null | HTMLElement>(null);
 
@@ -24,6 +34,14 @@ export const DrawerHeader: FC<DrawerHeaderProps> = ({ expanded, onClose, onToggl
   const handleNewConversation = () => {
     closeMenu();
     onNewConversation();
+  };
+
+  const handleDownloadHistory = () => {
+    closeMenu();
+    // A disabled MenuItem is only inert through `pointer-events: none`, so the guard is
+    // here too rather than trusting the styling to hold.
+    if (!canDownloadHistory) return;
+    onDownloadHistory();
   };
 
   return (
@@ -67,7 +85,16 @@ export const DrawerHeader: FC<DrawerHeaderProps> = ({ expanded, onClose, onToggl
       </IconButton>
 
       <Menu anchorEl={menuAnchor} open={Boolean(menuAnchor)} onClose={closeMenu}>
-        <MenuItem onClick={handleNewConversation}>{getText(i18nKeys.AI_ASSISTANT__NEW_CONVERSATION)}</MenuItem>
+        <MenuItem onClick={handleNewConversation} data-testid="ai-assistant-new-conversation">
+          {getText(i18nKeys.AI_ASSISTANT__NEW_CONVERSATION)}
+        </MenuItem>
+        <MenuItem
+          onClick={handleDownloadHistory}
+          disabled={!canDownloadHistory}
+          data-testid="ai-assistant-download-history"
+        >
+          {getText(i18nKeys.AI_ASSISTANT__DOWNLOAD_HISTORY)}
+        </MenuItem>
       </Menu>
     </div>
   );

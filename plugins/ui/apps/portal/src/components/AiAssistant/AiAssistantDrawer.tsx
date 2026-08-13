@@ -1,4 +1,4 @@
-import React, { FC, useEffect, useLayoutEffect, useState } from "react";
+import React, { FC, useCallback, useEffect, useLayoutEffect, useState } from "react";
 import classNames from "classnames";
 import { Drawer } from "@portal/components";
 import { useTranslation } from "../../contexts";
@@ -13,6 +13,7 @@ import {
   conceptSetSelectedId,
   useCohortChat,
 } from "./hooks/useCohortChat";
+import { downloadChatHistory } from "./chatTranscript";
 import { QuickReply } from "./types";
 import { broadcastAiAssistantOpen, PA_LEFT_PANE_OPENED_EVENT } from "./aiAssistantEvents";
 import "./AiAssistantDrawer.scss";
@@ -128,6 +129,10 @@ export const AiAssistantDrawer: FC<AiAssistantDrawerProps> = ({ open, onClose })
 
   const hasConversation = messages.length > 0;
 
+  // The conversation only lives in this tab: a refresh, or starting a new one, takes it.
+  // Saving it is how the reasoning behind a cohort built here survives that.
+  const handleDownloadHistory = useCallback(() => downloadChatHistory(messages, getText), [messages, getText]);
+
   // Say plainly what the assistant can and cannot do right now. Live cohort
   // editing depends on Patient Analytics being mounted on the same dataset, which
   // changes as the user navigates — leaving that implicit means the assistant
@@ -236,6 +241,8 @@ export const AiAssistantDrawer: FC<AiAssistantDrawerProps> = ({ open, onClose })
         onClose={onClose}
         onToggleExpand={() => setExpanded((prev) => !prev)}
         onNewConversation={reset}
+        onDownloadHistory={handleDownloadHistory}
+        canDownloadHistory={hasConversation}
         data-test="test-build"
       />
 
