@@ -44,7 +44,9 @@ execute_achilles <- function(
 
     # BigQuery: no temp tables — SqlRender emulates them in this schema.
     if (!is.null(tempEmulationSchema) && nzchar(tempEmulationSchema)) {
+        .orig_temp_emulation <- getOption("sqlRenderTempEmulationSchema")
         options(sqlRenderTempEmulationSchema = tempEmulationSchema)
+        on.exit(options(sqlRenderTempEmulationSchema = .orig_temp_emulation), add = TRUE)
     }
 
     .has_cache <- !is.null(cacheId) && nzchar(cacheId)
