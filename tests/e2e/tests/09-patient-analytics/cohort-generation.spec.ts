@@ -1,4 +1,4 @@
-import { test, expect } from '../fixtures'
+import { test, expect, filterCardAttribute } from '../fixtures'
 
 const TEST_NAME = 'cohort-generation'
 const SHOULD_SKIP = true
@@ -83,7 +83,7 @@ test('cohort-generation', async ({ page }) => {
   // CONCEPT SET CREATION
   // ========================
   // Create a new concept set for "Acute allergic reaction"
-  await page.getByRole('button', { name: '+' }).click()
+  await filterCardAttribute(page, 'Condition concept set').getByRole('button', { name: '+' }).click()
   await page.getByRole('textbox', { name: 'Concept set name' }).click()
   await page.getByRole('textbox', { name: 'Concept set name' }).fill('Acute allergic reaction')
 

@@ -1,4 +1,4 @@
-import { test, expect } from '../fixtures'
+import { test, expect, filterCardAttribute } from '../fixtures'
 
 const TEST_NAME = 'pa-filter-cards'
 const SHOULD_SKIP = false
@@ -76,7 +76,7 @@ test(TEST_NAME, async ({ browser }) => {
     .first()
     .click()
   await page.locator('#stacked-chart').click()
-  await page.getByRole('button', { name: '+' }).click()
+  await filterCardAttribute(page, 'Condition concept set').getByRole('button', { name: '+' }).click()
   await expect(page.locator('.loading-animation-component')).not.toBeVisible()
   await page.getByRole('textbox', { name: 'Concept set name' }).click()
   await page.getByRole('textbox', { name: 'Concept set name' }).fill('test_concept_set')

@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test'
+import { filterCardAttribute } from '../fixtures'
 
 const TEST_NAME = 'patient_analytics_mri'
 const SHOULD_SKIP = true
@@ -48,7 +49,9 @@ test(TEST_NAME, async ({ page }) => {
   )
   await expect(page.locator('#pane-left')).toContainText('Condition Occurrence')
   await expect(page.locator('[id="patient.interactions.conditionoccurrence.1"]')).toContainText('Condition concept set')
-  await expect(page.locator('[id="patient.interactions.conditionoccurrence.1"]')).toMatchAriaSnapshot(`- button "+"`)
+  // Scoped to the concept set attribute: the card also renders a "+" on every
+  // concept-backed text attribute, which would otherwise churn this snapshot.
+  await expect(filterCardAttribute(page, 'Condition concept set')).toMatchAriaSnapshot(`- button "+"`)
   await expect(page.getByTestId('terminology-container')).toMatchAriaSnapshot(`- text: Concept Sets x`)
   await expect(page.getByRole('tablist')).toMatchAriaSnapshot(`
     - tablist:

@@ -1,4 +1,4 @@
-import { test, expect } from '../fixtures'
+import { test, expect, filterCardAttribute } from '../fixtures'
 
 test('pa-compare-cohorts', async ({ page }) => {
   test.slow()
@@ -178,7 +178,7 @@ async function createConceptSet(page, conceptSetName, searchTerm, conceptIdRowNa
   // CONCEPT SET CREATION
   // ========================
   // Create a new concept set for "Acute allergic reaction"
-  await page.getByRole('button', { name: '+' }).click()
+  await filterCardAttribute(page, 'Condition concept set').getByRole('button', { name: '+' }).click()
   await page.getByRole('textbox', { name: 'Concept set name' }).click()
   await page.getByRole('textbox', { name: 'Concept set name' }).fill(conceptSetName)
 

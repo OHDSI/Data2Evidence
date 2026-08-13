@@ -97,3 +97,15 @@ export const test = base.extend<{
 })
 
 export { expect } from '@playwright/test'
+
+/**
+ * Scopes a locator to a single filter card attribute row, identified by its label.
+ *
+ * A filter card renders one "+" per concept attribute — concept sets open the
+ * create-concept-set overlay, and concept-backed text attributes (Gender, Condition
+ * concept name, ...) open the concept search. A page-wide `getByRole('button', {name:
+ * '+'})` therefore resolves to several elements and trips strict mode, so always scope
+ * to the attribute the click belongs to.
+ */
+export const filterCardAttribute = (page: Page, label: string) =>
+  page.locator('.constraint').filter({ has: page.getByTitle(label, { exact: true }) })
