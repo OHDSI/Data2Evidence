@@ -342,7 +342,9 @@ export default {
       return values.map(elem => {
         // Coerce to string: a constraint value may arrive numeric (e.g. a mis-shaped
         // value from a programmatic edit), and .replace would throw on a number.
-        const displayValue = String(elem.text ?? elem.value ?? '')
+        // Use || (not ??): programmatic values such as drilldown filters carry text: ''
+        // and must fall back to the raw value.
+        const displayValue = String(elem.text || elem.value || '')
         elem.display_value = displayValue.replace('</b>', '').replace('<b>', '')
         return elem
       })

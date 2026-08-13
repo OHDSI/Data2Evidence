@@ -1,4 +1,4 @@
-import React, { FC, useCallback, useMemo, useState } from "react";
+import React, { FC, useCallback, useEffect, useMemo, useState } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import { Loader } from "@portal/components";
 import { Researcher } from "../containers/researcher/Researcher";
@@ -13,15 +13,20 @@ import { ResultsDialogWithEventLister } from "../plugins/SystemAdmin/DQD/Results
 import { DisclaimerDialog } from "../containers/shared/Legal/DisclaimerDialog";
 
 export const PrivateApp: FC = () => {
-  const { popPostLoginRedirectUri } = usePostLoginRedirectUri();
+  const { postLoginRedirectUri, clearPostLoginRedirectUri } = usePostLoginRedirectUri();
   const { user } = useUser();
 
   const [isBootstrapping, setIsBootstrapping] = useState(true);
   const handleReady = useCallback(() => setIsBootstrapping(false), []);
 
+  useEffect(() => {
+    if (!isBootstrapping && postLoginRedirectUri) {
+      clearPostLoginRedirectUri();
+    }
+  }, [isBootstrapping, postLoginRedirectUri, clearPostLoginRedirectUri]);
+
   const defaultRoute = useMemo(() => {
     let defaultRoute = config.ROUTES.researcher;
-    const postLoginRedirectUri = popPostLoginRedirectUri();
 
     if (!user) {
       defaultRoute = config.ROUTES.login;
@@ -36,7 +41,7 @@ export const PrivateApp: FC = () => {
     }
 
     return defaultRoute;
-  }, [user, popPostLoginRedirectUri]);
+  }, [user, postLoginRedirectUri]);
 
   return (
     <div className="App">
