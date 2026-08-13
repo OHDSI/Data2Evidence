@@ -1246,9 +1246,10 @@ services:
       interval: 10s
       retries: 20
       start_period: 40s
+    # Must be the FQDN: the internal cert's only SAN is *.${TLS__INTERNAL__DOMAIN}.
+    hostname: ${PROJECT_NAME:-d2e}-supabase-storage-1.${TLS__INTERNAL__DOMAIN:-alp.local}
     # Custom image: postgresql-client pre-installed for offline capability, plus
     # nginx terminating internal TLS in front of storage-api (no native TLS).
-    hostname: ${PROJECT_NAME:-d2e}-supabase-storage-1.${TLS__INTERNAL__DOMAIN:-alp.local}
     image: ${DOCKER_IMAGE_PREFIX:-ghcr.io/ohdsi/}d2e-supabase-storage:${DOCKER_TAG_NAME:-develop}
     logging:
       options:
