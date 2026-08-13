@@ -1,6 +1,5 @@
 import os, logging
 from rpy2.rinterface_lib.callbacks import logger as rpy2_logger
-from rpy2.robjects import pandas2ri, numpy2ri
 from rpy2 import robjects
 
 from prefect import flow, task
@@ -60,11 +59,9 @@ def get_cohort_definitions(cohorts_id: str, vocabschema_name: str, materialize: 
     Returns:
         list: List of cohort definitions with cohortId, cohortName, json, and sql.
     """
-    pandas2ri.activate()
-    numpy2ri.activate()
     r_script_path = os.path.join(os.path.dirname(__file__), 'get_cohort_definitions.R')
 
-    with robjects.conversion.localconverter(robjects.default_converter):
+    with robjects.default_converter.context():
         
         # Source the R script to load the function
         robjects.r(f'source("{r_script_path}")')
