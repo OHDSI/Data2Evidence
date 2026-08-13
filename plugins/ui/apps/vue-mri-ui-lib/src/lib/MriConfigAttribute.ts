@@ -141,6 +141,15 @@ MriConfigAttribute.prototype.getStandardConceptCodeFilter = function () {
 }
 
 /**
+ * Returns which OMOP concept identifier the attribute stores ('id', 'code' or 'name').
+ * Empty/undefined for attributes that do not hold a concept identifier.
+ * @returns {string} The concept identifier type
+ */
+MriConfigAttribute.prototype.getConceptIdentifierType = function () {
+  return this.oInternalConfigAttribute.conceptIdentifierType
+}
+
+/**
  * Returns true if the attribute is configured to be used as catalog attribute in MRI
  * @returns {boolean} True if cataloge attribute
  */

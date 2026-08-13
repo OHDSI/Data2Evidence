@@ -25,6 +25,7 @@ function buildMockMriFrontendConfig(
     isInitialInFilterCard: () => true,
     getDomainFilter: () => null,
     getStandardConceptCodeFilter: () => null,
+    getConceptIdentifierType: () => null,
   })
 
   const makeFilterCardConfig = (

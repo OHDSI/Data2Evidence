@@ -101,6 +101,8 @@ export interface ApiConfig {
 export interface ConceptSetConfig {
   domainFilter?: string
   standardConceptCodeFilter?: string
+  // 'id' | 'code' | 'name' when a text attribute stores an OMOP concept identifier
+  conceptIdentifierType?: string
   selectedDatasetId?: string | null
 }
 
