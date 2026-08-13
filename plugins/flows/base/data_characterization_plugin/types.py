@@ -12,13 +12,16 @@ class DCOptionsType(BaseModel):
     resultsSchema: str
     executeConceptRecordCount: Optional[bool] = True
     datasetId: Optional[str] = None
+    # webapi-typed datasets run DC directly on the source database (postgres/
+    # bigquery) so Achilles results land in the WebAPI Results daimon schema.
+    useSourceConnection: Optional[bool] = False
 
     @property
     def use_trex_connection(self) -> bool:
         """
         Whether to use the TREX sql connection or direct database connection.
         """
-        return True
+        return not self.useSourceConnection
 
 
 class AchillesParams(DCOptionsType):
