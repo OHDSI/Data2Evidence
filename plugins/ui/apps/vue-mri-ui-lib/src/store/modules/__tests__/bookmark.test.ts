@@ -14,6 +14,12 @@ vi.mock('@/store', () => ({
     commit: vi.fn(),
   },
 }))
+vi.mock('@/utils/BookmarkUtils', () => ({
+  formatBookmark: vi.fn(bookmark => bookmark),
+  formatCohortDefinition: vi.fn(cohortDefinition => cohortDefinition),
+  formatAtlasCohortDefinition: vi.fn(atlasCohortDefinition => atlasCohortDefinition),
+  processBookmarksData: vi.fn(() => ({ bookmarks: [], materializedCohorts: [], atlasCohortDefinitions: [] })),
+}))
 
 import bookmarkModule from '../bookmark'
 import * as types from '../../mutation-types'
@@ -29,6 +35,7 @@ describe('store - bookmark', () => {
       activeBookmark: any
       addNewCohort: boolean
       loading: boolean
+      loadError: boolean
       canDatasetMaterializeCohorts: boolean
       canMaterializeCohortDatasetId: string
       isRestoringBookmark: boolean
@@ -45,6 +52,7 @@ describe('store - bookmark', () => {
         activeBookmark: null,
         addNewCohort: false,
         loading: false,
+        loadError: false,
         canDatasetMaterializeCohorts: false,
         canMaterializeCohortDatasetId: '',
         isRestoringBookmark: false,
@@ -91,6 +99,13 @@ describe('store - bookmark', () => {
       const baseline = { filter: { foo: 'bar' }, chartType: 'stacked' }
       bookmarkModule.mutations[types.SET_ACTIVE_BOOKMARK_BASELINE](state, baseline)
       expect(state.activeBookmarkBaseline).toEqual(baseline)
+    })
+
+    it('SET_BOOKMARKS_LOAD_ERROR toggles the load error flag', () => {
+      bookmarkModule.mutations[types.SET_BOOKMARKS_LOAD_ERROR](state, { loadError: true })
+      expect(state.loadError).toBe(true)
+      bookmarkModule.mutations[types.SET_BOOKMARKS_LOAD_ERROR](state, { loadError: false })
+      expect(state.loadError).toBe(false)
     })
   })
 
@@ -302,6 +317,139 @@ describe('store - bookmark', () => {
         const moduleGetters = { getBookmarksData: liveData }
         const rootGetters = { getMriFrontendConfig: createConfig(), getIsColorAxisAutoDefaulted: true }
         expect(callGetter(state, moduleGetters, rootGetters)).toBe(false)
+      })
+    })
+  })
+
+  describe('actions', () => {
+    describe('fireBookmarkQuery', () => {
+      const rootGetters = {
+        getMriFrontendConfig: {
+          getPaConfigId: () => 'pa-config-id',
+          _internalConfig: { panelOptions: { atlasCohortDefinition: false } },
+        },
+        getSelectedDataset: { id: 'dataset-1' },
+      }
+
+      it("clears the load error when 'loadAll' succeeds", async () => {
+        const commit = vi.fn()
+        const dispatch = vi.fn().mockResolvedValue({ data: {} })
+        await bookmarkModule.actions.fireBookmarkQuery(
+          { commit, dispatch, rootGetters },
+          { method: 'get', params: { cmd: 'loadAll' } }
+        )
+        expect(commit).toHaveBeenCalledWith(types.SET_BOOKMARKS_LOAD_ERROR, { loadError: false })
+        expect(commit).toHaveBeenCalledWith(types.SET_BOOKMARKS_LOADING, { loading: true })
+        expect(commit).toHaveBeenCalledWith(types.SET_BOOKMARKS_LOADING, { loading: false })
+      })
+
+      it("sets the load error and rethrows when 'loadAll' fails", async () => {
+        const commit = vi.fn()
+        const dispatch = vi.fn().mockRejectedValue(new Error('Network Error'))
+        await expect(
+          bookmarkModule.actions.fireBookmarkQuery(
+            { commit, dispatch, rootGetters },
+            { method: 'get', params: { cmd: 'loadAll' } }
+          )
+        ).rejects.toThrow('Network Error')
+        expect(commit).toHaveBeenCalledWith(types.SET_BOOKMARKS_LOAD_ERROR, { loadError: true })
+        expect(commit).toHaveBeenCalledWith(types.SET_BOOKMARKS_LOADING, { loading: false })
+      })
+    })
+
+    const createDeferred = () => {
+      let resolve!: (value?: any) => void
+      let reject!: (reason?: any) => void
+      const promise = new Promise((res, rej) => {
+        resolve = res
+        reject = rej
+      })
+      return { promise, resolve, reject }
+    }
+
+    const flushMicrotasks = () => new Promise(resolve => setTimeout(resolve, 0))
+
+    describe('refreshBookmarksForDatasetSwitch', () => {
+      it('does not block the cohort-definition load on the can-materialize-cohort check', async () => {
+        const canMaterialize = createDeferred()
+        const dispatched: string[] = []
+        const dispatch = vi.fn((name: string) => {
+          dispatched.push(name)
+          if (name === 'fireCheckIfDatasetCanMaterializeCohorts') {
+            return canMaterialize.promise
+          }
+          return Promise.resolve()
+        })
+        const rootGetters = { getAllChartConfigs: { shared: { enabled: false } } }
+
+        let settled = false
+        const run = bookmarkModule.actions
+          .refreshBookmarksForDatasetSwitch({ dispatch, rootGetters })
+          .then(() => {
+            settled = true
+          })
+
+        await flushMicrotasks()
+
+        expect(dispatched).toContain('fireCheckIfDatasetCanMaterializeCohorts')
+        expect(dispatched).toContain('fireBookmarkQuery')
+        expect(settled).toBe(true)
+
+        canMaterialize.resolve()
+        await run
+      })
+    })
+
+    describe('fireCheckIfDatasetCanMaterializeCohorts', () => {
+      const createAjaxDispatcher = () => {
+        const request = createDeferred()
+        const dispatch = vi.fn((name: string) => {
+          if (name === 'ajaxAuth') {
+            return request.promise
+          }
+          return Promise.resolve()
+        })
+        return { dispatch, request }
+      }
+
+      it('commits the result when the selected dataset is unchanged', async () => {
+        const { dispatch, request } = createAjaxDispatcher()
+        const commit = vi.fn()
+        const state = { canMaterializeCohortDatasetId: '' }
+        const rootGetters = { getSelectedDataset: { id: 'ds-1' }, getText: (key: string) => key }
+
+        const run = bookmarkModule.actions.fireCheckIfDatasetCanMaterializeCohorts({
+          state,
+          commit,
+          dispatch,
+          rootGetters,
+        })
+        request.resolve({ data: true })
+        await run
+
+        expect(commit).toHaveBeenCalledWith(types.SET_CAN_DATASET_MATERIALIZE_COHORTS, {
+          canDatasetMaterializeCohorts: true,
+          datasetId: 'ds-1',
+        })
+      })
+
+      it('ignores the result when the selected dataset changed before the response resolved', async () => {
+        const { dispatch, request } = createAjaxDispatcher()
+        const commit = vi.fn()
+        const state = { canMaterializeCohortDatasetId: '' }
+        const rootGetters = { getSelectedDataset: { id: 'ds-1' }, getText: (key: string) => key }
+
+        const run = bookmarkModule.actions.fireCheckIfDatasetCanMaterializeCohorts({
+          state,
+          commit,
+          dispatch,
+          rootGetters,
+        })
+        rootGetters.getSelectedDataset = { id: 'ds-2' }
+        request.resolve({ data: true })
+        await run
+
+        expect(commit).not.toHaveBeenCalled()
       })
     })
   })

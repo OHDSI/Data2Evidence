@@ -4,13 +4,7 @@
     <div v-if="isBelowMinCohortSize && !chartBusy" class="min-cohort-placeholder">
       <CohortDefinitionIcon class="min-cohort-placeholder__icon" />
       <div class="min-cohort-placeholder__title">{{ getText('MRI_PA_NOT_ENOUGH_DATA_TITLE') }}</div>
-      <div class="min-cohort-placeholder__message">
-        {{
-          minCohortSize != null
-            ? getText('MRI_PA_NOT_ENOUGH_DATA_MESSAGE', String(minCohortSize))
-            : getText('MRI_PA_NOT_ENOUGH_DATA_MESSAGE_NO_MIN')
-        }}
-      </div>
+      <div class="min-cohort-placeholder__message">{{ notEnoughDataMessage }}</div>
     </div>
     <div class="chartControllerContent">
       <div class="axisContainer" ref="axisContainer">
@@ -108,6 +102,7 @@ import { mapActions, mapGetters } from 'vuex'
 import appCheckbox from '../lib/ui/app-checkbox.vue'
 import appLabel from '../lib/ui/app-label.vue'
 import Constants from '../utils/Constants'
+import { formatNumber } from '../utils/NumberUtils'
 import messageBox from './MessageBox.vue'
 import appButton from '../lib/ui/app-button.vue'
 import AxisMenuButton from './AxisMenuButton.vue'
@@ -165,8 +160,14 @@ export default {
   },
   beforeUnmount() {
     window.removeEventListener('click', this.closeSubMenu)
+    this.$emit('setChartBusy', false)
   },
   watch: {
+    getActiveChart() {
+      // Reset busy state when switching chart types so a destroyed chart
+      // cannot leave the loading indicator stuck.
+      this.$emit('setChartBusy', false)
+    },
     getActiveBookmark(newVal, oldVal) {
       // Reset only when  switching to a different cohort.
       // Do NOT reset when a new cohort is saved for the first time:
@@ -206,6 +207,11 @@ export default {
     },
     minCohortSize() {
       return this.getAllChartConfigs?.minCohortSize
+    },
+    notEnoughDataMessage() {
+      return this.minCohortSize != null
+        ? this.getText('MRI_PA_NOT_ENOUGH_DATA_MESSAGE', formatNumber(this.minCohortSize))
+        : this.getText('MRI_PA_NOT_ENOUGH_DATA_MESSAGE_NO_MIN')
     },
     isBelowMinCohortSize() {
       const minCohortSize = this.minCohortSize ?? 0

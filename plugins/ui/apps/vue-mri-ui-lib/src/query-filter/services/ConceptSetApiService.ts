@@ -75,7 +75,7 @@ export const loadConceptSets = async (
     const values = await d2eWebapiService.getConceptSets(datasetId)
 
     const formattedValues = values.map(item => ({
-      value: String(item.id),
+      value: item.id,
       text: item.name,
       display_value: item.name,
       shared: item.shared || false,
@@ -345,7 +345,7 @@ export const getConceptSetExpression = async (
 
   // Create new promise and cache it immediately (deduplicates concurrent requests)
   console.log(`Fetching concept set expression for ID ${conceptSetId}`)
-  const promise = d2eWebapiService.getConceptSetExpression(parseInt(conceptSetId, 10), datasetId)
+  const promise = d2eWebapiService.getConceptSetExpression(conceptSetId, datasetId)
 
   conceptSetExpressionCache.set(cacheKey, {
     promise,
@@ -366,7 +366,7 @@ export const createConceptSet = async (
   conceptSetData: CreateConceptSetRequest,
   datasetId: string,
   isAtlas: boolean
-): Promise<number> => {
+): Promise<string> => {
   if (!datasetId) {
     throw new Error('Missing datasetId for concept set creation')
   }

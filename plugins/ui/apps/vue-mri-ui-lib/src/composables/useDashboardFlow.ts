@@ -3,11 +3,9 @@ import {
   getFieldAttrKey,
   getFieldFilterCardPathForField,
   getWizardFlow,
-  parseNumericInput,
   validateRequiredFields,
   isConditionField,
   type MissingRequiredField,
-  type NumericFilterValue,
   type WizardDefinition,
   type WizardFieldDefinition,
   type BookmarkBooleanContainer,
@@ -16,6 +14,7 @@ import {
 import { constraintContainsExpression, type Constraint } from '../services/dashboardFlowService'
 import BinaryToString from '../utils/BinaryToString'
 import { useNotificationStore } from '../stores/notifications'
+import { applyConstraintValue as applyConstraintValueShared } from '../utils/applyConstraintValue'
 
 export interface WizardFieldValue {
   value: string | number | boolean | object
@@ -154,6 +153,8 @@ export interface UseDashboardFlowReturn {
   initialFormValues: Ref<Record<string, string | number | object>>
   initialDisplayValues: Ref<Record<string, string>>
 
+  savedCohortId: Ref<number | null>
+
   // Computed
   dashboardContext: ComputedRef<DashboardContext>
 
@@ -170,7 +171,7 @@ export interface UseDashboardFlowReturn {
     _displayValues: Record<string, string>,
     _dirtyFieldIds: Set<string>
   ) => Promise<void>
-  handleSaveCohortSuccess: () => void
+  handleSaveCohortSuccess: (_payload?: { cohortId?: number | null }) => void
   handleCancelSaveCohort: () => void
   closeDashboardFlow: () => void
   closeDashboardModal: () => void
@@ -183,6 +184,10 @@ export function useDashboardFlow(
 ): UseDashboardFlowReturn {
   // State
   const showDashboardModal = ref(false)
+  // Id reported by the save, used in preference to getActiveCohortMaterializedId:
+  // that getter derives from the refreshed bookmark list, which can still be
+  // missing the cohort that was just materialized.
+  const savedCohortId = ref<number | null>(null)
   const showSaveCohortModal = ref(false)
   const saveCohortModalMode = ref<'full' | 'bookmark-only' | 'materialize-only'>('full')
   const showDashboardSelectionModal = ref(false)
@@ -935,83 +940,7 @@ export function useDashboardFlow(
     operator = '=',
     displayValue?: string
   ): Promise<any> {
-    const constraintType = constraint.props.type
-    if (constraintType === 'num') {
-      let parsedValues: NumericFilterValue[] = []
-      if (typeof rawInput === 'string') {
-        parsedValues = parseNumericInput(rawInput)
-        if (
-          operator &&
-          operator !== '=' &&
-          /^-?\d+(?:\.\d+)?$/.test(rawInput.trim()) &&
-          parsedValues.length === 1 &&
-          parsedValues[0].op === '='
-        ) {
-          parsedValues[0].op = operator
-        }
-      } else if (typeof rawInput === 'number') {
-        parsedValues = [{ op: operator || '=', value: rawInput }]
-      } else if (rawInput !== null && typeof rawInput !== 'undefined') {
-        const numericValue = Number(rawInput)
-        if (!Number.isNaN(numericValue)) {
-          parsedValues = [{ op: operator || '=', value: numericValue }]
-        }
-      }
-      if (!parsedValues.length) {
-        console.error('[DashboardFlow] Invalid numeric value:', { rawInput, constraint })
-        return Promise.reject(new Error(`Invalid numeric value for ${constraint.props.name || constraint.id}`))
-      }
-      return dispatch('updateConstraintValue', {
-        constraintId: constraint.id,
-        value: parsedValues,
-      })
-    }
-    if (rawInput && typeof rawInput === 'object' && 'from' in rawInput && 'to' in rawInput) {
-      const fromYear = rawInput.from
-      const toYear = rawInput.to
-      if (!fromYear && !toYear) {
-        return Promise.reject(new Error(`Missing year value for ${constraint.props.name || constraint.id}`))
-      }
-      const fromDate = fromYear ? new Date(`${fromYear}-01-01`) : new Date(`${toYear}-01-01`)
-      const toDate = toYear ? new Date(`${toYear}-12-31`) : new Date(`${fromYear}-12-31`)
-      return dispatch('updateDateConstraintValue', {
-        constraintId: constraint.id,
-        fromDateValue: fromDate,
-        toDateValue: toDate,
-        isUTC: false,
-      })
-    }
-    if (constraintType === 'time' || constraintType === 'datetime') {
-      const fromDateRaw = rawInput?.from || rawInput?.value || rawInput
-      const toDateRaw = rawInput?.to || rawInput?.value || rawInput
-      if (!fromDateRaw && !toDateRaw) {
-        return Promise.reject(new Error(`Missing date value for ${constraint.props.name || constraint.id}`))
-      }
-      const fromDate = new Date(fromDateRaw || toDateRaw)
-      const toDate = new Date(toDateRaw || fromDateRaw)
-      return dispatch('updateDateConstraintValue', {
-        constraintId: constraint.id,
-        fromDateValue: fromDate,
-        toDateValue: toDate,
-        isUTC: false,
-      })
-    }
-    const rawValue = rawInput?.value ?? rawInput
-    if (rawValue === null || typeof rawValue === 'undefined' || String(rawValue).trim() === '') {
-      return Promise.reject(new Error(`Missing value for ${constraint.props.name || constraint.id}`))
-    }
-    const finalDisplayValue = displayValue || rawInput?.displayName || String(rawValue)
-    return dispatch('updateConstraintValue', {
-      constraintId: constraint.id,
-      value: [
-        {
-          value: String(rawValue),
-          score: 1,
-          display_value: finalDisplayValue,
-          text: finalDisplayValue,
-        },
-      ],
-    })
+    return applyConstraintValueShared(dispatch, constraint, rawInput, operator, displayValue)
   }
 
   async function handleRequiredFiltersSubmit(
@@ -1171,7 +1100,9 @@ export function useDashboardFlow(
     showSaveCohortModal.value = true
   }
 
-  function handleSaveCohortSuccess() {
+  function handleSaveCohortSuccess(payload?: { cohortId?: number | null }) {
+    const cohortId = Number(payload?.cohortId)
+    savedCohortId.value = Number.isInteger(cohortId) ? cohortId : null
     showSaveCohortModal.value = false
     showDashboardModal.value = true
     isProcessingDashboardFlow = false
@@ -1202,6 +1133,7 @@ export function useDashboardFlow(
 
   function closeDashboardModal() {
     showDashboardModal.value = false
+    savedCohortId.value = null
   }
 
   function isProcessingDashboardFlowFn() {
@@ -1219,6 +1151,7 @@ export function useDashboardFlow(
 
   return {
     showDashboardModal,
+    savedCohortId,
     showSaveCohortModal,
     saveCohortModalMode,
     showDashboardSelectionModal,

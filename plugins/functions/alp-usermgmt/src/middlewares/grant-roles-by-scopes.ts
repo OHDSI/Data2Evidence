@@ -90,49 +90,12 @@ export const grantRolesByScopes = async (req: Request, res: Response, next: Next
             req.user = tokenUser
             Container.set(CONTAINER_KEY.CURRENT_USER, tokenUser)
           } else {
-            // Non-sync request while user doesn't exist — a concurrent sync
-            // request may be provisioning. Retry the lookup with backoff.
-            let retryUser = null
-            for (let i = 0; i < 3; i++) {
-              await new Promise(r => setTimeout(r, (i + 1) * 1000))
-              retryUser = await userService.getUserByIdpUserId(sub) || await userService.getUserByUsername(username)
-              if (retryUser) break
-            }
-            if (retryUser) {
-              userId = retryUser.id
-              const tokenUser: ITokenUser = { userId: retryUser.id!, idpUserId: sub }
-              req.user = tokenUser
-              Container.set(CONTAINER_KEY.CURRENT_USER, tokenUser)
-            } else {
-              logger.error(`User "${sub}" or "${username}" does not exist after retries`)
-              return res.status(500).send({ message: `User "${sub}" or "${username}" does not exist` })
-            }
-          }
-        } else {
-          // Auto-provision not enabled via IDP_AUTO_PROVISION_USERS — retry
-          // in case a concurrent request is provisioning the user via the
-          // PhysioNet OIDC connector.
-          if (env.USERMGMT_AUTO_PROVISION_ENABLED) {
-            logger.info(`[RaceRetry] user "${sub}" not found, USERMGMT_AUTO_PROVISION_ENABLED=true, retrying...`)
-            let retryUser = null
-            for (let i = 0; i < 3; i++) {
-              await new Promise(r => setTimeout(r, (i + 1) * 1000))
-              retryUser = await userService.getUserByIdpUserId(sub) || await userService.getUserByUsername(username)
-              if (retryUser) break
-            }
-            if (retryUser) {
-              userId = retryUser.id
-              const tokenUser: ITokenUser = { userId: retryUser.id!, idpUserId: sub }
-              req.user = tokenUser
-              Container.set(CONTAINER_KEY.CURRENT_USER, tokenUser)
-            } else {
-              logger.error(`User "${sub}" or "${username}" does not exist`)
-              return res.status(500).send({ message: `User "${sub}" or "${username}" does not exist` })
-            }
-          } else {
-            logger.error(`User "${sub}" or "${username}" does not exist`)
+            logger.error(`User "${sub}" or "${username}" does not exist for non-sync request`)
             return res.status(500).send({ message: `User "${sub}" or "${username}" does not exist` })
           }
+        } else {
+          logger.error(`User "${sub}" or "${username}" does not exist`)
+          return res.status(500).send({ message: `User "${sub}" or "${username}" does not exist` })
         }
       } else if (!user.idpUserId) {
         logger.info(`First time login for existing user, update idp_user_id: "${sub}"`)
@@ -168,7 +131,13 @@ export const grantRolesByScopes = async (req: Request, res: Response, next: Next
       await grantOrRevokeSystemRole(userId, ROLES.ALP_USER_ADMIN, scopes.includes(IDP_SCOPE_ROLE.USER_ADMIN))
       await grantOrRevokeSystemRole(userId, ROLES.ALP_DASHBOARD_VIEWER, scopes.includes(IDP_SCOPE_ROLE.DASHBOARD_VIEWER))
       
-      const datasets = await getDatasets()
+      const allDatasets = await getDatasets()
+      // Skip datasets governed by PhysioNet entitlements sync, else this
+      // token-scope sync revokes researcher roles it just granted.
+      const managedCodes = await Container.get(EntitlementsSyncService).getManagedDatasetCodes()
+      const datasets = managedCodes.size > 0
+        ? allDatasets.filter(d => !managedCodes.has(d.token_dataset_code))
+        : allDatasets
       if (datasets.length > 0) {
         let grantDatasetCodes = scopes
           .filter(x => x.startsWith(IDP_SCOPE_ROLE.DATASET_RESEARCHER_PREFIX))

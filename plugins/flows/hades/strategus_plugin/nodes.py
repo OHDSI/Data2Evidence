@@ -1186,10 +1186,16 @@ class StrategusNode(Node):
 
                 databaseConnectorJarFolder = '/app/inst/drivers'
                 os.environ['DATABASECONNECTOR_JAR_FOLDER'] = databaseConnectorJarFolder
-                dbSettings = { "database_code": self.flowOptions["databaseCode"], "schema_name": self.flowOptions["schemaName"], "dataset_id": self.flowOptions["datasetId"] }
+                dbSettings = {
+                    "database_code": self.flowOptions["databaseCode"],
+                    "cache_id": self.flowOptions.get("cacheId"),
+                    "schema_name": self.flowOptions["schemaName"],
+                    "dataset_id": self.flowOptions["datasetId"],
+                }
                 dbdao = DBDao(
                     dialect=SupportedDatabaseDialects.TREX if USE_TREX_CONNECTION else None,
-                    database_code=dbSettings['database_code']
+                    database_code=dbSettings['database_code'],
+                    cache_id=dbSettings.get('cache_id', None)
                 )
                 db_credentials = dbdao.tenant_configs
                 rDatabaseConnector = ro.packages.importr('DatabaseConnector')
@@ -1207,6 +1213,7 @@ class StrategusNode(Node):
                 path_to_results = f'{base_path}/results'
 
                 executionSettings = getRCdmExecutionSettings({
+                    "cacheId": dbSettings.get("cache_id"),
                     "schemaName": dbSettings['schema_name'],
                     "workFolder": work_folder,
                     "resultsFolder": path_to_results
@@ -1241,6 +1248,7 @@ class StrategusNode(Node):
 def get_strategus_node(options):
     return StrategusNode({"id": str(uuid.uuid4()), "type": "strategus_node", "flowOptions": options})
 
+
 @flow(name="execute-r-strategus",
       log_prints=True)
 def execute_r_strategus(analysisSpec: str, executionSettings, dbSettings):
@@ -1248,15 +1256,19 @@ def execute_r_strategus(analysisSpec: str, executionSettings, dbSettings):
         try:
             ro.r(set_trex_env_var(USE_TREX_CONNECTION))
             database_code = dbSettings['database_code']
+            cache_id = dbSettings.get('cache_id', None)
             rParallelLogger = importr('ParallelLogger')
             rDatabaseConnector = importr('DatabaseConnector')
             databaseConnectorJarFolder = '/app/inst/drivers'
 
             dbdao = DBDao(
                 dialect=SupportedDatabaseDialects.TREX if USE_TREX_CONNECTION else None,
-                database_code=database_code
+                database_code=database_code,
+                cache_id=cache_id
             )
             db_credentials = dbdao.tenant_configs
+            print(f"Connecting to database with connection string: {dbdao.get_database_connector_connection_string()}")
+
             rConnectionDetails = rDatabaseConnector.createConnectionDetails(
                 dbms=dbdao.get_database_connector_dbms_val(), 
                 connectionString=dbdao.get_database_connector_connection_string(),
@@ -1296,7 +1308,21 @@ def execute_r_strategus(analysisSpec: str, executionSettings, dbSettings):
 def execute(rSpec, rExecutionSettings, rConnectionDetails):
     with ro.default_converter.context():
         ro.r(set_trex_env_var(USE_TREX_CONNECTION))
-        ro.r('cat("Max Java Heap Size (GB): ", .jcall(.jnew("java/lang/Runtime"), "J", "maxMemory") / 1e9, "\\n")')
+        _patch = "/app/flows/hades/strategus_plugin/patch_treatment_patterns.R"
+        if os.path.exists(_patch):
+            ro.r(f'source("{_patch}")')
+        # rJava is loaded (DatabaseConnector Imports it, and its .onLoad starts the
+        # JVM) but never attached, so bare .jcall/.jnew do not resolve here -- the
+        # pixi env's R_PROFILE_USER (rprofile_java.R) only sets java.parameters,
+        # unlike the old image's init_rjava.R which ran library(rJava).
+        # Namespace-qualify, and use the Runtime singleton rather than .jnew (which
+        # bypasses the private constructor via JNI). Diagnostic only: never fatal.
+        ro.r('''try({
+  if (requireNamespace("rJava", quietly = TRUE))
+    cat("Max Java Heap Size (GB): ",
+        rJava::.jcall(rJava::.jcall("java/lang/Runtime", "Ljava/lang/Runtime;", "getRuntime"),
+                      "J", "maxMemory") / 1e9, "\\n")
+}, silent = TRUE)''')
         rStrategus = importr('Strategus')
         rStrategus.execute(connectionDetails = rConnectionDetails, analysisSpecifications = rSpec, executionSettings = rExecutionSettings)
 
@@ -1307,7 +1333,7 @@ def upload_strategus_results(analysisSpec: str, path_to_results, dbSettings):
         try:
             ro.r(set_trex_env_var(USE_TREX_CONNECTION))
             database_code = dbSettings['database_code']
-            results_schema = f'results_{validate_token_study_code(dbSettings["token_study_code"])}'
+            results_schema = f'{database_code}.results_{validate_token_study_code(dbSettings["token_study_code"])}'
             rStrategus = importr('Strategus')
             rParallelLogger = importr('ParallelLogger')
             rDatabaseConnector = importr('DatabaseConnector')
@@ -1341,18 +1367,6 @@ def upload_strategus_results(analysisSpec: str, path_to_results, dbSettings):
                     resultsConnectionDetails = rConnectionDetails
                 )
 
-                print(f'Creating table tb1_results in schema {results_schema}')
-                # create sql to create table tb1_results
-                create_table_sql = f"""
-                CREATE TABLE IF NOT EXISTS {results_schema}.tb1_results (
-                    token_study_code VARCHAR(100),
-                    dataset_id VARCHAR(100),
-                    cohort_id VARCHAR(100),
-                    table1_json TEXT,
-                    PRIMARY KEY (token_study_code, dataset_id, cohort_id)
-                );
-                """
-                dbdao.execute_sql(create_table_sql)
 
             # uploadResults logs are not captured by default
             # so we override the consolewrite_print callback to capture the logs
@@ -1431,8 +1445,8 @@ def getRCdmExecutionSettings(settings) -> str:
             rCohortGenerator = importr('CohortGenerator')
 
             rExecutionSettings = rStrategus.createCdmExecutionSettings(
-                workDatabaseSchema = settings['schemaName'],
-                cdmDatabaseSchema = settings['schemaName'],
+                workDatabaseSchema = f"{settings['dbName']}.{settings['schemaName']}",
+                cdmDatabaseSchema = f"{settings['dbName']}.{settings['schemaName']}",
                 cohortTableNames = rCohortGenerator.getCohortTableNames(cohortTable = "cohort"),
                 workFolder = settings['workFolder'],
                 resultsFolder = settings['resultsFolder'],

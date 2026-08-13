@@ -50,12 +50,24 @@ jobs:
             count=$(echo "$resp" | jq 'length')
             if [ "$count" = "0" ]; then break; fi
 
+            # Delete a version only when EVERY tag on it is pr-/mg-.
+            #
+            # The API deletes versions, not tags, and identical image content is
+            # deduped onto ONE version — so a stable image ends up with a single
+            # version carrying many tags. d2e-logto currently has one version
+            # tagged with five pr-* tags AND develop-a6b76bf AND develop-a0e1d4a.
+            # Matching any single stale pr-* tag therefore deleted develop with
+            # it, which is why the images that change least (d2e-logto,
+            # d2e-dataflow-gen-worker) keep only one develop-* tag while the
+            # others keep 50+, and why ghcr.io/ohdsi/d2e-dataflow-gen-worker:develop
+            # now resolves to a manifest that no longer exists. That broke every
+            # downstream e2e that pulls the develop image set.
             echo "$resp" | jq -r '
               .[]
               | . as $v
-              | (.metadata.container.tags // [])[]
-              | select(test("^(pr-|mg-)"))
-              | "\($v.id) \($v.updated_at) \(.)"
+              | (.metadata.container.tags // []) as $tags
+              | select(($tags | length) > 0 and (all($tags[]; test("^(pr-|mg-)"))))
+              | "\($v.id) \($v.updated_at) \($tags | join(","))"
             ' | while read vid updated tag; do
               vid_ts=$(date -u -d "$updated" +%s)
               if [ "$vid_ts" -lt "$cutoff" ]; then

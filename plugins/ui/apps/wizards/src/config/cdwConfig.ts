@@ -34,6 +34,10 @@ export interface CdwConfig {
 export interface ConfigMeta {
   configId: string;
   configVersion: string;
+  dependentConfig?: {
+    configId: string;
+    configVersion: string;
+  };
 }
 
 export interface CdwConfigResult {
@@ -76,16 +80,22 @@ const mockConfig: CdwConfig = {
 
 const isDev = import.meta.env.DEV;
 
-const mockMeta: ConfigMeta = { configId: "mock", configVersion: "1" };
+const mockMeta: ConfigMeta = {
+  configId: "mock",
+  configVersion: "1",
+  dependentConfig: { configId: "mock-cdm", configVersion: "1" },
+};
 
-let cachedResult: CdwConfigResult | null = null;
+const cachedResults = new Map<string | undefined, CdwConfigResult>();
 
 export async function fetchCdwConfig(datasetId?: string): Promise<CdwConfigResult> {
+  const cachedResult = cachedResults.get(datasetId);
   if (cachedResult) return cachedResult;
 
   if (isDev) {
-    cachedResult = { config: mockConfig, meta: mockMeta };
-    return cachedResult;
+    const result = { config: mockConfig, meta: mockMeta };
+    cachedResults.set(datasetId, result);
+    return result;
   }
 
   const response = await client.get("/d2e/analytics-svc/pa/services/analytics.xsjs", {
@@ -97,11 +107,12 @@ export async function fetchCdwConfig(datasetId?: string): Promise<CdwConfigResul
 
   const data = response.data;
   const configEntry = Array.isArray(data) ? data[0] : data;
-  cachedResult = {
+  const result = {
     config: configEntry.config as CdwConfig,
     meta: configEntry.meta as ConfigMeta,
   };
-  return cachedResult;
+  cachedResults.set(datasetId, result);
+  return result;
 }
 
 const mockAttributeValues: Record<string, Array<{ label: string; value: string }>> = {
