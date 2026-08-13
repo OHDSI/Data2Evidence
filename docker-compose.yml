@@ -292,7 +292,7 @@ services:
         "jupyter-gateway": "http://${PROJECT_NAME:-d2e}-enterprise-gateway:8888/jupyter",
         "jupyter-gateway-viewer": "http://${PROJECT_NAME:-d2e}-enterprise-gateway-viewer:8888/jupyter",
         "docker-logs": "http://${PROJECT_NAME:-d2e}-logging-1:8080",
-        "supabaseStorage": "http://${PROJECT_NAME:-d2e}-supabase-storage-1:9000",
+        "supabaseStorage": "https://${PROJECT_NAME:-d2e}-supabase-storage-1.${TLS__INTERNAL__DOMAIN:-alp.local}:9000",
         "dataflowStorage": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/system-portal/supabase-storage",
         "mlflow": "http://${PROJECT_NAME:-d2e}-mlflow:5000",
         "mcp-server": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/mcp/chat",
