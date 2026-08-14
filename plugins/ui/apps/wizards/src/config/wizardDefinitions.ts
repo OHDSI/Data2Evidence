@@ -1,4 +1,11 @@
-import type { WizardDefinition, WizardConfig, FieldDefinition, WizardStepConfig, WizardSurface } from "../types/wizard";
+import type {
+  WizardDefinition,
+  WizardConfig,
+  FieldDefinition,
+  WizardStepConfig,
+  WizardSurface,
+  WizardFormSection,
+} from "../types/wizard";
 import { fetchCdwConfig, getAttributeByPath } from "./cdwConfig";
 import type { CdwConfig } from "./cdwConfig";
 import client from "../axios/request";
@@ -268,6 +275,45 @@ const WIZARD_FIELDS: FieldDefinition[] = [
   },
 ];
 
+/**
+ * Layout for the Loss to Follow-up (LTFU) wizard's form.
+ */
+const LOSS_TO_FOLLOW_UP_SECTIONS: WizardFormSection[] = [
+  {
+    id: "person",
+    title: "Person",
+    groups: [{ id: "person-details", fieldIds: ["age", "gender", "ethnicity", "race"], columns: 2 }],
+  },
+  {
+    id: "measurement",
+    title: "Measurement",
+    groups: [
+      {
+        id: "body-measurement",
+        label: "Body measurement",
+        fieldIds: ["height", "weight", "bmi"],
+        columns: 3,
+        validation: {
+          minAnswered: 1,
+          maxAnswered: 2,
+          message: "Enter 1 or 2 of Height, Weight, and BMI.",
+        },
+      },
+      {
+        id: "vitals",
+        label: "Vitals",
+        fieldIds: ["systolicBp", "diastolicBp", "pulseRate", "respRate"],
+        columns: 2,
+      },
+    ],
+  },
+  {
+    id: "observation",
+    title: "Observation window",
+    groups: [{ id: "observation-details", fieldIds: ["year"], columns: 1 }],
+  },
+];
+
 const mockWizardConfigs: WizardConfig[] = [
   {
     id: "calculate-incidence",
@@ -303,6 +349,14 @@ const mockWizardConfigs: WizardConfig[] = [
     surfaces: ["cohortBuilder"],
     flow: "table1-config",
     fields: [],
+  },
+  {
+    id: "loss-to-follow-up",
+    name: "Loss to Follow-up (LTFU)",
+    description:
+      "This wizard will calculate the loss to follow-up rate for a particular clinical event, frequently used in clinical trial investigations and quality improvement research. This calculation works by finding patients who did not return for an expected visit within a time window you specify.",
+    sections: LOSS_TO_FOLLOW_UP_SECTIONS,
+    fields: WIZARD_FIELDS,
   },
 ];
 

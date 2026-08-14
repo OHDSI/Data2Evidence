@@ -935,6 +935,207 @@
       "surfaces": ["cohortBuilder"],
       "flow": "table1-config",
       "fields": []
+    },
+    {
+      "id": "loss-to-follow-up",
+      "name": "Loss to Follow-up (LTFU)",
+      "description": "This wizard will calculate the loss to follow-up rate for a particular clinical event, frequently used in clinical trial investigations and quality improvement research. This calculation works by finding patients who did not return for an expected visit within a time window you specify.",
+      "sections": [
+        {
+          "id": "person",
+          "title": "Person",
+          "groups": [
+            {
+              "id": "person-details",
+              "fieldIds": ["age", "gender", "ethnicity", "race"],
+              "columns": 2
+            }
+          ]
+        },
+        {
+          "id": "measurement",
+          "title": "Measurement",
+          "groups": [
+            {
+              "id": "body-measurement",
+              "label": "Body measurement",
+              "fieldIds": ["height", "weight", "bmi"],
+              "columns": 3,
+              "validation": {
+                "minAnswered": 1,
+                "maxAnswered": 2,
+                "message": "Enter 1 or 2 of Height, Weight, and BMI."
+              }
+            },
+            {
+              "id": "vitals",
+              "label": "Vitals",
+              "fieldIds": ["systolicBp", "diastolicBp", "pulseRate", "respRate"],
+              "columns": 2
+            }
+          ]
+        },
+        {
+          "id": "observation",
+          "title": "Observation window",
+          "groups": [
+            {
+              "id": "observation-details",
+              "fieldIds": ["year"],
+              "columns": 1
+            }
+          ]
+        }
+      ],
+      "fields": [
+        {
+          "id": "age",
+          "type": "num",
+          "label": "Age Range",
+          "required": true,
+          "configPath": "patient.attributes.Age"
+        },
+        {
+          "id": "gender",
+          "type": "text",
+          "label": "Gender",
+          "required": true,
+          "configPath": "patient.attributes.Gender"
+        },
+        {
+          "id": "ethnicity",
+          "type": "text",
+          "label": "Ethnicity",
+          "required": true,
+          "configPath": "patient.attributes.ethnicity"
+        },
+        {
+          "id": "race",
+          "type": "text",
+          "label": "Race",
+          "required": true,
+          "configPath": "patient.attributes.race"
+        },
+        {
+          "id": "height",
+          "type": "num",
+          "label": "Height",
+          "placeholder": "cm",
+          "required": false,
+          "configPath": "patient.interactions.measurement.attributes.numval",
+          "filterCardPath": "patient.interactions.measurement",
+          "fixedAttributes": [
+            {
+              "configPath": "patient.interactions.measurement.attributes.measurementconceptname",
+              "operator": "=",
+              "value": "Body Height"
+            }
+          ]
+        },
+        {
+          "id": "weight",
+          "type": "num",
+          "label": "Weight",
+          "placeholder": "kg",
+          "required": false,
+          "configPath": "patient.interactions.measurement.attributes.numval",
+          "filterCardPath": "patient.interactions.measurement",
+          "fixedAttributes": [
+            {
+              "configPath": "patient.interactions.measurement.attributes.measurementconceptname",
+              "operator": "=",
+              "value": "Body Weight"
+            }
+          ]
+        },
+        {
+          "id": "bmi",
+          "type": "num",
+          "label": "BMI",
+          "placeholder": "kg/m²",
+          "required": false,
+          "configPath": "patient.interactions.measurement.attributes.numval",
+          "filterCardPath": "patient.interactions.measurement",
+          "fixedAttributes": [
+            {
+              "configPath": "patient.interactions.measurement.attributes.measurementconceptname",
+              "operator": "=",
+              "value": "Body mass index"
+            }
+          ]
+        },
+        {
+          "id": "respRate",
+          "type": "num",
+          "label": "Resp Rate",
+          "placeholder": "bpm",
+          "required": true,
+          "configPath": "patient.interactions.measurement.attributes.numval",
+          "filterCardPath": "patient.interactions.measurement",
+          "fixedAttributes": [
+            {
+              "configPath": "patient.interactions.measurement.attributes.measurementconceptname",
+              "operator": "=",
+              "value": "Respiratory rate"
+            }
+          ]
+        },
+        {
+          "id": "pulseRate",
+          "type": "num",
+          "label": "Pulse Rate",
+          "placeholder": "bpm",
+          "required": true,
+          "configPath": "patient.interactions.measurement.attributes.numval",
+          "filterCardPath": "patient.interactions.measurement",
+          "fixedAttributes": [
+            {
+              "configPath": "patient.interactions.measurement.attributes.measurementconceptname",
+              "operator": "=",
+              "value": "Pulse rate"
+            }
+          ]
+        },
+        {
+          "id": "systolicBp",
+          "type": "num",
+          "label": "Systolic Blood Pressure",
+          "placeholder": "mmHg",
+          "required": true,
+          "configPath": "patient.interactions.measurement.attributes.numval",
+          "filterCardPath": "patient.interactions.measurement",
+          "fixedAttributes": [
+            {
+              "configPath": "patient.interactions.measurement.attributes.measurementconceptname",
+              "operator": "=",
+              "value": "Systolic blood pressure"
+            }
+          ]
+        },
+        {
+          "id": "diastolicBp",
+          "type": "num",
+          "label": "Diastolic Blood Pressure",
+          "placeholder": "mmHg",
+          "required": true,
+          "configPath": "patient.interactions.measurement.attributes.numval",
+          "filterCardPath": "patient.interactions.measurement",
+          "fixedAttributes": [
+            {
+              "configPath": "patient.interactions.measurement.attributes.measurementconceptname",
+              "operator": "=",
+              "value": "Diastolic blood pressure"
+            }
+          ]
+        },
+        {
+          "id": "year",
+          "type": "yearRange",
+          "label": "OBSERVATION WINDOW",
+          "required": true,
+          "isWizardField": true
+        }
+      ]
     }
   ]
 }
