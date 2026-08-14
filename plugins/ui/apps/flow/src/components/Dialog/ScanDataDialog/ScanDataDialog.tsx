@@ -129,8 +129,19 @@ export const ScanDataDialog: FC<ScanDataDialogProps> = ({
     };
   }, []);
 
+  // Seed ONCE per open cycle. `initialMetadata` is `formData.scanMetadata` in
+  // the drawer, which gets a fresh object identity on every setFormData — so
+  // depending on its identity would re-run this effect mid-dialog and snap the
+  // user's in-progress selections back to the saved values.
+  const seededForOpenRef = useRef(false);
+
   useEffect(() => {
-    if (!open || !initialMetadata?.dataType) return;
+    if (!open) {
+      seededForOpenRef.current = false;
+      return;
+    }
+    if (seededForOpenRef.current || !initialMetadata?.dataType) return;
+    seededForOpenRef.current = true;
 
     setInternalDataType(initialMetadata.dataType);
     setSelectedTables(initialMetadata.selectedTables ?? []);
