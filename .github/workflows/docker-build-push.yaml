@@ -798,10 +798,19 @@ jobs:
             -days 30 -subj "/CN=d2e-ci-ca" 2>/dev/null
           openssl req -newkey rsa:2048 -nodes \
             -keyout "$D/srv.key" -out "$D/srv.csr" \
-            -subj "/CN=d2e.cluster.local" 2>/dev/null
+            -subj "/CN=d2e.local" 2>/dev/null
+          # The SAN has to go on the signing step: `openssl x509 -req` drops CSR
+          # extensions unless told otherwise. Without a SAN the cert validates
+          # against nothing at all, since clients ignore CN when no SAN is
+          # present — which only became visible once the chart started verifying.
+          printf '%s\n' \
+            'subjectAltName=DNS:*.d2e.local,DNS:d2e.local,DNS:*.d2e.cluster.local,DNS:d2e.cluster.local' \
+            'keyUsage=critical,digitalSignature' \
+            'extendedKeyUsage=serverAuth,clientAuth' > "$D/srv.ext"
           openssl x509 -req -in "$D/srv.csr" \
             -CA "$D/ca.crt" -CAkey "$D/ca.key" -CAcreateserial \
-            -out "$D/srv.crt" -days 30 2>/dev/null
+            -out "$D/srv.crt" -days 30 -extfile "$D/srv.ext" 2>/dev/null
+          openssl x509 -in "$D/srv.crt" -noout -ext subjectAltName
 
       - name: Helm install (using just-built images)
         run: |
