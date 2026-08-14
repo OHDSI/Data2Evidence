@@ -4,3 +4,4 @@ export * from "./import-data";
 export * from "./mapping-data";
 export * from "./reducer";
 export * from "./translation";
+export * from "./wizard";

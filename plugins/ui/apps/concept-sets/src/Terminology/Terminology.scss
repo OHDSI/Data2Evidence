@@ -10,3 +10,13 @@
 .terminology__details {
   flex: 1;
 }
+
+// CONCEPT_MAPPING drawer only — matches the mapping node drawer width.
+// Other modes keep the inline 85% width set in Terminology.tsx.
+.terminology-concept-mapping-drawer {
+  width: clamp(1200px, 90vw, 2560px) !important;
+
+  @media (max-width: 1239.98px) {
+    width: calc(100vw - 40px) !important;
+  }
+}

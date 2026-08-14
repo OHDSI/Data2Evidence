@@ -5,8 +5,6 @@ import { NodeDataState } from "../../../../types";
 import { NodeLayout } from "../../NodeLayout/NodeLayout";
 import { ResultsDrawer } from "../../../Flow/FlowRunResults/ResultsDrawer";
 import { ConceptMappingDrawer } from "./ConceptMappingDrawer";
-import { SourceHandle } from "../../CustomHandle/CustomHandle";
-import { HandleIOType } from "../type";
 import "./ConceptMappingNode.scss";
 
 export interface ConceptMappingNodeData extends NodeDataState {
@@ -27,10 +25,12 @@ export const ConceptMappingNode = (node: NodeProps<ConceptMappingNodeData>) => {
         resultType={data.error ? "error" : "success"}
         onResultClick={data.result ? openResult : null}
         node={node}
+        // Both handles removed for now — the Concept Mapping node isn't wired into the graph
+        // (no upstream SQL/Python source, no downstream consumer yet); CSV upload is the only
+        // supported source. `null` (not omitted) so NodeLayout renders no handle rather than
+        // falling back to its "default" one.
         LeftHandle={null}
-        RightHandle={
-          <SourceHandle ioType={HandleIOType.Dataframe} nodeId={node.id} />
-        }
+        RightHandle={null}
       >
         {data.description}
       </NodeLayout>
