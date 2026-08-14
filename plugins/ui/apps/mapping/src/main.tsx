@@ -8,6 +8,7 @@ import "./index.css";
 
 export interface MappingMetadataParams {
   mappingSuggestion: boolean;
+  nodeId?: string;
   data: AppState;
   onChange: (data: any) => void;
 }
