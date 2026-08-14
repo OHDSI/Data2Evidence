@@ -120,7 +120,7 @@ export const WhiteRabbitDrawer: FC<WhiteRabbitDrawerProps> = ({
   }, [formData]);
   return (
     <>
-      <NodeDrawer onOk={handleOk} onClose={onClose} {...props}>
+      <NodeDrawer onOk={handleOk} onClose={handleOk} {...props}>
         <div className="white-rabbit-drawer">
           {formData?.sourceHandles.length ? (
             <div className="handle-container scroll-shadow">
