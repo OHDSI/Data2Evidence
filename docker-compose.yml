@@ -21,7 +21,7 @@ volumes:
 
 x-envs:
   env_converter: &x-converter
-    URL__DATABASE_LIST__GET: http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/gateway/api/db/database-creds/
+    URL__DATABASE_LIST__GET: http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-d2e.local}:33001/gateway/api/db/database-creds/
     DB_CREDENTIALS__PRIVATE_KEY: ${DB_CREDENTIALS__INTERNAL__DECRYPT_PRIVATE_KEY}
     IDP__ALP_SVC__CLIENT_ID: ${LOGTO__D2E_SVC__CLIENT_ID:-${LOGTO__ALP_SVC__CLIENT_ID}}
     IDP__ALP_SVC__CLIENT_SECRET: ${LOGTO__D2E_SVC__CLIENT_SECRET:-${LOGTO__ALP_SVC__CLIENT_SECRET}}
@@ -47,11 +47,11 @@ x-envs:
     TREX__SQL__USER: postgres
     TREX__SQL__PASSWORD: ${TREX__SQL__PASSWORD:?TREX__SQL__PASSWORD must be set (run d2e init); refusing default pencil} # Password for the trex sql interface
     TREX__SQL__DBNAME: postgres
-  # "https://${PROJECT_NAME:-d2e}-minerva-portal-server-1.${TLS__INTERNAL__DOMAIN:-alp.local}:41105",
+  # "https://${PROJECT_NAME:-d2e}-minerva-portal-server-1.${TLS__INTERNAL__DOMAIN:-d2e.local}:41105",
   tls: &x-tls
     TLS__INTERNAL__CA_CRT: ${TLS__INTERNAL__CA_CRT}
     TLS__INTERNAL__CRT: ${TLS__INTERNAL__CRT}
-    TLS__INTERNAL__DOMAIN: ${TLS__INTERNAL__DOMAIN:-alp.local}
+    TLS__INTERNAL__DOMAIN: ${TLS__INTERNAL__DOMAIN:-d2e.local}
     TLS__INTERNAL__KEY: ${TLS__INTERNAL__KEY}
   enterprise-gateway: &x-enterprise-gateway
     EG_KERNEL_LAUNCH_TIMEOUT: ${EG_KERNEL_LAUNCH_TIMEOUT:-300}
@@ -68,7 +68,7 @@ x-envs:
     EG_DEFAULT_KERNEL_NAME: "r_ohdsi_docker"
     EG_DOCKER_MODE: docker
     EG_ALLOW_ORIGIN: "https://${CADDY__D2E__PUBLIC_FQDN:-${CADDY__ALP__PUBLIC_FQDN:-localhost}}${PORT:+:${PORT:-443}}"
-    TREX__ENDPOINT_URL: "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001"
+    TREX__ENDPOINT_URL: "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-d2e.local}:33001"
     EG_ENV_WHITELIST: "KERNEL_USERNAME"
     EG_MAX_KERNELS_PER_USER: 1
 
@@ -77,7 +77,7 @@ services:
   trex:
     image: ${DOCKER_IMAGE_PREFIX:-ghcr.io/ohdsi/}d2e-trex:${DOCKER_TAG_NAME:-develop}
     container_name: ${PROJECT_NAME:-d2e}-trex
-    hostname: ${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}
+    hostname: ${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-d2e.local}
     extra_hosts:
       - "${CADDY__D2E__PUBLIC_FQDN:-${CADDY__ALP__PUBLIC_FQDN:-localhost}}:host-gateway"
     depends_on:
@@ -202,7 +202,7 @@ services:
       # LOGTO__TOKEN_URL, so trex (token exchange) and WebAPI (discovery/JWKS) reach Logto
       # consistently. The discovered issuer is still http://alp-caddy:8080/oidc (matches the
       # token iss / LOGTO__ISSUER); only the fetch endpoint + jwks_uri are proper HTTPS on :3001.
-      SECURITY_AUTH_OIDC_URL: "https://${PROJECT_NAME:-d2e}-logto-1.${TLS__INTERNAL__DOMAIN:-alp.local}:3001/oidc/.well-known/openid-configuration"
+      SECURITY_AUTH_OIDC_URL: "https://${PROJECT_NAME:-d2e}-logto-1.${TLS__INTERNAL__DOMAIN:-d2e.local}:3001/oidc/.well-known/openid-configuration"
       # External URL for browser redirects - used to rewrite internal OIDC URLs to external ones
       SECURITY_AUTH_OIDC_EXTERNALURL: "https://${CADDY__D2E__PUBLIC_FQDN:-${CADDY__ALP__PUBLIC_FQDN:-localhost}}:${CADDY_PORT:-${PORT:-443}}/oidc"
       SECURITY_AUTH_OIDC_LOGOUTURL: "https://${CADDY__D2E__PUBLIC_FQDN:-${CADDY__ALP__PUBLIC_FQDN:-localhost}}:${CADDY_PORT:-${PORT:-443}}/oidc/session/end"
@@ -267,38 +267,38 @@ services:
       TPM_USE_NODE_MODULES: "false"
       SERVICE_ROUTES: |-
         {
-        "analytics": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001",
-        "bookmark": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/analytics-svc/api/services/bookmark",
-        "cdw": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001",
-        "d2e-webapi": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/d2e-webapi",
-        "webapi": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/WebAPI",
-        "paConfig": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/pa-config-svc",
-        "trex": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001",
-        "queryGen": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001",
-        "jobplugins": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001",
-        "portalServer": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/system-portal",
-        "dataset": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/gateway/api/dataset",
-        "usermgmt": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/usermgmt/api",
-        "strategus-analysis": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001",
-        "terminology": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/terminology",
-        "prefect": "https://${PROJECT_NAME:-d2e}-dataflow-gen-1.${TLS__INTERNAL__DOMAIN:-alp.local}:41120/d2e/api",
-        "idIssuerUrl": "https://${PROJECT_NAME:-d2e}-logto-1.${TLS__INTERNAL__DOMAIN:-alp.local}:3001/oidc",
+        "analytics": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-d2e.local}:33001",
+        "bookmark": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-d2e.local}:33001/analytics-svc/api/services/bookmark",
+        "cdw": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-d2e.local}:33001",
+        "d2e-webapi": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-d2e.local}:33001/d2e-webapi",
+        "webapi": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-d2e.local}:33001/WebAPI",
+        "paConfig": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-d2e.local}:33001/pa-config-svc",
+        "trex": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-d2e.local}:33001",
+        "queryGen": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-d2e.local}:33001",
+        "jobplugins": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-d2e.local}:33001",
+        "portalServer": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-d2e.local}:33001/system-portal",
+        "dataset": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-d2e.local}:33001/gateway/api/dataset",
+        "usermgmt": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-d2e.local}:33001/usermgmt/api",
+        "strategus-analysis": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-d2e.local}:33001",
+        "terminology": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-d2e.local}:33001/terminology",
+        "prefect": "https://${PROJECT_NAME:-d2e}-dataflow-gen-1.${TLS__INTERNAL__DOMAIN:-d2e.local}:41120/d2e/api",
+        "idIssuerUrl": "https://${PROJECT_NAME:-d2e}-logto-1.${TLS__INTERNAL__DOMAIN:-d2e.local}:3001/oidc",
         "minio": "",
-        "filesManager": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/files-manager/api",
-        "whiteRabbit": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/white-rabbit/api",
-        "alpdb": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/gateway/api/db",
+        "filesManager": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-d2e.local}:33001/files-manager/api",
+        "whiteRabbit": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-d2e.local}:33001/white-rabbit/api",
+        "alpdb": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-d2e.local}:33001/gateway/api/db",
         "dicomServer": "http://${PROJECT_NAME:-d2e}-dicom-server-1:8042",
-        "logto": "https://${PROJECT_NAME:-d2e}-logto-1.${TLS__INTERNAL__DOMAIN:-alp.local}:3001",
+        "logto": "https://${PROJECT_NAME:-d2e}-logto-1.${TLS__INTERNAL__DOMAIN:-d2e.local}:3001",
         "jupyter-gateway": "http://${PROJECT_NAME:-d2e}-enterprise-gateway:8888/jupyter",
         "jupyter-gateway-viewer": "http://${PROJECT_NAME:-d2e}-enterprise-gateway-viewer:8888/jupyter",
         "docker-logs": "http://${PROJECT_NAME:-d2e}-logging-1:8080",
-        "supabaseStorage": "https://${PROJECT_NAME:-d2e}-supabase-storage-1.${TLS__INTERNAL__DOMAIN:-alp.local}:9000",
-        "dataflowStorage": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/system-portal/supabase-storage",
+        "supabaseStorage": "https://${PROJECT_NAME:-d2e}-supabase-storage-1.${TLS__INTERNAL__DOMAIN:-d2e.local}:9000",
+        "dataflowStorage": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-d2e.local}:33001/system-portal/supabase-storage",
         "mlflow": "http://${PROJECT_NAME:-d2e}-mlflow:5000",
-        "mcp-server": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/mcp/chat",
+        "mcp-server": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-d2e.local}:33001/mcp/chat",
         "materializeCohorts": "https://${PROJECT_NAME:-d2e}-materialize-cohorts:3333",
-        "fhirServer": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:8094",
-        "fhirGateway": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/fhir-gateway"
+        "fhirServer": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-d2e.local}:8094",
+        "fhirGateway": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-d2e.local}:33001/fhir-gateway"
         }
       PG_SUPER_PASSWORD: ${PG_SUPER_PASSWORD}
       PG_SUPER_USER: ${PG_SUPER_USER:-postgres}
@@ -307,12 +307,12 @@ services:
       PG_PASSWORD: ${PG_WRITE_PASSWORD}
       PG_USER: ${PG_WRITE_USER:-alp_pg_write_user}
       PORTAL__LOG_DISCLAIMER: ${PORTAL__LOG_DISCLAIMER:-false}
-      PREFECT_API_URL: ${PREFECT_API_URL:-https://${PROJECT_NAME:-d2e}-dataflow-gen-1.${TLS__INTERNAL__DOMAIN:-alp.local}:41120/d2e/api}
+      PREFECT_API_URL: ${PREFECT_API_URL:-https://${PROJECT_NAME:-d2e}-dataflow-gen-1.${TLS__INTERNAL__DOMAIN:-d2e.local}:41120/d2e/api}
       # Gates the alp-dataflow-gen-init function (waitforEnvVar: PREFECT_HEALTH_CHECK)
       # so trex waits for the Prefect API to be reachable before seeding its
       # variables/blocks/workpool. Without it the init runs at boot before Prefect
       # is up, crashes with ECONNREFUSED, and DQD flow runs later fail with 500.
-      PREFECT_HEALTH_CHECK: ${PREFECT_HEALTH_CHECK:-https://${PROJECT_NAME:-d2e}-dataflow-gen-1.${TLS__INTERNAL__DOMAIN:-alp.local}:41120/d2e/api/health}
+      PREFECT_HEALTH_CHECK: ${PREFECT_HEALTH_CHECK:-https://${PROJECT_NAME:-d2e}-dataflow-gen-1.${TLS__INTERNAL__DOMAIN:-d2e.local}:41120/d2e/api/health}
       # The trex core auto-deploys flow plugins to Prefect (core/server/plugin/flow.ts):
       # it waits for a worker pool named PREFECT_POOL before registering deployments
       # and sets work_pool_name to it. Must match the pool created by the
@@ -352,13 +352,13 @@ services:
       LOGTO__D2E_DATA__CLIENT_SECRET: ${LOGTO__D2E_DATA__CLIENT_SECRET:-${LOGTO__ALP_DATA__CLIENT_SECRET}}
       # Must equal the iss claim Logto stamps into tokens (= Logto's ENDPOINT + /oidc).
       # Used by trex-TS authn middleware (JWKS URL) and portal config (iss validation).
-      LOGTO__ISSUER: https://${PROJECT_NAME:-d2e}-logto-1.${TLS__INTERNAL__DOMAIN:-alp.local}:3001/oidc
+      LOGTO__ISSUER: https://${PROJECT_NAME:-d2e}-logto-1.${TLS__INTERNAL__DOMAIN:-d2e.local}:3001/oidc
       LOGTO__RESOURCE_API: https://alp-default
       LOGTO__SCOPE: ${LOGTO__SCOPE:-openid offline_access profile email}
       LOGTO__SVC_CLIENT_ID: ${LOGTO__D2E_SVC__CLIENT_ID:-${LOGTO__ALP_SVC__CLIENT_ID}}
       LOGTO__SVC_CLIENT_SECRET: ${LOGTO__D2E_SVC__CLIENT_SECRET:-${LOGTO__ALP_SVC__CLIENT_SECRET}}
-      LOGTO__TOKEN_URL: https://${PROJECT_NAME:-d2e}-logto-1.${TLS__INTERNAL__DOMAIN:-alp.local}:3001/oidc/token
-      LOGTO__ADMIN_SERVER__FQDN_URL: https://${PROJECT_NAME:-d2e}-logto-1.${TLS__INTERNAL__DOMAIN:-alp.local}:3002
+      LOGTO__TOKEN_URL: https://${PROJECT_NAME:-d2e}-logto-1.${TLS__INTERNAL__DOMAIN:-d2e.local}:3001/oidc/token
+      LOGTO__ADMIN_SERVER__FQDN_URL: https://${PROJECT_NAME:-d2e}-logto-1.${TLS__INTERNAL__DOMAIN:-d2e.local}:3002
       LOGTO__DEFAULT_TENANT__FQDN_URL: ${LOGTO__DEFAULT_TENANT__FQDN_URL:-https://default.logto.app/api}
       LOGTO__CLIENTID_PASSWORD__BASIC_AUTH: ${LOGTO__CLIENTID_PASSWORD__BASIC_AUTH}
       LOGTO_API_M2M_CLIENT_ID: ${LOGTO_API_M2M_CLIENT_ID}
@@ -500,7 +500,7 @@ services:
     depends_on:
       alp-minerva-postgres:
         condition: service_healthy
-    hostname: ${PROJECT_NAME:-d2e}-minerva-pg-mgmt-init-1.${TLS__INTERNAL__DOMAIN:-alp.local}
+    hostname: ${PROJECT_NAME:-d2e}-minerva-pg-mgmt-init-1.${TLS__INTERNAL__DOMAIN:-d2e.local}
     image: ${DOCKER_IMAGE_PREFIX:-ghcr.io/ohdsi/}d2e-pg-mgmt-init:${DOCKER_TAG_NAME:-develop}
     logging:
       options:
@@ -579,7 +579,7 @@ services:
 
   alp-caddy:
     container_name: &c1 ${PROJECT_NAME:-d2e}-caddy
-    hostname: ${PROJECT_NAME:-d2e}-caddy.${TLS__INTERNAL__DOMAIN:-alp.local}
+    hostname: ${PROJECT_NAME:-d2e}-caddy.${TLS__INTERNAL__DOMAIN:-d2e.local}
     platform: linux/amd64
     image: caddy:2.8-alpine
     logging:
@@ -654,7 +654,7 @@ services:
 
           handle @logto {
             uri strip_prefix /d2e/logto
-            reverse_proxy https://${PROJECT_NAME:-d2e}-logto-1.${TLS__INTERNAL__DOMAIN:-alp.local}:3001 {
+            reverse_proxy https://${PROJECT_NAME:-d2e}-logto-1.${TLS__INTERNAL__DOMAIN:-d2e.local}:3001 {
               import ${PROXY_HEADERS_MODE:-proxy_headers_default}
               # Host + X-Forwarded-* make Logto (TRUST_PROXY_HEADER=true) emit external URLs
               # for browser-facing endpoints (authorize/sign-in). The issuer claim itself is
@@ -761,7 +761,7 @@ services:
             path /oidc/*
           }
           handle @oidc {
-            reverse_proxy https://${PROJECT_NAME:-d2e}-logto-1.${TLS__INTERNAL__DOMAIN:-alp.local}:3001 {
+            reverse_proxy https://${PROJECT_NAME:-d2e}-logto-1.${TLS__INTERNAL__DOMAIN:-d2e.local}:3001 {
               transport http {
                 tls
                 tls_trust_pool file /srv/caddy-config/ca.pem
@@ -840,7 +840,7 @@ services:
           "curl -fk https://localhost:41120/d2e/api/health || exit 1",
         ]
       timeout: 30s
-    hostname: &dataflow-gen-hostname ${PROJECT_NAME:-d2e}-dataflow-gen-1.${TLS__INTERNAL__DOMAIN:-alp.local}
+    hostname: &dataflow-gen-hostname ${PROJECT_NAME:-d2e}-dataflow-gen-1.${TLS__INTERNAL__DOMAIN:-d2e.local}
     image: ${DOCKER_IMAGE_PREFIX:-ghcr.io/ohdsi/}d2e-dataflow-gen:${DOCKER_TAG_NAME:-develop}
     platform: linux/amd64
     logging:
@@ -927,7 +927,7 @@ services:
           "import urllib.request, sys; sys.exit(0 if 200 <= urllib.request.urlopen('http://localhost:8080/health', timeout=5).getcode() < 300 else 1)",
         ]
       timeout: 30s
-    hostname: ${PROJECT_NAME:-d2e}-dataflow-gen-worker.${TLS__INTERNAL__DOMAIN:-alp.local}
+    hostname: ${PROJECT_NAME:-d2e}-dataflow-gen-worker.${TLS__INTERNAL__DOMAIN:-d2e.local}
     image: ${DOCKER_IMAGE_PREFIX:-ghcr.io/ohdsi/}d2e-dataflow-gen-worker:${DOCKER_TAG_NAME:-develop}
     logging:
       options:
@@ -943,7 +943,7 @@ services:
     environment:
       <<:
         - *x-tls
-      PREFECT_API_URL: https://${PROJECT_NAME:-d2e}-dataflow-gen-1.${TLS__INTERNAL__DOMAIN:-alp.local}:41120/d2e/api
+      PREFECT_API_URL: https://${PROJECT_NAME:-d2e}-dataflow-gen-1.${TLS__INTERNAL__DOMAIN:-d2e.local}:41120/d2e/api
       PREFECT_API_ENABLE_HTTP2: False
       # Trust the internal self-signed CA across all Python HTTP stacks. The
       # command writes the CA into the OS store (update-ca-certificates) and the
@@ -1033,7 +1033,7 @@ services:
       LOGTO__ROLES: '[{"name":"role.systemadmin","description":"System admin","type":"User"},{"name":"role.useradmin","description":"User admin","type":"User"},{"name":"role.dashboardviewer","description":"Dashboard viewer","type":"User"},{"name":"role.viewer","description":"Viewer","type":"User"},{"name":"role.jobrunner","description":"Job runner","type":"User"},{"name":"role.studyresultsreader","description":"Study results reader","type":"User"},{"name":"role.etlmappingcontributor","description":"ETL mapping contributor","type":"User"}]'
       LOGTO__SCOPES: '[{"name":"role.systemadmin","description":"System admin"},{"name":"role.useradmin","description":"User admin"},{"name":"role.dashboardviewer","description":"Dashboard viewer"},{"name":"role.viewer","description":"Viewer"},{"name":"role.jobrunner","description":"Job runner"},{"name":"role.studyresultsreader","description":"Study results reader"},{"name":"role.etlmappingcontributor","description":"ETL mapping contributor"},{"name":"admin","description":"WebAPI admin role"},{"name":"anonymous","description":"WebAPI anonymous role"},{"name":"cohort-reader","description":"WebAPI cohort reader role (rewritten to \"cohort reader\" by JWT customizer)"},{"name":"cohort-creator","description":"WebAPI cohort creator role (rewritten to \"cohort creator\" by JWT customizer)"},{"name":"concept-set-creator","description":"WebAPI concept set creator role (rewritten to \"concept set creator\" by JWT customizer)"}]'
       LOGTO__ROLES_SCOPES: '[{"roleName":"role.systemadmin","scopeNames":["role.systemadmin","admin"]},{"roleName":"role.useradmin","scopeNames":["role.useradmin"]},{"roleName":"role.dashboardviewer","scopeNames":["role.dashboardviewer"]},{"roleName":"role.viewer","scopeNames":["role.viewer","anonymous"]},{"roleName":"role.jobrunner","scopeNames":["role.jobrunner"]},{"roleName":"role.studyresultsreader","scopeNames":["role.studyresultsreader"]},{"roleName":"role.etlmappingcontributor","scopeNames":["role.etlmappingcontributor"]}]'
-      LOGTO__ADMIN_SERVER__FQDN_URL: "https://${PROJECT_NAME:-d2e}-logto-1.${TLS__INTERNAL__DOMAIN:-alp.local}:3002"
+      LOGTO__ADMIN_SERVER__FQDN_URL: "https://${PROJECT_NAME:-d2e}-logto-1.${TLS__INTERNAL__DOMAIN:-d2e.local}:3002"
       LOGTO__CLIENTID_PASSWORD__BASIC_AUTH: ${LOGTO__CLIENTID_PASSWORD__BASIC_AUTH}
       LOGTO__ALP_ADMIN_APP: '{"application": {"id": "${LOGTO_API_M2M_CLIENT_ID}", "name":"alp-admin","description":"alp-admin", "secret": "${LOGTO_API_M2M_CLIENT_SECRET}"}, "role": { "name":"api-access","description":"Logto API access"}}'
       LOGTO__TERM_OF_USE_URL: ${LOGTO__TERM_OF_USE_URL:-}
@@ -1059,7 +1059,7 @@ services:
         - -O
         - logto.status
         - https://localhost:3001/api/status
-    hostname: ${PROJECT_NAME:-d2e}-logto-1.${TLS__INTERNAL__DOMAIN:-alp.local}
+    hostname: ${PROJECT_NAME:-d2e}-logto-1.${TLS__INTERNAL__DOMAIN:-d2e.local}
     platform: linux/amd64
     image: ${DOCKER_IMAGE_PREFIX:-ghcr.io/ohdsi/}d2e-logto:${DOCKER_TAG_NAME:-develop}
     logging:
@@ -1091,7 +1091,7 @@ services:
       # It must be reachable by backend services (e.g. WebAPI) that validate iss by fetching discovery.
       # Browser-visible URLs are derived per-request via TRUST_PROXY_HEADER=true + X-Forwarded-* from Caddy,
       # so users still see https://localhost:41100/... for sign-in/authorize.
-      ENDPOINT: https://${PROJECT_NAME:-d2e}-logto-1.${TLS__INTERNAL__DOMAIN:-alp.local}:3001
+      ENDPOINT: https://${PROJECT_NAME:-d2e}-logto-1.${TLS__INTERNAL__DOMAIN:-d2e.local}:3001
       LOGTO_API_M2M_CLIENT_ID: ${LOGTO_API_M2M_CLIENT_ID}
       LOGTO_API_M2M_CLIENT_SECRET: ${LOGTO_API_M2M_CLIENT_SECRET}
       LOGTO_ROLES_AZ_GROUPS_MAPPING: ${LOGTO_ROLES_AZ_GROUPS_MAPPING:-{"role.systemadmin":"37b5364a-348c-494f-b67f-a59a40e52ab7","role.useradmin":"90597adc-92af-4649-8151-68c3b7feb66c","role.dashboardviewer":"50a3b140-21eb-46dd-9d81-61a77cbc81f5"}}
@@ -1113,7 +1113,7 @@ services:
         - -d
         - ${POSTGRES_DB}
       timeout: 30s
-    hostname: ${PROJECT_NAME:-d2e}-minerva-postgres-1.${TLS__INTERNAL__DOMAIN:-alp.local}
+    hostname: ${PROJECT_NAME:-d2e}-minerva-postgres-1.${TLS__INTERNAL__DOMAIN:-d2e.local}
     image: postgres:15-alpine
     logging:
       options:
@@ -1218,7 +1218,7 @@ services:
       start_period: 60s
       timeout: 30s
       test: redis-cli --no-auth-warning -a ${REDIS_PASSWORD} ping | grep PONG
-    hostname: ${PROJECT_NAME:-d2e}-minerva-redis-1.${TLS__INTERNAL__DOMAIN:-alp.local}
+    hostname: ${PROJECT_NAME:-d2e}-minerva-redis-1.${TLS__INTERNAL__DOMAIN:-d2e.local}
     image: redis:7
     logging:
       options:
@@ -1247,7 +1247,7 @@ services:
       retries: 20
       start_period: 40s
     # Must be the FQDN: the internal cert's only SAN is *.${TLS__INTERNAL__DOMAIN}.
-    hostname: ${PROJECT_NAME:-d2e}-supabase-storage-1.${TLS__INTERNAL__DOMAIN:-alp.local}
+    hostname: ${PROJECT_NAME:-d2e}-supabase-storage-1.${TLS__INTERNAL__DOMAIN:-d2e.local}
     # Custom image: postgresql-client pre-installed for offline capability, plus
     # nginx terminating internal TLS in front of storage-api (no native TLS).
     image: ${DOCKER_IMAGE_PREFIX:-ghcr.io/ohdsi/}d2e-supabase-storage:${DOCKER_TAG_NAME:-develop}
@@ -1307,7 +1307,7 @@ services:
       # Inert under STORAGE_BACKEND=file, but kept consistent: the old value used the
       # compose service name, which is not a SAN on the internal cert -- the FQDN is
       # required if the S3 backend ever goes live.
-      GLOBAL_S3_ENDPOINT: https://${PROJECT_NAME:-d2e}-supabase-storage-1.${TLS__INTERNAL__DOMAIN:-alp.local}:9000/s3
+      GLOBAL_S3_ENDPOINT: https://${PROJECT_NAME:-d2e}-supabase-storage-1.${TLS__INTERNAL__DOMAIN:-d2e.local}:9000/s3
       GLOBAL_S3_PROTOCOL: "https"
       GLOBAL_S3_FORCE_PATH_STYLE: true
       FILE_STORAGE_BACKEND_PATH: /var/lib/storage
@@ -1325,7 +1325,7 @@ services:
     networks:
       alp:
       data:
-    hostname: ${PROJECT_NAME:-d2e}-dicom-server-1.${TLS__INTERNAL__DOMAIN:-alp.local}
+    hostname: ${PROJECT_NAME:-d2e}-dicom-server-1.${TLS__INTERNAL__DOMAIN:-d2e.local}
     environment:
       VERBOSE_ENABLED: true
       VERBOSE_STARTUP: true
