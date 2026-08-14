@@ -19,7 +19,17 @@ export const MappingLayout: FC<MappingLayoutProps> = ({ mappingSuggestion, nodeI
   const { setTableSourceHandles } = useTable();
 
   useEffect(() => {
-    if (data && (data.field?.edges?.length > 0 || data.table?.edges?.length > 0)) {
+    // Hydrate from saved node data whenever it carries any mapping work —
+    // edges, a scanned schema, or table handles. Keying only on edges dropped
+    // scanned-but-unmapped nodes on reload (#1162).
+    const hasSavedWork =
+      !!data &&
+      (data.field?.edges?.length > 0 ||
+        data.table?.edges?.length > 0 ||
+        !!data.scannedSchema ||
+        data.table?.sourceHandles?.length > 0);
+
+    if (hasSavedWork) {
       load(data);
     } else if (sourceNode) {
       setScannedSchema(sourceNode.data.scannedSchema);
