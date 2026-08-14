@@ -22,7 +22,7 @@ export const App: FC<AppProps> = ({ metadata }) => {
   return (
     <ReactFlowProvider>
       <ThemeProvider theme={theme}>
-        <AppProvider nodeId={pluginMetadata.data.nodeId}>
+        <AppProvider nodeId={pluginMetadata.data?.nodeId}>
           <MappingLayout {...pluginMetadata.data} />
         </AppProvider>
       </ThemeProvider>
