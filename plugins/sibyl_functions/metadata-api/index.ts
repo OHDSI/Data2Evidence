@@ -30,7 +30,7 @@ const OUTPUT_BASE = Deno.env.get("HADES_OUTPUT_BASE_DIR") ?? "";
 // the storage image terminates the internal cert); the trex runtime trusts the internal
 // CA via DENO_TLS_CA_STORE=system, so plain `fetch` validates it.
 const STORAGE_BASE_URL =
-  Deno.env.get("STORAGE_BASE_URL") ?? "https://d2e-supabase-storage-1.alp.local:9000";
+  Deno.env.get("STORAGE_BASE_URL") ?? "https://d2e-supabase-storage-1.d2e.local:9000";
 const STORAGE_JWT = Deno.env.get("SUPABASE_STORAGE_JWT_TOKEN") ?? "";
 const PREFIX = "/metadata-api";
 

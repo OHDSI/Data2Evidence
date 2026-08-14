@@ -45,7 +45,7 @@ const containerNames = Object.values(dcContainerName.services || {})
   .filter(name => name && name !== null)
   .join(',');
 
-let newNoProxy = `.alp.local,registry-1.docker.io,localhost,::1,${containerNames}`;
+let newNoProxy = `.d2e.local,registry-1.docker.io,localhost,::1,${containerNames}`;
 let newHttpProxy = process.env.HTTP_PROXY || '';
 let newHttpsProxy = process.env.HTTPS_PROXY || '';
 

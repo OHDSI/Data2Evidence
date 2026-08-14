@@ -33,7 +33,7 @@ cat("\n=== 2. TREX REACHABILITY CHECK ===\n")
 trex_url <- Sys.getenv("TREX__ENDPOINT_URL", unset = "")
 if (trex_url == "") {
   cat("TREX__ENDPOINT_URL not set in environment, trying default...\n")
-  trex_url <- "http://d2e-trex.alp.local:33001"
+  trex_url <- "http://d2e-trex.d2e.local:33001"
 }
 cat(sprintf("Target: %s\n\n", trex_url))
 
@@ -71,7 +71,7 @@ cat("\n=== 3. INTERNAL DNS / NETWORK SCAN ===\n")
 cat("Checking if kernel can resolve other internal service hostnames...\n\n")
 
 internal_hosts <- c(
-  "d2e-trex.alp.local",
+  "d2e-trex.d2e.local",
   "d2e-minerva-postgres-1",
   "d2e-redis-1",
   "d2e-alp-logto-1",
@@ -107,8 +107,8 @@ test_port <- function(host, port, label) {
 }
 
 targets <- list(
-  list(host = "d2e-trex.alp.local",         port = 33001L, label = "Trex API"),
-  list(host = "d2e-trex.alp.local",         port = 33000L, label = "Trex TLS"),
+  list(host = "d2e-trex.d2e.local",         port = 33001L, label = "Trex API"),
+  list(host = "d2e-trex.d2e.local",         port = 33000L, label = "Trex TLS"),
   list(host = "d2e-minerva-postgres-1",      port = 5432L,  label = "PostgreSQL"),
   list(host = "d2e-redis-1",                 port = 6379L,  label = "Redis"),
   list(host = "d2e-alp-logto-1",             port = 3001L,  label = "Logto"),

@@ -11,7 +11,7 @@ mkdir private-crt
 cd private-crt
 CONTAINER_NAME=alp-caddy
 TLS_CA_NAME=alp-internal
-DOMAIN_NAME=alp.local
+DOMAIN_NAME=d2e.local
 CONTAINER_CRT_DIR=/data/caddy/certificates/$TLS_CA_NAME/wildcard_.$DOMAIN_NAME
 CONTAINER_CA_DIR=/data/caddy/pki/authorities/$TLS_CA_NAME
 ```
@@ -51,4 +51,4 @@ openssl x509 -noout -ext subjectAltName -in TLS__INTERNAL__CRT.crt
 ```
 
 > X509v3 Subject Alternative Name: critical
-> DNS:\*.alp.local
+> DNS:\*.d2e.local
