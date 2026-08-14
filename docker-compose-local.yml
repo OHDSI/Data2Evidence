@@ -108,8 +108,7 @@ services:
       EDGE_FUNCTIONS_MANAGEMENT_FOLDER: /app/edge-functions
       # Bind-mounted source plugins win over bundled ones with the same package name.
       # /usr/src/plugins-dev first so trex's own web/studio/notebook plugins load too.
-      # PLUGINS_DEV_PATH: "/usr/src/plugins-dev:/usr/src/bundled-plugins:/usr/src/plugins"
-      PLUGINS_DEV_PATH: "/usr/src/bundled-plugins"
+      PLUGINS_DEV_PATH: "/usr/src/plugins-dev:/usr/src/bundled-plugins:/usr/src/plugins"
       SQL_QUERY_TEMPLATES: '{"cohort-members": "SELECT {{COHORT_ID}} AS cohort_id, CURRENT_TIMESTAMP AS exported_at", "patient-count": "SELECT COUNT(*) AS patient_count FROM {{SCHEMA}}.person"}'
       # PhysioNet auto-provision / entitlements sync are OFF by default 
       USERMGMT__AUTO_PROVISION_CONNECTORS: ${USERMGMT__AUTO_PROVISION_CONNECTORS:-physionet}
