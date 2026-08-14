@@ -28,16 +28,19 @@ app.use(async (req, res) => {
   }
   headers.set("connection", "keep-alive");
 
-  let body: Buffer | undefined;
-  if (req.method !== "GET" && req.method !== "HEAD") {
-    const chunks: Uint8Array[] = [];
-    for await (const chunk of req) {
-      chunks.push(chunk);
-    }
-    body = chunks.length ? Buffer.concat(chunks) : undefined;
-  }
-
   try {
+    // Inside the try: Express 4 does not await async handlers, so a client that
+    // disconnects mid-upload rejects this read with nothing to catch it — an
+    // unhandled rejection instead of the 502 below (fatal by default in Deno).
+    let body: Buffer | undefined;
+    if (req.method !== "GET" && req.method !== "HEAD") {
+      const chunks: Uint8Array[] = [];
+      for await (const chunk of req) {
+        chunks.push(chunk);
+      }
+      body = chunks.length ? Buffer.concat(chunks) : undefined;
+    }
+
     const upstreamRes = await fetch(upstreamUrl, {
       method: req.method,
       headers,
@@ -54,6 +57,12 @@ app.use(async (req, res) => {
     res.end(Buffer.from(buf));
   } catch (e) {
     console.error("Prefect proxy error:", e);
+    // Status and upstream headers may already be set by the time a body read
+    // fails, in which case a 502 payload would go out carrying them.
+    if (res.headersSent) {
+      res.destroy();
+      return;
+    }
     res.status(502).json({
       error: "Prefect proxy error",
       message: e instanceof Error ? e.message : String(e),
