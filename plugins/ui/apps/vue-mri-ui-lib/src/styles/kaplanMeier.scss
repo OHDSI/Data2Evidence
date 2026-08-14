@@ -221,11 +221,11 @@ $km-slider-height: 40px;
     font-size: 12px;
   }
   .km-chart > svg > .label-area text {
-    font-family: sans-serif;
+    font-family: $font-family-sans-serif;
     font-size: 12px;
   }
   .km-chart > svg > .censored-label text {
-    font-family: sans-serif;
+    font-family: $font-family-sans-serif;
     font-size: 12px;
   }
   .km-chart > svg > .grid > g.tick {

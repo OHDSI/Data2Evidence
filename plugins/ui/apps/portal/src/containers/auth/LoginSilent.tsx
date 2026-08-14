@@ -1,6 +1,10 @@
 import React, { FC } from "react";
 import { OidcLoginSilent } from "./oidc/OidcLoginSilent";
 
-export const LoginSilent: FC = () => {
-  return <OidcLoginSilent />;
+interface LoginSilentProps {
+  onReady?: () => void;
+}
+
+export const LoginSilent: FC<LoginSilentProps> = ({ onReady }) => {
+  return <OidcLoginSilent onReady={onReady} />;
 };

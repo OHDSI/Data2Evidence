@@ -61,6 +61,10 @@ export class AutoProvisionService {
     claims: { email?: string; username?: string },
     bearerToken: string,
   ): Promise<{ id: string; username: string } | null> {
+    this.logger.info(
+      `[AutoProvision] checking eligibility for idp user "${idpUserId}" with claims ${JSON.stringify(claims)}`,
+    )
+
     if (!env.USERMGMT_AUTO_PROVISION_ENABLED) {
       return null
     }
@@ -183,6 +187,7 @@ export class AutoProvisionService {
     try {
       const entitlementsSync = Container.get(EntitlementsSyncService)
       const token = jwt.decode(bearerToken) as jwt.JwtPayload
+      this.logger.info(`[AutoProvision] running entitlements sync for user ${userId} (idpUserId=${idpUserId})`)
       if (token) {
         await entitlementsSync.sync(userId, idpUserId, token)
       }

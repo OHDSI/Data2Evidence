@@ -1,0 +1,60 @@
+.concept-mapping__step2 {
+  &-preview {
+    margin-bottom: 24px;
+
+    // Same light-blue tint as the panel header bars ("1. Data source" / "2. Select a
+    // dataset" / "3. Column mapping" - see &-panel-title below and Step1Source.scss),
+    // so the preview table's header row visually matches them. Keep this in sync with
+    // that value rather than introducing a second hardcoded tint.
+    th.MuiTableCell-head {
+      background-color: #e5e6f2;
+      color: #000080;
+      font-weight: 700;
+    }
+  }
+
+  &-panel {
+    border: 1px solid #dad7d7;
+    border-radius: 8px;
+    overflow: hidden;
+    background-color: #fff;
+  }
+
+  &-panel-title {
+    margin: 0;
+    padding: 10px 16px;
+    background-color: #e5e6f2;
+    color: #000080;
+    font-weight: 700;
+  }
+
+  &-panel-body {
+    padding: 16px;
+  }
+
+  // 2-column grid, filled row by row in DOM order: [sourceCode | sourceFrequency],
+  // [sourceName | description], [domain checkbox | domain select (only when checked)].
+  &-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    column-gap: 24px;
+    margin-bottom: 16px;
+
+    @media (max-width: 700px) {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  &-grid-checkbox {
+    display: flex;
+    align-items: center;
+    // The grid has no row-gap (rows are spaced by each select's margin-bottom), so give the
+    // checkbox its own top spacing - otherwise, when unchecked (no domain select beside it),
+    // it sits tight against the "Source name column" dropdown above.
+    margin-top: 8px;
+  }
+
+  &-field {
+    margin-bottom: 16px;
+  }
+}

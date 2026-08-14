@@ -1,4 +1,5 @@
 import express, { Request, Response, Router } from "express";
+import { getUser } from "@alp/alp-base-utils";
 import { env } from "./env.ts";
 
 const logger = console;
@@ -336,6 +337,33 @@ async function resolveTemplate(
   }
 }
 
+function buildSetSessionVariableSql(name: string, value: string): string {
+  const escapedName = name.replace(/'/g, "''");
+  const escapedValue = String(value).replace(/'/g, "''");
+  return `SET '${escapedName}' = '${escapedValue}'`;
+}
+
+// Set on the connection's pinned HANA session, so every later statement on it
+// carries the attribution.
+async function applySessionVariables(
+  // deno-lint-ignore no-explicit-any
+  conn: any,
+  variables: Record<string, string | undefined>,
+): Promise<void> {
+  for (const [name, value] of Object.entries(variables)) {
+    if (!value) {
+      continue;
+    }
+    await new Promise<void>((resolve, reject) => {
+      conn.executeUpdate(
+        buildSetSessionVariableSql(name, value),
+        [],
+        (err: Error | null) => (err ? reject(err) : resolve()),
+      );
+    });
+  }
+}
+
 async function resolveDataset(
   datasetId: string,
   token: string,
@@ -563,6 +591,16 @@ router.post("/", async (req: Request, res: Response) => {
     );
 
     try {
+      if (conn.dialect === "hana") {
+        const userObj = getUser(req);
+        await applySessionVariables(conn, {
+          APPLICATION:
+            `${env.PROJECT_NAME}-WIZARD_${type}_${name}_${templateId}`,
+          APPLICATIONUSER: userObj.getEmail() || userObj.userObject.name ||
+            userObj.getUser(),
+        });
+      }
+
       if (format === "json") {
         const rows = await new Promise<unknown[]>((resolve, reject) => {
           conn.execute(
