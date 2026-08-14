@@ -53,6 +53,25 @@ function extractSessionVars(dbCredential: any): Record<string, string> {
     return out;
 }
 
+/**
+ * trex_hana_materialize_cohort's source_params_json is a JSON array of bare bind
+ * values, not the {type, value} objects _prepareQuery() returns in `placeholders`
+ 
+ * Accepts either shape: a {type, value} wrapper is unwrapped, an already-bare
+ * value is passed through. Absent values become null (SQL NULL). Keep this a
+ * 1:1 map — element order must stay aligned with the `?` markers in the SQL, and
+ * _prepareQuery() has already dropped the numeric placeholders it inlined.
+ */
+function flattenBindParameters(placeholders: any[]): any[] {
+    return (placeholders ?? []).map((placeholder: any) =>
+        placeholder !== null &&
+        typeof placeholder === "object" &&
+        "value" in placeholder
+            ? (placeholder.value ?? null)
+            : (placeholder ?? null)
+    );
+}
+
 export class CohortEndpoint {
     private constructor(
         public connection: ConnectionInterface,
@@ -611,7 +630,9 @@ export class CohortEndpoint {
 
             const url = buildHanaConnectionUrl(metadata.dbCredential);
             const sessionVars = extractSessionVars(metadata.dbCredential);
-
+            const sourceParams = flattenBindParameters(
+                preparedQuery.placeholders
+            );
             // The hana extension's trex_hana_materialize_cohort is registered on the
             // shared DuckDB database; reach it via a memory connection. %s = VARCHAR
             // params (sent as bind params), %f = the BIGINT cohort id (inlined as a
@@ -626,7 +647,7 @@ export class CohortEndpoint {
                     "SELECT trex_hana_materialize_cohort(%s, %s, %s, %s, %f, %s) AS processed_rows",
                     url,
                     translatedSql,
-                    JSON.stringify(preparedQuery.placeholders ?? []),
+                    JSON.stringify(sourceParams),
                     this.schemaName,
                     Number(cohortDefinitionId),
                     JSON.stringify(sessionVars)
