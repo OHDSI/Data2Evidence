@@ -7,7 +7,7 @@ import {
 
 describe("ETL_NODE_TYPES", () => {
   it("covers exactly the two ETL nodes in scope", () => {
-    expect([...ETL_NODE_TYPES].sort()).toEqual([
+    expect(Array.from(ETL_NODE_TYPES).sort()).toEqual([
       "rabbit_in_a_hat",
       "white_rabbit_node",
     ]);
