@@ -164,6 +164,8 @@ def data_characterization_plugin(options: DCOptionsType):
 
             execute_export_to_ares_wo(achilles_params, cdm_source)
 
+            invalidate_trex_source_cache(options, dbdao.dialect, logger)
+
         # Partial results were kept above; mark the flow failed without dropping them.
         if partial_failure:
             raise RuntimeError(
@@ -171,6 +173,31 @@ def data_characterization_plugin(options: DCOptionsType):
                 f"partial results kept in schema '{achilles_params.resultsSchema}'. "
                 f"Failed analysis IDs: \"{partial_failure}\""
             )
+
+
+def invalidate_trex_source_cache(options: DCOptionsType, dialect: str, logger):
+    """
+    A source-connection run rewrites the achilles tables straight on the source
+    database. trex reads them back through its DuckDB ATTACH of that source, which
+    caches the remote catalog, so it can otherwise keep resolving the table versions
+    this run dropped. A stale cache only costs the reader correct results, never the
+    run itself — so a failure here is logged, not raised.
+    """
+    clear_sql = (
+        "CALL bigquery_clear_cache()"
+        if dialect == SupportedDatabaseDialects.BIGQUERY
+        else "CALL pg_clear_cache()"
+    )
+    try:
+        TrexDao(
+            database_code=options.databaseCode, cache_id=options.cacheId
+        ).execute_sql(clear_sql)
+        logger.info(f"Invalidated the trex source catalog cache via {clear_sql}")
+    except Exception as e:
+        logger.warning(
+            f"Could not invalidate the trex source catalog cache ({clear_sql}): {e}. "
+            "Data characterization results may read stale until trex re-attaches."
+        )
 
 
 def with_drop_schema_on_failure(task_obj, dbdao, results_schema: str, use_trex_connection: bool):
@@ -373,7 +400,9 @@ def execute_achilles(achilles_params: AchillesParams, flow_run_id: str):
                 verboseMode=achilles_params.verboseMode,
                 excludeAnalysisIds=convert_to_int_vector(achilles_params.excludeAnalysisIds),
                 createIndices=achilles_params.createIndices,
-                cacheId=achilles_params.cacheId or "",
+                # The cache catalog only exists on the trex connection; a direct source
+                # connection rejects `USE`.
+                cacheId=(achilles_params.cacheId or "") if achilles_params.use_trex_connection else "",
                 # Render HANA-dialect SQL while keeping the postgres/pgwire JDBC driver:
                 # the R side overrides the connection's `dbms` attribute to this value.
                 translateDialect="hana" if achilles_params.is_hana else "",

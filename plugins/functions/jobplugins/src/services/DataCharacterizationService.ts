@@ -27,8 +27,14 @@ export class DataCharacterizationService {
     const dcFlowRun = await prefectApi.getFlowRun(flowRunId);
     const dcFlowRunOptions: DataCharacterizationOptions =
       dcFlowRun.parameters.options;
-    const { resultsSchema, databaseCode, cacheId, vocabSchemaName, datasetId } =
-      dcFlowRunOptions;
+    const {
+      resultsSchema,
+      databaseCode,
+      cacheId,
+      vocabSchemaName,
+      datasetId,
+      useSourceConnection,
+    } = dcFlowRunOptions;
 
     return await analyticsSvcApi.getDataCharacterizationResults(
       cacheId ?? databaseCode,
@@ -36,7 +42,8 @@ export class DataCharacterizationService {
       resultsSchema,
       sourceKey,
       vocabSchemaName,
-      datasetId
+      datasetId,
+      useSourceConnection ?? false
     );
   }
 
@@ -51,8 +58,14 @@ export class DataCharacterizationService {
     const dcFlowRun = await prefectApi.getFlowRun(flowRunId);
     const dcFlowRunOptions: DataCharacterizationOptions =
       dcFlowRun.parameters.options;
-    const { resultsSchema, databaseCode, cacheId, vocabSchemaName, datasetId } =
-      dcFlowRunOptions;
+    const {
+      resultsSchema,
+      databaseCode,
+      cacheId,
+      vocabSchemaName,
+      datasetId,
+      useSourceConnection,
+    } = dcFlowRunOptions;
 
     return await analyticsSvcApi.getDataCharacterizationResultsDrilldown(
       cacheId ?? databaseCode,
@@ -61,7 +74,8 @@ export class DataCharacterizationService {
       sourceKey,
       conceptId,
       vocabSchemaName,
-      datasetId
+      datasetId,
+      useSourceConnection ?? false
     );
   }
 
