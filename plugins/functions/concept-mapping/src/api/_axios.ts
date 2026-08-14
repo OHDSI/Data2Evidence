@@ -13,6 +13,12 @@
 //   axios.interceptors.response.use, axios.isAxiosError, named isAxiosError,
 //   and loose type aliases. Config honored: headers, timeout, responseType:"arraybuffer".
 //   httpsAgent is accepted and ignored. Non-2xx rejects with an axios-shaped error.
+//
+// NOTE: this file is duplicated across the plugin functions and the copies must
+// stay byte-identical — internal/scripts/check-axios-shim-sync.mjs enforces it.
+// Edit one copy, then run `node internal/scripts/check-axios-shim-sync.mjs --fix`.
+
+import { Buffer } from "node:buffer";
 
 export type AxiosRequestConfig = any;
 export type AxiosResponse<T = any> = {
@@ -100,57 +106,80 @@ async function core(
   const timer = timeout ? setTimeout(() => controller.abort(), timeout) : undefined;
   const cfgForError = { method: method.toLowerCase(), url, headers };
 
-  let res: Response;
+  // The timer is cleared in the `finally` below, not as soon as `fetch` resolves:
+  // fetch settles when the response *headers* arrive, so clearing it there would
+  // leave a server that stalls the body hanging forever. axios's `timeout`
+  // covered the whole response, and these calls now traverse TLS.
   try {
-    res = await fetch(url, {
-      method,
-      headers,
-      body,
-      signal: config.signal ?? controller.signal,
-    });
-  } catch (e: any) {
-    if (timer) clearTimeout(timer);
-    const aborted = e?.name === "AbortError";
-    throw makeError(
-      aborted ? `timeout of ${timeout}ms exceeded` : (e?.message || "Network Error"),
-      cfgForError,
-      aborted ? "ECONNABORTED" : "ERR_NETWORK",
-    );
-  }
-  if (timer) clearTimeout(timer);
-
-  let payload: any;
-  if (config.responseType === "arraybuffer") {
-    payload = new Uint8Array(await res.arrayBuffer());
-  } else {
-    const text = await res.text();
-    if (text) {
-      try {
-        payload = JSON.parse(text);
-      } catch {
-        payload = text;
-      }
-    } else {
-      payload = "";
+    let res: Response;
+    try {
+      res = await fetch(url, {
+        method,
+        headers,
+        body,
+        signal: config.signal ?? controller.signal,
+      });
+    } catch (e: any) {
+      const aborted = e?.name === "AbortError";
+      throw makeError(
+        aborted ? `timeout of ${timeout}ms exceeded` : (e?.message || "Network Error"),
+        cfgForError,
+        aborted ? "ECONNABORTED" : "ERR_NETWORK",
+      );
     }
-  }
 
-  if (res.status >= 200 && res.status < 300) {
-    return {
-      data: payload,
-      status: res.status,
-      statusText: res.statusText,
-      headers: res.headers,
-      config: cfgForError,
-    };
-  }
+    let payload: any;
+    try {
+      if (config.responseType === "arraybuffer") {
+        // Must be a Buffer, not a Uint8Array: Express's res.send only treats a
+        // payload as binary when Buffer.isBuffer() is true, and otherwise
+        // serialises it via res.json() as {"0":1,"1":2,...}.
+        payload = Buffer.from(await res.arrayBuffer());
+      } else {
+        const text = await res.text();
+        if (text) {
+          try {
+            payload = JSON.parse(text);
+          } catch {
+            payload = text;
+          }
+        } else {
+          payload = "";
+        }
+      }
+    } catch (e: any) {
+      const aborted = e?.name === "AbortError";
+      throw makeError(
+        aborted ? `timeout of ${timeout}ms exceeded` : (e?.message || "Network Error"),
+        cfgForError,
+        aborted ? "ECONNABORTED" : "ERR_NETWORK",
+      );
+    }
 
-  throw makeError(
-    `Request failed with status code ${res.status}`,
-    cfgForError,
-    "ERR_BAD_REQUEST",
-    { status: res.status, statusText: res.statusText, data: payload, headers: res.headers },
-  );
+    // A lowercase-keyed plain object, as axios returned. Call sites use bracket
+    // access (e.g. headers['total-number']), which a Headers instance does not
+    // support. Note repeated headers (set-cookie) collapse to one joined value.
+    const resHeaders = Object.fromEntries(res.headers);
+
+    if (res.status >= 200 && res.status < 300) {
+      return {
+        data: payload,
+        status: res.status,
+        statusText: res.statusText,
+        headers: resHeaders,
+        config: cfgForError,
+      };
+    }
+
+    throw makeError(
+      `Request failed with status code ${res.status}`,
+      cfgForError,
+      "ERR_BAD_REQUEST",
+      { status: res.status, statusText: res.statusText, data: payload, headers: resHeaders },
+    );
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
 }
 
 async function request(method: string, url: string, data: any, config: any): Promise<any> {
