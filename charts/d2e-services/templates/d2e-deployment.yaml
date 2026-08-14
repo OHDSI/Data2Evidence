@@ -912,7 +912,7 @@ spec:
                   name: "{{ .Release.Name }}-{{ .Chart.Name }}"
                   key: TLS__INTERNAL__CRT
             - name: TLS__INTERNAL__DOMAIN
-              value: alp.local
+              value: {{ .Values.global.tls.internalDomain | default "d2e.local" }}
             - name: TLS__INTERNAL__KEY
               valueFrom:
                 secretKeyRef:
