@@ -1,6 +1,6 @@
 import { saveAs } from "file-saver";
 import { scanForCharsToEscapeAndSurroundQuotes } from "./EscapeAndSurroundQuotes";
-import { OverviewResults } from "../types";
+import { OverviewResults, mappingData } from "../types";
 
 export interface DownloadColumn {
   header: string;
@@ -55,6 +55,14 @@ export const parseToCsv = (data: { [key: string]: string | number }[], columns: 
     result.push(arr.join(","));
   });
   return [headers.join(","), ...result].join("\n");
+};
+
+// Pure/testable: builds the CSV export for Step 3's "Download as CSV" action. Only
+// approved-and-not-flagged rows are included - a flag means the row still needs review,
+// even if it was approved before being flagged.
+export const buildApprovedConceptMappingCsv = (rows: mappingData[], columns: DownloadColumn[]): string => {
+  const approvedRows = rows.filter((row) => row.status === "approved" && !row.flagged);
+  return parseToCsv(approvedRows, columns);
 };
 
 export const filterJSON = (data: { [key: string]: string | number }[], overview: OverviewResults | undefined) => {
