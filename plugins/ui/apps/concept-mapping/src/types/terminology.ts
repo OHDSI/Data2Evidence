@@ -36,6 +36,28 @@ export interface TerminologyProps {
     id: string;
     value: string[];
   }[];
+  // Only populated for mode === "CONCEPT_MAPPING": the source row being mapped,
+  // shown by the terminology drawer's header. Mirrors the shared type in
+  // concept-sets/src/Terminology/Terminology.tsx.
+  sourceRow?: {
+    code?: string;
+    name?: string;
+    frequency?: string;
+    description?: string;
+    status?: string;
+  };
+  // CONCEPT_MAPPING only: the row's existing suggestions, rendered as a "Suggested concepts"
+  // section above the search results.
+  suggestedConcepts?: {
+    conceptId: number;
+    conceptName: string;
+    conceptCode: string;
+    domainId: string;
+    vocabularyId: string;
+  }[];
+  // CONCEPT_MAPPING only: approve the picked concept for the row (the drawer adds it as a
+  // suggestion first if it isn't one yet).
+  onApprove?: (concept: any) => void;
 }
 
 export type FilterOptions = {
