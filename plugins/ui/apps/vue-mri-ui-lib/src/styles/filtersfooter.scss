@@ -77,13 +77,13 @@ $share-row-height: 40px;
     button {
       width: 39px;
       height: 39px;
-      padding-left: 13px;
-      padding-top: 0px;
+      padding: 0;
+      justify-content: center;
+      align-items: center;
     }
     span {
       font-size: 24px;
-      margin-left: -3px;
-      margin-top: 2px;
+      margin: 0;
     }
   }
   .btn-link {

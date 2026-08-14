@@ -8,4 +8,21 @@
   .node-drawer__content {
     padding: 0;
   }
+
+  // Responsive WIDTH only (design spec). The drawer stays right-anchored (slides in from the
+  // right) - we intentionally do NOT override left/right/margin/transform, so the default
+  // MUI right-anchor position and slide animation are preserved.
+  //  - >2844px: capped at 2560px | 1334-2844px: fluid 90vw | 1240-1333px: floored at 1200px
+  //  - <1240px: fills the viewport minus a single 40px gap (right stays flush, so the gap is
+  //    on the left)
+  // The three >=1240px tiers collapse into one clamp(); only the 1240px boundary needs a media
+  // query. `!important` beats NodeDrawer's inline `style={{ width }}` (ConceptMappingDrawer no
+  // longer passes a `width` prop, so SCSS is the sole source of truth for width).
+  .MuiDrawer-paper {
+    width: clamp(1200px, 90vw, 2560px) !important;
+
+    @media (max-width: 1239.98px) {
+      width: calc(100vw - 40px) !important;
+    }
+  }
 }

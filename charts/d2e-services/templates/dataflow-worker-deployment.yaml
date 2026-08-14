@@ -38,7 +38,7 @@ spec:
             [
               "sh",
               "-c",
-              "while :;do sleep {{ .Values.dataflowWorker.readinessSleep }} && wget -O success-trex http://trex-http.d2e.svc.cluster.local:443/_internal/health && wget -O success-dataflow http://dataflow-gen.d2e.svc.cluster.local:443/d2e/api/health && if test -f success-trex; then if test -f success-dataflow; then exit 0; fi; fi; done",
+              "while :;do sleep {{ .Values.dataflowWorker.readinessSleep }} && wget -O success-trex http://trex-http.d2e.svc.cluster.local:443/trex/_internal/health && wget -O success-dataflow http://dataflow-gen.d2e.svc.cluster.local:443/d2e/api/health && if test -f success-trex; then if test -f success-dataflow; then exit 0; fi; fi; done",
             ]
           resources:
             requests:
@@ -211,6 +211,12 @@ spec:
               value: postgresql+asyncpg://$(PG__USER):$(PG__PASSWORD)@$(PG__HOST):5432/$(PG__DB_NAME)
             - name: PREFECT_API_URL
               value: http://dataflow-gen.d2e.svc.cluster.local:443/d2e/api
+            - name: INSTALL_SQLALCHEMY_HANA
+              value: "true"
+            - name: TREX_STORAGE_URL
+              value: "http://trex-http.d2e.svc.cluster.local:443/plugins/trex/storage-api"
+            - name: TREX_STORAGE_SERVICE_KEY
+              value: ""
             - name: PREFECT_API_ENABLE_HTTP2
               value: "False"
             - name: PREFECT_WORKER_WEBSERVER_HOST
@@ -283,32 +289,39 @@ spec:
               value: "10"
             - name: ROUNDING_TARGET
               value: "10"
-          command: ["/bin/sh"]
+          command:
+            - /entrypoint.sh
+            - pixi
+            - run
+            - --manifest-path
+            - /opt/worker/pyproject.toml
+            - sh
+            - -c
           args:
-            [
-              "-c",
-              "rm -rf /root/.prefect/storage/run_cache.db /root/.prefect/storage/events.db; pip install prefect[kubernetes]==3.6.10 && prefect work-pool create 'docker-pool' --type kubernetes; prefect worker start --pool 'docker-pool' --type kubernetes --name prefect-docker-worker --with-healthcheck",
-            ]
-          image: prefecthq/prefect:3.6.10-python3.12
-          imagePullPolicy: IfNotPresent
+            - >-
+              rm -rf /root/.prefect/storage/run_cache.db /root/.prefect/storage/events.db;
+              prefect work-pool create "${PREFECT_POOL:-process-pool}" --type ${WORKPOOL_TYPE:-process};
+              prefect worker start --pool "${PREFECT_POOL:-process-pool}" --type ${WORKPOOL_TYPE:-process}
+              --name prefect-${WORKPOOL_TYPE:-process}-worker --with-healthcheck
+              --limit {{ .Values.dataflowWorker.flowRunLimit | default 3 }}
+          image: ghcr.io/ohdsi/d2e-dataflow-gen-worker:{{ .Values.global.image.tag }}
+          imagePullPolicy: Always
           volumeMounts:
             - mountPath: /opt/prefect/libs/baseJobTemplate.json
               name: d2e-worker-cm
               subPath: baseJobTemplate.json
           resources:
-            requests:
-              cpu: 100m
-              memory: 250Mi
-            limits:
-              cpu: 250m
-              memory: 1000Mi
+            {{- toYaml .Values.global.resources.dataflowGenWorker | nindent 12 }}
           livenessProbe:
             exec:
               command:
-                - wget
-                - -O
-                - liveness
-                - http://localhost:8080/health
+                - pixi
+                - run
+                - --manifest-path
+                - /opt/worker/pyproject.toml
+                - python
+                - -c
+                - "import urllib.request, sys; sys.exit(0 if 200 <= urllib.request.urlopen('http://localhost:8080/health', timeout=5).getcode() < 300 else 1)"
             failureThreshold: 5
             initialDelaySeconds: 120
             periodSeconds: 10
