@@ -595,7 +595,7 @@ services:
     command: >
       sh -c "
         mkdir -p /srv/caddy-config &&
-        printf '%s' \"${TLS__INTERNAL__CA_CRT}\" > /srv/caddy-config/ca.pem &&
+        printf '%s' \"$$TLS__INTERNAL__CA_CRT\" > /srv/caddy-config/ca.pem &&
         cat <<EOT > /srv/caddy-config/Caddyfile
         {
           debug
@@ -822,6 +822,10 @@ services:
       INSTANCE_SPECIFIC_CONFIG: ${INSTANCE_SPECIFIC_CONFIG:-}
       CADDY__D2E__ALIAS_PUBLIC_FQDN: ${CADDY__D2E__ALIAS_PUBLIC_FQDN:-${CADDY__ALP__ALIAS_PUBLIC_FQDN:-}}
       PROJECT_NAME: ${PROJECT_NAME:-d2e}
+      # Read by the entrypoint above to write /srv/caddy-config/ca.pem, which the
+      # tls_trust_pool directives use. Only the CA is passed — not the *x-tls
+      # anchor — so the internal private key stays out of this container.
+      TLS__INTERNAL__CA_CRT: ${TLS__INTERNAL__CA_CRT}
 
   alp-dataflow-gen:
     container_name: &c2 ${PROJECT_NAME:-d2e}-dataflow-gen-1
@@ -1075,8 +1079,8 @@ services:
       - -c
       - >-
         mkdir -p /tmp/cert &&
-        printf '%s' "$TLS__INTERNAL__CRT" > /tmp/cert/cert.pem &&
-        printf '%s' "$TLS__INTERNAL__KEY" > /tmp/cert/key.pem &&
+        printf '%s' "$$TLS__INTERNAL__CRT" > /tmp/cert/cert.pem &&
+        printf '%s' "$$TLS__INTERNAL__KEY" > /tmp/cert/key.pem &&
         export HTTPS_CERT_PATH=/tmp/cert/cert.pem &&
         export HTTPS_KEY_PATH=/tmp/cert/key.pem &&
         npm run cli db seed -- --swe && npm run cli db alteration deploy latest && node packages/core/d2e-grants.mjs && npm start
