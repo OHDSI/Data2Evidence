@@ -56,6 +56,8 @@ interface ScanDataDialogProps {
   nodeId: string;
   setScanId: (id: string) => void;
   setScanMetadata: (metadata: ScanMetadata) => void;
+  /** Scan configuration from the saved revision, replayed into the form. */
+  initialMetadata?: ScanMetadata;
 }
 
 const EMPTY_DBCONNECTION_FORM_DATA = {
@@ -92,6 +94,7 @@ export const ScanDataDialog: FC<ScanDataDialogProps> = ({
   nodeId,
   setScanId,
   setScanMetadata,
+  initialMetadata,
 }) => {
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
   const [availableTables, setAvailableTables] = useState<string[]>([]);
@@ -125,6 +128,29 @@ export const ScanDataDialog: FC<ScanDataDialogProps> = ({
       }
     };
   }, []);
+
+  useEffect(() => {
+    if (!open || !initialMetadata?.dataType) return;
+
+    setInternalDataType(initialMetadata.dataType);
+    setSelectedTables(initialMetadata.selectedTables ?? []);
+
+    if (initialMetadata.dataType === "csv") {
+      setDelimiter(initialMetadata.delimiter ?? DELIMITERS[0].value);
+      // Previously uploaded CSVs are already stored server-side under this
+      // node id, so listing their names is enough to re-select them without
+      // re-uploading.
+      setAvailableTables(initialMetadata.uploadedFileNames ?? []);
+    } else {
+      setDbConnectionForm({
+        databaseCode: initialMetadata.databaseCode ?? "",
+        schema: initialMetadata.schemaName ?? "",
+      });
+      // A configuration that was previously applied was, by definition,
+      // connectable. The user can still re-test the connection.
+      setCanConnect(true);
+    }
+  }, [open, initialMetadata]);
 
   const handleClose = useCallback(
     (type: CloseDialogType) => {

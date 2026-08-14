@@ -108,6 +108,12 @@ export const WhiteRabbitDrawer: FC<WhiteRabbitDrawerProps> = ({
     }
   }, [node.data]);
 
+  useEffect(() => {
+    if (node.data?.scanMetadata) {
+      setScanMetadata(node.data.scanMetadata);
+    }
+  }, [node.data?.scanMetadata]);
+
   const handleOk = useCallback(() => {
     const updated: NodeState<WhiteRabbitNodeData> = {
       ...nodeState,
@@ -152,6 +158,7 @@ export const WhiteRabbitDrawer: FC<WhiteRabbitDrawerProps> = ({
         nodeId={node.id}
         setScanId={setScanId}
         setScanMetadata={setScanMetadata}
+        initialMetadata={formData.scanMetadata}
       />
       <ScanProgressDialog
         open={isScanProgressDialogOpen}
