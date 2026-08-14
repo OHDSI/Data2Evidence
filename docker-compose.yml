@@ -1078,9 +1078,12 @@ services:
       - sh
       - -c
       - >-
+        (
+        umask 077 &&
         mkdir -p /tmp/cert &&
         printf '%s' "$$TLS__INTERNAL__CRT" > /tmp/cert/cert.pem &&
-        printf '%s' "$$TLS__INTERNAL__KEY" > /tmp/cert/key.pem &&
+        printf '%s' "$$TLS__INTERNAL__KEY" > /tmp/cert/key.pem
+        ) &&
         export HTTPS_CERT_PATH=/tmp/cert/cert.pem &&
         export HTTPS_KEY_PATH=/tmp/cert/key.pem &&
         npm run cli db seed -- --swe && npm run cli db alteration deploy latest && node packages/core/d2e-grants.mjs && npm start
