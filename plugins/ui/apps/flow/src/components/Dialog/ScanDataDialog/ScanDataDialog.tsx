@@ -37,8 +37,17 @@ export interface ScanMetadata {
   dataType: string;
   databaseCode?: string;
   schemaName?: string;
+  /** Human-readable summary, kept for the existing drawer display. */
   fileName?: string;
   delimiter?: string;
+  /** Tables (DB scan) or file names (CSV scan) the user selected. */
+  selectedTables?: string[];
+  /**
+   * Names of CSVs already uploaded for this node. The bytes live server-side
+   * under the node id (POST/GET /jobplugins/dataflow/node/file), so only this
+   * reference is persisted in the revision — never the file contents.
+   */
+  uploadedFileNames?: string[];
 }
 
 interface ScanDataDialogProps {
@@ -136,6 +145,8 @@ export const ScanDataDialog: FC<ScanDataDialogProps> = ({
           dataType: "csv",
           fileName: uploadedFiles.map((f) => f.name).join(", "),
           delimiter,
+          selectedTables,
+          uploadedFileNames: uploadedFiles.map((f) => f.name),
         });
       } else {
         await scanDBData();
@@ -143,6 +154,7 @@ export const ScanDataDialog: FC<ScanDataDialogProps> = ({
           dataType: "postgresql",
           databaseCode: dbConnectionForm.databaseCode,
           schemaName: dbConnectionForm.schema,
+          selectedTables,
         });
       }
       handleClose("success");
