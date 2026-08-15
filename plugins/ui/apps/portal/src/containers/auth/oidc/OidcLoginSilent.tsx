@@ -1,6 +1,6 @@
-import { FC, useCallback, useEffect } from "react";
+import { FC, useCallback, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { useOidcIdToken } from "@axa-fr/react-oidc";
+import { useOidc, useOidcAccessToken, useOidcIdToken } from "@axa-fr/react-oidc";
 import { api } from "../../../axios/api";
 import { config } from "../../../config";
 import { useToken, useUser } from "../../../contexts";
@@ -9,25 +9,58 @@ import env from "../../../env";
 
 const subProp = env.REACT_APP_IDP_SUBJECT_PROP;
 
+const RELOGIN_GUARD_KEY = "d2e_first_login_role_refresh";
+
+interface OidcLoginSilentProps {
+  onReady?: () => void;
+}
+
 let firstTimeLoggedIn = false;
-export const OidcLoginSilent: FC = () => {
+let bootstrapSettled = false;
+
+export const OidcLoginSilent: FC<OidcLoginSilentProps> = ({ onReady }) => {
   const navigate = useNavigate();
   const { idToken, idTokenPayload } = useOidcIdToken();
+  const { accessTokenPayload } = useOidcAccessToken();
+  const { login } = useOidc();
   const { setIdToken, setIdTokenClaim } = useToken();
   const { setUserGroup, clearUser } = useUser();
   useDisclaimerHook();
 
+  // `useOidcAccessToken()` and `useOidc()` return fresh identities on every render.
+  // Reading them through refs keeps `loggedIn` stable, otherwise the effect below
+  // re-runs on every render and its unconditional token writes re-render forever.
+  const accessTokenPayloadRef = useRef(accessTokenPayload);
+  accessTokenPayloadRef.current = accessTokenPayload;
+  const loginRef = useRef(login);
+  loginRef.current = login;
+
   const loggedIn = useCallback(
-    async (idpUserId: string | undefined) => {
-      if (idpUserId) {
-        try {
-          const userGroups = await api.userMgmt.getUserGroupList(idpUserId, true);
-          setUserGroup(idpUserId, userGroups);
-        } catch (err: any) {
-          console.error("Error when getting user info", err);
-          navigate(err?.status === 403 ? config.ROUTES.noAccess : config.ROUTES.logout);
-          clearUser();
+    async (idpUserId: string) => {
+      try {
+        const userGroups = await api.userMgmt.getUserGroupList(idpUserId, true);
+        const currentRoles = (accessTokenPayloadRef.current as { roles?: string[] } | undefined)?.roles;
+        const tokenMissingRoles = (currentRoles?.length || 0) === 0;
+        const alreadyReloggedIn = sessionStorage.getItem(RELOGIN_GUARD_KEY) === "1";
+
+        if (tokenMissingRoles && !alreadyReloggedIn) {
+          console.info("[OidcLoginSilent] token has no roles after sync; re-login to refresh claims");
+          sessionStorage.setItem(RELOGIN_GUARD_KEY, "1");
+          loginRef.current();
+
+          await new Promise<void>((resolve) => setTimeout(resolve, 8000));
+          return;
         }
+
+        sessionStorage.removeItem(RELOGIN_GUARD_KEY);
+        setUserGroup(idpUserId, userGroups);
+
+        await api.userMgmt.syncWebApiRoles().catch((err) => console.warn("WebAPI role sync failed", err));
+      } catch (err: any) {
+        console.error("Error getting user info on login", err);
+        sessionStorage.removeItem(RELOGIN_GUARD_KEY);
+        clearUser();
+        navigate(err?.status === 403 ? config.ROUTES.noAccess : config.ROUTES.logout);
       }
     },
     [navigate, setUserGroup, clearUser]
@@ -38,11 +71,21 @@ export const OidcLoginSilent: FC = () => {
     setIdTokenClaim(idTokenPayload);
 
     if (!firstTimeLoggedIn) {
-      firstTimeLoggedIn = true;
-      const idpUserId = idTokenPayload[subProp];
-      loggedIn(idpUserId);
+      const idpUserId = idTokenPayload?.[subProp];
+      if (idpUserId) {
+        firstTimeLoggedIn = true;
+        loggedIn(idpUserId).finally(() => {
+          bootstrapSettled = true;
+          onReady?.();
+        });
+      }
+      return;
     }
-  }, [idToken, idTokenPayload, loggedIn]);
+
+    if (bootstrapSettled) {
+      onReady?.();
+    }
+  }, [idToken, idTokenPayload, loggedIn, onReady]);
 
   return null;
 };

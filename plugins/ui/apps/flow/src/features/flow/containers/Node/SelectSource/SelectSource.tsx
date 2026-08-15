@@ -37,6 +37,7 @@ export interface SelectSourceProps
   sourceOptions: SourceOptions;
   onChange: (value: string) => void;
   onFilter?: (kv: KeyValueData) => boolean;
+  allowEmpty?: boolean;
 }
 
 export const SelectSource: FC<SelectSourceProps> = ({
@@ -46,6 +47,7 @@ export const SelectSource: FC<SelectSourceProps> = ({
   sourceOptions,
   onChange,
   onFilter,
+  allowEmpty = false,
   ...props
 }) => {
   const sourceNodes = useSelector(
@@ -108,6 +110,11 @@ export const SelectSource: FC<SelectSourceProps> = ({
         onChange={(e: SelectChangeEvent) => onChange(e.target.value)}
         {...props}
       >
+        {allowEmpty && (
+          <MenuItem value="">
+            <em>None</em>
+          </MenuItem>
+        )}
         {filtered.map(({ key, value }) => (
           <MenuItem key={key} value={value}>
             <Box display="flex" gap={1}>

@@ -133,6 +133,7 @@ export const EditDbDetailsDialog: FC<EditDbDialogProps> = ({ open, onClose, db }
             typeof extraHashmap.Internal === "string" ? JSON.parse(extraHashmap.Internal) : extraHashmap.Internal;
           sslmode = internalObj.sslmode || "";
           ca = internalObj.ca || "";
+          if (ca && !sslmode) sslmode = "allow";
           // Remove TLS fields so they don't appear in the Extra textarea
           delete internalObj.sslmode;
           delete internalObj.ca;
@@ -167,10 +168,11 @@ export const EditDbDetailsDialog: FC<EditDbDialogProps> = ({ open, onClose, db }
   }, []);
 
   const isFormError = useCallback(() => {
+    const isBigQuery = dialect === DB_DIALECTS.BIG_QUERY;
     const errors: FormError = {
       name: !formData.name.trim(),
       host: !formData.host.trim(),
-      port: !formData.port,
+      port: !isBigQuery && !formData.port,
       ca: (formData.sslmode === "verify-ca" || formData.sslmode === "verify-full") && !formData.ca,
     };
     setFormError(errors);
@@ -179,7 +181,7 @@ export const EditDbDetailsDialog: FC<EditDbDialogProps> = ({ open, onClose, db }
       return true;
     }
     return false;
-  }, [formData]);
+  }, [formData, dialect]);
 
   const handleClose = useCallback(
     (type: CloseDialogType) => {

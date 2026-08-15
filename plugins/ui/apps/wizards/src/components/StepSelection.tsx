@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { getWizardDefinitions } from "../config/wizardDefinitions";
+import { getWizardDefinitions, isWizardVisibleOnSurface } from "../config/wizardDefinitions";
 import { useWizardContext } from "../context/WizardContext";
 import type { WizardDefinition } from "../types/wizard";
 import styles from "./StepSelection.module.css";
@@ -18,7 +18,7 @@ export function StepSelection() {
       setLoading(true);
       setError(null);
       const definitions = await getWizardDefinitions(portalProps.datasetId);
-      setWizards(definitions);
+      setWizards(definitions.filter((wizard) => isWizardVisibleOnSurface(wizard, "wizardApp")));
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : "Failed to load wizards";
       console.error("[Wizards] Failed to load wizard definitions:", err);

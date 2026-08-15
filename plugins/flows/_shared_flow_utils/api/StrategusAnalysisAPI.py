@@ -11,20 +11,20 @@ class StrategusAnalysisAPI(BaseAPI):
         self.strategus_analysis_url = self.url + 'strategus/analysis'
         self.headers = self.get_options()
 
-    def update_study_analysis(self, study_id: str, study_name: str, analysis_spec):
+    def update_study_analysis(self, token_study_code: str, database_code: str, notebook_name: str, analysis_spec):
         result = requests.put(
             self.strategus_analysis_url,
             headers=self.headers,
             verify=self.get_verify_value(),
             json=({
-                "studyId": study_id,
+                "tokenStudyCode": token_study_code,
                 "analysisSpec": json.loads(analysis_spec),
-                "notebookName": study_name,
-                "mode": "analysis-ui-flow"
+                "databaseCode": database_code,
+                "notebookName": notebook_name,
             })
         )
         if ((result.status_code >= 400) and (result.status_code < 600)):
             raise Exception(
-                f"[{result.status_code}] StrategusAnalysisAPI - Failed to update strategus analysis specification for study '{study_id}'")
+                f"[{result.status_code}] StrategusAnalysisAPI - Failed to update strategus analysis specification for study '{token_study_code}'")
         else:
             return True

@@ -1,4 +1,36 @@
 export type FieldType = "text" | "num" | "datetime" | "time" | "yearRange";
+export type WizardSurface = "wizardApp" | "cohortBuilder";
+export type WizardFlow = "required-fields" | "table1-config";
+
+export interface WizardFieldGroupValidation {
+  /** Minimum number of fields in the group that must contain a value. */
+  minAnswered?: number;
+  /** Maximum number of fields in the group that may contain a value. */
+  maxAnswered?: number;
+  /** Optional requirement guidance shown from the group information icon. */
+  message?: string;
+  /** Optional message shown when fewer than minAnswered fields contain values. */
+  minMessage?: string;
+  /** Optional message shown when more than maxAnswered fields contain values. */
+  maxMessage?: string;
+}
+
+export interface WizardFieldGroup {
+  id: string;
+  /** Optional subgroup label, for example "Body measurement". */
+  label?: string;
+  /** Existing wizard field IDs rendered in this group. */
+  fieldIds: string[];
+  /** Preferred desktop column count. */
+  columns?: 1 | 2 | 3;
+  validation?: WizardFieldGroupValidation;
+}
+
+export interface WizardFormSection {
+  id: string;
+  title: string;
+  groups: WizardFieldGroup[];
+}
 
 export interface FieldDefinition {
   id: string;
@@ -19,6 +51,8 @@ export interface FieldDefinition {
   isWizardField?: boolean;
   /** If true, text fields accept free text input without requiring dropdown selection */
   allowFreeText?: boolean;
+  /** If true, condition fields exclude descendant concepts by default */
+  excludeDescendantsByDefault?: boolean;
 }
 
 /**
@@ -81,6 +115,14 @@ export interface WizardConfig {
   id: string;
   name: string;
   description: string;
+  /** Optional form note. Missing preserves the legacy default; null or empty hides it. */
+  formNote?: string | null;
+  /** Optional UI surfaces. Missing means visible in all wizard-aware surfaces. */
+  surfaces?: WizardSurface[];
+  /** Optional flow override. Missing means use the default required-fields flow. */
+  flow?: WizardFlow;
+  /** Optional layout for this wizard. Missing or empty renders the legacy flat field list. */
+  sections?: WizardFormSection[];
   /** All fields — MRI bookmark fields and wizard-only fields (isWizardField: true) */
   fields: FieldDefinition[];
 }

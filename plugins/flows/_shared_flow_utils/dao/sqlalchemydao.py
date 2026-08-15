@@ -18,11 +18,10 @@ class SqlAlchemyDao(DaoBase):
 
     def __init__(
         self,
-        use_cache_db: bool,
         database_code: str,
         user_type: UserType = UserType.ADMIN_USER,
     ):
-        super().__init__(use_cache_db, database_code, user_type)
+        super().__init__(database_code, user_type)
 
     # --- Property methods ---
 
@@ -39,17 +38,6 @@ class SqlAlchemyDao(DaoBase):
             case _:
                 database_name = configs.databaseName
 
-        # For connecting to cachedb
-        # if self.use_cache_db:
-        #     connection_string = self.create_cachedb_connection_url(
-        #         user=configs.adminUser,
-        #         host=configs.host,
-        #         port=configs.port,
-        #         database_name=database_name,
-        #         password=configs.adminPassword.get_secret_value()
-        #     )
-        #     return sql.create_engine(connection_string, isolation_level="AUTOCOMMIT")
-
         connection_string, connect_args = self.create_sqlalchemy_connection_url(
             dialect=configs.dialect,
             auth_mode=configs.authMode,
@@ -58,7 +46,8 @@ class SqlAlchemyDao(DaoBase):
             host=configs.host,
             port=configs.port,
             database_name=database_name,
-            db_credentials=configs
+            db_credentials=configs,
+            pa_cdm_config=self.pa_cdm_config
         )
         return sql.create_engine(connection_string, connect_args=connect_args)
 
@@ -140,7 +129,6 @@ class SqlAlchemyDao(DaoBase):
         if self.dialect == SupportedDatabaseDialects.HANA:
             schema = schema.upper()
             table = table.upper()
-            column = column.upper()
         with self.engine.connect() as connection:
             metadata_obj = sql.MetaData(schema=schema)
             table = sql.Table(table, metadata_obj, autoload_with=connection)
@@ -197,7 +185,7 @@ class SqlAlchemyDao(DaoBase):
         if self.dialect == SupportedDatabaseDialects.HANA:
             schema = schema.upper()
             table = table.upper()
-            column = column.upper()
+            # column = column.upper()
         with self.engine.connect() as connection:
             metadata_obj = sql.MetaData(schema=schema)
             table_obj = sql.Table(table, metadata_obj, autoload_with=connection)
@@ -269,14 +257,20 @@ class SqlAlchemyDao(DaoBase):
         with self.engine.connect() as connection:
             metadata_obj = sql.MetaData(schema=schema)
             table_obj = sql.Table(table, metadata_obj, autoload_with=connection)
-            
+
+            # BigQuery has no DROP TABLE ... CASCADE — appending it turns every
+            # drop into a syntax error (first hit: repeat DC runs on a webapi
+            # BigQuery dataset). BQ tables have no dependent objects CASCADE
+            # would cover, so dropping plain is equivalent there.
+            supports_cascade = connection.dialect.name != "bigquery"
+
             @compiles(DropTable, connection.dialect.name)
             def _compile_drop_table(element, compiler, **kwargs):
                 sql_str = compiler.visit_drop_table(element)
-                if cascade:
+                if cascade and supports_cascade:
                     sql_str += " CASCADE"
                 return sql_str
-    
+
             table_obj.drop(connection)
             connection.commit()
 

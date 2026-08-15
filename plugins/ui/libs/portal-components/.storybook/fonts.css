@@ -1,0 +1,12 @@
+/* Storybook-only font loading. IBM Plex Sans is self-hosted via @fontsource-variable/ibm-plex-sans,
+   imported in preview.js. It replaces the previously bundled commercial faces
+   (removed for licensing compliance) and provides the 300-600 weights the
+   alert/dialog components rely on. */
+
+/* @d4l/web-components-library points --font-family-secondary at the removed
+   commercial font on :root; re-point it at IBM Plex Sans so components render correctly
+   in Storybook. Doubled :root:root specificity wins regardless of import order. */
+:root:root {
+  --font-family-secondary: "GT-America", "IBM Plex Sans Variable", "IBM Plex Sans", Helvetica, Arial, sans-serif;
+  --font-family-primary: Georgia, "Times New Roman", "Roboto Slab", serif;
+}

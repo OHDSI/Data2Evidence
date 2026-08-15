@@ -53,10 +53,6 @@ class DICOMETLOptions(BaseModel):
     person_to_patient_mapping: Optional[PersonPatientMapping] = None
     ingest_eav_table: Optional[bool] = True
 
-    @property
-    def use_cache_db(self) -> str:
-        return False
-
     # Override the __init__ method to dynamically set the default for person_to_patient_mapping
     def __init__(self, **data):
         super().__init__(**data)

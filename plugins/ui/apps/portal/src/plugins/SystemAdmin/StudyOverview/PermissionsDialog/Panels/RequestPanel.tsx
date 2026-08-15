@@ -16,13 +16,14 @@ import { useTranslation } from "../../../../../contexts";
 
 interface RequestPanelProps {
   studyId: string;
-  selectedAction: string;
+  approvedReqs: StudyAccessRequest[];
+  rejectedReqs: StudyAccessRequest[];
   handleActionChange: (event: SelectChangeEvent<string>, request: StudyAccessRequest) => void;
   accessRequests: StudyAccessRequest[];
   fetchStudyAccessRequests: () => Promise<void>;
 }
 
-const RequestPanel: FC<RequestPanelProps> = ({ selectedAction, handleActionChange, accessRequests }) => {
+const RequestPanel: FC<RequestPanelProps> = ({ approvedReqs, rejectedReqs, handleActionChange, accessRequests }) => {
   const { getText, i18nKeys } = useTranslation();
   return (
     <div className="request-panel">
@@ -36,7 +37,7 @@ const RequestPanel: FC<RequestPanelProps> = ({ selectedAction, handleActionChang
           </colgroup>
           <TableHead>
             <TableRow>
-              <TableCell>{getText(i18nKeys.REQUEST_PANEL__EMAIL)}</TableCell>
+              <TableCell>{getText(i18nKeys.REQUEST_PANEL__NAME)}</TableCell>
               <TableCell>{getText(i18nKeys.REQUEST_PANEL__REQUESTED)}</TableCell>
               <TableCell></TableCell>
             </TableRow>
@@ -49,30 +50,33 @@ const RequestPanel: FC<RequestPanelProps> = ({ selectedAction, handleActionChang
                 </TableCell>
               </TableRow>
             )}
-            {accessRequests?.map((request, index) => (
-              <TableRow key={request.id}>
-                <TableCell style={{ wordBreak: "break-all", color: "#000e7e" }}>{request.username}</TableCell>
-                <TableCell style={{ color: "#000e7e" }}>
-                  {dayjs(
-                    new Date(request.requestedOn)
-                    // new Date(parseInt(request.requestedOn.toString()))
-                  ).format(env.REACT_APP_DATETIME_FORMAT)}
-                </TableCell>
-                <TableCell className="col-action">
-                  <FormControl>
-                    <Select
-                      value={selectedAction}
-                      onChange={(event) => handleActionChange(event, request)}
-                      displayEmpty
-                    >
-                      <MenuItem value="">{getText(i18nKeys.REQUEST_PANEL__SELECT_ACTION)}</MenuItem>
-                      <MenuItem value="approve">{getText(i18nKeys.REQUEST_PANEL__APPROVE)}</MenuItem>
-                      <MenuItem value="reject">{getText(i18nKeys.REQUEST_PANEL__REJECT)}</MenuItem>
-                    </Select>
-                  </FormControl>
-                </TableCell>
-              </TableRow>
-            ))}
+            {accessRequests?.map((request, index) => {
+              const rowAction = approvedReqs.some((r) => r.id === request.id)
+                ? "approve"
+                : rejectedReqs.some((r) => r.id === request.id)
+                ? "reject"
+                : "";
+              return (
+                <TableRow key={request.id}>
+                  <TableCell style={{ wordBreak: "break-all", color: "#000e7e" }}>{request.username}</TableCell>
+                  <TableCell style={{ color: "#000e7e" }}>
+                    {dayjs(
+                      new Date(request.requestedOn)
+                      // new Date(parseInt(request.requestedOn.toString()))
+                    ).format(env.REACT_APP_DATETIME_FORMAT)}
+                  </TableCell>
+                  <TableCell className="col-action">
+                    <FormControl>
+                      <Select value={rowAction} onChange={(event) => handleActionChange(event, request)} displayEmpty>
+                        <MenuItem value="">{getText(i18nKeys.REQUEST_PANEL__SELECT_ACTION)}</MenuItem>
+                        <MenuItem value="approve">{getText(i18nKeys.REQUEST_PANEL__APPROVE)}</MenuItem>
+                        <MenuItem value="reject">{getText(i18nKeys.REQUEST_PANEL__REJECT)}</MenuItem>
+                      </Select>
+                    </FormControl>
+                  </TableCell>
+                </TableRow>
+              );
+            })}
           </TableBody>
         </Table>
       </TableContainer>

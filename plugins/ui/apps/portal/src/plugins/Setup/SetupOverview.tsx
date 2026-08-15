@@ -10,6 +10,7 @@ import { loadPlugins } from "../../utils";
 import { IPluginItem, LocationState } from "../../types";
 import { SetupPluginRenderer } from "../core/SetupPluginRenderer";
 import { useTranslation } from "../../contexts";
+import { useEnabledFeatures } from "../../hooks";
 import { SetupBreadcrumbProvider, useSetupBreadcrumb } from "./SetupBreadcrumbContext";
 import "./SetupOverview.scss";
 
@@ -20,9 +21,16 @@ export const SetupOverview: FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const locationState = location.state as LocationState;
+  const [enabledFeatures] = useEnabledFeatures();
   const enabledPlugins = useMemo(
-    () => plugins.setup?.filter((plugin: IPluginItem) => plugin.visible ?? plugin.enabled) || [],
-    []
+    () =>
+      plugins.setup?.filter((plugin: IPluginItem) => {
+        const visible = plugin.visible ?? plugin.enabled;
+        if (!visible) return false;
+        if (plugin.featureFlag && !enabledFeatures.includes(plugin.featureFlag)) return false;
+        return true;
+      }) || [],
+    [enabledFeatures]
   );
   const state = useMemo(() => locationState || { state: { tab: "setup", subTab: null } }, [locationState]);
 

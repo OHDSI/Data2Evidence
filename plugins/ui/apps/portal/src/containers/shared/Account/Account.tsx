@@ -5,7 +5,8 @@ import { PortalType, User } from "../../../types";
 import { useDialogHelper } from "../../../hooks";
 import { useToken, useTranslation, useUser } from "../../../contexts";
 import env from "../../../env";
-import { config } from "../../../config";
+import { config, FEATURE_ATLAS } from "../../../config";
+import { FeatureGate } from "../../../config/FeatureGate";
 import { api } from "../../../axios/api";
 import { ChangeMyPasswordDialog } from "./ChangeMyPasswordDialog/ChangeMyPasswordDialog";
 import DeleteAccountDialog from "./DeleteAccountDialog/DeleteAccountDialog";
@@ -62,6 +63,11 @@ export const Account: FC<AccountProps> = ({ portalType }) => {
     navigate(config.ROUTES.etl);
   }, [navigate]);
 
+  const handleSwitchToAtlas = useCallback(() => {
+    // Atlas is served outside the portal SPA, so do a full-page redirect.
+    window.location.href = `${window.location.origin}/atlas/`;
+  }, []);
+
   const handleLogout = useCallback(() => {
     navigate(config.ROUTES.logout);
   }, [navigate]);
@@ -115,6 +121,9 @@ export const Account: FC<AccountProps> = ({ portalType }) => {
                       onClick={handleSwitchToResearcher}
                     />
                   )}
+                  <FeatureGate featureFlags={[FEATURE_ATLAS]}>
+                    <Button block text={getText(i18nKeys.ACCOUNT__SWITCH_TO_ATLAS)} onClick={handleSwitchToAtlas} />
+                  </FeatureGate>
                   <Button block text={getText(i18nKeys.ACCOUNT__LOGOUT)} onClick={handleLogout} />
                   <Button
                     block

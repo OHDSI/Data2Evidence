@@ -1,6 +1,6 @@
 {
   "name": "@ohdsi/d2e",
-  "version": "0.15.0",
+  "version": "0.17.0",
   "description": "Data2Evidence Installer",
   "license": "Apache-2.0",
   "homepage": "https://d2e.sg",
@@ -20,7 +20,8 @@
     "init": "npx cross-env ENV_TYPE=local node ./scripts/dist/cli.js --version develop -n .env.local init",
     "inithana": "npx cross-env ENV_TYPE=local node ./scripts/dist/cli.js --version develop -n .env.local inithana",
     "local": "npx cross-env ENV_TYPE=local CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js --version develop --demo -n .env.local --function-path ./plugins/functions -p 41100",
-    "build": "npm run local -- build",
+    "build:atlas": "bash scripts/build-atlas.sh",
+    "build": "npm run build:atlas && npm run local -- build",
     "start": "npm run local -- start",
     "stop": "npm run local -- stop",
     "clean": "npm run local -- cleanci",
@@ -36,7 +37,7 @@
     "inittestdb-pg": "node tests/backend_integration_tests/build/initdb-pg.js test",
     "removetestdb-pg": "node tests/backend_integration_tests/build/initdb-pg.js rmonly",
     "internal": "npm run-script --prefix internal",
-    "build:ts": "tsc ./scripts/cli.ts --outDir ./scripts/dist",
+    "build:ts": "node scripts/embed-assets.mjs && tsc -p scripts/tsconfig.json",
     "prepare": "npm run build:ts"
   },
   "optionalDependencies": {
@@ -57,6 +58,7 @@
     "node-fetch": "^3.3.2",
     "node-forge": "^1.4.0",
     "typescript": "^5.0.0",
+    "undici": "^6.25.0",
     "uuid": "^14.0.0",
     "zx": "^8.8.5"
   }

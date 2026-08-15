@@ -8,7 +8,7 @@ import TableHead from "@mui/material/TableHead";
 import { Button, Loader, TableCell, TableRow, Text, Tooltip } from "@portal/components";
 import React, { FC, useCallback, useEffect, useMemo, useState } from "react";
 import { api } from "../../../axios/api";
-import { useTranslation } from "../../../contexts";
+import { useTranslation, useFeedback } from "../../../contexts";
 import { useDatabases, useDatasets, useDialogHelper } from "../../../hooks";
 import { CloseDialogType, NetworkStrategusStudy, Study, StudyAttribute } from "../../../types";
 import { JobRunTypes } from "../DQD/types";
@@ -33,6 +33,7 @@ import UpdateStudyDialog from "./UpdateStudyDialog/UpdateStudyDialog";
 import UploadStrategusResultsDialog from "./UploadStrategusResultsDialog/UploadStrategusResultsDialog";
 import ManageViewerDialog from "./ManageViewerDialog/ManageViewerDialog";
 import TransformToWebApiDialog from "./TransformToWebApiDialog/TransformToWebApiDialog";
+import RefreshCacheDialog from "./RefreshCacheDialog/RefreshCacheDialog";
 
 import "./StudyOverview.scss";
 
@@ -42,6 +43,7 @@ const enum StudyAttributeConfigIds {
 }
 const StudyOverview: FC = () => {
   const { getText, i18nKeys } = useTranslation();
+  const { setSuccessFeedback } = useFeedback();
   const [refetch, setRefetch] = useState(0);
   const [fetchUpdatesLoading, setFetchUpdatesLoading] = useState(false);
   const [datasets, loadingDatasets, error] = useDatasets("systemAdmin", undefined, undefined, refetch);
@@ -73,6 +75,7 @@ const StudyOverview: FC = () => {
     useDialogHelper(false);
   const [showManageViewerDialog, openManageViewerDialog, closeManageViewerDialog] = useDialogHelper(false);
   const [showTransformDialog, openTransformDialog, closeTransformDialog] = useDialogHelper(false);
+  const [showRefreshCacheDialog, openRefreshCacheDialog, closeRefreshCacheDialog] = useDialogHelper(false);
   const [viewerDialogType, setViewerDialogType] = useState<"dashboard" | "strategus">("dashboard");
   const [showAddStrategusStudyDialog, openAddStrategusStudyDialog, closeAddStrategusStudyDialog] =
     useDialogHelper(false);
@@ -207,6 +210,14 @@ const StudyOverview: FC = () => {
       openTransformDialog();
     },
     [openTransformDialog]
+  );
+
+  const handleRefreshCache = useCallback(
+    (dataset: Study) => {
+      setActiveDataset(dataset);
+      openRefreshCacheDialog();
+    },
+    [openRefreshCacheDialog]
   );
 
   const handleCloseTransformDialog = useCallback(
@@ -383,7 +394,14 @@ const StudyOverview: FC = () => {
           // This is a parent or standalone FHIR dataset
           fhir.push(dataset);
         }
-      } else if (type === "source" || type === "omop" || type === "hana__omop" || type === "hana__non_omop" || type === "webapi") {
+      } else if (
+        type === "source" ||
+        type === "omop" ||
+        type === "hana__omop" ||
+        type === "hana__non_omop" ||
+        type === "webapi" ||
+        type === "i2b2"
+      ) {
         const sourceIdAttribute = dataset.attributes?.find((attr) => attr.attributeId === "source_dataset_id");
 
         if (sourceIdAttribute && sourceIdAttribute.value) {
@@ -479,10 +497,11 @@ const StudyOverview: FC = () => {
     (type: CloseDialogType) => {
       closeUpdateStudyDialog();
       if (type === "success") {
+        setSuccessFeedback(getText(i18nKeys.UPDATE_STUDY_DIALOG__SUCCESS));
         setRefetch((refetch) => refetch + 1);
       }
     },
-    [closeUpdateStudyDialog]
+    [closeUpdateStudyDialog, setSuccessFeedback, getText, i18nKeys]
   );
 
   const handleCloseCopyStudyDialog = useCallback(
@@ -499,10 +518,11 @@ const StudyOverview: FC = () => {
     (type: CloseDialogType) => {
       closeDeleteStudyDialog();
       if (type === "success") {
+        setSuccessFeedback(getText(i18nKeys.DELETE_STUDY_DIALOG__SUCCESS));
         setRefetch((refetch) => refetch + 1);
       }
     },
-    [closeDeleteStudyDialog]
+    [closeDeleteStudyDialog, setSuccessFeedback, getText, i18nKeys]
   );
 
   const handleCloseAddStrategusStudyDialog = useCallback(
@@ -668,8 +688,8 @@ const StudyOverview: FC = () => {
         <TableCell>
           {dataset.dataModel
             ? `${dataset.dataModel} [${dataset.plugin}]`
-            : dataset.fhir_project_id && (
-                <Tooltip placement="top" title={dataset.fhir_project_id}>
+            : dataset.fhirStudyId && (
+                <Tooltip placement="top" title={dataset.fhirStudyId}>
                   <span>{getText(i18nKeys.STUDY_OVERVIEW__FHIR_SERVER)}</span>
                 </Tooltip>
               )}
@@ -693,6 +713,7 @@ const StudyOverview: FC = () => {
             handleSetupSemanticSearch={handleSetupSemanticSearch}
             handleManageDashboard={handleManageDashboard}
             handleTransformToWebApi={handleTransformToWebApi}
+            handleRefreshCache={handleRefreshCache}
           />
         </TableCell>
       </TableRow>
@@ -1012,6 +1033,14 @@ const StudyOverview: FC = () => {
 
           {showCreateCacheDialog && (
             <CreateCacheDialog dataset={activeDataset} open={showCreateCacheDialog} onClose={closeCreateCacheDialog} />
+          )}
+
+          {showRefreshCacheDialog && (
+            <RefreshCacheDialog
+              dataset={activeDataset}
+              open={showRefreshCacheDialog}
+              onClose={closeRefreshCacheDialog}
+            />
           )}
 
           {showSetupSemanticSearchDialog && (

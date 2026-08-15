@@ -40,6 +40,37 @@ export class StackedBarchartEndpoint extends BaseQueryEngineEndpoint {
         return false;
     }
 
+    /**
+     * True when the request selects at least one axis attribute.
+     *
+     * With every axis on "n/a" there is no measure and no category, so the
+     * generated MeasurePopulation CTE comes out as `SELECT  FROM PatientRequest0`
+     * and the database rejects the whole statement with "Parser Error: SELECT
+     * clause without selection list" — a 500 whose message says nothing about the
+     * actual problem. Callers that clear the axes programmatically (the AI
+     * assistant's cohort patches) then see only a "--" count. Detect it here and
+     * answer with the empty result instead.
+     */
+    private hasAxisSelection(bookmarkInputStr: string): boolean {
+        let axisSelection: any;
+        try {
+            axisSelection = JSON.parse(bookmarkInputStr)?.axisSelection;
+        } catch (e) {
+            // Not our call to reject a malformed body — let the normal path report it.
+            return true;
+        }
+        if (!Array.isArray(axisSelection)) {
+            return true;
+        }
+        return axisSelection.some(
+            (axis) =>
+                axis &&
+                typeof axis.attributeId === "string" &&
+                axis.attributeId !== "" &&
+                axis.attributeId !== "n/a"
+        );
+    }
+
     public processRequest(
         req,
         configId,
@@ -70,6 +101,11 @@ export class StackedBarchartEndpoint extends BaseQueryEngineEndpoint {
                 if (bookmarkInputStr === "{}") {
                     return resolve(emptyResult);
                 }
+                if (!this.hasAxisSelection(bookmarkInputStr)) {
+                    emptyResult.noDataReason =
+                        "MRI_PA_CHART_NO_AXIS_SELECTED";
+                    return resolve(emptyResult);
+                }
                 let queryResponse: QuerySvcResultType = await generateQuery(
                     req,
                     querySvcParams
@@ -86,12 +122,28 @@ export class StackedBarchartEndpoint extends BaseQueryEngineEndpoint {
                     queryResponse.measures;
                 let categories: MRIEndpointResultCategoryType[] =
                     queryResponse.categories;
+                const cdmConfigMetaData: any = queryResponse.cdmConfigMetaData;
 
                 // set settings to BaseQueryEngineEndpoint
                 this.setSettings(config.advancedSettings.settings);
 
                 let qeCallback = (err, result: MRIEndpointResultType) => {
                     if (err) {
+                        log.error(
+                            JSON.stringify({
+                                event: "analytics_sql_trace",
+                                endpoint: "aggquery",
+                                outcome: "error",
+                                stage: "query_execute",
+                                paConfigId: configId,
+                                paConfigVersion: configVersion,
+                                cdmConfigId: cdmConfigMetaData?.id ?? null,
+                                cdmConfigVersion:
+                                    cdmConfigMetaData?.version ?? null,
+                                sql: finalQueryObject?.queryString ?? null,
+                                error: err?.message ?? String(err),
+                            })
+                        );
                         reject(err);
                         return;
                     }
@@ -127,6 +179,19 @@ export class StackedBarchartEndpoint extends BaseQueryEngineEndpoint {
                         FAST: fast.statement,
                         nql,
                     });
+                    log.info(
+                        JSON.stringify({
+                            event: "analytics_sql_trace",
+                            endpoint: "aggquery",
+                            outcome: "success",
+                            stage: "query_execute",
+                            paConfigId: configId,
+                            paConfigVersion: configVersion,
+                            cdmConfigId: cdmConfigMetaData?.id ?? null,
+                            cdmConfigVersion: cdmConfigMetaData?.version ?? null,
+                            sql: result?.sql ?? finalQueryObject?.queryString ?? null,
+                        })
+                    );
 
                     result.postProcessingConfig = {
                         fillMissingValuesEnabled:

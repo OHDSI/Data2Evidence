@@ -19,7 +19,15 @@ export enum WebApiDatasetType {
   WEBAPI = "webapi",
 }
 
-export type DatasetType = SourceDatasetType | CacheDatasetType | WebApiDatasetType;
+export enum StandaloneDatasetType {
+  I2B2 = "i2b2",
+}
+
+export type DatasetType =
+  | SourceDatasetType
+  | CacheDatasetType
+  | WebApiDatasetType
+  | StandaloneDatasetType;
 
 export type ActionValue =
   | "info"
@@ -35,7 +43,8 @@ export type ActionValue =
   | "release"
   | "create-cache"
   | "manage-dashboard"
-  | "transform-to-webapi";
+  | "transform-to-webapi"
+  | "refresh-cache";
 
 export enum DatasetInfoTab {
   DatasetInfo = "info",
@@ -63,7 +72,7 @@ export interface Study {
   studyDetail?: StudyDetail;
   attributes?: StudyAttribute[];
   tags?: StudyTag[];
-  fhir_project_id?: string;
+  fhirStudyId?: string;
   sourceStudyId?: string;
   flowParameters?: DatasetFlowParameters | null;
   strategusAnalysis?: NetworkStrategusStudy | null;
@@ -83,7 +92,6 @@ export interface NewStudyInput {
   databaseCode: string;
   dialect: string;
   paConfigId: string;
-  fhirProjectId: string | undefined;
   visibilityStatus: string;
   detail: DatasetDetail;
   dashboards: DatasetDashboard[];
@@ -110,11 +118,6 @@ export interface CopyStudyInput {
   cdmSchemaValue?: string;
   vocabSchemaValue?: string;
   resultsSchemaValue?: string;
-}
-
-export interface NewFhirProjectInput {
-  id: string;
-  description: string;
 }
 
 export interface CopyStudyTableMetadata {

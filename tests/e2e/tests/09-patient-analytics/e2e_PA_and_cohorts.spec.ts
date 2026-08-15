@@ -66,9 +66,9 @@ async function navigateToCohorts(page) {
   await expect(page.getByText('Create Cohort:')).toBeVisible()
 }
 
-async function dismissDiscardDialog(page) {
+async function dismissUnsavedChangesDialog(page) {
   try {
-    await page.getByRole('button', { name: 'Discard' }).click({ timeout: 3000 })
+    await page.getByRole('button', { name: 'Leave without saving' }).click({ timeout: 3000 })
   } catch {
     // Dialog not present, continue
   }
@@ -76,7 +76,7 @@ async function dismissDiscardDialog(page) {
 
 async function navigateBackToCohortList(page) {
   await page.locator('#pane-left').getByRole('link', { name: 'Cohorts' }).click()
-  await dismissDiscardDialog(page)
+  await dismissUnsavedChangesDialog(page)
   await page.waitForTimeout(500)
 }
 
@@ -120,18 +120,19 @@ test(TEST_NAME, async ({ page }) => {
 
   // Create first cohort with MALE filter
   await page.getByRole('button', { name: 'D2E' }).click()
-  await page.getByText('All').click()
+  await page.getByTitle('Basic Data - Gender').getByText('All').click()
   await page.getByRole('textbox', { name: 'multiselect-searchbox' }).fill('MALE')
   await page.getByText('MALE - MALE').click()
   await expect(page.getByRole('combobox').filter({ hasText: 'MALE' }).first()).toBeVisible()
 
-  // Save cohort 1
+  // Save cohort 1 - the allow-sharing checkbox now lives in the filter card footer
+  // rather than the save dialog, so it has to be set before the dialog opens.
+  await page.getByTestId('pa-share-cohort-checkbox').click()
   await expect(page.getByRole('button', { name: 'Save' })).toBeVisible()
   await page.getByRole('button', { name: 'Save' }).click()
   await page.getByRole('textbox', { name: 'Enter name' }).fill(COHORT_1)
   await expect(page.locator('#pane-left')).toContainText('Save Current Filters')
   await expect(page.locator('#pane-left')).toContainText('Enter a new name')
-  await page.locator('.app-checkbox-container').click()
   await expect(page.locator('footer').getByRole('button', { name: 'Save' })).toBeVisible()
   await page.locator('footer').getByRole('button', { name: 'Save' }).click()
 
@@ -144,7 +145,7 @@ test(TEST_NAME, async ({ page }) => {
 
   // Create second cohort with FEMALE filter
   await page.getByRole('button', { name: 'D2E' }).click()
-  await dismissDiscardDialog(page)
+  await dismissUnsavedChangesDialog(page)
 
   await page.waitForTimeout(500)
   await page.getByText('All').first().click()
@@ -152,11 +153,12 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByRole('option').filter({ hasText: 'FEMALE' }).first().click()
   await expect(page.getByRole('combobox').filter({ hasText: 'FEMALE' }).first()).toBeVisible()
 
-  // Save cohort 2
+  // Save cohort 2 - allow-sharing now lives in the filter card footer, so it has to
+  // be set before the save dialog opens.
+  await page.getByTestId('pa-share-cohort-checkbox').click()
   await page.getByRole('button', { name: 'Save' }).click()
   await page.getByRole('textbox', { name: 'Enter name' }).fill(COHORT_2)
   await expect(page.locator('#pane-left')).toContainText('Save Current Filters')
-  await page.locator('.app-checkbox-container').click()
   await page.locator('footer').getByRole('button', { name: 'Save' }).click()
 
   await page.keyboard.press('Escape')
@@ -167,8 +169,8 @@ test(TEST_NAME, async ({ page }) => {
   await expect(page.locator('#pane-left')).toContainText(COHORT_2)
 
   // Select both cohorts and verify Compare
-  await page.locator('div:nth-child(2) > .footer > div > svg').first().click()
-  await page.getByRole('img').nth(4).click()
+  await page.getByTestId(`pa-cohort-card-${COHORT_1}`).getByTestId('pa-cohort-select-btn').click()
+  await page.getByTestId(`pa-cohort-card-${COHORT_2}`).getByTestId('pa-cohort-select-btn').click()
 
   await expect(page.getByRole('button', { name: 'Compare' })).toBeEnabled()
   await page.getByRole('button', { name: 'Compare' }).click()

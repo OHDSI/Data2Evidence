@@ -3,12 +3,29 @@
 @use './mixins' as *;
 @import 'vue-multiselect/dist/vue-multiselect.min.css';
 
+// Single CSS token for scoped component styles that can't read the SCSS var.
+:root {
+  --app-font-family: #{$font-family-sans-serif};
+}
+
 .mri-app-vue-container {
   @import './mri-bootstrap';
   @include mriBaseStyle;
   height: 100%;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
   // For alignment of the loading splash screen within PA wrapper
   position: relative;
+
+  // Bootstrap sets .text-primary to its default primary blue (#007bff).
+  // Override it so Vuetify and other theme-aware components use the app's
+  // current theme primary color instead.
+  .text-primary {
+    color: var(--color-primary, #000080) !important;
+  }
 
   /*
     copied styles from the html and body portion of bootstrap's reboot.scss file

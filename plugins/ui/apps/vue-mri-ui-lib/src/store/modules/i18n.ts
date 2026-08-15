@@ -1,7 +1,7 @@
 import * as types from '../mutation-types'
 import { i18n } from '../../lib/i18n'
 import { Commit } from 'vuex'
-import { getPortalAPI } from '@/utils/PortalUtils'
+import { usePortalContext } from '@/composables/usePortalContext'
 
 type ModuleState = {
   locales: { [key: string]: { [key: string]: string } }
@@ -71,7 +71,7 @@ const actions = {
     })
   },
   setLocale({ commit }: { commit: Commit }) {
-    const locale = getPortalAPI().locale
+    const locale = usePortalContext().locale
     commit(types.I18N_SET_CURRENT_LOCALE, locale)
   },
 }

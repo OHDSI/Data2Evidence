@@ -1,13 +1,99 @@
 {
   "version": "1.0",
-  "plugins": [],
+  "plugins": [
+    {
+      "id": "pythia-plugin",
+      "name": "Pythia",
+      "version": "0.1.0",
+      "entryPoint": "pythia-plugin/index.system.js",
+      "menuItems": [],
+      "fabMounts": [
+        {
+          "id": "pythia.fab",
+          "label": "Pythia — design assistant",
+          "icon": "mdi-chat-processing-outline",
+          "color": "primary",
+          "position": "bottom-right"
+        }
+      ],
+      "metadata": {
+        "author": "Atlas Team",
+        "description": "Pythia — AI-assisted cohort design advisor for ATLAS v3.0"
+      }
+    },
+    {
+      "id": "results-viewer",
+      "name": "Analysis Results",
+      "version": "0.2.0",
+      "entryPoint": "results-viewer/index.system.js",
+      "menuItems": [],
+      "metadata": {
+        "author": "OHDSI",
+        "description": "OHDSI HADES analysis results viewer — runs OhdsiShinyModules via WebR + DuckDB-WASM in-browser"
+      }
+    },
+    {
+      "id": "strategus-plugin",
+      "name": "Strategus",
+      "version": "0.1.0",
+      "entryPoint": "strategus-plugin/index.system.js",
+      "menuItems": [],
+      "metadata": { "author": "OHDSI", "description": "Strategus Analysis Specification Builder" }
+    },
+    {
+      "id": "notebook-plugin",
+      "name": "Notebooks",
+      "version": "0.1.0",
+      "entryPoint": "notebook-plugin/index.system.js",
+      "menuItems": [],
+      "metadata": { "author": "OHDSI", "description": "Create, store and run Python/R/Markdown notebooks (Pyodide/WebR)" }
+    },
+    {
+      "id": "network-plugin",
+      "name": "Network",
+      "version": "0.1.0",
+      "entryPoint": "network-plugin/index.system.js",
+      "menuItems": [],
+      "metadata": { "author": "OHDSI", "description": "Federated network studies — site plugin. Loads inactive until NETWORK_* config is provided." }
+    },
+    {
+      "id": "studies-plugin",
+      "name": "Studies",
+      "version": "0.1.0",
+      "entryPoint": "studies-plugin/index.system.js",
+      "menuItems": [
+        { "id": "studies.main", "name": "Studies", "route": "/plugins/studies-plugin/", "icon": "mdi-flask-outline", "order": 40 }
+      ],
+      "metadata": { "author": "OHDSI", "description": "Studies shell: Local / Network / Results" }
+    },
+    {
+      "id": "patient-analytics",
+      "name": "Data Exploration",
+      "version": "2.0.0",
+      "entryPoint": "patient-analytics/index.system.js",
+      "menuItems": [
+        { "id": "pa.main", "name": "Data Exploration", "route": "/plugins/patient-analytics/", "icon": "mdi-account-search-outline", "order": 45, "insertBefore": "cohorts" }
+      ],
+      "metadata": { "author": "D2E", "description": "Data Exploration (Patient Analytics/MRI) — visual cohort exploration against the selected data source" }
+    }
+  ],
   "settings": {
     "enableHotReload": false,
     "loadTimeout": 30000,
     "showLoadingIndicators": true,
+    "theme": {
+      "primaryColor": "#000080",
+      "logoUrl": "/atlas/config/d2e2.svg",
+      "logoNavigateTo": "/",
+      "accentColor": "#ff5e59",
+      "landingLogoUrl": "/atlas/config/landing-page-illustration.svg",
+      "chartColors": ["#000080", "#ff5e59", "#4e79a7", "#76b7b2", "#59a14f", "#edc949", "#af7aa1", "#9c755f", "#bab0ab", "#e15759"],
+      "treemapGradient": ["#c3cce8", "#4a5fb0", "#000080"]
+    },
     "header": {
+      "showNavBar": true,
       "showFeedbackButton": false,
-      "showLanguageSelector": false,
+      "showLanguageSelector": true,
       "showConfigButton": true,
       "showUserMenu": true
     }

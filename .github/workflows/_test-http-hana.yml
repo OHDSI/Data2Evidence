@@ -133,7 +133,7 @@ jobs:
           echo "Waiting 160 secs for services to start..."
           sleep 160
           echo "Trex Health check..."
-          curl --max-time 120 --fail -k https://localhost:41100/d2e/_internal/health
+          curl --max-time 120 --fail -k https://localhost:41100/trex/_internal/health
           echo "Waiting for webapi-init to complete (ensures logto admin user is created)..."
           for i in $(seq 1 60); do
             status=$(docker ps -a --filter "name=webapi-init" --format '{{.Status}}')
@@ -295,7 +295,7 @@ jobs:
           docker container restart alp-trex
           echo "Waiting 120 secs for alp-trex to restart..."
           sleep 120
-          curl --max-time 100 --fail -k https://localhost:41100/d2e/_internal/health
+          curl --max-time 100 --fail -k https://localhost:41100/trex/_internal/health
 
       - name: Assign and verify researcher assigned to user
         run: |

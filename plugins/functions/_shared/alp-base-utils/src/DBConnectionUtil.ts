@@ -58,7 +58,13 @@ export class DBConnectionUtil {
                 if (cb) { cb(null, DBConnectionUtil.pool); }
                 return resolve(DBConnectionUtil.pool);
             }
-            const client = hdb.createClient(credentials);
+            const client = hdb.createClient({
+                ...credentials,
+                // Allows node-hdb to send large prepared SQL statements without
+                // hitting its 128 KiB default request packet size. node-hdb
+                // derives packetSizeLimit from packetSize when it is unset.
+                packetSize: Math.pow(2, 30) - 1,
+            });
             if (cb) { cb(null, client); }
             client.on("error", (err) => {
                 logger.error(err);

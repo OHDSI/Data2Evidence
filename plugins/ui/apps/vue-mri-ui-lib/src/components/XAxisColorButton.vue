@@ -1,5 +1,9 @@
 <template>
-  <div class="axis-menu-button-wrapper x-axis-dropdown-button" v-show="axisMenuData.length > 0">
+  <div
+    class="axis-menu-button-wrapper x-axis-dropdown-button x-axis-color-button"
+    :class="{ 'axis-menu-button-wrapper--disabled': disabled }"
+    v-show="axisMenuData.length > 0"
+  >
     <div class="iconWrapper">
       <label class="iconLabel">
         <svg
@@ -17,7 +21,14 @@
       </label>
     </div>
     <div class="buttonWrapper" ref="menuButtonWrapper">
-      <button class="axisMenuButton" ref="menuButton" @click="toggleMenu" :title="selectionTooltip" tabindex="0">
+      <button
+        class="axisMenuButton"
+        ref="menuButton"
+        @click="toggleMenu"
+        :title="selectionTooltip"
+        :disabled="disabled"
+        tabindex="0"
+      >
         <span class="axisMenuText axisTextPlaceholder" v-if="!selectedAttrText">
           {{ getText('MRI_PA_SELECT_X_AXIS') }}
         </span>
@@ -45,7 +56,7 @@ import { useStore } from 'vuex'
 import DropDownMenu from './DropDownMenu.vue'
 
 // Props & Emits
-const props = defineProps<{ parentContainer: any; selectedAxis: number | null }>()
+const props = defineProps<{ parentContainer: any; selectedAxis: number | null; disabled?: boolean }>()
 const emit = defineEmits<{ colorAxisSelected: [value: number | null] }>()
 
 // Store
@@ -202,6 +213,7 @@ function buildMenuData() {
 }
 
 function toggleMenu() {
+  if (props.disabled) return
   menuVisible.value = !menuVisible.value
 }
 
@@ -251,10 +263,4 @@ function resetSelection() {
 }
 </script>
 
-<style scoped>
-.x-axis-dropdown-button {
-  position: absolute;
-  left: 0px;
-  top: 192px;
-}
-</style>
+<style scoped></style>

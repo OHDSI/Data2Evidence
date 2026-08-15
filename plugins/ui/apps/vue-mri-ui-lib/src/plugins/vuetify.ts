@@ -2,6 +2,7 @@ import { createVuetify } from 'vuetify'
 import * as components from 'vuetify/components'
 import * as directives from 'vuetify/directives'
 import 'vuetify/styles'
+import '@mdi/font/css/materialdesignicons.css'
 
 /**
  * Vuetify Plugin Configuration
@@ -185,6 +186,7 @@ export default createVuetify({
     VDialog: {
       maxWidth: 600,
       rounded: 'sm',
+      noClickAnimation: true, // no bouncing animation when clicking outside of persistent dialog
     },
 
     // Data table defaults

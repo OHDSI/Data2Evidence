@@ -241,7 +241,7 @@ export const registerApi = (registry: OpenAPIRegistry) => {
       body: {
         content: {
           "application/json": {
-            schema: conceptSchemas.getStandardConcepts,
+            schema: conceptSchemas.getStandardConceptsBody,
           },
         },
       },
@@ -252,6 +252,36 @@ export const registerApi = (registry: OpenAPIRegistry) => {
         content: {
           "application/json": {
             schema: z.string(),
+          },
+        },
+      },
+    },
+    tags: ["Concept"],
+  });
+
+  registry.registerPath({
+    method: "post",
+    path: "/terminology/concept/checkCoverage",
+    description: "Check which OMOP concept IDs exist in this dataset's vocabulary cache",
+    summary: "Check concept coverage in dataset",
+    request: {
+      body: {
+        content: {
+          "application/json": {
+            schema: conceptSchemas.checkConceptCoverageBody,
+          },
+        },
+      },
+    },
+    responses: {
+      200: {
+        description: "Found and missing concept IDs.",
+        content: {
+          "application/json": {
+            schema: z.object({
+              found: z.array(z.number()),
+              missing: z.array(z.number()),
+            }),
           },
         },
       },

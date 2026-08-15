@@ -1,10 +1,11 @@
 import React, { FC, useCallback, useEffect, useMemo, useState } from "react";
 import { Routes, Route, useLocation } from "react-router-dom";
 import classNames from "classnames";
-import { Snackbar, ErrorBoundary } from "@portal/components";
+import { ErrorBoundary } from "@portal/components";
 import { PluginDropdownItem, SubFeatureFlags } from "@portal/plugin";
 import { Header } from "../../components";
-import { useActiveDataset, useFeedback } from "../../contexts";
+import { FeedbackToast } from "../shared/FeedbackToast/FeedbackToast";
+import { useActiveDataset } from "../../contexts";
 import { IPluginItem, PluginDropdown } from "../../types";
 import { getPluginChildPathPattern, loadPlugins, sortPluginsByType } from "../../utils";
 import { ResearcherStudyPluginRenderer } from "../../plugins/core/ResearcherStudyPluginRenderer";
@@ -15,6 +16,8 @@ import { Information } from "./Information/Information";
 import { Account } from "../shared/Account/Account";
 import { ResearcherFeatureMap, ResearcherFeatures } from "../../constant";
 import "./Researcher.scss";
+import { AiAssistantButton } from "../../components/AiAssistant/AiAssistantButton";
+import { FeatureGate, FEATURE_AI_ASSISTANT } from "../../config";
 
 const plugins = loadPlugins();
 
@@ -33,9 +36,6 @@ interface StateProps {
 }
 
 export const Researcher: FC = () => {
-  const { clearFeedback, getFeedback } = useFeedback();
-  const feedback = getFeedback();
-
   // Load datasets for deep link sync
   const [datasets, datasetsLoading] = useDatasets("researcher");
 
@@ -56,10 +56,6 @@ export const Researcher: FC = () => {
   const [_pluginDropdown, setPluginDropdown] = useState<PluginDropdown>({});
   const [activeTenantId, setActiveTenantId] = useState<string>(state?.tenantId || "");
   const [featureFlags] = useEnabledFeatures();
-
-  useEffect(() => {
-    if ((feedback?.autoClose || 0) > 0) setTimeout(() => clearFeedback(), feedback?.autoClose);
-  }, [feedback, clearFeedback]);
 
   useEffect(() => {
     if (state) {
@@ -142,13 +138,10 @@ export const Researcher: FC = () => {
     <div className={classes}>
       {!isHome && <Header portalType="researcher" plugins={sortedPlugins} />}
       <main>
-        <Snackbar
-          type={feedback?.type}
-          handleClose={clearFeedback}
-          message={feedback?.message}
-          description={feedback?.description}
-          visible={feedback?.message != null}
-        />
+        <FeedbackToast />
+        <FeatureGate featureFlags={[FEATURE_AI_ASSISTANT]}>
+          <AiAssistantButton />
+        </FeatureGate>
         {/* Pre-render all single-spa app containers - visibility controlled by route matching */}
         {singleSpaApps.map((item: IPluginItem) => {
           const subFeatureFlags = item.featureFlag ? featureFlagsDict[item.featureFlag] : {};
@@ -160,6 +153,8 @@ export const Researcher: FC = () => {
                 display: isActiveRoute ? "block" : "none",
                 width: "100%",
                 height: "100%",
+                minHeight: 0,
+                overflow: "hidden",
               }}
             >
               <ErrorBoundary name={item.name}>

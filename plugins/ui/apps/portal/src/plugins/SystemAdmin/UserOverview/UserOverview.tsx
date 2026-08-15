@@ -45,7 +45,7 @@ export const UserOverview: FC<UserOverviewProps> = () => {
   const [userOverview, setUserOverview] = useState<UserWithRolesInfoExt[]>([]);
   const [alpUsers, setAlpUsers] = useState<UserWithRolesInfoExt[]>([]);
   const [alpDataAdmins, setAlpDataAdmins] = useState<UserWithRolesInfoExt[]>([]);
-  const { setFeedback, setGenericErrorFeedback } = useFeedback();
+  const { setFeedback, setGenericErrorFeedback, setSuccessFeedback } = useFeedback();
 
   const [showEditRole, openEditRoleDialog, closeEditRoleDialog] = useDialogHelper(false);
   const [showDeleteUser, openDeleteUserDialog, closeDeleteUserDialog] = useDialogHelper(false);
@@ -75,6 +75,7 @@ export const UserOverview: FC<UserOverviewProps> = () => {
         setUserOverview(overview);
         setAlpDataAdmins(overview.filter((u) => u.roles.some((r) => Object.keys(DATA_ADMIN_ROLES).includes(r))));
         setAlpUsers(overview.filter((u) => u.roles.some((r) => Object.keys(ALP_ROLES).includes(r))));
+        return true;
       } catch (err: any) {
         if (err.data?.message) {
           setFeedback({ type: "error", message: err.data?.message });
@@ -82,6 +83,7 @@ export const UserOverview: FC<UserOverviewProps> = () => {
           setGenericErrorFeedback();
         }
         console.error("err", err);
+        return false;
       } finally {
         if (withLoading) setLoading(false);
       }
@@ -103,22 +105,43 @@ export const UserOverview: FC<UserOverviewProps> = () => {
 
   const handleActivateUser = useCallback(
     async (user: UserWithRolesInfoExt, active: boolean) => {
-      await api.userMgmt.activateUser(user.userId, active);
-      fetchUserOverview();
+      try {
+        await api.userMgmt.activateUser(user.userId, active);
+      } catch (err) {
+        console.error("Error when updating user active state", err);
+        setFeedback({
+          variant: "alert",
+          type: "error",
+          message: getText(active ? i18nKeys.USER_OVERVIEW__ACTIVATE_ERROR : i18nKeys.USER_OVERVIEW__DEACTIVATE_ERROR),
+          autoClose: 5000,
+        });
+        return;
+      }
+
+      // fetchUserOverview handles its own errors (and shows its own error feedback),
+      // so only show the success toast when the refresh also succeeded.
+      const refreshed = await fetchUserOverview();
+      if (refreshed) {
+        setSuccessFeedback(
+          getText(active ? i18nKeys.USER_OVERVIEW__ACTIVATE_SUCCESS : i18nKeys.USER_OVERVIEW__DEACTIVATE_SUCCESS)
+        );
+      }
     },
-    [fetchUserOverview]
+    [fetchUserOverview, setSuccessFeedback, setFeedback, getText, i18nKeys]
   );
 
   const closeEditRole = useCallback(
     async (type: CloseDialogType) => {
+      const username = activeUser?.username;
       closeEditRoleDialog();
       setActiveUser(undefined);
 
       if (type === "success") {
-        await fetchUserOverview();
+        setSuccessFeedback(getText(i18nKeys.USER_OVERVIEW__EDIT_ROLE_SUCCESS, [username ?? ""]));
+        await fetchUserOverview(true);
       }
     },
-    [fetchUserOverview, closeEditRoleDialog]
+    [activeUser, fetchUserOverview, closeEditRoleDialog, setSuccessFeedback, getText, i18nKeys]
   );
 
   const handleDelete = useCallback(
@@ -135,10 +158,11 @@ export const UserOverview: FC<UserOverviewProps> = () => {
       setActiveUser(undefined);
 
       if (type === "success") {
-        await fetchUserOverview();
+        setSuccessFeedback(getText(i18nKeys.DELETE_USER_DIALOG__SUCCESS));
+        await fetchUserOverview(true);
       }
     },
-    [fetchUserOverview, closeDeleteUserDialog]
+    [fetchUserOverview, closeDeleteUserDialog, setSuccessFeedback, getText, i18nKeys]
   );
 
   const getRole = useCallback((roles: string[]) => {
@@ -193,10 +217,11 @@ export const UserOverview: FC<UserOverviewProps> = () => {
       closeAddUserDialog();
 
       if (type === "success") {
-        await fetchUserOverview();
+        setSuccessFeedback(getText(i18nKeys.ADD_USER_DIALOG__SUCCESS));
+        await fetchUserOverview(true);
       }
     },
-    [fetchUserOverview, closeAddUserDialog]
+    [fetchUserOverview, closeAddUserDialog, setSuccessFeedback, getText, i18nKeys]
   );
 
   const handleOpenPasswordDialog = useCallback(
@@ -298,7 +323,12 @@ export const UserOverview: FC<UserOverviewProps> = () => {
           />
           <DeleteUserDialog user={activeUser} open={showDeleteUser} onClose={closeDeleteUser} />
           {activeUser && (
-            <ChangeUserPasswordDialog userId={activeUser.userId} open={showPwd} onClose={handleClosePasswordDialog} />
+            <ChangeUserPasswordDialog
+              userId={activeUser.userId}
+              userName={activeUser.username}
+              open={showPwd}
+              onClose={handleClosePasswordDialog}
+            />
           )}
         </div>
       </div>

@@ -1,7 +1,6 @@
 import { vi } from 'vitest'
 import { shallowMount } from '@vue/test-utils'
 import { createStore } from 'vuex'
-import '../../globals'
 import km from '../KaplanMeier.vue'
 import mouseScroll from '@/directives/mouseScroll'
 

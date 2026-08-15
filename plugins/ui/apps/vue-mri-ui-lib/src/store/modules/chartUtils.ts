@@ -179,7 +179,7 @@ const getters = {
           meta: { fullName },
           marker: {
             line: {
-              color: '#595757',
+              color: '#4a4949',
               width: 0.7,
             },
           },

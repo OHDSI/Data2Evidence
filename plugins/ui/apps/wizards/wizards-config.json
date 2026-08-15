@@ -4,6 +4,48 @@
       "id": "calculate-incidence",
       "name": "Calculate Incidence",
       "description": "This wizard will calculate the incidence for a particular clinical condition. This calculation is done in SQL, and this works by finding the first instance of the condition (the diagnostic code) and determining if it occurs between a particular set of dates that you specify.",
+      "formNote": "Note: this is a very rough approximation that is just a starting point for a more comprehensive analysis.",
+      "sections": [
+        {
+          "id": "person",
+          "title": "Person",
+          "groups": [{ "id": "person-details", "fieldIds": ["age", "gender", "ethnicity", "race"], "columns": 2 }]
+        },
+        {
+          "id": "measurement",
+          "title": "Measurement",
+          "groups": [
+            {
+              "id": "body-measurement",
+              "label": "Body measurement",
+              "fieldIds": ["height", "weight", "bmi"],
+              "columns": 3,
+              "validation": {
+                "minAnswered": 1,
+                "maxAnswered": 2,
+                "message": "Enter 1 or 2 of Height, Weight, and BMI."
+              }
+            },
+            {
+              "id": "vitals",
+              "label": "Vitals",
+              "fieldIds": ["systolicBp", "diastolicBp", "pulseRate", "respRate"],
+              "columns": 2
+            }
+          ]
+        },
+        {
+          "id": "conditions",
+          "title": "Conditions",
+          "groups": [
+            {
+              "id": "condition-details",
+              "fieldIds": ["year", "condition1", "condition2", "condition3", "condition4", "condition5", "condition6"],
+              "columns": 1
+            }
+          ]
+        }
+      ],
       "fields": [
         {
           "id": "age",
@@ -38,7 +80,7 @@
           "type": "num",
           "label": "Height",
           "placeholder": "cm",
-          "required": true,
+          "required": false,
           "configPath": "patient.interactions.measurement.attributes.numval",
           "filterCardPath": "patient.interactions.measurement",
           "fixedAttributes": [
@@ -54,7 +96,7 @@
           "type": "num",
           "label": "Weight",
           "placeholder": "kg",
-          "required": true,
+          "required": false,
           "configPath": "patient.interactions.measurement.attributes.numval",
           "filterCardPath": "patient.interactions.measurement",
           "fixedAttributes": [
@@ -70,7 +112,7 @@
           "type": "num",
           "label": "BMI",
           "placeholder": "kg/m\u00b2",
-          "required": true,
+          "required": false,
           "configPath": "patient.interactions.measurement.attributes.numval",
           "filterCardPath": "patient.interactions.measurement",
           "fixedAttributes": [
@@ -203,6 +245,48 @@
       "id": "calculate-prevalence",
       "name": "Calculate Prevalence",
       "description": "This wizard will calculate the prevalence for a particular clinical condition. This calculation is done in SQL, and this works by finding the first instance of a condition.",
+      "formNote": "Note: this is a very rough approximation that is just a starting point for a more comprehensive analysis.",
+      "sections": [
+        {
+          "id": "person",
+          "title": "Person",
+          "groups": [{ "id": "person-details", "fieldIds": ["age", "gender", "ethnicity", "race"], "columns": 2 }]
+        },
+        {
+          "id": "measurement",
+          "title": "Measurement",
+          "groups": [
+            {
+              "id": "body-measurement",
+              "label": "Body measurement",
+              "fieldIds": ["height", "weight", "bmi"],
+              "columns": 3,
+              "validation": {
+                "minAnswered": 1,
+                "maxAnswered": 2,
+                "message": "Enter 1 or 2 of Height, Weight, and BMI."
+              }
+            },
+            {
+              "id": "vitals",
+              "label": "Vitals",
+              "fieldIds": ["systolicBp", "diastolicBp", "pulseRate", "respRate"],
+              "columns": 2
+            }
+          ]
+        },
+        {
+          "id": "conditions",
+          "title": "Conditions",
+          "groups": [
+            {
+              "id": "condition-details",
+              "fieldIds": ["year", "condition1", "condition2", "condition3", "condition4", "condition5", "condition6"],
+              "columns": 1
+            }
+          ]
+        }
+      ],
       "fields": [
         {
           "id": "age",
@@ -237,7 +321,7 @@
           "type": "num",
           "label": "Height",
           "placeholder": "cm",
-          "required": true,
+          "required": false,
           "configPath": "patient.interactions.measurement.attributes.numval",
           "filterCardPath": "patient.interactions.measurement",
           "fixedAttributes": [
@@ -253,7 +337,7 @@
           "type": "num",
           "label": "Weight",
           "placeholder": "kg",
-          "required": true,
+          "required": false,
           "configPath": "patient.interactions.measurement.attributes.numval",
           "filterCardPath": "patient.interactions.measurement",
           "fixedAttributes": [
@@ -269,7 +353,7 @@
           "type": "num",
           "label": "BMI",
           "placeholder": "kg/m\u00b2",
-          "required": true,
+          "required": false,
           "configPath": "patient.interactions.measurement.attributes.numval",
           "filterCardPath": "patient.interactions.measurement",
           "fixedAttributes": [
@@ -402,6 +486,48 @@
       "id": "calculate-mortality",
       "name": "Calculate Mortality",
       "description": "This wizard will calculate the mortality rate for a particular clinical condition, and works by death dates that co-occur with a condition between a particular set of dates that you specify.",
+      "formNote": "Note: this is a very rough approximation that is just a starting point for a more comprehensive analysis.",
+      "sections": [
+        {
+          "id": "person",
+          "title": "Person",
+          "groups": [{ "id": "person-details", "fieldIds": ["age", "gender", "ethnicity", "race"], "columns": 2 }]
+        },
+        {
+          "id": "measurement",
+          "title": "Measurement",
+          "groups": [
+            {
+              "id": "body-measurement",
+              "label": "Body measurement",
+              "fieldIds": ["height", "weight", "bmi"],
+              "columns": 3,
+              "validation": {
+                "minAnswered": 1,
+                "maxAnswered": 2,
+                "message": "Enter 1 or 2 of Height, Weight, and BMI."
+              }
+            },
+            {
+              "id": "vitals",
+              "label": "Vitals",
+              "fieldIds": ["systolicBp", "diastolicBp", "pulseRate", "respRate"],
+              "columns": 2
+            }
+          ]
+        },
+        {
+          "id": "conditions",
+          "title": "Conditions",
+          "groups": [
+            {
+              "id": "condition-details",
+              "fieldIds": ["year", "condition1", "condition2", "condition3", "condition4", "condition5", "condition6"],
+              "columns": 1
+            }
+          ]
+        }
+      ],
       "fields": [
         {
           "id": "age",
@@ -436,7 +562,7 @@
           "type": "num",
           "label": "Height",
           "placeholder": "cm",
-          "required": true,
+          "required": false,
           "configPath": "patient.interactions.measurement.attributes.numval",
           "filterCardPath": "patient.interactions.measurement",
           "fixedAttributes": [
@@ -452,7 +578,7 @@
           "type": "num",
           "label": "Weight",
           "placeholder": "kg",
-          "required": true,
+          "required": false,
           "configPath": "patient.interactions.measurement.attributes.numval",
           "filterCardPath": "patient.interactions.measurement",
           "fixedAttributes": [
@@ -468,7 +594,7 @@
           "type": "num",
           "label": "BMI",
           "placeholder": "kg/m\u00b2",
-          "required": true,
+          "required": false,
           "configPath": "patient.interactions.measurement.attributes.numval",
           "filterCardPath": "patient.interactions.measurement",
           "fixedAttributes": [
@@ -601,6 +727,48 @@
       "id": "cross-sectional-demographics",
       "name": "Cross sectional Demographics",
       "description": "Assessment of hypertension and cholesterol levels in post-operative patients.",
+      "formNote": "Note: this is a very rough approximation that is just a starting point for a more comprehensive analysis.",
+      "sections": [
+        {
+          "id": "conditions",
+          "title": "Conditions",
+          "groups": [
+            {
+              "id": "condition-details",
+              "fieldIds": ["condition1", "year", "condition2", "condition3", "condition4", "condition5", "condition6"],
+              "columns": 1
+            }
+          ]
+        },
+        {
+          "id": "person",
+          "title": "Person",
+          "groups": [{ "id": "person-details", "fieldIds": ["age", "gender", "ethnicity", "race"], "columns": 2 }]
+        },
+        {
+          "id": "measurement",
+          "title": "Measurement",
+          "groups": [
+            {
+              "id": "body-measurement",
+              "label": "Body measurement",
+              "fieldIds": ["height", "weight", "bmi"],
+              "columns": 3,
+              "validation": {
+                "minAnswered": 1,
+                "maxAnswered": 2,
+                "message": "Enter 1 or 2 of Height, Weight, and BMI."
+              }
+            },
+            {
+              "id": "vitals",
+              "label": "Vitals",
+              "fieldIds": ["systolicBp", "diastolicBp", "pulseRate", "respRate"],
+              "columns": 2
+            }
+          ]
+        }
+      ],
       "fields": [
         {
           "id": "condition1",
@@ -759,6 +927,14 @@
           ]
         }
       ]
+    },
+    {
+      "id": "table1",
+      "name": "Table 1",
+      "description": "Generate a Table 1 summary using selected covariate concept sets.",
+      "surfaces": ["cohortBuilder"],
+      "flow": "table1-config",
+      "fields": []
     }
   ]
 }

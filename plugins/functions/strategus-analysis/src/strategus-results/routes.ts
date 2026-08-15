@@ -33,7 +33,7 @@ export class StrategusResultsRouter {
         //   });
         // }
 
-        if (!viewerCode) {
+        if (viewerCode === undefined || viewerCode === null) {
           return res.status(400).json({
             message: "Missing required field: viewerCode",
           });
@@ -51,7 +51,7 @@ export class StrategusResultsRouter {
         });
       } catch (error) {
         res.status(500).json({
-          message: "An error occurred starting strategus result viewer",
+          message: error instanceof Error ? error.message : "An error occurred starting strategus result viewer",
         });
       }
     });

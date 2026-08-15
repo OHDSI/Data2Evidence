@@ -18,67 +18,72 @@ import { UserArtifactGroup } from '../user-artifact/entity/user-artifact-group.e
 import { UserArtifact } from '../user-artifact/entity/user-artifact.entity.ts';
 import { DatasetCode } from '../dataset/entity/dataset-code.entity.ts';
 import { DatasetCodeQuery } from '../dataset/entity/dataset-code-query.entity.ts';
+
+const _env = Deno.env.toObject();
+
+let _ssl: boolean | { rejectUnauthorized: boolean; ca: string } = JSON.parse(
+  _env.PG__SSL.toLowerCase(),
+);
+if (_env.PG__CA_ROOT_CERT) {
+  _ssl = {
+    rejectUnauthorized: true,
+    ca: _env.PG__CA_ROOT_CERT,
+  };
+}
+
+// Module-level singleton DataSource. It must be initialised exactly once and
+// before the HTTP server starts serving requests (see index.ts -> initialiseDataSource).
+// Otherwise a repository can issue a query before TypeORM has finished building
+// entity metadata, which surfaces as `No metadata for "Dataset" was found` and a
+// 500 on /system-portal/dataset/public/list.
+const dataSource = new DataSource({
+  type: 'postgres',
+  host: _env.PG_HOST,
+  port: parseInt(_env.PG_PORT),
+  username: _env.PG_USER,
+  password: _env.PG_PASSWORD,
+  database: _env.PG__DB_NAME,
+  schema: _env.PG_SCHEMA,
+  ssl: _ssl,
+  entities: [Feature, Config, UserArtifact, UserArtifactGroup, Dataset, DatasetDetail, DatasetTag, DatasetTagConfig, DatasetDashboard, DatasetRelease, DatasetAttribute, DatasetAttributeConfig, Notebook, DatasetCode, DatasetCodeQuery],
+});
+
+let _initPromise: Promise<DataSource> | null = null;
+
+// Idempotent: concurrent callers share a single initialize() promise so the
+// DataSource is never initialised twice (which can leave entity metadata unbuilt).
+export function initialiseDataSource(): Promise<DataSource> {
+  if (!_initPromise) {
+    _initPromise = dataSource.isInitialized
+      ? Promise.resolve(dataSource)
+      : dataSource.initialize();
+  }
+  return _initPromise;
+}
+
 @Injectable()
 export class PostgresService implements OnAppBootstrap, OnAppClose {
   private _env = Deno.env.toObject();
   public client: Client;
-  private dataSource: DataSource;
+  private dataSource = dataSource;
 
   constructor() {
-
-    let ssl = JSON.parse(this._env.PG__SSL.toLowerCase());
-    if (this._env.PG__CA_ROOT_CERT) {
-      ssl = {
-        rejectUnauthorized: true,
-        ca: this._env.PG__CA_ROOT_CERT,
-      };
-    }
-
     this.client = new Client({
       user: this._env.PG_USER,
       password: this._env.PG_PASSWORD,
       database: this._env.PG__DB_NAME,
       hostname: this._env.PG_HOST,
       schema: this._env.PG_SCHEMA,
-      ssl
-    });
-
-    this.dataSource = new DataSource({
-      type: 'postgres',
-      host: this._env.PG_HOST,
-      port: parseInt(this._env.PG_PORT),
-      username: this._env.PG_USER,
-      password: this._env.PG_PASSWORD,
-      database: this._env.PG__DB_NAME,
-      schema: this._env.PG_SCHEMA,
-      ssl,
-      entities: [Feature, Config, UserArtifact, UserArtifactGroup, Dataset, DatasetDetail, DatasetTag, DatasetTagConfig, DatasetDashboard, DatasetRelease, DatasetAttribute, DatasetAttributeConfig, Notebook, DatasetCode, DatasetCodeQuery],
+      ssl: _ssl
     });
   }
 
   getDataSource() {
-    if (!this.dataSource.isInitialized) {
-      this.dataSource.initialize();
-    }
     return this.dataSource;
   }
 
   async getDataSourceAsync() {
-    console.log('Getting DataSource:', {
-      isInitialized: this.dataSource.isInitialized,
-      hasMetadata: this.dataSource.entityMetadatas.length
-    });
-
-    if (!this.dataSource.isInitialized) {
-      console.log('Re-initializing DataSource...');
-      await this.dataSource.initialize();
-    }
-
-    if (this.dataSource.entityMetadatas.length === 0) {
-      console.error('No entity metadata loaded after initialization!');
-      await this.dataSource.synchronize();
-    }
-
+    await initialiseDataSource();
     return this.dataSource;
   }
 
@@ -87,11 +92,9 @@ export class PostgresService implements OnAppBootstrap, OnAppClose {
       await this.client.connect();
     }
 
-    // Initialize TypeORM and create tables
+    // Initialize TypeORM (build entity metadata + connect)
     try {
-      if (!this.dataSource.isInitialized) {
-        await this.dataSource.initialize();
-      }
+      await initialiseDataSource();
       console.log('TypeORM DataSource initialized');
     } catch (error) {
       console.error('Database initialization error:', error);
@@ -102,6 +105,9 @@ export class PostgresService implements OnAppBootstrap, OnAppClose {
   async onAppClose() {
     if (this.dataSource?.isInitialized) {
       await this.dataSource.destroy();
+      // Reset so a re-bootstrap (warm worker reuse) re-initialises the singleton
+      // instead of handing back this now-destroyed DataSource.
+      _initPromise = null;
     }
 
     if (this.client?.connected) {

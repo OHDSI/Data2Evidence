@@ -93,7 +93,8 @@ sap.ui.define([
 
 			deleteModeConfig: false,
 			deleteModeConfigAll: false,
-			deleteModeVersion: false
+			deleteModeVersion: false,
+			deleteSelectionCount: 0
 		};
 	};
 
@@ -343,7 +344,7 @@ sap.ui.define([
 			changeable: true,
 			attributes: [],
 			parentInteraction: [],
-			parentInteractionsMapping: { value: [], validity: { status: "valid", message: "" } },
+			parentInteractionsMapping: { value: "[]", validity: { status: "valid", message: "" } },
 			description: "",
 			isNew: true,
 			additionalInformation: "",
@@ -451,4 +452,3 @@ sap.ui.define([
 
 	return ConfigModelsData;
 });
-

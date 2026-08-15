@@ -23,18 +23,6 @@ export class CachedbController {
       await this.createCachedbFileFlowRun(req, res);
     });
 
-    // POST /cachedb/create-fhir-file
-    this.router.post(
-      "/create-fhir-file",
-      async (req: Request, res: Response) => {
-        const errors = validationResult(req);
-        if (!errors.isEmpty()) {
-          return res.status(400).json({ errors: errors.array() });
-        }
-        await this.createFhirCacheFileFlowRun(req, res);
-      }
-    );
-
     // GET /cachedb/results/:flowRunId
     this.router.get(
       "/results/:flowRunId",
@@ -105,7 +93,7 @@ export class CachedbController {
       res.send(result);
     } catch (error) {
       console.error(`Error creating cachedb file flow run: ${error}`);
-      res.status(500).send(`Error occurs: ${error}`);
+      res.status(500).send("Error creating cachedb file flow run");
     }
   }
 
@@ -119,7 +107,7 @@ export class CachedbController {
       res.send(result);
     } catch (error) {
       console.error(`Error creating fhir cache file flow run: ${error}`);
-      res.status(500).send(`Error occurs: ${error}`);
+      res.status(500).send("Error creating fhir cache file flow run");
     }
   }
 
@@ -134,7 +122,7 @@ export class CachedbController {
       res.send(result);
     } catch (error) {
       console.error(`Error getting cachedb file results: ${error}`);
-      res.status(500).send(`Error occurs: ${error}`);
+      res.status(500).send("Error getting cachedb file results");
     }
   }
 
@@ -149,7 +137,7 @@ export class CachedbController {
       res.send(result);
     } catch (error) {
       console.error(`Error getting completed flow run id: ${error}`);
-      res.status(500).send(`Error occurs: ${error}`);
+      res.status(500).send("Error getting completed flow run id");
     }
   }
 }

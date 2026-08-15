@@ -1,6 +1,15 @@
 import { Knex } from "knex";
 import { env } from "../../env"
-import { cdwFHIRConfigDuckdb, paFHIRConfigDuckdb } from "../configs/fhirConfigDuckdb";
+import { cdwFHIRConfigDuckdb, paFHIRConfigDuckdb } from "../configs/fhirConfigDuckdb.ts";
+import {
+    waveformOccurrenceInteraction,
+    waveformRegistryInteraction,
+    dimWaveformOcc,
+    dimWaveformReg,
+    waveformTableMappingAdditions,
+    waveformOccurrenceInteractionFiltercard,
+    waveformRegistryInteractionFiltercard,
+} from "../configs/waveformConfigDuckdb.ts";
 
 export async function seed(knex: Knex): Promise<void> {
   // Inserts seed entries
@@ -35,6 +44,34 @@ export async function seed(knex: Knex): Promise<void> {
         Created: "2025-03-07 19:30:54",
         Modifier: "ALICE",
         Modified: "2025-03-07 20:56:54",
+      },
+      {
+        Id: "8775a19f-0b6f-4e76-9b72-7794a0c66a73",
+        Version: "1",
+        Status: "A",
+        Name: "WAVEFORM_DM",
+        Type: "HC/HPH/CDW",
+        Data: cdwWaveformConfig,
+        ParentId: "",
+        ParentVersion: "",
+        Creator: "ALICE",
+        Created: "2026-07-20 00:00:00",
+        Modifier: "ALICE",
+        Modified: "2026-07-20 00:00:00",
+      },
+      {
+        Id: "e618155c-feb0-48a8-9ccc-629e2824a1f7",
+        Version: "A",
+        Status: "",
+        Name: "WAVEFORM",
+        Type: "HC/MRI/PA",
+        Data: paWaveformConfig,
+        ParentId: "8775a19f-0b6f-4e76-9b72-7794a0c66a73",
+        ParentVersion: "1",
+        Creator: "ALICE",
+        Created: "2026-07-20 00:00:00",
+        Modifier: "ALICE",
+        Modified: "2026-07-20 00:00:00",
       },
       {
         Id: "d10f83a0-ade9-4a33-90ae-cf760813953b",
@@ -8463,10 +8500,14 @@ export const cdwConfig = {
                                 "visible": true
                             }
                         ],
-                        "type": "num",
+                        "type": "text",
                         "expression": "@COHORT.cohort_definition_id",
+                        "referenceFilter": "CONTAINS (@RESULT_COHORT_DEF.cohort_definition_name, '%@SEARCH_QUERY%', FUZZY (0.5))",
+                        "referenceExpression": "@RESULT_COHORT_DEF.COHORT_DEFINITION_ID",
                         "order": 0,
                         "domainFilter": "",
+                        "includeDescendants": false,
+                        "includeDescendantsExpression": "",
                         "standardConceptCodeFilter": "",
                         "cohortDefinitionKey": "",
                         "conceptIdentifierType": "",
@@ -13302,7 +13343,10 @@ const paConfig = {
             "imageDownloadEnabled": true,
             "collectionEnabled": true,
             "beginVisible": true,
-            "fillMissingValuesEnabled": true
+            "fillMissingValuesEnabled": true,
+            "overlappingHistogramEnabled": false,
+            "overlappingBarChartEnabled": false,
+            "kernelDensityPlotEnabled": false
         },
         "boxplot": {
             "visible": true,
@@ -13331,7 +13375,8 @@ const paConfig = {
             "downloadEnabled": true,
             "collectionEnabled": true,
             "beginVisible": true,
-            "pageSize": 20
+            "pageSize": 20,
+            "maxPatientsExport": 2000000
         },
         "vb": {
             "visible": true,
@@ -13365,7 +13410,7 @@ const paConfig = {
         "atlasCohortDefinition": false,
         "usePaAtlas": false,
         "inclusionReport": false,
-        "intersectViewInclusionReport": false
+        "intersectViewInclusionReport": false,
     }
 };
 
@@ -27169,7 +27214,10 @@ const paConfigDuckdb = {
             "imageDownloadEnabled": true,
             "collectionEnabled": true,
             "beginVisible": true,
-            "fillMissingValuesEnabled": true
+            "fillMissingValuesEnabled": true,
+            "overlappingHistogramEnabled": false,
+            "overlappingBarChartEnabled": false,
+            "kernelDensityPlotEnabled": false
         },
         "boxplot": {
             "visible": true,
@@ -27198,7 +27246,8 @@ const paConfigDuckdb = {
             "downloadEnabled": true,
             "collectionEnabled": true,
             "beginVisible": true,
-            "pageSize": 20
+            "pageSize": 20,
+            "maxPatientsExport": 2000000
         },
         "vb": {
             "visible": true,
@@ -27229,10 +27278,10 @@ const paConfigDuckdb = {
         "calcViewAccessPoint": true,
         "externalAccessPoints": true,
         "cohortEntryExit": false,
-        "atlasCohortDefinition": true,
+        "atlasCohortDefinition": false,
         "usePaAtlas": false,
         "inclusionReport": true,
-        "intersectViewInclusionReport": false
+        "intersectViewInclusionReport": false,
     }
 };
 
@@ -28798,6 +28847,9 @@ const paI2b2ConfigDuckdb = {
       collectionEnabled: true,
       beginVisible: true,
       fillMissingValuesEnabled: true,
+      overlappingHistogramEnabled: false,
+      overlappingBarChartEnabled: false,
+      kernelDensityPlotEnabled: false,
     },
     boxplot: {
       visible: true,
@@ -28827,6 +28879,7 @@ const paI2b2ConfigDuckdb = {
       collectionEnabled: true,
       beginVisible: true,
       pageSize: 20,
+      maxPatientsExport: 2000000,
     },
     vb: {
       visible: true,
@@ -28859,7 +28912,7 @@ const paI2b2ConfigDuckdb = {
     externalAccessPoints: true,
     cohortEntryExit: false,
     inclusionReport: false,
-    intersectViewInclusionReport: false
+    intersectViewInclusionReport: false,
   },
 };
 
@@ -34643,7 +34696,10 @@ const pajsonfhirConfigDuckdb = {
             "imageDownloadEnabled": true,
             "collectionEnabled": true,
             "beginVisible": true,
-            "fillMissingValuesEnabled": true
+            "fillMissingValuesEnabled": true,
+            "overlappingHistogramEnabled": false,
+            "overlappingBarChartEnabled": false,
+            "kernelDensityPlotEnabled": false
         },
         "boxplot": {
             "visible": true,
@@ -34672,7 +34728,8 @@ const pajsonfhirConfigDuckdb = {
             "downloadEnabled": true,
             "collectionEnabled": true,
             "beginVisible": true,
-            "pageSize": 20
+            "pageSize": 20,
+            "maxPatientsExport": 2000000
         },
         "vb": {
             "visible": true,
@@ -34706,7 +34763,7 @@ const pajsonfhirConfigDuckdb = {
         "atlasCohortDefinition": true,
         "usePaAtlas": false,
         "inclusionReport": false,
-        "intersectViewInclusionReport": false
+        "intersectViewInclusionReport": false,
     }
 };
 
@@ -38129,7 +38186,10 @@ const omopHanaLeanPAConfig = {
             "imageDownloadEnabled": true,
             "collectionEnabled": true,
             "beginVisible": true,
-            "fillMissingValuesEnabled": true
+            "fillMissingValuesEnabled": true,
+            "overlappingHistogramEnabled": false,
+            "overlappingBarChartEnabled": false,
+            "kernelDensityPlotEnabled": false
         },
         "boxplot": {
             "visible": true,
@@ -38158,7 +38218,8 @@ const omopHanaLeanPAConfig = {
             "downloadEnabled": true,
             "collectionEnabled": true,
             "beginVisible": true,
-            "pageSize": 20
+            "pageSize": 20,
+            "maxPatientsExport": 2000000
         },
         "vb": {
             "visible": true,
@@ -38192,6 +38253,42 @@ const omopHanaLeanPAConfig = {
         "atlasCohortDefinition": false,
         "usePaAtlas": false,
         "inclusionReport": false,
-        "intersectViewInclusionReport": false
+        "intersectViewInclusionReport": false,
     }
+};
+
+export const cdwWaveformConfig = {
+    ...cdwConfigDuckdb,
+    patient: {
+        ...cdwConfigDuckdb.patient,
+        interactions: {
+            ...cdwConfigDuckdb.patient.interactions,
+            waveformoccurrence: waveformOccurrenceInteraction,
+            wfreg: waveformRegistryInteraction
+        }
+    },
+    advancedSettings: {
+        ...cdwConfigDuckdb.advancedSettings,
+        tableTypePlaceholderMap: {
+            ...cdwConfigDuckdb.advancedSettings.tableTypePlaceholderMap,
+            dimTables: [
+                ...cdwConfigDuckdb.advancedSettings.tableTypePlaceholderMap.dimTables,
+                dimWaveformOcc,
+                dimWaveformReg
+            ]
+        },
+        tableMapping: {
+            ...cdwConfigDuckdb.advancedSettings.tableMapping,
+            ...waveformTableMappingAdditions
+        }
+    }
+};
+
+export const paWaveformConfig = {
+    ...paConfigDuckdb,
+    filtercards: [
+        ...paConfigDuckdb.filtercards,
+        waveformOccurrenceInteractionFiltercard,
+        waveformRegistryInteractionFiltercard
+    ]
 };

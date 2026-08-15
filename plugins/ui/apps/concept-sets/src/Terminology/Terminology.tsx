@@ -1,10 +1,3 @@
-import React, {
-  ChangeEvent,
-  FC,
-  useCallback,
-  useEffect,
-  useState,
-} from "react";
 import Box from "@mui/material/Box";
 import Checkbox from "@mui/material/Checkbox";
 import Drawer from "@mui/material/Drawer";
@@ -13,29 +6,40 @@ import Tab from "@mui/material/Tab";
 import Tabs from "@mui/material/Tabs";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
-import { Button } from "@portal/components";
-import TerminologyList from "./components/TerminologyList/TerminologyList";
-import TerminologyDetail from "./components/TerminologyDetail/TerminologyDetail";
-import {
-  OnCloseReturnValues,
-  FhirValueSetExpansionContainsWithExt,
-  TerminologyResult,
-  ConceptSetWithConceptDetails,
-  ConceptSetConcept,
-} from "./utils/types";
-import { tabNames } from "./utils/constants";
-import { TabName, ConceptSet } from "./utils/types";
-import { usePortal, useTranslation } from "../hooks";
+import { Button, Chip } from "@portal/components";
+import TaskAltIcon from "@mui/icons-material/TaskAlt";
+import CloseIcon from "@mui/icons-material/Close";
+import React, {
+  ChangeEvent,
+  FC,
+  useCallback,
+  useEffect,
+  useState,
+} from "react";
 import { api } from "../axios/api";
+import { usePortal, useTranslation } from "../hooks";
+import TerminologyDetail from "./components/TerminologyDetail/TerminologyDetail";
+import TerminologyList from "./components/TerminologyList/TerminologyList";
+import { tabNames } from "./utils/constants";
 import {
   mapd2eWebapiConcept,
   mapd2eWebapiConceptSet,
 } from "./utils/d2eWebapiMappers";
+import {
+  ConceptSet,
+  ConceptSetConcept,
+  ConceptSetWithConceptDetails,
+  FhirValueSetExpansionContainsWithExt,
+  OnCloseReturnValues,
+  TabName,
+  TerminologyResult,
+} from "./utils/types";
 
 import { i18nKeys } from "../context/state";
 import "./Terminology.scss";
 
 const FEATURE_ADMIN_ONLY_SHARING = "adminOnlySharing";
+const FEATURE_CONCEPT_RECORD_COUNTS = "conceptRecordCounts";
 
 export interface TerminologyProps {
   onConceptIdSelect?: (
@@ -45,7 +49,7 @@ export interface TerminologyProps {
   userId?: string;
   open?: boolean;
   onClose?: (values: OnCloseReturnValues) => void;
-  selectedConceptSetId?: number;
+  selectedConceptSetId?: string;
   mode?:
     | "CONCEPT_MAPPING"
     | "CONCEPT_SET"
@@ -58,6 +62,26 @@ export interface TerminologyProps {
   }[];
   initialSelectedConcepts?: FhirValueSetExpansionContainsWithExt[];
   isAtlas: boolean;
+  // Only populated for mode === "CONCEPT_MAPPING": the source row being mapped,
+  // shown in the drawer header so the user knows what they're suggesting a concept for.
+  sourceRow?: {
+    code?: string;
+    name?: string;
+    frequency?: string;
+    description?: string;
+    status?: string;
+  };
+  // CONCEPT_MAPPING only: the row's existing suggestions, shown as a "Suggested concepts"
+  // section above the search results.
+  suggestedConcepts?: {
+    conceptId: number;
+    conceptName: string;
+    conceptCode: string;
+    domainId: string;
+    vocabularyId: string;
+  }[];
+  // CONCEPT_MAPPING only: approve the picked concept for the row.
+  onApprove?: (conceptData: FhirValueSetExpansionContainsWithExt) => void;
 }
 
 const WithDrawer = ({
@@ -65,20 +89,34 @@ const WithDrawer = ({
   children,
   open,
   isDrawer,
+  mode,
 }: {
   onClose?: (values: OnCloseReturnValues) => void;
   children: JSX.Element;
   open?: boolean;
   isDrawer: boolean;
-}) =>
-  isDrawer ? (
+  mode?: TerminologyProps["mode"];
+}) => {
+  const isConceptMapping = mode === "CONCEPT_MAPPING";
+  return isDrawer ? (
     <Drawer
       variant="temporary"
       open={open}
       onClose={onClose}
       anchor="right"
+      sx={{ zIndex: 11000 }}
       PaperProps={{
-        sx: { width: "85%", overflowY: "hidden" },
+        // CONCEPT_MAPPING gets its width from the `.terminology-concept-mapping-drawer`
+        // class (see Terminology.scss) so it matches the mapping node drawer. All other
+        // modes keep the existing inline 85% width.
+        className: isConceptMapping
+          ? "terminology-concept-mapping-drawer"
+          : undefined,
+        sx: {
+          ...(!isConceptMapping && { width: "85%" }),
+          overflowY: "hidden",
+          zIndex: 11001,
+        },
       }}
     >
       {children}
@@ -86,6 +124,7 @@ const WithDrawer = ({
   ) : (
     children
   );
+};
 
 const NameSection = ({
   conceptSetName,
@@ -107,7 +146,7 @@ const NameSection = ({
   isUserConceptSet: boolean;
   saveConceptSet(): void;
   isLoading: boolean;
-  conceptSetId: number | null;
+  conceptSetId: string | null;
   onClickClose(): void;
   errorMsg: string;
   canShare: boolean;
@@ -142,7 +181,7 @@ const NameSection = ({
           value={conceptSetName}
           onChange={(e) => setConceptSetName(e.target.value)}
           onBlur={(e) => setConceptSetName(e.target.value.trim())}
-          disabled={isLoading}
+          disabled={isLoading || !isUserConceptSet}
         />
         <Box
           sx={{
@@ -339,16 +378,23 @@ export const Terminology: FC<TerminologyProps> = ({
   defaultFilters,
   initialSelectedConcepts,
   isAtlas,
+  sourceRow,
+  suggestedConcepts,
+  onApprove,
 }: TerminologyProps) => {
   const { getText } = useTranslation();
   const [conceptId, setConceptId] = useState<null | number>(null);
+  // CONCEPT_MAPPING only: the single concept currently picked via the radio,
+  // pending confirmation via the "Suggest" button.
+  const [mappingSelectedConcept, setMappingSelectedConcept] =
+    useState<FhirValueSetExpansionContainsWithExt | null>(null);
   const [showDetails, setShowDetails] = useState(false);
   const [selectedConcepts, setSelectedConcepts] = useState<
     FhirValueSetExpansionContainsWithExt[]
   >(initialSelectedConcepts || []);
   const [tab, setTab] = useState<TabName>(tabNames.SEARCH);
   const [conceptSetName, setConceptSetName] = useState("");
-  const [conceptSetId, setConceptSetId] = useState<number | null>(null);
+  const [conceptSetId, setConceptSetId] = useState<string | null>(null);
   const [conceptSetShared, setConceptSetShared] = useState(false);
   const [isUserConceptSet, setIsUserConceptSet] = useState(false);
   const [isConceptSetLoading, setIsConceptSetLoading] = useState(false);
@@ -361,12 +407,17 @@ export const Terminology: FC<TerminologyProps> = ({
   const { datasetId, userName, features, featuresLoading } = usePortal();
   const activeDatasetId = selectedDatasetId || datasetId;
   const isConceptSet = mode === "CONCEPT_SET";
+  const isConceptMapping = mode === "CONCEPT_MAPPING";
 
   // Check if user can share based on adminOnlySharing feature flag
   const adminOnlySharingEnabled =
     features?.find((f) => f.feature === FEATURE_ADMIN_ONLY_SHARING)
       ?.isEnabled ?? false;
   const canShare = featuresLoading ? false : !adminOnlySharingEnabled;
+  const showConceptRecordCounts = featuresLoading
+    ? true
+    : features?.find((f) => f.feature === FEATURE_CONCEPT_RECORD_COUNTS)
+        ?.isEnabled ?? true;
   const isConceptMultiSelect = mode === "CONCEPT_MULTI_SELECT";
 
   // Show simplified interface for multi-select mode
@@ -400,6 +451,7 @@ export const Terminology: FC<TerminologyProps> = ({
     setConceptSetShared(false);
     setIsUserConceptSet(false);
     setConceptsResult(null);
+    setMappingSelectedConcept(null);
   }, []);
 
   const changeTab = useCallback((tabName: TabName) => {
@@ -417,7 +469,7 @@ export const Terminology: FC<TerminologyProps> = ({
   );
 
   const checkIfConceptSetExists = async (
-    conceptSetId: number,
+    conceptSetId: string,
     conceptSetName: string,
     datasetId: string,
   ): Promise<number> => {
@@ -429,10 +481,13 @@ export const Terminology: FC<TerminologyProps> = ({
     return Number(result);
   };
 
+  type ConceptSetDraft = Pick<ConceptSet, "concepts" | "name" | "shared"> &
+    Partial<Pick<ConceptSet, "userName">>;
+
   const createConceptSet = async (
-    conceptSet: Omit<ConceptSet, "id">,
+    conceptSet: ConceptSetDraft,
     datasetId: string,
-  ): Promise<number> => {
+  ): Promise<string> => {
     const conceptSetId = await api.d2eWebapi.createConceptSet(
       conceptSet.name,
       datasetId,
@@ -450,16 +505,12 @@ export const Terminology: FC<TerminologyProps> = ({
   };
 
   const updateConceptSet = async (
-    conceptSetId: number,
+    conceptSetId: string,
     conceptSet: Partial<ConceptSet>,
     datasetId: string,
-  ): Promise<number> => {
+  ): Promise<string> => {
     // Update concept set
-    await api.d2eWebapi.updateConceptSet(
-      conceptSetId,
-      { id: Number(conceptSetId), ...conceptSet },
-      datasetId,
-    );
+    await api.d2eWebapi.updateConceptSet(conceptSetId, conceptSet, datasetId);
     // Update concept set items
     const conceptSetItems = conceptSet.concepts ? conceptSet.concepts : [];
     await api.d2eWebapi.updateConceptSetItems(
@@ -467,7 +518,7 @@ export const Terminology: FC<TerminologyProps> = ({
       conceptSetItems,
       datasetId,
     );
-    return Number(conceptSetId);
+    return conceptSetId;
   };
 
   const saveConceptSet = useCallback(async () => {
@@ -491,9 +542,12 @@ export const Terminology: FC<TerminologyProps> = ({
     };
     setIsConceptSetLoading(true);
     try {
-      // 0 is the conceptSetId placeholder when creating a new concept set
+      // When creating a new concept set there is no id yet. Use "0" (a
+      // never-existing id) as the exclusion sentinel: the backend route param
+      // schema rejects an empty segment ("/conceptset//exists" -> 400), and
+      // "0" still surfaces same-name duplicates across both stores.
       const isNameUsed = await checkIfConceptSetExists(
-        conceptSetId || 0,
+        conceptSetId || "0",
         conceptSet.name,
         activeDatasetId,
       );
@@ -508,14 +562,16 @@ export const Terminology: FC<TerminologyProps> = ({
       }
 
       const updatedConceptSetId = conceptSetId
-        ? await updateConceptSet(
-            conceptSetId,
-            { id: Number(conceptSetId), ...conceptSet },
-            activeDatasetId,
-          )
+        ? await updateConceptSet(conceptSetId, conceptSet, activeDatasetId)
         : await createConceptSet(conceptSet, activeDatasetId);
       setErrorMsg("");
-      setCurrentConceptSet({ ...conceptSet, id: updatedConceptSetId });
+      // Refetch the persisted concept set so currentConceptSet carries
+      // server-controlled fields (externalId, source, access flags).
+      const savedConceptSet = await getConceptSetWithConceptDetails(
+        updatedConceptSetId,
+        activeDatasetId,
+      );
+      setCurrentConceptSet(savedConceptSet);
       setConceptSetId(updatedConceptSetId);
       return;
     } catch {
@@ -538,7 +594,7 @@ export const Terminology: FC<TerminologyProps> = ({
   ]);
 
   const getConceptSetWithConceptDetails = async (
-    conceptSetId: number,
+    conceptSetId: string,
     activeDatasetId: string,
   ): Promise<ConceptSetWithConceptDetails> => {
     const [conceptSet, conceptSetExpression] = await Promise.all([
@@ -564,7 +620,7 @@ export const Terminology: FC<TerminologyProps> = ({
   };
 
   const getConceptSet = useCallback(
-    async (conceptSetId: number) => {
+    async (conceptSetId: string) => {
       if (!activeDatasetId) {
         return;
       }
@@ -578,23 +634,31 @@ export const Terminology: FC<TerminologyProps> = ({
         sortAndSetSelectedConcepts(conceptSet.concepts);
         setCurrentConceptSet(conceptSet);
         setConceptSetShared(conceptSet.shared);
-        setIsUserConceptSet(conceptSet.createdBy === userName);
+        setIsUserConceptSet(
+          !!conceptSet.hasWriteAccess || conceptSet.createdBy === userName,
+        );
+        setErrorMsg("");
         return;
       } finally {
         setIsConceptSetLoading(false);
       }
     },
-    [activeDatasetId],
+    [activeDatasetId, userName],
   );
   const isDrawer = !!onClose;
 
-  const terminologyHeaderHeightPx = 40;
+  // CONCEPT_MAPPING renders an extra source-info line under the title, so its
+  // header is taller than the plain 40px header used by every other mode.
+  const terminologyHeaderHeightPx = isConceptMapping ? 64 : 40;
   const portalHeaderHeightPx = 56;
   const conceptSetNameHeightPx = 60;
   const mainBodyPadding = 2 * 32;
   const mainContentPadding = 2 * 10;
   const conceptSearchAndSetsTabs = 48;
   const datasetSelectorHeightPx = 38;
+  // CONCEPT_MAPPING adds a bottom "Suggest" footer; reserve its height so the search/table
+  // region doesn't push it below the viewport (the drawer paper is overflowY:hidden).
+  const suggestFooterHeightPx = 80;
   const searchAndDetailsHeightOffsetPx =
     (isDrawer
       ? terminologyHeaderHeightPx
@@ -603,10 +667,15 @@ export const Terminology: FC<TerminologyProps> = ({
         conceptSearchAndSetsTabs +
         mainContentPadding) +
     (isConceptSet ? conceptSetNameHeightPx : 0) +
+    (isConceptMapping ? suggestFooterHeightPx : 0) +
     (!activeDatasetId ? datasetSelectorHeightPx : 0);
 
   const onSelectConceptId = useCallback(
     (concept: FhirValueSetExpansionContainsWithExt) => {
+      if (isConceptSet && !isUserConceptSet) {
+        return;
+      }
+
       if (isConceptSet || isConceptMultiSelect) {
         const selectedConceptsCopy = JSON.parse(
           JSON.stringify(selectedConcepts),
@@ -632,6 +701,12 @@ export const Terminology: FC<TerminologyProps> = ({
         return;
       }
       if (onConceptIdSelect) {
+        // CONCEPT_MAPPING: don't fire/close on pick — just record the radio
+        // selection. The user confirms via the "Suggest" footer button.
+        if (mode === "CONCEPT_MAPPING") {
+          setMappingSelectedConcept(concept);
+          return;
+        }
         onConceptIdSelect(concept);
         resetState();
         return;
@@ -640,6 +715,8 @@ export const Terminology: FC<TerminologyProps> = ({
     [
       isConceptSet,
       isConceptMultiSelect,
+      isUserConceptSet,
+      mode,
       onConceptIdSelect,
       resetState,
       selectedConcepts,
@@ -649,6 +726,10 @@ export const Terminology: FC<TerminologyProps> = ({
 
   const toggleDescendantsAndMapped = useCallback(
     (conceptId: number, type: "DESCENDANTS" | "MAPPED" | "EXCLUDE") => {
+      if (!isUserConceptSet) {
+        return;
+      }
+
       const selectedConceptsCopy = JSON.parse(
         JSON.stringify(selectedConcepts),
       ) as FhirValueSetExpansionContainsWithExt[];
@@ -665,12 +746,12 @@ export const Terminology: FC<TerminologyProps> = ({
       });
       sortAndSetSelectedConcepts(selectedConceptsCopy);
     },
-    [selectedConcepts, sortAndSetSelectedConcepts],
+    [isUserConceptSet, selectedConcepts, sortAndSetSelectedConcepts],
   );
 
   const showAddIcon = !!(
     onConceptIdSelect ||
-    isConceptSet ||
+    (isConceptSet && isUserConceptSet) ||
     isConceptMultiSelect
   );
 
@@ -713,12 +794,7 @@ export const Terminology: FC<TerminologyProps> = ({
     } else if (isConceptSet) {
       // Return concept set for concept set mode
       const onCloseReturnValues: OnCloseReturnValues = {
-        currentConceptSet: currentConceptSet
-          ? {
-              ...currentConceptSet,
-              id: currentConceptSet.id.toString(),
-            }
-          : currentConceptSet,
+        currentConceptSet: currentConceptSet,
       };
       onClose(onCloseReturnValues);
     } else {
@@ -740,7 +816,12 @@ export const Terminology: FC<TerminologyProps> = ({
     return null;
   }
   return (
-    <WithDrawer onClose={onClickClose} isDrawer={isDrawer} open={open}>
+    <WithDrawer
+      onClose={onClickClose}
+      isDrawer={isDrawer}
+      open={open}
+      mode={mode}
+    >
       <div
         className="terminology__container"
         data-testid="terminology-container"
@@ -748,37 +829,105 @@ export const Terminology: FC<TerminologyProps> = ({
         {isDrawer && (
           <div
             style={{
-              height: "40px",
+              minHeight: isConceptMapping ? "64px" : "40px",
               width: "100%",
-              backgroundColor: "var(--color-table-row-bg, #edf2f7)",
+              backgroundColor: isConceptMapping ? "#ffffff" : "var(--color-table-row-bg, #edf2f7)",
               display: "flex",
               alignItems: "center",
               justifyContent: "space-between",
+              padding: isConceptMapping ? "8px 0" : undefined,
             }}
           >
             <div
               style={{
-                color: "var(--color-primary, #000080)",
-                marginLeft: 10,
-                fontWeight: 500,
+                marginLeft: 24,
+                display: "flex",
+                flexDirection: "column",
+                gap: isConceptMapping ? 4 : 0,
               }}
             >
-              {isConceptSet
-                ? getText(i18nKeys.TERMINOLOGY__CONCEPT_SETS)
-                : isConceptMultiSelect
-                ? getText(i18nKeys.TERMINOLOGY__SELECT_CONCEPTS)
-                : getText(i18nKeys.TERMINOLOGY__CONCEPTS)}
+              <div
+                style={{
+                  color: "var(--color-primary, #000080)",
+                  fontWeight: 500,
+                  fontSize: 18,
+                }}
+              >
+                {isConceptMapping
+                  ? getText(i18nKeys.TERMINOLOGY__CONCEPTS)
+                  : isConceptSet
+                  ? getText(i18nKeys.TERMINOLOGY__CONCEPT_SETS)
+                  : isConceptMultiSelect
+                  ? getText(i18nKeys.TERMINOLOGY__SELECT_CONCEPTS)
+                  : getText(i18nKeys.TERMINOLOGY__CONCEPTS)}
+              </div>
+              {isConceptMapping && sourceRow ? (
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 6,
+                    fontSize: 14,
+                    // The app self-hosts the *variable* family ("IBM Plex Sans Variable" via
+                    // @fontsource-variable/ibm-plex-sans); plain "IBM Plex Sans" isn't loaded,
+                    // so name the variable family first to actually get IBM Plex.
+                    fontFamily: '"IBM Plex Sans Variable", "IBM Plex Sans", sans-serif',
+                    fontWeight: 600,
+                    lineHeight: 1.5,
+                    color: "#000000",
+                  }}
+                >
+                  <span>
+                    {getText(i18nKeys.TERMINOLOGY__SOURCE)}:{" "}
+                    {sourceRow.code ?? ""} |{" "}
+                    {getText(i18nKeys.TERMINOLOGY__NAME)}:{" "}
+                    {sourceRow.name ?? ""} |{" "}
+                    {getText(i18nKeys.TERMINOLOGY__FREQUENCY)}:{" "}
+                    {sourceRow.frequency ?? ""} |{" "}
+                    {getText(i18nKeys.TERMINOLOGY__DESCRIPTION)}:{" "}
+                    {sourceRow.description ?? ""}
+                  </span>
+                  {sourceRow.status ? (
+                    sourceRow.status === "approved" ? (
+                      // Match the mapping-row Approved chip (mint bg + green text/check icon).
+                      <Chip
+                        label="Approved"
+                        size="small"
+                        icon={<TaskAltIcon fontSize="small" />}
+                        sx={{
+                          backgroundColor: "#E1FFF6",
+                          color: "#00875A",
+                          "& .MuiChip-icon": { color: "#00875A" },
+                        }}
+                      />
+                    ) : sourceRow.status === "suggested" ? (
+                      // Match the mapping-row Suggested chip, incl. the "(N)" suggestion count.
+                      <Chip
+                        label={`Suggested (${suggestedConcepts?.length ?? 0})`}
+                        size="small"
+                        sx={{ backgroundColor: "#E5E6F2", color: "#000080" }}
+                      />
+                    ) : (
+                      <Chip
+                        label={sourceRow.status.charAt(0).toUpperCase() + sourceRow.status.slice(1)}
+                        size="small"
+                      />
+                    )
+                  ) : null}
+                </div>
+              ) : null}
             </div>
 
             <div
               style={{
-                color: "var(--color-primary, #000080)",
-                marginRight: 10,
+                marginRight: 24,
                 cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
               }}
               onClick={onClickClose}
             >
-              x
+              <CloseIcon sx={{ width: 24, height: 24, color: "var(--color-primary, #000080)" }} />
             </div>
           </div>
         )}
@@ -857,6 +1006,9 @@ export const Terminology: FC<TerminologyProps> = ({
                   defaultFilters={defaultFilters}
                   mode={mode}
                   isAtlas={isAtlas}
+                  showConceptRecordCounts={showConceptRecordCounts}
+                  mappingSelectedConcept={mappingSelectedConcept}
+                  suggestedConcepts={suggestedConcepts}
                 />
               )}
             </div>
@@ -876,6 +1028,45 @@ export const Terminology: FC<TerminologyProps> = ({
             </div>
           </div>
         </div>
+        {isConceptMapping && (
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "flex-end",
+              alignItems: "center",
+              gap: "10px",
+              padding: "10px 20px 24px",
+              borderTop: "1px solid #d4d4d4",
+            }}
+          >
+            <Button
+              variant="outlined"
+              text={getText(i18nKeys.TERMINOLOGY__SUGGEST)}
+              // Disable Suggest for a concept that's already one of the row's suggestions
+              // (adding it again is a duplicate) - the user should Approve it instead.
+              disabled={
+                !mappingSelectedConcept ||
+                !!suggestedConcepts?.some(
+                  (s) => s.conceptId === mappingSelectedConcept?.conceptId,
+                )
+              }
+              onClick={() => {
+                if (mappingSelectedConcept) {
+                  onConceptIdSelect?.(mappingSelectedConcept);
+                }
+              }}
+            />
+            <Button
+              text={getText(i18nKeys.TERMINOLOGY__APPROVE)}
+              disabled={!mappingSelectedConcept}
+              onClick={() => {
+                if (mappingSelectedConcept) {
+                  onApprove?.(mappingSelectedConcept);
+                }
+              }}
+            />
+          </div>
+        )}
       </div>
     </WithDrawer>
   );

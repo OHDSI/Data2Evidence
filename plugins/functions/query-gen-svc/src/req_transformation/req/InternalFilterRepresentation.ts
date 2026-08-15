@@ -188,29 +188,29 @@ export class InternalFilterRepresentation implements Request {
                 fcArray.forEach((fc) => {
                     if (fc._isEntry) {
                         entryExitOverride.entry.dataType = FastUtil.tokenizeAndJoin(
-                            fc._configPath,
-                            Keys.TERM_DELIMITER_PRD,
-                            1
-                        );
+                                fc._configPath,
+                                Keys.TERM_DELIMITER_PRD,
+                                1
+                            );
 
                         entryExitOverride.entry.instanceID = FastUtil.tokenizeAndJoin(
-                            fc._instanceID,
-                            Keys.TERM_DELIMITER_PRD,
-                            1
-                        );
+                                fc._instanceID,
+                                Keys.TERM_DELIMITER_PRD,
+                                1
+                            );
                     }
                     else if (fc._isExit) {
                         entryExitOverride.exit.dataType = FastUtil.tokenizeAndJoin(
-                            fc._configPath,
-                            Keys.TERM_DELIMITER_PRD,
-                            1
-                        );
+                                fc._configPath,
+                                Keys.TERM_DELIMITER_PRD,
+                                1
+                            );
 
                         entryExitOverride.exit.instanceID = FastUtil.tokenizeAndJoin(
-                            fc._instanceID,
-                            Keys.TERM_DELIMITER_PRD,
-                            1
-                        );
+                                fc._instanceID,
+                                Keys.TERM_DELIMITER_PRD,
+                                1
+                            );
                     }
                 });
             });
@@ -220,7 +220,7 @@ export class InternalFilterRepresentation implements Request {
                 new BaseNode(
                     "entry",
                     `patient.interactions.${entryExitOverride.entry.dataType}.${entryExitOverride.entry.instanceID}.attributes.startdate`
-                    )
+                )
                     .withIdentifier(`patient.interactions.${entryExitOverride.entry.dataType}.${entryExitOverride.entry.instanceID}`)
                     .withTemplateId(`patient-interactions-${entryExitOverride.entry.dataType}`)
                     .withDataType(entryExitOverride.entry.dataType)
@@ -229,7 +229,7 @@ export class InternalFilterRepresentation implements Request {
                 new BaseNode(
                     "exit",
                     `patient.interactions.${entryExitOverride.exit.dataType}.${entryExitOverride.exit.instanceID}.attributes.enddate`
-                    )
+                )
                     .withIdentifier(`patient.interactions.${entryExitOverride.exit.dataType}.${entryExitOverride.exit.instanceID}`)
                     .withTemplateId(`patient-interactions-${entryExitOverride.exit.dataType}`)
                     .withDataType(entryExitOverride.exit.dataType)
@@ -275,7 +275,7 @@ export class InternalFilterRepresentation implements Request {
                 e.alias = "PEE";
             });
 
-         
+
             this.parserContainers.push(entryExitEvent);
         }
     }
@@ -786,28 +786,27 @@ export class InternalFilterRepresentation implements Request {
                     );
                 }
                 if (filtercard._parentInteraction) {
-                    node.attributeList.push(
-                        new BaseNode(Keys.MRITERM_PARENTINTERACTION)
-                            .withAlias(
-                                FastUtil.tokenizeAndJoin(
-                                    filtercard._instanceID,
-                                    Keys.TERM_DELIMITER_PRD,
-                                    2
-                                )
-                            )
-                            .withFilter([
-                                new Expression(
-                                    Keys.SQLTERM_INEQUALITY_SYMBOL_EQUAL,
-                                    FastUtil.tokenizeAndJoin(
-                                        filtercard._parentInteraction.id,
-                                        Keys.TERM_DELIMITER_PRD,
-                                        2
-                                    )
-                                )
-                                    .withType("expressionOp")
-                                    .withPath(Keys.MRITERM_INTERACTIONID),
-                            ])
-                    );
+                    // check for the parent interaction value type
+                    // if it is of string type => a single parent interaction
+                    // if it is of array of string type => multiple parent interactions
+                    if (typeof filtercard._parentInteraction.id === "string") {
+                        this.addParentInteractionToAttributeList(
+                            filtercard._instanceID,
+                            filtercard._parentInteraction.id,
+                            node.attributeList
+                        );
+                    } else if (
+                        Array.isArray(filtercard._parentInteraction.id)
+                    ) {
+                        for (const parentInteractionId of filtercard
+                            ._parentInteraction.id) {
+                            this.addParentInteractionToAttributeList(
+                                filtercard._instanceID,
+                                parentInteractionId,
+                                node.attributeList
+                            );
+                        }
+                    }
                 }
                 if (filtercard._advanceTimeFilter) {
                     node.attributeList.push(
@@ -915,7 +914,7 @@ export class InternalFilterRepresentation implements Request {
             }, {});
 
         //Detect interactions with multiple identical filtercards and add NotEqual check between them. Must be after isExclude is detected!
-        Deno.env.get("NOT_EQ_CHECK_FILTERCARDS") === "true" && 
+        Deno.env.get("NOT_EQ_CHECK_FILTERCARDS") === "true" &&
             Object.keys(patient.filter)
                 .filter((e) => patient.filter[e].length > 1)
                 .forEach((interaction) =>
@@ -1189,6 +1188,35 @@ export class InternalFilterRepresentation implements Request {
                 .getEntityByPath(FastUtil.getId(pathToken, true, true))
                 .getConfig()[Keys.MRITERM_MEASUREEXPRESSION] !==
             Keys.TERM_UNDEFINED
+        );
+    }
+
+    private addParentInteractionToAttributeList(
+        instanceId,
+        parentInteractionId,
+        attributeList
+    ) {
+        attributeList.push(
+            new BaseNode(Keys.MRITERM_PARENTINTERACTION)
+                .withAlias(
+                    FastUtil.tokenizeAndJoin(
+                        instanceId,
+                        Keys.TERM_DELIMITER_PRD,
+                        2
+                    )
+                )
+                .withFilter([
+                    new Expression(
+                        Keys.SQLTERM_INEQUALITY_SYMBOL_EQUAL,
+                        FastUtil.tokenizeAndJoin(
+                            parentInteractionId,
+                            Keys.TERM_DELIMITER_PRD,
+                            2
+                        )
+                    )
+                        .withType("expressionOp")
+                        .withPath(Keys.MRITERM_INTERACTIONID),
+                ])
         );
     }
 }

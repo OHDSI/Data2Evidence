@@ -1,7 +1,6 @@
 const moduleNames = [
   "mri/CDM",
   "mri/PatientAnalyticsConfig",
-  "mri/PatientAnalytics",
   "mri/Search",
   "Researcher/KaplanMeier",
   "Researcher/ShinyLive",
@@ -25,6 +24,7 @@ const moduleNames = [
   "Setup/OverviewDescription",
   "Setup/TrexPlugins",
   "Setup/DemoSetup",
+  "Setup/MigrateUserArtifacts",
   "Setup/HybridSearch",
   "Setup/GitConfig",
 ];

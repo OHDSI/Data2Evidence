@@ -1,0 +1,11 @@
+name: Plugin CI
+
+on:
+  workflow_dispatch:
+
+jobs:
+  noop:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Placeholder
+        run: echo "plugin-ci stub on default branch; real workflow lives on release/v0.15.0-beta"

@@ -33,8 +33,7 @@ def create_white_rabbit_settings(scan_type: WhiteRabbitRunType, scan_settings: d
     match scan_type:
         case WhiteRabbitRunType.SCAN_REPORT_DB: 
 
-            database_credentials = DBDao(use_cache_db=False,
-                                         database_code=scan_settings.databaseCode).tenant_configs
+            database_credentials = DBDao(database_code=scan_settings.databaseCode).tenant_configs
             
             ini_content = INISettings(scan_type=WhiteRabbitRunType.SCAN_REPORT_DB,
                                       server_location=f"{database_credentials.host}:{database_credentials.port}/{database_credentials.databaseName}",

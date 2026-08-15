@@ -28,7 +28,7 @@ export const useFeedback = (): {
     setFeedback({
       type: "error",
       message: "An error has occurred.",
-      description: "Please try again. To report the error, please send an email to help@data4life.care.",
+      description: "Please try again. To report the error, please send an email to your administrator.",
     });
   }, [setFeedback]);
 

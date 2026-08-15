@@ -1,6 +1,6 @@
-import type { NotebookData, CellLanguage } from 'react-notebook/src/types/notebook'
-import { createCodeCell, createMarkdownCell } from 'react-notebook/src/types/notebook'
-import { parseIpynb } from 'react-notebook/src/index'
+import type { NotebookData, CellLanguage } from '@trex/notebook/src/types/notebook'
+import { createCodeCell, createMarkdownCell } from '@trex/notebook/src/types/notebook'
+import { parseIpynb } from '@trex/notebook/src/index'
 
 /**
  * Detect whether source code looks like R (vs Python).

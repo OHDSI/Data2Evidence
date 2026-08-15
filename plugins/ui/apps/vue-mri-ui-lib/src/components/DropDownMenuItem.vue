@@ -4,11 +4,12 @@
     v-on:mouseover="onItemHover"
     v-on:click="onItemClick"
     v-bind:class="getClass()"
+    :data-testid="`pa-axis-dropdown-item-${text}`"
   >
     <div class="leftMargin"></div>
     <div class="content">
       <icon v-if="icon !== ''" :icon="icon" />
-      {{ text }}
+      <slot>{{ text }}</slot>
     </div>
     <div class="subMenu" v-html="subMenuText"></div>
     <div class="rightMargin"></div>

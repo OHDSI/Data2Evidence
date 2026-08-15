@@ -1,3 +1,4 @@
+import "@fontsource-variable/ibm-plex-sans";
 import React from "react";
 import ReactDOMClient from "react-dom/client";
 import singleSpaReact from "single-spa-react";

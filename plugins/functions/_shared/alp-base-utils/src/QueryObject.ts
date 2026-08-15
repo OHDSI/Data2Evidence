@@ -273,6 +273,52 @@ export class QueryObject {
     return result;
   }
 
+  private static formatSqlLiteral(value: any): string {
+    if (value === null || value === undefined) {
+      return "NULL";
+    }
+
+    if (typeof value === "number") {
+      return Number.isFinite(value) ? value.toString() : "NULL";
+    }
+
+    if (typeof value === "boolean") {
+      return value ? "TRUE" : "FALSE";
+    }
+
+    // Example: new Date("2026-05-13T00:00:00Z") -> '2026-05-13T00:00:00.000Z'
+    if (value instanceof Date) {
+      return `'${value.toISOString().replace(/'/g, "''")}'`;
+    }
+
+    // Example: O'Brien -> 'O''Brien'
+    return `'${String(value).replace(/'/g, "''")}'`;
+  }
+
+  private static inlineSqlParameters(sql: string, placeholders: any[]): string {
+    if (!placeholders || placeholders.length === 0) {
+      return sql;
+    }
+
+    if (/\$\d+\b/.test(sql)) {
+      return sql.replace(/\$(\d+)\b/g, (match, index) => {
+        const placeholder = placeholders[Number(index) - 1];
+        return placeholder
+          ? QueryObject.formatSqlLiteral(placeholder.value)
+          : match;
+      });
+    }
+
+    let placeholderIndex = 0;
+    return sql.replace(/\?/g, match => {
+      const placeholder = placeholders[placeholderIndex];
+      placeholderIndex += 1;
+      return placeholder
+        ? QueryObject.formatSqlLiteral(placeholder.value)
+        : match;
+    });
+  }
+
   public isEmpty(): boolean {
     return this.queryString === "";
   }
@@ -322,9 +368,13 @@ export class QueryObject {
       const _process = resultData => {
         const result: any = { data: resultData };
         if (this.sqlReturnOn) {
-          result.sql = connection.getTranslatedSql(
+          const translatedSql = connection.getTranslatedSql(
             preparedQuery.sql,
             schemaName || connection.schemaName,
+            preparedQuery.placeholders,
+          );
+          result.sql = QueryObject.inlineSqlParameters(
+            translatedSql,
             preparedQuery.placeholders,
           );
           result.sqlParameters = preparedQuery.placeholders.map(p => p.value);
@@ -397,9 +447,13 @@ export class QueryObject {
       const _process = resultData => {
         const result: any = { data: resultData };
         if (this.sqlReturnOn) {
-          result.sql = connection.getTranslatedSql(
+          const translatedSql = connection.getTranslatedSql(
             preparedQuery.sql,
             schemaName || connection.schemaName,
+            preparedQuery.placeholders,
+          );
+          result.sql = QueryObject.inlineSqlParameters(
+            translatedSql,
             preparedQuery.placeholders,
           );
           result.sqlParameters = preparedQuery.placeholders.map(p => p.value);

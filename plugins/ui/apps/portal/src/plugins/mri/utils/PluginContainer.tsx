@@ -10,7 +10,6 @@ interface PluginContainerProps {
   studyId?: string;
   releaseId?: string;
   children?: ReactNode;
-  toggleAtlas?(val: boolean, path: string): void;
 }
 
 const nameProp = env.REACT_APP_IDP_NAME_PROP;
@@ -21,16 +20,10 @@ const PluginContainer: FC<PluginContainerProps> = ({
   qeSvcUrl,
   studyId,
   releaseId,
-  toggleAtlas,
 }) => {
   const { idTokenClaims } = useToken();
   const { locale } = useTranslation();
   const [features, featuresLoading] = useFeatures();
-
-  useEffect(() => {
-    const pluginEvent = new CustomEvent("alp-dataset-change");
-    window.dispatchEvent(pluginEvent);
-  }, [studyId, releaseId]);
 
   return (
     <div
@@ -45,7 +38,6 @@ const PluginContainer: FC<PluginContainerProps> = ({
             username: idTokenClaims[nameProp],
             features,
             featuresLoading,
-            toggleAtlas,
             locale,
           };
         }

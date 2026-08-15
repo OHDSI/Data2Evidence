@@ -1,5 +1,5 @@
 <template>
-  <div class="dropdownmenu-container" v-bind:class="{ 'fixed-right': overflowRight }">
+  <div class="dropdownmenu-container" v-bind:class="{ 'fixed-right': overflowRight }" :data-testid="testId || 'pa-dropdown-menu'">
     <div class="menuWrapper" v-bind:class="{ closed: !opened }" :style="menuWrapperStyle">
       <ul>
         <template v-for="sub in subMenuStub" :key="sub.idx">
@@ -25,11 +25,14 @@
             v-if="!sub.hasSubMenu && !sub.isSeperator"
             :icon="sub.icon"
             :text="sub.text"
+            :selected="sub.selected"
             :disabled="sub.disabled"
             @clickEv="clickEvent(sub.data)"
             @hoverEv="handleHover(sub.idx, false)"
             :isTitle="sub.isTitle"
-          ></dropDownMenuItem>
+          >
+            <slot name="item" :item="sub">{{ sub.text }}</slot>
+          </dropDownMenuItem>
         </template>
       </ul>
     </div>
@@ -64,6 +67,7 @@ export default {
     'target', // type: node element
     'placement', // type: string
     'boundariesElement', // type: string
+    'testId',
   ],
   data() {
     return {

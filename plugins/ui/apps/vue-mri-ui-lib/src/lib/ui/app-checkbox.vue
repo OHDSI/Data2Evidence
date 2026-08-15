@@ -5,6 +5,7 @@
       v-bind:class="['app-checkbox-container', { 'app-checkbox-checked': checked, 'app-checkbox-disabled': disabled }]"
       @click="toggleCheckbox"
       tabindex="0"
+      data-testid="pa-share-cohort-checkbox"
     >
       <input type="checkbox" :checked="checked" />
     </div>

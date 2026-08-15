@@ -85,9 +85,13 @@ sap.ui.define([
                 includeItemInSelection: true,
                 mode: "SingleSelectMaster",
                 itemPress: function (oEvent) {
-                    that._configItemPressed(oEvent);
+                    var bindingContext = that._getConfigItemBindingContext(oEvent);
+                    if (!bindingContext) {
+                        return;
+                    }
+                    that._configItemPressed(bindingContext);
                     that.fireOnConfigPress({
-                        srcControl: oEvent.getParameters().srcControl
+                        bindingContext: bindingContext
                     });
                 },
                 updateFinished: function (oEvent) {
@@ -264,8 +268,32 @@ sap.ui.define([
             }
         },
 
-        _configItemPressed: function (oEvent) {
-            this.setProperty("selectedConfigKey", oEvent.getParameters().srcControl.getBindingContext(this._configItemsModelName).getPath());
+        _getConfigItemBindingContext: function (oEvent) {
+            var params = oEvent.getParameters();
+            var controls = [
+                oEvent.getParameter("listItem"),
+                oEvent.getSource().getSelectedItem(),
+                params.srcControl
+            ];
+
+            for (var i = 0; i < controls.length; i++) {
+                var control = controls[i];
+                while (control) {
+                    if (control.getBindingContext) {
+                        var bindingContext = control.getBindingContext(this._configItemsModelName);
+                        if (bindingContext) {
+                            return bindingContext;
+                        }
+                    }
+                    control = control.getParent && control.getParent();
+                }
+            }
+
+            return null;
+        },
+
+        _configItemPressed: function (bindingContext) {
+            this.setProperty("selectedConfigKey", bindingContext.getPath());
         },
 
         _onSelectedConfigChanged: function (oEvent) {

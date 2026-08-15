@@ -35,64 +35,9 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByRole('button', { name: 'Switch to Researcher portal' }).click()
   await page.getByText('Demo dataset').first().click()
   await page.getByRole('link', { name: 'Cohorts' }).click()
-  await page.getByRole('button', { name: 'Atlas' }).click()
-  await page.waitForTimeout(50000)
-  const agreement = await page
-    .locator('iframe[title="Atlas Lite"]')
-    .contentFrame()
-    .getByText('License Agreement', { exact: true })
-  if (await agreement.isVisible()) {
-    await page.locator('iframe[title="Atlas Lite"]').contentFrame().getByRole('button', { name: 'Accept' }).click()
-  }
-  await page.locator('iframe[title="Atlas Lite"]').contentFrame().getByText('New Cohort').click()
-  await page
-    .locator('iframe[title="Atlas Lite"]')
-    .contentFrame()
-    .getByRole('textbox', { name: 'New Cohort Definition' })
-    .clear()
-  await page
-    .locator('iframe[title="Atlas Lite"]')
-    .contentFrame()
-    .getByRole('textbox', { name: 'New Cohort Definition' })
-    .fill('testcohort_atlas')
-  await page
-    .locator('iframe[title="Atlas Lite"]')
-    .contentFrame()
-    .locator('div[class="asset-heading"]')
-    .getByTitle(new RegExp('^Save$'))
-    .click()
-  await page.waitForTimeout(10000)
-
-  await expect(
-    page.locator('iframe[title="Atlas Lite"]').contentFrame().locator('div[class="authorship__container"]')
-  ).toContainText(new RegExp('created by anonymous on'))
-
-  // Set up dialog handler for deletion confirmation
-  page.on('dialog', async dialog => {
-    expect(dialog.message()).toContain('Delete cohort definition? Warning: deletion can not be undone!')
-    await dialog.accept()
-  })
-  await page
-    .locator('iframe[title="Atlas Lite"]')
-    .contentFrame()
-    .locator('div[class="asset-heading"]')
-    .getByTitle(new RegExp('^Delete$'))
-    .click()
-  await page.waitForTimeout(10000)
-  await expect(
-    page
-      .locator('iframe[title="Atlas Lite"]')
-      .contentFrame()
-      .locator('.conceptTable.stripe.compact.hover.dataTable.no-footer')
-      .first()
-  ).toBeVisible()
-  await expect(
-    page
-      .locator('iframe[title="Atlas Lite"]')
-      .contentFrame()
-      .locator('.conceptTable.stripe.compact.hover.dataTable.no-footer')
-      .first()
-  ).toContainText('No data available in table')
+  // The embedded "Atlas Lite" iframe was removed (standalone Atlas3 replaces it).
+  // Verify the Atlas cohort-definition button is present, but do not open it.
+  await expect(page.getByRole('button', { name: 'Atlas' })).toBeVisible()
 
   await page.getByRole('link', { name: 'Account' }).click()
   await page.getByRole('button', { name: 'Switch to Admin portal' }).click()

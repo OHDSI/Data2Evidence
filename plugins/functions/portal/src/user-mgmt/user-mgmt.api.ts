@@ -37,6 +37,21 @@ export class UserMgmtApi {
     return result.data;
   }
 
+  async ensureDatasetRole(datasetId: string, tokenStudyCode: string, type: string | undefined, jwt: string) {
+    const requestConfig = this.getRequestConfig(jwt);
+    const body = JSON.stringify({ datasetId, tokenStudyCode, type });
+    const url = `${this.url}/dataset-role`;
+    const result = await this.channel.post(url, body, requestConfig);
+    return result.data;
+  }
+
+  async removeDatasetRole(datasetId: string, tokenStudyCode: string, jwt: string) {
+    const requestConfig = this.getRequestConfig(jwt);
+    const url = `${this.url}/dataset-role?datasetId=${encodeURIComponent(datasetId)}&tokenStudyCode=${encodeURIComponent(tokenStudyCode)}`;
+    const result = await this.channel.delete(url, requestConfig);
+    return result.data;
+  }
+
   private getRequestConfig(jwt: string): RequestInit {
     return {
       headers: {

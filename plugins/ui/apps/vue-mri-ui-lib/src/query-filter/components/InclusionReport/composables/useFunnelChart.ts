@@ -71,7 +71,7 @@ export function useFunnelChart(
       text: funnelChartData.value.hoverTexts,
       hoverinfo: 'text',
       textposition: 'inside',
-      texttemplate: 'N: %{x:,} (%{percentInitial:.2%})',
+      texttemplate: 'n: %{x:,} (%{percentInitial:.2%})',
       constraintext: 'outside',
       textinfo: 'value+percent initial',
       marker: {
@@ -204,6 +204,19 @@ export function useFunnelChart(
       renderFunnelChart()
     },
     { flush: 'post' } // Ensure <div ref="funnelChartRef"> exists
+  )
+
+  // Re-render when chart container is mounted (e.g. after the loading spinner hides).
+  // The funnelChartData watcher may fire while showLoader keeps the chart div out of the DOM,
+  // leaving funnelChartRef null. Once the spinner finishes and the div is mounted, render now.
+  watch(
+    funnelChartRef,
+    newRef => {
+      if (newRef) {
+        renderFunnelChart()
+      }
+    },
+    { flush: 'post' }
   )
 
   return {

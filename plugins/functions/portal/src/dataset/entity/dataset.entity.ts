@@ -63,8 +63,8 @@ export class Dataset extends Audit {
   @Column({ name: 'pa_config_id', type: 'uuid', nullable: true })
   paConfigId: string
 
-  @Column({ name: 'fhir_project_id', type: 'uuid', nullable: true })
-  fhir_project_id: string
+  @Column({ name: 'fhir_dataset_id', type: 'uuid', nullable: true })
+  fhirDatasetId: string
 
   @OneToOne(() => DatasetDetail, datasetDetail => datasetDetail.dataset)
   datasetDetail: DatasetDetail
@@ -80,7 +80,12 @@ export class Dataset extends Audit {
 
   @BeforeInsert()
   applyCacheIdDefault() {
-    if (this.cacheId == null && this.id) {
+    if (this.cacheId != null) return
+    // HANA datasets are queried directly, so the cacheId is the databaseCode
+    // rather than a sanitized per-dataset UUID.
+    if (this.dialect === 'hana') {
+      this.cacheId = this.databaseCode
+    } else if (this.id) {
       this.cacheId = sanitizeIdForCacheId(this.id)
     }
   }

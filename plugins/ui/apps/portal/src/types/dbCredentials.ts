@@ -2,6 +2,7 @@ export enum DB_DIALECTS {
   POSTGRES = "postgres",
   HANA = "hana",
   BIG_QUERY = "bigquery",
+  SNOWFLAKE = "snowflake",
 }
 export type DbDialect = `${DB_DIALECTS}`;
 export const DB_DIALECTS_KEY_VALUE = [
@@ -16,6 +17,10 @@ export const DB_DIALECTS_KEY_VALUE = [
   {
     key: DB_DIALECTS.BIG_QUERY,
     value: "BigQuery (experimental)",
+  },
+  {
+    key: DB_DIALECTS.SNOWFLAKE,
+    value: "Snowflake (experimental)",
   },
 ];
 

@@ -60,11 +60,14 @@ export const DATA_ADMIN_ROLES: { [key: string]: string } = {
   [ALP_SYSTEM_ADMIN]: "Admin",
 };
 
+export const FEATURE_ATLAS = "atlas";
+export const FEATURE_PYTHIA = "pythia";
 export const FEATURE_DATASET_FILTER = "datasetFilter";
 export const FEATURE_DATASET_SEARCH = "datasetSearch";
 export const FEATURE_FHIR_SERVER = "fhirServer";
 export const FEATURE_MAPPING_SUGGESTION = "mappingSuggestion";
 export const FEATURE_DOCKER_LOGS = "d2eLogs";
 export const FEATURE_ADMIN_ONLY_SHARING = "adminOnlySharing";
+export const FEATURE_AI_ASSISTANT = "aiAssistant";
 
 export * from "./FeatureGate";

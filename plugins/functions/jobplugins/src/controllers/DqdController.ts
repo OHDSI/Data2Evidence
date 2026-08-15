@@ -24,7 +24,7 @@ export class DqdController {
       async (req: Request, res: Response) => {
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
-          res.status(400).json({ errors: errors.array() });
+          return res.status(400).json({ errors: errors.array() });
         }
         await this.getDataQualityResults(req, res);
       }
@@ -38,7 +38,7 @@ export class DqdController {
       async (req: Request, res: Response) => {
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
-          res.status(400).json({ errors: errors.array() });
+          return res.status(400).json({ errors: errors.array() });
         }
         await this.getDataQualityOverview(req, res);
       }
@@ -165,7 +165,7 @@ export class DqdController {
       }
     } catch (error) {
       console.error(`Error retrieving DQD result: ${error}`);
-      res.status(500).send(`Error occurs: ${error}`);
+      res.status(500).send("Error retrieving DQD result");
     }
   }
 
@@ -185,7 +185,7 @@ export class DqdController {
       }
     } catch (error) {
       console.error(`Error retrieving DQD overview: ${error}`);
-      res.status(500).send(`Error occurs: ${error}`);
+      res.status(500).send("Error retrieving DQD overview");
     }
   }
 
@@ -205,7 +205,7 @@ export class DqdController {
       }
     } catch (error) {
       console.error(`Error retrieving latest flow run: ${error}`);
-      res.status(500).send(`Error occurs: ${error}`);
+      res.status(500).send("Error retrieving latest flow run");
     }
   }
 
@@ -226,12 +226,12 @@ export class DqdController {
         res
           .status(404)
           .send(
-            `No flow run found for datasetId: ${datasetId}, cohortDefinitionId: ${cohortDefinitionId}`
+            "No flow run found for the given datasetId and cohortDefinitionId"
           );
       }
     } catch (error) {
       console.error(`Error retrieving latest flow run with cohort: ${error}`);
-      res.status(500).send(`Error occurs: ${error}`);
+      res.status(500).send("Error retrieving latest flow run with cohort");
     }
   }
 
@@ -252,12 +252,12 @@ export class DqdController {
         res
           .status(404)
           .send(
-            `No flow run found for datasetId: ${datasetId}, releaseId: ${releaseId}`
+            "No flow run found for given datasetId and releaseId"
           );
       }
     } catch (error) {
       console.error(`Error retrieving flow run by release: ${error}`);
-      res.status(500).send(`Error occurs: ${error}`);
+      res.status(500).send("Error retrieving flow run by release");
     }
   }
 
@@ -272,7 +272,7 @@ export class DqdController {
       res.send(result);
     } catch (error) {
       console.error(`Error creating DQD flow run: ${error}`);
-      res.status(500).send(`Error occurs: ${error}`);
+      res.status(500).send("Error occurred while creating DQD flow run");
     }
   }
 
@@ -287,7 +287,7 @@ export class DqdController {
       res.send(history);
     } catch (error) {
       console.error(`Error retrieving dataset history by category: ${error}`);
-      res.status(500).send(`Error occurs: ${error}`);
+      res.status(500).send("Error retrieving dataset history by category");
     }
   }
 
@@ -302,7 +302,7 @@ export class DqdController {
       res.send(history);
     } catch (error) {
       console.error(`Error retrieving dataset history: ${error}`);
-      res.status(500).send(`Error occurs: ${error}`);
+      res.status(500).send("Error retrieving dataset history");
     }
   }
 
@@ -317,7 +317,7 @@ export class DqdController {
       res.send(history);
     } catch (error) {
       console.error(`Error retrieving dataset history: ${error}`);
-      res.status(500).send(`Error occurs: ${error}`);
+      res.status(500).send("Error retrieving dataset history");
     }
   }
 
@@ -332,7 +332,7 @@ export class DqdController {
       res.send(history);
     } catch (error) {
       console.error(`Error retrieving dataset history: ${error}`);
-      res.status(500).send(`Error occurs: ${error}`);
+      res.status(500).send("Error retrieving dataset history");
     }
   }
 }

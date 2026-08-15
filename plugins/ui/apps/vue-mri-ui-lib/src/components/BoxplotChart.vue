@@ -39,8 +39,10 @@
 <script lang="ts">
 import d3 from 'd3'
 import { mapActions, mapGetters } from 'vuex'
+import axios from 'axios'
 import Constants from '../utils/Constants'
 import processCSV from '../utils/ProcessCSV'
+import { generateDownloadFileName } from '../utils/generateDownloadFileName'
 import boxplotInfo from './BoxplotInfo.vue'
 import chartErrorMessage from './ChartErrorMessage.vue'
 import ChartPopover from './ChartPopover.vue'
@@ -85,6 +87,9 @@ export default {
       tooltipMeasures: [],
       tooltipPatientCount: 0,
       boxplotChartStyle: {},
+      requestId: 0,
+      requestCancel: null as (() => void) | null,
+      isUnmounted: false,
     }
   },
   mounted() {
@@ -95,6 +100,9 @@ export default {
     this.setFireRequest()
   },
   beforeUnmount() {
+    this.isUnmounted = true
+    this.cancelRequest()
+    this.$emit('busyEv', false)
     window.removeEventListener('resize', this.renderChart)
   },
   computed: {
@@ -103,12 +111,17 @@ export default {
       'getChartSize',
       'getText',
       'getCsvFireDownload',
+      'getActiveChart',
+      'getActiveBookmark',
       'getFireRequest',
       'isFireRequestHeld',
       'getActiveAxes',
       'getBookmarksData',
       'processResponse',
     ]),
+    csvFileName() {
+      return generateDownloadFileName(this.getActiveBookmark?.bookmarkname, this.getActiveChart, 'csv')
+    },
   },
   watch: {
     getSplitterWidth() {
@@ -143,34 +156,29 @@ export default {
       }
       this.reset()
 
-      const callback = chartData => {
-        this.chartData = this.processResponse(chartData)
-        this.setCurrentPatientCount({
-          currentPatientCount: this.chartData.totalPatientCount,
-        })
-        this.renderChart()
-        this.$emit('busyEv', false)
-
-        if (this.chartData.hasOwnProperty('noDataReason')) {
-          this.setCurrentPatientCount({
-            currentPatientCount: '--',
-          })
-        }
-      }
-
-      this.$emit('busyEv', false)
       const bookmark = this.getBookmarksData
       if (Object.keys(bookmark).length !== 0 && bookmark) {
-        this.fireQuery({
-          url: '/analytics-svc/api/services/population/json/boxplot',
-          params: { mriquery: JSON.stringify(bookmark) },
-        })
-          .then(callback)
-          .catch(({ message, response }) => {
-            if (message !== 'cancel') {
-              this.$emit('busyEv', false)
-            }
+        this.startRequest(
+          ({ cancelToken }) =>
+            this.fireQuery({
+              url: '/analytics-svc/api/services/population/json/boxplot',
+              params: { mriquery: JSON.stringify(bookmark) },
+              cancelToken,
+            }),
+          chartData => {
+            this.chartData = this.processResponse(chartData)
+            this.setCurrentPatientCount({
+              currentPatientCount: this.chartData.totalPatientCount,
+            })
+            this.renderChart()
 
+            if (this.chartData.hasOwnProperty('noDataReason')) {
+              this.setCurrentPatientCount({
+                currentPatientCount: '--',
+              })
+            }
+          },
+          ({ response }) => {
             if (response) {
               let noDataReason = this.getText('MRI_PA_CHART_NO_DATA_DEFAULT_MESSAGE')
 
@@ -185,13 +193,13 @@ export default {
             this.setCurrentPatientCount({
               currentPatientCount: '--',
             })
-          })
-        this.$emit('busyEv', true)
+          }
+        )
       }
     },
     getCsvFireDownload() {
       this.downloadCSV({ ...this.getBookmarksData })
-        .then(processCSV)
+        .then(response => processCSV(response, this.csvFileName))
         .catch(err => {
           // do nothing
         })
@@ -212,6 +220,42 @@ export default {
       'setFireRequest',
       'completeDownloadCSV',
     ]),
+    startRequest(fire, onSuccess, onError) {
+      this.requestId += 1
+      const requestId = this.requestId
+
+      if (this.requestCancel) {
+        this.requestCancel()
+        this.requestCancel = null
+      }
+
+      const cancelToken = new axios.CancelToken(c => {
+        this.requestCancel = () => c('cancel')
+      })
+
+      this.$emit('busyEv', true)
+
+      fire({ cancelToken })
+        .then(data => {
+          if (this.isUnmounted || requestId !== this.requestId) return
+          onSuccess(data)
+        })
+        .catch(error => {
+          if (this.isUnmounted || requestId !== this.requestId) return
+          onError(error)
+        })
+        .finally(() => {
+          if (this.isUnmounted || requestId !== this.requestId) return
+          this.requestCancel = null
+          this.$emit('busyEv', false)
+        })
+    },
+    cancelRequest() {
+      if (this.requestCancel) {
+        this.requestCancel()
+        this.requestCancel = null
+      }
+    },
     reset() {
       this.errorMessage = ''
       this.selection = []

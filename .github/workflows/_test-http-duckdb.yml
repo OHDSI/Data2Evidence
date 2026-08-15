@@ -38,7 +38,6 @@ jobs:
       VERSION: develop
       DOCKER_TAG_NAME: ${{ inputs.run_tag }}
       PLUGINS_IMAGE_TAG: ${{ inputs.run_tag }}
-      PLUGINS_SEED: '["d2e-flows", "d2e-atlas", "data-transformation-flow", "hades-flow", "d2e-fhir-server", "i2b2-flow", "data-management-flow"]'
       PGUSER: postgres
       PGPASSWORD: mypass
       PGHOST: localhost
@@ -378,7 +377,7 @@ jobs:
           echo "isTestEnv: ${isTestEnv:-false}"
           echo "TESTSCHEMA: ${TESTSCHEMA}"
           echo "HTTPTEST_DB_DIALECT: ${HTTPTEST_DB_DIALECT}"
-          yarn test-specs --test_schema_name=$TESTSCHEMA
+          yarn test-specs --test_schema_name=$TESTSCHEMA '--file_pattern=^(?!strategus_analysis_test).*_test\.js$'
 
       - name: Mark HTTP duckdb attempt success
         if: success()

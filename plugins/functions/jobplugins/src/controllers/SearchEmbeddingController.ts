@@ -3,6 +3,7 @@ import { validationResult } from "express-validator";
 import { validateSearchEmbeddingFlowRunDto } from "../middlewares/SearchEmbeddingValidatorMiddlewares.ts";
 import { SearchEmbeddingService } from "../services/SearchEmbeddingService.ts";
 import { PortalServerAPI } from "../api/PortalServerAPI.ts";
+import { getMissingDerivedParamError } from "../utils/validateSearchEmbeddingParams.ts";
 
 export class SearchEmbeddingController {
   private searchEmbeddingService: SearchEmbeddingService;
@@ -36,6 +37,13 @@ export class SearchEmbeddingController {
       const portalServerApi = new PortalServerAPI(token);
       const dataset = await portalServerApi.getDataset(params.datasetId);
       const { databaseCode, schemaName } = dataset;
+      const missingParamError = getMissingDerivedParamError({
+        databaseCode,
+        schemaName,
+      });
+      if (missingParamError) {
+        return res.status(400).send({ message: missingParamError });
+      }
       const cacheId = dataset.cacheId ?? databaseCode;
 
       const result =
@@ -50,7 +58,7 @@ export class SearchEmbeddingController {
       res.send(result);
     } catch (error) {
       console.error(`Error creating search-embedding flow run: ${error}`);
-      res.status(500).send(`${error}`);
+      res.status(500).send({ message: `${error}` });
     }
   }
 }

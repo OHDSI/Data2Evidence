@@ -3,6 +3,7 @@ from typing import Any
 from psycopg2 import connect
 
 from prefect import task
+from prefect.cache_policies import NONE
 from prefect.variables import Variable
 from prefect.blocks.system import Secret
 from prefect.context import TaskRunContext
@@ -29,7 +30,7 @@ def get_trex_connection(database_code: str):
     return conn
 
 
-@task(log_prints=True, task_run_name="create_cache_status_table")
+@task(log_prints=True, task_run_name="create_cache_status_table", cache_policy=NONE)
 def create_cache_status_table(con, copy_params):
     # Create status table
     execute_statement(con, f'''
@@ -73,7 +74,7 @@ def cleanup(con, table: str, copy_params):
     )
 
 
-@task(log_prints=True, task_run_name="drop_cache_status_table")
+@task(log_prints=True, task_run_name="drop_cache_status_table", cache_policy=NONE)
 def drop_cache_status_table(con, copy_params):
     execute_statement(con, f'DROP TABLE "{copy_params.target_database}"."{copy_params.target_schema}"."{COPY_STATUS_TABLE_NAME}";') 
 
@@ -115,7 +116,7 @@ def create_schema_if_not_exists_task(use_trex_conn: bool, copy_params: CopyParam
 
 
 def create_schema_if_not_exists(write_conn: Any, copy_params: CopyParameters, logger):
-    logger.info(f"Starting creation of schema '{copy_params.target_schema}' in database '{copy_params.target_database}' if it doesn't exist...")
+    logger.info(f"Creating schema '{copy_params.target_schema}' in cache database '{copy_params.target_database}' if it doesn't exist...")
     sql = f'CREATE SCHEMA IF NOT EXISTS "{copy_params.target_database}"."{copy_params.target_schema}";'
     execute_statement(write_conn, sql)
     logger.info(f"Schema '{copy_params.target_schema}' created.")
@@ -126,7 +127,8 @@ def create_schema_if_not_exists(write_conn: Any, copy_params: CopyParameters, lo
       tags=["flow-level-concurrency"],
       log_prints=True, 
       task_run_name="create_schema_tables_from_{copy_params.source_schema}",
-      timeout_seconds=int(Variable.get("cache_task_timeout")))
+      timeout_seconds=int(Variable.get("cache_task_timeout")),
+      cache_policy=NONE)
 def create_schema_tables_task(use_trex_conn: bool, read_conn: Any, copy_params: CopyParameters, duckdb_file_path: str):
     logger = get_run_logger()
 
@@ -282,7 +284,7 @@ def copy_table_chunk(write_conn: Any, copy_params: CopyParameters, query_columns
     insert_sql = f"""INSERT INTO "{copy_params.target_database}"."{copy_params.target_schema}"."{query_columns.table}"{select_sql};"""
     execute_statement(write_conn, insert_sql)
 
-@task(log_prints=True, task_run_name="copy_table_{query_columns.table}", tags=["table-level-concurrency"])
+@task(log_prints=True, task_run_name="copy_table_{query_columns.table}", tags=["table-level-concurrency"], cache_policy=NONE)
 def copy_table_task(write_conn: Any, read_conn: Any, copy_params: CopyParameters, query_columns: QueryColumns, source_schema: str):
     logger = get_run_logger()
     copy_table(write_conn, read_conn, copy_params, query_columns, source_schema, logger)
@@ -303,6 +305,7 @@ def copy_table(write_conn: Any, read_conn: Any, copy_params: CopyParameters, que
             mark_complete(write_conn, table, copy_params)
             return row_count
         else:
+            logger.info(f"Copying table '{table}' (large, {row_count} rows)")
             create_empty_target_table(write_conn, copy_params, query_columns, source_schema)
             # If columns_to_copy is "*", replace with actual column names for proper chunking
             if query_columns.columns_to_copy == ["*"]:

@@ -61,6 +61,7 @@ describe("Researcher - Deep Link Integration", () => {
 
     // Clear localStorage to reset persisted context state
     localStorage.clear();
+    sessionStorage.clear();
 
     // Clear mock navigate
     mockNavigate.mockClear();
@@ -69,6 +70,7 @@ describe("Researcher - Deep Link Integration", () => {
   it("should integrate with AppProvider to set active dataset from URL", () => {
     // Setup: URL with datasetId parameter
     (window as any).location = { href: "http://localhost:3000/researcher?datasetId=dataset-1" };
+    sessionStorage.setItem("deepLinkParams", JSON.stringify({ datasetId: "dataset-1" }));
 
     // Wrapper with AppProvider to test context integration
     const wrapper = ({ children }: { children: React.ReactNode }) => <AppProvider>{children}</AppProvider>;
@@ -100,6 +102,7 @@ describe("Researcher - Deep Link Integration", () => {
   it("should integrate with AppProvider to show error for invalid datasetId", () => {
     // Setup: URL with non-existent datasetId
     (window as any).location = { href: "http://localhost:3000/researcher?datasetId=non-existent" };
+    sessionStorage.setItem("deepLinkParams", JSON.stringify({ datasetId: "non-existent" }));
 
     // Wrapper with AppProvider
     const wrapper = ({ children }: { children: React.ReactNode }) => <AppProvider>{children}</AppProvider>;
@@ -130,6 +133,7 @@ describe("Researcher - Deep Link Integration", () => {
   it("should not process deep link while datasets are loading", () => {
     // Setup: URL with datasetId
     (window as any).location = { href: "http://localhost:3000/researcher?datasetId=dataset-1" };
+    sessionStorage.setItem("deepLinkParams", JSON.stringify({ datasetId: "dataset-1" }));
 
     // Wrapper with AppProvider
     const wrapper = ({ children }: { children: React.ReactNode }) => <AppProvider>{children}</AppProvider>;
@@ -178,6 +182,7 @@ describe("Researcher - Deep Link Integration", () => {
   it("should show error when user has zero datasets but URL has datasetId", () => {
     // Setup: URL with datasetId but user has no datasets
     (window as any).location = { href: "http://localhost:3000/researcher?datasetId=dataset-1" };
+    sessionStorage.setItem("deepLinkParams", JSON.stringify({ datasetId: "dataset-1" }));
 
     // Wrapper with AppProvider
     const wrapper = ({ children }: { children: React.ReactNode }) => <AppProvider>{children}</AppProvider>;
@@ -207,6 +212,13 @@ describe("Researcher - Deep Link Integration", () => {
     (window as any).location = {
       href: "http://localhost:3000/researcher?datasetId=dataset-2&route=cohort&linkType=cohort-definition&query=abc",
     };
+    sessionStorage.setItem(
+      "deepLinkParams",
+      JSON.stringify({
+        datasetId: "dataset-2",
+        queryParams: { route: "cohort", linkType: "cohort-definition", query: "abc" },
+      })
+    );
 
     // Wrapper with AppProvider
     const wrapper = ({ children }: { children: React.ReactNode }) => <AppProvider>{children}</AppProvider>;
@@ -232,5 +244,37 @@ describe("Researcher - Deep Link Integration", () => {
     expect(mockNavigate).toHaveBeenCalledWith("/researcher/information?route=cohort&linkType=cohort-definition&query=abc", {
       state: { tenantId: "t1" },
     });
+  });
+
+  it("should let persisted active dataset handle path-only deep links", () => {
+    (window as any).location = { href: "http://localhost:3000/researcher/cohort" };
+    sessionStorage.setItem("deepLinkParams", JSON.stringify({ path: "/researcher/cohort" }));
+    localStorage.setItem(
+      "d2e_app",
+      JSON.stringify({
+        activeDataset: {
+          id: "dataset-2",
+          releaseId: "",
+        },
+      })
+    );
+
+    const wrapper = ({ children }: { children: React.ReactNode }) => <AppProvider>{children}</AppProvider>;
+
+    const { result, rerender } = renderHook(
+      ({ datasets, loading }) => {
+        useDeepLinkSync(datasets, loading);
+        return {
+          activeDataset: useActiveDataset(),
+        };
+      },
+      { wrapper, initialProps: { datasets: mockDatasets, loading: true } }
+    );
+
+    rerender({ datasets: mockDatasets, loading: false });
+
+    expect(result.current.activeDataset.activeDataset.id).toBe("dataset-2");
+    expect(mockNavigate).not.toHaveBeenCalled();
+    expect(sessionStorage.getItem("deepLinkParams")).toBeNull();
   });
 });

@@ -45,7 +45,6 @@ def get_and_update_attributes(options: CreateCacheOptions, dataset: dict):
             dialect=SupportedDatabaseDialects.TREX
             if options.use_trex_connection
             else None,
-            use_cache_db=options.use_cache_db,
             database_code=database_code,
             cache_id=cache_id,
         )
@@ -54,6 +53,9 @@ def get_and_update_attributes(options: CreateCacheOptions, dataset: dict):
 
         logger.info(f"Checking if schema '{schema_name}' exists in cache for db {database_code} for dataset id '{dataset_id}'")
 
+        if hasattr(dbdao, "clear_pg_cache"):
+            dbdao.clear_pg_cache()
+        
         schema_exists = dbdao.check_schema_exists(schema_name)
 
         if schema_exists is False:

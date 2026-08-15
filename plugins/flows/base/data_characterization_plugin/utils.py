@@ -1,5 +1,5 @@
 import pandas as pd
-from re import match
+from re import match, sub
 from pathlib import Path
 
 
@@ -28,13 +28,22 @@ def is_safe_schema_name(schema: str) -> bool:
     return match(r"^[A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)?$", schema) is not None
 
 
-def get_cdm_source(dbdao, schema: str, *, use_trex_connection: bool = False) -> str:
+def get_cdm_source(
+    dbdao, schema: str, *, use_trex_connection: bool = False, is_hana: bool = False
+) -> str | None:
     """
     Get the cdm_source_abbreviation from the cdm_source table.
     """
     if use_trex_connection:
-        catalog = getattr(dbdao, "cache_id", None) or dbdao.database_code
-        sql = f'SELECT cdm_source_abbreviation FROM "{catalog}"."{schema}"."cdm_source"'
+        if is_hana:
+            # HANA datasets go through trex pgwire's HANA passthrough, which ships the
+            # literal query to HANA. HANA folds unquoted identifiers to UPPER-CASE, so the
+            # table must be referenced UNQUOTED (quoted "cdm_source" would not match the
+            # actual CDM_SOURCE table). No DuckDB catalog prefix — meaningless to HANA.
+            sql = f'SELECT cdm_source_abbreviation FROM "{schema}".cdm_source'
+        else:
+            catalog = getattr(dbdao, "cache_id", None) or dbdao.database_code
+            sql = f'SELECT cdm_source_abbreviation FROM "{catalog}"."{schema}"."cdm_source"'
         value = dbdao.execute_sql(
             sql,
             fetch=True,
@@ -85,3 +94,116 @@ def get_error_message(error_file_name: str, error_path: str | None) -> str | Non
         with error_file.open("r") as f:
             return f.read()
     return None
+
+
+def _error_signature(content: str) -> str:
+    """Normalize an Achilles error report so the same failure across many analyses groups together."""
+    lines = content.splitlines()
+    message = next(
+        (lines[i + 1].strip() for i, line in enumerate(lines)
+         if line.strip() == "Error:" and i + 1 < len(lines) and lines[i + 1].strip()),
+        next((line.strip() for line in lines if line.strip()), "unknown error"),
+    )
+    message = sub(r"\(Query:.*", "", message)
+    return sub(r"\d+", "N", message)[:250]
+
+
+def get_analysis_error_details(
+    output_folder: str, max_groups: int = 8, sample_chars: int = 2000
+) -> str | None:
+    """Group the per-analysis Achilles error reports by root error for logging, with one sample each."""
+    error_files = sorted(
+        Path(output_folder).glob("achillesError_*.txt"),
+        key=lambda f: int(f.stem.split("_")[-1]),
+    )
+    if not error_files:
+        return None
+
+    groups: dict[str, dict] = {}
+    for error_file in error_files:
+        try:
+            content = error_file.read_text()
+        except OSError:
+            continue
+        analysis_id = error_file.stem.split("_")[-1]
+        group = groups.setdefault(_error_signature(content), {"ids": [], "sample": content})
+        group["ids"].append(analysis_id)
+
+    header = f"{len(error_files)} analysis error report(s), {len(groups)} distinct error(s):"
+    sections = [header]
+    for group in list(groups.values())[:max_groups]:
+        ids = ",".join(group["ids"])
+        sections.append(f"\n[analyses {ids}]\n{group['sample'].strip()[:sample_chars]}")
+    if len(groups) > max_groups:
+        sections.append(f"\n... and {len(groups) - max_groups} more distinct error group(s)")
+    return "\n".join(sections)
+
+
+def get_achilles_log_tail(output_folder: str, max_lines: int = 60) -> str | None:
+    """
+    Return the tail of Achilles' execution log (log_achilles.txt) for debugging context.
+    """
+    log_file = Path(output_folder) / "log_achilles.txt"
+    if not log_file.exists():
+        return None
+    try:
+        lines = log_file.read_text(errors="replace").splitlines()
+    except OSError:
+        return None
+    return "\n".join(lines[-max_lines:])
+
+
+# Every table an Achilles/WebAPI results schema can hold. In the legacy trex mode DC
+# owns a throwaway results schema per run, so it clears all of them before rebuilding.
+RESULTS_SCHEMA_TABLES = [
+    # "cohort",
+    "cohort_censor_stats",
+    "cohort_inclusion",
+    "cohort_inclusion_result",
+    "cohort_inclusion_stats",
+    "cohort_summary_stats",
+    "cohort_cache",
+    "cohort_censor_stats_cache",
+    "cohort_inclusion_result_cache",
+    "cohort_inclusion_stats_cache",
+    "cohort_summary_stats_cache",
+    "feas_study_inclusion_stats",
+    "feas_study_index_stats",
+    "feas_study_result",
+    "heracles_analysis",
+    "heracles_heel_results",
+    "heracles_results",
+    "heracles_results_dist",
+    "heracles_periods",
+    "cohort_sample_element",
+    "ir_analysis_dist",
+    "ir_analysis_result",
+    "ir_analysis_strata_stats",
+    "ir_strata",
+    "cc_results",
+    "pathway_analysis_codes",
+    "pathway_analysis_events",
+    "pathway_analysis_paths",
+    "pathway_analysis_stats",
+    "concept_hierarchy",
+    "achilles_result_concept_count",
+]
+
+
+def tables_to_drop(use_trex_connection: bool) -> list[str]:
+    """
+    Tables to drop before a DC run writes into `results_schema`.
+
+    Legacy (trex) runs own a throwaway results schema, so everything is cleared.
+    Source-connection runs write into the customer's LIVE WebAPI "Results" daimon
+    schema: the cohort/ir_analysis/pathway/heracles/cc_results tables are Atlas
+    artifacts that must survive, so only the tables DC itself produces are dropped
+    (the achilles_* tables plus concept_hierarchy).
+    """
+    if use_trex_connection:
+        return list(RESULTS_SCHEMA_TABLES)
+    return [
+        table
+        for table in RESULTS_SCHEMA_TABLES
+        if table.startswith("achilles_") or table == "concept_hierarchy"
+    ]

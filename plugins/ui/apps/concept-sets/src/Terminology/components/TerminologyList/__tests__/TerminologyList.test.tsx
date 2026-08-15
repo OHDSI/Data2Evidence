@@ -1,5 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, act, waitFor } from "@testing-library/react";
+import {
+  render,
+  act,
+  waitFor,
+  screen,
+  fireEvent,
+} from "@testing-library/react";
 import React from "react";
 import type {
   FilterOptions,
@@ -137,6 +143,14 @@ const sampleMappedConcept: FhirValueSetExpansionContainsWithExt = {
   validity: "Valid",
 };
 
+const sampleMappedConceptWithCounts: FhirValueSetExpansionContainsWithExt = {
+  ...sampleMappedConcept,
+  recordCount: "10",
+  descendantRecordCount: "20",
+  personCount: "5",
+  descendantPersonCount: "8",
+};
+
 function setupDefaultMocks() {
   mockGetTerminologies.mockResolvedValue(sampleConcepts);
   mockGetConceptsCount.mockResolvedValue(1);
@@ -223,6 +237,21 @@ const conceptMappingProps = {
   initialInput: "diabetes",
 };
 
+/**
+ * Concept Mapping without defaultFilters — used for radio-rendering assertions.
+ * (conceptMappingProps' domain/standard defaultFilters get re-applied client-side
+ * by MRT's own column filtering on top of the already-filtered mock data, which
+ * would hide the row and is irrelevant to what these tests are checking.)
+ */
+const conceptMappingRadioProps = {
+  ...baseProps,
+  isDrawer: true,
+  mode: "CONCEPT_MAPPING" as const,
+  showAddIcon: true,
+  // Record-count merging isn't relevant to these radio-rendering assertions.
+  showConceptRecordCounts: false,
+};
+
 // --- Tests ---
 
 describe("TerminologyList", () => {
@@ -268,11 +297,60 @@ describe("TerminologyList", () => {
       });
     });
 
-    it("does not fetch data when userId is missing", async () => {
+    it("fetches concept record counts when the flag is missing", async () => {
+      await act(async () => {
+        render(<TerminologyList {...conceptsPageProps} />);
+      });
+
+      await waitFor(() => {
+        expect(mockGetConceptRecordCounts).toHaveBeenCalled();
+      });
+    });
+
+    it("does not fetch concept record counts when disabled", async () => {
+      const setConceptsResult = vi.fn();
+
       await act(async () => {
         render(
-          <TerminologyList {...conceptsPageProps} userId={undefined} />,
+          <TerminologyList
+            {...conceptsPageProps}
+            setConceptsResult={setConceptsResult}
+            showConceptRecordCounts={false}
+          />,
         );
+      });
+
+      await waitFor(() => {
+        expect(setConceptsResult).toHaveBeenCalled();
+      });
+
+      expect(mockGetConceptRecordCounts).not.toHaveBeenCalled();
+      const result = setConceptsResult.mock.calls[0][0];
+      expect(result.data[0].recordCount).toBeUndefined();
+      expect(result.data[0].descendantRecordCount).toBeUndefined();
+      expect(result.data[0].personCount).toBeUndefined();
+      expect(result.data[0].descendantPersonCount).toBeUndefined();
+    });
+
+    it("does not fetch concept record counts for an empty result", async () => {
+      mockGetTerminologies.mockResolvedValue([]);
+      mockGetConceptsCount.mockResolvedValue(0);
+
+      await act(async () => {
+        render(<TerminologyList {...conceptsPageProps} />);
+      });
+
+      await waitFor(() => {
+        expect(mockGetTerminologies).toHaveBeenCalled();
+      });
+      await flushEffects();
+
+      expect(mockGetConceptRecordCounts).not.toHaveBeenCalled();
+    });
+
+    it("does not fetch data when userId is missing", async () => {
+      await act(async () => {
+        render(<TerminologyList {...conceptsPageProps} userId={undefined} />);
       });
 
       await flushEffects();
@@ -445,6 +523,82 @@ describe("TerminologyList", () => {
         expect(mockGetConceptRecordCounts).toHaveBeenCalled();
       });
     });
+
+    // conceptsResult is normally lifted state owned by the parent Terminology
+    // component and fed back in via setConceptsResult; here it's supplied
+    // directly to simulate "a search has already completed" without depending
+    // on the fetch->setConceptsResult round trip (setConceptsResult is a plain
+    // spy in these unit tests, so calling it doesn't feed back into props).
+    const loadedResult = { count: 1, data: [sampleMappedConcept] };
+
+    it("renders a radio (not add/remove icons) for each result row", async () => {
+      await act(async () => {
+        render(
+          <TerminologyList
+            {...conceptMappingRadioProps}
+            onSelectConceptId={vi.fn()}
+            conceptsResult={loadedResult}
+          />,
+        );
+      });
+
+      expect(screen.getAllByRole("radio").length).toBeGreaterThanOrEqual(1);
+      expect(screen.queryByTestId("add-icon")).toBeNull();
+      expect(screen.queryByTestId("remove-icon")).toBeNull();
+    });
+
+    it("checks the radio matching mappingSelectedConcept", async () => {
+      await act(async () => {
+        render(
+          <TerminologyList
+            {...conceptMappingRadioProps}
+            onSelectConceptId={vi.fn()}
+            conceptsResult={loadedResult}
+            mappingSelectedConcept={sampleMappedConcept}
+          />,
+        );
+      });
+
+      const radio = screen.getAllByRole("radio")[0] as HTMLInputElement;
+      expect(radio.checked).toBe(true);
+    });
+
+    it("does not check the radio when mappingSelectedConcept is a different concept", async () => {
+      await act(async () => {
+        render(
+          <TerminologyList
+            {...conceptMappingRadioProps}
+            onSelectConceptId={vi.fn()}
+            conceptsResult={loadedResult}
+            mappingSelectedConcept={{ ...sampleMappedConcept, conceptId: 999 }}
+          />,
+        );
+      });
+
+      const radio = screen.getAllByRole("radio")[0] as HTMLInputElement;
+      expect(radio.checked).toBe(false);
+    });
+
+    it("clicking the radio calls onSelectConceptId with the row concept", async () => {
+      const onSelectConceptId = vi.fn();
+
+      await act(async () => {
+        render(
+          <TerminologyList
+            {...conceptMappingRadioProps}
+            onSelectConceptId={onSelectConceptId}
+            conceptsResult={loadedResult}
+          />,
+        );
+      });
+
+      const radio = screen.getAllByRole("radio")[0];
+      fireEvent.click(radio);
+
+      expect(onSelectConceptId).toHaveBeenCalledWith(
+        expect.objectContaining({ conceptId: 1 }),
+      );
+    });
   });
 
   // ==========================================
@@ -475,9 +629,7 @@ describe("TerminologyList", () => {
     });
 
     it("removes invalid values after validation against filterOptions", async () => {
-      const defaultFilters = [
-        { id: "domainId", value: ["NonExistentDomain"] },
-      ];
+      const defaultFilters = [{ id: "domainId", value: ["NonExistentDomain"] }];
 
       await act(async () => {
         render(
@@ -514,10 +666,7 @@ describe("TerminologyList", () => {
 
       // First fetch uses raw defaultFilters (both values)
       const firstCall = mockGetTerminologies.mock.calls[0];
-      expect(getDomainIdFilter(firstCall)).toEqual([
-        "Condition",
-        "FakeDomain",
-      ]);
+      expect(getDomainIdFilter(firstCall)).toEqual(["Condition", "FakeDomain"]);
 
       // After validation, only "Condition" remains
       const lastCall =
@@ -632,6 +781,50 @@ describe("TerminologyList", () => {
       expect(result).toHaveProperty("count");
       expect(result).toHaveProperty("data");
       expect(result.data).toHaveLength(1);
+    });
+
+    it("shows count columns when record counts are enabled", async () => {
+      await act(async () => {
+        render(
+          <TerminologyList
+            {...baseProps}
+            tab="SELECTED"
+            selectedConcepts={[sampleMappedConceptWithCounts]}
+          />,
+        );
+      });
+
+      expect(screen.queryByText("TERMINOLOGY_LIST__RECORD_COUNT")).toBeTruthy();
+      expect(
+        screen.queryByText("TERMINOLOGY_LIST__DESCENDANT_RECORD_COUNT"),
+      ).toBeTruthy();
+      expect(screen.queryByText("TERMINOLOGY_LIST__PERSON_COUNT")).toBeTruthy();
+      expect(
+        screen.queryByText("TERMINOLOGY_LIST__DESCENDANT_PERSON_COUNT"),
+      ).toBeTruthy();
+    });
+
+    it("hides count columns when record counts are disabled", async () => {
+      await act(async () => {
+        render(
+          <TerminologyList
+            {...baseProps}
+            tab="SELECTED"
+            selectedConcepts={[sampleMappedConceptWithCounts]}
+            showConceptRecordCounts={false}
+          />,
+        );
+      });
+
+      expect(screen.queryByText("TERMINOLOGY_LIST__RECORD_COUNT")).toBeNull();
+      expect(
+        screen.queryByText("TERMINOLOGY_LIST__DESCENDANT_RECORD_COUNT"),
+      ).toBeNull();
+      expect(screen.queryByText("TERMINOLOGY_LIST__PERSON_COUNT")).toBeNull();
+      expect(
+        screen.queryByText("TERMINOLOGY_LIST__DESCENDANT_PERSON_COUNT"),
+      ).toBeNull();
+      expect(screen.queryByText("TERMINOLOGY_LIST__NAME")).toBeTruthy();
     });
   });
 

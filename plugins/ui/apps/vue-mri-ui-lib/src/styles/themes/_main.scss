@@ -1,4 +1,16 @@
+@use '../mri-bootstrap-variables' as *;
 @import '@d4l/web-components-library/dist/d4l-ui/d4l-ui.css';
+
+// @d4l/web-components-library points --font-family-secondary at GT-America (a removed
+// commercial font we no longer ship). Components driven by that token — e.g. Button.vue,
+// which sets `font: var(--typography-mobile-button)` (= `500 15px var(--font-family-secondary)`)
+// — therefore fall back to Helvetica/Arial instead of IBM Plex Sans in environments where
+// GT-America isn't installed. Re-point the token at the self-hosted IBM Plex Sans stack
+// ($font-family-sans-serif). Doubled :root:root specificity wins over d4l's :root
+// regardless of import order. Mirrors libs/portal-components/.storybook/fonts.css.
+:root:root {
+  --font-family-secondary: #{$font-family-sans-serif};
+}
 
 // Fix for d4l-button not respecting inline styles after pnpm migration
 // Shadow DOM components need explicit display mode to accept margin properties
@@ -7,6 +19,7 @@ d4l-button {
 }
 
 .theme-d2e {
+  --color-primary: #000080;
   --color-ui-medium-border-rgb: 204, 204, 204;
   --color-mri-brand: var(--color-primary, #000080);
   --color-mri-brand-selected: none;
@@ -51,6 +64,7 @@ d4l-button {
   --color-mri-info: #007cc0;
   --color-mri-error: #c00000;
   --color-mri-warning: #f9a429;
+  --color-mri-success-bg: #e1fff6;
   --color-mri-contrast: var(--color-primary, #000080);
   --color-mri-select-list-item-hoverable-light: #f0f0f0;
   --color-mri-dropdown-list-item-selected: #ebf2f9;
@@ -312,4 +326,3 @@ d4l-button {
   --color-cardinality-at-most: var(--color-secondary);
   --color-cardinality-exactly: var(--color-black);
 }
-

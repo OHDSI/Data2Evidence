@@ -1,0 +1,94 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    profile: d2e-core-caddy
+  name: "{{ .Release.Name }}-{{ .Chart.Name }}-caddy"
+  namespace: d2e
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      profile: d2e-core-caddy
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        profile: d2e-core-caddy
+    spec:
+      nodeSelector:
+        "kubernetes.io/os": linux
+      restartPolicy: Always
+      containers:
+        - name: caddy
+          args:
+            - caddy
+            - run
+            - --environ
+            - --config
+            - /srv/caddy-config/Caddyfile
+            - --adapter
+            - caddyfile
+          env:
+            - name: CADDY__D2E__INTERNAL_FQDN
+              valueFrom:
+                configMapKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: CADDY__D2E__INTERNAL_FQDN
+            - name: CADDY__D2E__PUBLIC_FQDN
+              valueFrom:
+                configMapKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: CADDY__D2E__PUBLIC_FQDN
+            - name: TREX__D2E__INTERNAL_FQDN
+              value: trex.d2e.svc.cluster.local:443 # NOT trex-http!!
+            - name: TLS__CADDY_DIRECTIVE
+              value: tls internal
+          image: caddy:2.11-alpine
+          imagePullPolicy: IfNotPresent
+          livenessProbe:
+            httpGet:
+              path: /check-liveness
+              port: 8080
+            failureThreshold: 5
+            initialDelaySeconds: 30
+            periodSeconds: 5
+            timeoutSeconds: 5
+          readinessProbe:
+            httpGet:
+              path: /check-liveness
+              port: 8080
+            failureThreshold: 5
+            initialDelaySeconds: 30
+            periodSeconds: 5
+            timeoutSeconds: 5
+          ports:
+            - containerPort: 443
+              protocol: TCP
+            - containerPort: 8080
+              protocol: TCP
+          resources:
+            {{- toYaml .Values.global.resources.caddy | nindent 12 }}
+          volumeMounts:
+            - mountPath: /srv/caddy-config
+              name: d2e-caddy-cm
+            - mountPath: /data/caddy/pki/authorities/local/root.crt
+              name: caddy-local-pki
+              subPath: ROOT__PKI__CA_CRT
+            - mountPath: /data/caddy/pki/authorities/local/root.key
+              name: caddy-local-pki
+              subPath: ROOT__PKI__CA_KEY
+            - mountPath: /data/caddy/certificates/local/k8s.d2e.sg/k8s.d2e.sg.crt
+              name: caddy-local-pki
+              subPath: SERVER__CRT
+            - mountPath: /data/caddy/certificates/local/k8s.d2e.sg/k8s.d2e.sg.key
+              name: caddy-local-pki
+              subPath: SERVER__KEY
+      volumes:
+        - name: d2e-caddy-cm
+          configMap:
+            name: "{{ .Release.Name }}-{{ .Chart.Name }}-caddy"
+        - name: caddy-local-pki
+          secret:
+            secretName: "{{ .Release.Name }}-{{ .Chart.Name }}-caddy"

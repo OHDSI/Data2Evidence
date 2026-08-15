@@ -1,9 +1,18 @@
-import type { WizardDefinition, WizardConfig, FieldDefinition, WizardStepConfig } from "../types/wizard";
+import type { WizardDefinition, WizardConfig, FieldDefinition, WizardStepConfig, WizardSurface } from "../types/wizard";
 import { fetchCdwConfig, getAttributeByPath } from "./cdwConfig";
 import type { CdwConfig } from "./cdwConfig";
 import client from "../axios/request";
 
 const isDev = import.meta.env.DEV;
+
+export const DEFAULT_WIZARD_FORM_NOTE =
+  "Note: this is a very rough approximation that is just a starting point for a more comprehensive analysis.";
+
+export function resolveWizardFormNote(formNote: string | null | undefined): string | null {
+  if (formNote === undefined) return DEFAULT_WIZARD_FORM_NOTE;
+  const trimmedNote = formNote?.trim();
+  return trimmedNote || null;
+}
 
 /**
  * Default steps used by all wizards.
@@ -14,9 +23,13 @@ const DEFAULT_STEPS: WizardStepConfig[] = [
     id: "form",
     type: "form",
     title: "Form",
-    config: { submitLabel: "Open cohort", submitAction: "deep-link" },
+    config: { submitLabel: "Generate", submitAction: "deep-link" },
   },
 ];
+
+export function isWizardVisibleOnSurface(wizard: Pick<WizardConfig, "surfaces">, surface: WizardSurface): boolean {
+  return !wizard.surfaces || wizard.surfaces.includes(surface);
+}
 
 /**
  * Enrich a field definition using CDW config data looked up via configPath.
@@ -282,6 +295,14 @@ const mockWizardConfigs: WizardConfig[] = [
     name: "Cross sectional Demographics",
     description: "Assessment of hypertension and cholesterol levels in post-operative patients.",
     fields: WIZARD_FIELDS,
+  },
+  {
+    id: "table1",
+    name: "Table 1",
+    description: "Generate a Table 1 summary using selected covariate concept sets.",
+    surfaces: ["cohortBuilder"],
+    flow: "table1-config",
+    fields: [],
   },
 ];
 

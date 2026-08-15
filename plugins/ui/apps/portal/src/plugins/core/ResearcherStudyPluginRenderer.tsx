@@ -18,6 +18,10 @@ import env from "../../env";
 
 const nameProp = env.REACT_APP_IDP_NAME_PROP;
 
+const VUE_APP_HOST = env.REACT_APP_DN_BASE_URL.endsWith("/")
+  ? `${env.REACT_APP_DN_BASE_URL}d2e`
+  : `${env.REACT_APP_DN_BASE_URL}/d2e`;
+
 function generateAppId(path: string): string {
   return `researcher-plugin-${path.replace(/[^a-zA-Z0-9]/g, "-")}`;
 }
@@ -84,6 +88,7 @@ export const ResearcherStudyPluginRenderer: FC<ResearcherStudyPluginRendererProp
               locale,
               features,
               featuresLoading,
+              qeSvcUrl: VUE_APP_HOST,
               ...data,
             },
           });
@@ -117,6 +122,7 @@ export const ResearcherStudyPluginRenderer: FC<ResearcherStudyPluginRendererProp
         locale,
         features,
         featuresLoading,
+        qeSvcUrl: VUE_APP_HOST,
         ...data,
       });
     }

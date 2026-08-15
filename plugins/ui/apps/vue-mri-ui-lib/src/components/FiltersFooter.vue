@@ -1,6 +1,23 @@
 <template>
-  <div class="filters-footer d-flex justify-content-center">
-    <div class="d-flex align-items-center" style="justify-content: space-between; width: 100%">
+  <div class="filters-footer">
+    <!-- "Allow sharing" sits in its own row at the bottom of the side panel, directly above the action buttons. -->
+    <div v-if="canShare" class="filters-footer__share" data-testid="pa-share-cohort-row">
+      <v-checkbox
+        v-model="shareBookmark"
+        :label="getText('MRI_PA_BMK_SHARED_BOOKMARK_TEXT')"
+        density="compact"
+        hide-details
+        class="filters-footer__share-checkbox"
+        data-testid="pa-share-cohort-checkbox"
+      ></v-checkbox>
+      <span class="filters-footer__share-info" data-testid="pa-share-cohort-info">
+        <v-icon icon="mdi-information-outline" size="16"></v-icon>
+        <v-tooltip activator="parent" location="right" max-width="222" content-class="filters-footer__share-tooltip">
+          {{ getText('MRI_PA_BMK_SHARED_BOOKMARK_TOOLTIP') }}
+        </v-tooltip>
+      </span>
+    </div>
+    <div class="filters-footer__actions d-flex align-items-center" style="justify-content: space-between; width: 100%">
       <div>
         <d4l-button
           class="unicode-icon"
@@ -8,6 +25,7 @@
           :title="getText('MRI_PA_TOOLTIP_RESET_FILTERS')"
           @click="openResetDialog"
           style="--border-radius-button: 9999px; margin-left: 8px; margin-right: 8px"
+          data-testid="pa-reset-filters-btn"
         />
       </div>
       <div class="d-flex justify-content-center align-items-center">
@@ -25,6 +43,7 @@
                   : getText('MRI_PA_TOOLTIP_CREATE_FILTERS')
               "
               :disabled="this.hasExceededMaxFilterCount"
+              data-testid="pa-add-filter-btn"
             />
             <d4l-button
               v-else
@@ -57,7 +76,7 @@
           </div>
         </bs-dropdown>
       </div>
-      <div>
+      <div class="d-flex align-items-center">
         <d4l-button
           ref="saveBookmarkButton"
           :disabled="!hasChanges"
@@ -65,6 +84,7 @@
           :title="getText('MRI_PA_BUTTON_SAVE')"
           @click="openSaveBookmark"
           style="margin-left: 8px; margin-right: 8px"
+          data-testid="pa-save-cohort-btn"
         />
       </div>
     </div>
@@ -97,7 +117,7 @@
                       tabindex="0"
                       v-focus
                       required
-                      :maxlength="this.maxLength+1"
+                      :maxlength="this.maxLength + 1"
                       @keydown.enter="saveBookmark"
                     />
                     <div
@@ -118,14 +138,6 @@
                   </div>
                 </div>
               </div>
-
-              <div v-if="canShare" class="row row-checkbox">
-                <appCheckbox
-                  v-model="shareBookmark"
-                  :text="getText('MRI_PA_BMK_SHARED_BOOKMARK_TEXT')"
-                  :title="getText('MRI_PA_BMK_SHARED_BOOKMARK_TITLE')"
-                ></appCheckbox>
-              </div>
             </div>
           </div>
         </div>
@@ -137,11 +149,13 @@
           :text="getText('MRI_PA_BUTTON_SAVE')"
           :tooltip="getText('MRI_PA_BUTTON_SAVE')"
           :disabled="this.hasExceededLength || getBookmarksLoading"
+          testId="pa-save-dialog-save-btn"
         ></appButton>
         <appButton
           :click="closeSaveBookmark"
           :text="getText('MRI_PA_BUTTON_CANCEL')"
           :tooltip="getText('MRI_PA_BUTTON_CANCEL')"
+          testId="pa-save-dialog-cancel-btn"
         ></appButton>
       </template>
     </messageBox>
@@ -174,13 +188,12 @@
 <script lang="ts">
 import { mapActions, mapGetters, mapMutations, useStore } from 'vuex'
 import appButton from '../lib/ui/app-button.vue'
-import appCheckbox from '../lib/ui/app-checkbox.vue'
 import bsDropdown from '../lib/ui/bs-dropdown.vue'
 import bsDropdownItemButton from '../lib/ui/bs-dropdown-item-button.vue'
 import * as types from '../store/mutation-types'
 import DialogBox from './DialogBox.vue'
 import messageBox from './MessageBox.vue'
-import { getPortalAPI } from '../utils/PortalUtils'
+import { usePortalContext } from '../composables/usePortalContext'
 import { useUserRole } from '../composables/useUserRole'
 
 export default {
@@ -194,8 +207,9 @@ export default {
   },
   setup() {
     const store = useStore()
+    const portalContext = usePortalContext()
     const { canShare } = useUserRole()
-    return { canShare }
+    return { canShare, portalContext }
   },
   data() {
     return {
@@ -234,7 +248,8 @@ export default {
     ]),
     hasChanges() {
       // For regular D2E bookmarks, use existing logic with null checks
-      return this.getActiveBookmark?.isNew || this.getCurrentBookmarkHasChanges
+      const shareChanged = this.canShare && this.shareBookmark !== !!this.getActiveBookmark?.shared
+      return this.getActiveBookmark?.isNew || this.getCurrentBookmarkHasChanges || shareChanged
     },
     isNewCohort() {
       return this.getActiveBookmark?.isNew
@@ -251,8 +266,12 @@ export default {
       return filtercardCount >= this.maxFiltercardCount
     },
     isNotUserSharedBookmark() {
-      const username = getPortalAPI().username
+      const username = this.portalContext.username
       return this.getActiveBookmark.shared && username !== this.getActiveBookmark.user_id
+    },
+    needsSaveDialog() {
+      // Only flows that create a new cohort record require a name from the user.
+      return this.isNewCohort || this.isNotUserSharedBookmark
     },
   },
   watch: {
@@ -264,8 +283,8 @@ export default {
     },
   },
   methods: {
-    ...mapActions(['fireBookmarkQuery', 'loadbookmarkToState', 'resetChart']),
-    ...mapMutations([types.CONFIG_SET_HAS_ASSIGNED, types.SET_ACTIVE_BOOKMARK]),
+    ...mapActions(['fireBookmarkQuery', 'loadbookmarkToState', 'resetChart', 'queryReset']),
+    ...mapMutations([types.CONFIG_SET_HAS_ASSIGNED, types.SET_ACTIVE_BOOKMARK, types.SET_ACTIVE_BOOKMARK_BASELINE]),
     onAddFilterCardMenuItemSelected(configPath, isExclusion = false) {
       this.$emit('add', {
         configPath,
@@ -274,7 +293,13 @@ export default {
       })
     },
     openSaveBookmark() {
-      this.showSaveBookmark = true
+      // An already-saved cohort owned by the current user saves straight away and reports
+      // via the success toast. The dialog is only needed when a name has to be supplied.
+      if (this.needsSaveDialog) {
+        this.showSaveBookmark = true
+        return
+      }
+      this.saveBookmark()
     },
     closeSaveBookmark() {
       this.showSaveBookmark = false
@@ -301,7 +326,7 @@ export default {
           return
         }
 
-        const username = getPortalAPI().username
+        const username = this.portalContext.username
 
         // For updates without a new name, use the existing bookmark name
         const bookmarkName = this.cohortName.length > 0 ? this.cohortName : activeBookmark.bookmarkname
@@ -340,6 +365,7 @@ export default {
           await this.fireBookmarkQuery({ method: 'get', params: { cmd: 'loadAll' } })
           const savedBookmark = this.getBookmarkByNameAndUsername(bookmarkName, username)
           this[types.SET_ACTIVE_BOOKMARK](savedBookmark)
+          this[types.SET_ACTIVE_BOOKMARK_BASELINE](this.getBookmarksData)
         } catch (error) {
           console.error('Error during bookmark save or reload:', error)
         } finally {
@@ -349,6 +375,7 @@ export default {
       }
     },
     reset() {
+      this.queryReset()
       this.resetChart()
       this.closeResetDialog()
     },
@@ -366,7 +393,6 @@ export default {
   },
   components: {
     appButton,
-    appCheckbox,
     bsDropdown,
     bsDropdownItemButton,
     DialogBox,

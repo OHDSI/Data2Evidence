@@ -12,6 +12,7 @@ export const env = {
   PG__DB_NAME: _env.PG__DB_NAME,
   PG__SSL: _env.PG__SSL,
   PG__CA_ROOT_CERT: _env.PG__CA_ROOT_CERT,
+  FHIR_DATABASE_CODE: _env.FHIR_DATABASE_CODE,
 };
 
 export const services = JSON.parse(env.SERVICE_ROUTES);

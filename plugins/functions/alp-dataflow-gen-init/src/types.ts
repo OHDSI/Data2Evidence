@@ -48,6 +48,12 @@ interface DbExtra {
   auth_provider_x509_cert_url? : string
   client_x509_cert_url? : string
   universe_domain? : string
+  // Snowflake specific fields (key-pair auth; stored in db_extra.Internal)
+  warehouse? : string
+  schema? : string
+  role? : string
+  privateKey? : string
+  privateKeyPassphrase? : string
 }
 
 export interface DBCredentials {
@@ -103,12 +109,25 @@ export interface TransformedDBCredentials {
   auth_provider_x509_cert_url?: string;
   client_x509_cert_url?: string;
   universe_domain?: string;
+  // Snowflake specific fields
+  warehouse?: string | null;
+  snowflakeSchema?: string | null;
+  role?: string | null;
+  privateKey?: string | null;
+  privateKeyPassphrase?: string | null;
 }
 
 export function transformDBCredentials(
   dbCredentialsArray: DBCredentials[]
 ): TransformedDBCredentials[] {
   return dbCredentialsArray.map((dbCredentials) => {
+    // The trex core's getDatabaseCredentials() may return a credential without
+    // a `db_extra` object. Default it so the `db_extra.*` reads below don't throw
+    // "Cannot read properties of undefined (reading 'encrypt')" and crash the
+    // alp-dataflow-gen-init worker at module-eval (which would leave Prefect
+    // unseeded and make DQD flow runs fail).
+    dbCredentials.db_extra = dbCredentials.db_extra ?? {};
+
     // Extract read and admin credentials based on their type
     const readCredential = dbCredentials.credentials.find(
       (cred) => cred.userScope === UserScope.READ
@@ -146,7 +165,12 @@ export function transformDBCredentials(
       readRole: dbCredentials.db_extra.readRole
         ? dbCredentials.db_extra.readRole
         : "",
-      authMode: dbCredentials.authentication_mode,
+      // The trex core's getDatabaseCredentials() doesn't return authentication_mode,
+      // so it arrives undefined and JSON.stringify drops it from the Prefect
+      // database-credentials block — the flow's Pydantic DBCredentialsType then
+      // rejects the missing `authMode` and the datamodel/cache flows fail. The d2e
+      // stack authenticates with username/password, so default to Password.
+      authMode: dbCredentials.authentication_mode ?? AuthMode.PASSWORD,
       type: dbCredentials.db_extra.type 
         ? dbCredentials.db_extra.type 
         : "",
@@ -177,9 +201,25 @@ export function transformDBCredentials(
       client_x509_cert_url: dbCredentials.db_extra.client_x509_cert_url 
         ? dbCredentials.db_extra.client_x509_cert_url 
         : "",
-      universe_domain: dbCredentials.db_extra.universe_domain 
-        ? dbCredentials.db_extra.universe_domain 
+      universe_domain: dbCredentials.db_extra.universe_domain
+        ? dbCredentials.db_extra.universe_domain
         : "",
+      // Snowflake: user=adminUser, account=host, key/passphrase + wh/schema/role from db_extra
+      warehouse: dbCredentials.db_extra.warehouse
+        ? dbCredentials.db_extra.warehouse
+        : null,
+      snowflakeSchema: dbCredentials.db_extra.schema
+        ? dbCredentials.db_extra.schema
+        : null,
+      role: dbCredentials.db_extra.role
+        ? dbCredentials.db_extra.role
+        : null,
+      privateKey: dbCredentials.db_extra.privateKey
+        ? dbCredentials.db_extra.privateKey
+        : null,
+      privateKeyPassphrase: dbCredentials.db_extra.privateKeyPassphrase
+        ? dbCredentials.db_extra.privateKeyPassphrase
+        : null,
     };
     return transformedCredentials;
   });

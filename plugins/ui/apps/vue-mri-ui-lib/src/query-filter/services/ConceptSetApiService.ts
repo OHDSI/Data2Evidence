@@ -1,7 +1,7 @@
 /**
  * API service for concept set operations
  */
-import { getPortalAPI } from '../../utils/PortalUtils'
+import { usePortalContext } from '@/composables/usePortalContext'
 import { d2eWebapiService } from './D2eWebapiService'
 import type {
   ConceptSetItemDisplay,
@@ -14,10 +14,10 @@ import type {
 } from '../types/ConceptSetTypes'
 
 const buildApiHeaders = async (datasetId?: string): Promise<Record<string, string>> => {
-  const portalAPI = getPortalAPI()
+  const portalContext = usePortalContext()
   const headers: Record<string, string> = {}
 
-  const bearerToken = portalAPI ? await portalAPI.getToken() : localStorage.getItem('msaltoken')
+  const bearerToken = await portalContext.getToken()
   if (bearerToken != null) {
     headers['Authorization'] = `Bearer ${bearerToken}`
   }
@@ -58,7 +58,10 @@ export const clearConceptSetExpressionCache = () => {
   conceptSetExpressionCache.clear()
 }
 
-export const loadConceptSets = async (datasetId: string): Promise<ConceptSetDomainValues> => {
+export const loadConceptSets = async (
+  datasetId: string,
+  options: { throwOnError?: boolean } = {}
+): Promise<ConceptSetDomainValues> => {
   if (!datasetId) {
     console.warn('Missing datasetId for concept set API call')
     return {
@@ -72,7 +75,7 @@ export const loadConceptSets = async (datasetId: string): Promise<ConceptSetDoma
     const values = await d2eWebapiService.getConceptSets(datasetId)
 
     const formattedValues = values.map(item => ({
-      value: String(item.id),
+      value: item.id,
       text: item.name,
       display_value: item.name,
       shared: item.shared || false,
@@ -90,6 +93,9 @@ export const loadConceptSets = async (datasetId: string): Promise<ConceptSetDoma
     }
   } catch (error) {
     console.error('Error loading concept sets:', error)
+    if (options.throwOnError) {
+      throw error
+    }
     return {
       values: [],
       isLoading: false,
@@ -339,7 +345,7 @@ export const getConceptSetExpression = async (
 
   // Create new promise and cache it immediately (deduplicates concurrent requests)
   console.log(`Fetching concept set expression for ID ${conceptSetId}`)
-  const promise = d2eWebapiService.getConceptSetExpression(parseInt(conceptSetId, 10), datasetId)
+  const promise = d2eWebapiService.getConceptSetExpression(conceptSetId, datasetId)
 
   conceptSetExpressionCache.set(cacheKey, {
     promise,
@@ -360,7 +366,7 @@ export const createConceptSet = async (
   conceptSetData: CreateConceptSetRequest,
   datasetId: string,
   isAtlas: boolean
-): Promise<number> => {
+): Promise<string> => {
   if (!datasetId) {
     throw new Error('Missing datasetId for concept set creation')
   }

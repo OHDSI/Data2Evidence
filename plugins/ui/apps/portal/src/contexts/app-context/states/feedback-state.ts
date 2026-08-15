@@ -1,6 +1,3 @@
-export interface FeedbackState {
-  type?: "error" | "success";
-  message?: string;
-  description?: string;
-  autoClose?: number;
-}
+import type { Feedback } from "../../../types";
+
+export type FeedbackState = Feedback;

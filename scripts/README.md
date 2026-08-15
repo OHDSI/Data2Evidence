@@ -15,14 +15,12 @@
 # For dev setup
 - To compile cli.ts file 
 ```bash
-yarn prepare 
-# OR 
-# npm run build:ts
+npm run prepare
 ```
 
 - To start d2e: 
 ```bash
-yarn local start
+npm run local start
 # OR 
-yarn local --pull start # --pull flag: to pull latest docker image
+npm run local -- --pull start # --pull flag: to pull latest docker image
 ```

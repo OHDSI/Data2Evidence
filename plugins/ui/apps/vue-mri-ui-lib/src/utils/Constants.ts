@@ -256,9 +256,14 @@ const ChartColorway = {
   YELLOW: '#fcd34b',
 }
 
+// Font stack for Plotly canvas text (Plotly needs a plain string, so it can't
+// read the --app-font-family CSS token). Kept in sync with the SCSS/CSS stack.
+export const FONT_FAMILY =
+  "'GT-America', 'IBM Plex Sans Variable', 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif"
+
 const PlotlyFont = {
   color: '#000080',
-  family: "'GT-America', sans-serif",
+  family: FONT_FAMILY,
 }
 const PlotlyConsts = {
   layout: {
@@ -286,11 +291,13 @@ const PlotlyConsts = {
       ticks: 'outside',
       tickangle: 'auto',
       dividercolor: 'rgba(0,0,0,0.3)',
+      // gridcolor: 'rgba(0, 0, 0, 0.3)',
       type: 'multicategory', // Dynamically toggled with "category" while converting data into Plotly traces
     },
     yaxis: {
       showline: true,
       ticks: 'outside',
+      gridcolor: 'rgba(0, 0, 0, 0.3)',
     },
   },
   config: {
@@ -311,6 +318,8 @@ const CohortEntryExit = {
 
 const XAxisLabelMaxLength = 30
 
+const SnackbarTimeout = 3000
+
 export default {
   sap,
   events,
@@ -329,4 +338,5 @@ export default {
   ChartColorway,
   CohortEntryExit,
   XAxisLabelMaxLength,
+  SnackbarTimeout,
 }

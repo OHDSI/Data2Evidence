@@ -1,20 +1,18 @@
-#!/usr/bin/env zx
+#!/usr/bin/env node
 import fs from 'fs';
 import path from 'path';
+import { execSync } from 'child_process';
 
-// Set node_modules_path
-let node_modules_path;
-const args = process.argv.slice(2); 
-const vIndex_node_modules_path = args.indexOf("--script_full_path");
-if (vIndex_node_modules_path !== -1 && !args[vIndex_node_modules_path + 1].startsWith('-')) {
-  node_modules_path = (args[vIndex_node_modules_path + 1]);
+const args = process.argv.slice(2);
+const vIndex_nodeModulesPath = args.indexOf("-p");
+let nodeModulesPath;
+if (vIndex_nodeModulesPath !== -1 && !args[vIndex_nodeModulesPath + 1].startsWith("-")) {
+  nodeModulesPath = args[vIndex_nodeModulesPath + 1];
 } else {
-  console.log("Can't find d2e cli node_modules dir. You can set D2ECLI_NODE_MODULES_PATH to define the path. Exiting");
-  process.exit(1);
+  nodeModulesPath = ".";
 }
-console.log(`Using node_modules path: ${node_modules_path}`);
+console.log(`Using node_modules path: ${nodeModulesPath}`);
 
-// Set docker config path
 let dockerConfigPath;
 if (process.env.DOCKER_CONFIG_PATH) {
   dockerConfigPath = process.env.DOCKER_CONFIG_PATH;
@@ -26,46 +24,40 @@ if (process.env.DOCKER_CONFIG_PATH) {
 }
 console.log(`Using docker config at: ${dockerConfigPath}`);
 
-// Get docker-compose.yml path
-let dockerComposePath = path.join(node_modules_path, './docker-compose.yml');
+const dockerComposePath = path.join(nodeModulesPath, 'docker-compose.yml');
 let composeFile;
 if (fs.existsSync(dockerComposePath)) {
   console.log(`Found docker-compose.yml at: ${dockerComposePath}`);
-  composeFile = `${dockerComposePath}`;
+  composeFile = dockerComposePath;
 } else {
   console.log(`No docker-compose.yml found at: ${dockerComposePath}`);
   process.exit(1);
 }
 
-// Get noProxy settings from docker-compose.yml
-let dcConfig;
-dcConfig = await $`docker compose -f ${composeFile} --profile "*" config --format json 2>/dev/null`;
-  
-// Parse the JSON output
-const dcContainerName = JSON.parse(dcConfig.stdout);
+const dcConfigOutput = execSync(
+  `docker compose -f ${composeFile} --profile "*" config --format json 2>/dev/null`,
+  { encoding: 'utf-8' }
+);
+const dcContainerName = JSON.parse(dcConfigOutput);
 
-// Extract container names from the services
 const containerNames = Object.values(dcContainerName.services || {})
   .map(service => service.container_name)
   .filter(name => name && name !== null)
   .join(',');
 
 let newNoProxy = `.alp.local,registry-1.docker.io,localhost,::1,${containerNames}`;
-let newHttpProxy = process.env.HTTP_PROXY || '' ;
-let newHttpsProxy = process.env.HTTPS_PROXY || '' ;
+let newHttpProxy = process.env.HTTP_PROXY || '';
+let newHttpsProxy = process.env.HTTPS_PROXY || '';
 
-// Read existing Docker config
 let dockerConfig = {};
 if (fs.existsSync(dockerConfigPath)) {
   dockerConfig = JSON.parse(fs.readFileSync(dockerConfigPath, 'utf-8'));
 }
 
-// Concatenate new proxy values to existing ones if present
 dockerConfig.proxies = dockerConfig.proxies || {};
 dockerConfig.proxies.default = dockerConfig.proxies.default || {};
-dockerConfig.proxies.default.httpProxy = [dockerConfig.proxies.default.httpProxy,newHttpProxy].filter(Boolean).join(',');
-dockerConfig.proxies.default.httpsProxy = [dockerConfig.proxies.default.httpsProxy,newHttpsProxy].filter(Boolean).join(',');
-dockerConfig.proxies.default.noProxy = [dockerConfig.proxies.default.noProxy,newNoProxy].filter(Boolean).join(',');
+dockerConfig.proxies.default.httpProxy = [dockerConfig.proxies.default.httpProxy, newHttpProxy].filter(Boolean).join(',');
+dockerConfig.proxies.default.httpsProxy = [dockerConfig.proxies.default.httpsProxy, newHttpsProxy].filter(Boolean).join(',');
+dockerConfig.proxies.default.noProxy = [dockerConfig.proxies.default.noProxy, newNoProxy].filter(Boolean).join(',');
 
-// Print updated config
 console.log(`New docker config to update:\n${JSON.stringify(dockerConfig, null, 2)}`);

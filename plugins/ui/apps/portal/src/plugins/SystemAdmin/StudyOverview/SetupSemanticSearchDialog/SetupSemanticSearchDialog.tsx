@@ -29,10 +29,18 @@ const SetupSemanticSearchDialog: FC<SetupSemanticSearchDialogProps> = ({ dataset
   const handleSubmit = useCallback(async () => {
     setFeedback({});
 
+    if (!dataset?.id) {
+      setFeedback({
+        type: "error",
+        message: getText(i18nKeys.CREATE_SEMANTIC_SEARCH_DIALOG__RUN_ERROR),
+      });
+      return;
+    }
+
     try {
       setUpdating(true);
 
-      const data: CreateSemanticSearchFlowRun = { datasetId: dataset?.id };
+      const data: CreateSemanticSearchFlowRun = { datasetId: dataset.id };
       await api.dataflow.createSearchEmbeddingFlowRun(data);
 
       setFeedback({
@@ -76,6 +84,7 @@ const SetupSemanticSearchDialog: FC<SetupSemanticSearchDialogProps> = ({ dataset
           text={getText(i18nKeys.CREATE_SEMANTIC_SEARCH_DIALOG__RUN)}
           block
           loading={updating}
+          disabled={updating || !dataset?.id}
           onClick={handleSubmit}
         />
       </div>

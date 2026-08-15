@@ -56,11 +56,7 @@ export default {
   computed: {
     ...mapGetters(['getChartableFilterCards', 'getText', 'getFilterCards', 'getSelectedEntryExitFilterCard']),
     componentStyle() {
-      const result: any = {
-        position: 'absolute',
-        top: (this.text === Constants.CohortEntryExit.ENTRY ? 250 : 300) + 'px',
-      }
-      return result
+      return {}
     },
     getIcon() {
       return this.text === Constants.CohortEntryExit.ENTRY

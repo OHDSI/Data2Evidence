@@ -1,23 +1,23 @@
 import crypto from "crypto";
 import { Readable } from "stream";
 import * as utilsLib from "@alp/alp-base-utils";
-import { QueryObject as qo, Connection as connLib } from "@alp/alp-base-utils";
+import { Connection as connLib, QueryObject as qo } from "@alp/alp-base-utils";
 import QueryObject = qo.QueryObject;
 import ConnectionInterface = connLib.ConnectionInterface;
 import { Settings } from "../../qe/settings/Settings";
 import {
+    BackendConfigWithCDMConfigMetaDataType,
+    CohortDefinitionType,
+    ExtensionMetadata,
+    FilterType,
+    IMRIRequest,
+    MRIEndpointResultCategoryType,
+    MRIEndpointResultMeasureType,
+    PluginEndpointFormatType,
     PluginEndpointResultType,
     PluginEndpointStreamResultType,
-    ExtensionMetadata,
-    CohortDefinitionType,
-    PluginEndpointFormatType,
-    FilterType,
-    BackendConfigWithCDMConfigMetaDataType,
-    QuerySvcResultType,
-    IMRIRequest,
-    MRIEndpointResultMeasureType,
-    MRIEndpointResultCategoryType,
     PluginSelectedAttributeType,
+    QuerySvcResultType,
 } from "../../types";
 import { AuditLogger } from "../../utils/AuditLogger";
 import { generateQuery } from "../../utils/QueryGenSvcProxy";
@@ -45,6 +45,7 @@ export class PluginEndpoint {
     private settingsObj: Settings;
     private pholderTableMap: any;
     private cdmConfigMetaData: any;
+    private paConfigMetaData: { id: string; version: string };
     private request: IMRIRequest;
     private selectedAttributes: PluginSelectedAttributeType[];
     private entityQueryMap: any;
@@ -54,10 +55,14 @@ export class PluginEndpoint {
         public connection: ConnectionInterface,
         private schemaName: string
     ) {
-        //double quotes surround intentional to preserve lowercase naming in hana table
-        this.uniquePatientTempTableName = `"#MRI_PLUGIN_${crypto
-            .randomBytes(24)
-            .toString("hex")}"`;
+        const hex = crypto.randomBytes(24).toString("hex");
+        if (connection.dialect !== "hana") {
+            // Dropped explicitly via dropFn / cleanup() after use.
+            this.uniquePatientTempTableName = `memory.main."MRI_PLUGIN_${hex}"`;
+        } else {
+            //double quotes surround intentional to preserve lowercase naming in hana table
+            this.uniquePatientTempTableName = `"#MRI_PLUGIN_${hex}"`;
+        }
     }
 
     public setRequest(request: IMRIRequest) {
@@ -74,6 +79,38 @@ export class PluginEndpoint {
         return false;
     }
 
+    private logSqlTrace({
+        endpoint = "patient",
+        outcome,
+        stage,
+        sql,
+        error,
+    }: {
+        endpoint?: string;
+        outcome: "success" | "error";
+        stage: string;
+        sql: string | null;
+        error?: string;
+    }) {
+        const payload: any = {
+            event: "analytics_sql_trace",
+            endpoint,
+            outcome,
+            stage,
+            paConfigId: this.paConfigMetaData?.id ?? null,
+            paConfigVersion: this.paConfigMetaData?.version ?? null,
+            cdmConfigId: this.cdmConfigMetaData?.id ?? null,
+            cdmConfigVersion: this.cdmConfigMetaData?.version ?? null,
+            sql,
+        };
+        if (error) {
+            payload.error = error;
+            log.error(JSON.stringify(payload));
+        } else {
+            log.info(JSON.stringify(payload));
+        }
+    }
+
     private mapRequestDataFormat(format: string) {
         switch (format.toUpperCase()) {
             case "CSV":
@@ -86,9 +123,16 @@ export class PluginEndpoint {
     }
 
     private genLocalTempTableCreationQuery(existingPatientTable): string {
-        const query = `CREATE LOCAL TEMPORARY COLUMN TABLE ${this.uniquePatientTempTableName} AS 
-                                            (select * from ${existingPatientTable} where 1=0)`;
-        log.debug(`Generated Create Local Temp Table Query ${query}`);
+        let query: string;
+        if (this.connection.dialect !== "hana") {
+            // Trex/DuckDB path: plain CREATE TABLE so the table lands
+            // in memory.main where the streaming connection can see it.
+            // Dropped explicitly via dropFn / cleanup().
+            query = `CREATE TABLE ${this.uniquePatientTempTableName} AS (select * from ${existingPatientTable} where 1=0)`;
+        } else {
+            query = `CREATE LOCAL TEMPORARY COLUMN TABLE ${this.uniquePatientTempTableName} AS (select * from ${existingPatientTable} where 1=0)`;
+        }
+        log.debug(`Generated Temp Table Query ${query}`);
         return query;
     }
 
@@ -133,9 +177,30 @@ export class PluginEndpoint {
     }): Promise<NodeJS.ReadWriteStream | PluginEndpointResultType> {
         return new Promise<NodeJS.ReadWriteStream | PluginEndpointResultType>(
             async (resolve, reject) => {
-                let dropFn = () => {
-                    return Promise.resolve({});
-                };
+                let dropFn: () => Promise<void> = () => Promise.resolve();
+
+                // For non-HANA (Trex/DuckDB) the backing table is a regular
+                // table in memory.main; it must be dropped explicitly after use.
+                if (this.connection.dialect !== "hana") {
+                    dropFn = () =>
+                        new Promise<void>((res) => {
+                            QueryObject.format(
+                                `DROP TABLE IF EXISTS ${this.uniquePatientTempTableName}`
+                            ).executeUpdate(
+                                this.connection,
+                                (err) => {
+                                    if (err) {
+                                        log.error(
+                                            "Failed to drop DuckDB patient temp table:",
+                                            err
+                                        );
+                                    }
+                                    res();
+                                },
+                                this.schemaName
+                            );
+                        });
+                }
 
                 const errHandler = async (err) => {
                     await dropFn();
@@ -195,12 +260,26 @@ export class PluginEndpoint {
                                 this.connection,
                                 (err, result) => {
                                     if (err) {
+                                        this.logSqlTrace({
+                                            outcome: "error",
+                                            stage: "query_execute",
+                                            sql: query?.queryString ?? null,
+                                            error: err?.message ?? String(err),
+                                        });
                                         console.error(
                                             "Extension service - Interaction query failed",
                                             err
                                         );
                                         return reject(err);
                                     }
+                                    this.logSqlTrace({
+                                        outcome: "success",
+                                        stage: "query_execute",
+                                        sql:
+                                            result?.sql ??
+                                            query?.queryString ??
+                                            null,
+                                    });
                                     resolve({
                                         entity,
                                         data: result.data,
@@ -212,7 +291,6 @@ export class PluginEndpoint {
                         });
 
                     const qeExecuteUpdateCallback = async (err, result) => {
-                        let resultSet = [];
                         let serviceResponse;
 
                         if (err) {
@@ -255,11 +333,7 @@ export class PluginEndpoint {
                                     );
                             }
 
-                            qeDeleteTempTablesCallback(
-                                null,
-                                resultSet,
-                                serviceResponse
-                            );
+                            qeDeleteTempTablesCallback(serviceResponse);
                         } catch (err) {
                             return errHandler(err);
                         }
@@ -267,53 +341,57 @@ export class PluginEndpoint {
 
                     /**teardown resource setup, returns response */
                     const qeDeleteTempTablesCallback = async (
-                        err,
-                        queryResult,
                         serviceResponse
                     ) => {
-                        const patientEntity = queryResult.filter(
+                        const patientEntity = serviceResponse.filter(
                             (dataset) => dataset.entity === "patient"
                         )[0];
                         const pList = patientEntity ? patientEntity.data : [];
-                        const resultcb = (logErr) => {
-                            if (logErr) {
+
+                        if (AuditLogger.isEnabled()) {
+                            try {
+                                const auditLogger = AuditLogger.create({
+                                    cohortBuilderConfigMetaData:
+                                        this.paConfigMetaData,
+                                    cdmConfigMetaData: this.cdmConfigMetaData,
+                                    request: this.request,
+                                });
+                                await auditLogger.log(
+                                    "patient.attributes.pid",
+                                    auditLogChannelName,
+                                    pList,
+                                    undefined,
+                                    this.selectedAttributes
+                                );
+                            } catch (_err) {
+                                console.error(_err);
                                 return errHandler(new Error("Auditlog error"));
                             }
+                        }
 
-                            if (mode === MODE.CSV) {
-                                endpointResult.selectedAttributes =
-                                    this.selectedAttributes;
-                                endpointResult.noValue =
-                                    connLib.DBValues.NOVALUE;
-                                if (metadataType) {
-                                    const meta = this.MD
-                                        ? JSON.stringify(this.MD)
-                                        : "Metadata Type not supported";
-                                    serviceResponse.metadata = meta;
-                                }
+                        if (mode === MODE.CSV) {
+                            endpointResult.selectedAttributes =
+                                this.selectedAttributes;
+                            endpointResult.noValue = connLib.DBValues.NOVALUE;
+                            if (metadataType) {
+                                const meta = this.MD
+                                    ? JSON.stringify(this.MD)
+                                    : "Metadata Type not supported";
+                                serviceResponse.metadata = meta;
                             }
+                        }
 
-                            endpointResult.data = serviceResponse;
+                        endpointResult.data = serviceResponse;
 
-                            if (endpointResult.data.length === 0) {
-                                endpointResult.noDataReason =
-                                    "MRI_PA_NO_MATCHING_PATIENTS_GUARDED";
-                            }
+                        if (endpointResult.data.length === 0) {
+                            endpointResult.noDataReason =
+                                "MRI_PA_NO_MATCHING_PATIENTS_GUARDED";
+                        }
 
-                            return resolve(endpointResult);
-                        };
-
-                        AuditLogger.getAuditLogger({})
-                            .withCDMConfigMetaData(this.cdmConfigMetaData)
-                            .log(
-                                "patient.attributes.pid",
-                                auditLogChannelName,
-                                pList,
-                                true,
-                                resultcb,
-                                undefined,
-                                this.selectedAttributes
-                            );
+                        // Drop the regular DuckDB table now that the full
+                        // result set has been materialised.
+                        await dropFn();
+                        return resolve(endpointResult);
                     };
 
                     // const tempTableCreateTime = process.hrtime();
@@ -340,11 +418,26 @@ export class PluginEndpoint {
                                         this.schemaName
                                     );
 
-                                if (patientCount.data.length === 1) {
-                                    endpointResult.totalPatientCount =
-                                        patientCount.data[0][
-                                            "patient.attributes.pcount"
-                                        ];
+                                const totalPatientCount =
+                                    patientCount.data.length === 1
+                                        ? patientCount.data[0][
+                                              "patient.attributes.pcount"
+                                          ]
+                                        : 0;
+                                endpointResult.totalPatientCount =
+                                    totalPatientCount;
+                                // Enforce minCohortSize before returning patient data
+                                const minCohortSize =
+                                    this.config?.chartOptions?.minCohortSize;
+                                if (
+                                    minCohortSize !== undefined &&
+                                    totalPatientCount < minCohortSize
+                                ) {
+                                    return errHandler(
+                                        new Error(
+                                            `Patient list blocked: patient count ${totalPatientCount} is below the minimum cohort size of ${minCohortSize}`
+                                        )
+                                    );
                                 }
                                 //Execute query to select dataset, insert patient ids into temp table
                                 query.executeUpdate(
@@ -391,9 +484,31 @@ export class PluginEndpoint {
     }): Promise<PluginEndpointStreamResultType> {
         return new Promise<PluginEndpointStreamResultType>(
             async (resolve, reject) => {
-                let dropFn = () => {
-                    return Promise.resolve({});
-                };
+                let dropFn: () => Promise<void> = () => Promise.resolve();
+
+                // For non-HANA (Trex/DuckDB) the backing table is a regular
+                // table in memory.main so the separate Trex streaming connection
+                // can see it. Drop it explicitly after use.
+                if (this.connection.dialect !== "hana") {
+                    dropFn = () =>
+                        new Promise<void>((res) => {
+                            QueryObject.format(
+                                `DROP TABLE IF EXISTS ${this.uniquePatientTempTableName}`
+                            ).executeUpdate(
+                                this.connection,
+                                (err) => {
+                                    if (err) {
+                                        log.error(
+                                            "Failed to drop DuckDB patient temp table:",
+                                            err
+                                        );
+                                    }
+                                    res();
+                                },
+                                this.schemaName
+                            );
+                        });
+                }
 
                 const errHandler = async (err) => {
                     await dropFn();
@@ -404,9 +519,10 @@ export class PluginEndpoint {
                     const endpointResult: PluginEndpointStreamResultType = {
                         entity: "",
                         data: Readable.from(""),
+                        auditLogChannelName,
                     };
 
-                    let { query, noDataReason } =
+                    let { query, pCountQuery, noDataReason } =
                         await this.buildTempTableQuery({
                             cohortDefinition,
                             datasetId: datasetId,
@@ -451,10 +567,10 @@ export class PluginEndpoint {
                     //3
 
                     const streamQuery = async (
-                        entity,
+                        entity: string,
                         query: QueryObject
                     ): Promise<{
-                        entity: any;
+                        entity: string;
                         data: NodeJS.ReadableStream;
                     }> => {
                         try {
@@ -467,9 +583,20 @@ export class PluginEndpoint {
                                     this.connection,
                                     this.schemaName
                                 );
+                            this.logSqlTrace({
+                                outcome: "success",
+                                stage: "stream_query_execute",
+                                sql: query?.queryString ?? null,
+                            });
 
                             return { entity, data };
                         } catch (err) {
+                            this.logSqlTrace({
+                                outcome: "error",
+                                stage: "stream_query_execute",
+                                sql: query?.queryString ?? null,
+                                error: err?.message ?? String(err),
+                            });
                             log.error(err);
                             throw err;
                         }
@@ -493,6 +620,7 @@ export class PluginEndpoint {
                             endpointResult.noDataReason =
                                 "Detected extension service - Data streaming from a single FAST object failed. " +
                                 "Detect more than 1 FAST object based on associated attributes in the request.";
+                            await dropFn();
                             return resolve(endpointResult);
                         }
 
@@ -508,7 +636,7 @@ export class PluginEndpoint {
                                 entityObj.entity,
                                 qo
                             );
-                            await qePrepareDataStream(dataStream);
+                            qePrepareDataStream(dataStream);
                         } catch (err) {
                             return errHandler(err);
                         }
@@ -516,24 +644,10 @@ export class PluginEndpoint {
 
                     // Setup data stream events and return response
                     //4
-                    const qePrepareDataStream = async (dataStream: {
-                        entity: any;
+                    const qePrepareDataStream = (dataStream: {
+                        entity: string;
                         data: NodeJS.ReadableStream;
                     }) => {
-                        let rows = [];
-                        const CHUNK_SIZE = 10;
-                        const auditLogger = AuditLogger.getAuditLogger(
-                            {}
-                        ).withCDMConfigMetaData(this.cdmConfigMetaData);
-                        let rowCount = 0;
-
-                        const resultcb = (logErr) => {
-                            if (logErr) {
-                                log.error(logErr);
-                                return errHandler(new Error("Auditlog error"));
-                            }
-                        };
-
                         //Exception for duckdb
                         if (
                             dataStream.data.constructor.prototype.toString() !==
@@ -542,7 +656,7 @@ export class PluginEndpoint {
                         ) {
                             dataStream.data.on("end", () => {
                                 log.debug(
-                                    `total streamed rows for ${dataStream.entity}: ${rowCount}`
+                                    `finished streaming rows for ${dataStream.entity}`
                                 );
                             });
 
@@ -554,7 +668,13 @@ export class PluginEndpoint {
                         return resolve({
                             entity: dataStream.entity,
                             data: dataStream.data,
-                            rowCount: rowCount,
+                            selectedAttributes: this.selectedAttributes,
+                            cohortBuilderConfigMetaData: this.paConfigMetaData,
+                            cdmConfigMetaData: this.cdmConfigMetaData,
+                            auditLogChannelName,
+                            // patient.ts calls cleanup() after the pipeline
+                            // finishes to drop the DuckDB regular table.
+                            cleanup: dropFn,
                         });
                     };
 
@@ -570,6 +690,56 @@ export class PluginEndpoint {
                                 return errHandler(err);
                             }
                             try {
+                                // Enforce patient list export limits before streaming the dataset
+                                const listExportConfig =
+                                    this.config?.chartOptions?.list;
+                                const minCohortSize =
+                                    this.config?.chartOptions?.minCohortSize;
+                                if (listExportConfig && pCountQuery) {
+                                    const { maxPatientsExport } =
+                                        listExportConfig;
+                                    const patientCount =
+                                        await pCountQuery.executeQuery<
+                                            {
+                                                "gr_cnt": number;
+                                                "patient.attributes.pcount": number;
+                                            }[]
+                                        >(
+                                            this.connection,
+                                            undefined,
+                                            this.schemaName
+                                        );
+                                    const totalPatientCount =
+                                        patientCount.data.length === 1
+                                            ? patientCount.data[0][
+                                                  "patient.attributes.pcount"
+                                              ]
+                                            : 0;
+                                    if (
+                                        (minCohortSize !== undefined &&
+                                            totalPatientCount <
+                                                minCohortSize) ||
+                                        (maxPatientsExport !== undefined &&
+                                            totalPatientCount >
+                                                maxPatientsExport)
+                                    ) {
+                                        const rangeDescription = [
+                                            minCohortSize !== undefined
+                                                ? `min ${minCohortSize}`
+                                                : null,
+                                            maxPatientsExport !== undefined
+                                                ? `max ${maxPatientsExport}`
+                                                : null,
+                                        ]
+                                            .filter(Boolean)
+                                            .join(", ");
+                                        return errHandler(
+                                            new Error(
+                                                `Patient list export blocked: patient count ${totalPatientCount} is outside the allowed export range (${rangeDescription})`
+                                            )
+                                        );
+                                    }
+                                }
                                 // Execute query to select dataset, insert patient ids into temp table
                                 query.executeUpdate(
                                     this.connection,
@@ -674,6 +844,10 @@ export class PluginEndpoint {
         }>(async (resolve, reject) => {
             try {
                 const { configId, configVersion } = cohortDefinition.configData;
+                this.paConfigMetaData = {
+                    id: configId,
+                    version: configVersion,
+                };
                 cohortDefinition[`uniquePatientTempTableName`] =
                     this.uniquePatientTempTableName;
                 const querySvcParams = {

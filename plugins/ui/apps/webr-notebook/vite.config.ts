@@ -6,6 +6,7 @@ import path from 'path'
 import type { Plugin } from 'vite'
 import { defineConfig } from 'vite'
 import cssInjectedByJsPlugin from 'vite-plugin-css-injected-by-js'
+import { prepareOfflineAssets } from './scripts/prepare-offline-assets.mjs'
 
 // Read .R source files at build time and inject via define.
 // Vite's ?raw uses JS template literals which mangle R escape sequences
@@ -14,6 +15,18 @@ const rD2ESource = readFileSync(
   path.resolve(__dirname, './src/kernels/rD2E.R'),
   'utf-8'
 )
+
+// Read the resolved pyodide npm version. The submodule's pyodide-worker.ts
+// hardcodes a CDN indexURL pinned to v0.29.0 by default. If the npm package
+// resolves to anything else (currently 0.29.3), loadPyodide rejects with
+// "Pyodide version does not match". Inject the resolved version here and pass
+// it through as indexUrl from NotebookManager so the two cannot drift.
+const pyodideVersion: string = JSON.parse(
+  readFileSync(
+    path.resolve(__dirname, '../../node_modules/pyodide/package.json'),
+    'utf-8'
+  )
+).version
 
 /**
  * Post-build plugin that patches the entry chunk on disk:
@@ -70,12 +83,27 @@ function postBuildPatchPlugin(): Plugin {
   }
 }
 
-export default defineConfig({
+/**
+ * Build-only plugin: fetch/copy the offline kernel runtimes into publicDir so
+ * Vite copies them into the build output. Skipped in dev (apply: 'build').
+ */
+function offlineAssetsPlugin(): Plugin {
+  return {
+    name: 'offline-kernel-assets',
+    apply: 'build',
+    async buildStart() {
+      await prepareOfflineAssets({ publicDir: path.resolve(__dirname, 'public') })
+    },
+  }
+}
+
+export default defineConfig(({ command }) => ({
   plugins: [
       react(),
       tailwindcss(),
       cssInjectedByJsPlugin(),
       postBuildPatchPlugin(),
+      offlineAssetsPlugin(),
       basicSsl({
         name: "notebook-localhost",
         domains: ["localhost"],
@@ -85,7 +113,7 @@ export default defineConfig({
       
   resolve: {
     alias: {
-      '@': path.resolve(__dirname, '../../node_modules/react-notebook/src'),
+      '@': path.resolve(__dirname, '../../node_modules/@trex/notebook/src'),
     },
     dedupe: [
       'react',
@@ -117,6 +145,12 @@ export default defineConfig({
   },
   define: {
     __RD2E_SOURCE__: JSON.stringify(rD2ESource),
+    __PYODIDE_VERSION__: JSON.stringify(pyodideVersion),
+    // Production build: load kernel assets from the app's own origin (offline).
+    // Dev server: empty → kernels fall back to public CDNs.
+    __KERNEL_ASSET_BASE__: JSON.stringify(
+      command === 'build' ? '/resources/notebook/kernel-assets' : ''
+    ),
   },
   base: './',
   build: {
@@ -132,4 +166,4 @@ export default defineConfig({
     outDir: path.resolve(__dirname, '../../resources/notebook'),
     emptyOutDir: true,
   },
-})
+}))

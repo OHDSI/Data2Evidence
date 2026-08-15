@@ -7,7 +7,8 @@ FLOW_NAME = "data_management_plugin"
 
 DATAMODEL_CHANGELOG_MAPPING = {
             "omop5-4": "liquibase-changelog-5-4.xml",
-            "medical-imaging": "liquibase-changelog-medical-imaging.xml"
+            "medical-imaging": "liquibase-changelog-medical-imaging.xml",
+            "waveform": "liquibase-changelog-waveform.xml"
         }
 
 class FlowActionType(str, Enum):
@@ -33,10 +34,6 @@ class DataModelType(BaseModel):
     datasets: Optional[List] = None
 
     @property
-    def use_cache_db(self) -> str:
-        return False
-
-    @property
     def flow_name(self) -> str:
         return FLOW_NAME
 
@@ -58,7 +55,6 @@ class DataModelType(BaseModel):
 
 
 class DataModelBase(BaseModel):
-    use_cache_db: bool
     database_code: str = Field(...)
     cache_id: Optional[str] = None
     data_model: str = Field(...)

@@ -64,7 +64,7 @@ const LineChart: FC<LineChartProps> = ({
             zoom: `image://${ZoomPlusIcon}`,
           },
         },
-        dataView: { readOnly: false },
+        dataView: { readOnly: true },
         magicType: { type: ["line", "bar"] },
         restore: {},
         saveAsImage: {},

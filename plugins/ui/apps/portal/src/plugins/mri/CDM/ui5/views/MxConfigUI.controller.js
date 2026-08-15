@@ -12,6 +12,8 @@ var MxConfigUIController = Controller.extend("hc.hph.cdw.config.ui.views.MxConfi
 
     MxConfigUIController.prototype.onInit = function() {
         this._eventBus = sap.ui.getCore().getEventBus();
+        this._configSelectionLoading = false;
+        this._configSelectionRequestId = 0;
 
         // Creation of models
         this._oModelMgr = new ConfigModelsManager();
@@ -171,6 +173,9 @@ var MxConfigUIController = Controller.extend("hc.hph.cdw.config.ui.views.MxConfi
 
     MxConfigUIController.prototype._setViewBusy = function (sChannelId, sEventId, oEventData) {
         var busy = oEventData.busy;
+        if (busy) {
+            this.getView().setBusyIndicatorDelay(0);
+        }
         this.getView().setBusy(busy);
     };
 
@@ -245,14 +250,45 @@ var MxConfigUIController = Controller.extend("hc.hph.cdw.config.ui.views.MxConfi
     MxConfigUIController.prototype._configVersionItemChanged = function(sChannelId, sEventId, oEventData) {
         var that = this;
 
+        if (this._configSelectionLoading) {
+            return;
+        }
+
+        this._configSelectionLoading = true;
+        this._configSelectionRequestId++;
+        var requestId = this._configSelectionRequestId;
+
+        function clearSelectionLoading() {
+            that._configSelectionLoading = false;
+            that._eventBus.publish(ConfigUtils.configEvents.EVENT_CONFIG_PAGE_BUSY, { busy: false });
+        }
+
+        this._eventBus.publish(ConfigUtils.configEvents.EVENT_CONFIG_PAGE_BUSY, { busy: true });
+
         var meta = {
             configId: oEventData.configId,
             configVersion: oEventData.configVersion
         };
-        this._oModelMgr.buildConfigEditorModel(meta,
-                function(configEditorJSONModel) {
-                    that._applyConfigModel(configEditorJSONModel);
-                });
+        try {
+            this._oModelMgr.buildConfigEditorModel(meta,
+                    function(configEditorJSONModel) {
+                        if (requestId !== that._configSelectionRequestId) {
+                            return;
+                        }
+                        try {
+                            if (configEditorJSONModel) {
+                                that._applyConfigModel(configEditorJSONModel);
+                            }
+                        } finally {
+                            clearSelectionLoading();
+                        }
+                    });
+        } catch (e) {
+            ConfigUtils.logError(e);
+            if (requestId === this._configSelectionRequestId) {
+                clearSelectionLoading();
+            }
+        }
     };
 
     /**

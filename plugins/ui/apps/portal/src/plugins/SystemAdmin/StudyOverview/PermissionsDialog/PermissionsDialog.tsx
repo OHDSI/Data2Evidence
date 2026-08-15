@@ -1,6 +1,6 @@
 import React, { FC, useCallback, useState, useEffect } from "react";
-import { Study, UserWithRoles } from "../../../../types";
-import { Dialog, Button, Feedback } from "@portal/components";
+import { Feedback, Study, UserWithRoles } from "../../../../types";
+import { Dialog, Button } from "@portal/components";
 import Divider from "@mui/material/Divider";
 import "./PermissionsDialog.scss";
 import Tabs from "@mui/material/Tabs";
@@ -37,13 +37,13 @@ const PermissionsDialog: FC<PermissionsDialogProps> = ({ study, open, onClose })
   const { getText, i18nKeys } = useTranslation();
   const [tabIndex, setTabIndex] = useState(0);
   const [users, setUsers] = useState<UserWithRoles[]>([]);
+  const [usersLoading, setUsersLoading] = useState(false);
   const [feedback, setFeedback] = useState<Feedback>({});
   const [loading, setLoading] = useState(false);
 
   //Request states
   const [approvedReqs, setApprovedReqs] = useState<StudyAccessRequest[]>([]);
   const [rejectedReqs, setRejectedReqs] = useState<StudyAccessRequest[]>([]);
-  const [selectedAction, setSelectedAction] = useState("");
 
   //Edit roles states
   const [grantRolesList, setGrantRolesList] = useState<RoleEdit[]>([]);
@@ -64,8 +64,13 @@ const PermissionsDialog: FC<PermissionsDialogProps> = ({ study, open, onClose })
   //FETCH STUDY USERS
   const fetchStudyUsers = useCallback(async () => {
     if (study?.id) {
-      const users = await api.userMgmt.getUsersByStudy(study?.id);
-      setUsers(users);
+      try {
+        setUsersLoading(true);
+        const users = await api.userMgmt.getUsersByStudy(study?.id);
+        setUsers(users);
+      } finally {
+        setUsersLoading(false);
+      }
     }
   }, [study?.id]);
 
@@ -116,15 +121,12 @@ const PermissionsDialog: FC<PermissionsDialogProps> = ({ study, open, onClose })
   const handleActionChange = useCallback(
     (event: SelectChangeEvent<string>, request: StudyAccessRequest) => {
       if (event.target.value === "approve") {
-        setSelectedAction(event.target.value);
         removeFromPendingArr(request);
         setApprovedReqs([...approvedReqs, request]);
       } else if (event.target.value === "reject") {
-        setSelectedAction(event.target.value);
         removeFromPendingArr(request);
         setRejectedReqs([...rejectedReqs, request]);
       } else {
-        setSelectedAction(event.target.value);
         removeFromPendingArr(request);
       }
     },
@@ -184,6 +186,7 @@ const PermissionsDialog: FC<PermissionsDialogProps> = ({ study, open, onClose })
     await Promise.all(promises)
       .then(() => {
         setFeedback({
+          variant: "alert",
           type: "success",
           message: getText(i18nKeys.PERMISSIONS_DIALOG__SUCCESS),
         });
@@ -193,6 +196,7 @@ const PermissionsDialog: FC<PermissionsDialogProps> = ({ study, open, onClose })
       })
       .catch((e) => {
         setFeedback({
+          variant: "alert",
           type: "error",
           message: getText(i18nKeys.PERMISSIONS_DIALOG__ERROR, [e]),
         });
@@ -270,7 +274,8 @@ const PermissionsDialog: FC<PermissionsDialogProps> = ({ study, open, onClose })
           <>
             <RequestPanel
               studyId={study?.id!}
-              selectedAction={selectedAction}
+              approvedReqs={approvedReqs}
+              rejectedReqs={rejectedReqs}
               handleActionChange={handleActionChange}
               accessRequests={accessRequests}
               fetchStudyAccessRequests={fetchStudyAccessRequests}
@@ -299,9 +304,8 @@ const PermissionsDialog: FC<PermissionsDialogProps> = ({ study, open, onClose })
           <AccessPanel
             studyId={study?.id!}
             tenantId={study?.tenant?.id!}
-            selectedAction={selectedAction}
-            handleActionChange={handleActionChange}
             users={users}
+            usersLoading={usersLoading}
             grantRolesList={grantRolesList}
             withdrawRolesList={withdrawRolesList}
             setGrantRolesList={setGrantRolesList}

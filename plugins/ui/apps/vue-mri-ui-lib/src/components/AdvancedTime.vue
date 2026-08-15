@@ -298,7 +298,7 @@ export default {
           text: this.getText('MRI_PA_TEMPORAL_FILTER_START'),
         },
         targetSelection: {
-          key: 'before_start',
+          key: 'before_startdate',
           text: this.getText('MRI_PA_TEMPORAL_FILTER_BEFORE_START'),
         },
         targetInteraction: {
@@ -310,7 +310,7 @@ export default {
       this.model.props.timeFilterModel.timeFilters.push(newTimeFilter)
       this.advancedTimeLayout.props.timeFilterModel.timeFilters.push({
         originSelection: 'startdate',
-        targetSelection: 'before_start',
+        targetSelection: 'before_startdate',
         targetInteraction: '',
         days: '0',
       })

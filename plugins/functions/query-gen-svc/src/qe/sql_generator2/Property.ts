@@ -85,13 +85,18 @@ export class Property extends AstElement {
 
                 let joinType = "LEFT JOIN";
                 //optionalFiltering Is a new configuration property to indicate if the join should be left join in a filter context.
-                if (this.parent.getType() === "IsNull" || attrConfig.__config.optionalFiltering) {
-                    joinType = "left join";
-                } else if (
-                    this.parent instanceof Operator ||
-                    this.attrConfig.getBaseEntity() === "@REF" //Even though its an additional query @REF is a special entity thats used now for vocab lookup and not the standard interaction.
+                if (
+                    this.parent.getType() === "IsNull" ||
+                    attrConfig.__config.optionalFiltering
                 ) {
-                    joinType = "INNER JOIN";
+                    joinType = "left join";
+                } else if (this.parent instanceof Operator) {
+                    //Even though its an additional query @REF is a special entity thats used now for vocab lookup and not the standard interaction.
+                    if (this.attrConfig.getBaseEntity() === "@REF") {
+                        joinType = "LEFT JOIN";
+                    } else {
+                        joinType = "INNER JOIN";
+                    }
                 }
 
                 let that = this;

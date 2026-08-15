@@ -26,6 +26,9 @@ test(TEST_NAME, async ({ page }) => {
   }
   await expect(conceptsCheckbox).toBeChecked()
 
+  const conceptRecordCountsCheckbox = await page.getByLabel('Concept record counts')
+  await expect(conceptRecordCountsCheckbox).toBeChecked()
+
   const CohortCheckbox = await page.getByText('Cohort')
   if (!(await CohortCheckbox.isChecked())) {
     await CohortCheckbox.click()
@@ -38,7 +41,21 @@ test(TEST_NAME, async ({ page }) => {
   }
   await expect(notebooksCheckbox).toBeChecked()
 
+  let featureSavePayload: { features?: { feature: string; isEnabled: boolean }[] } | undefined
+  const featureSaveResponse = page.waitForResponse(response => {
+    if (!response.url().includes('/system-portal/feature') || response.request().method() !== 'POST') {
+      return false
+    }
+    featureSavePayload = response.request().postDataJSON()
+    return true
+  })
   await page.getByTestId('button').click()
+  const featureSave = await featureSaveResponse
+  expect(featureSave.ok()).toBeTruthy()
+  expect(featureSavePayload?.features).toContainEqual(
+    expect.objectContaining({ feature: 'conceptRecordCounts', isEnabled: true })
+  )
+
   await page.getByRole('link', { name: 'Account' }).click()
   await page.getByRole('button', { name: 'Switch to Researcher portal' }).click()
   await page.getByText('Demo dataset').first().click()

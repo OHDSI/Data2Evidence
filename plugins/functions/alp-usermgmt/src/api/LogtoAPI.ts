@@ -3,6 +3,7 @@ import { del, get, patch, post } from './request-util'
 import { BaseIDPAPI } from './BaseIDPAPI'
 import { ILogtoUser, ILogtoUserCreated, ILogtoRole } from '../types'
 import { env } from '../env'
+import { datasetResearcherScopes, sourceUserScopeName } from '../const'
 
 @Service()
 export class LogtoAPI extends BaseIDPAPI {
@@ -80,6 +81,38 @@ export class LogtoAPI extends BaseIDPAPI {
     const url = `${this.baseUrl}/api/users/${userId}`
     const result = await get<ILogtoUser>(url, options)
     return result.data
+  }
+
+  /**
+   * Return the user's SSO identities keyed by connector target (e.g. "oidc",
+   * "azuread-alp", "physionet"). Used to gate auto-provisioning to a
+   * specific upstream IdP. A user with no SSO identities (password
+   * sign-up, etc.) gets an empty object.
+   */
+  async getUserSsoIdentities(idpUserId: string): Promise<Record<string, { details?: object }>> {
+    const options = await this.getRequestConfig('all', { resource: env.IDP_ALP_ADMIN_RESOURCE })
+    const url = `${this.baseUrl}/api/users/${idpUserId}/sso-identities`
+    try {
+      const result = await get<Record<string, { details?: object }>>(url, options)
+      return result.data || {}
+    } catch (err: any) {
+      if (err?.response?.status === 404) {
+        return {}
+      }
+      throw err
+    }
+  }
+
+  /**
+   * Return the user's social-connector identities keyed by connector target
+   * (e.g. "physionet" for the standard OIDC connector we register). Logto
+   * stores these on the user record itself; `getUser` returns the same
+   * object under `.identities`, so this is a thin wrapper that normalizes
+   * the empty case.
+   */
+  async getUserSocialIdentities(idpUserId: string): Promise<Record<string, { userId?: string; details?: object }>> {
+    const user = await this.getUser(idpUserId)
+    return ((user as unknown as { identities?: Record<string, { userId?: string; details?: object }> }).identities) || {}
   }
 
   async createUser(username: string, password: string): Promise<ILogtoUserCreated> {
@@ -232,5 +265,55 @@ export class LogtoAPI extends BaseIDPAPI {
 
     await del(url, options)
     this.logger.info(`Successfully removed role ${roleName} from user ${idpUserId}`)
+  }
+
+  // Idempotently ensures a per-dataset researcher role + scopes (incl. `Source user (<datasetId>)`) in Logto depends on dataset.type.
+  async ensureDatasetRole(datasetId: string, tokenStudyCode: string, type?: string): Promise<void> {
+    this.logger.info(`Ensuring dataset role for ${tokenStudyCode} (${datasetId})`)
+
+    const roleName = `role.researcher.${tokenStudyCode}`
+    let role = await this.getRoleByName(roleName)
+    if (!role) {
+      role = await this.createRole(roleName)
+    }
+
+    const scopeNames = datasetResearcherScopes(roleName, datasetId, type)
+    for (const scopeName of scopeNames) {
+      try {
+        await this.ensureScopeForRole(role.id, scopeName)
+      } catch (err: any) {
+        const status = err?.response?.status
+        const body = err?.response?.data
+        const detail = body ? JSON.stringify(body) : err?.message
+        throw new Error(
+          `ensureScopeForRole "${scopeName}" on role ${roleName} failed: ${status ?? 'no-status'} ${detail}`
+        )
+      }
+    }
+  }
+
+  // Best-effort removal of the per-dataset researcher role + scopes; missing entries are treated as clean.
+  async removeDatasetRole(datasetId: string, tokenStudyCode: string): Promise<void> {
+    this.logger.info(`Removing dataset role for ${tokenStudyCode} (${datasetId})`)
+
+    const roleName = `role.researcher.${tokenStudyCode}`
+    const options = await this.getRequestConfig('all', { resource: env.IDP_ALP_ADMIN_RESOURCE })
+
+    const role = await this.getRoleByName(roleName)
+    if (role) {
+      await del(`${this.baseUrl}/api/roles/${role.id}`, options)
+      this.roleCache.delete(roleName)
+    } else {
+      this.logger.debug(`Role ${roleName} not in Logto, skipping role delete`)
+    }
+
+    const resourceId = await this.getResourceId()
+    const scopesPath = `/api/resources/${resourceId}/scopes`
+    const existingScopes = await this.fetchAllPages<{ id: string; name: string }>(scopesPath)
+    const scopeNames = new Set([roleName, `role.researcher.${datasetId}`, sourceUserScopeName(datasetId)])
+
+    for (const scope of existingScopes.filter(s => scopeNames.has(s.name))) {
+      await del(`${this.baseUrl}${scopesPath}/${scope.id}`, options)
+    }
   }
 }

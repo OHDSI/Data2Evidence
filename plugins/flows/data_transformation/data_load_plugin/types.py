@@ -17,7 +17,3 @@ class DataloadOptions(BaseModel):
     encoding: Optional[str] = None
     empty_string_to_null: Optional[bool] = None
     chunksize: Optional[int] = None
-    
-    @property
-    def use_cache_db(self) -> str:
-        return False

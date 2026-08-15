@@ -11,7 +11,6 @@ from .types import OmopCDMPluginOptions, RELEASE_VERSION_MAPPING
 def update_dataset_metadata_flow(options: OmopCDMPluginOptions):
     logger = get_run_logger()
     dataset_list = options.datasets
-    use_cache_db = options.use_cache_db
     
     if (dataset_list is None) or (len(dataset_list) == 0):
         logger.info("No datasets fetched from portal")
@@ -19,11 +18,11 @@ def update_dataset_metadata_flow(options: OmopCDMPluginOptions):
         logger.info(f"Successfully fetched {len(dataset_list)} datasets from portal")
 
         for dataset in dataset_list:
-            get_and_update_attributes(dataset, use_cache_db)
+            get_and_update_attributes(dataset)
 
 
 @task(log_prints=True)
-def get_and_update_attributes(dataset: dict, use_cache_db: bool):
+def get_and_update_attributes(dataset: dict):
     logger = get_run_logger()
 
     try:
@@ -44,9 +43,7 @@ def get_and_update_attributes(dataset: dict, use_cache_db: bool):
             return
 
         try:
-            dbdao = DBDao(use_cache_db=use_cache_db,
-                        database_code=database_code,
-                        cache_id=cache_id)
+            dbdao = DBDao(database_code=database_code, cache_id=cache_id)
         except Exception as e:
             logger.error(e)
             return

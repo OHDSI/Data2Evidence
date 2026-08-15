@@ -54,7 +54,7 @@ export class DbSvcController {
       res.send(result);
     } catch (error) {
       console.error(`Error creating db-svc flow run: ${error}`);
-      res.status(500).send(`Error occurs: ${error}`);
+      res.status(500).send("Error creating db-svc flow run");
     }
   }
   private async updateDatasetAttributes(req: Request, res: Response) {
@@ -68,7 +68,7 @@ export class DbSvcController {
       res.send(result);
     } catch (error) {
       console.error(`Error updating dataset attributes: ${error}`);
-      res.status(500).send(`Error occurs: ${error}`);
+      res.status(500).send("Error updating dataset attributes");
     }
   }
 }

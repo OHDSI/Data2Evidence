@@ -24,8 +24,3 @@ class i2b2PluginType(BaseModel):
         if self.data_model:
             return RELEASE_TAG_MAPPING.get(self.data_model)
         return None
-    
-    
-    @property
-    def use_cache_db(self) -> str:
-        return False

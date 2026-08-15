@@ -1,0 +1,33 @@
+{
+  "$comment": "d2e runtime config for Atlas3. Copied verbatim to resources/atlas/config-local.json by scripts/postinstall.js (Atlas3 fetches ./config-local.json at boot). api.url is RELATIVE so Atlas3 talks to WebAPI through d2e's Caddy->trex on the same origin (/WebAPI). The OpenID provider points at the standalone login bridge (Atlas3 prefixes webAPIRoot, so '../atlas-login/' resolves to /atlas-login/): the bridge does a Logto OIDC login and writes the Logto token to localStorage.bearerToken, which trex exchanges for a WebAPI token per request. NOT WebAPI's own /user/login/openid, which mints a WebAPI token that trex rejects.",
+  "api": {
+    "url": "/WebAPI"
+  },
+  "userAuthenticationEnabled": true,
+  "enableSkipLogin": false,
+  "enablePermissionManagement": true,
+  "authProviders": [
+    {
+      "name": "OpenID",
+      "url": "../atlas-login/",
+      "ajax": false,
+      "icon": "mdi-login-variant",
+      "isUseCredentialsForm": false
+    },
+    {
+      "name": "Database",
+      "url": "user/login/db",
+      "ajax": true,
+      "icon": "mdi-database",
+      "isUseCredentialsForm": true
+    }
+  ],
+  "refreshTokenThreshold": 900000,
+  "enableIAPSession": false,
+  "enableTermsAndConditions": false,
+  "enablePythia": true,
+  "enablePersonCount": true,
+  "enableTaggingSection": false,
+  "defaultLocale": "en",
+  "pollInterval": 60000
+}

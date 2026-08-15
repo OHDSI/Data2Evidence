@@ -1,0 +1,104 @@
+{{- if not .Values.disableIngress }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  annotations:
+    appgw.ingress.kubernetes.io/use-private-ip: "true"
+    appgw.ingress.kubernetes.io/ssl-redirect: "true"
+    appgw.ingress.kubernetes.io/backend-protocol: "https"
+    appgw.ingress.kubernetes.io/appgw-ssl-certificate: "{{ .Values.config.APP__GATEWAY__PUBLIC_CERT }}"
+    appgw.ingress.kubernetes.io/backend-hostname: "{{ .Values.global.config.CADDY__D2E__INTERNAL_FQDN }}"
+    appgw.ingress.kubernetes.io/appgw-trusted-root-certificate: "{{ .Values.config.CADDY_INTERNAL_CUSTOM_ROOT_CA }}"
+    appgw.ingress.kubernetes.io/health-probe-hostname: "{{ .Values.global.config.CADDY__D2E__INTERNAL_FQDN }}"
+    appgw.ingress.kubernetes.io/health-probe-port: "443"
+    appgw.ingress.kubernetes.io/health-probe-path: "/check-liveness"
+    appgw.ingress.kubernetes.io/health-probe-status-codes: "200-399"
+    appgw.ingress.kubernetes.io/request-timeout: "600"
+  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+spec:
+  ingressClassName: azure-application-gateway
+  rules:
+    - host: "{{ .Values.global.config.CADDY__D2E__PUBLIC_FQDN }}"
+      http:
+        paths:
+          - backend:
+              service:
+                name: gateway
+                port:
+                  number: 443
+            path: /
+            pathType: Prefix
+---
+# apiVersion: alb.networking.azure.io/v1
+# kind: HealthCheckPolicy
+# metadata:
+#   name: gateway-health-check-policy
+#   namespace: d2e
+# spec:
+#   targetRef:
+#     group: ""
+#     kind: Service
+#     name: d2e
+#     namespace: d2e
+#   default:
+#     interval: 15s
+#     timeout: 5s
+#     healthyThreshold: 2
+#     unhealthyThreshold: 5
+#     port: 443
+#     # grpc: {} # defined if probing a gRPC endpoint
+#     http:
+#       host: d2e
+#       path: /check-liveness
+#       match:
+#         statusCodes:
+#           - start: 200
+#             end: 399
+#     useTLS: true
+
+# apiVersion: networking.k8s.io/v1
+# kind: Ingress
+# metadata:
+#   annotations:
+#     appgw.ingress.kubernetes.io/use-private-ip: "true"
+#     appgw.ingress.kubernetes.io/appgw-ssl-certificate: "air-sandbox-appgw-cert"
+#     appgw.ingress.kubernetes.io/ssl-redirect: "true"
+#     appgw.ingress.kubernetes.io/rewrite-rule-set-custom-resource: "kpi-rewrite-rule-set"
+#   name: "az-kpi"
+# spec:
+#   ingressClassName: azure-application-gateway
+#   rules:
+#     - host: "{{ .Values.global.config.CADDY__D2E__INTERNAL_FQDN }}"
+#       http:
+#         paths:
+#           - backend:
+#               service:
+#                 name: "kpi"
+#                 port:
+#                   number: 80
+#             path: /kpi
+#             pathType: Prefix
+
+---
+# apiVersion: appgw.ingress.azure.io/v1beta1
+# kind: AzureApplicationGatewayRewrite
+# metadata:
+#   name: kpi-rewrite-rule-set
+# spec:
+#   rewriteRules:
+#     - name: rule1
+#       ruleSequence: 21
+
+#       conditions:
+#         - ignoreCase: false
+#           negate: false
+#           variable: http_req_Host
+#           pattern: "{{ .Values.global.config.CADDY__D2E__INTERNAL_FQDN }}"
+
+#       actions:
+#         responseHeaderConfigurations:
+#           - actionType: set
+#             headerName: location
+#             headerValue: "{{ printf "https://%s/kpi/" .Values.global.config.CADDY__D2E__INTERNAL_FQDN }}"
+{{- end }}
+

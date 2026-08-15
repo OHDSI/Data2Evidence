@@ -269,7 +269,7 @@ sap.ui.define([
 
         if (!dimTable.hierarchy) {
             currentData.parentInteraction = [];
-            currentData.parentInteractionsMapping.value = [];
+            currentData.parentInteractionsMapping.value = "[]";
             currentData.parentInteractionLabel.value = "";
         }
 
@@ -913,11 +913,15 @@ sap.ui.define([
                                 that._oJSONModels.configEditorJSONModel = new JSONModel(
                                     configForUi.configEditorModelData);
                                 callBack(that._oJSONModels.configEditorJSONModel);
+                            }, function (e) {
+                                ConfigUtils.logError(e);
+                                callBack(null);
                             });
 
                     } catch (e) {
                         ConfigUtils
                             .logError(e);
+                        callBack(null);
                     }
                 }
 

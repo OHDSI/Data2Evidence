@@ -9,6 +9,8 @@ import {
   replaceNodes,
   replaceVariables,
   replaceImportLibs,
+  replaceDatabases,
+  replaceSchemas,
 } from "~/features/flow/reducers";
 import {
   sanitizeFlowEdges,
@@ -36,12 +38,14 @@ export const ImportFlowButton: FC<ImportFlowButtonProps> = () => {
           const json = JSON.parse(jsonData) as DataflowExportDto;
           console.debug("JSON content:", json);
 
-          const safeNodes = sanitizeFlowNodes(json.flow?.nodes);
-          const safeEdges = sanitizeFlowEdges(json.flow?.edges, safeNodes);
+          const safeNodes = sanitizeFlowNodes(json.nodes);
+          const safeEdges = sanitizeFlowEdges(json.edges, safeNodes);
           dispatch(replaceNodes(safeNodes));
           dispatch(replaceEdges(safeEdges));
-          dispatch(replaceVariables(json.flow?.variables ?? []));
-          dispatch(replaceImportLibs(json.flow?.importLibs ?? []));
+          dispatch(replaceVariables(json.variables ?? []));
+          dispatch(replaceImportLibs(json.importLibs ?? []));
+          dispatch(replaceDatabases(json.databases ?? []));
+          dispatch(replaceSchemas(json.schemas ?? []));
           dispatch(markStatusAsDraft());
         } catch (err) {
           console.error("Error parsing JSON:", err);

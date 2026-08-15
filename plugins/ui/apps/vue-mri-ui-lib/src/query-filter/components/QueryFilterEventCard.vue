@@ -20,7 +20,7 @@ import type {
 import type { AttributeOption } from '../utils/ConfigLoader'
 import { configLoader } from '../utils/ConfigLoader'
 import CardinalitySidebar from './CardinalitySidebar.vue'
-import { getPortalAPI } from '../../utils/PortalUtils'
+import { usePortalContext } from '@/composables/usePortalContext'
 import TrashIcon from './icons/TrashIcon.vue'
 import { loadSingleConceptSetDetails } from '../services/ConceptSetApiService'
 import AttributeContainer from './attributes/AttributeContainer.vue'
@@ -62,6 +62,7 @@ const emit = defineEmits<{
 }>()
 
 const store = useStore()
+const portalContext = usePortalContext()
 
 // Use the reactive prop directly instead of local copy
 const eventData = computed({
@@ -145,7 +146,7 @@ const handleConceptSetChange = async (values: ConceptSetItemDisplay[]) => {
 // Handle concept set selection
 const handleConceptSetSelected = async (conceptSet: ConceptSetItemDisplay) => {
   const selectedConceptSet: SelectedConceptSet = {
-    value: parseInt(conceptSet.value),
+    value: conceptSet.value,
     text: conceptSet.text || '',
     display_value: conceptSet.display_value || '',
     conceptIds: conceptSet.conceptIds || [],
@@ -209,14 +210,13 @@ const getDatasetIdFromProps = (): string => {
     return datasetId
   }
 
-  // Final fallback to portalAPI studyId if neither prop nor store available
-  const portalAPI = getPortalAPI()
-  if (portalAPI?.studyId) {
-    return portalAPI.studyId
+  // Final fallback to portal context datasetId if neither prop nor store available
+  if (portalContext.datasetId) {
+    return portalContext.datasetId
   }
 
   // This should not happen in normal operation - indicates configuration issue
-  throw new Error('Dataset ID is required but not available from props, store or portalAPI')
+  throw new Error('Dataset ID is required but not available from props, store or portal context')
 }
 
 // Handle attribute selection
@@ -365,7 +365,7 @@ const tagInputModel = computed(() => {
       value: eventData.value.selectedConceptSet
         ? [
             {
-              value: String(eventData.value.selectedConceptSet.value),
+              value: eventData.value.selectedConceptSet.value,
               text: eventData.value.selectedConceptSet.text,
               display_value: eventData.value.selectedConceptSet.display_value,
               conceptIds: eventData.value.selectedConceptSet.conceptIds,
@@ -386,7 +386,7 @@ const getTagInputValue = () => {
   const result = eventData.value.selectedConceptSet
     ? [
         {
-          value: String(eventData.value.selectedConceptSet.value),
+          value: eventData.value.selectedConceptSet.value,
           text: eventData.value.selectedConceptSet.text,
           display_value: eventData.value.selectedConceptSet.display_value,
           conceptIds: eventData.value.selectedConceptSet.conceptIds,
@@ -433,7 +433,7 @@ const getConceptSetDisplayName = (): string => {
     return (
       eventData.value.selectedConceptSet.text ||
       eventData.value.selectedConceptSet.display_value ||
-      String(eventData.value.selectedConceptSet.value) ||
+      eventData.value.selectedConceptSet.value ||
       'Unknown Concept Set'
     )
   }

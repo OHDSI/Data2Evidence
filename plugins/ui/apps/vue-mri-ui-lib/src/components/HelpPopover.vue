@@ -1,7 +1,7 @@
 <template>
   <div class="help-popover-container">
     <div class="help-icon" ref="helpDialog" :tabindex="showIcon ? 0 : -1">
-      <appIcon v-show="showIcon" icon="help" />
+      <appIcon v-show="showIcon" icon="help" data-testid="help-popover-icon"/>
     </div>
     <popover
       :target="getTarget"

@@ -1,5 +1,7 @@
 import { ActionValue, CacheDatasetType, DatasetInfoTab, DatasetType, SourceDatasetType } from "./types";
 
+export const I2B2_PLUGIN = "i2b2_plugin";
+
 export enum DatasetAttribute {
   PATIENT_COUNT = "patient_count",
   CREATED_DATE = "created_date",
@@ -48,7 +50,7 @@ export const ResearcherFeatures = ["Notebooks", "Results", "Concepts", "Cohorts"
 
 export const ActionSelectorMap: Record<DatasetType, ActionValue[]> = {
   source: ["info", "metadata", "version", "delete", "transform-to-webapi"],
-  fhir: ["info", "metadata", "version", "delete", "transform-to-webapi"],
+  fhir: ["info", "metadata", "delete"],
   non_omop: ["metadata", "permissions", "resources", "delete", "create-cache"],
   omop: [
     "metadata",
@@ -69,6 +71,7 @@ export const ActionSelectorMap: Record<DatasetType, ActionValue[]> = {
     "delete",
     "data-quality",
     "data-characterization",
+    "setup-semantic-search",
     "manage-dashboard",
   ],
   hana__non_omop: ["metadata", "permissions", "resources", "delete", "manage-dashboard"],
@@ -83,7 +86,9 @@ export const ActionSelectorMap: Record<DatasetType, ActionValue[]> = {
     "data-characterization",
     "setup-semantic-search",
     "manage-dashboard",
+    "refresh-cache",
   ],
+  i2b2: ["metadata", "permissions", "resources", "delete"],
 };
 
 export const InformationPageMap: Record<DatasetType, DatasetInfoTab[]> = {
@@ -96,6 +101,7 @@ export const InformationPageMap: Record<DatasetType, DatasetInfoTab[]> = {
   hana__non_omop: [DatasetInfoTab.DatasetInfo, DatasetInfoTab.DataQuality, DatasetInfoTab.DataCharacterization],
   strategus_analysis: [DatasetInfoTab.DatasetInfo],
   webapi: [DatasetInfoTab.DatasetInfo, DatasetInfoTab.DataQuality, DatasetInfoTab.DataCharacterization],
+  i2b2: [DatasetInfoTab.DatasetInfo],
 };
 
 export const ResearcherFeatureMap: Record<DatasetType, (typeof ResearcherFeatures)[number][]> = {
@@ -108,6 +114,7 @@ export const ResearcherFeatureMap: Record<DatasetType, (typeof ResearcherFeature
   hana__non_omop: ["Cohorts", "Notebooks"],
   strategus_analysis: [],
   webapi: ["Cohorts", "Notebooks", "Analysis", "Concepts"],
+  i2b2: ["Cohorts", "Notebooks"],
 };
 
 export enum LogResponseType {

@@ -5,4 +5,8 @@ module.exports = {
   core: {
     builder: "webpack5"
   },
+  // Disable TS docgen: SB 6.5's plugin calls ts.createIdentifier, removed in TS 5.0.
+  typescript: {
+    reactDocgen: false,
+  },
 };

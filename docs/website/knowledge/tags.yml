@@ -1,0 +1,9 @@
+hello:
+  label: Hello
+  permalink: /hello
+  description: Hello tag description
+
+hola:
+  label: Hola
+  permalink: /hola
+  description: Hola tag description

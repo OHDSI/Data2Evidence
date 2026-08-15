@@ -216,6 +216,14 @@ export class UserMgmt {
     });
   }
 
+  public syncWebApiRoles(): Promise<{ ok: boolean; status?: number }> {
+    return request({
+      baseURL: USER_MGMT_BASE_URL,
+      url: "me/sync-webapi-roles",
+      method: "POST",
+    });
+  }
+
   public changeMyPassword(oldPassword: string, password: string) {
     return request({
       baseURL: USER_MGMT_BASE_URL,

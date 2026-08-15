@@ -9,7 +9,6 @@ import { Request } from "express";
 export interface IMRIRequest extends Request {
     dbConnections: {
         analyticsConnection: ConnectionInterface;
-        sourceConnection: ConnectionInterface;
     };
     dbCredentials: {
         analyticsCredentials: any;
@@ -22,6 +21,10 @@ export interface IMRIRequest extends Request {
     swagger: any;
     fileName?: string;
     usage?: "EXPORT";
+    paConfigId?: string;
+    paConfigVersion?: string;
+    cdmConfigId?: string;
+    cdmConfigVersion?: string;
 }
 export interface Map<T> {
     [key: string]: T;
@@ -247,6 +250,12 @@ export type PluginEndpointStreamResultType = {
     debug?: any;
     noDataReason?: string;
     rowCount?: number;
+    selectedAttributes?: PluginSelectedAttributeType[];
+    cohortBuilderConfigMetaData?: CDMConfigMetaDataType;
+    cdmConfigMetaData?: CDMConfigMetaDataType;
+    auditLogChannelName: string;
+    /** Called after all response data has been written; drops the backing table for DuckDB datasets. */
+    cleanup?: () => Promise<void>;
 };
 
 export type CohortDefinitionType = {
@@ -387,11 +396,24 @@ export interface StudyDbMetadata {
     resultsSchemaName: string;
     dialect: string;
     databaseCode: string;
+    type: string;
     cacheId?: string | null;
+    sourceStudyId: string | null;
 }
 
 export interface StudiesDbMetadata {
     studies: StudyDbMetadata[];
+}
+
+export interface PABackendConfigResponse {
+    meta: {
+        configId: string;
+        configVersion: string;
+        dependentConfig: {
+            configId: string;
+            configVersion: string;
+        };
+    };
 }
 
 export type QuerySvcResultType = {
@@ -477,4 +499,5 @@ export enum ANALYTICS_DB_DIALECTS {
     HANA = "hana",
     POSTGRES = "postgresql",
     BIGQUERY = "bigquery",
+    SNOWFLAKE = "snowflake",
 }

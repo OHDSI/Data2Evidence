@@ -2,11 +2,10 @@ import { ref, computed, type Ref, type ComputedRef } from 'vue'
 import {
   getFieldAttrKey,
   getFieldFilterCardPathForField,
-  parseNumericInput,
+  getWizardFlow,
   validateRequiredFields,
   isConditionField,
   type MissingRequiredField,
-  type NumericFilterValue,
   type WizardDefinition,
   type WizardFieldDefinition,
   type BookmarkBooleanContainer,
@@ -15,6 +14,7 @@ import {
 import { constraintContainsExpression, type Constraint } from '../services/dashboardFlowService'
 import BinaryToString from '../utils/BinaryToString'
 import { useNotificationStore } from '../stores/notifications'
+import { applyConstraintValue as applyConstraintValueShared } from '../utils/applyConstraintValue'
 
 export interface WizardFieldValue {
   value: string | number | boolean | object
@@ -33,8 +33,39 @@ export interface WizardConfig {
   year?: { from: number | string | null; to: number | string | null }
   conditions?: ConditionValue[]
   dashboardType?: string
+  conceptSets?: Table1ConceptSetSelection[]
   fromDeepLink?: boolean
   [key: string]: unknown
+}
+
+export interface Table1ConceptSetSelection {
+  id: string
+  name: string
+}
+
+export function buildTable1WizardConfig(
+  wizardDefinition: Pick<WizardDefinition, 'id'>,
+  conceptSets: Table1ConceptSetSelection[]
+): WizardConfig | null {
+  const normalizedConceptSets = conceptSets
+    .map(conceptSet => {
+      const id = String(conceptSet.id ?? '').trim()
+      const name = String(conceptSet.name ?? '').trim()
+      return {
+        id,
+        name: name || id,
+      }
+    })
+    .filter(conceptSet => conceptSet.id !== '')
+
+  if (normalizedConceptSets.length === 0) {
+    return null
+  }
+
+  return {
+    dashboardType: wizardDefinition.id,
+    conceptSets: normalizedConceptSets,
+  }
 }
 
 export interface DashboardCode {
@@ -105,6 +136,7 @@ export interface UseDashboardFlowReturn {
   saveCohortModalMode: Ref<'full' | 'bookmark-only' | 'materialize-only'>
   showDashboardSelectionModal: Ref<boolean>
   showRequiredFiltersModal: Ref<boolean>
+  showTable1ConfigModal: Ref<boolean>
   dashboardMetadataLoading: Ref<boolean>
   applyingRequiredFilters: Ref<boolean>
   dashboardSelectionError: Ref<string>
@@ -115,10 +147,13 @@ export interface UseDashboardFlowReturn {
   selectedWizardDefinition: Ref<WizardDefinition | null>
   missingRequiredFields: Ref<MissingRequiredField[]>
   activeDashboardWizardConfig: Ref<WizardConfig | null>
+  confirmedTable1ConceptSets: ComputedRef<Table1ConceptSetSelection[]>
   // New state for mini wizards form
   allWizardFields: Ref<WizardFieldDefinition[]>
   initialFormValues: Ref<Record<string, string | number | object>>
   initialDisplayValues: Ref<Record<string, string>>
+
+  savedCohortId: Ref<number | null>
 
   // Computed
   dashboardContext: ComputedRef<DashboardContext>
@@ -128,14 +163,17 @@ export interface UseDashboardFlowReturn {
   openDashboardModal: () => Promise<void>
   closeDashboardSelectionModal: () => void
   handleDashboardSelected: (_dashboard: DashboardCode) => Promise<void>
+  handleTable1ConfigCancel: () => void
+  handleTable1ConfigConfirm: (_conceptSets: Table1ConceptSetSelection[]) => Promise<void>
   handleRequiredFiltersCancel: () => void
   handleRequiredFiltersSubmit: (
     _formValues: Record<string, string | number | object>,
     _displayValues: Record<string, string>,
     _dirtyFieldIds: Set<string>
   ) => Promise<void>
-  handleSaveCohortSuccess: () => void
+  handleSaveCohortSuccess: (_payload?: { cohortId?: number | null }) => void
   handleCancelSaveCohort: () => void
+  closeDashboardFlow: () => void
   closeDashboardModal: () => void
   isProcessingDashboardFlow: () => boolean
 }
@@ -146,10 +184,15 @@ export function useDashboardFlow(
 ): UseDashboardFlowReturn {
   // State
   const showDashboardModal = ref(false)
+  // Id reported by the save, used in preference to getActiveCohortMaterializedId:
+  // that getter derives from the refreshed bookmark list, which can still be
+  // missing the cohort that was just materialized.
+  const savedCohortId = ref<number | null>(null)
   const showSaveCohortModal = ref(false)
   const saveCohortModalMode = ref<'full' | 'bookmark-only' | 'materialize-only'>('full')
   const showDashboardSelectionModal = ref(false)
   const showRequiredFiltersModal = ref(false)
+  const showTable1ConfigModal = ref(false)
   const dashboardMetadataLoading = ref(false)
   const applyingRequiredFilters = ref(false)
   const dashboardSelectionError = ref('')
@@ -159,7 +202,7 @@ export function useDashboardFlow(
   const selectedDashboard = ref<DashboardCode | null>(null)
   const selectedWizardDefinition = ref<WizardDefinition | null>(null)
   const missingRequiredFields = ref<MissingRequiredField[]>([])
-  const activeDashboardWizardConfig = ref<Record<string, any> | null>(null)
+  const activeDashboardWizardConfig = ref<WizardConfig | null>(null)
   // New state for mini wizards form
   const allWizardFields = ref<WizardFieldDefinition[]>([])
   const initialFormValues = ref<Record<string, any>>({})
@@ -195,6 +238,20 @@ export function useDashboardFlow(
     return { wizardConfig, conditions: null, mriquery }
   })
 
+  const confirmedTable1ConceptSets = computed<Table1ConceptSetSelection[]>(() => {
+    const wizardConfig = activeDashboardWizardConfig.value
+    if (getWizardFlow(selectedWizardDefinition.value || {}) !== 'table1-config' || !Array.isArray(wizardConfig?.conceptSets)) {
+      return []
+    }
+
+    return wizardConfig.conceptSets
+      .map(conceptSet => ({
+        id: String(conceptSet.id ?? '').trim(),
+        name: String(conceptSet.name ?? '').trim(),
+      }))
+      .filter(conceptSet => conceptSet.id !== '')
+  })
+
   function normalizeResponseArray(payload: any): any[] {
     if (Array.isArray(payload)) {
       return payload
@@ -208,6 +265,7 @@ export function useDashboardFlow(
   function resetDashboardFlowState() {
     showDashboardSelectionModal.value = false
     showRequiredFiltersModal.value = false
+    showTable1ConfigModal.value = false
     dashboardMetadataLoading.value = false
     applyingRequiredFilters.value = false
     dashboardSelectionError.value = ''
@@ -510,7 +568,7 @@ export function useDashboardFlow(
     for (const op of operations) {
       if (op.type === 'update' && op.filterCardId) {
         const attrKey = getFieldAttrKey(op.field.configPath!)
-        const constraint = getters.getConstraintForAttribute?.({
+        let constraint = getters.getConstraintForAttribute?.({
           filterCardId: op.filterCardId,
           key: attrKey,
         })
@@ -524,6 +582,21 @@ export function useDashboardFlow(
           })
 
           await applyConstraintValue(constraint, op.value, '=', op.displayValue)
+        } else {
+          // Constraint missing on existing card — add it first
+          await dispatch('addFilterCardConstraint', {
+            filterCardId: op.filterCardId,
+            key: attrKey,
+          })
+
+          constraint = getters.getConstraintForAttribute?.({
+            filterCardId: op.filterCardId,
+            key: attrKey,
+          })
+
+          if (constraint) {
+            await applyConstraintValue(constraint, op.value, '=', op.displayValue)
+          }
         }
       } else if (op.type === 'add-to-existing' && op.filterCardId) {
         // Add constraint to already-created card
@@ -763,6 +836,13 @@ export function useDashboardFlow(
 
     showDashboardSelectionModal.value = false
     requiredFiltersError.value = ''
+
+    if (getWizardFlow(wizardDef) === 'table1-config') {
+      isProcessingDashboardFlow = true
+      showTable1ConfigModal.value = true
+      return
+    }
+
     showRequiredFiltersModal.value = true
   }
 
@@ -785,10 +865,14 @@ export function useDashboardFlow(
       if (field.id.toLowerCase().startsWith('condition')) {
         const value = formValues[field.id]
         if (value !== undefined && value !== null && value !== '') {
+          const includeDescendantsValue = formValues[`${field.id}_includeDescendants`]
           conditions.push({
             value,
             displayName: displayValues?.[field.id] || value,
-            useDescendants: formValues[`${field.id}_includeDescendants`] === true,
+            useDescendants:
+              includeDescendantsValue === undefined
+                ? field.excludeDescendantsByDefault !== true
+                : includeDescendantsValue === true,
           })
         }
         continue
@@ -856,83 +940,7 @@ export function useDashboardFlow(
     operator = '=',
     displayValue?: string
   ): Promise<any> {
-    const constraintType = constraint.props.type
-    if (constraintType === 'num') {
-      let parsedValues: NumericFilterValue[] = []
-      if (typeof rawInput === 'string') {
-        parsedValues = parseNumericInput(rawInput)
-        if (
-          operator &&
-          operator !== '=' &&
-          /^-?\d+(?:\.\d+)?$/.test(rawInput.trim()) &&
-          parsedValues.length === 1 &&
-          parsedValues[0].op === '='
-        ) {
-          parsedValues[0].op = operator
-        }
-      } else if (typeof rawInput === 'number') {
-        parsedValues = [{ op: operator || '=', value: rawInput }]
-      } else if (rawInput !== null && typeof rawInput !== 'undefined') {
-        const numericValue = Number(rawInput)
-        if (!Number.isNaN(numericValue)) {
-          parsedValues = [{ op: operator || '=', value: numericValue }]
-        }
-      }
-      if (!parsedValues.length) {
-        console.error('[DashboardFlow] Invalid numeric value:', { rawInput, constraint })
-        return Promise.reject(new Error(`Invalid numeric value for ${constraint.props.name || constraint.id}`))
-      }
-      return dispatch('updateConstraintValue', {
-        constraintId: constraint.id,
-        value: parsedValues,
-      })
-    }
-    if (rawInput && typeof rawInput === 'object' && 'from' in rawInput && 'to' in rawInput) {
-      const fromYear = rawInput.from
-      const toYear = rawInput.to
-      if (!fromYear && !toYear) {
-        return Promise.reject(new Error(`Missing year value for ${constraint.props.name || constraint.id}`))
-      }
-      const fromDate = fromYear ? new Date(`${fromYear}-01-01`) : new Date(`${toYear}-01-01`)
-      const toDate = toYear ? new Date(`${toYear}-12-31`) : new Date(`${fromYear}-12-31`)
-      return dispatch('updateDateConstraintValue', {
-        constraintId: constraint.id,
-        fromDateValue: fromDate,
-        toDateValue: toDate,
-        isUTC: false,
-      })
-    }
-    if (constraintType === 'time' || constraintType === 'datetime') {
-      const fromDateRaw = rawInput?.from || rawInput?.value || rawInput
-      const toDateRaw = rawInput?.to || rawInput?.value || rawInput
-      if (!fromDateRaw && !toDateRaw) {
-        return Promise.reject(new Error(`Missing date value for ${constraint.props.name || constraint.id}`))
-      }
-      const fromDate = new Date(fromDateRaw || toDateRaw)
-      const toDate = new Date(toDateRaw || fromDateRaw)
-      return dispatch('updateDateConstraintValue', {
-        constraintId: constraint.id,
-        fromDateValue: fromDate,
-        toDateValue: toDate,
-        isUTC: false,
-      })
-    }
-    const rawValue = rawInput?.value ?? rawInput
-    if (rawValue === null || typeof rawValue === 'undefined' || String(rawValue).trim() === '') {
-      return Promise.reject(new Error(`Missing value for ${constraint.props.name || constraint.id}`))
-    }
-    const finalDisplayValue = displayValue || rawInput?.displayName || String(rawValue)
-    return dispatch('updateConstraintValue', {
-      constraintId: constraint.id,
-      value: [
-        {
-          value: String(rawValue),
-          score: 1,
-          display_value: finalDisplayValue,
-          text: finalDisplayValue,
-        },
-      ],
-    })
+    return applyConstraintValueShared(dispatch, constraint, rawInput, operator, displayValue)
   }
 
   async function handleRequiredFiltersSubmit(
@@ -977,6 +985,29 @@ export function useDashboardFlow(
     } finally {
       applyingRequiredFilters.value = false
     }
+  }
+
+  function handleTable1ConfigCancel() {
+    showTable1ConfigModal.value = false
+    selectedDashboard.value = null
+    selectedWizardDefinition.value = null
+    activeDashboardWizardConfig.value = null
+    isProcessingDashboardFlow = false
+  }
+
+  async function handleTable1ConfigConfirm(conceptSets: Table1ConceptSetSelection[]) {
+    if (!selectedWizardDefinition.value) {
+      return
+    }
+
+    const table1WizardConfig = buildTable1WizardConfig(selectedWizardDefinition.value, conceptSets)
+    if (!table1WizardConfig) {
+      return
+    }
+
+    showTable1ConfigModal.value = false
+    isProcessingDashboardFlow = true
+    await prepareWizardConfigAndContinue(selectedWizardDefinition.value, table1WizardConfig)
   }
 
   function getActiveMaterializedCohort(): IMaterializedCohort | null {
@@ -1069,7 +1100,9 @@ export function useDashboardFlow(
     showSaveCohortModal.value = true
   }
 
-  function handleSaveCohortSuccess() {
+  function handleSaveCohortSuccess(payload?: { cohortId?: number | null }) {
+    const cohortId = Number(payload?.cohortId)
+    savedCohortId.value = Number.isInteger(cohortId) ? cohortId : null
     showSaveCohortModal.value = false
     showDashboardModal.value = true
     isProcessingDashboardFlow = false
@@ -1077,11 +1110,30 @@ export function useDashboardFlow(
 
   function handleCancelSaveCohort() {
     showSaveCohortModal.value = false
+    if (showDashboardModal.value) {
+      isProcessingDashboardFlow = false
+      return
+    }
+    if (getWizardFlow(selectedWizardDefinition.value || {}) === 'table1-config' && confirmedTable1ConceptSets.value.length > 0) {
+      showTable1ConfigModal.value = true
+      isProcessingDashboardFlow = true
+      return
+    }
+    isProcessingDashboardFlow = false
+  }
+
+  function closeDashboardFlow() {
+    showDashboardSelectionModal.value = false
+    showRequiredFiltersModal.value = false
+    showTable1ConfigModal.value = false
+    showSaveCohortModal.value = false
+    showDashboardModal.value = false
     isProcessingDashboardFlow = false
   }
 
   function closeDashboardModal() {
     showDashboardModal.value = false
+    savedCohortId.value = null
   }
 
   function isProcessingDashboardFlowFn() {
@@ -1099,10 +1151,12 @@ export function useDashboardFlow(
 
   return {
     showDashboardModal,
+    savedCohortId,
     showSaveCohortModal,
     saveCohortModalMode,
     showDashboardSelectionModal,
     showRequiredFiltersModal,
+    showTable1ConfigModal,
     dashboardMetadataLoading,
     applyingRequiredFilters,
     dashboardSelectionError,
@@ -1113,6 +1167,7 @@ export function useDashboardFlow(
     selectedWizardDefinition,
     missingRequiredFields,
     activeDashboardWizardConfig,
+    confirmedTable1ConceptSets,
     allWizardFields,
     initialFormValues,
     initialDisplayValues,
@@ -1121,10 +1176,13 @@ export function useDashboardFlow(
     openDashboardModal,
     closeDashboardSelectionModal,
     handleDashboardSelected,
+    handleTable1ConfigCancel,
+    handleTable1ConfigConfirm,
     handleRequiredFiltersCancel,
     handleRequiredFiltersSubmit,
     handleSaveCohortSuccess,
     handleCancelSaveCohort,
+    closeDashboardFlow,
     closeDashboardModal,
     isProcessingDashboardFlow: isProcessingDashboardFlowFn,
   }

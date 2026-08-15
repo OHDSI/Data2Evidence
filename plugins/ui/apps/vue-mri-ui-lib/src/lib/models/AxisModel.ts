@@ -12,6 +12,7 @@ export default class AxisModel extends EntityBase {
       iconFamily: '',
       binsize: '',
       active: false,
+      disabled: false,
       isCategory: false,
       isMeasure: false,
       layoutLeft: 0,

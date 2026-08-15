@@ -23,6 +23,7 @@ def shiny_live_plugin(options: ShinyLivePluginType):
     """
 
     logger = get_run_logger()
+    logger.info(f"Flow parameters received: {options.json()}")
     logger.info(
         f"Building Shiny Live app for dataset {options.dataset_id} in {options.language}...")
 

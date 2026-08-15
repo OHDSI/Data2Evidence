@@ -1,0 +1,1211 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    profile: d2e-functions
+  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+  namespace: d2e
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      profile: d2e-functions
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        profile: d2e-functions
+    spec:
+      nodeSelector:
+        # "kubernetes.io/os": linux
+        # "app": "d2e"
+      restartPolicy: Always
+      serviceAccountName: pod-viewer
+      tolerations:
+        - key: "app"
+          operator: "Equal"
+          value: "d2e"
+          effect: "NoExecute"
+      volumes:
+        - name: d2e-cm
+          configMap:
+            name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+        - name: trex-volume
+          persistentVolumeClaim:
+            claimName: trex-pvc
+        - name: storage-volume
+          persistentVolumeClaim:
+            claimName: storage-pvc
+        - name: atlas-db-init
+          configMap:
+            name: "{{ .Release.Name }}-{{ .Chart.Name }}-atlas-db-init"
+        {{- if .Values.features.materializeCohorts }}
+        - name: materialize-cohorts-pki
+          secret:
+            secretName: "{{ .Release.Name }}-{{ .Chart.Name }}-materialize-cohorts"
+        - name: materialize-cohorts-client-pki
+          secret:
+            secretName: "{{ .Release.Name }}-{{ .Chart.Name }}-materialize-cohorts-client"
+        {{- end }}
+      initContainers:
+        - name: trex-init
+          image: busybox:latest
+          resources:
+            requests:
+              cpu: 50m
+              memory: 50Mi
+            limits:
+              cpu: 70m
+              memory: 70Mi
+          volumeMounts:
+            - mountPath: /usr/src/data
+              name: trex-volume
+            - mountPath: /data/plugins/.npmrc
+              name: d2e-cm
+              subPath: TREX_NPMRC
+            - mountPath: /data/plugins/bunfig.toml
+              name: d2e-cm
+              subPath: TREX_BUNFIG
+            # - mountPath: /data/plugins/package.json
+            #   name: d2e-cm
+            #   subPath: TREX_PACKAGE_JSON_PLUGIN
+          command: [
+              "sh",
+              "-c",
+              "mkdir -p /usr/src/data/plugins && mkdir -p /usr/src/data/cache && \
+              cp -rfv /data/plugins/.npmrc /usr/src/data/plugins/.npmrc && \
+              cp -rfv /data/plugins/bunfig.toml /usr/src/data/plugins/bunfig.toml && exit 0",
+            ]
+        - name: logto-check
+          image: busybox:latest
+          resources:
+            {{- toYaml .Values.global.resources.logtoCheck | nindent 12 }}
+          command:
+            [
+              "sh",
+              "-c",
+              "while :;do sleep 20 && wget -O success http://idp.d2e.svc.cluster.local:443/api/status && if test -f success; then exit 0; fi; done",
+            ]
+        - name: logto-post-init
+          env:
+            - name: CADDY__D2E__PUBLIC_FQDN
+              valueFrom:
+                configMapKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: CADDY__D2E__PUBLIC_FQDN
+            - name: ENV_TYPE
+              value: remote
+            - name: PG__DB_NAME
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: POSTGRES_CONFIG_DB
+            - name: LOGTO__CONNECTOR_CONFIG
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: LOGTO__CONNECTOR_CONFIG
+            - name: LOGTO__DISABLE_BASIC_AUTH
+              valueFrom:
+                configMapKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: LOGTO__DISABLE_BASIC_AUTH
+            - name: PG__HOST
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: POSTGRES_HOST
+            - name: PG__PORT
+              value: "5432"
+            - name: PG__SSL
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: PG__SSL
+            - name: PG__SCHEMA
+              value: "logto"
+            - name: PG__USER
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: POSTGRES_IDP_ADMIN_USER
+            - name: PG__PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: POSTGRES_IDP_ADMIN_PASSWORD
+            - name: LOGTO__CUSTOM_JWT
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: LOGTO__CUSTOM_JWT
+            - name: LOGTO_API_M2M_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: LOGTO_API_M2M_CLIENT_ID
+            - name: LOGTO_API_M2M_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: LOGTO_API_M2M_CLIENT_SECRET
+            - name: LOGTO__CLIENTID_PASSWORD__BASIC_AUTH
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: LOGTO__CLIENTID_PASSWORD__BASIC_AUTH
+            - name: IDP__ALP_SVC__CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: LOGTO__SVC_CLIENT_ID
+            - name: IDP__ALP_SVC__CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: LOGTO__SVC_CLIENT_SECRET
+            - name: IDP__ALP_APP__CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: LOGTO__APP_CLIENT_ID
+            - name: IDP__ALP_APP__CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: LOGTO__APP_CLIENT_SECRET
+            - name: IDP__ALP_DATA__CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: LOGTO__DATA_CLIENT_ID
+            - name: IDP__ALP_DATA__CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: LOGTO__DATA_CLIENT_SECRET
+            - name: IDP__ALP_DATA_CLIENT_ID
+              value: $(IDP__ALP_DATA__CLIENT_ID)
+            - name: LOGTO__CLIENT_APPS
+              value: '[{"name":"alp-svc","description":"alp-svc","type":"MachineToMachine", "id": "$(IDP__ALP_SVC__CLIENT_ID)", "secret": "$(IDP__ALP_SVC__CLIENT_SECRET)"},{"name":"alp-data","description":"alp-data","type":"MachineToMachine", "id": "$(IDP__ALP_DATA__CLIENT_ID)", "secret": "$(IDP__ALP_DATA__CLIENT_SECRET)"},{"name":"alp-app","description":"alp-app","type":"Traditional", "id": "$(IDP__ALP_APP__CLIENT_ID)", "secret": "$(IDP__ALP_APP__CLIENT_SECRET)", "oidcClientMetadata":{"redirectUris":["https://$(CADDY__D2E__PUBLIC_FQDN)/d2e/portal/login-callback","https://$(CADDY__D2E__PUBLIC_FQDN)/d2e/ui/gateway/dashboard","https://$(CADDY__D2E__PUBLIC_FQDN)/WebAPI/user/oauth/callback/openid","https://$(CADDY__D2E__PUBLIC_FQDN)/atlas-login/"],"postLogoutRedirectUris":["https://$(CADDY__D2E__PUBLIC_FQDN)/d2e/portal"]},"customClientMetadata":{"corsAllowedOrigins":[],"refreshTokenTtlInDays":14,"alwaysIssueRefreshToken":true,"rotateRefreshToken":true}}]'
+            - name: LOGTO__RESOURCE
+              value: '{"name":"alp-default","indicator":"https://alp-default","accessTokenTtl":3600}'
+            - name: LOGTO__USER
+              value: '{"username":"admin","initialPassword":"Updatepassword12345"}'
+            - name: LOGTO__ROLES
+              valueFrom:
+                configMapKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: LOGTO__ROLES
+            - name: LOGTO__SCOPES
+              valueFrom:
+                configMapKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: LOGTO__SCOPES
+            - name: LOGTO__ROLES_SCOPES
+              valueFrom:
+                configMapKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: LOGTO__ROLES_SCOPES
+            - name: LOGTO__ADMIN_SERVER__FQDN_URL
+              value: "http://idp-admin.d2e.svc.cluster.local:443"
+            - name: LOGTO__ALP_ADMIN_APP
+              value: '{"application": {"id": "$(LOGTO_API_M2M_CLIENT_ID)", "name":"alp-admin","description":"alp-admin", "secret": "$(LOGTO_API_M2M_CLIENT_SECRET)"}, "role": { "name":"api-access","description":"Logto API access"}}'
+            - name: LOGTO__TERM_OF_USE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: LOGTO__TERM_OF_USE_URL
+            - name: LOGTO__PRIVACY_POLICY_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: LOGTO__PRIVACY_POLICY_URL
+            - name: LOGTO__CUSTOM_CSS
+              valueFrom:
+                configMapKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: LOGTO__CUSTOM_CSS
+
+          image: ghcr.io/ohdsi/d2e-logto-post-init:{{ .Values.global.image.tag }}
+          imagePullPolicy: Always
+          resources:
+            {{- toYaml .Values.global.resources.logtoPostInit | nindent 12 }}
+      containers:
+        - name: dataflow-gen
+          env:
+            - name: PG__HOST
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: POSTGRES_HOST
+            - name: PG__USER
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: POSTGRES_SUPERUSER
+            - name: PG__PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: POSTGRES_SUPERUSER_PASSWORD
+            - name: PG__DB_NAME
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: POSTGRES_CONFIG_DB
+            - name: PREFECT_API_DATABASE_CONNECTION_URL
+              value: postgresql+asyncpg://$(PG__USER):$(PG__PASSWORD)@$(PG__HOST):5432/$(PG__DB_NAME)
+            - name: PREFECT_SERVER_API_BASE_PATH
+              value: /d2e/api
+            - name: PREFECT_UI_SERVE_BASE
+              value: /d2e
+            - name: PREFECT_UI_API_URL
+              value: http://0.0.0.0:41120/d2e/api
+            - name: PREFECT_UI_URL
+              value: http://0.0.0.0:41120/d2e
+            - name: PREFECT_LOGGING_LEVEL
+              value: DEBUG
+            - name: PREFECT_LOGGING_SERVER_LEVEL
+              value: WARNING
+            - name: PREFECT_SERVER_API_HOST
+              value: "0.0.0.0"
+            - name: PREFECT_UI_STATIC_DIRECTORY
+              value: /app/ui-files
+            - name: PREFECT_SERVER_API_PORT
+              value: "41120"
+            - name: PREFECT_API_ENABLE_HTTP2
+              value: "False"
+            - name: PREFECT_API_DEFAULT_LIMIT
+              value: "5000"
+            - name: DB_CREDENTIALS_MGR__API_URL
+              value: "http://trex-http.d2e.svc.cluster.local:443/db-credentials/db/"
+            - name: DB_CREDENTIALS__PRIVATE_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: DB_CREDENTIALS__PRIVATE_KEY
+            - name: IDP__ALP_SVC__CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: LOGTO__SVC_CLIENT_ID
+            - name: IDP__ALP_SVC__CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: LOGTO__SVC_CLIENT_SECRET
+            - name: IDP__SCOPE
+              value: "https://alp-default"
+            - name: IDP_SUBJECT_PROP
+              value: "sub"
+          command: ["/bin/sh"]
+          args: ["-c", "prefect server start"]
+          image: prefecthq/prefect:3.6.10-python3.12
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 41120
+              protocol: TCP
+          lifecycle:
+            postStart:
+              exec:
+                command: ["/bin/sh", "-c", "sleep 120"]
+          resources:
+            {{- toYaml .Values.global.resources.dataflowGen | nindent 12 }}
+          livenessProbe:
+            httpGet:
+              path: /d2e/api/health
+              port: 41120
+            failureThreshold: 5
+            initialDelaySeconds: 120
+            periodSeconds: 10
+            timeoutSeconds: 20
+        - name: webapi-init
+          image: postgres:16-alpine
+          resources:
+            requests:
+              cpu: 10m
+              memory: 50Mi
+            limits:
+              cpu: 50m
+              memory: 50Mi
+          env:
+            - name: PGHOST
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: POSTGRES_HOST
+            - name: PGPORT
+              value: "5432"
+            - name: PGUSER
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: POSTGRES_SUPERUSER
+            - name: PGPASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: POSTGRES_SUPERUSER_PASSWORD
+            - name: PGDATABASE
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: POSTGRES_CONFIG_DB
+          volumeMounts:
+            - mountPath: /scripts
+              name: atlas-db-init
+              readOnly: true
+          command:
+            - sh
+            - -c
+            - |
+              set -e;
+              echo "Waiting for webapi.sec_role table...";
+              for i in $(seq 1 120); do
+                if psql -tAc "SELECT 1 FROM information_schema.tables WHERE table_schema = 'webapi' AND table_name = 'sec_role'" | grep -q 1; then
+                  echo "webapi.sec_role table found";
+                  break;
+                fi;
+                echo "Waiting... ($i/120)";
+                sleep 5;
+              done;
+              echo "Waiting for logto.users table...";
+              for i in $(seq 1 60); do
+                if psql -tAc "SELECT 1 FROM information_schema.tables WHERE table_schema = 'logto' AND table_name = 'users'" | grep -q 1; then
+                  echo "logto.users table found";
+                  break;
+                fi;
+                echo "Waiting... ($i/60)";
+                sleep 2;
+              done;
+              for f in /scripts/*.sql; do psql -v ON_ERROR_STOP=1 -f "$$f"; done;
+              touch /tmp/webapi-init.done;
+              echo "webapi-init: SQL scripts complete";
+              tail -f /dev/null
+        - name: trex
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              mkdir -p /usr/src/cert
+              printf '%s' "$TLS__INTERNAL__CRT" > /usr/src/cert/cert.pem
+              printf '%s' "$TLS__INTERNAL__KEY" > /usr/src/cert/key.pem
+              exec /usr/src/entrypoint.sh ${TREX_OTEL_ENABLED:+--enable-otel}
+          env:
+            - name: RUST_BACKTRACE
+              value: "full"
+            - name: ALP__SYSTEM_NAME
+              value: Research System
+            - name: APP__TENANT_ID
+              value: {{ .Values.global.tenantId | quote }}
+            - name: ACHILLES_THREAD_COUNT
+              valueFrom:
+                configMapKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: ACHILLES_THREAD_COUNT
+            - name: AUTO_GRANT_RESEARCHER_BY_DATASET_CODES
+              valueFrom:
+                configMapKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: AZ_AUTO_GRANT_RESEARCHER_BY_DATASET_CODES
+            - name: USER_MGMT__ROLE_SOURCE
+              value: "logto"
+            - name: NETWORK_COGNITO_DOMAIN
+              value: ""
+            - name: NETWORK_CENTRAL_API_URL
+              value: ""
+            - name: NETWORK_MACHINE_CLIENT_ID
+              value: ""
+            - name: NETWORK_TOKEN_SCOPE
+              value: ""
+            - name: NETWORK_COORDINATOR_CLIENT_ID
+              value: ""
+            - name: NETWORK_COORDINATOR_TOKEN_SCOPE
+              value: ""
+            - name: NETWORK_CLIENT_SECRET
+              value: ""
+            - name: NETWORK_ENC_KEY
+              value: ""
+            - name: NETWORK_COORDINATOR_CLIENT_SECRET
+              value: ""
+            - name: CADDY__D2E__PUBLIC_FQDN
+              valueFrom:
+                configMapKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: CADDY__D2E__PUBLIC_FQDN
+            - name: CUSTOM_WORK_POOL_CONFIGURATION
+              value: {{ .Values.config.baseJobTemplate.configuration | toJson }}
+            - name: CACHE_TABLE_LEVEL_CONCURRENCY
+              value: "1"
+            - name: CACHE_FLOW_LEVEL_CONCURRENCY
+              value: "1"
+            - name: CACHE_TASK_TIMEOUT
+              value: "10800"
+            - name: DATABASE_CREDENTIALS
+              value: "{}"
+            - name: DB_CREDENTIALS_MGR__API_URL
+              value: "http://trex-http.d2e.svc.cluster.local:443/db-credentials/db/"
+            - name: EXCLUDE_ANALYSIS_IDS
+              valueFrom:
+                configMapKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: EXCLUDE_ANALYSIS_IDS
+            - name: HANA_HINT
+              value: USE_HEX_PLAN
+            - name: GATEWAY__IDP_AUTH_TYPE
+              value: logto
+            - name: GATEWAY__IDP_SUBJECT_PROP
+              value: sub
+            - name: GATEWAY__WO_PROTOCOL_FQDN
+              valueFrom:
+                configMapKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: CADDY__D2E__PUBLIC_FQDN
+            - name: DC_HANA_READ_ROLE
+              value: ""
+            - name: HOSTNAME
+              value: "trex-http.d2e.svc.cluster.local"
+            - name: LOGTO_API_M2M_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: LOGTO_API_M2M_CLIENT_ID
+            - name: LOGTO_API_M2M_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: LOGTO_API_M2M_CLIENT_SECRET
+            - name: IDP__ALP_SVC__CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: LOGTO__SVC_CLIENT_ID
+            - name: LOGTO__SVC_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: LOGTO__SVC_CLIENT_ID
+            - name: LOGTO__D2E_SVC__CLIENT_ID
+              value: $(IDP__ALP_SVC__CLIENT_ID)
+            - name: IDP__ALP_SVC__CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: LOGTO__SVC_CLIENT_SECRET
+            - name: LOGTO__SVC_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: LOGTO__SVC_CLIENT_SECRET
+            - name: LOGTO__D2E_SVC__CLIENT_SECRET
+              value: $(IDP__ALP_SVC__CLIENT_SECRET)
+            - name: LOGTO__CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: LOGTO__APP_CLIENT_ID
+            - name: LOGTO__CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: LOGTO__APP_CLIENT_SECRET
+            - name: LOGTO__D2E_DATA__CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: LOGTO__DATA_CLIENT_ID
+            - name: LOGTO__D2E_DATA__CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: LOGTO__DATA_CLIENT_SECRET
+            - name: IDP__ALP_SVC_CLIENT_ID
+              value: $(IDP__ALP_SVC__CLIENT_ID)
+            - name: IDP__ALP_DATA_CLIENT_ID
+              value: $(LOGTO__D2E_DATA__CLIENT_ID)
+            - name: IDP__ALP_ADMIN__RESOURCE
+              value: https://default.logto.app/api
+            - name: IDP__BASE_URL
+              value: http://idp.d2e.svc.cluster.local:443
+            - name: IDP__FETCH_USER_INFO_TYPE
+              value: logto
+            - name: IDP__INITIAL_USER__NAME
+              value: admin
+            - name: IDP__INITIAL_USER__UUID
+              value: a6660e40-261e-4782-873e-f76b4328aecf
+            - name: IDP__AUTO_PROVISION_USERS
+              value: "true"
+            - name: IDP__RELYING_PARTY
+              valueFrom:
+                configMapKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: IDP__RELYING_PARTY
+            - name: IDP__REQUIRED_CLAIM
+              valueFrom:
+                configMapKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: IDP__REQUIRED_CLAIM
+            - name: IDP__SCOPE
+              value: https://alp-default
+            - name: IDP_SUBJECT_PROP
+              value: sub
+            - name: LOCAL_DEBUG
+              value: "false"
+            - name: LOGTO__ADMIN_SERVER__FQDN_URL
+              value: http://idp-admin.d2e.svc.cluster.local:443
+            - name: LOGTO__DEFAULT_TENANT__FQDN_URL
+              value: https://default.logto.app/api
+            - name: LOGTO__AUDIENCES
+              value: https://alp-default
+            - name: LOGTO__RESOURCE_API
+              value: https://alp-default
+            - name: LOGTO__SCOPE
+              valueFrom:
+                configMapKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: LOGTO__SCOPE
+            - name: LOGTO__TOKEN_URL
+              value: http://idp.d2e.svc.cluster.local:443/oidc/token
+            - name: LOGTO__ISSUER
+              value: "http://gateway.d2e.svc.cluster.local/oidc"
+            - name: NODE_ENV
+              value: development
+            - name: NOT_EQ_CHECK_FILTERCARDS
+              value: "true"
+            - name: OMOP_RELATIONSHIPS_FOR_DESCENDANTS
+              valueFrom:
+                configMapKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: OMOP_RELATIONSHIPS_FOR_DESCENDANTS
+            - name: PORTAL__LOG_DISCLAIMER
+              value: "true"
+            - name: PREFECT_DOCKER_VOLUMES
+              value: "[]"
+            - name: LOGTO__CLIENTID_PASSWORD__BASIC_AUTH
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: LOGTO__CLIENTID_PASSWORD__BASIC_AUTH
+            - name: PLUGINS_PATH
+              value: "/usr/src/data/plugins"
+            - name: DATASOURCE_DRIVERCLASSNAME
+              value: org.postgresql.Driver
+            - name: DATASOURCE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: DATASOURCE_URL
+            - name: DATASOURCE_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: POSTGRES_SUPERUSER
+            - name: DATASOURCE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: POSTGRES_SUPERUSER_PASSWORD
+            - name: DATASOURCE_OHDSI_SCHEMA
+              value: webapi
+            - name: SPRING_JPA_PROPERTIES_HIBERNATE_DEFAULT_SCHEMA
+              value: webapi
+            - name: SPRING_BATCH_REPOSITORY_TABLEPREFIX
+              value: webapi.batch_
+            # Flyway migration settings
+            - name: FLYWAY_DATASOURCE_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: POSTGRES_SUPERUSER
+            - name: FLYWAY_DATASOURCE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: POSTGRES_SUPERUSER_PASSWORD
+            - name: SPRING_FLYWAY_URL
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: DATASOURCE_URL
+            - name: SPRING_FLYWAY_USER
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: POSTGRES_SUPERUSER
+            - name: SPRING_FLYWAY_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: POSTGRES_SUPERUSER_PASSWORD
+            - name: SPRING_FLYWAY_SCHEMAS
+              value: webapi
+            - name: SPRING_FLYWAY_TABLE
+              value: flyway_schema_history
+            - name: SPRING_FLYWAY_PLACEHOLDERS_OHDSISCHEMA
+              value: webapi
+            # No SPRING_FLYWAY_BASELINE_VERSION: on an empty schema Flyway baselines at v1
+            # and applies all migrations, including the early ones that create cc_* tables.
+            # Existing installs already have history rows so this is a no-op for them.
+            # Security configuration
+            - name: SECURITY_PROVIDER
+              value: AtlasRegularSecurity
+            - name: SECURITY_ORIGIN
+              value: "*"
+            - name: SECURITY_SSL_ENABLED
+              value: "false"
+            # Enable forwarded headers support for reverse proxy
+            - name: SERVER_FORWARD_HEADERS_STRATEGY
+              value: NATIVE
+            # Auth providers - OpenID via Logto + Database auth
+            - name: SECURITY_AUTH_JDBC_ENABLED
+              value: "true"
+            - name: SECURITY_AUTH_WINDOWS_ENABLED
+              value: "false"
+            - name: SECURITY_AUTH_KERBEROS_ENABLED
+              value: "false"
+            - name: SECURITY_AUTH_OIDC_ENABLED
+              value: "true"
+            - name: SECURITY_AUTH_FACEBOOK_ENABLED
+              value: "false"
+            - name: SECURITY_AUTH_GITHUB_ENABLED
+              value: "false"
+            - name: SECURITY_AUTH_GOOGLE_ENABLED
+              value: "false"
+            - name: SECURITY_AUTH_LDAP_ENABLED
+              value: "false"
+            - name: SECURITY_AUTH_AD_ENABLED
+              value: "false"
+            - name: SECURITY_AUTH_CAS_ENABLED
+              value: "false"
+            # Database authentication configuration (uses webapi_security schema in d2e-dev-app-pg)
+            - name: SECURITY_DB_DATASOURCE_SCHEMA
+              value: webapi_security
+            - name: SECURITY_DB_DATASOURCE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: SECURITY_DB_DATASOURCE_URL
+            - name: SECURITY_DB_DATASOURCE_DRIVERCLASSNAME
+              value: org.postgresql.Driver
+            - name: SECURITY_DB_DATASOURCE_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: POSTGRES_SUPERUSER
+            - name: SECURITY_DB_DATASOURCE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: POSTGRES_SUPERUSER_PASSWORD
+            - name: SECURITY_DB_DATASOURCE_AUTHENTICATIONQUERY
+              value: "SELECT password, email AS firstname, NULL AS middlename, email AS lastname FROM webapi_security.security WHERE email = ?"
+            # Native WebAPI reads its auth datasource under security.auth.db.datasource.*
+            # (not the legacy security.db.datasource.* above).
+            - name: SECURITY_AUTH_DB_ENABLED
+              value: "true"
+            - name: SECURITY_AUTH_DB_DATASOURCE_DRIVERCLASSNAME
+              value: org.postgresql.Driver
+            - name: SECURITY_AUTH_DB_DATASOURCE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: SECURITY_DB_DATASOURCE_URL
+            - name: SECURITY_AUTH_DB_DATASOURCE_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: POSTGRES_SUPERUSER
+            - name: SECURITY_AUTH_DB_DATASOURCE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: POSTGRES_SUPERUSER_PASSWORD
+            - name: SECURITY_AUTH_DB_DATASOURCE_SCHEMA
+              value: webapi_security        
+            # OpenID Connect configuration (Logto)
+            # Property prefix updated for WebAPI p-hoffmann/openid branch: security.auth.openId.* (was security.oid.*)
+            - name: SECURITY_AUTH_OIDC_CLIENTID
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: LOGTO__APP_CLIENT_ID
+            - name: SECURITY_AUTH_OIDC_APISECRET
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: LOGTO__APP_CLIENT_SECRET
+            - name: SECURITY_AUTH_OIDC_URL
+              value: "http://gateway.d2e.svc.cluster.local/oidc/.well-known/openid-configuration"
+            # External URL for browser redirects - used to rewrite internal OIDC URLs to external ones
+            - name: SECURITY_AUTH_OIDC_EXTERNALURL
+              value: "https://$(CADDY__D2E__PUBLIC_FQDN)/oidc"
+            - name: SECURITY_AUTH_OIDC_LOGOUTURL
+              value: "https://$(CADDY__D2E__PUBLIC_FQDN)/oidc/session/end"
+            # Role claim in the ID token (Logto emits `roles` when the roles feature is enabled for the app)
+            - name: SECURITY_AUTH_OIDC_ROLESCLAIM
+              value: "roles"
+            # NOTE: scopes `openid profile email` are added by default by the new WebAPI; extraScopes no longer required
+            # OAuth callback URLs - must use external URL for browser redirects
+            # NOTE: callback path now includes /openid segment (Spring oauth2Login convention).
+            # The Logto app's redirect URI must be updated to end with /user/oauth/callback/openid
+            - name: SECURITY_AUTH_OAUTH_CALLBACK_API
+              value: "https://$(CADDY__D2E__PUBLIC_FQDN)/WebAPI/user/oauth/callback"
+            - name: SECURITY_AUTH_OAUTH_CALLBACK_UI
+              value: "https://$(CADDY__D2E__PUBLIC_FQDN)/atlas/#/welcome"
+            # TrexSQL configuration
+            # PG__ vars needed by trex (npm start) for database connection                            
+            - name: TREX__SQL__HOST
+              value: trex-sql.d2e.svc.cluster.local
+            - name: TREX__SQL__USER
+              value: postgres
+            - name: TREX__SQL__DBNAME
+              value: postgres
+            - name: TREX__SQL__PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: TREX__SQL__PASSWORD
+            - name: TREX__ENDPOINT_URL
+              value: "http://localhost:33001"
+            - name: TREX_ROUTES
+              value: '{"d2e":"http://localhost:33001"}'
+            - name: TREX_EXTENSIONS_PATH
+              value: /usr/src/node_modules/@trex
+            - name: TREX_POOL_SIZE
+              value: "1024"
+            - name: TREXSQL_ENABLED
+              value: "true"
+            - name: "PG_SCHEMA"
+              value: "trexdb,notebook"
+            - name: HADES_ENVS_BASE_DIR
+              value: /data/hades/envs
+            - name: HADES_OUTPUT_BASE_DIR
+              value: /data/hades/runs
+            - name: HADES_WORK_SCHEMA
+              value: _config.work
+            - name: SWARM_NODE
+              value: d2e
+            - name: SWARM_CONFIG
+              value: |-
+                {
+                  "cluster_id": "d2e",
+                  "nodes": {
+                    "d2e": {
+                      "gossip_addr": "0.0.0.0:4200",
+                      "extensions": [
+                        {
+                          "name": "trexas",
+                          "config": {
+                            "host": "0.0.0.0",
+                            "port": 33001,
+                            "main_service_path": "/usr/src/core/server/index.eszip",
+                            "event_worker_path": "/usr/src/core/event/index.eszip",
+                            "tls_port": 33000,
+                            "tls_cert_path": "/usr/src/cert/cert.pem",
+                            "tls_key_path": "/usr/src/cert/key.pem"
+                          }
+                        },
+                        {
+                          "name": "pgwire",
+                          "config": { "host": "0.0.0.0", "port": 5433, "password": "$(TREX__SQL__PASSWORD)" }
+                        }
+                      ]
+                    }
+                  }
+                }
+            - name: PLUGINS_API_VERSION
+              valueFrom:
+                configMapKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: PLUGINS_API_VERSION
+            - name: PLUGINS_REGISTRY
+              valueFrom:
+                configMapKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: PLUGINS_REGISTRY
+            - name: TPM_REGISTRY_URL
+              value: "$(PLUGINS_REGISTRY)"
+            - name: PLUGINS_IMAGE_TAG
+              valueFrom:
+                configMapKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: PLUGINS_IMAGE_TAG
+            - name: PLUGINS_PULL_POLICY
+              value: Always
+            - name: PLUGINS_FLOW_CUSTOM_REPO_IMAGE_CONFIG
+              valueFrom:
+                configMapKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: PLUGINS_FLOW_CUSTOM_REPO_IMAGE_CONFIG
+            - name: PG__DB_NAME
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: POSTGRES_CONFIG_DB
+            - name: PG_DB_NAME
+              value: "$(PG__DB_NAME)"
+            - name: PG__DEBUG
+              value: "1"
+            - name: PG__DIALECT
+              value: postgresql
+            - name: PG__HOST
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: POSTGRES_HOST
+            - name: PG_HOST
+              value: "$(PG__HOST)"
+            - name: PG__IDLE_TIMEOUT_IN_MS
+              value: "300000"
+            - name: PG__MAX_POOL
+              value: "10"
+            - name: PG__MIN_POOL
+              value: "0"
+            - name: PG__PORT
+              value: "5432"
+            - name: PG_MANAGE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: POSTGRES_CONFIG_ADMIN_PASSWORD
+            - name: PG_ADMIN_PASSWORD
+              value: "$(PG_MANAGE_PASSWORD)"
+            - name: PG_ADMIN_USER
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: POSTGRES_CONFIG_ADMIN_USER
+            - name: PG_MANAGE_USER
+              value: "$(PG_ADMIN_USER)"
+            - name: POSTGRES_SUPERUSER
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: POSTGRES_SUPERUSER
+            - name: POSTGRES_SUPERUSER_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: POSTGRES_SUPERUSER_PASSWORD
+            - name: PG__CONFIG__DB_NAME
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: POSTGRES_CONFIG_DB
+            - name: PG_WRITE_USER
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: POSTGRES_CONFIG_WRITE_USER
+            - name: PG_WRITE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: POSTGRES_CONFIG_WRITE_PASSWORD
+            - name: PG__SSL
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: PG__SSL
+            - name: PREFECT_API_URL
+              value: http://dataflow-gen.d2e.svc.cluster.local:443/d2e/api
+            - name: PREFECT_HEALTH_CHECK
+              value: "http://dataflow-gen.d2e.svc.cluster.local:443/d2e/api/health"
+            - name: PREFECT_POOL
+              value: "process-pool"
+            - name: WORKPOOL_TYPE
+              value: "process"
+            - name: DEFAULT_FLOW_COMMAND
+              value: "/app/run-flow.sh d2e-flows"
+            - name: STORAGE_FILE_BACKEND_PATH
+              value: "/usr/src/data/storage"
+            - name: TREX_STORAGE_URL
+              value: "http://localhost:33001/plugins/trex/storage-api"
+            - name: TREX_STORAGE_SERVICE_KEY
+              value: ""
+            - name: PROJECT_NAME
+              value: d2e
+            - name: SERVICE_ROUTES
+              valueFrom:
+                configMapKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: SERVICE_ROUTES
+            - name: DB_CREDENTIALS__PUBLIC_KEYS
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: DB_CREDENTIALS__PUBLIC_KEYS
+            - name: DB_CREDENTIALS__PRIVATE_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: DB_CREDENTIALS__PRIVATE_KEY
+            - name: SQL_RETURN_ON
+              value: "true"
+            - name: SUPABASE_STORAGE_JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: SUPABASE_STORAGE_JWT_SECRET
+            - name: SUPABASE_STORAGE_JWT_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: SUPABASE_STORAGE_JWT_TOKEN
+            - name: TLS__INTERNAL__CA_CRT
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: TLS__INTERNAL__CA_CRT
+            - name: TLS__INTERNAL__CRT
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: TLS__INTERNAL__CRT
+            - name: TLS__INTERNAL__DOMAIN
+              value: alp.local
+            - name: TLS__INTERNAL__KEY
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: TLS__INTERNAL__KEY
+            - name: TREX__SQL__PORT
+              value: "443"
+            - name: TREX_SQL_PASSWORD
+              value: "$(TREX__SQL__PASSWORD)"
+            - name: JASYPT_ENCRYPTOR_ENABLED
+              value: "false"
+            - name: JASYPT_ENCRYPTOR_PASSWORD
+              value: ""
+            - name: JASYPT_ENCRYPTOR_ALGORITHM
+              value: "PBEWITHSHA256AND256BITAES-CBC-BC"
+            - name: TPM_USE_NODE_MODULES
+              value: "false"
+            - name: USE_PUBLIC_WEBAPI_PROXY
+              value: "false"
+            - name: USE_TREX_DB_CONN
+              value: "false"
+            - name: IS_AUDIT_LOG_ENABLED
+              value: {{ .Values.features.auditLog | quote }}
+            - name: IS_CDM_SQL_AUDIT_LOG_ENABLED
+              value: {{ .Values.features.cdmSqlAuditLog | quote }}
+            - name: AUDIT_LOG_TO_CONSOLE
+              value: {{ .Values.features.auditLogToConsole | quote }}
+            - name: ANALYTICS_HANA_STREAMING_ENABLED
+              value: {{ .Values.features.materializeCohorts | quote }}
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: STORAGE__JDBC__URL
+            - name: TREX_ROOT_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: TREX_ROOT_KEY
+            - name: BETTER_AUTH_SECRET
+              value: "$(TREX_ROOT_KEY)"
+            - name: BETTER_AUTH_URL
+              value: "http://localhost:33001/trex"
+            - name: BASE_PATH
+              value: /trex
+            - name: SCHEMA_DIR
+              value: /usr/src/core/schema
+            - name: PLUGINS_DEV_PATH
+              value: "/usr/src/plugins-dev:/usr/src/bundled-plugins"
+            - name: D2E_COMPAT
+              value: "true"
+            - name: TREX_OTEL_ENABLED
+              value: {{ (.Values.global.otel).enabled | default "" | quote }}
+            - name: OTEL_EXPORTER_OTLP_ENDPOINT
+              value: {{ (.Values.global.otel).exporterOtlpEndpoint | default "" | quote }}
+            - name: OTEL_EXPORTER_OTLP_PROTOCOL
+              value: {{ (.Values.global.otel).exporterOtlpProtocol | default "" | quote }}
+            - name: OTEL_EXPORTER_OTLP_HEADERS
+              value: {{ (.Values.global.otel).exporterOtlpHeaders | default "" | quote }}
+            - name: OTEL_SERVICE_NAME
+              value: {{ (.Values.global.otel).serviceName | default "" | quote }}
+            - name: ANALYTICS_STREAMING_CHUNK_SIZE_BY_DIALECT
+              value: '{"hana": 10000}'
+            - name: IS_SELF_MANAGED_ROLES
+              value: "true"
+          image: ghcr.io/ohdsi/d2e-trex:{{ .Values.global.image.tag }}
+          imagePullPolicy: Always
+          resources:
+            requests:
+              cpu: {{ .Values.resources.trex.requests.cpu }}
+              memory: {{ .Values.resources.trex.requests.memory }}
+            limits:
+              cpu: {{ .Values.resources.trex.limits.cpu }}
+              memory: {{ .Values.resources.trex.limits.memory }}        
+          ports:
+            - containerPort: 33000
+              protocol: TCP
+            - containerPort: 33001
+              protocol: TCP
+            - containerPort: 5432
+              protocol: TCP
+          volumeMounts:
+            - mountPath: /usr/src/data
+              name: trex-volume
+            {{- if .Values.features.materializeCohorts }}
+            - mountPath: /usr/src/cert/client.crt
+              name: materialize-cohorts-client-pki
+              subPath: API_COHORT_CLIENT_CRT
+            - mountPath: /usr/src/cert/client.key
+              name: materialize-cohorts-client-pki
+              subPath: API_COHORT_CLIENT_KEY
+            - mountPath: /usr/src/cert/ca.crt
+              name: materialize-cohorts-client-pki
+              subPath: API_TLS_CA
+            {{- end }}
+          livenessProbe:
+            exec:
+              command:
+                - /bin/sh
+                - -c
+                - curl -fk https://localhost:33000/trex/_internal/health || curl -f http://localhost:33001/trex/_internal/health || exit 1
+            initialDelaySeconds: 120
+            periodSeconds: 10
+            timeoutSeconds: 10
+            failureThreshold: 30
+        {{- if .Values.features.materializeCohorts }}
+        - name: materialize-cohorts
+          command: ["npm", "run", "start"]
+          env:
+            - name: PORT
+              value: "3333"
+            - name: API_MTLS_ENABLED
+              value: "true"
+            - name: API_TLS_CA_PATH
+              value: "/app/PKI/ca.crt"
+            - name: API_TLS_CERT_PATH
+              value: "/app/PKI/server.crt"
+            - name: API_TLS_KEY_PATH
+              value: "/app/PKI/server.key"
+            - name: INSTALL_SQLALCHEMY_HANA
+              value: "true"
+          image: {{ .Values.global.images.materializeCohorts }}:{{ .Values.global.image.tag }}
+          imagePullPolicy: Always
+          volumeMounts:
+            - mountPath: /app/PKI/ca.crt
+              name: materialize-cohorts-pki
+              subPath: API_TLS_CA
+            - mountPath: /app/PKI/server.crt
+              name: materialize-cohorts-pki
+              subPath: API_TLS_CERT
+            - mountPath: /app/PKI/server.key
+              name: materialize-cohorts-pki
+              subPath: API_TLS_KEY
+          ports:
+            - containerPort: 3333
+              protocol: TCP
+          resources:
+            requests:
+              # cpu: 100m
+              cpu: 50m # for dev
+              memory: 200Mi
+            limits:
+              cpu: 1000m
+              memory: 2000Mi
+          livenessProbe:
+            httpGet:
+              scheme: HTTPS
+              path: /health
+              port: 3333
+            failureThreshold: 5
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+        {{- end }}
+        - name: supabase-storage
+          command: ["/bin/sh", "-c"]
+          args:
+            [
+              "-c",
+              "echo 'Waiting 60 seconds before starting...' && sleep 60 && echo 'Starting server now' && node dist/start/server.js",
+            ]
+          env:
+            - name: PROJECT_REF
+              value: "d2e"
+            - name: PORT
+              value: "9000"
+            - name: FILE_SIZE_LIMIT
+              value: "1048576000"
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: STORAGE__JDBC__URL
+            - name: SUPABASE_STORAGE_JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: SUPABASE_STORAGE_JWT_SECRET
+            - name: PGRST_JWT_SECRET
+              value: "$(SUPABASE_STORAGE_JWT_SECRET)"
+            - name: SERVICE_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: SUPABASE_STORAGE_JWT_TOKEN
+            - name: MIGRATIONS_SCHEMA
+              value: storage
+            - name: MIGRATIONS_TABLE
+              value: migrations
+            - name: SKIP_MIGRATIONS
+              value: "true"
+            - name: STORAGE_BACKEND
+              value: file
+            - name: GLOBAL_S3_BUCKET
+              value: stub
+            - name: GLOBAL_S3_ENDPOINT
+              value: http://storage.d2e.svc.cluster.local:443/s3
+            - name: GLOBAL_S3_PROTOCOL
+              value: http
+            - name: GLOBAL_S3_FORCE_PATH_STYLE
+              value: "true"
+            - name: FILE_STORAGE_BACKEND_PATH
+              value: "/var/lib/storage"
+            - name: TENANT_ID
+              value: "stub"
+            - name: REGION
+              value: stub
+          image: ghcr.io/ohdsi/d2e-supabase-storage:{{ .Values.global.image.tag }}
+          volumeMounts:
+            - name: storage-volume
+              mountPath: /var/lib/storage
+          imagePullPolicy: IfNotPresent
+          livenessProbe:
+            exec:
+              command:
+                - wget
+                - -O
+                - liveness
+                - http://127.0.0.1:9000/status
+            failureThreshold: 5
+            initialDelaySeconds: 150
+            periodSeconds: 5
+            timeoutSeconds: 10
+          readinessProbe:
+            exec:
+              command:
+                - wget
+                - -O
+                - readiness
+                - http://127.0.0.1:9000/status
+            failureThreshold: 5
+            initialDelaySeconds: 150
+            periodSeconds: 5
+            timeoutSeconds: 10
+          ports:
+            - containerPort: 9000
+              protocol: TCP
+          resources:
+            requests:
+              cpu: 50m
+              memory: 100Mi
+            limits:
+              cpu: 500m
+              memory: 500Mi

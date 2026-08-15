@@ -1,0 +1,14 @@
+# apiVersion: v1
+# kind: PersistentVolumeClaim
+# metadata:
+#   name: etl-pvc
+#   annotations:
+#     helm.sh/resource-policy: keep
+# spec:
+#   storageClassName: default
+#   accessModes:
+#     - ReadWriteOnce
+#   resources:
+#     requests:
+#       storage: 200Gi
+#   volumeName: apptier-pv-200gb-0

@@ -16,14 +16,28 @@ export async function getCDMVersion(req, res, next) {
         const { analyticsConnection } = req.dbConnections;
         let dbDao = new DBDAO(analyticsConnection);
         const trexAlias = cacheId ?? databaseCode;
-        const cdmVersion = await dbDao.getCDMVersion(trexAlias, schemaName, dialect);
-
+        const cdmVersion = await dbDao.getCDMVersion(
+            trexAlias,
+            schemaName,
+            dialect
+        );
+        logger.info(
+            `CDM version retrieved for dataset ${datasetId} with schema name ${schemaName} with dialect ${dialect} is ${JSON.stringify(cdmVersion)}`
+        );
         let hanaKey = "CDM_VERSION";
         let cdmVersionKey =
             dialect === ANALYTICS_DB_DIALECTS.HANA
                 ? hanaKey
                 : dbUtils.convertNameToPg(hanaKey);
-        let cdmVersionValue = cdmVersion[0][cdmVersionKey];
+        // Result-set key casing varies by source dialect: the trex query layer surfaces the
+        // column as written in the DAO's `SELECT CDM_VERSION` literal (UPPERCASE) for a
+        // Snowflake-sourced cache, whereas postgres/hana fold to the convertNameToPg key.
+        // Resolve the key case-insensitively so the version is found regardless of dialect.
+        const cdmRow = cdmVersion[0] ?? {};
+        const matchedKey = Object.keys(cdmRow).find(
+            (k) => k.toLowerCase() === cdmVersionKey.toLowerCase()
+        );
+        let cdmVersionValue = matchedKey ? cdmRow[matchedKey] : undefined;
         if (cdmVersionValue) {
             //Cater to scenarios if vx.x is stored in the CDM schema
             cdmVersionValue = cdmVersionValue.toUpperCase().startsWith("V")
@@ -32,6 +46,9 @@ export async function getCDMVersion(req, res, next) {
         } else {
             throw new Error("Invalid cdm version value");
         }
+        logger.info(
+            `CDM version returned for dataset ${datasetId} with schema name ${schemaName} with dialect ${dialect} is ${cdmVersionValue}`
+        );
         res.status(200).json(cdmVersionValue);
     } catch (err) {
         logger.error(`Error retrieving CDM version: ${err}`);

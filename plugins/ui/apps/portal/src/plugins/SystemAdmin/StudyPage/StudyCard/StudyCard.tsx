@@ -135,7 +135,7 @@ export const StudyCard: FC<StudyCardProps> = ({
     async (e: React.MouseEvent) => {
       e.stopPropagation();
 
-      if (isRunning || !selectedDatasetId) {
+      if (isRunning || !selectedDatasetId || !study.tokenDatasetCode) {
         return;
       }
 
@@ -170,7 +170,7 @@ export const StudyCard: FC<StudyCardProps> = ({
           options: {
             mode: "kernel",
             datasetId: selectedDatasetId,
-            studyId: study.id,
+            tokenStudyCode: study.tokenDatasetCode,
             uploadResults: true,
           },
         };
@@ -271,14 +271,14 @@ export const StudyCard: FC<StudyCardProps> = ({
     async (e: React.MouseEvent) => {
       e.stopPropagation();
 
-      if (isCleaningUp || !study.id) {
+      if (isCleaningUp || !study.tokenDatasetCode) {
         return;
       }
 
       setIsCleaningUp(true);
 
       try {
-        await api.dataflow.createCleanUpStudySchemaRun(study.id);
+        await api.dataflow.createCleanUpStudySchemaRun(study.tokenDatasetCode);
 
         setFeedback({
           type: "success",

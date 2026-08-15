@@ -1,5 +1,7 @@
 export * from './roles'
+export * from './AutoProvisionService'
 export * from './B2cGroupService'
+export * from './EntitlementsSyncService'
 export * from './ConfigService'
 export * from './EmailService'
 export * from './MemberService'

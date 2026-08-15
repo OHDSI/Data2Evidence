@@ -1,5 +1,5 @@
 <template>
-  <div class="patientlist-container" ref="patientlistContainer">
+  <div class="patientlist-container" ref="patientlistContainer" data-testid="pa-patient-list-table">
     <template v-if="errorMessage">
       <chartErrorMessage :errorMessage="errorMessage"></chartErrorMessage>
     </template>
@@ -10,8 +10,8 @@
         :menuData="getColumnSelectionMenu"
         @clickItem="addColumn"
       ></menuButton>
-      <div style="height: 14px"></div>
-      <div class="patientlist-control-wrapper" style="height: 90%; overflow: auto">
+      <div style="height: 14px; flex-shrink: 0"></div>
+      <div class="patientlist-control-wrapper" style="flex: 1; min-height: 0; overflow: auto">
         <patientListControl
           :columns="getSelectedAttributes"
           :rows="chartData.data"
@@ -42,6 +42,7 @@
 <script lang="ts">
 declare var sap
 import { mapActions, mapGetters } from 'vuex'
+import axios from 'axios'
 import menuButton from './MenuButton.vue'
 import Pager from './Pager.vue'
 import patientListControl from './PatientListControl.vue'
@@ -59,6 +60,9 @@ export default {
         data: [],
         totalPatientCount: 0,
       },
+      requestId: 0,
+      requestCancel: null as (() => void) | null,
+      isUnmounted: false,
     }
   },
   watch: {
@@ -73,37 +77,32 @@ export default {
       if (Object.keys(this.getSelectedAttributes).length === 0) {
         return (this.errorMessage = this.getText('MRI_PA_PATIENT_LIT_NO_COLUMNS_SELECTED_MESSAGE'))
       }
-      this.$emit('busyEv', false)
       this.errorMessage = ''
-      const callback = rawChartData => {
-        const chartData = postProcessPatientListData(rawChartData)
-        this.chartData = this.processResult(JSON.parse(JSON.stringify(chartData)))
-        this.setCurrentPatientCount({
-          currentPatientCount: chartData.totalPatientCount,
-        })
-        if (typeof chartData.noDataReason !== 'undefined') {
-          this.errorMessage = chartData.noDataReason
+
+      this.startRequest(
+        ({ cancelToken }) =>
+          this.fireQuery({
+            url: '/analytics-svc/api/services/patient',
+            params: {
+              mriquery: JSON.stringify(this.getPLRequest({ useLimit: true })),
+              datasetId: this.getSelectedDataset.id,
+            },
+            cancelToken,
+          }),
+        rawChartData => {
+          const chartData = postProcessPatientListData(rawChartData)
+          this.chartData = this.processResult(JSON.parse(JSON.stringify(chartData)))
           this.setCurrentPatientCount({
-            currentPatientCount: '--',
+            currentPatientCount: chartData.totalPatientCount,
           })
-        }
-        this.$emit('busyEv', false)
-      }
-
-      this.$emit('busyEv', true)
-      this.fireQuery({
-        url: '/analytics-svc/api/services/patient',
-        params: {
-          mriquery: JSON.stringify(this.getPLRequest({ useLimit: true })),
-          datasetId: this.getSelectedDataset.id,
-        },
-      })
-        .then(callback)
-        .catch(({ message, response }) => {
-          if (message !== 'cancel') {
-            this.$emit('busyEv', false)
+          if (typeof chartData.noDataReason !== 'undefined') {
+            this.errorMessage = chartData.noDataReason
+            this.setCurrentPatientCount({
+              currentPatientCount: '--',
+            })
           }
-
+        },
+        ({ response }) => {
           if (response) {
             let noDataReason = this.getText('MRI_PA_CHART_NO_DATA_DEFAULT_MESSAGE')
 
@@ -121,7 +120,8 @@ export default {
           this.setCurrentPatientCount({
             currentPatientCount: '--',
           })
-        })
+        }
+      )
     },
     getZipFireDownload() {
       this.downloadZIP({
@@ -131,14 +131,19 @@ export default {
           createZip(
             {
               responses,
+              cohortName: this.getActiveBookmark?.bookmarkname,
             },
             () => {
               this.completeDownloadZIP()
             }
           )
         })
-        .catch(() => {
-          // do nothing
+        .catch(err => {
+          // A superseded/cancelled download is not a failure — don't surface an error toast
+          if (err?.name === 'AbortError') {
+            return
+          }
+          this.setZIPDownloadError(true)
         })
     },
   },
@@ -155,6 +160,7 @@ export default {
       'getSelectedAttributes',
       'getSelectedDataset',
       'translate',
+      'getActiveBookmark',
     ]),
     currentPage() {
       return this.getPLModel.currentPage
@@ -162,6 +168,11 @@ export default {
     pageSize() {
       return this.getPLModel.pageSize
     },
+  },
+  beforeUnmount() {
+    this.isUnmounted = true
+    this.cancelRequest()
+    this.$emit('busyEv', false)
   },
   mounted() {
     this.populateColumnMenu()
@@ -180,12 +191,49 @@ export default {
       'setFireRequest',
       'completeDownloadCSV',
       'completeDownloadZIP',
+      'setZIPDownloadError',
       'initPLModel',
       'setPLRequest',
       'changePage',
       'populateColumnMenu',
       'addSelectedAttribute',
     ]),
+    startRequest(fire, onSuccess, onError) {
+      this.requestId += 1
+      const requestId = this.requestId
+
+      if (this.requestCancel) {
+        this.requestCancel()
+        this.requestCancel = null
+      }
+
+      const cancelToken = new axios.CancelToken(c => {
+        this.requestCancel = () => c('cancel')
+      })
+
+      this.$emit('busyEv', true)
+
+      fire({ cancelToken })
+        .then(data => {
+          if (this.isUnmounted || requestId !== this.requestId) return
+          onSuccess(data)
+        })
+        .catch(error => {
+          if (this.isUnmounted || requestId !== this.requestId) return
+          onError(error)
+        })
+        .finally(() => {
+          if (this.isUnmounted || requestId !== this.requestId) return
+          this.requestCancel = null
+          this.$emit('busyEv', false)
+        })
+    },
+    cancelRequest() {
+      if (this.requestCancel) {
+        this.requestCancel()
+        this.requestCancel = null
+      }
+    },
     removeColumn({ configPath }) {
       this.removeSelectedAttribute({ configPath })
       this.setFireRequest()

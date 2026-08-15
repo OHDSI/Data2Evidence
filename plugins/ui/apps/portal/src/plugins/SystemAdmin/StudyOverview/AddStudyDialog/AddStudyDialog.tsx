@@ -21,8 +21,10 @@ import {
   IDatabase,
   NewStudyInput,
   SourceDatasetType,
+  StandaloneDatasetType,
   Study,
 } from "../../../../types";
+import { parseDatamodelOption, resolveSourceDatasetType } from "./datasetType";
 import "./AddStudyDialog.scss";
 
 interface AddStudyDialogProps {
@@ -182,6 +184,7 @@ interface Datamodel {
   flowId: string;
 }
 
+// Todo: remove
 // hardcoded values for FHIR dataset creation
 const FHIR_DB_CODE = "d2e_fhir";
 const FHIR_SCHEMA_NAME = "fhir";
@@ -309,12 +312,17 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
   );
 
   const displayCacheConfiguration = useMemo(() => {
-    return formData.dialect !== "hana" && formData.managementMode === "source";
-  }, [formData.dialect, formData.managementMode]);
+    return (
+      formData.dialect !== "hana" &&
+      formData.managementMode === "source" &&
+      formData.type !== SourceDatasetType.FHIR &&
+      formData.type !== StandaloneDatasetType.I2B2
+    );
+  }, [formData.dialect, formData.managementMode, formData.type]);
 
   const displayManagementMode = useMemo(() => {
-    return formData.dialect !== "hana";
-  }, [formData.dialect]);
+    return formData.dialect !== "hana" && formData.type !== StandaloneDatasetType.I2B2;
+  }, [formData.dialect, formData.type]);
 
   const isOmopDataModel = useCallback((dataModelOption: string) => {
     return dataModelOption.toLowerCase().startsWith("omop");
@@ -469,33 +477,39 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
       formError = { ...formError, type: { required: true } };
     }
 
-    if (!cacheDatasetName && dialect !== "hana" && formData.managementMode === "source") {
+    if (
+      !cacheDatasetName &&
+      dialect !== "hana" &&
+      formData.managementMode === "source" &&
+      type !== SourceDatasetType.FHIR &&
+      type !== StandaloneDatasetType.I2B2
+    ) {
       formError = { ...formError, cacheDatasetName: { required: true } };
     }
 
-    if (!cacheDatasetType && dialect !== "hana" && formData.managementMode === "source") {
+    if (
+      !cacheDatasetType &&
+      dialect !== "hana" &&
+      formData.managementMode === "source" &&
+      type !== SourceDatasetType.FHIR &&
+      type !== StandaloneDatasetType.I2B2
+    ) {
       formError = { ...formError, cacheDatasetType: { required: true } };
     }
 
     if (Object.keys(formError).length > 0) {
+      console.error("Validation errors:", formError);
       setFormError({ ...EMPTY_FORM_ERROR, ...(formError as FormError) });
       return true;
     }
     return false;
   }, [formData, schemas, tokenIsValid]);
 
-  const parseDatamodelOption = useCallback((dataModelOption: string) => {
-    const parsedOption = dataModelOption.replace(/[[\]]/g, "").split(" ");
-    return {
-      dataModel: parsedOption[0],
-      plugin: parsedOption[1],
-    };
-  }, []);
-
   const handleSubmit = useCallback(async () => {
     console.log("Submitting form data:", formData);
-    if (isFormError()) {
-      console.error("Form has errors:", formError);
+    const hasError = isFormError();
+    if (hasError) {
+      console.error("Form has errors. Current formData:", formData);
       return;
     }
 
@@ -526,7 +540,6 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
     const dataModelDetails = parseDatamodelOption(dataModel);
     const parsedDataModel =
       dataModelDetails.dataModel === customDataModelOption.datamodel ? dataModelCustom : dataModelDetails.dataModel;
-    let fhirProjectId;
 
     const parsedDatasetType = dialect === "hana" ? `hana__${type}` : type;
 
@@ -549,7 +562,6 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
       databaseCode,
       dialect,
       paConfigId,
-      fhirProjectId,
       visibilityStatus: dialect === "hana" ? "DEFAULT" : visibilityStatus,
       attributes: [],
       tags: [],
@@ -574,7 +586,7 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
     } finally {
       setLoading(false);
     }
-  }, [formData, tenant, isFormError, setLoading, handleClose, parseDatamodelOption]);
+  }, [formData, tenant, isFormError, setLoading, handleClose]);
 
   if (createdDatasetName) {
     return (
@@ -650,13 +662,13 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
                 const newType = schemaOption === SchemaTypes.FHIR ? SourceDatasetType.FHIR : SourceDatasetType.SOURCE;
                 handleFormDataChange({
                   schemaOption,
-                  cdmSchemaValue: schemaOption === SchemaTypes.FHIR ? FHIR_SCHEMA_NAME : "",
+                  cdmSchemaValue: "",
                   isSameCdmSchemaForVocab: true,
                   vocabSchemaValue: "",
                   resultsSchemaValue: "",
                   autoGenerateResultsSchema: false,
-                  databaseCode: schemaOption === SchemaTypes.FHIR ? FHIR_DB_CODE : "",
-                  dialect: schemaOption === SchemaTypes.FHIR ? FHIR_DIALECT : "",
+                  databaseCode: "",
+                  dialect: "",
                   type: newType,
                   cacheDatasetType: DatasetMap[newType][0],
                   // webapi requires OMOP — FHIR is non-OMOP, so force source mode.
@@ -695,11 +707,7 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
                 onChange={(event: SelectChangeEvent<string>) => {
                   const managementMode = event.target.value as ManagementMode;
                   const changes: Partial<FormData> = { managementMode };
-                  if (
-                    managementMode === "webapi" &&
-                    formData.dataModel &&
-                    !isOmopDataModel(formData.dataModel)
-                  ) {
+                  if (managementMode === "webapi" && formData.dataModel && !isOmopDataModel(formData.dataModel)) {
                     changes.dataModel = "";
                     changes.dataModelCustom = "";
                   }
@@ -710,11 +718,7 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
                   id: "management-mode-option",
                 }}
               >
-                <MenuItem
-                  sx={styles}
-                  value="webapi"
-                  disabled={formData.schemaOption === SchemaTypes.FHIR}
-                >
+                <MenuItem sx={styles} value="webapi" disabled={formData.schemaOption === SchemaTypes.FHIR}>
                   {getText(i18nKeys.ADD_STUDY_DIALOG__MANAGEMENT_MODE_WEBAPI)}
                 </MenuItem>
                 <MenuItem sx={styles} value="source">
@@ -1047,7 +1051,23 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
               <Select
                 sx={styles}
                 value={formData.dataModel}
-                onChange={(event: SelectChangeEvent<string>) => handleFormDataChange({ dataModel: event.target.value })}
+                onChange={(event: SelectChangeEvent<string>) => {
+                  const dataModel = event.target.value;
+                  // HANA uses its own type dropdown — don't derive type from the data model.
+                  if (formData.dialect === "hana") {
+                    handleFormDataChange({ dataModel });
+                    return;
+                  }
+                  const type = resolveSourceDatasetType(dataModel);
+                  const changes: Partial<FormData> = { dataModel, type };
+                  // i2b2 is standalone: always source-managed with no cache. Clear any cache
+                  if (type === StandaloneDatasetType.I2B2) {
+                    changes.managementMode = "source";
+                    changes.cacheDatasetName = "";
+                    changes.cacheDatasetType = CacheDatasetType.OMOP;
+                  }
+                  handleFormDataChange(changes);
+                }}
                 inputProps={{
                   name: "dataModelOption",
                   id: "data-model-option",
@@ -1138,7 +1158,9 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
         </div>
         {displayCacheConfiguration && (
           <>
-            <div style={{ marginBottom: "32px", fontWeight: "bold" }}>{getText(i18nKeys.ADD_STUDY_DIALOG__CACHE_DATASET_CONFIGURATION)}</div>
+            <div style={{ marginBottom: "32px", fontWeight: "bold" }}>
+              {getText(i18nKeys.ADD_STUDY_DIALOG__CACHE_DATASET_CONFIGURATION)}
+            </div>
 
             <div style={{ marginBottom: "32px" }}>
               <TextField
@@ -1161,7 +1183,9 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
                 fullWidth
                 {...(formError.vocabSchemaValue.required ? { error: true } : {})}
               >
-                <InputLabel htmlFor="cache-dataset-option">{getText(i18nKeys.ADD_STUDY_DIALOG__CACHE_DATASET_TYPE)}</InputLabel>
+                <InputLabel htmlFor="cache-dataset-option">
+                  {getText(i18nKeys.ADD_STUDY_DIALOG__CACHE_DATASET_TYPE)}
+                </InputLabel>
                 <Select
                   sx={styles}
                   value={formData.cacheDatasetType}

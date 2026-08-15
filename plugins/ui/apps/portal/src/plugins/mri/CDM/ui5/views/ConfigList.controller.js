@@ -233,15 +233,22 @@ sap.ui.define([
     			
     			//var configData = JSON.stringify(beConfig);
     			var configData = encodeURIComponent(JSON.stringify(beConfig.config));
+                var downloadFileName = ConfigUtils.buildConfigDownloadFileName("CDM", [{
+                    value: beConfig.configName || sName,
+                    fallback: "unknown"
+                }, {
+                    value: beConfig.configVersion || iVersion,
+                    fallback: "unknown-version"
+                }]);
     			
     	        if(window.navigator.msSaveOrOpenBlob) {
     			    var blob = new Blob([JSON.stringify(beConfig.config)], {type: 'application/json'});
-    			    window.navigator.msSaveBlob(blob, beConfig.configName + ".json");
+                window.navigator.msSaveBlob(blob, downloadFileName);
     			} else {
     			    var xDocument = that.getView().getDomRef().ownerDocument;
     			    var xDownloadLink = xDocument.createElement("a");
     			    xDownloadLink.href = "data:application/json;charset=utf-8," + configData;
-                    xDownloadLink.download = beConfig.configName + ".json";
+                    xDownloadLink.download = downloadFileName;
     	            xDocument.body.appendChild(xDownloadLink);
     	            xDownloadLink.click();
     	            xDocument.body.removeChild(xDownloadLink);

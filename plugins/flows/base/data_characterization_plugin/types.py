@@ -11,17 +11,17 @@ class DCOptionsType(BaseModel):
     releaseDate: Optional[str] = None
     resultsSchema: str
     executeConceptRecordCount: Optional[bool] = True
-
-    @property
-    def use_cache_db(self) -> bool:
-        return False
+    datasetId: Optional[str] = None
+    # webapi-typed datasets run DC directly on the source database (postgres/
+    # bigquery) so Achilles results land in the WebAPI Results daimon schema.
+    useSourceConnection: Optional[bool] = False
 
     @property
     def use_trex_connection(self) -> bool:
         """
         Whether to use the TREX sql connection or direct database connection.
         """
-        return True
+        return not self.useSourceConnection
 
 
 class AchillesParams(DCOptionsType):
@@ -37,3 +37,10 @@ class AchillesParams(DCOptionsType):
     createIndices: bool = True
     sqlOnly: bool = False
     verboseMode: bool = False
+    # True when the underlying dataset is HANA served via the trex pgwire passthrough.
+    # Used to render HANA-dialect SQL in Achilles while keeping the postgres/pgwire driver.
+    is_hana: bool = False
+    # BigQuery has no temp tables: SqlRender emulates them in this schema
+    # (options(sqlRenderTempEmulationSchema=...)). Set only for direct-BigQuery
+    # runs; empty string disables emulation.
+    tempEmulationSchema: str = ""

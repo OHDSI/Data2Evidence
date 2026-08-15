@@ -41,7 +41,7 @@ export class PhenotypeController {
       res.send(result);
     } catch (error) {
       console.error(`Error creating phenotype flow run: ${error}`);
-      res.status(500).send(`${error}`);
+      res.status(500).send("Error creating phenotype flow run");
     }
   }
 }

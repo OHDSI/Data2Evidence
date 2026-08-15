@@ -131,17 +131,17 @@ export const dataflowApiSlice = createApi({
       query: ({
         id,
         datasetId,
-        studyId,
+        tokenStudyCode,
         uploadResults,
       }: {
         id: string;
         datasetId: string;
-        studyId: string;
+        tokenStudyCode: string;
         uploadResults?: boolean;
       }) => ({
         url: `prefect/analysis-run/${id}`,
         method: "POST",
-        body: { datasetId, studyId, uploadResults },
+        body: { datasetId, tokenStudyCode, uploadResults },
       }),
       invalidatesTags: (result, error, { id }) => [
         { type: "Dataflow", id },

@@ -51,7 +51,7 @@ const BoxPlotChart: FC<BoxPlotChartProps> = ({ data, title, xAxisName, yAxisName
     toolbox: {
       show: true,
       feature: {
-        dataView: { readOnly: false },
+        dataView: { readOnly: true },
         saveAsImage: {},
         restore: {},
       },

@@ -1,7 +1,14 @@
 import type { Knex } from '../types'
 import { Container, Service } from 'typedi'
 import { v4 as uuidv4 } from 'uuid'
-import { CONTAINER_KEY, ROLES, LOGTO_ROLES, LOGTO_ROLE_NAMES, LOGTO_TO_INTERNAL_ROLES } from '../const'
+import {
+  CONTAINER_KEY,
+  ROLES,
+  LOGTO_ROLES,
+  LOGTO_ROLE_NAMES,
+  LOGTO_TO_INTERNAL_ROLES,
+  datasetResearcherScopes
+} from '../const'
 import { UserGroup } from '../entities'
 import { UserGroupExt } from '../dtos'
 import { UserGroupCriteria, UserGroupExtCriteria, UserGroupField, UserGroupRepository } from '../repositories'
@@ -286,7 +293,7 @@ export class UserGroupService {
         const name = `${logtoRole}.${dataset.tokenStudyCode}`
         return {
           role: name,
-          scopes: [name, `${logtoRole}.${datasetId}`]
+          scopes: datasetResearcherScopes(name, datasetId, dataset.type)
         }
       }
       this.logger.warn(`Dataset ${datasetId} has no token_dataset_code, skipping Logto sync`)
@@ -446,6 +453,22 @@ export class UserGroupService {
     for (const { user, roles: userRoles } of userRolesPairs) {
       const active = !user.isSuspended
       const localUserId = idpToLocalId.get(user.id) || user.id
+
+      if (userRoles.length === 0) {
+        const syntheticId = `no-role:${localUserId}`
+        result.push({
+          id: syntheticId,
+          userId: localUserId,
+          b2cGroupId: null,
+          username: user.username,
+          role: null,
+          tenantId: env.APP_TENANT_ID,
+          studyId: null,
+          system: null,
+          active
+        })
+        continue
+      }
 
       for (const role of userRoles) {
         const { name } = role

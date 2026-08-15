@@ -1,8 +1,7 @@
 // import https from "node:https";
 import { AxiosRequestConfig } from "npm:axios";
 import {
-  ICreateDatamodelFlowRunDto,
-  ICreateFhirCacheFlowRunDto,
+  ICreateDatamodelFlowRunDto
 } from "../../jobplugins/src/types.ts";
 import { services } from "../env.ts";
 import { post } from "./request-util.ts";
@@ -57,21 +56,6 @@ export class JobPluginsAPI {
       const status = error.status || error.response?.status;
       const responseData = error.response?.data;
       this.logger.error(`Failed create datamodel flow run: ${error.message}, status: ${status}, data: ${JSON.stringify(responseData)}`);
-      throw error;
-    }
-  }
-
-  async createFhirCacheFlowRun(data: ICreateFhirCacheFlowRunDto) {
-    this.logger.info("Running create FHIR cache flow run");
-    try {
-      const options = await this.getRequestConfig();
-      const url = `${this.baseURL}/cachedb/create-fhir-file`;
-      const result = await this.channel.post(url, data, options);
-      return result.data;
-    } catch (error: any) {
-      const status = error.status || error.response?.status;
-      const responseData = error.response?.data;
-      this.logger.error(`Failed create FHIR cache flow run: ${error.message}, status: ${status}, data: ${JSON.stringify(responseData)}`);
       throw error;
     }
   }

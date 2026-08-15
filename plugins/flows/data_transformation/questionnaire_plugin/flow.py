@@ -21,10 +21,8 @@ def questionnaire_plugin(options: QuestionnaireOptionsType):
     schema_name = options.schema_name
     database_code = options.database_code
     cache_id = options.cache_id
-    use_cache_db = options.use_cache_db
 
-    dbdao = DBDao(use_cache_db=use_cache_db,
-                  database_code=database_code,
+    dbdao = DBDao(database_code=database_code,
                   cache_id=cache_id)
     
     match options.flow_action_type:

@@ -94,7 +94,13 @@ openssl req -new -key client.key -out client.csr -subj "/CN=local-client" -addex
 openssl x509 -req -in client.csr -CA ca.crt -CAkey ca.key -CAcreateserial -out client.crt -days 1825 -sha256 -copy_extensions copyall
 ```
 
-Use this client cert with `curl --cert client.crt --key client.key --cacert ca.crt ...`.
+
+```bash
+curl --cert client.crt \
+  --key client.key \
+  --cacert ca.crt \
+  -X POST https://localhost:3333/api/stream/run-all
+```
 
 ### 4) Create self-signed client certificate (alternative)
 

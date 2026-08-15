@@ -38,7 +38,7 @@ export class CohortController {
       res.send(result);
     } catch (error) {
       console.error(`Error creating cohort-generator flow run: ${error}`);
-      res.status(500).send(`${error}`);
+      res.status(500).send("Error creating cohort-generator flow run");
     }
   }
 }

@@ -197,9 +197,9 @@ const assignLogtoRolesByAzureGroups = async (
   }
 
   // Fetch existing roles and ensure all eligible roles exist (create if missing)
-  let logtoRoles = await getLogtoRoles(logtoAPItoken);
+  let logtoRoles = (await getLogtoRoles(logtoAPItoken)) || [];
   logtoRoles = await ensureEligibleRolesExist(eligibleLogtoRoles, logtoRoles, logtoAPItoken);
-  const userRoles = await getUserRoles(logtoUserID, logtoAPItoken);
+  const userRoles = (await getUserRoles(logtoUserID, logtoAPItoken)) || [];
   // console.log(`USER ${logtoUserID} ROLES ${JSON.stringify(userRoles)}`);
 
   // Assign eligible roles the user doesn't have yet
@@ -302,9 +302,17 @@ const getLogtoUsersByName = async (username: string, apiToken: string) => {
   }
 };
 
-const getLogtoRoles = async (apiToken: string) => {
-  try {
-    const httpResponse = await got.get(`${ENDPOINT}/api/roles`, {
+const fetchAllPages = async <T = any>(
+  path: string,
+  apiToken: string,
+  pageSize = 100,
+): Promise<T[]> => {
+  let page = 1;
+  const allItems: T[] = [];
+
+  while (true) {
+    const url = `${ENDPOINT}${path}${path.includes("?") ? "&" : "?"}page=${page}&page_size=${pageSize}`;
+    const response = await got.get(url, {
       headers: {
         authorization: `Bearer ${apiToken}`,
       },
@@ -314,9 +322,22 @@ const getLogtoRoles = async (apiToken: string) => {
       },
     });
 
-    // console.log(`Logto Roles ${JSON.stringify(httpResponse.body)}`);
+    const items = JSON.parse(response.body) as T[];
+    allItems.push(...items);
 
-    return JSON.parse(httpResponse.body);
+    const totalNumber = Number(response.headers["total-number"]);
+    if (!totalNumber || allItems.length >= totalNumber || items.length === 0) {
+      break;
+    }
+    page++;
+  }
+
+  return allItems;
+};
+
+const getLogtoRoles = async (apiToken: string) => {
+  try {
+    return await fetchAllPages(`/api/roles`, apiToken);
   } catch (e) {
     console.error(e);
   }
@@ -326,18 +347,11 @@ const getDefaultResourceId = async (
   apiToken: string,
 ): Promise<string | undefined> => {
   try {
-    const httpResponse = await got.get(`${ENDPOINT}/api/resources`, {
-      headers: {
-        authorization: `Bearer ${apiToken}`,
-      },
-      timeout: { request: defaultTimeout },
-      https: {
-        rejectUnauthorized: false,
-      },
-    });
-
-    const resources = JSON.parse(httpResponse.body);
-    const defaultResource = resources.find((r: any) => r.isDefault);
+    const resources = await fetchAllPages<{ id: string; isDefault?: boolean }>(
+      `/api/resources`,
+      apiToken,
+    );
+    const defaultResource = resources.find((r) => r.isDefault);
     return defaultResource?.id;
   } catch (e) {
     console.error("Error fetching default resource:", e);
@@ -382,21 +396,13 @@ const ensureScopeForRole = async (
     console.log(`Ensuring scope ${scopeName} exists for role ${roleId}`);
 
     // Find or create scope on the default resource
-    const scopesResponse = await got.get(
-      `${ENDPOINT}/api/resources/${resourceId}/scopes`,
-      {
-        headers: {
-          authorization: `Bearer ${apiToken}`,
-        },
-        timeout: { request: defaultTimeout },
-        https: {
-          rejectUnauthorized: false,
-        },
-      },
+    const existingScopes = await fetchAllPages<{ id: string; name: string }>(
+      `/api/resources/${resourceId}/scopes`,
+      apiToken,
     );
-
-    const existingScopes = JSON.parse(scopesResponse.body);
-    let scope = existingScopes.find((s: any) => s.name === scopeName);
+    let scope: { id: string; name: string } | undefined = existingScopes.find(
+      (s) => s.name === scopeName,
+    );
 
     if (!scope) {
       console.log(`Creating scope ${scopeName} on resource ${resourceId}`);
@@ -421,23 +427,11 @@ const ensureScopeForRole = async (
     }
 
     // Assign scope to role if not already assigned
-    const roleScopesResponse = await got.get(
-      `${ENDPOINT}/api/roles/${roleId}/scopes`,
-      {
-        headers: {
-          authorization: `Bearer ${apiToken}`,
-        },
-        timeout: { request: defaultTimeout },
-        https: {
-          rejectUnauthorized: false,
-        },
-      },
+    const existingRoleScopes = await fetchAllPages<{ id: string }>(
+      `/api/roles/${roleId}/scopes`,
+      apiToken,
     );
-
-    const existingRoleScopes = JSON.parse(roleScopesResponse.body);
-    const alreadyAssigned = existingRoleScopes.some(
-      (s: any) => s.id === scope.id,
-    );
+    const alreadyAssigned = existingRoleScopes.some((s) => s.id === scope!.id);
 
     if (!alreadyAssigned) {
       console.log(`Assigning scope ${scopeName} to role ${roleId}`);
@@ -447,7 +441,7 @@ const ensureScopeForRole = async (
           "content-type": "application/json",
         },
         json: {
-          scopeIds: [scope.id],
+          scopeIds: [scope!.id],
         },
         timeout: { request: defaultTimeout },
         https: {
@@ -501,22 +495,7 @@ const ensureEligibleRolesExist = async (
 
 const getUserRoles = async (userId: string, apiToken: string) => {
   try {
-    const httpResponse = await got.get(
-      `${ENDPOINT}/api/users/${userId}/roles`,
-      {
-        headers: {
-          authorization: `Bearer ${apiToken}`,
-        },
-        timeout: { request: defaultTimeout },
-        https: {
-          rejectUnauthorized: false,
-        },
-      }
-    );
-
-    // console.log(`Logto User ${userId} Roles ${JSON.stringify(httpResponse.body)}`);
-
-    return JSON.parse(httpResponse.body);
+    return await fetchAllPages(`/api/users/${userId}/roles`, apiToken);
   } catch (e) {
     console.error(e);
   }

@@ -10,6 +10,18 @@ import { FeatureRepository } from './repository/feature.repository.ts'
 export class FeatureService {
   private readonly NON_PLUGIN_FEATURES = [
     {
+      featureFlag: 'atlas',
+      name: 'Atlas',
+      nameI18nKey: 'FEATURE__ATLAS',
+      defaultEnabled: true
+    },
+    {
+      featureFlag: 'pythia',
+      name: 'Pythia (Atlas AI assistant)',
+      nameI18nKey: 'FEATURE__PYTHIA',
+      defaultEnabled: false
+    },
+    {
       featureFlag: 'datasetFilter',
       name: 'Dataset filter',
       nameI18nKey: 'FEATURE__DATASET_FILTER',
@@ -37,6 +49,30 @@ export class FeatureService {
       featureFlag: 'adminOnlySharing',
       name: 'Admin-only sharing',
       nameI18nKey: 'FEATURE__ADMIN_ONLY_SHARING',
+      defaultEnabled: false
+    },
+    {
+      featureFlag: 'conceptRecordCounts',
+      name: 'Concept record counts',
+      nameI18nKey: 'FEATURE__CONCEPT_RECORD_COUNTS',
+      defaultEnabled: true
+    },
+    {
+      featureFlag: 'aiAssistant',
+      name: 'AI assistant',
+      nameI18nKey: 'FEATURE__AI_ASSISTANT',
+      defaultEnabled: false
+    },
+    {
+      featureFlag: 'sibyl',
+      name: 'Sibyl',
+      nameI18nKey: 'FEATURE__SIBYL',
+      defaultEnabled: false
+    },
+    {
+      featureFlag: 'dataExploration',
+      name: 'Data Exploration',
+      nameI18nKey: 'FEATURE__DATA_EXPLORATION',
       defaultEnabled: false
     }
   ]

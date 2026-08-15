@@ -15,6 +15,7 @@
 [![Commuity](https://img.shields.io/badge/Community-Slack-d9dbec)](https://join.slack.com/t/data2evidence/shared_invite/zt-3vabnh2qr-vMev2VfLI2Sl1YA27gGVig)
 [![GitHub Activity](https://img.shields.io/github/commit-activity/m/ohdsi/d2e?label=Commit%20activty&logo=github&color=d9dbec)](https://github.com/ohdsi/d2e/graphs/contributors)
 [![D2E CLI Version](https://img.shields.io/npm/v/d2e?label=D2E%20installer&logo=npm&color=d9dbec)](https://www.npmjs.com/package/d2e)
+[![Strategus Analysis Tests](https://github.com/ohdsi/d2e/actions/workflows/strategus-analysis-integration-test.yml/badge.svg?branch=develop)](https://github.com/ohdsi/d2e/actions/workflows/strategus-analysis-integration-test.yml)
 
 ## Overview  
 
@@ -87,12 +88,6 @@ Data2Evidence supercharges the **OHDSI ecosystem**, combining familiar tools wit
 
 ### Installation  
 
-Install the Data2Evidence CLI
-
-```bash
-npm i -g d2e
-```
-
 Create folder for Data2Evidence
 
 ```bash
@@ -100,23 +95,41 @@ mkdir d2e
 cd d2e
 ```
 
-Generate `.env` file for Data2Evidence with random generated secretes and certificats
+Install the Data2Evidence CLI
+
+Set `VERSION` and your platform, then download it as `d2e`.
+
+**Linux / macOS** — `PLATFORM` is one of `linux-x64`, `linux-arm64`, `darwin-x64`, `darwin-arm64`:
+```bash
+VERSION="0.17.0-beta"        # any released version
+PLATFORM="darwin-arm64"      # your OS/arch
+curl -L "https://github.com/OHDSI/Data2Evidence/releases/download/v$VERSION/data2evidence-cli-$VERSION-$PLATFORM" -o d2e
+chmod +x d2e
+```
+
+**Windows (PowerShell)**:
+```powershell
+$VERSION = "0.17.0-beta"     # any released version
+curl.exe -L --progress-bar -o d2e.exe "https://github.com/OHDSI/Data2Evidence/releases/download/v$VERSION/data2evidence-cli-$VERSION-windows-x64.exe"
+```
+
+Generate `.env` file for Data2Evidence with random generated secrets and certificates
 
 ```bash
-d2e init
+./d2e init
 ```
 
 Start the Data2Evidence services
 
 ```bash
-d2e -e pull
-d2e -e start
+./d2e -e pull
+./d2e -e start
 ```
 
 Create and load demo dataset
 
 ```bash
-d2e setupdemo
+./d2e setupdemo
 ```
 
 Access via [https://localhost:443](https://localhost:443)  
@@ -141,9 +154,9 @@ functions/  → Analytical utilities and notebook helpers
 | d2e services  | d2e  functions | d2e ui  |
 |:-:|:-:|:-:|
 | [![d2e/cli build and publish](https://github.com/ohdsi/d2e/actions/workflows/cli-setup-npm.yml/badge.svg)](https://github.com/ohdsi/d2e/actions/workflows/cli-setup-npm.yml) | [![d2e Docker Build](https://github.com/OHDSI/d2e/actions/workflows/docker-build-push.yaml/badge.svg)](https://github.com/OHDSI/d2e/actions/workflows/docker-build-push.yaml) | [![d2e-ui/pa (vue)](https://github.com/ohdsi/d2e/actions/workflows/ui-test-vue.yml/badge.svg)](https://github.com/ohdsi/d2e/actions/workflows/ui-test-vue.yml)   |  
-| [![Run Trex Deno Tests](https://github.com/OHDSI/d2e/actions/workflows/trex-deno-tests.yml/badge.svg)](https://github.com/OHDSI/d2e/actions/workflows/trex-deno-tests.yml) |  | [![d2e-ui/portal unit tests (Frontend)](https://github.com/ohdsi/d2e/actions/workflows/ui-alp-portal-test-fe.yml/badge.svg)](https://github.com/ohdsi/d2e/actions/workflows/ui-alp-portal-test-fe.yml)  |   
+|  |[![d2e-functions/pa integration tests](https://github.com/ohdsi/d2e/actions/workflows/functions-mri-tests.yml/badge.svg)](https://github.com/ohdsi/d2e/actions/workflows/functions-mri-tests.yml)  | [![d2e-ui/portal unit tests (Frontend)](https://github.com/ohdsi/d2e/actions/workflows/ui-alp-portal-test-fe.yml/badge.svg)](https://github.com/ohdsi/d2e/actions/workflows/ui-alp-portal-test-fe.yml)  |   
 | |  | [![d2e-ui/portal unit tests (Components Library)](https://github.com/ohdsi/d2e/actions/workflows/ui-alp-portal-test-components.yml/badge.svg)](https://github.com/ohdsi/d2e/actions/workflows/ui-alp-portal-test-components.yml) |
-| | [![d2e-functions/pa integration tests](https://github.com/ohdsi/d2e/actions/workflows/functions-mri-tests.yml/badge.svg)](https://github.com/ohdsi/d2e/actions/workflows/functions-mri-tests.yml) | [![d2e-ui/pyqe tests](https://github.com/ohdsi/d2e/actions/workflows/ui-pyqe-test.yml/badge.svg)](https://github.com/ohdsi/d2e/actions/workflows/ui-pyqe-test.yml) |  
+| |  | [![d2e-ui/pyqe tests](https://github.com/ohdsi/d2e/actions/workflows/ui-pyqe-test.yml/badge.svg)](https://github.com/ohdsi/d2e/actions/workflows/ui-pyqe-test.yml) |  
 
 ## Contributing  
 

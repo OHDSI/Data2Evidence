@@ -3,13 +3,14 @@ from re import compile
 from _shared_flow_utils.dao.DBDao import DBDao
 from _shared_flow_utils.types import InternalPluginType
 
-OMOP_DATA_MODELS = ["omop", "omop5-4", "custom-omop-ms", "custom-omop-ms-phi"]
+OMOP_DATA_MODELS = ["omop", "omop5-4", "custom-omop-ms", "custom-omop-ms-phi", "waveform"]
 
 DATAMODEL_CDM_VERSION = {
     "omop": "5.3",
     "omop5-4": "5.4",
     "custom-omop-ms": "5.3",
-    "custom-omop-ms-phi": "5.3"
+    "custom-omop-ms-phi": "5.3",
+    "waveform": "5.4"
 }
 
 CHANGESET_AVAILABLE_REGEX = compile(r"db/migrations/\S+")
@@ -28,7 +29,7 @@ def hana_to_postgres(table_name: str) -> str:
 
 def get_db_dialect(options):
     if options.flow_name in InternalPluginType.values():
-        return DBDao(use_cache_db=False, database_code=options.database_code).dialect
+        return DBDao(database_code=options.database_code).dialect
     else:
         return options.dialect
 

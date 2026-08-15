@@ -88,29 +88,6 @@
       </template>
     </messageBox>
 
-    <messageBox
-      messageType="warning"
-      dim="true"
-      dialogWidth="400px"
-      v-if="showSaveOrDiscardDialog"
-      @close="closeSaveOrDiscardDialog"
-    >
-      <template v-slot:header>{{ getText('MRI_PA_BOOKMARK_UNSAVED_DIALOG_TITLE') }}</template>
-      <template v-slot:body>
-        <div>
-          <div class="div-bookmark-dialog">
-            <div>{{ getText('MRI_PA_BOOKMARK_UNSAVED_DIALOG_TEXT') }}</div>
-            <div>{{ getText('MRI_PA_BOOKMARK_UNSAVED_DIALOG_QUESTION_TEXT') }}</div>
-          </div>
-        </div>
-      </template>
-      <template v-slot:footer>
-        <div class="flex-spacer"></div>
-        <appButton :click="discardCohortChanges" :text="getText('MRI_PA_BUTTON_DISCARD')" v-focus></appButton>
-        <appButton :click="saveCohortChanges" :text="getText('MRI_PA_BUTTON_SAVE')"></appButton>
-      </template>
-    </messageBox>
-
     <ImportAtlasCohortDefinitionDialog
       v-if="showImportAtlasCohortDefinition"
       @closeEv="closeImportAtlasCohortDefinition"
@@ -118,14 +95,10 @@
     />
 
     <div class="bookmark-content">
-      <div class="bookmark-content__header">
+      <div class="bookmark-content__header" ref="bookmarkHeaderRef">
         <div class="bookmark-content__header-title" v-if="!isAtlas">Create Cohort:</div>
         <div class="bookmark-content__header-button-group">
-          <Button
-            :text="getText('MRI_PA_CREATE_D2E_COHORT_TEXT')"
-            :onClick="openAddNewCohort"
-            v-if="!isAtlas"
-          ></Button>
+          <Button :text="getText('MRI_PA_CREATE_D2E_COHORT_TEXT')" :onClick="openAddNewCohort" v-if="!isAtlas"></Button>
           <Button
             v-if="useAtlasLite || usePaAtlas"
             :text="isAtlas ? 'Create Cohort' : getText('MRI_PA_CREATE_ATLAS_COHORT_TEXT')"
@@ -156,29 +129,42 @@
         </div>
       </div>
 
-      <div class="bookmark-content__break" />
+      <div class="bookmark-content__break" ref="bookmarkBreakRef" />
 
-      <div v-if="isBookmarksLoading" class="bookmark-content__spinner">
-        <d4l-spinner />
-      </div>
-      <div v-else>
-        <div v-if="!bookmarksDisplay || bookmarksDisplay.length === 0" class="bookmark-noContent">
-          {{ getText('MRI_PA_NO_BOOKMARKS_TEXT') }}
+      <div class="bookmark-content__body" :style="bookmarkBodyStyle">
+        <div v-if="isBookmarksLoading" class="bookmark-content__spinner">
+          <d4l-spinner />
         </div>
-        <div v-else class="bookmark-content__list">
-          <BookmarkItems
-            :bookmarksDisplay="bookmarksDisplay"
-            :compareCohortsSelectionList="aSelBookmarkList"
-            :useQueryFilterForAtlas="usePaAtlas"
-            :canDatasetMaterializeCohorts="canDatasetMaterializeCohorts"
-            @onSelectBookmark="onSelectBookmark"
-            @renameBookmark="renameBookmark"
-            @deleteBookmark="deleteBookmark"
-            @addCohort="addCohort"
-            @openDataQualityDialog="openDataQualityDialog"
-            @loadBookmarkCheck="loadBookmarkCheck"
-            @loadAtlasBookmark="loadAtlasBookmark"
-          />
+        <div v-else>
+          <div v-if="getBookmarksLoadError" class="bookmark-empty-state bookmark-empty-state--error">
+            <LoadErrorIllustration class="bookmark-empty-state__icon bookmark-empty-state__illustration" />
+            <div class="bookmark-empty-state__title">{{ getText('MRI_PA_BOOKMARKS_ERROR_TITLE') }}</div>
+            <div class="bookmark-empty-state__body">{{ getText('MRI_PA_BOOKMARKS_ERROR_TEXT') }}</div>
+            <button class="bookmark-empty-state__refresh" type="button" @click="loadBookmarks">
+              <RefreshIcon class="bookmark-empty-state__refresh-icon" />
+              {{ getText('MRI_PA_BOOKMARKS_REFRESH') }}
+            </button>
+          </div>
+          <div v-else-if="!bookmarksDisplay || bookmarksDisplay.length === 0" class="bookmark-empty-state">
+            <UsersIcon class="bookmark-empty-state__icon bookmark-empty-state__icon--users" />
+            <div class="bookmark-empty-state__title">{{ getText('MRI_PA_BOOKMARKS_EMPTY_TITLE') }}</div>
+            <div class="bookmark-empty-state__body">{{ getText('MRI_PA_NO_BOOKMARKS_TEXT') }}</div>
+          </div>
+          <div v-else class="bookmark-content__list">
+            <BookmarkItems
+              :bookmarksDisplay="bookmarksDisplay"
+              :compareCohortsSelectionList="aSelBookmarkList"
+              :useQueryFilterForAtlas="usePaAtlas"
+              :canDatasetMaterializeCohorts="canDatasetMaterializeCohorts"
+              @onSelectBookmark="onSelectBookmark"
+              @renameBookmark="renameBookmark"
+              @deleteBookmark="deleteBookmark"
+              @addCohort="addCohort"
+              @openDataQualityDialog="openDataQualityDialog"
+              @loadBookmarkCheck="loadBookmarkCheck"
+              @loadAtlasBookmark="loadAtlasBookmark"
+            />
+          </div>
         </div>
       </div>
     </div>
@@ -238,19 +224,31 @@ import cohortComparisonDialog from './CohortComparisonDialog.vue'
 import messageBox from './MessageBox.vue'
 import addCohort from './AddCohort.vue'
 import cohortListDialog from './CohortListDialog.vue'
-import { getPortalAPI } from '../utils/PortalUtils'
 import * as types from '../store/mutation-types'
 import appMessageStrip from '../lib/ui/app-message-strip.vue'
 import BookmarkItems from './BookmarkItems.vue'
 import SlideToggle from './SlideToggle.vue'
 import { getBookmarkType } from '../utils/BookmarkUtils'
 import Button from './Button.vue'
+import UsersIcon from './icons/UsersIcon.vue'
+import LoadErrorIllustration from './icons/LoadErrorIllustration.vue'
+import RefreshIcon from './icons/RefreshIcon.vue'
 import ImportAtlasCohortDefinitionDialog from './ImportAtlasCohortDefinitionDialog.vue'
+import { useAtlasStore } from '../stores/atlas'
+import { usePortalContext } from '../composables/usePortalContext'
+import { useUnsavedChanges } from '../composables/useUnsavedChanges'
 export default {
   name: 'bookmark',
   props: ['unloadBookmarkEv', 'initBookmarkId'],
+  setup() {
+    return {
+      unsavedChanges: useUnsavedChanges(),
+    }
+  },
   data() {
     return {
+      atlasStore: useAtlasStore(),
+      portalContext: usePortalContext(),
       maxLength: 255,
       selectedBookmark: {},
       renamedBookmark: '',
@@ -269,8 +267,6 @@ export default {
       showIncompatibleMessage: false,
       cohortName: 'New cohort',
       cohortNameValidationState: 'valid' as 'invalid' | 'valid' | 'empty',
-      showSaveOrDiscardDialog: false,
-      isAddNewCohort: false,
       selectedBmkId: '',
       selectedChartType: '',
       messageStrip: {
@@ -281,13 +277,25 @@ export default {
       cohortDefinitionType: '',
       atlasCohortDefinitionId: null,
       showImportAtlasCohortDefinition: false,
+      bookmarkBodyOffset: 0,
+      headerResizeObserver: null as ResizeObserver | null,
     }
   },
   watch: {
     initBookmarkId() {
       if (this.initBookmarkId !== '') {
-        this.loadBookmark(this.initBookmarkId, null)
+        // Restore the bookmark referenced by the URL (?bmkId=) on (re)mount.
+        // loadBookmark() reads selectedBmkId/selectedChartType, so set them first
+        // (mirrors loadBookmarkCheck); passing them as args would be ignored.
+        this.selectedBmkId = this.initBookmarkId
+        this.selectedChartType = null
+        this.loadBookmark()
       }
+    },
+    isBookmarksLoading() {
+      this.$nextTick(() => {
+        this.updateBookmarkBodyOffset()
+      })
     },
   },
   computed: {
@@ -300,6 +308,7 @@ export default {
       'getDisplayBookmarks',
       'getSelectedDataset',
       'getBookmarksLoading',
+      'getBookmarksLoadError',
       'getCanDatasetMaterializeCohorts',
     ]),
     enableAtlasCohortDefinition() {
@@ -315,13 +324,10 @@ export default {
       return this.getCanDatasetMaterializeCohorts
     },
     bookmarksDisplay() {
-      return this.getDisplayBookmarks(this.showSharedBookmarks, getPortalAPI().username)
+      return this.getDisplayBookmarks(this.showSharedBookmarks, this.portalContext.username)
     },
     isAtlas() {
-      return getPortalAPI()?.isAtlas === true
-    },
-    hasChanges() {
-      return this.getActiveBookmark?.isNew || this.getCurrentBookmarkHasChanges
+      return import.meta.env.VITE_STANDALONE_ATLAS === 'true'
     },
     showCohortCompareBtn() {
       return this.aSelBookmarkList.length > 1
@@ -332,6 +338,22 @@ export default {
     isBookmarksLoading() {
       return this.bookmarksDisplay.length === 0 && this.getBookmarksLoading
     },
+    bookmarkBodyStyle() {
+      return {
+        top: `${this.bookmarkBodyOffset}px`,
+      }
+    },
+  },
+  mounted() {
+    this.$nextTick(() => {
+      this.updateBookmarkBodyOffset()
+      this.setupBookmarkLayoutObserver()
+    })
+    window.addEventListener('resize', this.updateBookmarkBodyOffset)
+  },
+  beforeUnmount() {
+    window.removeEventListener('resize', this.updateBookmarkBodyOffset)
+    this.teardownBookmarkLayoutObserver()
   },
   methods: {
     ...mapActions([
@@ -344,7 +366,7 @@ export default {
       'generateDataQualityFlowRun',
       'resetChart',
     ]),
-    ...mapMutations([types.SET_ACTIVE_BOOKMARK, types.CONFIG_SET_HAS_ASSIGNED]),
+    ...mapMutations([types.SET_ACTIVE_BOOKMARK, types.SET_ACTIVE_BOOKMARK_BASELINE, types.CONFIG_SET_HAS_ASSIGNED]),
     openCompareDialog() {
       this.showCohortCompareDialog = true
     },
@@ -359,15 +381,11 @@ export default {
     loadBookmarkCheck(bmkId, chartType) {
       if (this.getActiveBookmark && bmkId === this.getActiveBookmark.bmkId) {
         this.$emit('unloadBookmarkEv', false)
-      } else {
-        this.selectedBmkId = bmkId
-        this.selectedChartType = chartType
-        if (this.hasChanges) {
-          this.openSaveOrDiscardDialog()
-        } else {
-          this.loadBookmark()
-        }
+        return
       }
+      this.selectedBmkId = bmkId
+      this.selectedChartType = chartType
+      this.unsavedChanges.guard(() => this.loadBookmark())
     },
     loadBookmark() {
       this.loadbookmarkToState({ bmkId: this.selectedBmkId, chartType: this.selectedChartType })
@@ -381,34 +399,40 @@ export default {
         })
     },
     async loadAtlasBookmark(atlasDefinitionId) {
-      try {
-        // Get Atlas JSON using our new store action
-        const atlasJson = await this.$store.dispatch('fireGetAtlasCohortDefinitionQuery', atlasDefinitionId)
+      this.unsavedChanges.guard(async () => {
+        try {
+          // Get Atlas JSON using our new store action
+          const atlasJson = await this.$store.dispatch('fireGetAtlasCohortDefinitionQuery', atlasDefinitionId)
 
-        // Create a fake bookmark object for the tab display
-        const atlasBookmark = {
-          bookmarkname: atlasJson.name || `Atlas Cohort ${atlasDefinitionId}`,
-          bmkId: `${atlasDefinitionId}`,
-          isAtlas: true,
-          isNew: false, // Currently always false as we have to import one first
+          // Create a fake bookmark object for the tab display
+          const atlasBookmark = {
+            bookmarkname: atlasJson.name || `Atlas Cohort ${atlasDefinitionId}`,
+            bmkId: `${atlasDefinitionId}`,
+            isAtlas: true,
+            isNew: false, // Currently always false as we have to import one first
+          }
+
+          // Set as active bookmark to create the tab
+          this[types.SET_ACTIVE_BOOKMARK](atlasBookmark)
+
+          // Emit event to parent to load Atlas JSON into the correct QueryFilter (in Filters.vue)
+          this.$emit('loadAtlasCohortDefinition', atlasJson)
+
+          // Switch to Patient Analytics view after loading
+          this.$emit('unloadBookmarkEv', false, true)
+
+          // Allow the QueryFilter to settle before capturing the baseline
+          await this.$nextTick()
+          this[types.SET_ACTIVE_BOOKMARK_BASELINE](this.$store.getters.getBookmarksData)
+        } catch (error) {
+          console.error('Failed to load Atlas bookmark:', error)
+          this.messageStrip = {
+            show: true,
+            message: 'Failed to load Atlas cohort definition',
+            messageType: 'error',
+          }
         }
-
-        // Set as active bookmark to create the tab
-        this[types.SET_ACTIVE_BOOKMARK](atlasBookmark)
-
-        // Emit event to parent to load Atlas JSON into the correct QueryFilter (in Filters.vue)
-        this.$emit('loadAtlasCohortDefinition', atlasJson)
-
-        // Switch to Patient Analytics view after loading
-        this.$emit('unloadBookmarkEv', false, true)
-      } catch (error) {
-        console.error('Failed to load Atlas bookmark:', error)
-        this.messageStrip = {
-          show: true,
-          message: 'Failed to load Atlas cohort definition',
-          messageType: 'error',
-        }
-      }
+      })
     },
     closeRenameBookmark() {
       if (this.isRenamingBookmark) return
@@ -437,7 +461,7 @@ export default {
       }
 
       // Check if the new name is already taken
-      const username = getPortalAPI().username
+      const username = this.portalContext.username
       for (const bookmark of this.getBookmarks) {
         if (
           username === bookmark.user_id &&
@@ -472,7 +496,18 @@ export default {
           params: request,
           bookmarkId: bookmarkDisplay.bookmark.id,
         })
-        this[types.SET_ACTIVE_BOOKMARK]({ bookmark: bookmarkDisplay.bookmark.data, bookmarkname: request.newName })
+        const activeBookmark = this.getActiveBookmark
+        if (activeBookmark && activeBookmark.bmkId === bookmarkDisplay.bookmark.id) {
+          // Rename is metadata-only and must not change dirty state. SET_ACTIVE_BOOKMARK
+          // clears activeBookmarkBaseline, so preserve and restore it — keeping the exact
+          // dirty semantics (clean stays clean, in-progress edits stay dirty) instead of
+          // falling back to the fragile legacy raw-JSON comparison.
+          const baseline = this.$store.getters.getActiveBookmarkBaseline
+          this[types.SET_ACTIVE_BOOKMARK]({ ...activeBookmark, bookmarkname: request.newName })
+          if (baseline != null) {
+            this[types.SET_ACTIVE_BOOKMARK_BASELINE](baseline)
+          }
+        }
         await this.fireBookmarkQuery({ method: 'get', params: { cmd: 'loadAll' } })
         this.showRenameDialog = false
         this.cohortNameValidationState = 'valid'
@@ -548,46 +583,27 @@ export default {
     closeIncompatibleMessage() {
       this.showIncompatibleMessage = false
     },
-    openSaveOrDiscardDialog(isAddNewCohort = false) {
-      this.showSaveOrDiscardDialog = true
-      if (isAddNewCohort) this.isAddNewCohort = true
-    },
-    closeSaveOrDiscardDialog() {
-      this.showSaveOrDiscardDialog = false
-      this.isAddNewCohort = false
-    },
-    discardCohortChanges() {
-      this.showSaveOrDiscardDialog = false
-      if (this.isAddNewCohort) {
-        this.addNewCohort()
-      } else {
-        this.loadBookmark()
-      }
-    },
-    saveCohortChanges() {
-      this.showSaveOrDiscardDialog = false
-      this.$emit('unloadBookmarkEv', false)
-    },
     openAddNewCohort() {
-      if (this.hasChanges) {
-        this.openSaveOrDiscardDialog(true)
-      } else {
-        this.addNewCohort()
-      }
+      this.unsavedChanges.guard(() => this.addNewCohort())
     },
     closeAddNewCohort() {
       this.cohortName = ''
       this.isInvalidName = false
     },
-    addNewCohort() {
+    async addNewCohort() {
       this.cohortName = this.checkCohortName(this.cohortName)
       this[types.SET_ACTIVE_BOOKMARK]({ bookmarkname: this.cohortName, isNew: true })
       this.closeAddNewCohort()
       this.$emit('unloadBookmarkEv', false)
-      this.reset()
+      await this.reset()
+      // Let chart defaults that are applied reactively after resetChart (axes /
+      // auto-default colorAxis via onChartDataReady) flush before snapshotting the
+      // baseline; otherwise it captures the previous cohort's not-yet-reset state.
+      await this.$nextTick()
+      this[types.SET_ACTIVE_BOOKMARK_BASELINE](this.$store.getters.getBookmarksData)
     },
     checkCohortName(bookmarkName, suffix = '') {
-      const username = getPortalAPI().username
+      const username = this.portalContext.username
       let uniqueName = bookmarkName + (suffix ? ` ${suffix}` : '')
       for (const bookmark of this.getBookmarks) {
         if (username === bookmark.user_id && bookmark.bookmarkname === uniqueName) {
@@ -597,7 +613,10 @@ export default {
       return uniqueName
     },
     reset() {
-      this.resetChart()
+      // Return the promise so callers can await the full reset (setIFRState +
+      // setupChartDefaults). Without this, `await this.reset()` resolves
+      // immediately and any baseline captured right after reflects pre-reset state.
+      return this.resetChart()
     },
     isMScohort(bookmarkDisplay) {
       // MS cohort only contains a cohort definition
@@ -675,29 +694,35 @@ export default {
     openAtlasLink() {
       if (this.useAtlasLite) {
         // Existing behavior: open atlas-lite
-        getPortalAPI()?.toggleAtlas(true, '/#/cohortdefinitions')
+        this.atlasStore.openAtlas('/#/cohortdefinitions')
       } else if (this.usePaAtlas) {
         // New behavior: create empty Atlas bookmark for pa-atlas
         this.openNewAtlasBookmark()
       }
     },
-    openNewAtlasBookmark() {
-      // Create a new Atlas bookmark object
-      const atlasBookmark = {
-        bookmarkname: 'New Atlas Cohort',
-        bmkId: null, // No ID yet as it's new
-        isAtlas: true,
-        isNew: true,
-      }
+    async openNewAtlasBookmark() {
+      this.unsavedChanges.guard(async () => {
+        // Create a new Atlas bookmark object
+        const atlasBookmark = {
+          bookmarkname: 'New Atlas Cohort',
+          bmkId: null, // No ID yet as it's new
+          isAtlas: true,
+          isNew: true,
+        }
 
-      // Set as active bookmark
-      this[types.SET_ACTIVE_BOOKMARK](atlasBookmark)
+        // Set as active bookmark
+        this[types.SET_ACTIVE_BOOKMARK](atlasBookmark)
 
-      // Pass null Atlas data to initialize empty QueryFilter
-      this.$emit('loadAtlasCohortDefinition', null)
+        // Pass null Atlas data to initialize empty QueryFilter
+        this.$emit('loadAtlasCohortDefinition', null)
 
-      // Switch to Patient Analytics view
-      this.$emit('unloadBookmarkEv', false, true)
+        // Switch to Patient Analytics view
+        this.$emit('unloadBookmarkEv', false, true)
+
+        // Allow the QueryFilter to settle before capturing the baseline
+        await this.$nextTick()
+        this[types.SET_ACTIVE_BOOKMARK_BASELINE](this.$store.getters.getBookmarksData)
+      })
     },
     openImportAtlasCohortDefinition() {
       this.showImportAtlasCohortDefinition = true
@@ -705,8 +730,58 @@ export default {
     closeImportAtlasCohortDefinition() {
       this.showImportAtlasCohortDefinition = false
     },
+    setupBookmarkLayoutObserver() {
+      if (typeof window === 'undefined' || typeof ResizeObserver === 'undefined') {
+        return
+      }
+
+      this.teardownBookmarkLayoutObserver()
+
+      this.headerResizeObserver = new ResizeObserver(() => {
+        this.updateBookmarkBodyOffset()
+      })
+
+      const headerEl = this.$refs.bookmarkHeaderRef as HTMLElement | undefined
+      const breakEl = this.$refs.bookmarkBreakRef as HTMLElement | undefined
+
+      if (headerEl) {
+        this.headerResizeObserver.observe(headerEl)
+      }
+
+      if (breakEl) {
+        this.headerResizeObserver.observe(breakEl)
+      }
+    },
+    teardownBookmarkLayoutObserver() {
+      if (!this.headerResizeObserver) {
+        return
+      }
+
+      this.headerResizeObserver.disconnect()
+      this.headerResizeObserver = null
+    },
+    updateBookmarkBodyOffset() {
+      const headerEl = this.$refs.bookmarkHeaderRef as HTMLElement | undefined
+      const breakEl = this.$refs.bookmarkBreakRef as HTMLElement | undefined
+
+      let offset = 0
+      if (headerEl) {
+        offset += headerEl.offsetHeight
+      }
+
+      if (breakEl) {
+        const breakStyles = getComputedStyle(breakEl)
+        const marginTop = Number.parseFloat(breakStyles.marginTop || '0') || 0
+        const marginBottom = Number.parseFloat(breakStyles.marginBottom || '0') || 0
+        offset += breakEl.offsetHeight + marginTop + marginBottom
+      }
+
+      this.bookmarkBodyOffset = Math.max(offset, 0)
+    },
     loadBookmarks() {
-      this.fireBookmarkQuery({ method: 'get', params: { cmd: 'loadAll' } })
+      // Failures are tracked in the store (loadError) and rendered as the in-list
+      // error state, so swallow the rethrown error here to avoid unhandled rejections.
+      this.fireBookmarkQuery({ method: 'get', params: { cmd: 'loadAll' } }).catch(() => {})
     },
   },
   components: {
@@ -721,6 +796,9 @@ export default {
     SlideToggle,
     Button,
     ImportAtlasCohortDefinitionDialog,
+    UsersIcon,
+    LoadErrorIllustration,
+    RefreshIcon,
   },
 }
 </script>

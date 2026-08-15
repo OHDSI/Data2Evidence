@@ -1,9 +1,10 @@
 <template>
   <div :class="['pa-component-wrapper']">
+    <AtlasView v-if="atlasStore.showAtlas" />
     <div :class="['fullHeight', 'pa-splitter', { 'right-pane-opened': rightPaneEverOpened }]">
       <splitpanes class="default-theme" @resize="onSplitterDrag($event)">
         <pane :size="paneSize" :min-size="hideLeftPane ? 0 : splitterMinWidth">
-          <div id="pane-left" class="split">
+          <div id="pane-left" class="split" data-testid="pa-pane-left">
             <div class="panel-header filters-toolbar d-flex">
               <div v-if="!isAtlasBookmark">
                 <button
@@ -11,6 +12,7 @@
                   class="actionButton"
                   @click="togglePanel(PANEL.RIGHT)"
                   :title="getText('MRI_PA_TOOLTIP_ENTER_EXPANDED_FILTERS_VIEW')"
+                  data-testid="pa-fullscreen-btn"
                 >
                   <icon icon="fullScreen" />
                 </button>
@@ -30,30 +32,32 @@
                 </ul>
               </div>
             </div>
-            <bookmarks
-              @unloadBookmarkEv="toggleCohorts"
-              @loadAtlasCohortDefinition="handleLoadAtlasCohortDefinition"
-              :init-bookmark-id="querystring.bmkId"
-              v-if="getMriFrontendConfig && displayCohorts"
-            ></bookmarks>
+            <div class="pane-left-content">
+              <bookmarks
+                @unloadBookmarkEv="toggleCohorts"
+                @loadAtlasCohortDefinition="handleLoadAtlasCohortDefinition"
+                :init-bookmark-id="querystring.bmkId"
+                v-if="getMriFrontendConfig && displayCohorts"
+              ></bookmarks>
 
-            <filters
-              ref="filtersRef"
-              v-if="!showQueryFilter && !displayCohorts"
-              v-bind:class="{ hidden: displayCohorts }"
-            ></filters>
+              <filters
+                ref="filtersRef"
+                v-if="!showQueryFilter && !displayCohorts"
+                v-bind:class="{ hidden: displayCohorts }"
+              ></filters>
 
-            <QueryFilter
-              v-else-if="showQueryFilter"
-              ref="queryFilterRef"
-              :atlas-data="atlasDataForQueryFilter"
-              :key="atlasDataForQueryFilter?.id || 'new-cohort'"
-            />
+              <QueryFilter
+                v-else-if="showQueryFilter"
+                ref="queryFilterRef"
+                :atlas-data="atlasDataForQueryFilter"
+                :key="atlasDataForQueryFilter?.id || 'new-cohort'"
+              />
+            </div>
           </div>
         </pane>
 
         <pane :size="PANE_SIZE.FULL - paneSize">
-          <div id="pane-right" class="split">
+          <div id="pane-right" class="split" data-testid="pa-pane-right">
             <template v-if="rightPaneEverOpened">
               <chartToolbar
                 :showUnHideFilters="hideLeftPane"
@@ -163,6 +167,8 @@ declare var sap
 const myWindow: any = window
 
 import { mapActions, mapGetters } from 'vuex'
+import { registerPaTools } from '@/ai/webmcpServer'
+import { publishPaTools } from '@/ai/paToolBridge'
 import icon from '../lib/ui/app-icon.vue'
 import appButton from '../lib/ui/app-button.vue'
 import appIcon from '../lib/ui/app-icon.vue'
@@ -179,6 +185,8 @@ import ResizeObserver from './ResizeObserver.vue'
 import { Splitpanes, Pane } from 'splitpanes'
 import 'splitpanes/dist/splitpanes.css'
 import { QueryFilter } from '@/query-filter'
+import AtlasView from '../views/AtlasView.vue'
+import { useAtlasStore } from '../stores/atlas'
 
 const PANE_SIZE = {
   FULL: 100,
@@ -214,6 +222,7 @@ export default {
       showQueryFilter: false,
       atlasDataForQueryFilter: null,
       rightPaneEverOpened: false,
+      atlasStore: useAtlasStore(),
     }
   },
   created() {},
@@ -223,6 +232,14 @@ export default {
       // Only trigger when going from no bookmark to having one
       if (newVal && !oldVal && this.displayCohorts) {
         this.toggleCohorts(false)
+      }
+    },
+    getDatasetReloadInProgress(inProgress, wasInProgress) {
+      // When a dataset/release switch finishes, the previous bookmark has been
+      // cleared (datasetWatcher commits SET_ACTIVE_BOOKMARK null). Reset the view
+      // to the default empty state once the new config is loaded.
+      if (wasInProgress && !inProgress) {
+        this.resetToDefaultView()
       }
     },
     getBookmarkFromIFR(bm) {
@@ -235,26 +252,44 @@ export default {
         this.setFireRequest()
       }
     },
+    getActiveChart() {
+      this.chartBusy = false
+    },
     getHasAssignedConfig(val) {
       if (val) {
         this.completeInitialLoad()
-        this.loadAllSharedBookmark()
         this.loadDefaultFilters()
         this.loadValuesForAttributePath({
           attributePathUid: 'conceptSets',
           searchQuery: '',
           attributeType: 'conceptSet',
         })
-        this.initializeBookmarks()
+        if (!this.getDatasetReloadInProgress) {
+          this.loadAllSharedBookmark()
+          this.initializeBookmarks()
+        }
       }
     },
   },
   mounted() {
+    const paToolHooks = {
+      // Let pa_new_cohort switch from the saved-cohort list to the builder so a
+      // programmatically built cohort renders and computes its count/chart.
+      showBuilder: () => this.toggleCohorts(false),
+    }
+    // Two consumers, one tool set: an external browser agent via Chrome's
+    // modelContext, and an in-page consumer via the window registry. Both wrap
+    // the same createPaTools() array.
+    this._unregisterPaTools = registerPaTools(this.$store, paToolHooks)
+    this._unpublishPaTools = publishPaTools(this.$store, paToolHooks)
     this.updateMinSplitterWidth()
     window.addEventListener('resize', this.updateMinSplitterWidth)
   },
   beforeUnmount() {
+    this._unregisterPaTools?.()
+    this._unpublishPaTools?.()
     window.removeEventListener('resize', this.updateMinSplitterWidth)
+    this.chartBusy = false
   },
   computed: {
     ...mapGetters([
@@ -269,6 +304,7 @@ export default {
       'getPLModel',
       'getActiveBookmark',
       'getBookmarkById',
+      'getDatasetReloadInProgress',
     ]),
     initBookmarkId() {
       const url = window.location.href
@@ -320,6 +356,18 @@ export default {
     loadDefaultFilters() {
       this.setIFRState({ ifr: this.getMriFrontendConfig.getInitialIFR() })
       this.setupChartDefaults()
+    },
+    resetToDefaultView() {
+      // Default empty state: full-width Cohorts list, no right chart pane, no
+      // query filter, no filter-card summary, and filters reset to the config's
+      // initial IFR (clears any retained filter-card selections).
+      this.displayCohorts = true
+      this.showQueryFilter = false
+      this.displayFilterCardSummary = false
+      this.paneSize = PANE_SIZE.FULL
+      this.rightPaneEverOpened = false
+      this.setRightPaneMounted(false)
+      this.loadDefaultFilters()
     },
     loadAllBookmark() {
       const params = {
@@ -503,6 +551,7 @@ export default {
     Splitpanes,
     Pane,
     QueryFilter,
+    AtlasView,
   },
 }
 </script>
@@ -511,5 +560,12 @@ export default {
 .pa-splitter:not(.right-pane-opened) :deep(.splitpanes__splitter) {
   pointer-events: none;
   opacity: 0;
+}
+
+/* splitpanes animates pane width (transition: width .2s) by default, which makes
+   the left pane visibly slide in when returning to Cohorts or resetting the view.
+   Keep pane sizing static. */
+.pa-splitter :deep(.splitpanes__pane) {
+  transition: none;
 }
 </style>

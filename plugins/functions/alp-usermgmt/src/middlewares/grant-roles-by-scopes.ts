@@ -4,7 +4,13 @@ import { Container } from 'typedi'
 import jwt from 'jsonwebtoken'
 import { v4 as uuidv4 } from 'uuid'
 import { createLogger } from '../Logger'
-import { B2cGroupService, UserGroupService, UserService } from '../services'
+import {
+  AutoProvisionService,
+  B2cGroupService,
+  EntitlementsSyncService,
+  UserGroupService,
+  UserService,
+} from '../services'
 import { env, getAutoGrantDatasetCodes } from '../env'
 import { LogtoAPI } from '../api'
 import { IDataset, ITokenUser } from '../types'
@@ -33,6 +39,12 @@ export const grantRolesByScopes = async (req: Request, res: Response, next: Next
     }
 
     sub = token[subProp]
+
+    // M2M tokens have sub === client_id; skip user provisioning for those.
+    if (sub === token.client_id) {
+      return next()
+    }
+
     if (isSync) {
       logger.info(`Assigning roles for user with subject "${sub}"`)
     }
@@ -57,7 +69,14 @@ export const grantRolesByScopes = async (req: Request, res: Response, next: Next
       userId = user?.id
 
       if (user == null) {
-        if (env.IDP_AUTO_PROVISION_USERS) {
+        const autoProvisionService = Container.get(AutoProvisionService)
+        const provisioned = await autoProvisionService.provision(sub, { email, username }, bearerToken)
+        if (provisioned) {
+          userId = provisioned.id
+          const tokenUser: ITokenUser = { userId: provisioned.id, idpUserId: sub }
+          req.user = tokenUser
+          Container.set(CONTAINER_KEY.CURRENT_USER, tokenUser)
+        } else if (env.IDP_AUTO_PROVISION_USERS) {
           if (isSync) {
             logger.info(`First time login for new user, create user: "${sub}"`)
             const newUser: Partial<UserField> = { id: uuidv4(), username: username, idp_user_id: sub }
@@ -95,6 +114,11 @@ export const grantRolesByScopes = async (req: Request, res: Response, next: Next
       return next()
     }
 
+    const entitlementsSync = Container.get(EntitlementsSyncService)
+    await entitlementsSync.sync(userId!, sub, token).catch(err => {
+      logger.warn(`[Entitlements] sync threw for ${sub}: ${err}; keeping existing roles`)
+    })
+
     if (isSync && env.IDP_AUTO_PROVISION_USERS) {
       const tenantId = env.APP_TENANT_ID
       if (!tenantId) {
@@ -107,7 +131,13 @@ export const grantRolesByScopes = async (req: Request, res: Response, next: Next
       await grantOrRevokeSystemRole(userId, ROLES.ALP_USER_ADMIN, scopes.includes(IDP_SCOPE_ROLE.USER_ADMIN))
       await grantOrRevokeSystemRole(userId, ROLES.ALP_DASHBOARD_VIEWER, scopes.includes(IDP_SCOPE_ROLE.DASHBOARD_VIEWER))
       
-      const datasets = await getDatasets()
+      const allDatasets = await getDatasets()
+      // Skip datasets governed by PhysioNet entitlements sync, else this
+      // token-scope sync revokes researcher roles it just granted.
+      const managedCodes = await Container.get(EntitlementsSyncService).getManagedDatasetCodes()
+      const datasets = managedCodes.size > 0
+        ? allDatasets.filter(d => !managedCodes.has(d.token_dataset_code))
+        : allDatasets
       if (datasets.length > 0) {
         let grantDatasetCodes = scopes
           .filter(x => x.startsWith(IDP_SCOPE_ROLE.DATASET_RESEARCHER_PREFIX))
@@ -201,7 +231,9 @@ const grantOrRevokeResearcherRole = async (userId: string, tenantId: string, rol
   }
 
   // Automatically grant viewer role when is researcher
-  await grantOrRevokeTenantRole(userId, tenantId, ROLES.TENANT_VIEWER, isResearcher)
+  if (isResearcher) {
+    await grantOrRevokeTenantRole(userId, tenantId, ROLES.TENANT_VIEWER, isResearcher)
+  }
 }
 
 const addUserToGroup = async (userId: string, groupId: string) => {

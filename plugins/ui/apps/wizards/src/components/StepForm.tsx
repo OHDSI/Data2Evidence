@@ -1,23 +1,64 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { useWizardContext } from "../context/WizardContext";
 import type { FieldDefinition, FormStepConfig } from "../types/wizard";
-import { generateFormSubmitDeepLink } from "../utils/deepLinks";
+import { buildWizardSubmitPayload, generateFormSubmitDeepLink } from "../utils/deepLinks";
 import { fetchCdwConfig } from "../config/cdwConfig";
 import type { ConfigMeta } from "../config/cdwConfig";
 import { TypeaheadField } from "./TypeaheadField";
 import { AnalyticsIcon } from "./icons/AnalyticsIcon";
+import { WizardDashboardModal } from "./WizardDashboardModal";
+import { useWizardDashboardFlow } from "../hooks/useWizardDashboardFlow";
+import {
+  getFieldGroupCompletionHint,
+  getFieldGroupValidationMessage,
+  isFieldDisabledByGroupLimit,
+  resolveWizardFormLayout,
+} from "../utils/wizardSections";
+import type { ResolvedWizardFieldGroup } from "../utils/wizardSections";
+import { resolveWizardFormNote } from "../config/wizardDefinitions";
 import styles from "./StepForm.module.css";
+
+// Keep the legacy Cohort Builder action available for a one-line re-enable.
+// Standalone Wizards currently exposes only the direct dashboard action.
+const SHOW_COHORT_BUILDER_ACTION = false;
 
 /**
  * Form step renderer with config-driven fields.
  */
 export function StepForm() {
-  const { selectedWizard, formData, updateFormData, goBack, goForward, getCurrentStepConfig, portalProps } =
-    useWizardContext();
+  const {
+    selectedWizard,
+    formData,
+    updateFormData,
+    goBack,
+    goForward,
+    getCurrentStepConfig,
+    portalProps,
+    ensureBookmarkCache,
+    refreshBookmarkCache,
+  } = useWizardContext();
   const stepConfig = getCurrentStepConfig();
   const [configMeta, setConfigMeta] = useState<ConfigMeta | null>(null);
   const displayValuesRef = useRef<Record<string, string>>({});
+  const defaultFormValues = { ...formData };
+  const dashboardFlow = useWizardDashboardFlow({
+    datasetId: portalProps.datasetId,
+    username: portalProps.username,
+    ensureCache: ensureBookmarkCache,
+    refreshCache: refreshBookmarkCache,
+  });
+
+  selectedWizard?.fields.forEach((field) => {
+    if (!field.id.startsWith("condition")) {
+      return;
+    }
+
+    const excludeDescendantsKey = `${field.id}_excludeDescendants`;
+    if (defaultFormValues[excludeDescendantsKey] === undefined) {
+      defaultFormValues[excludeDescendantsKey] = field.excludeDescendantsByDefault === true;
+    }
+  });
 
   const handleDisplayValueChange = useCallback((fieldId: string, displayValue: string | null) => {
     if (displayValue) {
@@ -40,15 +81,27 @@ export function StepForm() {
     formState: { errors, isValid },
   } = useForm({
     mode: "onChange",
-    defaultValues: formData,
+    defaultValues: defaultFormValues,
   });
 
   // Watch all form values to check if required fields are filled
   const formValues = watch();
+  const formLayout = useMemo(
+    () => resolveWizardFormLayout(selectedWizard?.fields || [], selectedWizard?.sections),
+    [selectedWizard],
+  );
+  const groupValidationMessages = formLayout.sections.flatMap((section) =>
+    section.groups.flatMap((group) => {
+      const message = getFieldGroupValidationMessage(group, formValues);
+      return message ? [message] : [];
+    }),
+  );
+  const hasGroupValidationErrors = groupValidationMessages.length > 0;
 
   // Check if all required fields have values
   const allRequiredFieldsFilled = useCallback(() => {
     if (!selectedWizard) return false;
+    if (hasGroupValidationErrors) return false;
     for (const field of selectedWizard.fields) {
       if (field.type === "yearRange") {
         const from = formValues[`${field.id}_from`];
@@ -63,7 +116,7 @@ export function StepForm() {
       }
     }
     return true;
-  }, [selectedWizard, formValues]);
+  }, [selectedWizard, formValues, hasGroupValidationErrors]);
 
   const onSubmit = async (data: Record<string, any>) => {
     updateFormData(data);
@@ -119,8 +172,38 @@ export function StepForm() {
     }
   };
 
-  const renderField = (field: FieldDefinition) => {
+  const onOpenDashboard = (data: Record<string, any>) => {
+    updateFormData(data);
+    dashboardFlow.openDashboard(async () => {
+      if (!selectedWizard || !portalProps.datasetId) throw new Error("Missing Wizard context");
+      const combinedFormData = { ...formData, ...data };
+      const { config: cdwConfig, meta } = await fetchCdwConfig(portalProps.datasetId);
+      const payload = buildWizardSubmitPayload(
+        selectedWizard.fields.filter((field) => !field.isWizardField),
+        combinedFormData,
+        meta,
+        portalProps.datasetId,
+        cdwConfig.chartOptions,
+        cdwConfig,
+        selectedWizard.fields.filter((field) => field.isWizardField),
+        selectedWizard.id,
+        displayValuesRef.current,
+      );
+      return { ...payload, configMeta: meta };
+    });
+  };
+
+  const renderField = (field: FieldDefinition, containingGroup?: ResolvedWizardFieldGroup) => {
     const fieldError = errors[field.id];
+    const disabledByGroupLimit = containingGroup
+      ? isFieldDisabledByGroupLimit(containingGroup, field.id, formValues)
+      : false;
+    const groupLimitTitle = disabledByGroupLimit
+      ? `Only ${containingGroup?.validation?.maxAnswered} of the ${containingGroup?.fields.length === 3 ? "three" : containingGroup?.fields.length} fields`
+      : null;
+    const groupLimitBody = disabledByGroupLimit
+      ? `(${containingGroup?.fields.map((groupField) => groupField.label).join(", ")}) can be filled in at the same time.`
+      : null;
 
     // Text fields with configPath use typeahead search
     if (field.type === "text" && field.configPath && configMeta) {
@@ -150,8 +233,12 @@ export function StepForm() {
             />
             {isConditionField && fieldValue && (
               <div className={styles.wildcardToggle}>
-                <input type="checkbox" id={`${field.id}_wildcard`} {...register(`${field.id}_wildcard`)} />
-                <label htmlFor={`${field.id}_wildcard`}>Include descendants</label>
+                <input
+                  type="checkbox"
+                  id={`${field.id}_excludeDescendants`}
+                  {...register(`${field.id}_excludeDescendants`)}
+                />
+                <label htmlFor={`${field.id}_excludeDescendants`}>Exclude descendants</label>
               </div>
             )}
           </div>
@@ -235,31 +322,72 @@ export function StepForm() {
       case "num":
         return (
           <div key={field.id} className={styles.fieldGroup}>
-            <label htmlFor={field.id} className={styles.label}>
-              {field.label}
-              {field.required && <span className={styles.requiredAsterisk}>*</span>}:
-            </label>
-            <input
-              id={field.id}
-              type="text"
-              placeholder={field.placeholder || "e.g. >=60, [50-80]"}
-              className={`${styles.input} ${fieldError ? styles.inputError : ""}`}
-              aria-invalid={!!fieldError}
-              {...register(field.id, {
-                required: field.required ? `${field.label} is required` : false,
-                validate: (v) => {
-                  if (!v || v === "") return true;
-                  const s = String(v).trim();
-                  const isRange = /^[[\]]\s*-?\d+(\.\d+)?\s*-\s*-?\d+(\.\d+)?\s*[[\]]$/.test(s);
-                  const isOp = /^(>=|<=|>|<|=|!=)\s*-?\d+(\.\d+)?$/.test(s);
-                  const isNum = /^-?\d+(\.\d+)?$/.test(s);
-                  if (!isRange && !isOp && !isNum) {
-                    return `Invalid expression. Examples: >=60, >50, [50-80], 60`;
-                  }
-                  return true;
-                },
-              })}
-            />
+            <div className={styles.fieldLabelRow}>
+              <label htmlFor={field.id} className={styles.label}>
+                {field.label}
+                {field.required && <span className={styles.requiredAsterisk}>*</span>}:
+              </label>
+              <span className={styles.infoTooltip}>
+                <button
+                  type="button"
+                  className={styles.infoButton}
+                  aria-label={`${field.label} valid formats`}
+                  aria-describedby={`${field.id}-numeric-help`}
+                >
+                  i
+                </button>
+                <span id={`${field.id}-numeric-help`} role="tooltip" className={styles.infoTooltipContent}>
+                  <span>Valid format:</span>
+                  <ul>
+                    <li>Enter a single value</li>
+                    <li>&gt; or &lt; for greater/less than</li>
+                    <li>&gt;= or &lt;= for greater than or equal to/less than or equal to</li>
+                    <li>[x-y] or ]x-y[ for an interval including or excluding the endpoints</li>
+                    <li>(-x) for negative values</li>
+                  </ul>
+                  <span>E.g: &gt;=60, [50-80]</span>
+                </span>
+              </span>
+            </div>
+            <div
+              className={styles.numericInputAnchor}
+              tabIndex={disabledByGroupLimit ? 0 : undefined}
+              aria-describedby={disabledByGroupLimit ? `${field.id}-limit-help` : undefined}
+            >
+              <input
+                id={field.id}
+                type="text"
+                placeholder={field.placeholder || "e.g. >=60, [50-80]"}
+                className={`${styles.input} ${fieldError ? styles.inputError : ""}`}
+                aria-invalid={!!fieldError}
+                aria-describedby={disabledByGroupLimit ? `${field.id}-limit-help` : undefined}
+                disabled={disabledByGroupLimit}
+                {...register(field.id, {
+                  required: field.required ? `${field.label} is required` : false,
+                  validate: (v) => {
+                    if (!v || v === "") return true;
+                    const s = String(v).trim();
+                    const isRange = /^[[\]]\s*-?\d+(\.\d+)?\s*-\s*-?\d+(\.\d+)?\s*[[\]]$/.test(s);
+                    const isOp = /^(>=|<=|>|<|=|!=)\s*-?\d+(\.\d+)?$/.test(s);
+                    const isNum = /^-?\d+(\.\d+)?$/.test(s);
+                    if (!isRange && !isOp && !isNum) {
+                      return `Invalid expression. Examples: >=60, >50, [50-80], 60`;
+                    }
+                    return true;
+                  },
+                })}
+              />
+              {disabledByGroupLimit && (
+                <span
+                  id={`${field.id}-limit-help`}
+                  role="tooltip"
+                  className={`${styles.infoTooltipContent} ${styles.limitTooltipContent}`}
+                >
+                  <strong>{groupLimitTitle}</strong>
+                  <span>{groupLimitBody}</span>
+                </span>
+              )}
+            </div>
             {fieldError && (
               <span className={styles.errorMessage} role="alert">
                 {fieldError.message as string}
@@ -343,22 +471,114 @@ export function StepForm() {
     );
   }
 
-  // Get submit button text from stepConfig or default to "Next"
   const submitLabel = stepConfig ? (stepConfig.config as FormStepConfig)?.submitLabel || "Next" : "Next";
+  const formNote = resolveWizardFormNote(selectedWizard.formNote);
 
-  const renderFields = (fields: FieldDefinition[]) => {
-    return fields.map((field) => renderField(field));
+  const renderFields = (fields: FieldDefinition[], containingGroup?: ResolvedWizardFieldGroup) => {
+    return fields.map((field) => renderField(field, containingGroup));
+  };
+
+  const getColumnsClass = (columns: number = 2) => {
+    if (columns === 1) return styles.oneColumn;
+    if (columns === 3) return styles.threeColumns;
+    return styles.twoColumns;
+  };
+
+  const renderFieldGroup = (group: ResolvedWizardFieldGroup) => {
+    const completionHint = getFieldGroupCompletionHint(group);
+    const isRequiredGroup = (group.validation?.minAnswered ?? 0) > 0;
+
+    return (
+      <div key={group.id} className={styles.sectionGroup}>
+        {group.label && (
+          <div className={styles.groupHeader}>
+            <div className={styles.groupTitleRow}>
+              <h3 aria-label={isRequiredGroup ? `${group.label}, required group` : undefined}>
+                {group.label}
+                {isRequiredGroup && (
+                  <span className={styles.groupRequiredAsterisk} aria-hidden="true">
+                    *
+                  </span>
+                )}
+              </h3>
+              {completionHint && (
+                <span className={styles.infoTooltip}>
+                  <button
+                    type="button"
+                    className={styles.infoButton}
+                    aria-label={`${group.label} requirements`}
+                    aria-describedby={`${group.id}-requirements`}
+                  >
+                    i
+                  </button>
+                  <span id={`${group.id}-requirements`} role="tooltip" className={styles.infoTooltipContent}>
+                    {completionHint}
+                  </span>
+                </span>
+              )}
+            </div>
+          </div>
+        )}
+        <div className={`${styles.fieldGrid} ${getColumnsClass(group.columns)}`}>
+          {renderFields(group.fields, group)}
+        </div>
+      </div>
+    );
+  };
+
+  const renderConfiguredFields = () => {
+    if (formLayout.sections.length === 0) {
+      return <div className={styles.formFields}>{renderFields(formLayout.ungroupedFields)}</div>;
+    }
+
+    return (
+      <div className={styles.sections}>
+        {formLayout.sections.map((section, index) => (
+          <section key={section.id} className={styles.section} aria-labelledby={`wizard-section-${section.id}`}>
+            <h2 id={`wizard-section-${section.id}`} className={styles.sectionTitle}>
+              <span className={styles.sectionNumber}>{index + 1}</span>
+              {section.title}
+            </h2>
+            <div className={styles.sectionContent}>{section.groups.map(renderFieldGroup)}</div>
+          </section>
+        ))}
+        {formLayout.ungroupedFields.length > 0 && (
+          <section className={styles.section} aria-labelledby="wizard-section-additional">
+            <h2 id="wizard-section-additional" className={styles.sectionTitle}>
+              <span className={styles.sectionNumber}>{formLayout.sections.length + 1}</span>
+              Additional
+            </h2>
+            <div className={styles.sectionContent}>
+              <div className={`${styles.fieldGrid} ${styles.twoColumns}`}>
+                {renderFields(formLayout.ungroupedFields)}
+              </div>
+            </div>
+          </section>
+        )}
+      </div>
+    );
   };
 
   return (
     <div className={styles.container}>
-      <h2>{selectedWizard.name}</h2>
+      <div className={styles.titleRow}>
+        <button
+          type="button"
+          onClick={goBack}
+          className={styles.backIconButton}
+          aria-label="Back to wizard selection"
+          title="Back to wizard selection"
+        >
+          <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
+            <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.42-1.41L7.83 13H20v-2Z" />
+          </svg>
+        </button>
+        <h2>{selectedWizard.name}</h2>
+      </div>
 
       {selectedWizard.description && <div className={styles.description}>{selectedWizard.description}</div>}
 
-      <div className={styles.note}>
-        Note: this is a very rough approximation that is just a starting point for a more comprehensive analysis.
-      </div>
+      {formNote && <div className={styles.note}>{formNote}</div>}
 
       <hr className={styles.divider} />
 
@@ -372,21 +592,41 @@ export function StepForm() {
         className={styles.form}
         aria-label={selectedWizard.name + " form"}
       >
-        <div className={styles.formFields}>{renderFields(selectedWizard.fields)}</div>
+        {renderConfiguredFields()}
 
         <div className={styles.buttonRow}>
           <button type="button" onClick={goBack} className={styles.button}>
             Back
           </button>
-          <button
-            type="submit"
-            disabled={!allRequiredFieldsFilled() || !isValid}
-            className={`${styles.button} ${styles.buttonPrimary}`}
-          >
-            <AnalyticsIcon /> {submitLabel}
-          </button>
+          <div className={styles.primaryActions}>
+            {SHOW_COHORT_BUILDER_ACTION && (
+              <button
+                type="submit"
+                disabled={!allRequiredFieldsFilled() || !isValid}
+                className={`${styles.button} ${styles.buttonPrimary}`}
+              >
+                <AnalyticsIcon /> {submitLabel}
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={handleSubmit(onOpenDashboard)}
+              disabled={!allRequiredFieldsFilled() || !isValid || dashboardFlow.state.isOpen}
+              aria-busy={dashboardFlow.state.isOpen && dashboardFlow.state.status !== "ready"}
+              className={`${styles.button} ${styles.buttonPrimary}`}
+            >
+              <AnalyticsIcon /> {submitLabel}
+            </button>
+          </div>
         </div>
       </form>
+      <WizardDashboardModal
+        state={dashboardFlow.state}
+        onClose={dashboardFlow.close}
+        onRetry={dashboardFlow.retry}
+        datasetId={portalProps.datasetId}
+        getToken={portalProps.getToken}
+      />
     </div>
   );
 }

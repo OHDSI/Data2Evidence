@@ -23,7 +23,10 @@ async function openDatasetCohorts(page) {
       await cohortsLink.click()
       return
     } catch {
-      await page.getByRole('link', { name: 'Dataset' }).click().catch(() => {})
+      await page
+        .getByRole('link', { name: 'Dataset' })
+        .click()
+        .catch(() => {})
     }
   }
   throw new Error('Cohorts link did not appear for selected dataset within ~60s')
@@ -55,7 +58,7 @@ test(TEST_NAME, async ({ page }) => {
   })
   //Add Gender filter
   await test.step('Add Gender - Male filter', async () => {
-    await page.getByText('All').click()
+    await page.getByTitle('Basic Data - Gender').getByText('All').click()
     await page.getByPlaceholder('Enter search term').fill('Male')
     await page.getByText('MALE - MALE').click()
     await expect(page.getByText('1,096 / 2,694')).toBeVisible()
@@ -115,7 +118,11 @@ test(TEST_NAME, async ({ page }) => {
     //   .filter({ hasText: /^Select an Attribute$/ })
     //   .getByRole('button')
     //   .click()
-    await page.locator('button.axisMenuButton', { hasText: 'Gender' }).first().click()
+    await page
+      .locator('.axis-group--bottom .axis-subgroup')
+      .last()
+      .locator('button.axisMenuButton', { hasText: 'Gender' })
+      .click()
     await page.locator('#pane-right').getByText('Condition Occurrence A').click()
     await page.locator('.dropdownmenuitem-container .content', { hasText: 'Condition concept Name' }).click()
     await expect(page.locator('.loading-animation-component')).not.toBeVisible()
@@ -150,7 +157,11 @@ test(TEST_NAME, async ({ page }) => {
   })
   //Reset x1 selection to avoid displaying errors
   await test.step('Reset the x1 attributes', async () => {
-    await page.getByRole('button', { name: 'A - Condition Occurrence Condition concept Name ◢' }).click()
+    await page
+      .locator('.axis-group--bottom .axis-subgroup')
+      .last()
+      .getByRole('button', { name: 'A - Condition Occurrence Condition concept Name ◢' })
+      .click()
     await page.getByText('Reset Selection').click()
     await expect(page.locator('.loading-animation-component')).not.toBeVisible()
     await page.getByRole('button', { name: 'Basic Data Month of Birth ◢' }).click()
@@ -172,7 +183,11 @@ test(TEST_NAME, async ({ page }) => {
     // Confirm that the 'Enter name' textbox is not visible before proceeding
     await expect(page.getByRole('textbox', { name: 'Enter name' })).not.toBeVisible()
     await page.getByRole('button', { name: 'Save' }).click()
-    await page.locator('footer').getByRole('button', { name: 'Save' }).click()
+    // Re-saving an already-saved cohort owned by the current user no longer opens the
+    // naming dialog - FiltersFooter.openSaveBookmark() only does that when
+    // needsSaveDialog (isNewCohort || isNotUserSharedBookmark) is true.
+    await expect(page.getByRole('textbox', { name: 'Enter name' })).not.toBeVisible()
+    await expect(page.getByText('Saved filter updated.')).toBeVisible()
   })
   //Verify the saved filter
   await test.step('Verify the saved filter', async () => {
@@ -205,7 +220,13 @@ test(TEST_NAME, async ({ page }) => {
       .filter({ hasText: new RegExp(`^${NAME.renamedFilters}$`) })
       .first()
       .click()
-    await page.getByRole('button', { name: 'Discard' }).click()
+    // Loading a saved filter from an unmodified (clean) cohort no longer prompts the
+    // unsaved-changes dialog (#2636 changed the semantics so a fresh cohort is clean).
+    // Dismiss the dialog only if it happens to appear; otherwise the filter loads directly.
+    await page
+      .getByRole('button', { name: 'Leave without saving' })
+      .click({ timeout: 3000 })
+      .catch(() => {})
     //Verify filters are loaded
     await expect(page.getByText('>2')).toBeVisible()
     await expect(page.locator('#patient').getByText('FEMALE')).toBeVisible()
@@ -236,11 +257,11 @@ test(TEST_NAME, async ({ page }) => {
     // Confirm that 'Measurement' exists in the table header
     await expect(page.locator('thead')).toContainText('Measurement')
     await page.getByRole('cell', { name: 'Ethnicity concept id ' }).locator('span').nth(1).click()
-    await page.getByText('Remove').click()
+    await page.locator('.dropdownmenu-container .menuWrapper:not(.closed)').getByText('Remove').click()
     await page.getByRole('cell', { name: 'Age ' }).locator('span').nth(1).click()
-    await page.getByText(' Sort Descending').click()
+    await page.locator('.dropdownmenu-container .menuWrapper:not(.closed)').getByText('Sort Descending').click()
     //Add basic filters
-    await page.getByText('All').click()
+    await page.getByTitle('Basic Data - Gender').getByText('All').click()
     await page.getByRole('textbox', { name: 'multiselect-searchbox' }).fill('FEMALE')
     await page.getByText('FEMALE - FEMALE').click()
     //Add filter card
@@ -286,10 +307,11 @@ test(TEST_NAME, async ({ page }) => {
     await page.getByRole('link', { name: 'Exclusion (0)' }).click()
     await page.getByTitle('Add Filter Card').getByRole('button').click()
     await page.getByRole('menuitem', { name: 'Death' }).click()
-    //Save filter
+    //Save filter - the allow-sharing checkbox now lives in the filter card footer
+    //rather than the save dialog, so it has to be set before the dialog opens.
+    await page.getByTestId('pa-share-cohort-checkbox').click()
     await page.getByRole('button', { name: 'Save' }).click()
     await page.getByRole('textbox', { name: 'Enter name' }).fill(NAME.patientListFilters)
-    await page.getByTitle('Allow bookmark to be visible').locator('div').click()
     await page.locator('footer').getByRole('button', { name: 'Save' }).click()
     //Verify Cohort is saved
     await page.locator('#pane-left').getByRole('link', { name: 'Cohorts' }).click()
@@ -297,7 +319,7 @@ test(TEST_NAME, async ({ page }) => {
     //Click on the saved cohort
     await page.locator('#pane-left').getByRole('link', { name: 'Cohorts' }).click()
     await page.getByText(NAME.patientListFilters).nth(1).click()
-    await expect(page.getByText('FEMALE')).toBeVisible()
+    await expect(page.locator('#patient').getByText('FEMALE')).toBeVisible()
     await expect(page.getByText('Viral sinusitis')).toBeVisible()
     await page.getByRole('link', { name: 'Exclusion (1)' }).click()
     await expect(page.getByText('Death A')).toBeVisible()
@@ -450,7 +472,7 @@ test(TEST_NAME, async ({ page }) => {
       await page.getByRole('button', { name: 'Delete' }).click()
       await expect(page.getByText(NAME.patientListFilters)).not.toBeVisible()
     })
-    await expect(page.getByText('You have not yet saved any filters')).toBeVisible()
+    await expect(page.getByText('You have not yet saved any cohort definitions')).toBeVisible()
   })
 
   //Delete concept sets

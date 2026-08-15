@@ -63,7 +63,7 @@ export class DBRouter {
         this.logger.error(
           `Error when updating schema ${schemaName}: ${JSON.stringify(error)}`
         );
-        res.status(500).send(`Error when updating schema ${schemaName}`);
+        res.status(500).send("Error when updating schema");
       }
     });
 

@@ -5,6 +5,7 @@ export interface StudyDatasetDto {
   id: string;
   type: string;
   studyDetail?: { name: string };
+  tokenDatasetCode?: string;
 }
 
 export const systemPortalSlice = createApi({
