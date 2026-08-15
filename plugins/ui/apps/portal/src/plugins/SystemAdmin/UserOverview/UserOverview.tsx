@@ -323,7 +323,12 @@ export const UserOverview: FC<UserOverviewProps> = () => {
           />
           <DeleteUserDialog user={activeUser} open={showDeleteUser} onClose={closeDeleteUser} />
           {activeUser && (
-            <ChangeUserPasswordDialog userId={activeUser.userId} open={showPwd} onClose={handleClosePasswordDialog} />
+            <ChangeUserPasswordDialog
+              userId={activeUser.userId}
+              userName={activeUser.username}
+              open={showPwd}
+              onClose={handleClosePasswordDialog}
+            />
           )}
         </div>
       </div>

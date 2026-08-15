@@ -208,6 +208,16 @@ export class WebApiSourceService {
         return `jdbc:postgresql://${host}:${port}/${database}`
       case 'hana':
         return `jdbc:sap://${host}:${port}/`
+      case 'bigquery':
+        // Simba BigQuery JDBC URL. The database entry carries the GCP project
+        // in `host` and the default dataset in `name`/`database` (see the
+        // admin UI's BigQueryForm). OAuthType=3 = application default
+        // credentials: auth lives with the engine (the same model the DuckDB
+        // bigquery scanner uses for the TrexSQL cache build), never in the
+        // URL. bao's source_dsn parser requires the `ProjectId=` key — the
+        // generic `jdbc:bigquery://host:port/db` form broke the cache path.
+        return `jdbc:bigquery://https://www.googleapis.com/bigquery/v2:443;` +
+          `ProjectId=${host};DefaultDataset=${database};OAuthType=3;`
       default:
         this.logger.warn(`Unknown dialect ${dialect}, using generic JDBC URL`)
         return `jdbc:${dialect}://${host}:${port}/${database}`
