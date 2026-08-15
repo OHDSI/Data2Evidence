@@ -12,7 +12,7 @@ applyTo: "plugins/flows/**"
 **Key indicators:**
 - `flow.py` + `__init__.py` in individual plugin folders
 - `Dockerfile` + `package.json` in plugin group folders
-- Dependencies: `requirements_[name].txt` (legacy) or `pyproject.toml + uv.lock` (modern)
+- Dependencies: `pyproject.toml + pixi.lock` per group (pixi: conda-forge for python/R/Java/toolchain, PyPI via [project.dependencies]); `renv.lock` for R packages, restored by the group's `setup_r.sh`
 
 ## Essential Development Workflow
 
@@ -113,9 +113,7 @@ plugins/flows/[plugin_group]/
 ```
 
 ### Dependency Detection Patterns
-**Legacy pip plugins:** Look for `requirements_[plugin_group].txt` → `RUN pip install -r requirements_[name].txt`
-**Modern uv plugins:** Look for `pyproject.toml + uv.lock` → `uv sync --locked --no-install-project --no-editable --no-dev`
-**OSS builds:** Most include `RUN if [ $BUILD_TYPE = 'OSS' ]; then sed -i '/sqlalchemy-hana/d' /app/requirements*.txt; fi`
+**All groups are pixi projects:** `pyproject.toml` (+ committed `pixi.lock`). After editing dependencies run `pixi lock` in the group dir and commit both files — CI (`_pixi-lock-check.yml`) fails stale locks and any compiled pypi sdist. R packages stay in `renv.lock` (`setup-r` task); binary assets are fetched by the `setup-assets` task. Flow runs execute on the process worker in the group's env via `/app/run-flow.sh <npm-short-name>`; HANA support is a pixi `hana` environment provisioned at runtime (never shipped).
 
 ## Testing
 

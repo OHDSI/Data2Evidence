@@ -26,6 +26,7 @@ const icons = {
   information: '&#xe202',
   lowerRightPencil: '&#x270E;',
   successCheck: '&#xe1c2',
+  alertCircle: '&#xe0b1',
 }
 
 export default {

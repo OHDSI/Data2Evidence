@@ -19,7 +19,7 @@ export type RowObject = {
   domainId?: string;
 };
 
-export type csvData = { name: string; data: ParseResult<any> };
+export type csvData = { name: string; size?: number; data: ParseResult<any> };
 
 export type conceptMap = {
   source_code: string;

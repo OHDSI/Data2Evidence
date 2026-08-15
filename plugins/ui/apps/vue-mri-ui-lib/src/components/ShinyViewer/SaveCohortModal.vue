@@ -287,7 +287,7 @@ export default {
   },
   methods: {
     ...mapActions(['fireBookmarkQuery', 'onAddCohortOkButtonPress']),
-    ...mapMutations([types.SET_ACTIVE_BOOKMARK]),
+    ...mapMutations([types.SET_ACTIVE_BOOKMARK, types.SET_ACTIVE_BOOKMARK_BASELINE]),
     generateDefaultName(): string {
       const now = new Date()
       const timestamp = now.toLocaleString('en-US', {
@@ -432,6 +432,7 @@ export default {
       }
 
       this[types.SET_ACTIVE_BOOKMARK](bookmark)
+      this[types.SET_ACTIVE_BOOKMARK_BASELINE](this.getBookmarksData)
 
       return bookmark
     },
@@ -529,30 +530,18 @@ export default {
       const url = '/analytics-svc/api/services/cohort'
 
       this.savingStep = 'materializing-cohort'
-      await this.onAddCohortOkButtonPress({ params, url })
+      const materializeResponse = await this.onAddCohortOkButtonPress({ params, url })
+      const cohortDefinitionId = Number(materializeResponse?.cohortDefinitionId)
 
-      this.savingStep = 'refreshing-cohort'
-      const materializedBookmark = await this.refreshAndFindBookmark()
-
-      if (!materializedBookmark.cohortDefinitionId) {
+      if (!Number.isInteger(cohortDefinitionId)) {
         throw new Error(this.getText('MRI_PA_BOOKMARK_MISSING_COHORT_DEFINITION'))
       }
 
-      const materializedCohorts = this.getMaterializedCohorts
-      const materializedCohort = materializedCohorts.find(
-        cohort =>
-          materializedBookmark.bookmarkname === cohort?.cohortDefinitionName &&
-          cohort.id === materializedBookmark.cohortDefinitionId
-      )
+      this.savedCohortId = cohortDefinitionId
 
-      if (!materializedCohort) {
-        console.error('[SaveCohort] Bookmark name:', materializedBookmark.bookmarkname)
-        console.error('[SaveCohort] Bookmark cohortDefinitionId:', materializedBookmark.cohortDefinitionId)
-        console.error('[SaveCohort] Available materialized cohorts:', materializedCohorts)
-        throw new Error(this.getText('MRI_PA_MATERIALIZED_COHORT_NOT_FOUND'))
-      }
+      this.savingStep = 'refreshing-cohort'
+      await this.refreshAndFindBookmark()
 
-      this.savedCohortId = materializedCohort.id
       this.savingStep = 'complete'
     },
     ensureSavedBookmarkIdForMaterialization() {

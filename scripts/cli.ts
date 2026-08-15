@@ -8,7 +8,7 @@ import * as fs from "fs";
 import * as readline from "readline";
 import { execSync } from "child_process";
 import { LibUtils } from "./lib";
-import { dockerComposeContent } from "./docker-compose-embed";
+import { dockerComposeContent, atlasDbInitScripts } from "./docker-compose-embed";
 import { setupDemo } from "./setupdemo";
 import { checkSetupDemoFlow } from "./check-setupdemo-flow";
 import { setupHTTPTestEnv as runSetupHTTPTestEnv } from "./setuphttptestenv";
@@ -39,8 +39,8 @@ interface CliOptions {
 
 class D2ECli {
   version: string;
-  LATEST_DOCKER_TAG_NAME: string = "0.15.0-beta"; // Update this as needed
-  default_version: string = "0.15.0"; // Update this as needed default/base version
+  LATEST_DOCKER_TAG_NAME: string = "0.17.0-beta"; // Update this as needed
+  default_version: string = "0.17.0"; // Update this as needed default/base version
   CADDY__CONFIG: string;
   ENV_TYPE: string;
   DOCKER_LOG_LEVEL: string;
@@ -81,11 +81,50 @@ class D2ECli {
 
   extract_compose_file(): void {
     const dest = path.join(this.compose_dir, "docker-compose.yml");
-    if (!fs.existsSync(dest)) {
-      fs.writeFileSync(dest, dockerComposeContent);
+    this.write_embedded_file(dest, dockerComposeContent);
+    // Stage the atlas-db-init SQL scripts next to the compose file so the
+    // webapi-init service's `./services/atlas-db-init:/scripts` bind mount
+    // resolves. These live at repo root but aren't present where the
+    // distributed CLI runs, so we write the embedded copies here.
+    const atlasDbInitDir = path.join(
+      this.compose_dir,
+      "services",
+      "atlas-db-init"
+    );
+    try {
+      fs.mkdirSync(atlasDbInitDir, { recursive: true });
+    } catch (err: any) {
+      if (err?.code === "EACCES" || err?.code === "EPERM") {
+        console.warn(
+          `Warning: could not create ${atlasDbInitDir} (permission denied). ` +
+            `Skipping atlas-db-init staging; continuing with existing files.`
+        );
+        return;
+      }
+      throw err;
+    }
+    for (const [name, content] of Object.entries(atlasDbInitScripts)) {
+      this.write_embedded_file(path.join(atlasDbInitDir, name), content);
     }
   }
-
+  private write_embedded_file(dest: string, content: string): void {
+    try {
+      if (fs.existsSync(dest) && fs.readFileSync(dest, "utf8") === content) {
+        return;
+      }
+      fs.writeFileSync(dest, content);
+    } catch (err: any) {
+      if (err?.code === "EACCES" || err?.code === "EPERM") {
+        console.warn(
+          `Warning: could not update ${dest} (permission denied). ` +
+            `It looks owned by another user (e.g. root from a release download). ` +
+            `Continuing with the existing file.`
+        );
+        return;
+      }
+      throw err;
+    }
+  }
   // Functions
   load_env_variables(): void {
     if (this.version == "develop") {
@@ -205,6 +244,10 @@ class D2ECli {
       TREX__SQL__PASSWORD: `${this.generate_random_password(
         this.DEFAULT_PASSWORD_LENGTH,
       )}`,
+      // Root encryption key for trex's KEK/DEK wrapping and JWT signing. The
+      // trexsql entrypoint refuses to start without it (must be valid base64 of
+      // >=32 bytes, i.e. >=40 chars); 32 random bytes -> 44-char base64.
+      TREX_ROOT_KEY: crypto.randomBytes(32).toString("base64"),
       JASYPT_ENCRYPTOR_ENABLED: `true`,
       JASYPT_ENCRYPTOR_PASSWORD: `${this.generate_random_password(
         this.DEFAULT_PASSWORD_LENGTH,
@@ -973,12 +1016,10 @@ class D2ECli {
         let DOCKER_IMAGE_PREFIX =
           process.env.DOCKER_IMAGE_PREFIX || "ghcr.io/ohdsi/";
         this.DOCKER_IMAGE_PREFIX = DOCKER_IMAGE_PREFIX;
-        await this.pull_image("d2e/flow-base", this.DOCKER_TAG_NAME);
+        // Flow runs execute on the pixi process worker (its image is part of
+        // the compose pull); the legacy per-group flow images are retired.
         if (options.jupyter) {
           await this.pull_image("d2e-r-ohdsi-kernel", this.DOCKER_TAG_NAME);
-        }
-        if (options.hades) {
-          await this.pull_image("d2e/flow-hades", this.DOCKER_TAG_NAME);
         }
         const { cmd, env } = this.build_docker_command(options, "pull");
         console.log(`Executing command: ${cmd}`);
@@ -992,6 +1033,7 @@ class D2ECli {
             console.log("Process completed successfully.");
           } else {
             console.log(`Process exited with code ${code}`);
+            process.exitCode = code ?? 1;
           }
         });
       });

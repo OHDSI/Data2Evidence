@@ -42,6 +42,7 @@ export const env = {
     trex_sql_port: _env.TREX__SQL__PORT,
     trex_sql_dbname: _env.TREX__SQL__DBNAME,
     trex_sql_user: _env.TREX__SQL__USER,
+    trex_strategus_results_db_name: _env.TREX__STRATEGUS_RESULTS_DB_NAME || "strategus_results",
     is_dev_env: _env.PREFECT__LOCAL_DEBUG === "true" || false, // Default to false if not set
     logs_debug_enable: _env.PREFECT__LOGS_DEBUG_ENABLED === "true" || false, // Default to false if not set
     fhir_database_code: _env.FHIR_DATABASE_CODE,
@@ -73,10 +74,20 @@ export const env = {
   PREFECT_API_URL: _env.PREFECT_API_URL,
   D2E_MEMORY_LIMIT: _env.D2E_MEMORY_LIMIT,
   D2E_SWAP_LIMIT: _env.D2E_SWAP_LIMIT,
-  WORKPOOL_NAME: _env.WORKPOOL_NAME
+  WORKPOOL_NAME: _env.WORKPOOL_NAME,
+  // "process" selects the pixi process-worker base job template; anything else
+  // keeps the legacy docker template (rollback path).
+  WORKPOOL_TYPE: _env.WORKPOOL_TYPE || "docker",
+  INSTALL_SQLALCHEMY: _env.INSTALL_SQLALCHEMY,
+  // Default flow-run command on the process pool; covers flows imported at
+  // runtime, which run in the base group's environment.
+  DEFAULT_FLOW_COMMAND:
+    _env.DEFAULT_FLOW_COMMAND || "/app/run-flow.sh d2e-flows",
 };
 
 export const D2E_MEMORY_LIMIT = env.D2E_MEMORY_LIMIT;
 export const D2E_SWAP_LIMIT = env.D2E_SWAP_LIMIT;
+export const INSTALL_SQLALCHEMY = env.INSTALL_SQLALCHEMY;
+export const DEFAULT_FLOW_COMMAND = env.DEFAULT_FLOW_COMMAND;
 export const CUSTOM_WORK_POOL_CONFIGURATION =
   env.CUSTOM_WORK_POOL_CONFIGURATION;

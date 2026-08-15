@@ -8,6 +8,7 @@ import {
   IWebapiConceptSetExpression,
 } from "../Terminology/utils/types";
 import { getPortalAPI } from "../utils/PortalUtils";
+import { getInvalidReasonFilter } from "./concept-search-filter";
 
 export class PublicWebapiProxyAPI {
   private readonly baseURL: string;
@@ -97,8 +98,8 @@ export class PublicWebapiProxyAPI {
   }
 
   async getTerminologies(
-    page: number,
-    rowsPerPage: number,
+    _page: number,
+    _rowsPerPage: number,
     dataSource: string,
     searchText: string,
     conceptClassId: string[],
@@ -114,13 +115,14 @@ export class PublicWebapiProxyAPI {
     }
 
     try {
+      const invalidReason = getInvalidReasonFilter(validity);
       const data = {
         QUERY: searchText,
         CONCEPT_CLASS_ID: conceptClassId,
         DOMAIN_ID: domainId,
         VOCABULARY_ID: vocabularyId,
         STANDARD_CONCEPT: standardConcept[0],
-        INVALID_REASON: validity[0],
+        ...(invalidReason && { INVALID_REASON: invalidReason }),
       };
 
       const result = await request({
@@ -152,55 +154,58 @@ export class PublicWebapiProxyAPI {
     });
   }
 
-  public getConceptSet(conceptSetId: number): Promise<IWebapiConceptSet> {
+  public getConceptSet(conceptSetId: string): Promise<IWebapiConceptSet> {
     return request<IWebapiConceptSet>({
       baseURL: this.baseURL,
-      url: `d2e-webapi/conceptset/${conceptSetId}`,
+      url: `d2e-webapi/conceptset/${encodeURIComponent(conceptSetId)}`,
       method: "GET",
     });
   }
 
-  public getConceptSetExpression(conceptSetId: number) {
+  public getConceptSetExpression(conceptSetId: string) {
     return request<IWebapiConceptSetExpression>({
       baseURL: this.baseURL,
-      url: `d2e-webapi/conceptset/${conceptSetId}/expression`,
+      url: `d2e-webapi/conceptset/${encodeURIComponent(
+        conceptSetId,
+      )}/expression`,
       method: "GET",
     });
   }
 
-  public checkIfConceptSetExists(conceptSetId: number, conceptSetName: string) {
+  public checkIfConceptSetExists(conceptSetId: string, conceptSetName: string) {
     return request({
       baseURL: this.baseURL,
-      url: `d2e-webapi/conceptset/${conceptSetId}/exists?name=${encodeURIComponent(
-        conceptSetName,
-      )}`,
+      url: `d2e-webapi/conceptset/${encodeURIComponent(
+        conceptSetId,
+      )}/exists?name=${encodeURIComponent(conceptSetName)}`,
       method: "GET",
     });
   }
 
-  public createConceptSet(name: string) {
-    return request<number>({
+  public async createConceptSet(name: string): Promise<string> {
+    const conceptSet = await request<IWebapiConceptSet>({
       baseURL: this.baseURL,
       url: `d2e-webapi/conceptset`,
       method: "POST",
       data: { name },
     });
+    return conceptSet.id;
   }
 
   public updateConceptSet(
-    conceptSetId: number,
+    conceptSetId: string,
     conceptSet: Partial<ConceptSet>,
   ) {
     return request<number>({
       baseURL: this.baseURL,
-      url: `d2e-webapi/conceptset/${conceptSetId}`,
+      url: `d2e-webapi/conceptset/${encodeURIComponent(conceptSetId)}`,
       method: "PUT",
       data: conceptSet,
     });
   }
 
   public updateConceptSetItems(
-    conceptSetId: number,
+    conceptSetId: string,
     conceptSetConcepts: ConceptSetConcept[],
   ) {
     const data = conceptSetConcepts.map((concept) => ({
@@ -211,16 +216,16 @@ export class PublicWebapiProxyAPI {
     }));
     return request<number>({
       baseURL: this.baseURL,
-      url: `d2e-webapi/conceptset/${conceptSetId}/items`,
+      url: `d2e-webapi/conceptset/${encodeURIComponent(conceptSetId)}/items`,
       method: "PUT",
       data,
     });
   }
 
-  public deleteConceptSet(conceptSetId: number) {
+  public deleteConceptSet(conceptSetId: string) {
     return request<number>({
       baseURL: this.baseURL,
-      url: `d2e-webapi/conceptset/${conceptSetId}`,
+      url: `d2e-webapi/conceptset/${encodeURIComponent(conceptSetId)}`,
       method: "DELETE",
     });
   }

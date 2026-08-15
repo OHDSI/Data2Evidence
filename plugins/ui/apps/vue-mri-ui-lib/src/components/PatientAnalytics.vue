@@ -167,6 +167,8 @@ declare var sap
 const myWindow: any = window
 
 import { mapActions, mapGetters } from 'vuex'
+import { registerPaTools } from '@/ai/webmcpServer'
+import { publishPaTools } from '@/ai/paToolBridge'
 import icon from '../lib/ui/app-icon.vue'
 import appButton from '../lib/ui/app-button.vue'
 import appIcon from '../lib/ui/app-icon.vue'
@@ -232,6 +234,14 @@ export default {
         this.toggleCohorts(false)
       }
     },
+    getDatasetReloadInProgress(inProgress, wasInProgress) {
+      // When a dataset/release switch finishes, the previous bookmark has been
+      // cleared (datasetWatcher commits SET_ACTIVE_BOOKMARK null). Reset the view
+      // to the default empty state once the new config is loaded.
+      if (wasInProgress && !inProgress) {
+        this.resetToDefaultView()
+      }
+    },
     getBookmarkFromIFR(bm) {
       // In patient list, changePage is watched and already calls setFireRequest once
       // It seems like if both are run, `setFireRequest` runs consecutively in the same tick,
@@ -241,6 +251,9 @@ export default {
       } else {
         this.setFireRequest()
       }
+    },
+    getActiveChart() {
+      this.chartBusy = false
     },
     getHasAssignedConfig(val) {
       if (val) {
@@ -259,11 +272,24 @@ export default {
     },
   },
   mounted() {
+    const paToolHooks = {
+      // Let pa_new_cohort switch from the saved-cohort list to the builder so a
+      // programmatically built cohort renders and computes its count/chart.
+      showBuilder: () => this.toggleCohorts(false),
+    }
+    // Two consumers, one tool set: an external browser agent via Chrome's
+    // modelContext, and an in-page consumer via the window registry. Both wrap
+    // the same createPaTools() array.
+    this._unregisterPaTools = registerPaTools(this.$store, paToolHooks)
+    this._unpublishPaTools = publishPaTools(this.$store, paToolHooks)
     this.updateMinSplitterWidth()
     window.addEventListener('resize', this.updateMinSplitterWidth)
   },
   beforeUnmount() {
+    this._unregisterPaTools?.()
+    this._unpublishPaTools?.()
     window.removeEventListener('resize', this.updateMinSplitterWidth)
+    this.chartBusy = false
   },
   computed: {
     ...mapGetters([
@@ -330,6 +356,18 @@ export default {
     loadDefaultFilters() {
       this.setIFRState({ ifr: this.getMriFrontendConfig.getInitialIFR() })
       this.setupChartDefaults()
+    },
+    resetToDefaultView() {
+      // Default empty state: full-width Cohorts list, no right chart pane, no
+      // query filter, no filter-card summary, and filters reset to the config's
+      // initial IFR (clears any retained filter-card selections).
+      this.displayCohorts = true
+      this.showQueryFilter = false
+      this.displayFilterCardSummary = false
+      this.paneSize = PANE_SIZE.FULL
+      this.rightPaneEverOpened = false
+      this.setRightPaneMounted(false)
+      this.loadDefaultFilters()
     },
     loadAllBookmark() {
       const params = {
@@ -522,5 +560,12 @@ export default {
 .pa-splitter:not(.right-pane-opened) :deep(.splitpanes__splitter) {
   pointer-events: none;
   opacity: 0;
+}
+
+/* splitpanes animates pane width (transition: width .2s) by default, which makes
+   the left pane visibly slide in when returning to Cohorts or resetting the view.
+   Keep pane sizing static. */
+.pa-splitter :deep(.splitpanes__pane) {
+  transition: none;
 }
 </style>

@@ -46,7 +46,8 @@ class SqlAlchemyDao(DaoBase):
             host=configs.host,
             port=configs.port,
             database_name=database_name,
-            db_credentials=configs
+            db_credentials=configs,
+            pa_cdm_config=self.pa_cdm_config
         )
         return sql.create_engine(connection_string, connect_args=connect_args)
 
@@ -256,14 +257,20 @@ class SqlAlchemyDao(DaoBase):
         with self.engine.connect() as connection:
             metadata_obj = sql.MetaData(schema=schema)
             table_obj = sql.Table(table, metadata_obj, autoload_with=connection)
-            
+
+            # BigQuery has no DROP TABLE ... CASCADE — appending it turns every
+            # drop into a syntax error (first hit: repeat DC runs on a webapi
+            # BigQuery dataset). BQ tables have no dependent objects CASCADE
+            # would cover, so dropping plain is equivalent there.
+            supports_cascade = connection.dialect.name != "bigquery"
+
             @compiles(DropTable, connection.dialect.name)
             def _compile_drop_table(element, compiler, **kwargs):
                 sql_str = compiler.visit_drop_table(element)
-                if cascade:
+                if cascade and supports_cascade:
                     sql_str += " CASCADE"
                 return sql_str
-    
+
             table_obj.drop(connection)
             connection.commit()
 

@@ -1,0 +1,186 @@
+.concept-mapping__step1 {
+  // Fills whatever height the steps body hands it (see StepFlow.scss), so the columns
+  // row below can, in turn, use flex: 1 to occupy all of that space rather than just
+  // sizing to its own content.
+  height: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+
+  &-columns {
+    display: flex;
+    gap: 24px;
+    // `stretch` (the flex default - overriding it is what caused the two panels to sit at
+    // unequal, content-sized heights) makes both panels match the row's full height.
+    align-items: stretch;
+    flex: 1;
+    min-height: 0;
+
+    @media (max-width: 900px) {
+      flex-direction: column;
+    }
+  }
+
+  &-panel {
+    flex: 1 1 0;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    border: 1px solid #dad7d7;
+    border-radius: 8px;
+    overflow: hidden;
+    background-color: #fff;
+  }
+
+  &-panel-title {
+    margin: 0;
+    padding: 10px 16px;
+    background-color: #e5e6f2;
+    color: #000080;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+
+  &-panel-body {
+    padding: 16px;
+    // Grows to fill the panel below its title bar (so both panels are tall, content-at-top
+    // boxes per the design) while staying independently scrollable if its own content is
+    // ever taller than the stretched panel height.
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+  }
+
+  &-card {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 16px;
+    border: 1px solid #dad7d7;
+    border-radius: 8px;
+    background-color: #fafbfe;
+
+    &-icon {
+      color: #000080;
+      margin-bottom: 4px;
+    }
+
+    &-title {
+      font-weight: 700;
+      color: #000080;
+    }
+
+    &--connected {
+      position: relative;
+    }
+  }
+
+  &-card-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+  }
+
+  &-card-unlink {
+    // Functional: removes the incoming canvas edge (see onDisconnectSource).
+    color: #acaba8;
+
+    &:hover {
+      color: #c62828;
+    }
+  }
+
+  &-divider {
+    display: flex;
+    align-items: center;
+    text-align: center;
+    color: #595757;
+    margin: 12px 0;
+
+    &::before,
+    &::after {
+      content: "";
+      flex: 1;
+      border-bottom: 1px solid #dad7d7;
+    }
+
+    span {
+      padding: 0 12px;
+      font-size: 13px;
+      text-transform: uppercase;
+    }
+  }
+
+  // The uploaded-CSV file card (states: uploading / success / failed). `&-file-card` is
+  // layered on top of the base `&-card` styling (border/radius/padding) - see the combined
+  // classNames in Step1Source.tsx.
+  &-file-card {
+    gap: 0;
+
+    &-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    &-icon {
+      color: #000080;
+      flex-shrink: 0;
+    }
+
+    &-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    &-name {
+      font-weight: 700;
+      color: #000080;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    &-sub {
+      color: #595757;
+    }
+
+    &-actions {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      flex-shrink: 0;
+    }
+
+    &-success-icon {
+      color: #2e7d32;
+    }
+
+    &--failed {
+      background-color: #fdecea;
+      border-color: #f5c2c0;
+
+      .concept-mapping__step1-file-card-icon,
+      .concept-mapping__step1-file-card-name,
+      .concept-mapping__step1-file-card-sub {
+        color: #c62828;
+      }
+    }
+  }
+
+  &-info-callout {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 12px;
+    margin: 8px 0 16px;
+    background-color: #e5e6f2;
+    border-radius: 6px;
+    color: #000080;
+
+    svg {
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+  }
+}

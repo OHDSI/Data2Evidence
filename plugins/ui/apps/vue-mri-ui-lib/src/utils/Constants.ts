@@ -318,6 +318,8 @@ const CohortEntryExit = {
 
 const XAxisLabelMaxLength = 30
 
+const SnackbarTimeout = 3000
+
 export default {
   sap,
   events,
@@ -336,4 +338,5 @@ export default {
   ChartColorway,
   CohortEntryExit,
   XAxisLabelMaxLength,
+  SnackbarTimeout,
 }

@@ -6,6 +6,7 @@ from uuid import uuid4
 
 from prefect import flow, task
 from prefect.context import TaskRunContext, FlowRunContext, get_run_context
+from prefect.variables import Variable
 from prefect.artifacts import create_markdown_artifact
 
 from .hooks import generate_nodes_flow_hook, execute_nodes_flow_hook, node_task_execution_hook
@@ -13,7 +14,6 @@ from .flowutils import get_node_list, get_incoming_edges, install_r_packages_fro
 from .nodes import generate_nodes_flow, execute_r_strategus, upload_strategus_results, drop_strategus_results_schema, get_strategus_node, getRCdmExecutionSettings, upload_results_from_storage
 from _shared_flow_utils.logger.logger import Logger
 from _shared_flow_utils.api.StrategusAnalysisAPI import StrategusAnalysisAPI
-from .table1 import Table1Generator
 
 
 @flow(log_prints=True)
@@ -53,6 +53,7 @@ def strategus_plugin(json_graph, options):
     update_results_schema = _options.get('updateResultsSchema', True)
     databaseCode = options.get('databaseCode', None)
     datasetId = options.get('datasetId', None)
+    cacheId = options.get('cacheId', None)
     studyName = options.get("studyName", "")
     tokenStudyCode = options.get('tokenStudyCode', None)
 
@@ -91,11 +92,18 @@ def strategus_plugin(json_graph, options):
         )
         # updateResultsSchema option will drop the existing schema before uploading new results
         if(update_results_schema):
-            drop_strategus_results(options)
+            results_db_settings = {
+                'databaseCode': Variable.get('trex_strategus_results_db_name', 'strategus_results'),
+                'cacheId': cacheId,
+                "datasetID": datasetId,
+                "tokenStudyCode": tokenStudyCode
+            }
+            drop_strategus_results(results_db_settings)
 
         if(upload_results):
             result_db_settings = {
-                'database_code': databaseCode,
+                'database_code': Variable.get('trex_strategus_results_db_name', 'strategus_results'),
+                'cache_id': cacheId,
                 "dataset_id": datasetId,
                 "token_study_code": tokenStudyCode
             }
@@ -215,6 +223,7 @@ def runStrategus(json_graph, options):
     token_study_code = options.get('tokenStudyCode', None)
     datasetId = options.get('datasetId', None)
     database_code = options.get('databaseCode', None)
+    cache_id = options.get('cacheId', None)
     schema_name = options.get('schemaName', None)
     upload_results = options.get('uploadResults', False)
     update_results_schema = options.get('updateResultsSchema', True)
@@ -228,7 +237,7 @@ def runStrategus(json_graph, options):
     if(not schema_name):
        raise Exception('Schema name is missing')
     
-    dbSettings = { "database_code": database_code, "schema_name": schema_name, "dataset_id": datasetId, "token_study_code": token_study_code }
+    dbSettings = { "database_code": database_code, "cache_id": cache_id, "schema_name": schema_name, "dataset_id": datasetId, "token_study_code": token_study_code }
     base_path = f'/tmp/{flow_run_id}'
     work_folder = f'{base_path}/work'
     path_to_results = f'{base_path}/results'
@@ -243,6 +252,8 @@ def runStrategus(json_graph, options):
 
     analysisSpec = json.dumps(analysisSpec)
     defaultExecutionSettings = getRCdmExecutionSettings({
+        "cacheId": cache_id,
+        "dbName": cache_id if cache_id else database_code,
         "schemaName": schema_name,
         "workFolder": work_folder,
         "resultsFolder": path_to_results
@@ -252,36 +263,21 @@ def runStrategus(json_graph, options):
     execute_r_strategus(analysisSpec, executionSettings, dbSettings)
     # updateResultsSchema option will drop the existing schema before uploading new results
     if(update_results_schema):
-        drop_strategus_results(options)
+        drop_strategus_results({
+            'databaseCode': Variable.get('trex_strategus_results_db_name', 'strategus_results'),
+            'cacheId': cache_id,
+            'tokenStudyCode': token_study_code
+        })
 
     if(upload_results):
         result_db_settings = {
-            'database_code': database_code,
+            'database_code': Variable.get('trex_strategus_results_db_name', 'strategus_results'),
+            'cache_id': cache_id,
             "dataset_id": datasetId,
             "token_study_code": token_study_code
         }
         upload_strategus_results(analysisSpec, path_to_results, result_db_settings)
 
-    if(runTable1):
-        # Extract cohort IDs from analysis specification
-        cohort_ids = []
-        shared_resources = json.loads(analysisSpec).get('sharedResources', [])
-        for resource in shared_resources:
-            cohort_definitions = resource.get('cohortDefinitions', [])
-            for cohort in cohort_definitions:
-                cohort_id = cohort.get('cohortId', None)
-                if cohort_id is not None:
-                    cohort_ids.append(cohort_id)
-
-        table1_generator = Table1Generator(
-            token_study_code=token_study_code,
-            dataset_id=datasetId,
-            cohort_ids=cohort_ids,
-            database_code=database_code,
-            cdm_schema_name=schema_name
-        )
-
-        table1_generator.generate_and_save_table1()
 
 def drop_strategus_results(options):
     """
@@ -297,6 +293,7 @@ def drop_strategus_results(options):
 
     drop_strategus_results_schema(dbSettings={
         'database_code': database_code,
+        'cache_id': options.get('cacheId', None),
         'token_study_code': token_study_code
     })
 

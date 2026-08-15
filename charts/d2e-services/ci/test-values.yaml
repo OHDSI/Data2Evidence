@@ -12,6 +12,9 @@ secrets:
   ROOT__PKI__CA_KEY: ""
   SERVER__CRT: ""
   SERVER__KEY: ""
+  TASK_API_BASE_URL: ""
+  TASK_API_USERNAME: ""
+  TASK_API_PASSWORD: ""
 
 idp:
   IDP__RELYING_PARTY: logto
@@ -129,6 +132,12 @@ d2e-core:
     serviceType: ClusterIP
 
 global:
+  otel:
+    enabled: ""            # non-empty (e.g. "true") adds --enable-otel to trex
+    exporterOtlpEndpoint: ""
+    exporterOtlpProtocol: ""
+    exporterOtlpHeaders: ""
+    serviceName: ""
   tenantId: "00000000-0000-0000-0000-000000000000"
   pgSSLMode: disable
   disableVolumeName: true
@@ -170,6 +179,8 @@ global:
     LOGTO__CLIENTID_PASSWORD__BASIC_AUTH: "Y2ktbTJtOmNpLW0ybS1zZWNyZXQ="
     SUPABASE_STORAGE_JWT_SECRET: "ci-supabase-jwt-secret-not-real-0000000000"
     SUPABASE_STORAGE_JWT_TOKEN: ""
+    TREX__SQL__PASSWORD: "pencil"
+    TREX_ROOT_KEY: "ndDfri0G85Aw/P+s5jYqdnuBFdfbbY8irhrI9gFSE1Q="
   resources:
     caddy:
       requests: { cpu: 25m, memory: 50Mi }
@@ -189,6 +200,9 @@ global:
     dataflowGen:
       requests: { cpu: 50m, memory: 150Mi }
       limits:   { cpu: 500m, memory: 500Mi }
+    dataflowGenWorker:
+      requests: { cpu: 100m, memory: 250Mi }
+      limits:   { cpu: 250m, memory: 1000Mi }
 
 features:
   materializeCohorts: false

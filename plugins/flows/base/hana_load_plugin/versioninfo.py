@@ -29,16 +29,16 @@ def get_and_update_attributes(dataset: dict):
     try:
         dataset_id = dataset.get("id")
         database_code = dataset.get("databaseCode")
-        cache_id = dataset.get("cacheId")
         schema_name = dataset.get("schemaName")
     except KeyError as ke:
         missing_key = ke.args[0]
         logger.error(f"'{missing_key} not found in dataset'")
     else:
         try:
+            # For HANA dialect, we use dataset_id to resolve PA/CDM config session variables instead of cache_id
             dbdao = DBDao(
                 database_code=database_code,
-                cache_id=cache_id,
+                cache_id=dataset_id,
             )
         except Exception as e:
             logger.error(f"Failed to connect to database '{database_code}': {e}")

@@ -1,6 +1,9 @@
 {
   "workspace": [],
   "nodeModulesDir": "auto",
+  "tasks": {
+    "test": "deno test --allow-read --allow-env --no-check"
+  },
   "compilerOptions": {
     "lib": [
       "deno.window"
@@ -10,6 +13,7 @@
     "emitDecoratorMetadata": true
   },
   "imports": {
+    "@std/assert": "jsr:@std/assert@1",
     "@alp/alp-base-utils": "../_shared/alp-base-utils/src/index.ts",
     "@alp/alp-config-utils": "../_shared/alp-config-utils/src/index.ts",
     "@sap/textbundle": "npm:@sap/textbundle@4.2.0",
@@ -101,12 +105,12 @@
     "./src/req_transformation/req/Patient": "./src/req_transformation/req/Patient.ts",
     "./src/req_transformation/fast_util": "./src/req_transformation/fast_util.ts",
     "./src/req_transformation/keys": "./src/req_transformation/keys.ts",
-    "./src/utils/AuditLogger": "./src/utils/AuditLogger.ts",
     "./src/utils/MRILoggedError": "./src/utils/MRILoggedError.ts",
     "./src/utils/DBError": "./src/utils/DBError.ts",
     "./src/utils/MRIEndpointErrorHandler": "./src/utils/MRIEndpointErrorHandler.ts",
     "./src/utils/AnnotationError": "./src/utils/AnnotationError.ts",
     "./src/utils/Utils": "./src/utils/Utils.ts",
+    "./src/utils/conceptSetRef": "./src/utils/conceptSetRef.ts",
     "./src/utils/Logger": "./src/utils/Logger.ts",
     "./src/utils/formatter/BookmarkFormatter": "./src/utils/formatter/BookmarkFormatter.ts",
     "./src/utils/formatter/ConceptSetToConceptConverter": "./src/utils/formatter/ConceptSetToConceptConverter.ts",

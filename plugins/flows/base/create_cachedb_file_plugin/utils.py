@@ -9,7 +9,7 @@ from prefect.blocks.system import Secret
 from _shared_flow_utils.types import SupportedDatabaseDialects
 
 
-DUCKDB_EXTENSIONS_FILEPATH = "/app/duckdb_extensions"
+DUCKDB_EXTENSIONS_FILEPATH = os.path.join(os.getcwd(), "duckdb_extensions")
 
 
 DUCKDB_FULLTEXT_SEARCH_CONFIG = {
@@ -55,6 +55,7 @@ def check_supported_dialects(dialect: str):
     supported_dialects = [
         SupportedDatabaseDialects.POSTGRES.value,
         SupportedDatabaseDialects.BIGQUERY.value,
+        SupportedDatabaseDialects.SNOWFLAKE.value,
     ]
     if dialect not in supported_dialects:
         raise ValueError(

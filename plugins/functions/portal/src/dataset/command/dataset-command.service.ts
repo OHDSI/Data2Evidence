@@ -96,8 +96,12 @@ export class DatasetCommandService {
         this.swapVariables<Dataset>(dataset, SWAP_TO.DATASET),
       );
       // insertDataset bypasses @BeforeInsert (TypeORM .insert() skips hooks); mirror Dataset.applyCacheIdDefault explicitly.
-      if (entity.cacheId == null && entity.id) {
-        entity.cacheId = sanitizeIdForCacheId(entity.id);
+      if (entity.cacheId == null) {
+        if (entity.dialect === "hana") {
+          entity.cacheId = entity.databaseCode;
+        } else if (entity.id) {
+          entity.cacheId = sanitizeIdForCacheId(entity.id);
+        }
       }
       const result = await this.datasetRepo.insertDataset(
         entityMgr,
@@ -166,13 +170,15 @@ export class DatasetCommandService {
 
     // Best-effort: notify trex to (re)attach the new dataset's cache file and source DB
     // so a freshly-set cache_id becomes available without a trex restart. The cache_id
-    // mirrors the entity's @BeforeInsert default (sanitized dataset id) when the DTO
-    // doesn't supply one.
+    // mirrors the entity's @BeforeInsert default (databaseCode for HANA, sanitized dataset
+    // id otherwise) when the DTO doesn't supply one.
     const cacheId =
       datasetDto.cacheId ??
-      (datasetDto.id
-        ? sanitizeIdForCacheId(datasetDto.id)
-        : datasetDto.databaseCode);
+      (datasetDto.dialect === "hana"
+        ? datasetDto.databaseCode
+        : datasetDto.id
+          ? sanitizeIdForCacheId(datasetDto.id)
+          : datasetDto.databaseCode);
     await this.trexApiService.attach({
       cacheIds: cacheId ? [cacheId] : [],
       connectionIds: datasetDto.databaseCode ? [datasetDto.databaseCode] : [],

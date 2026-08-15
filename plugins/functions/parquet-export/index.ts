@@ -1,4 +1,5 @@
 import express, { Request, Response, Router } from "express";
+import { getUser } from "@alp/alp-base-utils";
 import { env } from "./env.ts";
 
 const logger = console;
@@ -124,7 +125,7 @@ function substituteTemplateParams(
     resultsSchema: string;
   },
   additionalParams: Record<string, string>,
-  conceptIds: number[],
+  conceptIds?: number[],
 ): string {
   if (!isValidCohortId(params.cohortId)) {
     throw new Error("Invalid cohortId");
@@ -224,7 +225,7 @@ function substituteTemplateParams(
     )
     .replace(
       /\{\{CONCEPT_IDS\}\}/g,
-      conceptIds.join(","),
+      conceptIds ? conceptIds.join(",") : "",
     );
 
   const remainingPlaceholders = extractPlaceholders(result);
@@ -333,6 +334,33 @@ async function resolveTemplate(
       throw new Error(`Template not found: ${templateId}`);
     }
     throw new Error("Portal service unavailable");
+  }
+}
+
+function buildSetSessionVariableSql(name: string, value: string): string {
+  const escapedName = name.replace(/'/g, "''");
+  const escapedValue = String(value).replace(/'/g, "''");
+  return `SET '${escapedName}' = '${escapedValue}'`;
+}
+
+// Set on the connection's pinned HANA session, so every later statement on it
+// carries the attribution.
+async function applySessionVariables(
+  // deno-lint-ignore no-explicit-any
+  conn: any,
+  variables: Record<string, string | undefined>,
+): Promise<void> {
+  for (const [name, value] of Object.entries(variables)) {
+    if (!value) {
+      continue;
+    }
+    await new Promise<void>((resolve, reject) => {
+      conn.executeUpdate(
+        buildSetSessionVariableSql(name, value),
+        [],
+        (err: Error | null) => (err ? reject(err) : resolve()),
+      );
+    });
   }
 }
 
@@ -480,11 +508,14 @@ router.post("/", async (req: Request, res: Response) => {
     }
 
     const conceptIds = req.body.conceptIds as unknown | undefined;
-    if (!isValidConceptIdArray(conceptIds)) {
-      return res.status(400).json({
-        error: "Invalid parameter",
-        message: "conceptIds must be an array of positive integers",
-      });
+    // Check if template requires CONCEPT_IDS
+    if (template.sqlText.includes("{{CONCEPT_IDS}}")) {
+      if (!isValidConceptIdArray(conceptIds)) {
+        return res.status(400).json({
+          error: "Missing or invalid parameter",
+          message: "conceptIds must be a non-empty array of positive integers",
+        });
+      }
     }
 
     const reservedBodyParams = new Set([
@@ -560,6 +591,16 @@ router.post("/", async (req: Request, res: Response) => {
     );
 
     try {
+      if (conn.dialect === "hana") {
+        const userObj = getUser(req);
+        await applySessionVariables(conn, {
+          APPLICATION:
+            `${env.PROJECT_NAME}-WIZARD_${type}_${name}_${templateId}`,
+          APPLICATIONUSER: userObj.getEmail() || userObj.userObject.name ||
+            userObj.getUser(),
+        });
+      }
+
       if (format === "json") {
         const rows = await new Promise<unknown[]>((resolve, reject) => {
           conn.execute(
@@ -628,3 +669,4 @@ router.post("/", async (req: Request, res: Response) => {
 
 app.use("/parquet-export", router);
 app.listen(8000);
+  

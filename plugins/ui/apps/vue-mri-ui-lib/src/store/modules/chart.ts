@@ -3,7 +3,6 @@ import axios from 'axios'
 import Constants from '../../utils/Constants'
 import * as types from '../mutation-types'
 import QueryString from '../../utils/QueryString'
-import { useNotificationStore } from '../../stores/notifications'
 
 const CancelToken = axios.CancelToken
 const csvEndpoints = {
@@ -33,9 +32,11 @@ const state = {
   // the chart where to trigger csv download
   csvFireDownload: '',
   csvDownloadCompleted: false,
+  csvDownloadError: false,
 
   zipFireDownload: '',
   zipDownloadCompleted: false,
+  zipDownloadError: false,
   columnsToInclude: 'SELECTED',
 
   // fire chart request
@@ -53,6 +54,9 @@ const state = {
   previousXAxisAttributeId: null,
   // index into getAllAxes for the axis used to color bars (0 = x1, 1 = x2, null = none)
   colorAxisIndex: null as number | null,
+  // true when colorAxisIndex was set by automatic default-selection (not by the
+  // user or a restored bookmark). Used to avoid false-positive unsaved-changes.
+  isColorAxisAutoDefaulted: false,
 }
 
 // Cancel tokens
@@ -83,7 +87,9 @@ const splitEntitiesByColumns = (columns: Array<{ configPath: string; order: stri
 // getters
 const getters = {
   getCSVDownloadCompleted: modulestate => modulestate.csvDownloadCompleted,
+  getCSVDownloadError: modulestate => modulestate.csvDownloadError,
   getZIPDownloadCompleted: modulestate => modulestate.zipDownloadCompleted,
+  getZIPDownloadError: modulestate => modulestate.zipDownloadError,
   getSplitterWidth: modulestate => modulestate.layout.width,
   getChartSize: modulestate => modulestate.chartSize,
   getPdfChartReady: modulestate => modulestate.pdfReady,
@@ -106,6 +112,7 @@ const getters = {
   getBarChartType: modulestate => modulestate.barDisplayMode,
   getShowDistributionOverlay: modulestate => modulestate.showDistributionOverlay,
   getColorAxisIndex: modulestate => modulestate.colorAxisIndex,
+  getIsColorAxisAutoDefaulted: modulestate => modulestate.isColorAxisAutoDefaulted,
 }
 
 // actions
@@ -146,7 +153,7 @@ const actions = {
   completeDownloadZIP({ commit }) {
     commit(types.ZIP_DOWNLOAD_COMPLETED, { downloadCompleted: true })
   },
-  downloadCSV({ state, dispatch, rootGetters }, additionalParameter) {
+  downloadCSV({ state, commit, dispatch, rootGetters }, additionalParameter) {
     if (!additionalParameter) {
       return Promise.reject(`mriquery is required ${state.layout.activeChart}`)
     }
@@ -180,18 +187,12 @@ const actions = {
       method: 'get',
       cancelToken,
       url: urlWithQuerystring,
-    }).catch(({ response }) => {
-      let noDataReason = rootGetters.getText('MRI_PA_CHART_NO_DATA_DEFAULT_MESSAGE')
-
-      if (response.data.errorType === 'MRILoggedError') {
-        noDataReason = rootGetters.getText('MRI_DB_LOGGED_MESSAGE', response.data.logId)
+    }).catch(err => {
+      if (axios.isCancel(err)) {
+        throw err
       }
-
-      useNotificationStore().setAlertMessage({
-        message: noDataReason,
-      })
-
-      throw response
+      commit(types.CSV_DOWNLOAD_ERROR, { csvDownloadError: true })
+      throw err
     })
   },
   downloadZIP({ state, dispatch, rootGetters }, additionalParameter) {
@@ -259,10 +260,7 @@ const actions = {
       try {
         entityColumns = splitEntitiesByColumns(params.cohortDefinition.columns)
       } catch (e) {
-        useNotificationStore().setAlertMessage({
-          message: e.message,
-        })
-        throw e
+        return Promise.reject(e)
       }
 
       // Prepare Streaming request for each entity individually
@@ -288,19 +286,16 @@ const actions = {
           }),
         })
           .then(response => {
+            if (!response.ok) {
+              throw { response: { status: response.status, data: {} } }
+            }
             return { filename: `${el}.csv`, response }
           })
           .catch(err => {
-            let noDataReason = rootGetters.getText('MRI_PA_CHART_NO_DATA_DEFAULT_MESSAGE')
-
-            if (err.response.data.errorType === 'MRILoggedError') {
-              noDataReason = rootGetters.getText('MRI_DB_LOGGED_MESSAGE', err.response.data.logId)
+            if (err?.response) {
+              throw err.response
             }
-
-            useNotificationStore().setAlertMessage({
-              message: noDataReason,
-            })
-            throw err.response
+            throw err
           })
       })
 
@@ -311,12 +306,17 @@ const actions = {
   },
   setFireDownloadCSV({ commit }) {
     commit(types.CSV_DOWNLOAD_COMPLETED, { csvDownloadCompleted: false })
+    commit(types.CSV_DOWNLOAD_ERROR, { csvDownloadError: false })
     commit(types.CHART_CSV_DOWNLOAD, Math.random())
   },
   setFireDownloadZIP({ commit }, { columnsToInclude }) {
     commit(types.ZIP_DOWNLOAD_COMPLETED, { downloadCompleted: false })
+    commit(types.ZIP_DOWNLOAD_ERROR, { zipDownloadError: false })
     commit(types.CHART_ZIP_DOWNLOAD, Math.random())
     commit(types.CHART_COLUMNS_TO_INCLUDE, columnsToInclude)
+  },
+  setZIPDownloadError({ commit }, zipDownloadError) {
+    commit(types.ZIP_DOWNLOAD_ERROR, { zipDownloadError })
   },
   setInitialAxisSelection({ getters, dispatch, rootGetters }) {
     const initialAxis = rootGetters.getMriFrontendConfig.getInitialAxisSelection()
@@ -361,6 +361,11 @@ const actions = {
   },
   setColorAxisIndex({ commit }, index: number | null) {
     commit(types.SET_COLOR_AXIS_INDEX, index)
+    commit(types.SET_COLOR_AXIS_AUTO_DEFAULTED, false)
+  },
+  setDefaultColorAxisIndex({ commit }, index: number | null) {
+    commit(types.SET_COLOR_AXIS_INDEX, index)
+    commit(types.SET_COLOR_AXIS_AUTO_DEFAULTED, true)
   },
   holdFireRequest({ commit }) {
     commit(types.CHART_HOLD_FIRE_REQUEST)
@@ -371,8 +376,7 @@ const actions = {
   resetChart({ dispatch, getters }) {
     dispatch('resetChartProperties')
     const initialIFR = getters.getMriFrontendConfig.getInitialIFR()
-    dispatch('setIFRState', { ifr: initialIFR })
-    dispatch('setupChartDefaults')
+    return dispatch('setIFRState', { ifr: initialIFR }).then(() => dispatch('setupChartDefaults'))
   },
   setBarChartType({ commit, dispatch, state, rootGetters }, modeId: string) {
     const previousMode = state.barDisplayMode
@@ -503,8 +507,14 @@ const mutations = {
   [types.CSV_DOWNLOAD_COMPLETED](modulestate, { csvDownloadCompleted }) {
     modulestate.csvDownloadCompleted = csvDownloadCompleted
   },
+  [types.CSV_DOWNLOAD_ERROR](modulestate, { csvDownloadError }) {
+    modulestate.csvDownloadError = csvDownloadError
+  },
   [types.ZIP_DOWNLOAD_COMPLETED](modulestate, { downloadCompleted }) {
     modulestate.zipDownloadCompleted = downloadCompleted
+  },
+  [types.ZIP_DOWNLOAD_ERROR](modulestate, { zipDownloadError }) {
+    modulestate.zipDownloadError = zipDownloadError
   },
   [types.PDF_READY](modulestate, pdfReady) {
     modulestate.pdfReady = pdfReady
@@ -554,6 +564,9 @@ const mutations = {
   },
   [types.SET_COLOR_AXIS_INDEX](modulestate, index: number | null) {
     modulestate.colorAxisIndex = index
+  },
+  [types.SET_COLOR_AXIS_AUTO_DEFAULTED](modulestate, value: boolean) {
+    modulestate.isColorAxisAutoDefaulted = value
   },
 }
 

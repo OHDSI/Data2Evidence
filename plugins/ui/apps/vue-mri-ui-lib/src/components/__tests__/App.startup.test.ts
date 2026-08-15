@@ -39,6 +39,13 @@ vi.mock('../../components/SplashScreen.vue', () => ({
   },
 }))
 
+vi.mock('../../components/UnsavedChangesDialog.vue', () => ({
+  default: {
+    name: 'UnsavedChangesDialog',
+    template: '<div data-test="unsaved-changes" />',
+  },
+}))
+
 describe('App startup', () => {
   beforeEach(() => {
     setActivePinia(createPinia())
@@ -85,8 +92,8 @@ describe('App startup', () => {
       },
     })
 
-    expect(wrapper.find('patientanalytics').exists()).toBe(true)
-    expect(wrapper.find('splashscreen').exists()).toBe(true)
+    expect(wrapper.find('[data-test="patientanalytics"]').exists()).toBe(true)
+    expect(wrapper.find('[data-test="splash"]').exists()).toBe(true)
   })
 
   it('shows splash during dataset reload after initial load', async () => {
@@ -109,7 +116,7 @@ describe('App startup', () => {
       },
     })
 
-    expect(wrapper.find('patientanalytics').exists()).toBe(true)
-    expect(wrapper.find('splashscreen').exists()).toBe(true)
+    expect(wrapper.find('[data-test="patientanalytics"]').exists()).toBe(true)
+    expect(wrapper.find('[data-test="splash"]').exists()).toBe(true)
   })
 })

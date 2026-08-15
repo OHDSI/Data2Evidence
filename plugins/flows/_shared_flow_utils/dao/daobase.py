@@ -25,11 +25,29 @@ from _shared_flow_utils.types import (
 SYSTEM_SCHEMAS = {"postgres": ["information_schema", "pg_catalog", "public"]}
 
 
+def build_bigquery_r_connection_string(
+    project: str, client_email: str, key_path: str, path_to_driver: str
+) -> str:
+    """Build R DatabaseConnector connection string for BigQuery."""
+    conn_url = (
+        "jdbc:bigquery://https://www.googleapis.com/bigquery/v2:443;"
+        f"ProjectId={project};OAuthType=0;"
+        f"OAuthServiceAcctEmail={client_email};"
+        f"OAuthPvtKeyPath={key_path}"
+    )
+    return (
+        "connectionDetails <- DatabaseConnector::createConnectionDetails("
+        f"dbms = 'bigquery', connectionString = '{conn_url}', "
+        f"user = '', password = '', pathToDriver = '{path_to_driver}')"
+    )
+
+
 class DialectDrivers(BaseModel):
     class jdbc:
         postgres: str = "jdbc:postgresql"
         hana: str = "jdbc:sap"
         duckdb: str = "jdbc:duckdb"
+        bigquery: str = "jdbc:bigquery"
         trex: str = "jdbc:postgresql"
 
     class sqlalchemy:
@@ -37,6 +55,7 @@ class DialectDrivers(BaseModel):
         hana: str = "hana+hdbcli"
         duckdb: str = "duckdb"
         bigquery: str = "bigquery"
+        snowflake: str = "snowflake"
         trex: str = "postgresql+psycopg2"
 
     class ibis:
@@ -48,6 +67,7 @@ class DialectDrivers(BaseModel):
     class database_connector:
         postgres: str = "postgresql"
         hana: str = "hana"
+        bigquery: str = "bigquery"
         trex: str = "postgresql"
 
     class cachedb:
@@ -92,6 +112,30 @@ class DaoBase(ABC):
     @property
     def tenant_configs(self) -> DBCredentialsType | CacheDBCredentialsType:
         return self.__extract_database_credentials()
+
+    @property
+    def pa_cdm_config(self) -> dict:
+        """
+        The dataset's PA/CDM config id/version
+        """
+        if getattr(self, "_pa_cdm_config", None) is None:
+            result = {}
+            if (
+                self.dialect == SupportedDatabaseDialects.HANA
+                and self.cache_id != self.database_code
+            ):
+                try:
+                    from _shared_flow_utils.api.PortalServerAPI import PortalServerAPI
+                    result = PortalServerAPI().pa_cdm_config_session_vars(self.cache_id)
+                except Exception as e:
+                    from _shared_flow_utils.logger.logger import Logger
+                    Logger().warning(
+                        f"Could not resolve PA/CDM config session variables for "
+                        f"dataset '{self.cache_id}'; proceeding without them: {e}"
+                    )
+                    result = {}
+            self._pa_cdm_config = result
+        return self._pa_cdm_config
 
     # --- Create methods ---
 
@@ -243,6 +287,7 @@ class DaoBase(ABC):
         host: str = None,
         port: int = None,
         db_credentials: DBCredentialsType = None,
+        pa_cdm_config: dict = None,
     ) -> Tuple[str, dict]:
         connect_args = {}
         match dialect:
@@ -257,6 +302,38 @@ class DaoBase(ABC):
                 if not os.path.isfile(big_query_key_path):
                     DaoBase.create_service_account_credentials_file(db_credentials)
                 base_url = f"{getattr(DialectDrivers.sqlalchemy, dialect)}://{host}/{database_name}?credentials_path={big_query_key_path}"
+            case SupportedDatabaseDialects.SNOWFLAKE:
+                from cryptography.hazmat.primitives import serialization
+                account = host
+                user_str = user.get_secret_value() if hasattr(user, "get_secret_value") else user
+                sf_schema = getattr(db_credentials, "snowflakeSchema", None)
+                warehouse = getattr(db_credentials, "warehouse", None)
+                role = getattr(db_credentials, "role", None)
+                base_url = f"{getattr(DialectDrivers.sqlalchemy, dialect)}://{user_str}@{account}/{database_name}"
+                if sf_schema:
+                    base_url += f"/{sf_schema}"
+                params = []
+                if warehouse:
+                    params.append(f"warehouse={warehouse}")
+                if role:
+                    params.append(f"role={role}")
+                if params:
+                    base_url += "?" + "&".join(params)
+                if not db_credentials.privateKey:
+                    raise ValueError("Snowflake key-pair auth requires db_credentials.privateKey")
+                pem = db_credentials.privateKey.get_secret_value().encode()
+                passphrase = (
+                    db_credentials.privateKeyPassphrase.get_secret_value().encode()
+                    if db_credentials.privateKeyPassphrase else None
+                )
+                pkey = serialization.load_pem_private_key(pem, password=passphrase)
+                connect_args = {
+                    "private_key": pkey.private_bytes(
+                        encoding=serialization.Encoding.DER,
+                        format=serialization.PrivateFormat.PKCS8,
+                        encryption_algorithm=serialization.NoEncryption(),
+                    )
+                }
             case _:
                 base_url = f"{getattr(DialectDrivers.sqlalchemy, dialect)}://{host}:{port}/{database_name}"
                 if auth_mode == AuthMode.PASSWORD:
@@ -284,6 +361,8 @@ class DaoBase(ABC):
             token_user = build_user_from_token(token)
             hana_connect_args["sessionVariable:APPLICATION"] = app_name
             hana_connect_args["sessionVariable:APPLICATIONUSER"] = token_user.email if token_user.email else token_user.user_id
+            if pa_cdm_config:
+                hana_connect_args.update(pa_cdm_config)
             return base_url, hana_connect_args
 
         return base_url, connect_args
@@ -334,6 +413,16 @@ class DaoBase(ABC):
                     else None
                 )
                 conn_url += extra_config
+            case SupportedDatabaseDialects.BIGQUERY:
+                key_path = Secret.load("google-service-account-json").get()
+                if not os.path.isfile(key_path):
+                    DaoBase.create_service_account_credentials_file(database_credentials)
+                return build_bigquery_r_connection_string(
+                    project=host,
+                    client_email=database_credentials.client_email,
+                    key_path=key_path,
+                    path_to_driver=DaoBase.path_to_driver,
+                )
 
         match user_type:
             case UserType.ADMIN_USER:
@@ -355,6 +444,8 @@ class DaoBase(ABC):
             app_name = f"d2e-{os.environ.get('plugin_name')}"
             token_user = build_user_from_token(token)
             conn_url_with_app = f"{conn_url}&sessionVariable:APPLICATION={app_name}&sessionVariable:APPLICATIONUSER={token_user.email if token_user.email else token_user.user_id}"
+            for session_key, value in self.pa_cdm_config.items():
+                conn_url_with_app += f"&{session_key}={value}"
             return f"""connectionDetails <- DatabaseConnector::createConnectionDetails(dbms = '{database_connector_dialect}', connectionString = '{conn_url_with_app}', user = '{user}', password = '{password.get_secret_value()}', pathToDriver = '{DaoBase.path_to_driver}')"""
 
         return f"""connectionDetails <- DatabaseConnector::createConnectionDetails(dbms = '{database_connector_dialect}', connectionString = '{conn_url}', user = '{user}', password = '{password.get_secret_value()}', pathToDriver = '{DaoBase.path_to_driver}')"""
@@ -448,6 +539,9 @@ class DaoBase(ABC):
                 database_credentials.readRole = "postgres_tenant_read_role"
             case SupportedDatabaseDialects.TREX:
                 # Trex pgwire has a single sql user; no separate read role.
+                database_credentials.readRole = ""
+            case SupportedDatabaseDialects.SNOWFLAKE:
+                # Snowflake key-pair auth has no separate read role.
                 database_credentials.readRole = ""
             case _:
                 dialect_err = f"Dialect {database_credentials.dialect} not supported. Unable to find corresponding dialect read role."

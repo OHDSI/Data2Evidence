@@ -14,7 +14,7 @@
     "format": "prettier --write src/"
   },
   "dependencies": {
-    "@fontsource-variable/inter": "^5.0.18",
+    "@fontsource-variable/ibm-plex-sans": "^5.2.8",
     "@prefecthq/prefect-design": "^2.12.1",
     "@prefecthq/vue-compositions": "^1.11.4",
     "@prefecthq/prefect-ui-library": "3.10.1",

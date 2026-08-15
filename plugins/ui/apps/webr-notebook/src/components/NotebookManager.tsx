@@ -103,6 +103,8 @@ export function NotebookManager({ datasetId, userId, getToken }: NotebookManager
   const [loading, setLoading] = useState(true);
   const [token, setToken] = useState<string | null>(null);
 
+  const [notebookMounted, setNotebookMounted] = useState(false);
+
   const [deleteTarget, setDeleteTarget] = useState<NotebookRecord | null>(null);
   const [renameTarget, setRenameTarget] = useState<NotebookRecord | null>(null);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
@@ -178,6 +180,10 @@ export function NotebookManager({ datasetId, userId, getToken }: NotebookManager
   useEffect(() => {
     fetchNotebooks();
   }, [fetchNotebooks]);
+
+  useEffect(() => {
+    if (activeNotebook) setNotebookMounted(true);
+  }, [activeNotebook]);
 
   useEffect(() => {
     if (!activeNotebook) {
@@ -463,7 +469,7 @@ export function NotebookManager({ datasetId, userId, getToken }: NotebookManager
         onChange={handleFileChange}
       />
 
-      {!activeNotebook ? (
+      {!activeNotebook && (
         <div className="notebook-manager__empty">
           <EmptyState
             hasNotebooks={notebooks.length > 0}
@@ -471,8 +477,13 @@ export function NotebookManager({ datasetId, userId, getToken }: NotebookManager
             onImport={handleImport}
           />
         </div>
-      ) : (
-        <div className="notebook-manager__card">
+      )}
+
+      {notebookMounted && (
+        <div
+          className="notebook-manager__card"
+          style={activeNotebook ? undefined : { display: "none" }}
+        >
           <div className="notebook-manager__content">
             <div className="notebook-manager__root">
               <div className="notebook-card">

@@ -18,6 +18,7 @@ import PortalServerAPI from "../PortalServerAPI";
 import { convertIFRToExtCohort } from "../../ifr-to-extcohort/main";
 import { dataflowRequest } from "../../utils/DataflowMgmtProxy";
 import { env } from "../../env";
+import { createCdmSqlAuditContext } from "../../utils/CdmSqlAuditLogger.ts";
 
 const language = "en";
 
@@ -314,6 +315,17 @@ export async function createCohort(req: IMRIRequest, res: Response) {
                     datasetId: req.selectedstudyDbMetadata.id,
                     token: req.headers.authorization,
                     dbCredential: req.dbCredentials.studyAnalyticsCredential,
+                    auditContext: createCdmSqlAuditContext({
+                        request: req,
+                        actorId: getUser(req)?.getUser() ?? "unknown",
+                        databaseCode:
+                            req.dbCredentials.studyAnalyticsCredential.code,
+                        databaseDialect:
+                            req.dbCredentials.studyAnalyticsCredential.dialect,
+                        databaseEngine: "hana",
+                        schemaName:
+                            req.dbCredentials.studyAnalyticsCredential.schema,
+                    }),
                 }
             );
         } else {
@@ -324,7 +336,15 @@ export async function createCohort(req: IMRIRequest, res: Response) {
             );
         }
 
-        res.status(200).send(`Cohort successfully materialized`);
+        // Return the id so callers do not have to re-read it from the bookmark
+        // list, where it is only derived once the materialized cohort is
+        // visible to the reading connection.
+        res.status(200).json({
+            message: `Cohort successfully materialized`,
+            // Coerced: the driver may hand the id back as a string, and
+            // consumers reject anything that is not an integer.
+            cohortDefinitionId: Number(cohortDefinitionId),
+        });
     } catch (err) {
         logger.error(err);
         res.status(500).send(MRIEndpointErrorHandler({ err, language }));
@@ -421,7 +441,7 @@ export async function createCohortDefinition(req: IMRIRequest, res: Response) {
 
         const cohortDefiniton = <CohortDefinitionTableType>{
             name: req.body.name,
-            description: req.body.description,
+            description: req.body.description ?? "",
             creationTimestamp: new Date().toISOString().split("T")[0],
             definitionTypeConceptId: req.body.definitionTypeConceptId ?? 0,
             subjectConceptId: req.body.subjectConceptId ?? 0,

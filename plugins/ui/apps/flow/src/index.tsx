@@ -1,3 +1,4 @@
+import "@fontsource-variable/ibm-plex-sans";
 import React, { FC } from "react";
 import * as ReactDOM from "react-dom/client";
 import { SystemAdminPageMetadata } from "@portal/plugin";

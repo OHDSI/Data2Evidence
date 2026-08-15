@@ -54,64 +54,13 @@ for (const [from, to] of vendorFiles) {
 }
 console.log('[postinstall] Supplied single-spa/react vendor files for the Atlas3 plugin runtime');
 
-// Atlas3's accent and chart palettes aren't config-exposed (theme only has
-// primaryColor), so re-brand them by string-replacing the copied dist assets.
-const COLOR_OVERRIDES = {
-  '#eb6622': '#ff5e59', // accent orange -> d2e coral
-};
-// Palette arrays keyed on the colors (the minified var name changes per build).
-const PALETTE_OVERRIDES = {
-  // categorical palette (gender slices [0]/[1]): lead navy + coral
-  '["#4e79a7","#f28e2c","#e15759","#76b7b2","#59a14f","#edc949","#af7aa1","#ff9da7","#9c755f","#bab0ab"]':
-    '["#000080","#ff5e59","#4e79a7","#76b7b2","#59a14f","#edc949","#af7aa1","#9c755f","#bab0ab","#e15759"]',
-  // treemap gradient: light -> navy
-  '["#7e9bbf","#4e79a7","#1f425a"]':
-    '["#c3cce8","#4a5fb0","#000080"]',
-};
-const assetsDir = join(resourcesDir, 'assets');
-if (existsSync(assetsDir)) {
-  let recolored = 0;
-  for (const file of readdirSync(assetsDir)) {
-    if (!/\.(js|css)$/.test(file)) continue;
-    const p = join(assetsDir, file);
-    let txt = readFileSync(p, 'utf8');
-    let changed = false;
-    for (const [from, to] of Object.entries(COLOR_OVERRIDES)) {
-      const re = new RegExp(from.replace('#', '#?'), 'gi');
-      if (re.test(txt)) {
-        txt = txt.replace(re, (m) => (m.startsWith('#') ? to : to.slice(1)));
-        changed = true;
-      }
-    }
-    for (const [from, to] of Object.entries(PALETTE_OVERRIDES)) {
-      if (txt.includes(from)) { txt = txt.split(from).join(to); changed = true; }
-    }
-    if (changed) { writeFileSync(p, txt); recolored++; }
-  }
-  console.log(`[postinstall] Recolored Atlas3 accent + chart palette (brand navy/coral) in ${recolored} asset file(s)`);
-
-  // d2e landing-page image: Atlas3's landing hero is a hardcoded asset
-  // (`const A = new URL("atlas-loading-<hash>.svg", import.meta.url)` rendered as
-  // <img class="landing__logo">) — there is NO landing-image theme option (only
-  // logoUrl). Repoint just the LandingView reference to the d2e brand image served
-  // at /atlas/config/d2e2.svg (../config/ resolves from the assets/ module dir),
-  // leaving the shared loading-screen graphic untouched. Version-specific: the
-  // hashed filenames change on @ohdsi/atlas3 bumps, so re-verify after upgrades.
-  const LANDING_IMAGE = '../config/d2e2.svg';
-  let landingPatched = 0;
-  for (const file of readdirSync(assetsDir)) {
-    if (!/^LandingView.*\.js$/.test(file)) continue;
-    const p = join(assetsDir, file);
-    let txt = readFileSync(p, 'utf8');
-    const re = /atlas-loading-[A-Za-z0-9_-]+\.svg/g;
-    if (re.test(txt)) {
-      txt = txt.replace(re, LANDING_IMAGE);
-      writeFileSync(p, txt);
-      landingPatched++;
-    }
-  }
-  console.log(`[postinstall] Repointed Atlas3 landing image -> ${LANDING_IMAGE} in ${landingPatched} LandingView file(s)`);
-}
+// Atlas3's built assets are served as published. Branding comes from
+// settings.theme in plugins.standalone.json (OHDSI/Atlas3#184), and the WebAPI
+// fixes this file used to graft into the bundle are upstream: the cache-status
+// retry and concept-set tag snapshot in OHDSI/Atlas3#183, and the bare-int tag
+// body in OHDSI/trex#212, which removed the reason to rewrite the request at
+// all. Nothing here depends on the minified output any more, so an atlas3 bump
+// can no longer silently stop applying.
 
 // Overlay d2e runtime config: point Atlas3 at WebAPI through d2e.
 const configLocalSrc = join(rootDir, 'config-local.json');
@@ -137,11 +86,23 @@ if (existsSync(logoSrc)) {
   copyFileSync(logoSrc, join(resourcesDir, 'config', 'd2e2.svg'));
 }
 
+// Make the d2e portal landing illustration (LandingView hero image) available
+// under /atlas/config; see the LandingView repoint above.
+const landingImageSrc = join(rootDir, 'landing-page-illustration.svg');
+if (existsSync(landingImageSrc)) {
+  mkdirSync(join(resourcesDir, 'config'), { recursive: true });
+  copyFileSync(landingImageSrc, join(resourcesDir, 'config', 'landing-page-illustration.svg'));
+} else {
+  // The LandingView repoint above unconditionally points at this file, so a
+  // missing source means a broken landing image — surface it loudly.
+  console.warn('[postinstall] WARN: landing-page-illustration.svg missing at', landingImageSrc, '- landing image will 404');
+}
+
 // Helper scripts injected into Atlas3's index.html:
 //  - login-guard.js: silent-SSO guard; runs first, blocks the WebAPI HS256 fallback.
-//  - logo-link.js: routes the header logo to the d2e portal.
+//  - user-link.js: routes the navbar user menu to the d2e portal account page.
 //  - token-keeper.js: refreshes the Logto bearerToken before expiry.
-const headScripts = ['login-guard.js', 'logo-link.js', 'token-keeper.js'];
+const headScripts = ['login-guard.js', 'user-link.js', 'token-keeper.js'];
 let indexHtml = readFileSync(join(resourcesDir, 'index.html'), 'utf8');
 let indexChanged = false;
 for (const script of headScripts) {
@@ -170,24 +131,50 @@ if (existsSync(loginSrc)) {
   console.log('[postinstall] Copied login bridge to resources/login');
 }
 
-// Serve the @ohdsi/pythia-plugin SystemJS bundle (installed via this plugin's
-// dependency + .npmrc, like @ohdsi/atlas3) at /atlas/plugins/pythia-plugin/.
-const pythiaSrc = join(rootDir, 'node_modules', '@ohdsi', 'pythia-plugin', 'dist');
-const pythiaDest = join(resourcesDir, 'plugins', 'pythia-plugin');
-if (existsSync(pythiaSrc)) {
-  mkdirSync(pythiaDest, { recursive: true });
-  cpSync(pythiaSrc, pythiaDest, { recursive: true });
-  // Point the chat endpoint at the agent fn served by trex at /d2e/agent.
-  const pythiaEntry = join(pythiaDest, 'index.system.js');
-  if (existsSync(pythiaEntry)) {
-    let js = readFileSync(pythiaEntry, 'utf8');
-    if (js.includes('/WebAPI/trexsql/agent')) {
-      js = js.split('/WebAPI/trexsql/agent').join('/d2e/agent');
-      writeFileSync(pythiaEntry, js);
-      console.log('[postinstall] Repointed Pythia agent endpoint -> /d2e/agent (direct trex fn)');
+// Table-driven plugin loader: copy each published SystemJS plugin's dist into
+// resources/atlas/plugins/<id>/ and apply any endpoint repoints. Mirrors how
+// @ohdsi/atlas3 itself is staged; see plugins.standalone.json for registration.
+const PLUGINS = [
+  {
+    pkg: '@ohdsi/pythia-plugin',
+    id: 'pythia-plugin',
+    // Point the chat endpoint at the agent fn served by trex at /d2e/agent.
+    repoints: [['/WebAPI/trexsql/agent', '/d2e/agent']],
+  },
+  {
+    pkg: '@ohdsi/results-viewer',
+    id: 'results-viewer',
+    repoints: [],
+  },
+  { pkg: '@ohdsi/strategus-plugin', id: 'strategus-plugin', repoints: [] },
+  { pkg: '@ohdsi/notebook-plugin', id: 'notebook-plugin', repoints: [] },
+  { pkg: '@ohdsi/network-plugin', id: 'network-plugin', repoints: [] },
+  { pkg: '@ohdsi/studies-plugin', id: 'studies-plugin', repoints: [] },
+];
+
+for (const { pkg, id, repoints } of PLUGINS) {
+  const src = join(rootDir, 'node_modules', ...pkg.split('/'), 'dist');
+  const dest = join(resourcesDir, 'plugins', id);
+  if (!existsSync(src)) {
+    console.warn(`[postinstall] WARN: ${pkg} dist not found at ${src}; skipping ${id}`);
+    continue;
+  }
+  rmSync(dest, { recursive: true, force: true });
+  mkdirSync(dest, { recursive: true });
+  cpSync(src, dest, { recursive: true });
+  const entry = join(dest, 'index.system.js');
+  if (repoints.length && existsSync(entry)) {
+    let js = readFileSync(entry, 'utf8');
+    let changed = false;
+    for (const [from, to] of repoints) {
+      if (js.includes(from)) { js = js.split(from).join(to); changed = true; }
+    }
+    if (changed) {
+      writeFileSync(entry, js);
+      console.log(`[postinstall] Applied repoints for ${id}: ${repoints.map(([f, t]) => `${f}->${t}`).join(', ')}`);
     }
   }
-  console.log('[postinstall] Served Pythia plugin at /atlas/plugins/pythia-plugin');
+  console.log(`[postinstall] Served ${id} at /atlas/plugins/${id}`);
 }
 
 console.log('[postinstall] Atlas3 plugin setup complete!');

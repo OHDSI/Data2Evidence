@@ -216,8 +216,20 @@ export class DataCharacterizationController {
 
       res.send(dcResult);
     } catch (error) {
-      console.error(`Error retrieving DC result: ${error}`);
-      res.status(500).send("Error retrieving DC result");
+      console.error(`Error creating DC flow run: ${error}`);
+      // Services tag client errors (e.g. a webapi dataset with no results schema
+      // registered) with statusCode; everything else stays a 500.
+      const status =
+        typeof (error as { statusCode?: number })?.statusCode === "number"
+          ? (error as { statusCode: number }).statusCode
+          : 500;
+      res
+        .status(status)
+        .send(
+          status === 500
+            ? "Error retrieving DC result"
+            : { message: (error as Error).message }
+        );
     }
   }
 

@@ -111,7 +111,9 @@ test(TEST_NAME, async ({ page, context }) => {
   await page.locator('li#logs.p-tab.p-tab__active').click()
   const logsPage = await page.locator('pre')
   await logsPage.scrollIntoViewIfNeeded()
-  await expect(page.getByText("Worker 'prefect-docker-worker")).toBeVisible()
+  // Pool-agnostic: the worker is prefect-process-worker on the pixi process
+  // pool and prefect-docker-worker under the docker-pool rollback.
+  await expect(page.getByText("Worker 'prefect-").first()).toBeVisible()
 
   // Jobs: View Results - View results for job dqd_demo
   await page.getByText('Job RunsJobsBlocksVariables').scrollIntoViewIfNeeded()

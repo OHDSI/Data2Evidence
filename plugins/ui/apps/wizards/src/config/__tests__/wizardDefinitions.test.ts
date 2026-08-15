@@ -1,5 +1,11 @@
 import { describe, it, expect, vi } from "vitest";
-import { getWizardDefinitions, getWizardById, isWizardVisibleOnSurface } from "../wizardDefinitions";
+import {
+  DEFAULT_WIZARD_FORM_NOTE,
+  getWizardDefinitions,
+  getWizardById,
+  isWizardVisibleOnSurface,
+  resolveWizardFormNote,
+} from "../wizardDefinitions";
 
 // Mock cdwConfig - tests run in dev mode so they use hardcoded definitions
 vi.mock("../cdwConfig", () => ({
@@ -11,6 +17,18 @@ vi.mock("../cdwConfig", () => ({
 }));
 
 describe("wizardDefinitions", () => {
+  describe("resolveWizardFormNote", () => {
+    it("preserves the legacy note when the config omits formNote", () => {
+      expect(resolveWizardFormNote(undefined)).toBe(DEFAULT_WIZARD_FORM_NOTE);
+    });
+
+    it("supports custom and hidden form notes", () => {
+      expect(resolveWizardFormNote("Custom note")).toBe("Custom note");
+      expect(resolveWizardFormNote(null)).toBeNull();
+      expect(resolveWizardFormNote("   ")).toBeNull();
+    });
+  });
+
   describe("getWizardDefinitions", () => {
     it("should return an array with exactly 5 wizards", async () => {
       const wizards = await getWizardDefinitions();
@@ -62,10 +80,16 @@ describe("wizardDefinitions", () => {
         expect(wizard.steps).toHaveLength(1);
         expect(wizard.steps[0].type).toBe("form");
         expect(wizard.steps[0].config).toEqual({
-          submitLabel: "Open cohort",
+          submitLabel: "Generate",
           submitAction: "deep-link",
         });
       });
+    });
+
+    it("does not synthesize sections for development mock wizards", async () => {
+      const wizards = await getWizardDefinitions();
+
+      expect(wizards.every((wizard) => wizard.sections === undefined)).toBe(true);
     });
   });
 

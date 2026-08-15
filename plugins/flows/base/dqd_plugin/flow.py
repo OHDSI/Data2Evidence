@@ -46,7 +46,7 @@ def dqd_plugin(options: DqdOptionsType):
     dbdao = DBDao(
         dialect=SupportedDatabaseDialects.TREX if options.use_trex_connection else None,
         database_code=options.databaseCode,
-        cache_id=options.cacheId,
+        cache_id=options.cacheId if options.use_trex_connection else options.datasetId,  # Use datasetId for non-TREX connections to retrieve PA and CDM configs
     )
     dbdao.is_hana = is_hana
     use_trex_connection = options.use_trex_connection
@@ -57,7 +57,6 @@ def dqd_plugin(options: DqdOptionsType):
 
     db_driver_string = dbdao.set_db_driver_env()
 
-    # Todo: Update implementation if Hana uses trex
     dqd_parameters = DqdParams(
         **options.model_dump(),
         setDBDriverEnv=db_driver_string,
