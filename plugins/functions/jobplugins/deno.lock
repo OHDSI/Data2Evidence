@@ -517,6 +517,7 @@
         "package-json-from-dist",
         "path-scurry"
       ],
+      "deprecated": true,
       "bin": true
     },
     "gopd@1.2.0": {
@@ -1186,6 +1187,7 @@
     },
     "uuid@10.0.0": {
       "integrity": "sha512-8XkAphELsDnEGrDxUOHB3RGvXz6TeuYSGEZBOjtTtPm2lwhGBjLgOzLHB63IUWfBpNucQjND6d3AOudO+H3RWQ==",
+      "deprecated": true,
       "bin": true
     },
     "uuid@11.1.0": {
@@ -1284,6 +1286,8 @@
   },
   "workspace": {
     "dependencies": [
+      "jsr:@std/assert@1",
+      "jsr:@std/testing@1",
       "npm:async@*",
       "npm:axios@~0.21.2",
       "npm:bcryptjs@*",

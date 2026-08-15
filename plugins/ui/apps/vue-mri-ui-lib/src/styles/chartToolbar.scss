@@ -138,6 +138,58 @@
     .iconActionButton {
       display: flex;
       align-items: center;
+
+      .chartButton,
+      .toolbarButton,
+      .actionButton {
+        @include mriToolbarIconButton;
+        @include mriActionButtonHoverable;
+      }
+
+      // Re-assert the active chart button on top of the shared geometry above.
+      .chartButton.active {
+        background-color: var(--color-mri-button-hover-dark);
+        color: var(--color-mri-lightest-text);
+      }
+
+      .chartButton:disabled,
+      .chartButton.disabled,
+      .toolbarButton:disabled,
+      .toolbarButton.toolbarButtonDisabled,
+      .actionButton:disabled,
+      .actionButton.actionButtonDisabled {
+        @include mriToolbarIconButtonDisabled;
+      }
+
+      // DownloadMenu renders its toolbar button inside a Bootstrap dropdown
+      // trigger. Reduce that trigger to a transparent wrapper so it contributes
+      // no box, colour or `.btn:disabled` opacity of its own. Bootstrap's
+      // `.btn:focus` ring is switched off as well, so a replacement
+      // keyboard-focus ring is provided below.
+      .bs-dropdown {
+        display: inline-flex;
+        align-items: center;
+      }
+
+      .bs-dropdown__trigger.btn {
+        display: inline-flex;
+        align-items: center;
+        padding: 0;
+        border: none;
+        border-radius: 0;
+        background: none;
+        color: inherit;
+        box-shadow: none;
+        line-height: inherit;
+
+        &:focus-visible {
+          box-shadow: 0 0 0 2px var(--color-focus);
+        }
+
+        &:disabled {
+          opacity: 1;
+        }
+      }
     }
   }
 }

@@ -857,6 +857,11 @@ paths:
           description: Dataset ID
           required: true
           type: string
+        - name: useSourceConnection
+          in: query
+          description: Whether the data characterization run wrote its results to the source database
+          required: false
+          type: boolean
       responses:
         "200":
           description: success
@@ -904,6 +909,11 @@ paths:
           description: Dataset ID
           required: true
           type: string
+        - name: useSourceConnection
+          in: query
+          description: Whether the data characterization run wrote its results to the source database
+          required: false
+          type: boolean
       responses:
         "200":
           description: success
