@@ -164,9 +164,53 @@ In order; each step gates the next.
 - Re-removing the defensive error handling in `cohortdefinition.service.ts`. If "fail loud so
   the e2e catches regressions" is still wanted, it is a separate ticket with its own review.
 - Any further change to `configSuggestion.ts`. `develop`'s implementation stands as-is.
-- Rewriting, restructuring, or de-flaking `CDM-creation.spec.ts` beyond flipping the flag.
 - Re-enabling any other skipped test in `tests/e2e`.
 - Rebasing or squashing the branch's existing history.
+
+## 7. Scope amendment (2026-08-15, approved by the team)
+
+Validation found the re-enabled test fails deterministically (4/4 attempts) against a live
+stack, at the "Base Entity ID" dropdown in the *Placeholder mapping* step. The team approved
+extending this PR to repair the test interactions. The original non-goal "do not de-flake
+`CDM-creation.spec.ts`" is therefore withdrawn; all other non-goals stand.
+
+### 7.1 Root cause — disabled UI5 select
+
+A `sap.m.Select` stays disabled (`class` contains `sapMSltDisabled`) until its column data
+arrives. The spec guarded readiness with `expect(arrow).toBeEnabled()`, but the arrow is a
+plain `<div>`, which Playwright always reports as enabled. The test therefore clicked a
+disabled control, the click was swallowed, and it then waited 60s for options that never
+appeared. Diagnostic evidence, at the exact failure point:
+
+```
+SELECT class: sapMSlt sapMSltDefault sapMSltDisabled sapMSltMinWidth sapMSltWithArrow
+[A: arrow.click]  role=option:8  person_id:0  popovers:0
+[B: select.click] role=option:26 person_id:1 popovers:1
+```
+
+Fix: an `openSelect()` helper that waits for the select to lose `sapMSltDisabled` before
+clicking it, plus a `selectInRow()` locator helper. Applied to every `sap.m.Select` in the
+Placeholder-mapping step, replacing the arrow-click pattern, one `waitForTimeout(200)`, and a
+`while` loop that had been re-clicking the arrow to paper over the same race.
+
+### 7.2 Two further races of the same shape
+
+Both check UI state immediately after an asynchronous commit:
+
+- `clickTestConfig()` tested breadcrumb visibility right after `page.reload()`, racing the
+  render; when it lost, the back-navigation was skipped and the config list never appeared.
+  Fix: wait for whichever of breadcrumb-or-list renders first, then decide.
+- The PA config rename loop re-checked visibility immediately after the blur, burning its
+  three attempts without giving the rename time to commit. Fix: wait up to 15s for the name to
+  appear inside each iteration.
+
+### 7.3 Residual finding (not fixed here)
+
+`configDefaults` returns `"@REF": "\"undefined\".\"CONCEPT\""` because the `cdw`-tagged
+service's credentials carry no `vocabSchema`, and `getEmptyConfig` interpolates it unchecked
+(`DefaultAttributes.ts:41`). `develop`'s fix guards against *zero* matching services but not
+against a matching service *without* `vocabSchema`. Pre-existing on `develop`, does not block
+this test (the spec sets the vocab mappings explicitly). Deserves its own ticket.
 
 ## 7. Open questions
 

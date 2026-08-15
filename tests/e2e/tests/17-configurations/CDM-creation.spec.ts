@@ -31,13 +31,36 @@ test(TEST_NAME, async ({ page }, testInfo) => {
     const breadcrumbBackBtn = page
       .getByRole('navigation', { name: 'breadcrumb' })
       .getByRole('button', { name: /CDM configuration/i })
+    const testConfig = page.locator('ul > li').filter({ hasText: testConfigname })
+    // A reload can restore the configuration detail view instead of the list. The
+    // breadcrumb and the list render asynchronously, so wait for whichever arrives
+    // first before deciding whether to navigate back — checking visibility straight
+    // after the reload races the render and silently skips the back navigation.
+    await breadcrumbBackBtn.or(testConfig).first().waitFor({ state: 'visible' })
     if (await breadcrumbBackBtn.isVisible()) {
       await breadcrumbBackBtn.click()
     }
-    const testConfig = page.locator('ul > li').filter({ hasText: testConfigname })
     await expect(testConfig).toBeVisible()
     await testConfig.click({ position: { x: 100, y: 20 } })
     await expect(page.getByText(`${testConfigname} - Version`)).toBeVisible()
+  }
+
+  // A UI5 sap.m.Select stays disabled (class sapMSltDisabled) until its column data
+  // arrives, but its arrow is a plain <div> that Playwright always reports as enabled.
+  // Clicking the arrow while the select is disabled is silently swallowed, so wait for
+  // the select itself to become enabled before opening it.
+  async function openSelect(select: Locator): Promise<void> {
+    await expect(select).not.toHaveClass(/sapMSltDisabled/)
+    await select.click()
+  }
+
+  // Locate a sap.m.Select by the label of the row it sits in, within a named section.
+  function selectInRow(section: string, rowLabel: string): Locator {
+    return page
+      .locator(`[id*="__data"]:has-text("${section}")`)
+      .locator(`[class="sapUiRFLCompleteRow sapUiRFLRow"]:has-text("${rowLabel}")`)
+      .locator('.sapMSlt')
+      .first()
   }
 
   // This function is used to scroll an element into view, playwright's version of this scrollIntoViewIfNeeded() results in flaky tests
@@ -108,39 +131,17 @@ test(TEST_NAME, async ({ page }, testInfo) => {
     await expect(page.locator('[id="__input9-__list17-__list23-0-0-inner"]')).toBeVisible()
     await page.locator('[id="__input9-__list17-__list23-0-0-inner"]').click()
     await page.locator('[id="__input9-__list17-__list23-0-0-inner"]').fill('$$SCHEMA$$."person"')
-    await expect(
-      page
-        .locator('[id*="__data"]:has-text("Base Entity Table")')
-        .locator('[class="sapUiRFLCompleteRow sapUiRFLRow"]:has-text("Base Entity ID")')
-        .locator('[class="sapMSltArrow"]')
-        .first()
-    ).toBeEnabled()
-    await page
-      .locator('[id*="__data"]:has-text("Base Entity Table")')
-      .locator('[class="sapUiRFLCompleteRow sapUiRFLRow"]:has-text("Base Entity ID")')
-      .locator('[class="sapMSltArrow"]')
-      .first()
-      .click()
+    await openSelect(selectInRow('Base Entity Table', 'Base Entity ID'))
     await page.getByRole('option', { name: '"person_id"' }).click()
     await page.getByTitle('Add a Join Entity Table').click()
     await page.locator('[id="__input12-__list35-0-inner"]').click()
     await page.locator('[id="__input12-__list35-0-inner"]').fill('@COND')
     await page.locator('[id="__input13-__list35-0-inner"]').click()
     await page.locator('[id="__input13-__list35-0-inner"]').fill('$$SCHEMA$$."condition_occurrence"')
-    await page
-      .locator('[id*="__data"]:has-text("Join Entity Tables")')
-      .locator('[class="sapUiRFLCompleteRow sapUiRFLRow"]:has-text("Base Entity ID")')
-      .locator('[class="sapMSltArrow"]')
-      .first()
-      .click()
+    await openSelect(selectInRow('Join Entity Tables', 'Base Entity ID'))
     await page.getByRole('option', { name: '"person_id"' }).click()
     await expect(page.locator('[id*="__data"]:has-text("Join Entity Tables")')).toBeVisible()
-    await page
-      .locator('[id*="__data"]:has-text("Join Entity Tables")')
-      .locator('[class="sapUiRFLCompleteRow sapUiRFLRow"]:has-text("Type")')
-      .locator('[class="sapMSltArrow"]')
-      .first()
-      .click()
+    await openSelect(selectInRow('Join Entity Tables', 'Type'))
     await expect(page.getByRole('option', { name: '"condition_type_concept_id"' }).last()).toBeVisible()
     await page.getByRole('option', { name: '"condition_type_concept_id"' }).last().click()
     // Delete unused join entity
@@ -162,31 +163,21 @@ test(TEST_NAME, async ({ page }, testInfo) => {
     await page.locator('[id="__input16-__list39-0-inner"]').click()
     await page.locator('[id="__input16-__list39-0-inner"]').fill('$$VOCAB_SCHEMA$$."concept"')
     await page.locator('[id="__input16-__list39-0-inner"]').press('Enter')
-    await expect(page.locator('[id="__select18-__list39-0-arrow"]')).toBeEnabled()
-    while (
-      !(await page
-        .getByRole('option', { name: '"vocabulary_id"' })
-        .isVisible()
-        .catch(() => false))
-    ) {
-      await page.locator('[id="__select18-__list39-0-arrow"]').click()
-    }
+    await openSelect(page.locator('[id="__select18-__list39-0"]'))
     await page.getByRole('option', { name: '"vocabulary_id"' }).click()
-    await page.locator('[id="__select19-__list39-0-arrow"]').click()
+    await openSelect(page.locator('[id="__select19-__list39-0"]'))
     await page.getByRole('option', { name: '"concept_code"' }).last().click()
     await expect(page.locator('[id="__select19-__list39-0-3"]')).not.toBeVisible()
-    await page.locator('[id="__select20-__list39-0-arrow"]').click()
+    await openSelect(page.locator('[id="__select20-__list39-0"]'))
     await page.getByRole('option', { name: '"concept_name"' }).last().click()
     await page.locator('[id="__input17-__list43-0-inner"]').click()
     await page.locator('[id="__input17-__list43-0-inner"]').fill('$$VOCAB_SCHEMA$$."concept"')
     await page.locator('[id="__input16-__list39-0-inner"]').press('Enter')
-    await expect(page.locator('[id="__select21-__list43-0-arrow"]')).toBeEnabled()
-    await page.waitForTimeout(200)
-    await page.locator('[id="__select21-__list43-0-arrow"]').click()
+    await openSelect(page.locator('[id="__select21-__list43-0"]'))
     await page.getByRole('option', { name: '"concept_id"' }).last().click()
-    await page.locator('[id="__select22-__list43-0-arrow"]').click()
+    await openSelect(page.locator('[id="__select22-__list43-0"]'))
     await page.getByRole('option', { name: '"concept_id"' }).last().click()
-    await page.locator('[id="__select23-__list43-0-arrow"]').click()
+    await openSelect(page.locator('[id="__select23-__list43-0"]'))
     await page.getByRole('option', { name: '"concept_name"' }).last().click()
     await page.locator('[id="__input18-__list44-0-inner"]').click()
     await page.locator('[id="__input18-__list44-0-inner"]').fill('$$VOCAB_SCHEMA$$."concept"')
@@ -399,16 +390,26 @@ test(TEST_NAME, async ({ page }, testInfo) => {
     await page.locator('.sapMRIPAConfigLargeText').first().click()
     // configuration name
     let retries = 0
-    while (
-      !(await page
-        .getByText('CDM-Test101-PA')
-        .isVisible()
-        .catch(() => false)) &&
-      retries < 3
-    ) {
+    while (retries < 3) {
+      if (
+        await page
+          .getByText('CDM-Test101-PA')
+          .first()
+          .isVisible()
+          .catch(() => false)
+      ) {
+        break
+      }
       await page.getByRole('textbox', { name: 'Name : Enter Configuration' }).fill('CDM-Test101-PA')
       await page.getByRole('textbox', { name: 'Name : Enter Configuration' }).press('Enter', { delay: 100 })
       await page.locator('ul > li').filter({ hasText: 'Creator' }).click()
+      // Give the rename time to commit before re-checking; testing visibility
+      // immediately after the blur races the update and burns a retry for nothing.
+      await page
+        .getByText('CDM-Test101-PA')
+        .first()
+        .waitFor({ state: 'visible', timeout: 15000 })
+        .catch(() => {})
       retries++
     }
     await expect(page.getByText('CDM-Test101-PA').last()).toBeVisible()

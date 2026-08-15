@@ -593,6 +593,22 @@ Nothing is pushed until Task 7, so the remote branch is untouched until then.
 
 - Do not re-remove the defensive error handling in `cohortdefinition.service.ts`.
 - Do not modify `configSuggestion.ts` in any way.
-- Do not rewrite, restructure, or add retries/timeouts to `CDM-creation.spec.ts` beyond the flag.
 - Do not re-enable any other skipped test.
 - Do not rebase, squash, or force-push the branch.
+
+## Amendment — Task 9: repair the e2e interactions (approved 2026-08-15)
+
+Task 5 found the re-enabled test failing deterministically (4/4) at the "Base Entity ID"
+dropdown. The team approved repairing the test in this PR, so the non-goal forbidding changes
+to `CDM-creation.spec.ts` beyond the flag is withdrawn. See §7 of the design spec for the root
+causes and evidence. Work done, all in
+`tests/e2e/tests/17-configurations/CDM-creation.spec.ts`:
+
+- [x] Add `openSelect()` — waits for a `sap.m.Select` to lose `sapMSltDisabled` before
+      clicking, because the arrow `<div>` reports as enabled even while the select is not.
+- [x] Add `selectInRow(section, rowLabel)` locator helper.
+- [x] Replace all nine arrow-click sites in the Placeholder-mapping step, removing a
+      `waitForTimeout(200)` and a `while` loop that re-clicked the arrow.
+- [x] Harden `clickTestConfig()` — wait for breadcrumb-or-list after `page.reload()`.
+- [x] Harden the PA config rename loop — allow up to 15s per attempt for the commit.
+- [x] Validate: 3 consecutive runs against a live stack (see report).
