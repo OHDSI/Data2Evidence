@@ -131,6 +131,43 @@ describe('WebApiSourceService.syncSourceForDataset', () => {
     assertEquals(request.daimons.map((d) => d.priority), [1, 1, 1])
   })
 
+  // Regression: BigQuery datasets got no WebAPI source at all — the credential
+  // lookup 400'd on the missing username/password (service-account auth), and
+  // the generic JDBC fallback URL lacked the ProjectId= key bao's cache DSN
+  // parser requires.
+  it('registers a source for a bigquery dataset with a Simba JDBC URL and no user/password', async () => {
+    const { api, calls, methods } = createApiStub()
+    const service = new WebApiSourceService(api as never)
+
+    const bqCredentials: IDbCredentials = {
+      host: 'my-gcp-project', // BigQuery entries carry the project in `host`
+      port: 443,
+      database: 'my_dataset', // ...and the default dataset in `database`
+      dialect: 'bigquery',
+      username: '',
+      password: '',
+    }
+
+    await service.syncSourceForDataset(datasetWithDialect('bigquery'), detail, bqCredentials)
+
+    assertEquals(methods().includes('createSource'), true)
+    const created = calls.find((c) => c.method === 'createSource')!
+    const request = created.args[0] as {
+      dialect: string
+      connectionString: string
+      daimons: { daimonType: string }[]
+    }
+    assertEquals(request.dialect, 'bigquery')
+    assertEquals(
+      request.connectionString,
+      'jdbc:bigquery://https://www.googleapis.com/bigquery/v2:443;' +
+        'ProjectId=my-gcp-project;DefaultDataset=my_dataset;OAuthType=3;',
+    )
+    assertEquals(request.daimons.map((d) => d.daimonType), ['CDM', 'Vocabulary', 'Results'])
+    // The cache build is still triggered for the schema.
+    assertEquals(methods().includes('createCache'), true)
+  })
+
   it('does not register a source for a hana dataset', async () => {
     const { api, methods } = createApiStub()
     const service = new WebApiSourceService(api as never)
