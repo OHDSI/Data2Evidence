@@ -66,8 +66,11 @@ ENV PIXI_CACHE_DIR=/opt/pixi/cache \
 # available on conda-forge — the one flow-specific apt package.
 # git: pixi/uv fetch direct git dependencies (data_transformation's ner env)
 # during provisioning, before any env exists that could provide it.
+# unzip: entrypoint.sh runtime-unpacks the BigQuery JDBC driver zip (the
+# Simba driver is proprietary and cannot be baked into the image — see
+# entrypoint.sh for the download step).
 RUN apt-get update && apt-get install -y --no-install-recommends \
-        ca-certificates curl git python3 xvfb \
+        ca-certificates curl git python3 unzip xvfb \
     && rm -rf /var/lib/apt/lists/*
 RUN curl -fsSL "https://github.com/prefix-dev/pixi/releases/download/v${PIXI_VERSION}/pixi-x86_64-unknown-linux-musl" \
         -o /usr/local/bin/pixi && chmod +x /usr/local/bin/pixi

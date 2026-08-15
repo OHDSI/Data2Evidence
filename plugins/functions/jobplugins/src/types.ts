@@ -198,6 +198,7 @@ export interface DataCharacterizationOptions {
   resultsSchema: string;
   vocabSchemaName: string;
   cdmVersionNumber: string;
+  useSourceConnection?: boolean;
 }
 
 export interface DataCharacterizationFlowRunDto {

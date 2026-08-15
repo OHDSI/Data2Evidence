@@ -5,6 +5,7 @@ import CreateLogger = Logger.CreateLogger;
 import { DataCharacterizationEndpoint } from "../../mri/endpoint/DataCharacterizationEndpoint";
 import * as DC_RESULTS_CONFIG from "../../const/dcResultsSqlConfig";
 import * as DC_RESULTS_DRILLDOWN_CONFIG from "../../const/dcResultsDrilldownSqlConfig";
+import { resolveDcResultsSchema } from "../../utils/dcResultsSchema";
 
 let logger = CreateLogger("analytics-log");
 const language = "en";
@@ -146,6 +147,23 @@ const resolveSchemaValue = (
     }
 };
 
+/**
+ * The path's databaseCode segment carries the cache alias, so the source catalog
+ * prefix has to come from the resolved credential instead.
+ */
+const resolveResultsSchemaValue = (
+    req: IMRIRequest,
+    connection: Connection.ConnectionInterface,
+    resultsSchema: string
+): string => {
+    return resolveDcResultsSchema({
+        isTrexConnection: connection.constructor.name === "TrexConnection",
+        useSourceConnection: req.query?.useSourceConnection === "true",
+        databaseCode: req.dbCredentials?.studyAnalyticsCredential?.code,
+        resultsSchema,
+    });
+};
+
 export async function getDataCharacterizationResult(req: IMRIRequest, res) {
     try {
         const databaseCode = req.params.databaseCode;
@@ -160,7 +178,11 @@ export async function getDataCharacterizationResult(req: IMRIRequest, res) {
         );
 
         const dcReplacementConfig: DcReplacementConfig = {
-            results_database_schema: resultsSchema,
+            results_database_schema: resolveResultsSchemaValue(
+                req,
+                analyticsConnection,
+                resultsSchema
+            ),
             vocab_database_schema: resolveSchemaValue(
                 analyticsConnection,
                 databaseCode,
@@ -227,7 +249,11 @@ export async function getDataCharacterizationDrilldownResult(
         );
 
         const dcReplacementConfig: DcReplacementConfig = {
-            results_database_schema: resultsSchema,
+            results_database_schema: resolveResultsSchemaValue(
+                req,
+                analyticsConnection,
+                resultsSchema
+            ),
             vocab_database_schema: resolveSchemaValue(
                 analyticsConnection,
                 databaseCode,
