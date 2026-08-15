@@ -154,7 +154,7 @@ npm ci && npm run build:ts
 
 Expected: exit 0. This runs `node scripts/embed-assets.mjs && tsc -p scripts/tsconfig.json`.
 
-- [ ] **Step 3: Update services/trex (`brace-expansion` → 5.0.7)**
+- [ ] **Step 3: Update services/trex (`brace-expansion` → 5.0.9)**
 
 ```bash
 cd services/trex
@@ -162,7 +162,7 @@ npm update brace-expansion --package-lock-only
 npm ls brace-expansion --all 2>/dev/null | grep brace-expansion | sort -u
 ```
 
-Expected: `brace-expansion@5.0.7` present.
+Expected: `brace-expansion@5.0.9` present (5.0.7 is the minimum the advisory requires; `npm update` resolves the latest in range).
 
 - [ ] **Step 4: Verify the install resolves**
 

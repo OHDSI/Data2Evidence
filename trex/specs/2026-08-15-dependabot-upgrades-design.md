@@ -2,7 +2,7 @@
 
 **Date:** 2026-08-15 (rev. 2)
 **Repo:** OHDSI/Data2Evidence (`develop`)
-**Status:** scope confirmed by team — not implemented
+**Status:** implemented in PR #3131
 **Implementation plan:** `trex/plans/2026-08-15-dependabot-upgrades.md`
 
 **Scope decision:** Option A, **plus the Vitest major upgrade**. Prefect, ECharts and Nx remain excluded. Team confirmed three previously-blocking points:
@@ -53,7 +53,7 @@ Four of the five units are dependency-manifest changes only. Unit 5 (Vitest) is 
 | `tests/backend_integration_tests/pg/yarn.lock` | 12 | `yarn upgrade` (transitives only) |
 | `tests/backend_integration_tests/hana/yarn.lock` | 12 | `yarn upgrade` (transitives only) |
 | `package-lock.json` (root CLI) | 7 | `undici` `^6.25.0` → 6.28.0, in-range |
-| `services/trex/package-lock.json` | 1 | `brace-expansion` → 5.0.7 |
+| `services/trex/package-lock.json` | 1 | `brace-expansion` → 5.0.9 (5.0.7 was the minimum required) |
 
 **Verified finding — the obvious approach does not work.** `npm install --package-lock-only` on `docs/website` is a **no-op**: it changed zero of 21 vulnerable transitives, because the existing lock already satisfies its parents' ranges. `npm update --package-lock-only` moves **17 of 21**, including both criticals in this unit:
 
