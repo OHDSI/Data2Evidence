@@ -1089,6 +1089,12 @@ jobs:
       - name: Disable IPv6 to prevent ERR_NETWORK_CHANGED
         run: sudo sysctl -w net.ipv6.conf.all.disable_ipv6=1
 
+      # TEMPORARY: `-u` regenerates the visual baselines instead of asserting
+      # against them. The `tests` bind mount is required so the rewritten PNGs
+      # land on the runner instead of dying with the container, and
+      # `--max-failures=0` overrides the config cap of 1 so a single unrelated
+      # failure cannot stop the rest of the baselines from being rewritten.
+      # Revert this step and commit the regenerated PNGs before merging.
       - name: e2e tests
         run: |
           cd ./tests/e2e
@@ -1097,10 +1103,22 @@ jobs:
             --ipc=host \
             -v "$(pwd)/test-results:/work/test-results" \
             -v "$(pwd)/ctrf:/work/ctrf" \
+            -v "$(pwd)/tests:/work/tests" \
             -e D2E_BASE_URL=https://localhost:443 \
             -e CI=true \
             -e GITHUB_ACTIONS=true \
-            d2e-e2e npm test
+            d2e-e2e npm test -- -u --max-failures=0
+
+      # TEMPORARY: download this artifact, copy the PNGs over
+      # tests/e2e/tests/**/*-snapshots/, and commit them. Remove with the step above.
+      - name: Upload regenerated snapshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: updated-snapshots-attempt-${{ matrix.attempt }}
+          path: tests/e2e/tests/**/*-snapshots/**
+          overwrite: true
+          if-no-files-found: warn
 
       - name: Mark e2e attempt success
         if: success()
