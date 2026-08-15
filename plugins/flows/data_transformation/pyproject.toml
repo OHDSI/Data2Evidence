@@ -21,7 +21,7 @@ dependencies = [
     "jsonpath-ng==1.7.0",
     "numpy==2.0.0",
     "orthanc-api-client==0.15.3",
-    "pandas==2.2.2",
+    "pandas==2.2.3",
     "pandasql==0.7.3",
     "prefect[dask,docker,shell]==3.6.10",
     "prefect-shell==0.3.1",
@@ -40,6 +40,7 @@ dependencies = [
     "setuptools==80.9.0",
     "wheel==0.46.2",
     "pyarrow==22.0.0",
+    "wfdb==4.3.1",
 ]
 
 [project.optional-dependencies]
@@ -55,7 +56,7 @@ ner = [
     "importlib-metadata==8.7.0",
     "fastapi==0.128.0",
     "numpy==1.26.4",
-    "pandas==2.2.2",
+    "pandas==2.2.3",
     "httpx==0.27.2",
     "pydantic==2.10.6",
     "pyjwt==2.12.0",
