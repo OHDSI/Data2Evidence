@@ -1,5 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, act, waitFor, screen } from "@testing-library/react";
+import {
+  render,
+  act,
+  waitFor,
+  screen,
+  fireEvent,
+} from "@testing-library/react";
 import React from "react";
 import type {
   FilterOptions,
@@ -229,6 +235,21 @@ const conceptMappingProps = {
     { id: "domainId", value: ["Condition"] },
   ],
   initialInput: "diabetes",
+};
+
+/**
+ * Concept Mapping without defaultFilters — used for radio-rendering assertions.
+ * (conceptMappingProps' domain/standard defaultFilters get re-applied client-side
+ * by MRT's own column filtering on top of the already-filtered mock data, which
+ * would hide the row and is irrelevant to what these tests are checking.)
+ */
+const conceptMappingRadioProps = {
+  ...baseProps,
+  isDrawer: true,
+  mode: "CONCEPT_MAPPING" as const,
+  showAddIcon: true,
+  // Record-count merging isn't relevant to these radio-rendering assertions.
+  showConceptRecordCounts: false,
 };
 
 // --- Tests ---
@@ -501,6 +522,82 @@ describe("TerminologyList", () => {
       await waitFor(() => {
         expect(mockGetConceptRecordCounts).toHaveBeenCalled();
       });
+    });
+
+    // conceptsResult is normally lifted state owned by the parent Terminology
+    // component and fed back in via setConceptsResult; here it's supplied
+    // directly to simulate "a search has already completed" without depending
+    // on the fetch->setConceptsResult round trip (setConceptsResult is a plain
+    // spy in these unit tests, so calling it doesn't feed back into props).
+    const loadedResult = { count: 1, data: [sampleMappedConcept] };
+
+    it("renders a radio (not add/remove icons) for each result row", async () => {
+      await act(async () => {
+        render(
+          <TerminologyList
+            {...conceptMappingRadioProps}
+            onSelectConceptId={vi.fn()}
+            conceptsResult={loadedResult}
+          />,
+        );
+      });
+
+      expect(screen.getAllByRole("radio").length).toBeGreaterThanOrEqual(1);
+      expect(screen.queryByTestId("add-icon")).toBeNull();
+      expect(screen.queryByTestId("remove-icon")).toBeNull();
+    });
+
+    it("checks the radio matching mappingSelectedConcept", async () => {
+      await act(async () => {
+        render(
+          <TerminologyList
+            {...conceptMappingRadioProps}
+            onSelectConceptId={vi.fn()}
+            conceptsResult={loadedResult}
+            mappingSelectedConcept={sampleMappedConcept}
+          />,
+        );
+      });
+
+      const radio = screen.getAllByRole("radio")[0] as HTMLInputElement;
+      expect(radio.checked).toBe(true);
+    });
+
+    it("does not check the radio when mappingSelectedConcept is a different concept", async () => {
+      await act(async () => {
+        render(
+          <TerminologyList
+            {...conceptMappingRadioProps}
+            onSelectConceptId={vi.fn()}
+            conceptsResult={loadedResult}
+            mappingSelectedConcept={{ ...sampleMappedConcept, conceptId: 999 }}
+          />,
+        );
+      });
+
+      const radio = screen.getAllByRole("radio")[0] as HTMLInputElement;
+      expect(radio.checked).toBe(false);
+    });
+
+    it("clicking the radio calls onSelectConceptId with the row concept", async () => {
+      const onSelectConceptId = vi.fn();
+
+      await act(async () => {
+        render(
+          <TerminologyList
+            {...conceptMappingRadioProps}
+            onSelectConceptId={onSelectConceptId}
+            conceptsResult={loadedResult}
+          />,
+        );
+      });
+
+      const radio = screen.getAllByRole("radio")[0];
+      fireEvent.click(radio);
+
+      expect(onSelectConceptId).toHaveBeenCalledWith(
+        expect.objectContaining({ conceptId: 1 }),
+      );
     });
   });
 

@@ -10,10 +10,9 @@ export const usePostLoginRedirectUri = () => {
     dispatch({ type: ACTION_TYPES.SET_POST_LOGIN_REDIRECT_URI, payload: uri });
   }, []);
 
-  const popPostLoginRedirectUri = useCallback(() => {
+  const clearPostLoginRedirectUri = useCallback(() => {
     dispatch({ type: ACTION_TYPES.CLEAR_POST_LOGIN_REDIRECT_URI });
-    return postLoginRedirectUri;
-  }, [postLoginRedirectUri]);
+  }, []);
 
-  return { setPostLoginRedirectUri, popPostLoginRedirectUri };
+  return { postLoginRedirectUri, setPostLoginRedirectUri, clearPostLoginRedirectUri };
 };

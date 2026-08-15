@@ -4,6 +4,7 @@ import { AnalysisController } from "./src/controllers/AnalysisController.ts";
 import { CachedbController } from "./src/controllers/CachedbController.ts";
 import { CohortController } from "./src/controllers/CohortController.ts";
 import { CohortSurvivalController } from "./src/controllers/CohortSurvivalController.ts";
+import { ConceptMappingSuggestionController } from "./src/controllers/ConceptMappingSuggestionController.ts";
 import { DataCharacterizationController } from "./src/controllers/DataCharacterizationController.ts";
 import { DataModelFlowController } from "./src/controllers/DataModelFlowController.ts";
 import { DataTransformationController } from "./src/controllers/DataTransformationController.ts";
@@ -30,6 +31,10 @@ app.use(extractUsernameFromJwt);
 app.use("/jobplugins/dqd/data-quality", new DqdController().router);
 app.use("/jobplugins/cohort", new CohortController().router);
 app.use("/jobplugins/cohort-survival", new CohortSurvivalController().router);
+app.use(
+  "/jobplugins/concept-mapping-suggestions",
+  new ConceptMappingSuggestionController().router,
+);
 app.use("/jobplugins/db-svc", new DbSvcController().router);
 app.use(
   "/jobplugins/dqd/data-characterization",

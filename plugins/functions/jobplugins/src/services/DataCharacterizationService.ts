@@ -12,6 +12,7 @@ import {
   DataCharacterizationOptions,
 } from "../types.ts";
 import { parseCdmVersionForOhdsi } from "../utils/OhdsiParser.ts";
+import { resolveDcTarget } from "./dcTarget.ts";
 
 export class DataCharacterizationService {
   private flowRunNamePrefix: string = "DC";
@@ -26,8 +27,14 @@ export class DataCharacterizationService {
     const dcFlowRun = await prefectApi.getFlowRun(flowRunId);
     const dcFlowRunOptions: DataCharacterizationOptions =
       dcFlowRun.parameters.options;
-    const { resultsSchema, databaseCode, cacheId, vocabSchemaName, datasetId } =
-      dcFlowRunOptions;
+    const {
+      resultsSchema,
+      databaseCode,
+      cacheId,
+      vocabSchemaName,
+      datasetId,
+      useSourceConnection,
+    } = dcFlowRunOptions;
 
     return await analyticsSvcApi.getDataCharacterizationResults(
       cacheId ?? databaseCode,
@@ -35,7 +42,8 @@ export class DataCharacterizationService {
       resultsSchema,
       sourceKey,
       vocabSchemaName,
-      datasetId
+      datasetId,
+      useSourceConnection ?? false
     );
   }
 
@@ -50,8 +58,14 @@ export class DataCharacterizationService {
     const dcFlowRun = await prefectApi.getFlowRun(flowRunId);
     const dcFlowRunOptions: DataCharacterizationOptions =
       dcFlowRun.parameters.options;
-    const { resultsSchema, databaseCode, cacheId, vocabSchemaName, datasetId } =
-      dcFlowRunOptions;
+    const {
+      resultsSchema,
+      databaseCode,
+      cacheId,
+      vocabSchemaName,
+      datasetId,
+      useSourceConnection,
+    } = dcFlowRunOptions;
 
     return await analyticsSvcApi.getDataCharacterizationResultsDrilldown(
       cacheId ?? databaseCode,
@@ -60,7 +74,8 @@ export class DataCharacterizationService {
       sourceKey,
       conceptId,
       vocabSchemaName,
-      datasetId
+      datasetId,
+      useSourceConnection ?? false
     );
   }
 
@@ -127,18 +142,26 @@ export class DataCharacterizationService {
     const { dialect, databaseCode, schemaName, vocabSchemaName } = dataset;
     const cacheId = dataset.cacheId ?? databaseCode;
 
-    let resultsSchema =
-      overrideResultsSchema || `${schemaName}_DC_${Date.now()}`;
+    const dcTarget = resolveDcTarget(dataset, overrideResultsSchema);
 
-    if (dialect === "hana") {
-      resultsSchema = resultsSchema.toUpperCase();
-    } else if (dialect === "postgres") {
-      resultsSchema = resultsSchema.toLowerCase();
+    let resultsSchema: string;
+    if (dcTarget.resultsSchema !== null) {
+      // webapi dataset: fixed schema, verbatim (must match the WebAPI
+      // Results daimon tableQualifier), overwritten on every run.
+      resultsSchema = dcTarget.resultsSchema;
+    } else {
+      resultsSchema = overrideResultsSchema || `${schemaName}_DC_${Date.now()}`;
 
-      if (resultsSchema.length > 63) {
-        throw new Error(
-          `Results schema name cannot exceed 63 characters for PostgreSQL dialect. Current length: ${resultsSchema.length}`
-        );
+      if (dialect === "hana") {
+        resultsSchema = resultsSchema.toUpperCase();
+      } else if (dialect === "postgres") {
+        resultsSchema = resultsSchema.toLowerCase();
+
+        if (resultsSchema.length > 63) {
+          throw new Error(
+            `Results schema name cannot exceed 63 characters for PostgreSQL dialect. Current length: ${resultsSchema.length}`
+          );
+        }
       }
     }
 
@@ -171,6 +194,7 @@ export class DataCharacterizationService {
         // treated as "skip" while the read side still expected the table -> 500.
         executeConceptRecordCount:
           dataCharacterizationFlowRunDto.executeConceptRecordCount ?? true,
+        useSourceConnection: dcTarget.useSourceConnection,
       },
     };
 

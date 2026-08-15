@@ -1,8 +1,15 @@
 import { ReactNode } from "react";
 import { FeedbackState, TranslationState } from "../Context/state";
+import { WizardState } from "./source";
+
+export type MappingStatus = "unchecked" | "suggested" | "approved";
 
 export type mappingData = conceptData & {
-  status: string;
+  status: MappingStatus;
+  flagged?: boolean;
+  // Stable per-row id (UUID), assigned once at ingestion (source-adapter.ts) and preserved
+  // across reopen, so backend suggestions (Task 10) can attach to a row reliably.
+  sourceRowId?: string;
   [key: string]: any; // columnn mapping keys
 };
 
@@ -47,4 +54,5 @@ export type ConceptMappingState = {
   databaseCode?: string;
   schemaName?: string;
   sourceVocabularyId?: string;
+  wizard: WizardState;
 };
