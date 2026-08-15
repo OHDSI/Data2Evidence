@@ -43,8 +43,10 @@ test('pa-compare-cohorts', async ({ page }) => {
   await expect(page.locator('#pane-right')).toContainText('439')
 
   // Save the final cohort configuration
+  // Re-saving an already-saved cohort owned by the current user no longer opens the
+  // naming dialog - FiltersFooter.openSaveBookmark() only does that when
+  // needsSaveDialog (isNewCohort || isNotUserSharedBookmark) is true.
   await page.getByRole('button', { name: 'Save' }).click()
-  await page.locator('footer').getByRole('button', { name: 'Save' }).click()
   await expect(page.locator('#app')).toContainText('Saved filter updated.')
 
   // Navigate back to the cohorts list
@@ -66,8 +68,10 @@ test('pa-compare-cohorts', async ({ page }) => {
   // await createConceptSet(page, 'Acute allergic reaction', 'Acute allergic reaction', '4084167 241929008 Acute')
 
   // Save the final cohort configuration
+  // Re-saving an already-saved cohort owned by the current user no longer opens the
+  // naming dialog - FiltersFooter.openSaveBookmark() only does that when
+  // needsSaveDialog (isNewCohort || isNotUserSharedBookmark) is true.
   await page.getByRole('button', { name: 'Save' }).click()
-  await page.locator('footer').getByRole('button', { name: 'Save' }).click()
   await expect(page.locator('#app')).toContainText('Saved filter updated.')
 
   // Navigate back to the cohorts list
@@ -129,16 +133,14 @@ async function createCohortWithOneConditionOccurrenceFilercard(page, cohortName)
   await page.getByRole('button', { name: 'D2E' }).click()
   await expect(page.locator('#pane-left')).toContainText('New cohort')
 
+  // Configure cohort sharing settings. The allow-sharing checkbox now lives in the
+  // filter card footer instead of the save dialog, so it has to be set before the
+  // dialog opens - once open, the modal overlay intercepts the click.
+  await page.getByTestId('pa-share-cohort-checkbox').click()
+
   // Save the initial cohort configuration
   await page.getByRole('button', { name: 'Save' }).click()
   await page.waitForTimeout(5000)
-
-  // Configure cohort sharing settings
-  await page
-    .locator('div')
-    .filter({ hasText: /^Allow sharing$/ })
-    .first()
-    .click()
 
   // Name the cohort with unique timestamp-based name and save
   await page.getByRole('textbox', { name: 'Enter name' }).click()

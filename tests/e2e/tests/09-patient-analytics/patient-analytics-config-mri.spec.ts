@@ -74,14 +74,16 @@ test(TEST_NAME, async ({ page }) => {
   await expect(page.locator('[id="patient.interactions.conditionoccurrence.1"]')).toMatchAriaSnapshot(
     `- text: Type 2 diabetes Mellitus`
   )
+  // The allow-sharing checkbox moved out of the save dialog into the filter card
+  // footer (and from appCheckbox to a v-checkbox), so set it before opening the
+  // dialog and drop it from the dialog's aria snapshot.
+  await page.getByTestId('pa-share-cohort-checkbox').click()
   await page.getByRole('button', { name: 'Save' }).click()
   await expect(page.locator('#pane-left')).toContainText('Save Current Filters')
   await expect(page.locator('#pane-left')).toMatchAriaSnapshot(`
     - text: Enter a new name if you would like to overwrite the current name (New cohort).
     - textbox "Enter name"
-    - text: Allow sharing
     `)
-  await page.locator('.app-checkbox-container').click()
   await page.getByRole('textbox', { name: 'Enter name' }).click()
   await page.getByRole('textbox', { name: 'Enter name' }).fill('Cohort Test')
   await page.locator('footer').getByRole('button', { name: 'Save' }).click()

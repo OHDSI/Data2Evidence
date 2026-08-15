@@ -1,6 +1,10 @@
 {
   "version": "5",
   "specifiers": {
+    "jsr:@std/assert@1": "1.0.19",
+    "jsr:@std/assert@^1.0.19": "1.0.19",
+    "jsr:@std/internal@^1.0.12": "1.0.14",
+    "jsr:@std/testing@1": "1.0.19",
     "npm:@types/node@*": "24.2.0",
     "npm:async@*": "3.2.6",
     "npm:axios@~0.21.2": "0.21.4",
@@ -19,6 +23,23 @@
     "npm:typeorm@~0.3.20": "0.3.28_pg@8.16.3",
     "npm:uuid@10": "10.0.0",
     "npm:winston@*": "3.19.0"
+  },
+  "jsr": {
+    "@std/assert@1.0.19": {
+      "integrity": "eaada96ee120cb980bc47e040f82814d786fe8162ecc53c91d8df60b8755991e",
+      "dependencies": [
+        "jsr:@std/internal"
+      ]
+    },
+    "@std/internal@1.0.14": {
+      "integrity": "291516b3d4c35024d6ffbc0a9df5bf4c64116e05b50012cf846710152d2ffdf7"
+    },
+    "@std/testing@1.0.19": {
+      "integrity": "f4236172365b216728dc3cc8b5e80a9f4c33083d1e4ede7613d5b25b4014898e",
+      "dependencies": [
+        "jsr:@std/assert@^1.0.19"
+      ]
+    }
   },
   "npm": {
     "@colors/colors@1.6.0": {
@@ -494,6 +515,7 @@
         "package-json-from-dist",
         "path-scurry"
       ],
+      "deprecated": true,
       "bin": true
     },
     "gopd@1.2.0": {
@@ -1163,6 +1185,7 @@
     },
     "uuid@10.0.0": {
       "integrity": "sha512-8XkAphELsDnEGrDxUOHB3RGvXz6TeuYSGEZBOjtTtPm2lwhGBjLgOzLHB63IUWfBpNucQjND6d3AOudO+H3RWQ==",
+      "deprecated": true,
       "bin": true
     },
     "uuid@11.1.0": {
@@ -1261,6 +1284,8 @@
   },
   "workspace": {
     "dependencies": [
+      "jsr:@std/assert@1",
+      "jsr:@std/testing@1",
       "npm:async@*",
       "npm:axios@~0.21.2",
       "npm:bcryptjs@*",

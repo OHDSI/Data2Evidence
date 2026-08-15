@@ -1,0 +1,32 @@
+name: Plugin Function Unit Tests
+
+on:
+  pull_request:
+    paths:
+      - 'plugins/functions/**'
+      - '.github/workflows/plugin-function-tests.yml'
+  push:
+    branches: [develop]
+    paths:
+      - 'plugins/functions/**'
+      - '.github/workflows/plugin-function-tests.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  deno-test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        plugin: [strategus-analysis, jobplugins, dataset]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - name: ${{ matrix.plugin }} tests
+        working-directory: plugins/functions/${{ matrix.plugin }}
+        run: deno task test

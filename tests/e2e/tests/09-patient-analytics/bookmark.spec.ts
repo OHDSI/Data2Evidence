@@ -58,7 +58,7 @@ test(TEST_NAME, async ({ page }) => {
   })
   //Add Gender filter
   await test.step('Add Gender - Male filter', async () => {
-    await page.getByText('All').click()
+    await page.getByTitle('Basic Data - Gender').getByText('All').click()
     await page.getByPlaceholder('Enter search term').fill('Male')
     await page.getByText('MALE - MALE').click()
     await expect(page.getByText('1,096 / 2,694')).toBeVisible()
@@ -183,7 +183,11 @@ test(TEST_NAME, async ({ page }) => {
     // Confirm that the 'Enter name' textbox is not visible before proceeding
     await expect(page.getByRole('textbox', { name: 'Enter name' })).not.toBeVisible()
     await page.getByRole('button', { name: 'Save' }).click()
-    await page.locator('footer').getByRole('button', { name: 'Save' }).click()
+    // Re-saving an already-saved cohort owned by the current user no longer opens the
+    // naming dialog - FiltersFooter.openSaveBookmark() only does that when
+    // needsSaveDialog (isNewCohort || isNotUserSharedBookmark) is true.
+    await expect(page.getByRole('textbox', { name: 'Enter name' })).not.toBeVisible()
+    await expect(page.getByText('Saved filter updated.')).toBeVisible()
   })
   //Verify the saved filter
   await test.step('Verify the saved filter', async () => {
@@ -257,7 +261,7 @@ test(TEST_NAME, async ({ page }) => {
     await page.getByRole('cell', { name: 'Age ' }).locator('span').nth(1).click()
     await page.locator('.dropdownmenu-container .menuWrapper:not(.closed)').getByText('Sort Descending').click()
     //Add basic filters
-    await page.getByText('All').click()
+    await page.getByTitle('Basic Data - Gender').getByText('All').click()
     await page.getByRole('textbox', { name: 'multiselect-searchbox' }).fill('FEMALE')
     await page.getByText('FEMALE - FEMALE').click()
     //Add filter card
@@ -303,10 +307,11 @@ test(TEST_NAME, async ({ page }) => {
     await page.getByRole('link', { name: 'Exclusion (0)' }).click()
     await page.getByTitle('Add Filter Card').getByRole('button').click()
     await page.getByRole('menuitem', { name: 'Death' }).click()
-    //Save filter
+    //Save filter - the allow-sharing checkbox now lives in the filter card footer
+    //rather than the save dialog, so it has to be set before the dialog opens.
+    await page.getByTestId('pa-share-cohort-checkbox').click()
     await page.getByRole('button', { name: 'Save' }).click()
     await page.getByRole('textbox', { name: 'Enter name' }).fill(NAME.patientListFilters)
-    await page.getByTitle('Allow bookmark to be visible').locator('div').click()
     await page.locator('footer').getByRole('button', { name: 'Save' }).click()
     //Verify Cohort is saved
     await page.locator('#pane-left').getByRole('link', { name: 'Cohorts' }).click()
