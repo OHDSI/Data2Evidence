@@ -16,6 +16,8 @@ jobs:
   test-portal:
     name: Run Portal Unit Tests
     runs-on: ubuntu-latest
+    env:
+      PG__SSL: "false"
 
     steps:
       - name: Checkout code
