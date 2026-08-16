@@ -116,10 +116,16 @@ export function useViewerData({
     }
   }, [configId, codeType, strategy]);
 
+  // A freshly opened dialog has no user edits to protect. This is deliberately
+  // keyed on `open` alone: the fetch effect below also re-runs when `codeType`
+  // changes, and a config-type switch must NOT discard what the user has typed.
   useEffect(() => {
     if (!open) return;
-    // A freshly opened dialog has no user edits to protect.
     dirtyRef.current = false;
+  }, [open]);
+
+  useEffect(() => {
+    if (!open) return;
     fetchData();
   }, [open, fetchData]);
 
