@@ -42,7 +42,7 @@ export function useViewerData({
   const [isNewName, setIsNewName] = useState(false);
   const [queries, setQueries] = useState<QueryEntry[]>([]);
   const [originalQueryNames, setOriginalQueryNames] = useState<string[]>([]);
-  const [initialLoading, setInitialLoading] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(open);
 
   // Set once the user edits name/code/queries. While true, a resolving fetch must
   // not overwrite their input.

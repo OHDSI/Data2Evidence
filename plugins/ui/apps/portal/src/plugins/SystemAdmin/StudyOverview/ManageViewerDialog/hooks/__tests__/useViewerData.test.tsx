@@ -63,4 +63,34 @@ describe("useViewerData", () => {
 
     expect(screen.getByTestId("name")).toHaveTextContent(DASHBOARD_NAME);
   });
+
+  it("reports loading on the first render when opened, before the fetch resolves", () => {
+    const strategy = makeStrategy({
+      fetchCodes: jest.fn(() => new Promise(() => undefined) as never),
+    });
+
+    // render() wraps in act(), which flushes the effect before it returns, so a
+    // DOM assertion cannot see the first paint — the exact frame the E2E's
+    // toBeHidden() check slips through. Record what the hook returned per render.
+    const loadingPerRender: boolean[] = [];
+    const Probe: React.FC = () => {
+      const { initialLoading } = useViewerData({
+        open: true,
+        configId: "cfg-1",
+        configType: "dashboard",
+        codeType: "dashboard",
+        strategy,
+      });
+      loadingPerRender.push(initialLoading);
+      return null;
+    };
+
+    render(<Probe />);
+
+    expect(loadingPerRender[0]).toBe(true);
+
+    render(<Harness strategy={strategy} open codeType="dashboard" />);
+
+    expect(screen.getByTestId("loading")).toHaveTextContent("true");
+  });
 });
