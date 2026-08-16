@@ -19,7 +19,7 @@ dependencies = [
     "prefect[docker,shell]==3.6.10",
     "psycopg2-binary==2.9.9",
     "pydantic==2.10.6",
-    "pyjwt==2.12.0",
+    "pyjwt==2.13.0",
     "python-dotenv==1.2.2",
     "scikit-learn==1.5.0",
     "sqlalchemy==2.0.38",
@@ -29,7 +29,7 @@ dependencies = [
 dev = [
     "pytest==9.0.3",
     "ruff==0.12.7",
-    "uv==0.11.6",
+    "uv==0.11.15",
 ]
 
 [tool.pixi.workspace]
