@@ -9,6 +9,7 @@
   ],
   "scripts": {
     "postinstall": "node scripts/postinstall.js",
+    "prepack": "node scripts/verify-plugins.js",
     "build": "vite build && vite build --config vite.portal.config.mjs",
     "build:cohorts": "vite build",
     "build:portal": "vite build --config vite.portal.config.mjs",
