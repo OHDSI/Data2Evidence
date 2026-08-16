@@ -169,6 +169,7 @@ describe("useViewerData", () => {
     // stale check before it ever calls fetchCodes, and the *second* request would
     // be the one handed the pending `firstCall` promise — inverting the scenario.
     await act(async () => undefined);
+    expect(fetchCodes).toHaveBeenCalledTimes(1);
 
     rerender(<Harness strategy={strategy} open codeType="cohort" />);
     await act(async () => undefined);
