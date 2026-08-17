@@ -120,18 +120,19 @@ test(TEST_NAME, async ({ page }) => {
 
   // Create first cohort with MALE filter
   await page.getByRole('button', { name: 'D2E' }).click()
-  await page.getByText('All').click()
+  await page.getByTitle('Basic Data - Gender').getByText('All').click()
   await page.getByRole('textbox', { name: 'multiselect-searchbox' }).fill('MALE')
   await page.getByText('MALE - MALE').click()
   await expect(page.getByRole('combobox').filter({ hasText: 'MALE' }).first()).toBeVisible()
 
-  // Save cohort 1
+  // Save cohort 1 - the allow-sharing checkbox now lives in the filter card footer
+  // rather than the save dialog, so it has to be set before the dialog opens.
+  await page.getByTestId('pa-share-cohort-checkbox').click()
   await expect(page.getByRole('button', { name: 'Save' })).toBeVisible()
   await page.getByRole('button', { name: 'Save' }).click()
   await page.getByRole('textbox', { name: 'Enter name' }).fill(COHORT_1)
   await expect(page.locator('#pane-left')).toContainText('Save Current Filters')
   await expect(page.locator('#pane-left')).toContainText('Enter a new name')
-  await page.locator('.app-checkbox-container').click()
   await expect(page.locator('footer').getByRole('button', { name: 'Save' })).toBeVisible()
   await page.locator('footer').getByRole('button', { name: 'Save' }).click()
 
@@ -152,11 +153,12 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByRole('option').filter({ hasText: 'FEMALE' }).first().click()
   await expect(page.getByRole('combobox').filter({ hasText: 'FEMALE' }).first()).toBeVisible()
 
-  // Save cohort 2
+  // Save cohort 2 - allow-sharing now lives in the filter card footer, so it has to
+  // be set before the save dialog opens.
+  await page.getByTestId('pa-share-cohort-checkbox').click()
   await page.getByRole('button', { name: 'Save' }).click()
   await page.getByRole('textbox', { name: 'Enter name' }).fill(COHORT_2)
   await expect(page.locator('#pane-left')).toContainText('Save Current Filters')
-  await page.locator('.app-checkbox-container').click()
   await page.locator('footer').getByRole('button', { name: 'Save' }).click()
 
   await page.keyboard.press('Escape')
