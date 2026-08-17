@@ -1,22 +1,12 @@
 /**
- * Stale-reapplication coverage for the D2E issue 2410 freshness gate.
- *
  * `grant-roles-by-scopes` reconciles the portal database *from* the access
- * token's role claims. That makes it the one place where a stale token does
- * real damage: replaying an outdated claim set overwrites the change an admin
- * just made, silently reverting it. Rejecting the request in `addUserObjToReq`
- * covers this only while enforcement is ON — in shadow mode the request is
- * served, so this guard is the only thing standing between a stale token and a
- * reverted grant. That is why it is asserted independently of the flag.
+ * token's role claims — its own claims, not an authorization change — so it
+ * must NOT stamp `authz_changed_at`. Doing so would mark the caller's own
+ * token stale for a change it supplied, forcing a renewal that returns
+ * identical claims: invisible in production except as unexplained re-login
+ * churn on every first login. That's the property pinned here.
  *
- * The second property pinned here is the `skipAuthzStamp` wiring. This
- * reconciliation writes the token's OWN claims, so it must NOT stamp
- * `authz_changed_at` — doing so would mark the caller's own token stale for a
- * change it supplied, forcing a renewal that returns identical claims. That
- * bug would be invisible in production except as unexplained re-login churn on
- * every first login, so it is asserted at the call boundary.
- *
- * Run: deno test --allow-env --no-check src/middlewares/grant-roles-by-scopes_test.ts
+ * Run: deno test --allow-env --no-check src/middlewares/grant-roles-by-scopes.test.ts
  */
 import { assertEquals } from '@std/assert'
 
@@ -114,7 +104,7 @@ const withEnv = async (fn: () => Promise<void>) => {
   }
 }
 
-const run = async (isAuthzTokenFresh: boolean | undefined) => {
+const run = async () => {
   const stubs = installStubs()
 
   const req: any = {
@@ -126,8 +116,7 @@ const run = async (isAuthzTokenFresh: boolean | undefined) => {
         // A grant and a revoke in the same pass, so both call shapes are seen.
         roles: [IDP_SCOPE_ROLE.SYSTEM_ADMIN]
       })
-    },
-    isAuthzTokenFresh
+    }
   }
   const res: any = {
     statusCode: undefined as number | undefined,
@@ -150,51 +139,9 @@ const run = async (isAuthzTokenFresh: boolean | undefined) => {
   return { ...stubs, req, res, nextCalled, nextErr }
 }
 
-Deno.test('a stale token is served but never reconciles roles', async () => {
-  await withEnv(async () => {
-    const { groupCalls, rawQueries, nextCalled, nextErr, res } = await run(false)
-
-    // Served: the guard is not a rejection, it is a refusal to write.
-    assertEquals(nextCalled, true)
-    assertEquals(nextErr, undefined)
-    assertEquals(res.statusCode, undefined)
-
-    // The whole point: no role was granted or revoked from this token's claims,
-    // so an admin's just-made change survives.
-    assertEquals(groupCalls, [])
-    // And the reconciliation never even got as far as loading datasets.
-    assertEquals(rawQueries, [])
-  })
-})
-
-Deno.test('a fresh token does reconcile roles', async () => {
-  await withEnv(async () => {
-    const { groupCalls, rawQueries, nextCalled, nextErr } = await run(true)
-
-    assertEquals(nextCalled, true)
-    assertEquals(nextErr, undefined)
-
-    // The contrast that makes the previous test meaningful: with a fresh token
-    // the same request DOES reconcile, so it was the guard that stopped it and
-    // not some unrelated early return.
-    assertEquals(groupCalls.length > 0, true)
-    assertEquals(rawQueries.length, 1)
-  })
-})
-
-Deno.test('an unset freshness flag reconciles, so unrelated callers are unaffected', async () => {
-  await withEnv(async () => {
-    // The guard tests `=== false` precisely so that a request which never went
-    // through addUserObjToReq (undefined) keeps its existing behaviour.
-    const { groupCalls } = await run(undefined)
-
-    assertEquals(groupCalls.length > 0, true)
-  })
-})
-
 Deno.test('reconciliation never stamps authz_changed_at', async () => {
   await withEnv(async () => {
-    const { groupCalls } = await run(true)
+    const { groupCalls } = await run()
 
     // Every register/withdraw issued by the reconciliation must opt out of
     // stamping. Stamping here would invalidate the very token that supplied the
@@ -208,7 +155,7 @@ Deno.test('reconciliation never stamps authz_changed_at', async () => {
 
 Deno.test('the reconciliation grants and revokes according to token scopes', async () => {
   await withEnv(async () => {
-    const { groupCalls } = await run(true)
+    const { groupCalls } = await run()
 
     // Sanity: the token carried SYSTEM_ADMIN only, so that role is granted and
     // the other two system roles are revoked. This pins that suppressing the

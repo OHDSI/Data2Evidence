@@ -58,11 +58,6 @@ export class MemberService {
       const updateFields = { id: newUser.id, idp_user_id: idpUserId }
       await this.userService.updateUser(updateFields, trx)
 
-      // D2E issue 2410. A no-op in practice — a user created moments ago holds
-      // no token to invalidate — but it keeps the invariant "every authorization
-      // mutation stamps" true, so a future reader cannot mistake its absence
-      // here for a deliberate exemption. The group assignments above go through
-      // addUserToGroup directly, which does not stamp.
       await this.userService.touchAuthzChangedAt(newUser.id, trx)
 
       await trx.commit()
@@ -134,6 +129,9 @@ export class MemberService {
     try {
       const updateFields: Partial<UserField> = { id: userId, active }
       await this.userService.updateUser(updateFields, trx)
+
+      await this.userService.touchAuthzChangedAt(userId, trx)
+
       await this.logtoApi.activateUser(user.idpUserId, active)
 
       await trx.commit()

@@ -31,11 +31,6 @@ export interface ITokenUser {
 export interface IAppRequest extends Request {
   user: ITokenUser
   userGroupsCache?: Map<string, Promise<UserGroupMetadata>>
-  // D2E issue 2410. Set by addUserObjToReq: false means the token was minted
-  // before this user's last authorization change. When enforcement is on the
-  // request is already rejected with 401; this flag is what lets middleware
-  // running in shadow mode refuse to write the token's stale claims back.
-  isAuthzTokenFresh?: boolean
 }
 
 export interface RoleMap {

@@ -1,31 +1,18 @@
 /**
- * Mutation-path stamping coverage for the D2E issue 2410 freshness gate.
+ * Proves `authz_changed_at` actually gets written when a user's authorization
+ * changes — the write the freshness gate reads. Two properties are pinned
+ * because neither is obvious from the call sites:
  *
- * `authz-freshness_test.ts` proves the comparison and
- * `middlewares/add-user-object-to-req_test.ts` proves the middleware acts on it.
- * Neither is worth anything unless `authz_changed_at` actually gets written when
- * a user's authorization changes — that write is what the whole feature reads.
- *
- * Two properties are load-bearing here and neither is obvious from the call
- * sites, which is why they are pinned:
- *
- *  1. **Argument order.** `Repository.update` is
- *     `(field, criteria, user, trx)` — field FIRST. Passing `({ id }, { ... })`
- *     type-checks (both are plain object literals under this service's
- *     `strict: false` config) and would silently write `id` into every row's
- *     column set while filtering on `authz_changed_at`. There is no runtime
- *     error to catch it; only an assertion on the call shape.
+ *  1. **Argument order.** `Repository.update` is `(field, criteria, user, trx)`
+ *     — field FIRST. Reversing it type-checks (both are plain object literals)
+ *     and would silently write `id` into every row while filtering on
+ *     `authz_changed_at`, with no runtime error to catch it.
  *
  *  2. **The transaction is forwarded.** A stamp that commits outside the
- *     surrounding transaction can survive a rolled-back change (forcing a
- *     pointless renewal) or, worse, be lost while the change commits — which is
- *     precisely the bug this feature exists to prevent.
+ *     surrounding transaction can survive a rolled-back change, or be lost
+ *     while the change commits.
  *
- * Run: deno test --allow-env --no-check src/services/authz-stamping_test.ts
- *
- * `--no-check` matches the sibling middleware test: the service import graph has
- * pre-existing type errors (e.g. `Buffer` in UserGroupService.ts) unrelated to
- * anything asserted here.
+ * Run: deno test --allow-env --no-check src/services/authz-stamping.test.ts
  */
 import { assertEquals } from '@std/assert'
 
@@ -47,7 +34,6 @@ const TRX = { __trx: true } as any
 
 type UpdateCall = { field: any; criteria: any; user: any; trx: any }
 
-/** A UserRepository stand-in that records how `update` was called. */
 const makeUserRepo = () => {
   const updates: UpdateCall[] = []
   return {

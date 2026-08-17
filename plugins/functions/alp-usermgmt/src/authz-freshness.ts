@@ -1,6 +1,4 @@
 /**
- * Freshness comparison for D2E issue 2410.
- *
  * A Logto access token carries the user's roles as a claim, computed when the
  * token was minted. `authz_changed_at` records the last time this user's
  * authorization was mutated. A token whose `iat` predates that moment is
@@ -37,31 +35,3 @@ export const isTokenAuthzFresh = (
 }
 
 export const DEFAULT_AUTHZ_FRESHNESS_SKEW_MS = 2000
-
-/**
- * Parses the configured clock-skew allowance.
- *
- * Deliberately forgiving: an unset, empty, blank or non-numeric value falls back
- * to the default rather than reaching the comparison. `Number('')` is `0` and
- * `Number('abc')` is `NaN`, so the naive `Number(raw ?? '2000')` turns a typo or
- * an env var declared-but-empty by compose into a silent behaviour change — and
- * a `NaN` skew would mark every token stale, locking out every signed-in user
- * the moment the first authorization change is recorded.
- *
- * An explicit `0` is honoured: it means "no allowance", which is a real choice.
- * A negative value is rejected because it would move the threshold later and
- * reject tokens that are genuinely fresh.
- */
-export const parseSkewMs = (
-  raw: string | undefined | null,
-  fallbackMs: number = DEFAULT_AUTHZ_FRESHNESS_SKEW_MS
-): number => {
-  if (raw == null || raw.trim() === '') {
-    return fallbackMs
-  }
-  const parsed = Number(raw)
-  if (!Number.isFinite(parsed) || parsed < 0) {
-    return fallbackMs
-  }
-  return Math.floor(parsed)
-}

@@ -17,6 +17,8 @@ interface OidcLoginSilentProps {
 
 let firstTimeLoggedIn = false;
 let bootstrapSettled = false;
+let bootstrapFailed = false;
+let lastAttemptedIdToken: string | null | undefined = null;
 
 export const OidcLoginSilent: FC<OidcLoginSilentProps> = ({ onReady }) => {
   const navigate = useNavigate();
@@ -35,30 +37,36 @@ export const OidcLoginSilent: FC<OidcLoginSilentProps> = ({ onReady }) => {
   const loginRef = useRef(login);
   loginRef.current = login;
 
+  // `isFirstLogin` gates the roles-less-token re-login check to the initial
+  // bootstrap only; later renewals just re-sync userGroup/WebAPI roles.
   const loggedIn = useCallback(
-    async (idpUserId: string) => {
+    async (idpUserId: string, isFirstLogin: boolean) => {
       try {
-        const userGroups = await api.userMgmt.getUserGroupList(idpUserId, true);
-        const currentRoles = (accessTokenPayloadRef.current as { roles?: string[] } | undefined)?.roles;
-        const tokenMissingRoles = (currentRoles?.length || 0) === 0;
-        const alreadyReloggedIn = sessionStorage.getItem(RELOGIN_GUARD_KEY) === "1";
+        if (isFirstLogin) {
+          const currentRoles = (accessTokenPayloadRef.current as { roles?: string[] } | undefined)?.roles;
+          const tokenMissingRoles = (currentRoles?.length || 0) === 0;
+          const alreadyReloggedIn = sessionStorage.getItem(RELOGIN_GUARD_KEY) === "1";
 
-        if (tokenMissingRoles && !alreadyReloggedIn) {
-          console.info("[OidcLoginSilent] token has no roles after sync; re-login to refresh claims");
-          sessionStorage.setItem(RELOGIN_GUARD_KEY, "1");
-          loginRef.current();
+          if (tokenMissingRoles && !alreadyReloggedIn) {
+            console.info("[OidcLoginSilent] token has no roles after sync; re-login to refresh claims");
+            sessionStorage.setItem(RELOGIN_GUARD_KEY, "1");
+            loginRef.current();
 
-          await new Promise<void>((resolve) => setTimeout(resolve, 8000));
-          return;
+            await new Promise<void>((resolve) => setTimeout(resolve, 8000));
+            return;
+          }
+
+          sessionStorage.removeItem(RELOGIN_GUARD_KEY);
         }
 
-        sessionStorage.removeItem(RELOGIN_GUARD_KEY);
+        const userGroups = await api.userMgmt.getUserGroupList(idpUserId, true);
         setUserGroup(idpUserId, userGroups);
 
         await api.userMgmt.syncWebApiRoles().catch((err) => console.warn("WebAPI role sync failed", err));
       } catch (err: any) {
         console.error("Error getting user info on login", err);
         sessionStorage.removeItem(RELOGIN_GUARD_KEY);
+        bootstrapFailed = true;
         clearUser();
         navigate(err?.status === 403 ? config.ROUTES.noAccess : config.ROUTES.logout);
       }
@@ -70,15 +78,19 @@ export const OidcLoginSilent: FC<OidcLoginSilentProps> = ({ onReady }) => {
     setIdToken(idToken);
     setIdTokenClaim(idTokenPayload);
 
-    if (!firstTimeLoggedIn) {
-      const idpUserId = idTokenPayload?.[subProp];
-      if (idpUserId) {
-        firstTimeLoggedIn = true;
-        loggedIn(idpUserId).finally(() => {
-          bootstrapSettled = true;
-          onReady?.();
-        });
-      }
+    const idpUserId = idTokenPayload?.[subProp];
+    const isNewToken = idToken !== lastAttemptedIdToken;
+    const needsSync = idpUserId && isNewToken;
+
+    if (needsSync) {
+      const isFirstLogin = !firstTimeLoggedIn || bootstrapFailed;
+      firstTimeLoggedIn = true;
+      bootstrapFailed = false;
+      lastAttemptedIdToken = idToken;
+      loggedIn(idpUserId, isFirstLogin).finally(() => {
+        bootstrapSettled = true;
+        onReady?.();
+      });
       return;
     }
 

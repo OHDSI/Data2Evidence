@@ -67,19 +67,6 @@ export class UserService {
     await this.userRepo.update(user, { id: user.id }, tokenUser, trx)
   }
 
-  /**
-   * D2E issue 2410. Records that this user's authorization changed, so access
-   * tokens minted before now are treated as stale by addUserObjToReq.
-   *
-   * Pass the surrounding transaction wherever one exists, so the stamp lands
-   * atomically with the change itself — a stamp that commits without its change
-   * forces a pointless renewal, but a change that commits without its stamp is
-   * the actual bug this feature exists to prevent.
-   *
-   * Note the argument order: Repository.update is (field, criteria, user, trx),
-   * not (criteria, field, ...). It also folds in modified_by/modified_date from
-   * the current token user, exactly as updateUser above does.
-   */
   async touchAuthzChangedAt(id: string, trx?: Knex) {
     this.logger.info(`Stamp authz_changed_at for user ${id}`)
 
