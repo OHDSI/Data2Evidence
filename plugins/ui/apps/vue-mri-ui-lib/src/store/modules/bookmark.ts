@@ -27,6 +27,11 @@ const state = {
   loadError: false,
   canDatasetMaterializeCohorts: false,
   canMaterializeCohortDatasetId: '',
+  // Dataset the cached `bookmarks` list was loaded for. This module's state is a plain
+  // object, so Vuex shares it across the per-mount store instances (see App.vue) and the
+  // list outlives a single-spa unmount. Without this stamp, re-entering Cohorts under a
+  // different dataset renders the previous dataset's cohorts until the new load returns.
+  bookmarksDatasetId: '',
   isRestoringBookmark: false,
   activeBookmarkBaseline: null as any,
 }
@@ -343,10 +348,21 @@ const actions = {
   setAddNewCohort({ commit }, { addNewCohort }) {
     commit(types.SET_ADD_NEW_COHORT, { addNewCohort })
   },
-  fireBookmarkQuery({ commit, dispatch, rootGetters }, { method = 'post', params, bookmarkId, cancelToken }) {
+  fireBookmarkQuery({ state, commit, dispatch, rootGetters }, { method = 'post', params, bookmarkId, cancelToken }) {
     commit(types.SET_BOOKMARKS_LOADING, { loading: true })
+    const isLoadAll = params.cmd === 'loadAll'
+    // Dataset this request is for. Captured now so a response that lands after the user
+    // switched datasets again can be recognised as stale.
+    const requestDatasetId = isLoadAll ? rootGetters.getSelectedDataset.id : ''
+    if (isLoadAll && requestDatasetId !== state.bookmarksDatasetId) {
+      // Drop the previous dataset's cohorts up front rather than on response. The cohorts
+      // pane hides its spinner while the list is non-empty (Bookmarks.vue isBookmarksLoading),
+      // so leaving them in place presents another dataset's cohorts as a finished result for
+      // the whole duration of the request.
+      commit(types.RESET_ALL_BOOKMARKS)
+    }
     let url = ''
-    if (params.cmd === 'loadAll') {
+    if (isLoadAll) {
       url = `${webApiCohortDefinitionURL}?source=pa`
     } else {
       url = `${bookmarkURL}/${bookmarkId || ''}`
@@ -363,13 +379,18 @@ const actions = {
       cancelToken: typeof cancelToken
       datasetId?: string
     } = { url, method, params, cancelToken }
-    if (params.cmd === 'loadAll') {
-      dispatchOptions.datasetId = rootGetters.getSelectedDataset.id
+    if (isLoadAll) {
+      dispatchOptions.datasetId = requestDatasetId
     }
     return dispatch('ajaxAuth', dispatchOptions)
       .then(({ data }) => {
         let toastMessage = ''
-        if (params.cmd === 'loadAll') {
+        if (isLoadAll) {
+          // Ignore stale responses: the user may have switched datasets again while this
+          // request was in flight, and the newer request owns the list.
+          if (rootGetters.getSelectedDataset.id !== requestDatasetId) {
+            return data
+          }
           commit(types.SET_BOOKMARKS_LOAD_ERROR, { loadError: false })
           commit(types.RESET_ALL_BOOKMARKS)
           const { bookmarks, materializedCohorts, atlasCohortDefinitions } = processBookmarksData(
@@ -382,6 +403,7 @@ const actions = {
           if (isAtlasEnabled) {
             commit(types.SET_ATLAS_COHORT_DEFINITIONS, atlasCohortDefinitions)
           }
+          commit(types.SET_BOOKMARKS_DATASET_ID, { datasetId: requestDatasetId })
         }
         if (params.cmd === 'delete') {
           toastMessage = rootGetters.getText('MRI_PA_DELETE_BMK_SUCCESS')
@@ -400,7 +422,9 @@ const actions = {
         return data
       })
       .catch(error => {
-        if (params.cmd === 'loadAll') {
+        // A failure for a dataset the user has already navigated away from must not paint an
+        // error state over the load that replaced it.
+        if (isLoadAll && rootGetters.getSelectedDataset.id === requestDatasetId) {
           // Cohort list load failures surface as an in-list error state (see Bookmarks.vue).
           // Keep rethrowing so awaiting callers retain their current control flow.
           commit(types.SET_BOOKMARKS_LOAD_ERROR, { loadError: true })
@@ -738,6 +762,9 @@ const mutations = {
   [types.SET_BOOKMARKS_LOAD_ERROR](modulestate, { loadError }) {
     modulestate.loadError = loadError
   },
+  [types.SET_BOOKMARKS_DATASET_ID](modulestate, { datasetId }) {
+    modulestate.bookmarksDatasetId = datasetId ?? ''
+  },
   [types.SET_CAN_DATASET_MATERIALIZE_COHORTS](modulestate, { canDatasetMaterializeCohorts, datasetId }) {
     modulestate.canDatasetMaterializeCohorts = canDatasetMaterializeCohorts
     modulestate.canMaterializeCohortDatasetId = datasetId ?? ''
@@ -771,6 +798,8 @@ const mutations = {
     modulestate.bookmarks = []
     modulestate.materializedCohorts = []
     modulestate.atlasCohortDefinitions = []
+    // The cleared list no longer belongs to any dataset, so the next load must repopulate it.
+    modulestate.bookmarksDatasetId = ''
   },
   [types.RESET_DATASET_CACHE](modulestate) {
     modulestate.canDatasetMaterializeCohorts = false

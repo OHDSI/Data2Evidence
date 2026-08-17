@@ -1,7 +1,10 @@
 import { vi, describe, expect, it } from 'vitest'
 
 vi.mock('axios')
-vi.mock('../../stores/notifications', () => ({
+// Path is relative to this test file, so it must resolve to src/stores/notifications —
+// the module bookmark.ts imports. '../../stores/notifications' resolves to
+// src/store/stores/notifications from here and silently mocks nothing.
+vi.mock('@/stores/notifications', () => ({
   useNotificationStore: () => ({
     setToastMessage: vi.fn(),
     setAlertMessage: vi.fn(),
@@ -38,6 +41,7 @@ describe('store - bookmark', () => {
       loadError: boolean
       canDatasetMaterializeCohorts: boolean
       canMaterializeCohortDatasetId: string
+      bookmarksDatasetId: string
       isRestoringBookmark: boolean
       activeBookmarkBaseline: any
     }
@@ -55,6 +59,7 @@ describe('store - bookmark', () => {
         loadError: false,
         canDatasetMaterializeCohorts: false,
         canMaterializeCohortDatasetId: '',
+        bookmarksDatasetId: '',
         isRestoringBookmark: false,
         activeBookmarkBaseline: null,
       }
@@ -99,6 +104,19 @@ describe('store - bookmark', () => {
       const baseline = { filter: { foo: 'bar' }, chartType: 'stacked' }
       bookmarkModule.mutations[types.SET_ACTIVE_BOOKMARK_BASELINE](state, baseline)
       expect(state.activeBookmarkBaseline).toEqual(baseline)
+    })
+
+    it('SET_BOOKMARKS_DATASET_ID records the dataset the cached list belongs to', () => {
+      bookmarkModule.mutations[types.SET_BOOKMARKS_DATASET_ID](state, { datasetId: 'dataset-2' })
+      expect(state.bookmarksDatasetId).toBe('dataset-2')
+    })
+
+    it('RESET_ALL_BOOKMARKS forgets which dataset the cached list belonged to', () => {
+      state.bookmarks = [{ bmkId: '1' }]
+      state.bookmarksDatasetId = 'dataset-1'
+      bookmarkModule.mutations[types.RESET_ALL_BOOKMARKS](state)
+      expect(state.bookmarks).toEqual([])
+      expect(state.bookmarksDatasetId).toBe('')
     })
 
     it('SET_BOOKMARKS_LOAD_ERROR toggles the load error flag', () => {
@@ -335,7 +353,7 @@ describe('store - bookmark', () => {
         const commit = vi.fn()
         const dispatch = vi.fn().mockResolvedValue({ data: {} })
         await bookmarkModule.actions.fireBookmarkQuery(
-          { commit, dispatch, rootGetters },
+          { state: { bookmarksDatasetId: 'dataset-1' }, commit, dispatch, rootGetters },
           { method: 'get', params: { cmd: 'loadAll' } }
         )
         expect(commit).toHaveBeenCalledWith(types.SET_BOOKMARKS_LOAD_ERROR, { loadError: false })
@@ -348,7 +366,7 @@ describe('store - bookmark', () => {
         const dispatch = vi.fn().mockRejectedValue(new Error('Network Error'))
         await expect(
           bookmarkModule.actions.fireBookmarkQuery(
-            { commit, dispatch, rootGetters },
+            { state: { bookmarksDatasetId: 'dataset-1' }, commit, dispatch, rootGetters },
             { method: 'get', params: { cmd: 'loadAll' } }
           )
         ).rejects.toThrow('Network Error')
@@ -368,6 +386,140 @@ describe('store - bookmark', () => {
     }
 
     const flushMicrotasks = () => new Promise(resolve => setTimeout(resolve, 0))
+
+    // Regression cover for the "Cohorts list shows cohorts from a different dataset with no
+    // loading indicator" bug. Vuex module state is an object (not a factory), so the bookmark
+    // list survives a single-spa unmount. Re-entering Cohorts under a new dataset therefore
+    // renders the previous dataset's cohorts, and Bookmarks.vue suppresses its spinner while
+    // the list is non-empty. Clearing the cache up front is what restores the spinner.
+    describe('fireBookmarkQuery - dataset switch', () => {
+      const buildRootGetters = (datasetId: string) => ({
+        getMriFrontendConfig: {
+          getPaConfigId: () => 'pa-config-id',
+          getDatamodelConfigId: () => 'cdm-config-id',
+          getVersion: () => 'v1',
+          _internalConfig: { panelOptions: { atlasCohortDefinition: false } },
+        },
+        getSelectedDataset: { id: datasetId },
+        getText: (key: string) => key,
+      })
+
+      it("drops the cached list before the request when 'loadAll' targets a different dataset", async () => {
+        const commit = vi.fn()
+        const request = createDeferred()
+        const dispatch = vi.fn(() => request.promise)
+
+        const run = bookmarkModule.actions.fireBookmarkQuery(
+          {
+            state: { bookmarksDatasetId: 'dataset-1' },
+            commit,
+            dispatch,
+            rootGetters: buildRootGetters('dataset-2'),
+          },
+          { method: 'get', params: { cmd: 'loadAll' } }
+        )
+
+        // Asserted while the request is still in flight: the stale rows must already be gone,
+        // otherwise the cohorts pane renders the previous dataset's cohorts as a final result.
+        expect(commit).toHaveBeenCalledWith(types.RESET_ALL_BOOKMARKS)
+
+        request.resolve({ data: {} })
+        await run
+      })
+
+      it("keeps the cached list in place while 'loadAll' refreshes the same dataset", async () => {
+        const commit = vi.fn()
+        const request = createDeferred()
+        const dispatch = vi.fn(() => request.promise)
+
+        const run = bookmarkModule.actions.fireBookmarkQuery(
+          {
+            state: { bookmarksDatasetId: 'dataset-1' },
+            commit,
+            dispatch,
+            rootGetters: buildRootGetters('dataset-1'),
+          },
+          { method: 'get', params: { cmd: 'loadAll' } }
+        )
+
+        // Same dataset: no flash of an empty list on a plain refresh.
+        expect(commit).not.toHaveBeenCalledWith(types.RESET_ALL_BOOKMARKS)
+
+        request.resolve({ data: {} })
+        await run
+      })
+
+      it('does not drop the cached list for non-loadAll commands', async () => {
+        const commit = vi.fn()
+        const dispatch = vi.fn().mockResolvedValue({ data: {} })
+
+        await bookmarkModule.actions.fireBookmarkQuery(
+          {
+            state: { bookmarksDatasetId: 'dataset-1' },
+            commit,
+            dispatch,
+            rootGetters: buildRootGetters('dataset-2'),
+          },
+          { method: 'post', params: { cmd: 'delete' }, bookmarkId: 'bmk-1' }
+        )
+
+        expect(commit).not.toHaveBeenCalledWith(types.RESET_ALL_BOOKMARKS)
+      })
+
+      it("stamps the dataset id when 'loadAll' succeeds", async () => {
+        const commit = vi.fn()
+        const dispatch = vi.fn().mockResolvedValue({ data: {} })
+
+        await bookmarkModule.actions.fireBookmarkQuery(
+          {
+            state: { bookmarksDatasetId: '' },
+            commit,
+            dispatch,
+            rootGetters: buildRootGetters('dataset-2'),
+          },
+          { method: 'get', params: { cmd: 'loadAll' } }
+        )
+
+        expect(commit).toHaveBeenCalledWith(types.SET_BOOKMARKS_DATASET_ID, { datasetId: 'dataset-2' })
+      })
+
+      it("ignores a 'loadAll' response when the dataset changed while it was in flight", async () => {
+        const commit = vi.fn()
+        const request = createDeferred()
+        const dispatch = vi.fn(() => request.promise)
+        const rootGetters = buildRootGetters('dataset-2')
+
+        const run = bookmarkModule.actions.fireBookmarkQuery(
+          { state: { bookmarksDatasetId: 'dataset-1' }, commit, dispatch, rootGetters },
+          { method: 'get', params: { cmd: 'loadAll' } }
+        )
+
+        rootGetters.getSelectedDataset = { id: 'dataset-3' }
+        request.resolve({ data: {} })
+        await run
+
+        expect(commit).not.toHaveBeenCalledWith(types.SET_BOOKMARKS, expect.anything())
+        expect(commit).not.toHaveBeenCalledWith(types.SET_BOOKMARKS_DATASET_ID, { datasetId: 'dataset-2' })
+      })
+
+      it("still clears the loading flag when a 'loadAll' response is discarded as stale", async () => {
+        const commit = vi.fn()
+        const request = createDeferred()
+        const dispatch = vi.fn(() => request.promise)
+        const rootGetters = buildRootGetters('dataset-2')
+
+        const run = bookmarkModule.actions.fireBookmarkQuery(
+          { state: { bookmarksDatasetId: 'dataset-1' }, commit, dispatch, rootGetters },
+          { method: 'get', params: { cmd: 'loadAll' } }
+        )
+
+        rootGetters.getSelectedDataset = { id: 'dataset-3' }
+        request.resolve({ data: {} })
+        await run
+
+        expect(commit).toHaveBeenCalledWith(types.SET_BOOKMARKS_LOADING, { loading: false })
+      })
+    })
 
     describe('refreshBookmarksForDatasetSwitch', () => {
       it('does not block the cohort-definition load on the can-materialize-cohort check', async () => {
