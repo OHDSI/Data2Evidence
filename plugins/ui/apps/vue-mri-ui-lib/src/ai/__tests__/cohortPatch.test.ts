@@ -700,6 +700,107 @@ describe('applyCohortPatch', () => {
     })
   })
 
+  describe('date-range warnings', () => {
+    // A date range is the one constraint the model can fabricate without a lookup,
+    // so it is the one that lands cleanly when nobody asked for it: the reported
+    // symptom was an invented start-date window on the Observation Period card,
+    // added for a prior-observation requirement that belongs in set_time_relation.
+    // The applier cannot know what the user said, so it does not reject — it makes
+    // the range impossible to leave unmentioned.
+    const OBS = 'patient.interactions.obsperiod'
+    const OBS_START = `${OBS}.attributes.startdate`
+
+    it('warns about every date range that landed, naming the window and the alternatives', async () => {
+      const { store } = makeStore({ existingCards: ['patient', `${OBS}.1`] })
+      const res = await applyCohortPatch(store, [
+        {
+          op: 'add_constraint',
+          card: `${OBS}.1`,
+          attributePath: OBS_START,
+          value: { from: '2010-01-01', to: '2015-12-31' },
+        },
+      ])
+      expect(res.applied).toBe(true)
+      expect(res.warnings).toHaveLength(1)
+      const [warning] = res.warnings!
+      // The exact window, so the model cannot report the filter without the dates.
+      expect(warning).toContain('2010-01-01')
+      expect(warning).toContain('2015-12-31')
+      expect(warning).toContain(OBS_START)
+      // And the two ops it should have reached for instead.
+      expect(warning).toContain('set_time_relation')
+      expect(warning).toContain('set_entry_exit')
+      expect(warning).toContain('remove_constraint')
+    })
+
+    it('omits `warnings` entirely when no date range was applied', async () => {
+      // The result is resent on every agent turn, so an always-present empty array
+      // is pure context burn.
+      const DX = 'patient.interactions.conditionoccurrence'
+      const { store } = makeStore({ existingCards: ['patient', `${DX}.1`] })
+      const res = await applyCohortPatch(store, [
+        {
+          op: 'add_constraint',
+          card: `${DX}.1`,
+          attributePath: `${DX}.attributes.conditionconceptset`,
+          value: { conceptSetId: 37 },
+        },
+        { op: 'add_constraint', card: 'patient', attributePath: 'patient.attributes.age', value: 60, operator: '>=' },
+      ])
+      expect(res.applied).toBe(true)
+      expect('warnings' in res).toBe(false)
+    })
+
+    it('quotes the dates the OP asked for, not the shifted Date the store holds', async () => {
+      // updateDateConstraintValue shifts the value by the local timezone offset so
+      // it SERIALISES to the intended calendar day, so formatting the stored Date
+      // back prints the neighbouring day west of UTC. A warning that misquotes the
+      // window is worse than none — and the op's own strings are what the model has
+      // to justify anyway.
+      const { store, constraints } = makeStore({ existingCards: ['patient', `${OBS}.1`] })
+      const res = await applyCohortPatch(store, [
+        {
+          op: 'add_constraint',
+          card: `${OBS}.1`,
+          attributePath: OBS_START,
+          value: { from: '2010-01-01', to: '2015-12-31' },
+        },
+      ])
+      const stored = Object.values(constraints).find((c: any) => c.props.attrKey === 'startdate') as any
+      expect(stored.props.fromDate.value).toBeInstanceOf(Date)
+      expect(res.warnings![0]).toContain('Date range 2010-01-01 → 2015-12-31')
+    })
+
+    it('warns on a scalar date too — it pins both ends of the range to one day', async () => {
+      const { store } = makeStore({ existingCards: ['patient', `${OBS}.1`] })
+      const res = await applyCohortPatch(store, [
+        { op: 'add_constraint', card: `${OBS}.1`, attributePath: OBS_START, value: '2010-06-15' },
+      ])
+      expect(res.warnings).toHaveLength(1)
+      expect(res.warnings![0]).toContain('Date range 2010-06-15 → 2010-06-15')
+    })
+
+    it('warns per date range, so a from/to pair on two cards is two warnings', async () => {
+      const DX = 'patient.interactions.conditionoccurrence'
+      const { store } = makeStore({ existingCards: ['patient', `${OBS}.1`, `${DX}.1`] })
+      const res = await applyCohortPatch(store, [
+        {
+          op: 'add_constraint',
+          card: `${OBS}.1`,
+          attributePath: OBS_START,
+          value: { from: '2010-01-01', to: '2015-12-31' },
+        },
+        {
+          op: 'add_constraint',
+          card: `${DX}.1`,
+          attributePath: `${DX}.attributes.startdate`,
+          value: { from: '2012-01-01', to: '2012-12-31' },
+        },
+      ])
+      expect(res.warnings).toHaveLength(2)
+    })
+  })
+
   describe('removals', () => {
     const DX = 'patient.interactions.conditionoccurrence'
     const DX_SET = `${DX}.attributes.conditionconceptset`
@@ -888,6 +989,70 @@ describe('applyCohortPatch', () => {
             },
           ],
         },
+      ])
+    })
+
+    // `within` is the second value nothing stops the model getting wrong (dates
+    // are the first): "the 2nd eGFR >=90 days after the 1st" built as within+90
+    // is the COMPLEMENT of the request, and it computes and renders like a
+    // success. The warning is what makes the bound impossible to leave unsaid.
+    it('warns that a "within" relation is a closed at-most window', async () => {
+      const { store } = makeStore({ existingCards: ['patient', DX, RX] })
+      const result = await applyCohortPatch(store, [
+        { op: 'set_time_relation', card: RX, relativeTo: DX, mode: 'within', days: 90, direction: 'after' },
+      ])
+
+      expect(result.warnings).toHaveLength(1)
+      expect(result.warnings![0]).toContain('0–90 days')
+      expect(result.warnings![0]).toContain('AT MOST 90 days apart')
+      // Names the op that fixes it, with the day count already filled in.
+      expect(result.warnings![0]).toContain('mode:"at_least", days:90')
+      // The mode was explicit here, so it is not reported as a default.
+      expect(result.warnings![0]).not.toContain('defaulted')
+    })
+
+    it('calls out the defaulted mode when the op omits it', async () => {
+      const { store, cards } = makeStore({ existingCards: ['patient', DX, RX] })
+      const result = await applyCohortPatch(store, [
+        { op: 'set_time_relation', card: RX, relativeTo: DX, days: 90 },
+      ])
+
+      expect(timeFiltersOn(cards, RX)[0]).toMatchObject({ days: '[0-90]' })
+      expect(result.warnings![0]).toContain('defaulted to "within"')
+    })
+
+    // A mode that carries its own bound needs no second-guessing, and a warning
+    // on every relation would train the reader to skip them.
+    it('does not warn for at_least / between / overlaps', async () => {
+      const { store } = makeStore({ existingCards: ['patient', DX, RX] })
+      for (const op of [
+        { op: 'set_time_relation', card: RX, relativeTo: DX, mode: 'at_least', days: 90 },
+        { op: 'set_time_relation', card: RX, relativeTo: DX, mode: 'between', minDays: 30, maxDays: 90 },
+        { op: 'set_time_relation', card: RX, relativeTo: DX, mode: 'overlaps' },
+      ] as const) {
+        const result = await applyCohortPatch(store, [op as any])
+        expect(result.warnings).toBeUndefined()
+      }
+    })
+
+    // The clinical shape the warning exists for, end to end: two instances of the
+    // same card, each carrying the threshold, with a floor between them.
+    it('expresses "2 values <60, the 2nd >=90d after the 1st" as at_least between two cards', async () => {
+      const LAB1 = 'patient.interactions.measurement.1'
+      const LAB2 = 'patient.interactions.measurement.2'
+      const { store, cards } = makeStore({ existingCards: ['patient', LAB1, LAB2] })
+      const result = await applyCohortPatch(store, [
+        { op: 'set_time_relation', card: LAB2, relativeTo: LAB1, mode: 'at_least', days: 90, direction: 'after' },
+      ])
+
+      expect(timeFiltersOn(cards, LAB2)[0]).toMatchObject({
+        days: '>=90',
+        targetSelection: 'after_startdate',
+        targetInteraction: LAB1,
+      })
+      expect(result.warnings).toBeUndefined()
+      expect(result.timeRelations).toEqual([
+        { card: LAB2, relativeTo: LAB1, description: `${LAB2} starts at least 90 days after ${LAB1} starts` },
       ])
     })
 

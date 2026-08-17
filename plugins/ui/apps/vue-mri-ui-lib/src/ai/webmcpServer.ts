@@ -187,7 +187,14 @@ function describeAttributeValue(attr: any): string {
 // biggest driver of both context burn and the 413 the drawer used to hit.
 const VALUE_KIND_GUIDE: Record<string, string> = {
   numeric: 'add_constraint value:<number> with operator ("<",">","=",…).',
-  date: 'add_constraint value:{ from, to } (date range).',
+  date:
+    'add_constraint value:{ from, to } (date range) — ONLY when the user named actual calendar dates. This is ' +
+    'an absolute filter that drops every patient whose record falls outside the window, and unlike every other ' +
+    'valueKind it needs no lookup, so an invented range applies cleanly and narrows the cohort silently. A ' +
+    'DURATION ("at least a year of prior observation", "within 90 days", "followed for 6 months") is NOT a date ' +
+    'range: use set_time_relation for the gap between two interactions, or set_entry_exit for the observation ' +
+    'window. A card with no date constraint means "the patient has such a record at all" — that is a complete, ' +
+    'valid filter, so never fill in dates just to give a freshly added card a value.',
   conceptSet:
     'add_constraint value:{ conceptSetId } — build/find the concept set with the d2e-mcp concept tools. The ' +
     "attribute's `conceptDomain` (when present) is the OMOP domain its concepts must come from: a set built " +
@@ -243,7 +250,8 @@ function listFilterOptions(store: Store<any>): {
     // Per-attribute how-to lives here, keyed by valueKind — see VALUE_KIND_GUIDE.
     valueKindGuide: VALUE_KIND_GUIDE,
     note:
-      'Route each add_constraint value by `valueKind`: numeric→number+operator, date→{from,to}, ' +
+      'Route each add_constraint value by `valueKind`: numeric→number+operator, date→{from,to} but only for ' +
+      'calendar dates the user named (a duration is set_time_relation, a window is set_entry_exit), ' +
       'conceptSet→{conceptSetId} (build via d2e-mcp), catalog→resolve the exact token with ' +
       'pa_search_attribute_values first. This dataset may be non-OMOP (SAP HANA / LEAF): its coded ' +
       'condition/drug/measurement filters use source concept codes or concept sets, not OMOP standard ' +
@@ -449,10 +457,13 @@ export function createPaTools(store: Store<any>, hooks: PaComponentHooks = {}): 
         'SEPARATE FROM AND/OR: AND-ed cards mean "both happened, ever" — any "within N days", "followed by", ' +
         '"after", "before", "during" wording needs a set_time_relation op as well, or the cohort silently answers ' +
         'a wider question. "Observed FROM event A UNTIL event B" is a third, different thing — the observation ' +
-        'window — and needs set_entry_exit. The result reports `cardGroups` (the grouping that landed), ' +
-        '`timeRelations` (the timing that landed) and `cohortEntryExit` (the window that landed) — report from ' +
-        'those. Legacy `bookmark`: a full tree, accepted ONLY from a trusted builder — a hand-authored tree is ' +
-        'validated and rejected (it silently loads the wrong cohort). Never hand-author one.',
+        'window — and needs set_entry_exit. NEVER invent a date range to give a card a value: adding a card with ' +
+        'no constraint already means "the patient has such a record", and a fabricated { from, to } silently ' +
+        'drops every patient outside it. The result reports `cardGroups` (the grouping that landed), ' +
+        '`timeRelations` (the timing that landed), `cohortEntryExit` (the window that landed) and `warnings` ' +
+        '(date ranges that landed — act on each one) — report from those. Legacy `bookmark`: a full tree, ' +
+        'accepted ONLY from a trusted builder — a hand-authored tree is validated and rejected (it silently ' +
+        'loads the wrong cohort). Never hand-author one.',
       inputSchema: {
         type: 'object',
         properties: {
@@ -531,11 +542,18 @@ export function createPaTools(store: Store<any>, hooks: PaComponentHooks = {}): 
                   type: 'string',
                   enum: ['within', 'exactly', 'at_least', 'at_most', 'between', 'overlaps'],
                   description:
-                    'set_time_relation, default "within". "within" + days:90 = 0–90 days (this is what ' +
-                    '"within 90 days" / "in the 90 days following" means). "exactly" + days:90 = the 90th day ' +
-                    'ONLY — almost never what a clinical question asks for. "at_least"/"at_most" = an open ' +
-                    'bound; "between" = minDays–maxDays; "overlaps" = the two interactions overlap in time ' +
-                    '(days and direction are ignored).',
+                    'set_time_relation, default "within" — but the default is only right for an UPPER bound, so ' +
+                    "read the user's words and pass `mode` explicitly. Each mode names the day-range expression " +
+                    'written into the builder, and that expression is the mode\'s real meaning: "within" = ' +
+                    '[0-N], the CLOSED window 0..N, i.e. at most N days apart ("within 90 days" / "in the 90 ' +
+                    'days following" / "no later than 90 days"); "at_least" = >=N, a FLOOR with no ceiling ' +
+                    '("at least 90 days", "≥90 days", "90 days or more", "no sooner than 90 days", "90 days ' +
+                    'apart", "after 90 days"); "at_most" = <=N; "between" = [minDays-maxDays], a floor AND a ' +
+                    'ceiling; "exactly" = the Nth day ONLY, almost never what a clinical question asks for; ' +
+                    '"overlaps" = the two interactions overlap in time (days and direction are ignored). ' +
+                    '[0-N] and >=N PARTITION the timeline at N days — no patient satisfies both — so choosing ' +
+                    'the wrong one does not widen the cohort, it swaps it for the complement. "90 days" in the ' +
+                    'request tells you nothing about the mode; the bounding word next to it does.',
                 },
                 days: {
                   type: 'number',
@@ -580,7 +598,9 @@ export function createPaTools(store: Store<any>, hooks: PaComponentHooks = {}): 
                   description:
                     'add_constraint: REQUIRED, and the concept-set id goes HERE, not beside it. ' +
                     'numeric -> a number (with `operator`); catalog/text -> the exact stored string; ' +
-                    'date -> { from, to }; conceptSet -> { conceptSetId, includeDescendants? } where ' +
+                    'date -> { from, to }, and ONLY when the user named those calendar dates — a duration or a ' +
+                    'prior-observation requirement is set_time_relation, and an observation window is ' +
+                    'set_entry_exit; conceptSet -> { conceptSetId, includeDescendants? } where ' +
                     'conceptSetId came from create_concept_set / list_concept_sets. An empty or missing ' +
                     'value is rejected — use remove_constraint to clear a filter.',
                 },

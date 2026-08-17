@@ -117,6 +117,13 @@ export interface ApplyCohortPatchResult {
    * is resent on each agent turn.
    */
   cohortEntryExit?: CohortEntryExit
+  /**
+   * Things the patch DID apply that the caller has to justify or undo — currently
+   * every date range it landed. See describeDateRangeWarning: an invented date
+   * range is a filter the user never asked for, and nothing else in the result
+   * makes it stand out from the filters they did ask for.
+   */
+  warnings?: string[]
   error?: string
 }
 
@@ -776,6 +783,116 @@ function assertValueLanded(store: Store<any>, filterCardId: string, key: string,
   )
 }
 
+// ---------------------------------------------------------------------------
+// Date-range warnings
+//
+// A date range is the one constraint the model can fabricate out of nothing. Every
+// other value has to come from a lookup — a concept set from list_concept_sets, a
+// catalog token from pa_search_attribute_values, a number the user said — and a
+// wrong one usually fails the patch or matches nothing. Dates need no lookup, so
+// "2010-01-01 → 2015-12-31" applies cleanly, computes, renders, and quietly drops
+// every patient outside a window nobody asked for.
+//
+// The failure this closes: asked for a prior-observation or follow-up requirement,
+// the model adds the Observation Period card (right) and then puts an invented
+// range on its start date (wrong) — the duration it was asked for belongs in
+// set_time_relation, and the window in set_entry_exit. Neither is a calendar filter.
+//
+// The applier cannot know what the user said, so this does not reject: it makes
+// the range impossible to leave unmentioned. Keyed on the constraint's DATE SLOT
+// (props.fromDate/toDate — the { from, to } assertValueLanded reads back), not on
+// any card or attribute path, so it holds on every dataset config.
+// ---------------------------------------------------------------------------
+
+/** A value that landed in the constraint's date slot — see assertValueLanded. */
+const isDateRangeValue = (value: any): value is { from?: unknown; to?: unknown } =>
+  !!value && typeof value === 'object' && !Array.isArray(value) && ('from' in value || 'to' in value)
+
+// The bounds the OP asked for, not the Date objects read back from the store. The
+// store deliberately shifts a date by the local timezone offset so that it
+// SERIALISES to the intended calendar day (DateUtils.toUTCDate), which means
+// formatting one back gives the neighbouring day in a negative-offset timezone —
+// and a warning that misquotes the window is worse than none. The op's own strings
+// are also what the model has to justify, so they are what it should see.
+function requestedBounds(op: AddConstraintOp): { from: string; to: string } {
+  const asText = (value: unknown): string => {
+    const text = value == null ? '' : String(value)
+    return text.trim() || 'unset'
+  }
+  const value: any = op.value
+  if (isDateRangeValue(value)) {
+    // applyConstraintValue falls back to the populated bound when only one is given.
+    return { from: asText(value.from ?? value.to), to: asText(value.to ?? value.from) }
+  }
+  // A scalar date pins both ends of the range to the same day.
+  const single = asText(typeof value === 'object' ? value?.value : value)
+  return { from: single, to: single }
+}
+
+const attributeName = (store: Store<any>, attributePath: string): string => {
+  try {
+    return store.getters.getMriFrontendConfig?.getAttributeByPath?.(attributePath)?.getName?.() || attributePath
+  } catch {
+    return attributePath
+  }
+}
+
+function describeDateRangeWarning(store: Store<any>, filterCardId: string, op: AddConstraintOp): string {
+  const { from, to } = requestedBounds(op)
+  return (
+    `Date range ${from} → ${to} is now filtering "${attributeName(store, op.attributePath)}" (${
+      op.attributePath
+    }) on card "${cardName(store, filterCardId)}". That is an ABSOLUTE calendar filter: every patient whose ` +
+    'record falls outside those dates is dropped from the cohort. Keep it ONLY if the user named those dates. ' +
+    'If you added it to express a DURATION ("at least a year of prior observation", "within 90 days", ' +
+    '"followed up for 6 months") or a vague period ("recent", "historical"), it is wrong and it is silently ' +
+    'narrowing the cohort — remove it with remove_constraint and use set_time_relation for the gap between two ' +
+    'interactions, or set_entry_exit for the observation window. Adding the card with NO date constraint is ' +
+    'the correct way to say "the patient has such a record at all". If you do keep it, state the exact dates ' +
+    'in your reply so the user can see the window you applied.'
+  )
+}
+
+// ---------------------------------------------------------------------------
+// Bounded-window warnings
+//
+// `within` is the second value the model can get wrong without anything stopping
+// it, and for the same reason dates are the first: the op applies cleanly and the
+// cohort computes. `mode` is optional and defaults to `within`, every worked
+// example in the tool schema and the agent prompts reads `mode:"within",
+// days:90`, and the readback renders `[0-90]` as "within 90 days" — which looks
+// like a faithful echo of a user who said "90 days".
+//
+// The failure this closes: "two eGFR values, the 2nd at least 90 days after the
+// 1st" becomes `[0-90]` — the exact COMPLEMENT of the request. Every patient the
+// user wanted (gap of 90 days or more) is dropped, and every patient they
+// excluded (the two labs drawn a week apart) is kept. "≥", "at least", "or
+// more", "apart" are all `at_least`; only an upper bound is `within`.
+//
+// Like the date warning this does not reject — the applier cannot know what the
+// user said, so it makes the bound impossible to leave unmentioned.
+// ---------------------------------------------------------------------------
+
+function describeBoundedWindowWarning(
+  store: Store<any>,
+  filterCardId: string,
+  targetId: string,
+  days: number,
+  modeWasDefaulted: boolean
+): string {
+  return (
+    `Time relation "${cardName(store, filterCardId)}" → "${cardName(store, targetId)}" landed as the CLOSED ` +
+    `window 0–${days} days${modeWasDefaulted ? ' (no `mode` was given, so it defaulted to "within")' : ''}. ` +
+    `It requires the two interactions to be AT MOST ${days} days apart: a patient whose gap is ${days + 1} days ` +
+    'or more is DROPPED. That is the right reading of "within N days" / "in the N days following" and nothing ' +
+    'else. If the user said "at least", "≥", "or more", "no sooner than", "N days apart" or "after N days", ' +
+    `this is the COMPLEMENT of what they asked for — re-issue the op with mode:"at_least", days:${days}. For a ` +
+    'floor AND a ceiling use mode:"between" with minDays/maxDays. If 0–' +
+    `${days} really is the window they described, say "within ${days} days" in your reply so they can see the ` +
+    'bound you applied.'
+  )
+}
+
 /**
  * Apply a list of typed patch ops to the live cohort in `store`.
  *
@@ -817,11 +934,12 @@ export async function applyCohortPatch(store: Store<any>, patchOps: PatchOp[]): 
   }
 
   const appliedConstraints: NonNullable<ApplyCohortPatchResult['appliedConstraints']> = []
+  const warnings: string[] = []
 
   await dispatch('holdFireRequest')
   try {
     for (const rawOp of patchOps) {
-      await applyOne(dispatch, store, rawOp, refMap, rollback, resolveCard, appliedConstraints)
+      await applyOne(dispatch, store, rawOp, refMap, rollback, resolveCard, appliedConstraints, warnings)
     }
   } catch (err) {
     await revert(dispatch, rollback, store)
@@ -854,6 +972,9 @@ export async function applyCohortPatch(store: Store<any>, patchOps: PatchOp[]): 
     cardGroups: describeCardGroups(store),
     timeRelations: describeTimeRelations(store),
     ...(reportEntryExit ? { cohortEntryExit } : {}),
+    // Omitted when there is nothing to warn about — this result is resent on
+    // every agent turn, so an always-present empty array is pure context burn.
+    ...(warnings.length ? { warnings } : {}),
   }
 }
 
@@ -903,7 +1024,8 @@ async function applyOne(
   refMap: Map<string, string>,
   rollback: Rollback,
   resolveCard: (card: string) => string,
-  applied: NonNullable<ApplyCohortPatchResult['appliedConstraints']>
+  applied: NonNullable<ApplyCohortPatchResult['appliedConstraints']>,
+  warnings: string[]
 ): Promise<void> {
   switch (op.op) {
     case 'add_card': {
@@ -1053,11 +1175,14 @@ async function applyOne(
       } else {
         await applyConstraintValue(dispatch, constraint, op.value, op.operator ?? '=')
       }
-      applied.push({
-        card: filterCardId,
-        attributePath: op.attributePath,
-        value: assertValueLanded(store, filterCardId, key, op),
-      })
+      const landed = assertValueLanded(store, filterCardId, key, op)
+      applied.push({ card: filterCardId, attributePath: op.attributePath, value: landed })
+      // Read the KIND off what landed (the date slot), not off the op — a scalar
+      // date and a { from, to } both end up here, and neither the card nor the
+      // attribute path is a reliable tell across dataset configs.
+      if (isDateRangeValue(landed)) {
+        warnings.push(describeDateRangeWarning(store, filterCardId, op))
+      }
       return
     }
     case 'remove_constraint': {
@@ -1085,6 +1210,7 @@ async function applyOne(
       const targetId = resolveCard(op.relativeTo)
       assertTimeRelationIsExpressible(store, filterCardId, targetId)
 
+      const modeWasDefaulted = op.mode == null
       const mode = (op.mode ?? 'within') as TimeRelationMode
       const direction = op.direction ?? 'after'
       if (direction !== 'after' && direction !== 'before') {
@@ -1122,6 +1248,11 @@ async function applyOne(
       if (!landed) {
         throw new Error(
           `set_time_relation: the relation between "${filterCardId}" and "${targetId}" did not land on the card.`
+        )
+      }
+      if (mode === 'within') {
+        warnings.push(
+          describeBoundedWindowWarning(store, filterCardId, targetId, op.days as number, modeWasDefaulted)
         )
       }
       return

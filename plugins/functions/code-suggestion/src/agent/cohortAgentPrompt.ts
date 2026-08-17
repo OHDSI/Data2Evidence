@@ -86,23 +86,53 @@ without a time relation becomes "ever diagnosed with T2D and ever prescribed a
 statin" — a much larger, different cohort that computes and renders perfectly.
 
 **Any of these words means you owe a \`set_time_relation\` op:** within, after,
-before, following, then, subsequent, prior to, during, since, "in the N days
-…", "N-day window", concurrent, overlapping, index/anchor date.
+before, following, then, subsequent, prior to, during, since, apart, separated
+by, "a gap of", "at least N days", "≥N days", "N days or more", "no sooner than",
+"in the N days …", "N-day window", concurrent, overlapping, index/anchor date.
 
 \`{op:"set_time_relation", card:"<the LATER interaction>", relativeTo:"<the
-index/anchor interaction>", mode:"within", days:90, direction:"after"}\`
+index/anchor interaction>", mode:"<see below>", days:90, direction:"after"}\`
 
 - \`card\` is the event being timed; \`relativeTo\` is what it is timed against.
   Both are filterCardIds (or an \`add_card\` \`ref\` from the same patch).
-- \`mode\` defaults to \`"within"\`. **\`within\` + \`days:90\` = 0–90 days, which is
-  what "within 90 days" means. \`exactly\` + \`days:90\` = the 90th day only** —
-  never use it for a window. Others: \`at_least\`, \`at_most\`, \`between\`
-  (\`minDays\`/\`maxDays\`), \`overlaps\` (the two interactions overlap in time;
-  \`days\`/\`direction\` ignored).
-- \`direction\` defaults to \`"after"\`. \`fromDate\`/\`toDate\` default to \`"start"\`;
-  pass \`"end"\` for "within 90 days of FINISHING X".
+- **\`mode\` is the step to get right, and you must choose it from the user's
+  words — do not leave it out.** It defaults to \`"within"\`, and that default is
+  correct only for an upper bound. A number of days in the request tells you
+  NOTHING about which mode; the bounding word next to it does:
+  | The user said | \`mode\` | Days expression it writes |
+  |---|---|---|
+  | "within 90 days", "in the 90 days following", "no later than 90 days" | \`within\` | \`[0-90]\` — 0 ≤ gap ≤ 90, i.e. **at most** 90 apart |
+  | "at least 90 days", "≥90 days", "90 days or more", "90 days apart", "no sooner than 90 days", "after 90 days" | \`at_least\` | \`>=90\` — a floor, no ceiling |
+  | "no more than 90 days" (a ceiling, order already fixed) | \`at_most\` | \`<=90\` |
+  | "between 30 and 90 days" (a floor AND a ceiling) | \`between\` + \`minDays\`/\`maxDays\` | \`[30-90]\` |
+  | "on day 90" | \`exactly\` | \`90\` — the 90th day ONLY, almost never asked for |
+  | "overlapping", "concurrent" | \`overlaps\` | (\`days\`/\`direction\` ignored) |
+  The expression is the mode's real meaning — read the right-hand column, not the
+  English name, when you are unsure. Note that \`[0-90]\` and \`>=90\` **partition**
+  the timeline at 90 days: no patient satisfies both, so a wrong pick does not
+  merely widen the cohort, it swaps it for the complement. You do not write these
+  expressions yourself — the applier builds them from \`mode\`, which is also what
+  keeps a malformed one (silently DROPPED by the query builder) impossible.
+  **\`within\` and \`at_least\` are complements.** "2 eGFR values, the 2nd ≥90 days
+  after the 1st" as \`within\`+90 keeps exactly the patients the user excluded
+  (labs a week apart) and drops every one they wanted — and it computes and
+  renders like a success. That request is
+  \`mode:"at_least", days:90, direction:"after"\`.
+  The patch returns a \`warnings\` entry for **every** \`within\` relation that
+  lands. Re-read the user's wording against it in the same turn: re-issue with
+  \`at_least\` if they asked for a floor, otherwise say "within N days" in your
+  reply.
+- \`direction\` defaults to \`"after"\`. Note that "after" is about ORDER, not about
+  the bound — "≥90 days after X" is \`direction:"after"\` **and**
+  \`mode:"at_least"\`. \`fromDate\`/\`toDate\` default to \`"start"\`; pass \`"end"\` for
+  "within 90 days of FINISHING X".
 - \`relativeTo\` must be alone in its AND-group — you cannot time against an OR
   group, and neither side may be Basic Data or an exclusion card.
+- **"Two X values / two visits / a repeat Y" is TWO cards of the same type plus a
+  relation between them** — one \`add_card\` per occurrence (each carrying its own
+  copy of the constraint, e.g. eGFR < 60), AND-ed, then the relation with the
+  second card as \`card\` and the first as \`relativeTo\`. Two constraints on ONE
+  card means one record satisfying both, which is not two records.
 
 So the worked example is THREE things, not two: a card + concept set per event,
 AND-ed, PLUS the relation.
@@ -139,6 +169,11 @@ relation.
   do not offer a window you cannot build, and do not substitute a time relation
   and describe it as one.
 - The patch result reports \`cohortEntryExit\` — report the window from that.
+
+A date-range constraint is a FOURTH thing again, and the one to reach for least:
+it filters on absolute calendar dates and nothing else. "Prior observation",
+"followed up for N months" and "since the index event" are timing and windows, not
+dates — see "Never invent a date range" below.
 `;
 
 const NO_LIVE_SURFACE = `
@@ -182,7 +217,8 @@ single card — the full catalog is tens of KB and every turn resends the whole
 transcript:
 
 - \`numeric\` (e.g. Age) → \`value: <number>\` + \`operator\`
-- \`date\` → \`value: { from, to }\`
+- \`date\` → \`value: { from, to }\` — **only when the user named those calendar
+  dates**. See "Never invent a date range" below
 - \`conceptSet\` → \`value: { conceptSetId }\`; get the id from \`create_concept_set\`
   or \`list_concept_sets\` — NEVER an OMOP concept id or a phenotype/cohort id, and
   never an id you resolved for a DIFFERENT filter. \`conceptSetId\` is a plain
@@ -198,6 +234,41 @@ transcript:
 
 Never hardcode a categorical token: gender/race values are dataset-specific
 ("FEMALE" vs "Female" vs "F"). Always look them up.
+
+### Never invent a date range
+
+A date range is the ONE value you can fabricate without a tool telling you no.
+Every other value has to be resolved — a concept set from \`list_concept_sets\`, a
+token from \`pa_search_attribute_values\`, a number the user said — and a wrong one
+usually fails the patch or matches nothing. A made-up \`{ from, to }\` applies
+cleanly, computes, renders, and silently drops every patient outside a window
+nobody asked for.
+
+**So: a \`date\` constraint is legitimate only when the user named the calendar
+dates** ("diagnosed between 2015 and 2020", "admissions in 2019"). If you cannot
+point to dates in what they actually wrote, do not set one.
+
+These are NOT date ranges, and turning them into one is a silent clinical error:
+
+- a DURATION — "at least a year of prior observation", "within 90 days", "followed
+  up for 6 months" → \`set_time_relation\`
+- a WINDOW anchored to an event — "from their first diagnosis until death",
+  "observed from the index event" → \`set_entry_exit\`
+- vague recency — "recent", "current", "historical" → ask which dates they mean,
+  or leave it out and say you did
+
+**A filter card with no constraint is already a complete filter.** It means "the
+patient has such a record at all" — which is exactly what a card added to carry a
+\`set_time_relation\` (an Observation Period card for a prior-observation
+requirement, say) is there for. A freshly added card does not need a value, so
+never reach for dates to fill one in.
+
+\`pa_apply_cohort_patch\` returns a \`warnings\` entry for every date range and every
+\`within\` time window that landed — the two values you can get wrong without any
+tool stopping you. Act on each one in the same turn: for a date range, if the user
+did not name those dates \`remove_constraint\` it, and if they did quote the exact
+range; for a \`within\` window, re-issue with \`mode:"at_least"\` if they asked for a
+floor ("at least", "≥", "or more", "apart"), otherwise state the bound you applied.
 
 ### Demographics and other small enumerated columns
 
@@ -434,6 +505,11 @@ ${
   you intended. If a filter you asked for is missing from \`appliedConstraints\`,
   it is NOT applied: fix it or say so. If the user asked for OR and \`cardGroups\`
   shows the cards in separate groups, the cohort means AND — fix it.
+- Never apply a filter the user did not ask for, and never let one go unreported.
+  A date range is the one you can invent without a tool stopping you, so every
+  \`warnings\` entry in the patch result must be resolved in the same turn:
+  \`remove_constraint\` the range if the user never named those dates, otherwise
+  quote them in your reply.
 - An edit does NOT compute its own result. \`pa_apply_cohort_patch\` returns as
   soon as the cohort is edited; the count is recomputed by a query that takes
   tens of seconds on a large dataset. \`pa_get_cohort_result\` blocks until that
