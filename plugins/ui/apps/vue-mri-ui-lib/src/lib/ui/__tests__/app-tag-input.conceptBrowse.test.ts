@@ -2,6 +2,7 @@ import { flushPromises, shallowMount } from '@vue/test-utils'
 import { createStore } from 'vuex'
 import appTagInput from '../app-tag-input.vue'
 import { getConceptByCode, getConceptById, getConceptByName } from '@/utils/IfrToExtCohortDeps/conceptGetters'
+import { setConceptBrowserOpening } from '../conceptBrowserLock'
 
 vi.mock('@/utils/IfrToExtCohortDeps/conceptGetters', () => ({
   getConceptByCode: vi.fn(),
@@ -10,6 +11,9 @@ vi.mock('@/utils/IfrToExtCohortDeps/conceptGetters', () => ({
 }))
 
 beforeEach(() => {
+  // Shared across every instance and therefore across tests, so a test that leaves it held
+  // would silently block the next one.
+  setConceptBrowserOpening(false)
   vi.mocked(getConceptByCode).mockReset().mockResolvedValue(null)
   vi.mocked(getConceptById).mockReset().mockResolvedValue(null)
   vi.mocked(getConceptByName).mockReset().mockResolvedValue(null)
@@ -327,6 +331,93 @@ describe('app-tag-input concept browsing', () => {
     props.onClose(undefined)
 
     expect(updateConstraintValue).not.toHaveBeenCalled()
+  })
+
+  // Resolution happens before the overlay is dispatched, and nothing is on screen to
+  // swallow clicks during it. A second dispatch reaching the terminology listener while
+  // the overlay is already open would keep the first attribute's pre-selection but adopt
+  // the second attribute's onClose, writing picks into the wrong constraint.
+  describe('concurrent opens', () => {
+    const deferred = () => {
+      let resolve: (value: unknown) => void = () => undefined
+      const promise = new Promise(res => {
+        resolve = res
+      })
+      return { promise, resolve }
+    }
+
+    const browse = (wrapper: any) =>
+      wrapper.vm.handleConceptSet({
+        values: null,
+        config: wrapper.vm.conceptSetConfig,
+        componentType: 'text',
+        action: 'browse',
+      })
+
+    it('dispatches one overlay only, when a second "+" is clicked mid-resolution', async () => {
+      const pending = deferred()
+      vi.mocked(getConceptById).mockReturnValue(pending.promise as any)
+      // Two attributes on one filter card: two component instances, so a per-instance
+      // flag would not have closed the window.
+      const first = mountTagInput({ conceptIdentifierType: 'id', domainFilter: 'Condition' }, [{ value: '201826' }])
+      const second = mountTagInput({ conceptIdentifierType: 'id', domainFilter: 'Drug' }, [{ value: '35605858' }])
+
+      const dispatched: CustomEvent[] = []
+      const listener = (event: Event) => dispatched.push(event as CustomEvent)
+      window.addEventListener('alp-terminology-open', listener)
+      browse(first.wrapper)
+      browse(second.wrapper)
+      pending.resolve(MORPHINE_RECORD)
+      await flushPromises()
+      window.removeEventListener('alp-terminology-open', listener)
+
+      expect(dispatched).toHaveLength(1)
+      // The one that got through is the attribute that was clicked first.
+      expect(dispatched[0].detail.props.defaultFilters).toContainEqual({ id: 'domainId', value: ['Condition'] })
+    })
+
+    it('greys out every "+" while any one of them is resolving', async () => {
+      const pending = deferred()
+      vi.mocked(getConceptById).mockReturnValue(pending.promise as any)
+      const first = mountTagInput({ conceptIdentifierType: 'id' }, [{ value: '201826' }])
+      const second = mountTagInput({ conceptIdentifierType: 'id' }, [{ value: '35605858' }])
+
+      browse(first.wrapper)
+      await first.wrapper.vm.$nextTick()
+
+      expect(first.wrapper.vm.conceptBrowserOpening).toBe(true)
+      expect(second.wrapper.vm.conceptBrowserOpening).toBe(true)
+      // The child is resolved by name at runtime, so match the rendered stub, not the import.
+      expect(first.wrapper.find('basetaginput').attributes('concept-browser-opening')).toBe('true')
+
+      pending.resolve(MORPHINE_RECORD)
+      await flushPromises()
+
+      expect(first.wrapper.vm.conceptBrowserOpening).toBe(false)
+      expect(second.wrapper.vm.conceptBrowserOpening).toBe(false)
+    })
+
+    it('releases the guard so the overlay can be opened again', async () => {
+      const { wrapper } = mountTagInput({ conceptIdentifierType: 'id' })
+
+      expect(await openBrowser(wrapper)).toBeDefined()
+      expect(await openBrowser(wrapper)).toBeDefined()
+    })
+
+    it('swallows and reports a failed open instead of stranding the guard', async () => {
+      const { wrapper } = mountTagInput({ conceptIdentifierType: 'id' })
+      const boom = vi.spyOn(wrapper.vm, 'dispatchConceptBrowser').mockRejectedValueOnce(new Error('boom'))
+      const logged = vi.spyOn(console, 'error').mockImplementation(() => undefined)
+
+      // Nothing awaits openConceptBrowser, so it must not reject.
+      await expect(wrapper.vm.openConceptBrowser(wrapper.vm.conceptSetConfig)).resolves.toBeUndefined()
+      expect(logged).toHaveBeenCalled()
+      expect(wrapper.vm.conceptBrowserOpening).toBe(false)
+
+      boom.mockRestore()
+      logged.mockRestore()
+      expect(await openBrowser(wrapper)).toBeDefined()
+    })
   })
 
   it('still opens the concept set overlay for concept set attributes', async () => {

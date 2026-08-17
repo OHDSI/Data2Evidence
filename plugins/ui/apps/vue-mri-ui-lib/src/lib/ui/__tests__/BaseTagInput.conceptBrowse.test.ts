@@ -57,4 +57,25 @@ describe('BaseTagInput concept browsing', () => {
       action: 'browse',
     })
   })
+
+  it('disables the browse button while an overlay is being opened', () => {
+    const wrapper = mountTagInput({
+      conceptSetConfig: { conceptIdentifierType: 'id' },
+      conceptBrowserOpening: true,
+    })
+
+    expect(wrapper.find('d4l-button').attributes('disabled')).toBeDefined()
+  })
+
+  it('emits no browse action while an overlay is being opened', () => {
+    // d4l-button is a web component, so a disabled one can still deliver mousedown.
+    const wrapper = mountTagInput({
+      conceptSetConfig: { conceptIdentifierType: 'id' },
+      conceptBrowserOpening: true,
+    })
+
+    wrapper.vm.handleBrowseConcepts()
+
+    expect(wrapper.emitted('concept-set-action')).toBeFalsy()
+  })
 })

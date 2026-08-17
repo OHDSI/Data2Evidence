@@ -7,6 +7,7 @@
     :is-catalog-attribute="isCatalogAttribute"
     :options-limit="optionLimitSize"
     :concept-set-config="conceptSetConfig"
+    :concept-browser-opening="conceptBrowserOpening"
     @update:value="updateValue"
     @search-change="asyncFind"
     @concept-set-action="handleConceptSet"
@@ -17,6 +18,11 @@
 import { mapActions, mapGetters } from 'vuex'
 import BaseTagInput from './BaseTagInput.vue'
 import { getConceptByCode, getConceptById, getConceptByName } from '../../utils/IfrToExtCohortDeps/conceptGetters'
+import {
+  isConceptBrowserOpening,
+  onConceptBrowserOpeningChange,
+  setConceptBrowserOpening,
+} from './conceptBrowserLock'
 
 // Concept ids are plain integers; anything else in a value list was typed by hand and
 // cannot be round-tripped through the terminology overlay.
@@ -73,6 +79,10 @@ export default {
     return {
       selectedValuesTimeout: null,
       optionLimitSize: 200,
+      // Mirrors the shared lock, so every "+" on the page greys out while any one of them
+      // is resolving its values into concepts.
+      conceptBrowserOpening: isConceptBrowserOpening(),
+      unsubscribeConceptBrowserLock: null,
     }
   },
   computed: {
@@ -113,6 +123,12 @@ export default {
     if (configLimit) {
       this.optionLimitSize = configLimit
     }
+    this.unsubscribeConceptBrowserLock = onConceptBrowserOpeningChange(opening => {
+      this.conceptBrowserOpening = opening
+    })
+  },
+  beforeUnmount() {
+    this.unsubscribeConceptBrowserLock?.()
   },
   methods: {
     ...mapActions(['loadValuesForAttributePath', 'updateConstraintValue']),
@@ -199,6 +215,25 @@ export default {
     // full screen and written straight back into this text constraint as tags. The value
     // written per concept is whatever identifier the attribute is configured to store.
     async openConceptBrowser(config) {
+      // The lock only has to cover the resolution window. Once the overlay is mounted its
+      // backdrop blocks the "+" buttons, and a second dispatch landing in the sliver before
+      // React commits is harmless: the listener has not mounted <Terminology> yet, so the
+      // later props win whole rather than being spliced onto the earlier pre-selection.
+      if (isConceptBrowserOpening()) {
+        return
+      }
+      setConceptBrowserOpening(true)
+      try {
+        await this.dispatchConceptBrowser(config)
+      } catch (error) {
+        // handleConceptSet does not await this, so letting it reject would only surface as
+        // an unhandled rejection.
+        console.error('Failed to open the terminology overlay:', error)
+      } finally {
+        setConceptBrowserOpening(false)
+      }
+    },
+    async dispatchConceptBrowser(config) {
       const { selectedDatasetId, conceptIdentifierType } = config
       // Read live from the store, never off `model` or a computed: getConstraint hands
       // out a deep clone, so the prop is a snapshot from the last render, and a computed

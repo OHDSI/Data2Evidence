@@ -92,6 +92,7 @@
         class="unicode-icon"
         text="+"
         :title="texts.browseConcepts"
+        :disabled="conceptBrowserOpening"
         style="--border-radius-button: 9999px; margin-left: 8px; margin-right: 0px"
         @mousedown.stop.prevent="handleBrowseConcepts()"
       />
@@ -150,6 +151,12 @@ export default {
     conceptSetConfig: {
       type: Object,
       default: () => ({}),
+    },
+    // True while any "+" on the page is resolving its current values into concepts. Only
+    // one terminology overlay can be open at a time, so all of them grey out together.
+    conceptBrowserOpening: {
+      type: Boolean,
+      default: false,
     },
     maxSelections: {
       type: Number,
@@ -477,6 +484,10 @@ export default {
       })
     },
     handleBrowseConcepts() {
+      // d4l-button is a web component, so a disabled one can still deliver mousedown.
+      if (this.conceptBrowserOpening) {
+        return
+      }
       this.$emit('concept-set-action', {
         values: null,
         config: this.conceptSetConfig,
