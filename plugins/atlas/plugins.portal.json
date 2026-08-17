@@ -6,6 +6,7 @@
     "loadTimeout": 30000,
     "showLoadingIndicators": true,
     "theme": {
+      "enableDarkMode": false,
       "primaryColor": "#000080",
       "logoUrl": "/atlas/config/d2e2.svg",
       "logoNavigateTo": "/"
