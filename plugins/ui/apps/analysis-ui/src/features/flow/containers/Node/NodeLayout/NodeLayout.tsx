@@ -1,11 +1,12 @@
-import React, { useMemo } from "react";
-import { Handle, NodeProps, Position } from "reactflow";
+import React, { useCallback, useMemo } from "react";
+import { Handle, NodeProps, Position, useReactFlow } from "reactflow";
 import classNames from "classnames";
 import {
   Box,
   EditNoBoxIcon,
   DragIndicatorIcon,
   Button,
+  TrashIcon,
 } from "@portal/components";
 import { InputHandle } from "./NodeHandle/CustomHandle";
 import { NodeDataState } from "../../../types";
@@ -17,6 +18,8 @@ import {
   NodeChoiceMap,
   NodeConnection,
 } from "../NodeTypes";
+import { dispatch } from "../../../../../store";
+import { markStatusAsDraft } from "../../../reducers";
 import "./NodeLayout.scss";
 
 export interface NodeLayoutProps<T> {
@@ -40,12 +43,38 @@ export const NodeLayout = <T extends NodeDataState>({
   renderChildren = false,
   node,
 }: NodeLayoutProps<T>) => {
+  const { deleteElements } = useReactFlow();
   const classes = classNames("node", className, {
     "node--has-setting": typeof onSettingClick === "function",
     "node--has-error": resultType === "error",
   });
 
   const PLAIN_NODES = ["patient_level_prediction_node"];
+
+  const deleteNode = useCallback(async () => {
+    await deleteElements({ nodes: [{ id: node.id }] });
+    dispatch(markStatusAsDraft());
+  }, [deleteElements, node.id]);
+
+  const handleDeleteClick = useCallback(
+    (event: React.MouseEvent<SVGSVGElement>) => {
+      event.stopPropagation();
+      deleteNode();
+    },
+    [deleteNode]
+  );
+
+  const handleDeleteKeyDown = useCallback(
+    (event: React.KeyboardEvent<SVGSVGElement>) => {
+      // Activate on Enter/Space like a native button (Space would otherwise scroll).
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        event.stopPropagation();
+        deleteNode();
+      }
+    },
+    [deleteNode]
+  );
 
   const inputHandles = useMemo(() => {
     const handles: NodeConnection[] = NodeChoiceMap[node.type]?.inputs ?? [];
@@ -98,6 +127,16 @@ export const NodeLayout = <T extends NodeDataState>({
           {title}
         </Box>
         <Box display="flex" gap={2}>
+          <Box display="inline-flex">
+            <TrashIcon
+              onClick={handleDeleteClick}
+              onKeyDown={handleDeleteKeyDown}
+              role="button"
+              tabIndex={0}
+              aria-label="Delete node"
+              className="node__setting node__delete nodrag"
+            />
+          </Box>
           {typeof onSettingClick === "function" &&
             !PLAIN_NODES.includes(node.type) && (
               <Box display="inline-flex">
