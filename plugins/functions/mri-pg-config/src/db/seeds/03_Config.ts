@@ -1040,6 +1040,59 @@ export const cdwConfig = {
                         "conceptIdentifierType": "name",
                         "useRefValue": true
                     },
+                    "conditionconceptcode": {
+                        "name": [
+                            {
+                                "lang": "",
+                                "value": "Condition concept code"
+                            }
+                        ],
+                        "disabledLangName": [
+                            {
+                                "lang": "en",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "de",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "fr",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "es",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "pt",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "zh",
+                                "value": "",
+                                "visible": true
+                            }
+                        ],
+                        "type": "text",
+                        "expression": "@REF.CONCEPT_CODE",
+                        "defaultPlaceholder": "@REF",
+                        "defaultFilter": "@REF.concept_id = @COND.condition_concept_id",
+                        "referenceFilter": "@REF.DOMAIN_ID = 'Condition' AND @REF.STANDARD_CONCEPT = 'S' AND (@REF.CONCEPT_NAME) LIKE_REGEXPR '@SEARCH_QUERY' FLAG 'i'",
+                        "referenceExpression": "@REF.CONCEPT_CODE",
+                        "order": 12,
+                        "domainFilter": "",
+                        "standardConceptCodeFilter": "",
+                        "cohortDefinitionKey": "CodesetId",
+                        "conceptIdentifierType": "name",
+                        "useRefValue": true,
+                        "useRefText": true
+                    },
                     "conditionoccurrenceid": {
                         "name": [
                             {
@@ -10020,6 +10073,26 @@ const paConfig = {
                     "modelName": "Condition concept name"
                 },
                 {
+                    "source": "patient.interactions.conditionoccurrence.attributes.conditionconceptcode",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": true,
+                    "useRefValue": true,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 12
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Condition concept code"
+                },
+                {
                     "source": "patient.interactions.conditionoccurrence.attributes.conditionconceptid",
                     "ordered": false,
                     "cached": true,
@@ -14329,6 +14402,59 @@ export const cdwConfigDuckdb = {
                         "standardConceptCodeFilter": "",
                         "cohortDefinitionKey": "CodesetId",
                         "conceptIdentifierType": "name"
+                    },
+                    "conditionconceptcode": {
+                        "name": [
+                            {
+                                "lang": "",
+                                "value": "Condition concept code"
+                            }
+                        ],
+                        "disabledLangName": [
+                            {
+                                "lang": "en",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "de",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "fr",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "es",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "pt",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "zh",
+                                "value": "",
+                                "visible": true
+                            }
+                        ],
+                        "type": "text",
+                        "expression": "@REF.CONCEPT_CODE",
+                        "defaultPlaceholder": "@REF",
+                        "defaultFilter": "@REF.concept_id = @COND.condition_concept_id",
+                        "referenceFilter": "@REF.DOMAIN_ID = 'Condition' AND @REF.STANDARD_CONCEPT = 'S' AND @REF.VOCABULARY_ID = 'SNOMED' AND JARO_SIMILARITY(lower(@REF.CONCEPT_NAME), lower('@SEARCH_QUERY')) >= 0.65",
+                        "referenceExpression": "@REF.CONCEPT_CODE",
+                        "order": 11,
+                        "domainFilter": "",
+                        "standardConceptCodeFilter": "",
+                        "cohortDefinitionKey": "CodesetId",
+                        "conceptIdentifierType": "code",
+                        "useRefValue": true,
+                        "useRefText": true
                     },
                     "condition_source_concept_code": {
                         "name": [
@@ -26334,6 +26460,26 @@ const paConfigDuckdb = {
                     "modelName": "Condition concept Name"
                 },
                 {
+                    "source": "patient.interactions.conditionoccurrence.attributes.conditionconceptcode",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": true,
+                    "useRefValue": true,
+                    "category": false,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": false,
+                        "order": 12
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": false,
+                        "linkColumn": false
+                    },
+                    "modelName": "Condition concept code"
+                },
+                {
                     "source": "patient.interactions.conditionoccurrence.attributes.condition_source_concept_code",
                     "ordered": false,
                     "cached": true,
@@ -35018,6 +35164,59 @@ const omopHanaLeanCdwConfig = {
 						"cohortDefinitionKey": "CodesetId",
 						"conceptIdentifierType": "name",
 						"useRefValue": true
+					},
+					"conditionconceptcode": {
+						"name": [
+							{
+								"lang": "",
+								"value": "Condition concept code"
+							}
+						],
+						"disabledLangName": [
+								{
+									"lang": "en",
+									"value": "",
+									"visible": true
+								},
+								{
+									"lang": "de",
+									"value": "",
+									"visible": true
+								},
+								{
+									"lang": "fr",
+									"value": "",
+									"visible": true
+								},
+								{
+									"lang": "es",
+									"value": "",
+									"visible": true
+								},
+								{
+									"lang": "pt",
+									"value": "",
+									"visible": true
+								},
+								{
+									"lang": "zh",
+									"value": "",
+									"visible": true
+								}
+						],
+						"type": "text",
+						"expression": "@REF.CONCEPT_CODE",
+						"defaultPlaceholder": "@REF",
+						"defaultFilter": "@REF.concept_id = @COND.condition_concept_id",
+						"referenceFilter": "@REF.DOMAIN_ID = 'Condition' AND @REF.STANDARD_CONCEPT = 'S' AND (@REF.CONCEPT_NAME) LIKE_REGEXPR '@SEARCH_QUERY' FLAG 'i'",
+						"referenceExpression": "@REF.CONCEPT_CODE",
+						"order": 4,
+						"domainFilter": "",
+						"standardConceptCodeFilter": "",
+						"cohortDefinitionKey": "CodesetId",
+						"conceptIdentifierType": "name",
+						"useRefValue": true,
+						"useRefText": true
 					}
 				}
 			},
@@ -38004,6 +38203,26 @@ const omopHanaLeanPAConfig = {
                         "linkColumn": false
                     },
                     "modelName": "Condition Source concept code"
+                },
+                {
+                    "source": "patient.interactions.conditionoccurrence.attributes.conditionconceptcode",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": true,
+                    "useRefValue": true,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 5
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Condition concept code"
                 }
             ],
             "initialPatientlistColumn": false,

@@ -97,14 +97,14 @@ const WIZARD_FIELDS: FieldDefinition[] = [
   //   type: "text",
   //   label: "Condition",
   //   required: false,
-  //   configPath: "patient.interactions.conditionoccurrence.attributes.condition_occ_concept_name",
+  //   configPath: "patient.interactions.conditionoccurrence.attributes.conditionconceptcode",
   // },
   // {
   //   id: "condition2",
   //   type: "text",
   //   label: "Condition2",
   //   required: false,
-  //   configPath: "patient.interactions.conditionoccurrence.attributes.condition_occ_concept_name",
+  //   configPath: "patient.interactions.conditionoccurrence.attributes.conditionconceptcode",
   // },
   {
     id: "height",
@@ -223,7 +223,7 @@ const WIZARD_FIELDS: FieldDefinition[] = [
     type: "text",
     label: "Condition 1",
     required: false,
-    configPath: "patient.interactions.conditionoccurrence.attributes.condition_occ_concept_name",
+    configPath: "patient.interactions.conditionoccurrence.attributes.conditionconceptcode",
     isWizardField: true,
   },
   {
@@ -231,7 +231,7 @@ const WIZARD_FIELDS: FieldDefinition[] = [
     type: "text",
     label: "Condition 2",
     required: false,
-    configPath: "patient.interactions.conditionoccurrence.attributes.condition_occ_concept_name",
+    configPath: "patient.interactions.conditionoccurrence.attributes.conditionconceptcode",
     isWizardField: true,
   },
   {
@@ -239,7 +239,7 @@ const WIZARD_FIELDS: FieldDefinition[] = [
     type: "text",
     label: "Condition 3",
     required: false,
-    configPath: "patient.interactions.conditionoccurrence.attributes.condition_occ_concept_name",
+    configPath: "patient.interactions.conditionoccurrence.attributes.conditionconceptcode",
     isWizardField: true,
   },
   {
@@ -247,7 +247,7 @@ const WIZARD_FIELDS: FieldDefinition[] = [
     type: "text",
     label: "Condition 4",
     required: false,
-    configPath: "patient.interactions.conditionoccurrence.attributes.condition_occ_concept_name",
+    configPath: "patient.interactions.conditionoccurrence.attributes.conditionconceptcode",
     isWizardField: true,
   },
   {
@@ -255,7 +255,7 @@ const WIZARD_FIELDS: FieldDefinition[] = [
     type: "text",
     label: "Condition 5",
     required: false,
-    configPath: "patient.interactions.conditionoccurrence.attributes.condition_occ_concept_name",
+    configPath: "patient.interactions.conditionoccurrence.attributes.conditionconceptcode",
     isWizardField: true,
   },
   {
@@ -263,7 +263,7 @@ const WIZARD_FIELDS: FieldDefinition[] = [
     type: "text",
     label: "Condition 6",
     required: false,
-    configPath: "patient.interactions.conditionoccurrence.attributes.condition_occ_concept_name",
+    configPath: "patient.interactions.conditionoccurrence.attributes.conditionconceptcode",
     isWizardField: true,
   },
 ];

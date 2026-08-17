@@ -55,7 +55,7 @@ const mockConfig: CdwConfig = {
       conditionoccurrence: {
         name: "Condition Occurrence",
         attributes: {
-          condition_occ_concept_name: { name: "Condition", type: "text" },
+          conditionconceptcode: { name: "Condition", type: "text" },
         },
       },
       measurement: {
@@ -120,10 +120,10 @@ const mockAttributeValues: Record<string, Array<{ label: string; value: string }
     { label: "FEMALE", value: "FEMALE" },
     { label: "MALE", value: "MALE" },
   ],
-  "patient.interactions.conditionoccurrence.attributes.condition_occ_concept_name": [
-    { label: "Diabetes mellitus", value: "Diabetes mellitus" },
-    { label: "Hypertension", value: "Hypertension" },
-    { label: "Asthma", value: "Asthma" },
+  "patient.interactions.conditionoccurrence.attributes.conditionconceptcode": [
+    { label: "Diabetes mellitus", value: "73211009" },
+    { label: "Hypertensive disorder", value: "38341003" },
+    { label: "Asthma", value: "195967001" },
   ],
 };
 

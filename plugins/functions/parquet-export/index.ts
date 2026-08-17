@@ -74,7 +74,7 @@ function isValidYear(str: string): boolean {
   );
 }
 
-function isValidConceptCode(str: string): boolean {
+export function isValidConceptCode(str: string): boolean {
   return typeof str === "string" && /^[a-zA-Z0-9.\-]+$/.test(str);
 }
 
@@ -116,7 +116,7 @@ const RESERVED_PLACEHOLDERS = new Set([
   "CONCEPT_IDS",
 ]);
 
-function substituteTemplateParams(
+export function substituteTemplateParams(
   sqlTemplate: string,
   params: {
     cohortId: number;
@@ -668,5 +668,9 @@ router.post("/", async (req: Request, res: Response) => {
 });
 
 app.use("/parquet-export", router);
-app.listen(8000);
+
+// Only start the server when run directly (not when imported by tests).
+if (import.meta.main) {
+  app.listen(8000);
+}
   
