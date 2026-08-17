@@ -222,16 +222,6 @@
           "service": "logto"
         },
         {
-          "source": "/jupyter",
-          "service": "jupyter-gateway",
-          "rmsrc": true
-        },
-        {
-          "source": "/jupyter-viewer",
-          "service": "jupyter-gateway-viewer",
-          "rmsrc": true
-        },
-        {
           "source": "/prefect/docs",
           "service": "prefect"
         },
@@ -276,26 +266,10 @@
           "imports": "/d2e-webapi/deno.json"
         },
         {
-          "source": "/strategus-results",
-          "function": "/strategus-analysis",
-          "env": "strategus-analysis",
-          "imports": "/strategus-analysis/deno.json"
-        },
-        {
           "source": "/strategus",
           "function": "/strategus-analysis",
           "env": "strategus-analysis",
           "imports": "/strategus-analysis/deno.json"
-        },
-        {
-          "source": "/mlflow",
-          "service": "mlflow",
-          "rmsrc": true
-        },
-        {
-          "source": "/dockerlogs",
-          "service": "docker-logs",
-          "rmsrc": false
         },
         {
           "source": "/parquet-export",
@@ -581,9 +555,6 @@
           "FHIR_DATABASE_CODE": "${FHIR_DATABASE_CODE:-FHIR}",
           "IS_SELF_MANAGED_ROLES": "${IS_SELF_MANAGED_ROLES:-false}"
         },
-        "jupyter-gateway": {},
-        "jupyter-gateway-viewer": {},
-        "mlflow": {},
         "strategus-analysis": {
           "PG_USER": "${PG_WRITE_USER:-alp_pg_write_user}",
           "PG_PASSWORD": "${PG_WRITE_PASSWORD}",
@@ -770,9 +741,7 @@
           "strategus.results.write",
           "strategus.results.delete",
           "strategus.results.admin.upload",
-          "strategus.results.admin.delete",
-          "mlflow",
-          "d2e.container.logs.read"
+          "strategus.results.admin.delete"
         ],
         "ALP_DASHBOARD_VIEWER": [
           "gateway.dashboardGate.content",
@@ -877,7 +846,6 @@
           "strategus.analysis.read",
           "strategus.analysis.write",
           "jobplugins.flowRun.strategus.removeResults.add",
-          "jupyter",
           "jobplugins.dqd.researcher.execute",
           "jobplugins.cohortDqd.researcher.execute",
           "jobplugins.analysisUi.researcher.execute",
@@ -2961,38 +2929,6 @@
           "path": "^/d2e-webapi(.*)",
           "scopes": [
             "d2e.webapi"
-          ]
-        },
-        {
-          "path": "^/jupyter",
-          "scopes": [
-            "jupyter"
-          ]
-        },
-        {
-          "path": "^/mlflow(.*)",
-          "scopes": [
-            "mlflow"
-          ]
-        },
-        {
-          "path": "^/dockerlogs(.*)",
-          "scopes": [
-            "d2e.container.logs.read"
-          ]
-        },
-        {
-          "path": "^/strategus-results",
-          "scopes": [
-            "strategus.results.read",
-            "strategus.results.write",
-            "strategus.results.delete"
-          ],
-          "httpMethods": [
-            "GET",
-            "HEAD",
-            "POST",
-            "DELETE"
           ]
         },
         {

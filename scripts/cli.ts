@@ -21,9 +21,6 @@ interface CliOptions {
   functionPath?: string;
   demo?: boolean;
   minio?: boolean;
-  dicom?: boolean;
-  jupyter?: boolean;
-  mlflow?: boolean;
   composeFile?: string;
   dockerContext?: string;
   version?: string;
@@ -230,12 +227,6 @@ class D2ECli {
         this.DEFAULT_PASSWORD_LENGTH,
       )}`,
       DEMO__DB_PASSWORD: `${this.generate_random_password(6)}`,
-      REDIS_PASSWORD: `${this.generate_random_password(
-        this.DEFAULT_PASSWORD_LENGTH,
-      )}`,
-      DICOM__HEALTH_CHECK_PASSWORD: `${this.generate_random_password(
-        this.DEFAULT_PASSWORD_LENGTH,
-      )}`,
       TLS__CADDY_DIRECTIVE: `${this.TLS__CADDY_DIRECTIVE}`,
       SUPABASE_STORAGE_JWT_SECRET: `${this.SUPABASE_STORAGE_JWT_SECRET}`,
       SUPABASE_STORAGE_JWT_TOKEN: `${this.SUPABASE_STORAGE_JWT_TOKEN}`,
@@ -307,9 +298,6 @@ class D2ECli {
         "[PATH] Development mode. [PATH] is the path to the functions plugin (e.g. ./plugins/functions)",
       )
       .option("-e, --demo", "Include demo database")
-      .option("-i, --dicom", "Include DICOM Server")
-      .option("-j, --jupyter", "Include jupyter")
-      .option("-m, --mlflow", "Include mlflow")
       .option("-h, --hana", "")
       .option("--hades", "")
       .option(
@@ -475,9 +463,6 @@ class D2ECli {
       `${this.compose_dir}/docker-compose.yml`,
     );
     if (options.demo) dockerbasecmd.push("--profile", "demodb");
-    if (options.dicom) dockerbasecmd.push("--profile", "dicom");
-    if (options.jupyter) dockerbasecmd.push("--profile", "jupyter");
-    if (options.mlflow) dockerbasecmd.push("--profile", "mlflow");
     if (options.hana) dockerbasecmd.push("--profile", "hana");
     if (options.minio) dockerbasecmd.push("--profile", "minio");
     if (options.functionPath) {
@@ -633,49 +618,6 @@ class D2ECli {
 
   isFullStart(opts: CliOptions): boolean {
     return !opts.services || opts.services.length === 0;
-  }
-
-  async pull_image(imageName: string, tagName: string): Promise<void> {
-    const fullImageName = `${this.DOCKER_IMAGE_PREFIX}${imageName}:${tagName}`;
-    const cmd_pull = `docker pull --platform linux/amd64 ${fullImageName}`;
-    console.log(`Pulling image: ${cmd_pull}`);
-    await new Promise<void>((resolve) => {
-      const proc = spawn(cmd_pull, {
-        stdio: "inherit",
-        shell: true,
-        env: process.env,
-      });
-      proc.on("close", (code) => {
-        if (code === 0) {
-          console.log("Process completed successfully.");
-        } else {
-          console.log(`Process exited with code ${code}`);
-        }
-        resolve();
-      });
-    });
-  }
-  updateTag() {
-    const kernelPath = path.join(
-      this.node_modules_path,
-      "services/enterprise-gateway/kernels/R_ohdsi_docker/kernel.json",
-    );
-    console.log(`Updating tag of R Jupyter Kernel at ${kernelPath}`);
-    if (!fs.existsSync(kernelPath)) {
-      console.error(`Error: kernel.json not found at ${kernelPath}`);
-      process.exit(1);
-    }
-    const rawData = fs.readFileSync(kernelPath, "utf-8");
-    const data = JSON.parse(rawData);
-    const imageName = data.metadata.process_proxy.config.image_name;
-    console.log(`Original image name: ${imageName}`);
-    let DOCKER_IMAGE_PREFIX =
-      process.env.DOCKER_IMAGE_PREFIX || "ghcr.io/ohdsi/";
-    const newImage = `${DOCKER_IMAGE_PREFIX}d2e-r-ohdsi-kernel:${this.DOCKER_TAG_NAME}`;
-    console.log(`Updating image name to: ${newImage}`);
-    data.metadata.process_proxy.config.image_name = newImage;
-    fs.writeFileSync(kernelPath, JSON.stringify(data, null, 2));
-    console.log(`Completed successfully.`);
   }
 
   // Commands
@@ -1018,9 +960,6 @@ class D2ECli {
         this.DOCKER_IMAGE_PREFIX = DOCKER_IMAGE_PREFIX;
         // Flow runs execute on the pixi process worker (its image is part of
         // the compose pull); the legacy per-group flow images are retired.
-        if (options.jupyter) {
-          await this.pull_image("d2e-r-ohdsi-kernel", this.DOCKER_TAG_NAME);
-        }
         const { cmd, env } = this.build_docker_command(options, "pull");
         console.log(`Executing command: ${cmd}`);
         const proc1 = spawn(cmd, {
@@ -1097,14 +1036,6 @@ class D2ECli {
         const r = await this.syncRoles();
         if (!r.ok) process.exit(1);
       });
-    const update_tag = this.program
-      .command("updatetag")
-      .description("Update image tags for d2e services")
-      .action(async () => {
-        console.log("Updating image tags for patch/release...");
-        this.updateTag();
-      });
-    (update_tag as any)._hidden = true;
   }
 
   run(): void {

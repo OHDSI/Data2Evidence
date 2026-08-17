@@ -56,10 +56,6 @@ DEMO__DB_USER:
   comment: null
   publish: false
   type: string
-DICOM__HEALTH_CHECK_PASSWORD:
-  comment: deprecated
-  publish: true
-  type: string
 DOCKER_TAG_NAME:
   comment: default tag
   publish: true
@@ -164,10 +160,6 @@ PLUGINS_SEED_UPDATE:
 PROJECT_NAME:
   comment: null
   publish: false
-  type: string
-REDIS_PASSWORD:
-  comment: Redis Password
-  publish: true
   type: string
 SQL_RETURN_ON:
   comment: null

@@ -1,12 +1,9 @@
 import React, { FC, useCallback, useState, useMemo } from "react";
 import Divider from "@mui/material/Divider";
-import CircularProgress from "@mui/material/CircularProgress";
-import { PlayCircleFilled, StopCircle } from "@mui/icons-material";
 import { Button, Dialog, Select, MenuItem, InputLabel, Loader } from "@portal/components";
 import * as monaco from "monaco-editor";
 import { loader, Editor } from "@monaco-editor/react";
 import { CloseDialogType } from "../../../../types";
-import { useKernelViewer } from "../../../../hooks";
 import { useTranslation } from "../../../../contexts";
 import { api } from "../../../../axios/api";
 import { i18nKeys } from "../../../../contexts/app-context/states";
@@ -52,7 +49,6 @@ const ManageViewerDialog: FC<ManageViewerDialogProps> = ({ config, open, onClose
 
   const strategy = useMemo(() => createConfigStrategy(config.type), [config.type]);
   const { loading, feedback, clearFeedback, execute } = useAsyncOperation();
-  const [viewerStatus, startViewer, stopViewer] = useKernelViewer(config.id, config.datasetId ?? config.id);
 
   const {
     templates,
@@ -102,33 +98,12 @@ const ManageViewerDialog: FC<ManageViewerDialogProps> = ({ config, open, onClose
     const prefix = config.type === "dashboard" ? "MANAGE_DASHBOARD_DIALOG" : "MANAGE_STRATEGUS_RESULT_VIEWER_DIALOG";
     return {
       title: `${prefix}__TITLE` as keyof typeof i18nKeys,
-      startViewer: `${prefix}__START_VIEWER` as keyof typeof i18nKeys,
-      startingViewer: `${prefix}__STARTING_VIEWER` as keyof typeof i18nKeys,
-      stopViewer: `${prefix}__STOP_VIEWER` as keyof typeof i18nKeys,
-      stoppingViewer: `${prefix}__STOPPING_VIEWER` as keyof typeof i18nKeys,
-      viewerStatus: `${prefix}__VIEWER_STATUS` as keyof typeof i18nKeys,
       cancel: `${prefix}__CANCEL` as keyof typeof i18nKeys,
       save: `${prefix}__SAVE` as keyof typeof i18nKeys,
       saveSuccess: `${prefix}__SAVE_SUCCESS` as keyof typeof i18nKeys,
       saveError: `${prefix}__SAVE_ERROR` as keyof typeof i18nKeys,
     };
   }, [config.type]);
-
-  const handleStartViewer = useCallback(async () => {
-    try {
-      await startViewer(code);
-    } catch (error) {
-      console.error("Failed to start viewer:", error);
-    }
-  }, [startViewer, code]);
-
-  const handleStopViewer = useCallback(async () => {
-    try {
-      await stopViewer();
-    } catch (error) {
-      console.error("Failed to stop viewer:", error);
-    }
-  }, [stopViewer]);
 
   const handleClose = useCallback(
     (type: CloseDialogType) => {
@@ -340,46 +315,9 @@ const ManageViewerDialog: FC<ManageViewerDialogProps> = ({ config, open, onClose
           </div>
         </div>
 
-        {ViewerType.SHINY_SERVER === templateLanguage && (
-          <>
-            <div className="manage-viewer-dialog__header__content">
-              <Button
-                onClick={handleStartViewer}
-                startIcon={
-                  viewerStatus === "starting" ? (
-                    <CircularProgress size={16} className="manage-viewer-dialog__loading-icon" />
-                  ) : (
-                    <PlayCircleFilled className="manage-viewer-dialog__action-icon" />
-                  )
-                }
-                text={viewerStatus === "starting" ? getText(i18n.startingViewer) : getText(i18n.startViewer)}
-                disabled={viewerStatus !== "down" && viewerStatus !== "failed"}
-                variant="text"
-              />
-
-              <Button
-                startIcon={
-                  viewerStatus === "stopping" ? (
-                    <CircularProgress size={16} className="manage-viewer-dialog__loading-icon" />
-                  ) : (
-                    <StopCircle className="manage-viewer-dialog__action-icon" />
-                  )
-                }
-                text={viewerStatus === "stopping" ? getText(i18n.stoppingViewer) : getText(i18n.stopViewer)}
-                disabled={viewerStatus !== "up"}
-                variant="text"
-                onClick={handleStopViewer}
-              />
-            </div>
-            <div className="manage-viewer-dialog__header__content">{getText(i18n.viewerStatus, [viewerStatus])}</div>
-          </>
-        )}
-
-        {ViewerType.SHINY_SERVER !== templateLanguage && (
-          <div className="manage-viewer-dialog__header__content">
-            <Button onClick={handleBuildAssets} text={getText(i18nKeys.MANAGE_VIEWER_DIALOG__BUILD_SHINY)} loading={loading} />
-          </div>
-        )}
+        <div className="manage-viewer-dialog__header__content">
+          <Button onClick={handleBuildAssets} text={getText(i18nKeys.MANAGE_VIEWER_DIALOG__BUILD_SHINY)} loading={loading} />
+        </div>
       </div>
       <Divider />
 
