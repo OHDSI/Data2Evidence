@@ -2,8 +2,6 @@ name: ${PROJECT_NAME:-d2e}
 networks:
   alp:
   data:
-  enterprise-gateway:
-  enterprise-gateway-viewer:
 
 volumes:
   caddy:
@@ -13,7 +11,6 @@ volumes:
   r-libs:
   trex:
   demodb-data:
-  dicom-sqlite-storage:
   hana-data:
   supabase-storage-data:
   hades-data:
@@ -38,9 +35,6 @@ x-envs:
     PG__IDLE_TIMEOUT_IN_MS: ${PG__IDLE_TIMEOUT_IN_MS:-30000}
     PG__DIALECT: postgresql
     PG__SSL: ${PG__SSL:-false}
-  redis: &x-redis
-    REDIS_HOST: ${REDIS_HOST:-${PROJECT_NAME:-d2e}-minerva-redis-1}
-    REDIS_PORT: ${REDIS_PORT:-6379}
   trex_sql: &x-trex-sql
     TREX__SQL__HOST: ${PROJECT_NAME:-d2e}-trex
     TREX__SQL__PORT: ${TREX__SQL__PORT:-5433}
@@ -53,24 +47,6 @@ x-envs:
     TLS__INTERNAL__CRT: ${TLS__INTERNAL__CRT}
     TLS__INTERNAL__DOMAIN: ${TLS__INTERNAL__DOMAIN:-alp.local}
     TLS__INTERNAL__KEY: ${TLS__INTERNAL__KEY}
-  enterprise-gateway: &x-enterprise-gateway
-    EG_KERNEL_LAUNCH_TIMEOUT: ${EG_KERNEL_LAUNCH_TIMEOUT:-300}
-    EG_KERNEL_INFO_TIMEOUT: ${EG_KERNEL_INFO_TIMEOUT:-60}
-    EG_CULL_IDLE_TIMEOUT: ${EG_CULL_IDLE_TIMEOUT:-600}
-    EG_CULL_CONNECTED: ${EG_CULL_CONNECTED:-True}
-    EG_CULL_BUSY: ${EG_CULL_BUSY:-True}
-    # Use double-defaulting for B/C.  Support for EG_KERNEL_WHITELIST will be removed in a future release
-    EG_ALLOWED_KERNELS: ${EG_ALLOWED_KERNELS:-${EG_KERNEL_WHITELIST:-'r_ohdsi_docker'}} # /jupyter/api/kernelspecs
-    EG_MIRROR_WORKING_DIRS: ${EG_MIRROR_WORKING_DIRS:-False}
-    EG_RESPONSE_PORT: ${EG_RESPONSE_PORT:-8877}
-    KG_PORT: ${KG_PORT:-8888}
-    EG_BASE_URL: /jupyter
-    EG_DEFAULT_KERNEL_NAME: "r_ohdsi_docker"
-    EG_DOCKER_MODE: docker
-    EG_ALLOW_ORIGIN: "https://${CADDY__D2E__PUBLIC_FQDN:-${CADDY__ALP__PUBLIC_FQDN:-localhost}}${PORT:+:${PORT:-443}}"
-    TREX__ENDPOINT_URL: "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001"
-    EG_ENV_WHITELIST: "KERNEL_USERNAME"
-    EG_MAX_KERNELS_PER_USER: 1
 
 services:
   # OHDSI WebAPI for Atlas3 (with trex dependencies)
@@ -90,13 +66,16 @@ services:
         priority: 20
       data:
         priority: 10
-      enterprise-gateway-viewer:
-        priority: 20
     volumes:
       - trex:/usr/src/data
       - cdw-config-cachedb-data-1:/usr/src/cdw_data/dynamically_generated
       - hades-data:/data/hades
       - audit-logs:/var/log/d2e/audit
+      # `notebook` schema (studies/notebooks) + its PostGraphile grants, applied
+      # as a trex migrations plugin. Must land under a PLUGINS_DEV_PATH entry to
+      # be scanned; trex runs it against _config (the alp Postgres catalog) and
+      # tracks applied versions in notebook.refinery_schema_history.
+      - ./services/trex/migrations/notebook:/usr/src/bundled-plugins/notebook-schema:ro
     ports:
       - "8090:8080"
     healthcheck:
@@ -203,7 +182,8 @@ services:
       PG__HOST: ${PG_HOST:-${PROJECT_NAME:-d2e}-minerva-postgres-1}
       PG__PORT: ${PG_PORT:-5432}
       # Schemas PostGraphile introspects for /trex/graphql - `notebook` exposes
-      # the studies/notebooks tables from services/trex/migrations/notebook.
+      # the studies/notebooks tables provisioned by the notebook-schema
+      # migrations plugin mounted above.
       PG_SCHEMA: ${PG_SCHEMA:-trexdb,notebook}
       TREX_SQL_PASSWORD: ${TREX__SQL__PASSWORD:?TREX__SQL__PASSWORD must be set (run d2e init); refusing default pencil}
       TREX__SQL__PORT: ${TREX__SQL__PORT:-5433}
@@ -270,14 +250,9 @@ services:
         "filesManager": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/files-manager/api",
         "whiteRabbit": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/white-rabbit/api",
         "alpdb": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/gateway/api/db",
-        "dicomServer": "http://${PROJECT_NAME:-d2e}-dicom-server-1:8042",
         "logto": "http://${PROJECT_NAME:-d2e}-logto-1:3001",
-        "jupyter-gateway": "http://${PROJECT_NAME:-d2e}-enterprise-gateway:8888/jupyter",
-        "jupyter-gateway-viewer": "http://${PROJECT_NAME:-d2e}-enterprise-gateway-viewer:8888/jupyter",
-        "docker-logs": "http://${PROJECT_NAME:-d2e}-logging-1:8080",
         "supabaseStorage": "http://${PROJECT_NAME:-d2e}-supabase-storage-1:9000",
         "dataflowStorage": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/system-portal/supabase-storage",
-        "mlflow": "http://${PROJECT_NAME:-d2e}-mlflow:5000",
         "mcp-server": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/mcp/chat",
         "materializeCohorts": "https://${PROJECT_NAME:-d2e}-materialize-cohorts:3333",
         "fhirServer": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:8094",
@@ -387,7 +362,6 @@ services:
       USE_PUBLIC_WEBAPI_PROXY: ${USE_PUBLIC_WEBAPI_PROXY:-false}
       PUBLIC_WEBAPI_PROXY_URL: ${PUBLIC_WEBAPI_PROXY_URL:-http://localhost:3001}
       PUBLIC_WEBAPI_DATASOURCE: ${PUBLIC_WEBAPI_DATASOURCE:-SYNPUF1K}
-      REDIS_PASSWORD: ${REDIS_PASSWORD}
       SQL_RETURN_ON: ${SQL_RETURN_ON:-false}
       AZURE_OPENAI_API_KEY: ${AZURE_OPENAI_API_KEY:-}
       AZURE_OPENAI_API_ENDPOINT: ${AZURE_OPENAI_API_ENDPOINT:-}
@@ -571,10 +545,6 @@ services:
     networks:
       alp:
         priority: 20
-      enterprise-gateway:
-        priority: 20
-      enterprise-gateway-viewer:
-        priority: 20
     command: >
       sh -c "
         mkdir -p /srv/caddy-config &&
@@ -646,47 +616,6 @@ services:
               transport http {
                 read_buffer 8192
               }
-            }
-          }
-
-          @jupyter_websocket {
-            path /jupyter/*
-            header Connection *Upgrade*
-            header Upgrade websocket
-          }
-
-          @strategus_websocket {
-            path /strategus-results/*
-            header Connection *Upgrade*
-            header Upgrade websocket
-          }
-          
-          handle @jupyter_websocket {
-            reverse_proxy https://${PROJECT_NAME:-d2e}-trex:33000 {
-              transport http {
-                tls
-                tls_insecure_skip_verify
-                read_buffer 8192
-              }
-              method GET
-              rewrite /usermgmt/api/me/is_token_valid_internal
-              header_up X-Forwarded-Method {method}
-              header_up X-Forwarded-Uri {uri}
-              header_up authorization {http.request.uri.query.token}
-              @good status 2xx
-              handle_response @good {
-                request_header Remote-User {rp.header.Remote-User}
-                request_header Remote-Email {rp.header.Remote-Email}
-              }
-            }
-            reverse_proxy @jupyter_websocket http://${PROJECT_NAME:-d2e}-enterprise-gateway:8888
-          }
-
-          handle @strategus_websocket {
-            @study_id path_regexp ^/strategus-results/([^/]+)/(.*)$
-            handle @study_id {
-              uri strip_prefix /strategus-results/{re.1}
-              reverse_proxy {re.1}:3838
             }
           }
 
@@ -1071,10 +1000,6 @@ services:
         priority: 20
       data:
         priority: 10
-      enterprise-gateway:
-        priority: 10
-      enterprise-gateway-viewer:
-        priority: 10
     restart: ${DOCKER__RESTART_POLICY:-unless-stopped}
     command:
       - "postgres"
@@ -1091,30 +1016,6 @@ services:
         - *x-tls
       POSTGRES_DB: ${PG_DB_NAME:-alp}
       POSTGRES_PASSWORD: ${PG_SUPER_PASSWORD}
-
-  # Applies the trex `notebook` schema migrations into the alp DB so
-  # PostGraphile can persist studies/notebooks. Idempotent (CREATE ... IF NOT
-  # EXISTS) so re-runs are safe.
-  notebook-migrate:
-    container_name: ${PROJECT_NAME:-d2e}-notebook-migrate
-    image: postgres:16
-    depends_on:
-      alp-minerva-postgres:
-        condition: service_healthy
-    networks:
-      alp:
-        priority: 20
-      data:
-        priority: 10
-    environment:
-      PGPASSWORD: ${PG_SUPER_PASSWORD}
-    volumes:
-      - ./services/trex/migrations/notebook:/migrations/notebook:ro
-    entrypoint:
-      - /bin/sh
-      - -c
-      - 'for f in /migrations/notebook/V*.sql; do echo "applying $$f"; psql -h ${PG_HOST:-${PROJECT_NAME:-d2e}-minerva-postgres-1} -U postgres -d alp -v ON_ERROR_STOP=1 -f "$$f"; done'
-    restart: "no"
 
   demodb:
     image: ohdsi/broadsea-atlasdb:2.3.0
@@ -1155,25 +1056,6 @@ services:
       interval: 5s
       timeout: 5s
       retries: 10
-    restart: ${DOCKER__RESTART_POLICY:-unless-stopped}
-
-  redis:
-    command: redis-server --requirepass ${REDIS_PASSWORD}
-    container_name: &c26 ${PROJECT_NAME:-d2e}-minerva-redis-1
-    healthcheck:
-      interval: 20s
-      retries: 10
-      start_period: 60s
-      timeout: 30s
-      test: redis-cli --no-auth-warning -a ${REDIS_PASSWORD} ping | grep PONG
-    hostname: ${PROJECT_NAME:-d2e}-minerva-redis-1.${TLS__INTERNAL__DOMAIN:-alp.local}
-    image: redis:7
-    logging:
-      options:
-        tag: *c26
-    networks:
-      alp:
-        priority: 20
     restart: ${DOCKER__RESTART_POLICY:-unless-stopped}
 
   supabase-storage:
@@ -1255,121 +1137,6 @@ services:
       TENANT_ID: stub
       REGION: stub
 
-  dicom-server:
-    # uses 8042 port on the container
-    image: orthancteam/orthanc:24.6.1
-    container_name: &c27 ${PROJECT_NAME:-d2e}-dicom-server-${BASE_PORT:-1}
-    logging:
-      options:
-        tag: *c27
-    restart: ${DOCKER__RESTART_POLICY:-unless-stopped}
-    networks:
-      alp:
-      data:
-    hostname: ${PROJECT_NAME:-d2e}-dicom-server-1.${TLS__INTERNAL__DOMAIN:-alp.local}
-    environment:
-      VERBOSE_ENABLED: true
-      VERBOSE_STARTUP: true
-      ORTHANC__NAME: D2E Dicom Service
-      ORTHANC__AWS_S3_STORAGE__BUCKET_NAME: dicom-images
-      ORTHANC__AWS_S3_STORAGE__ENDPOINT: http://${MINIO__ENDPOINT:-alp-minerva-s3}:${MINIO__PORT:-9000}
-      ORTHANC__AWS_S3_STORAGE__ACCESS_KEY: ${MINIO__ACCESS_KEY:-root}
-      ORTHANC__AWS_S3_STORAGE__SECRET_KEY: ${MINIO__SECRET_KEY}
-      ORTHANC__AWS_S3_STORAGE__VIRTUAL_ADDRESSING: false
-      ORTHANC__AWS_S3_STORAGE__REGION: ${MINIO__REGION:-ap-southeast-1}
-      ORTHANC__AUTHENTICATION_ENABLED: false
-    healthcheck:
-      test:
-        [
-          "CMD-SHELL",
-          "/probes/test-aliveness.py --user=healthcheck --pwd=${DICOM__HEALTH_CHECK_PASSWORD}",
-        ]
-      start_period: 10s
-      interval: 20s
-      retries: 20
-      timeout: 60s
-    volumes:
-      - dicom-sqlite-storage:/var/lib/orthanc/db
-    profiles: [dicom]
-
-  enterprise-gateway:
-    image: ${DOCKER_IMAGE_PREFIX:-ghcr.io/ohdsi/}d2e-enterprise-gateway:${DOCKER_TAG_NAME:-develop}
-    container_name: &c28 ${PROJECT_NAME:-d2e}-enterprise-gateway
-    healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8888/jupyter/api || exit 1"]
-      interval: 30s
-      timeout: 30s
-      retries: 5
-      start_period: 30s
-    platform: linux/amd64
-    logging:
-      options:
-        tag: *c28
-    networks:
-      enterprise-gateway:
-    user: root # Run as root
-    environment:
-      <<:
-        - *x-enterprise-gateway
-      EG_DOCKER_NETWORK: ${EG_DOCKER_NETWORK:-${PROJECT_NAME:-d2e}_enterprise-gateway}
-    volumes:
-      - "/var/run/docker.sock:/var/run/docker.sock"
-    labels:
-      app: "enterprise-gateway"
-      component: "enterprise-gateway"
-    deploy:
-      replicas: 1
-      endpoint_mode: dnsrr
-      labels:
-        app: "enterprise-gateway"
-        component: "enterprise-gateway"
-
-  enterprise-gateway-viewer:
-    image: ${DOCKER_IMAGE_PREFIX:-ghcr.io/ohdsi/}d2e-enterprise-gateway:${DOCKER_TAG_NAME:-develop}
-    container_name: &c29 ${PROJECT_NAME:-d2e}-enterprise-gateway-viewer
-    healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8888/jupyter/api || exit 1"]
-      interval: 30s
-      timeout: 30s
-      retries: 5
-      start_period: 30s
-    platform: linux/amd64
-    logging:
-      options:
-        tag: *c29
-    networks:
-      enterprise-gateway-viewer:
-    user: root # Run as root
-    environment:
-      <<:
-        - *x-enterprise-gateway
-      EG_DOCKER_NETWORK: ${EG_DOCKER_NETWORK:-${PROJECT_NAME:-d2e}_enterprise-gateway-viewer}
-    volumes:
-      - "/var/run/docker.sock:/var/run/docker.sock"
-    labels:
-      app: "enterprise-gateway-viewer"
-      component: "enterprise-gateway-viewer"
-    deploy:
-      replicas: 1
-      endpoint_mode: dnsrr
-      labels:
-        app: "enterprise-gateway-viewer"
-        component: "enterprise-gateway-viewer"
-
-  mlflow:
-    image: ghcr.io/mlflow/mlflow:v3.0.0
-    container_name: &c31 ${PROJECT_NAME:-d2e}-mlflow
-    platform: linux/amd64
-    logging:
-      options:
-        tag: *c31
-    networks:
-      alp:
-      data:
-      enterprise-gateway:
-    command: mlflow server --host 0.0.0.0 --port 5000
-    profiles: [mlflow]
-
   hana:
     container_name: hana
     hostname: hana
@@ -1387,18 +1154,6 @@ services:
       alp:
       data:
     profiles: [hana]
-
-  logging:
-    image: amir20/dozzle:v8.13.9
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock:ro
-    read_only: true
-    networks:
-      alp:
-    environment:
-      - DOZZLE_FILTER=name=${PROJECT_NAME:-d2e}
-      - DOZZLE_BASE=/dockerlogs
-      - DOZZLE_NO_ANALYTICS=true
 
   # WebAPI database initialization (runs SQL scripts after WebAPI is healthy)
   webapi-init:

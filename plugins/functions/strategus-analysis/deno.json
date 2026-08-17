@@ -20,7 +20,6 @@
     "express": "npm:express@^4.18",
     "stream": "node:stream",
     "https": "node:https",
-    "@jupyterlab/services": "npm:@jupyterlab/services@^7.4.3",
     "winston": "npm:winston",
     "async": "npm:async",
     "bcryptjs": "npm:bcryptjs",

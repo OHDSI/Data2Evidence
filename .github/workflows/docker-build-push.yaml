@@ -50,7 +50,6 @@ jobs:
       plugins_tag: ${{ steps.tag.outputs.plugins_tag }}
       is_pr_or_mg: ${{ steps.tag.outputs.is_pr_or_mg }}
       changes_src: ${{ steps.file_changes.outputs.src }}
-      changes_rkernel: ${{ steps.file_changes.outputs.rkernel }}
       changes_dataflow: ${{ steps.file_changes.outputs.dataflow }}
       changes_plugins: ${{ steps.file_changes.outputs.plugins }}
       changes_http_tests: ${{ steps.file_changes.outputs.http_tests }}
@@ -141,13 +140,6 @@ jobs:
               - "plugins/flows/**"
               - "services/alp-dataflow-gen-worker/**"
               - ".github/workflows/docker-build-push.yaml"
-            rkernel:
-              - "services/enterprise-gateway/CustomKernelManager/**"
-              - "services/enterprise-gateway/kernels/**"
-              - "services/enterprise-gateway/r-strategus-lib/**"
-              - "plugins/flows/hades/renv.lock"
-              - "plugins/flows/_shared_flow_utils/postgresql-42.3.1.jar"
-              - ".github/workflows/docker-build-push.yaml"
             plugins:
               - "plugins/flows/**"
               - "package.json"
@@ -200,7 +192,7 @@ jobs:
       contains(github.base_ref, 'release/') ||
       github.event_name == 'workflow_dispatch' ||
       github.event_name == 'merge_group' ||
-      (github.event_name == 'pull_request' && (needs.setup.outputs.changes_src == 'true' || needs.setup.outputs.changes_rkernel == 'true' || needs.setup.outputs.changes_plugins == 'true' || needs.setup.outputs.changes_e2e == 'true'))
+      (github.event_name == 'pull_request' && (needs.setup.outputs.changes_src == 'true' || needs.setup.outputs.changes_plugins == 'true' || needs.setup.outputs.changes_e2e == 'true'))
     runs-on: ${{ needs.setup.outputs.random_runner }}
     env:
       RUN_TAG: ${{ needs.setup.outputs.run_tag }}
@@ -220,13 +212,6 @@ jobs:
           - AZ_REG_REPOSITORY: d2e-logto-post-init
             DOCKER_BUILD_FILE_PATH: ./services/alp-logto/post-init/Dockerfile
             DOCKER_BUILD_CONTEXT_PATH: ./services/alp-logto/post-init
-          - AZ_REG_REPOSITORY: d2e-enterprise-gateway
-            DOCKER_BUILD_FILE_PATH: ./services/enterprise-gateway/Dockerfile
-            DOCKER_BUILD_CONTEXT_PATH: ./services/enterprise-gateway
-          - AZ_REG_REPOSITORY: d2e-r-ohdsi-kernel
-            DOCKER_BUILD_FILE_PATH: ./services/enterprise-gateway/kernels/R_ohdsi_docker/Dockerfile
-            DOCKER_BUILD_CONTEXT_PATH: .
-            build_disable: ${{ (needs.setup.outputs.changes_rkernel != 'true') && 'true' || 'false' }}
           - AZ_REG_REPOSITORY: d2e-dataflow-gen-worker
             # Slowest job in the matrix (~1h50m) and it rebuilt on every run,
             # including changes it cannot possibly bake. Gate it on the paths it
@@ -1552,8 +1537,6 @@ jobs:
           - d2e-pg-mgmt-init
           - d2e-logto
           - d2e-logto-post-init
-          - d2e-enterprise-gateway
-          - d2e-r-ohdsi-kernel
           - d2e-trex
           - d2e-dataflow-gen-worker
           - d2e-supabase-storage

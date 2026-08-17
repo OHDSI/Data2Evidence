@@ -2,7 +2,8 @@
 # rD2E.R
 # WebR-compatible port of the rD2E package
 #
-# Original: d2e/services/enterprise-gateway/r-strategus-lib/rD2E/
+# Ported from the rD2E package that shipped with the retired
+# enterprise-gateway R kernel.
 #
 # WebR adaptations:
 #   - CirceR (requires Java) -> SQL generation skipped
