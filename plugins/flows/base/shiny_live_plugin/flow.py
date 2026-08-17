@@ -35,18 +35,26 @@ def shiny_live_plugin(options: ShinyLivePluginType):
         app_code=options.app_code
     )
 
-    docs_dir = build_shiny_live_assets(
-        language=options.language,
-        app_dir=app_dir
-    )
+    try:
+        docs_dir = build_shiny_live_assets(
+            language=options.language,
+            app_dir=app_dir
+        )
 
-    upload_result = upload_shiny_live_folder(
-        docs_dir=docs_dir,
-        dataset_id=options.dataset_id,
-        config_type=options.config_type,
-        name=options.name,
-        language=options.language
-    )
+        upload_result = upload_shiny_live_folder(
+            docs_dir=docs_dir,
+            dataset_id=options.dataset_id,
+            config_type=options.config_type,
+            name=options.name,
+            language=options.language
+        )
+    finally:
+        try:
+            shutil.rmtree(app_dir)
+            logger.info(f"Cleaned up temporary directory {app_dir}")
+        except OSError as e:
+            logger.error(f"Failed to clean up temporary directory {app_dir}: {e}")
+            raise
 
     return {
         'status': 'success',
