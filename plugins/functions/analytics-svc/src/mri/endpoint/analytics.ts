@@ -6,23 +6,9 @@ import { Settings } from "../../qe/settings/Settings";
 import { Connection as connLib, DBError as dbe } from "@alp/alp-base-utils";
 import DBError = dbe.DBError;
 import * as domainValuesService from "./domain_values_service";
-import { env } from "../../env";
 
 import ConnectionInterface = connLib.ConnectionInterface;
 import CallBackInterface = connLib.CallBackInterface;
-
-const sqlReturnOn: boolean = env.SQL_RETURN_ON === "true" ? true : false;
-
-let _stripDbgInfo = (result) => {
-    if (typeof result === "string") {
-        return result;
-    }
-
-    ["sql", "sqlParameters", "debug"].forEach((k) => (result[k] = undefined));
-    return result;
-};
-let _processResult = (result) =>
-    result && !sqlReturnOn ? _stripDbgInfo(result) : result;
 
 export async function processRequest(
     action,
@@ -40,7 +26,7 @@ export async function processRequest(
         if (err instanceof DBError) {
             mainCallback(err, null);
         } else {
-            mainCallback(err, _processResult(result));
+            mainCallback(err, result);
         }
     };
 
@@ -129,7 +115,7 @@ export async function processRequestCsv(
         if (err instanceof DBError) {
             mainCallback(err, null);
         } else {
-            mainCallback(err, _processResult(result));
+            mainCallback(err, result);
         }
     };
 

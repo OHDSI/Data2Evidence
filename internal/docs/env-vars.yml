@@ -169,10 +169,6 @@ REDIS_PASSWORD:
   comment: Redis Password
   publish: true
   type: string
-SQL_RETURN_ON:
-  comment: null
-  publish: false
-  type: string
 TLS__CADDY_DIRECTIVE:
   comment: Generate self-signed or public x509 certificate
   publish: true

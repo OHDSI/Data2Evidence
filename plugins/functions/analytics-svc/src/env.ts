@@ -37,7 +37,6 @@ const Env = z
         PROJECT_NAME: z.string(),
 
         LOCAL_DEBUG: z.string(),
-        SQL_RETURN_ON: z.string(),
         isHttpTestRun: z.string().optional(),
         isTestEnv: z.string().optional(),
         HTTPTEST_DB_DIALECT: z.string().optional(),
