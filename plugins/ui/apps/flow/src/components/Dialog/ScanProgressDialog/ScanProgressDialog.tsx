@@ -12,6 +12,10 @@ import {
   useLazyGetSourceSchemaByFlowRunIdQuery,
   useLazyGetScanReportQuery,
 } from "~/features/flow/slices";
+import {
+  classifyFlowState,
+  MAX_CONSECUTIVE_POLL_ERRORS,
+} from "~/features/flow/utils/scan-progress-state";
 
 export type CloseDialogType = "success" | "cancelled";
 import "./ScanProgressDialog.scss";
@@ -25,13 +29,6 @@ interface ScanProgressDialogProps {
   scanMetadata: ScanMetadata;
   onFormDataChange: (updates: { [field: string]: any }) => void;
 }
-
-const FLOW_STATE_MAP = {
-  Scheduled: 10,
-  Pending: 25,
-  Running: 50,
-  Completed: 100,
-};
 
 export const ScanProgressDialog: FC<ScanProgressDialogProps> = ({
   open,
@@ -47,6 +44,8 @@ export const ScanProgressDialog: FC<ScanProgressDialogProps> = ({
   const [scanCompleted, setScanCompleted] = useState(false);
   const [scanFailed, setScanFailed] = useState(false);
   const [log, setLog] = useState<string>("");
+  const [pollError, setPollError] = useState<string>("");
+  const pollErrorCountRef = useRef(0);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const updateNodeInternals = useUpdateNodeInternals();
   // setTableSourceHandles
@@ -62,6 +61,9 @@ export const ScanProgressDialog: FC<ScanProgressDialogProps> = ({
     setLog("");
     setProgress(0);
     setScanCompleted(false);
+    setScanFailed(false);
+    setPollError("");
+    pollErrorCountRef.current = 0;
   }, []);
 
   const handleClose = useCallback(
@@ -110,29 +112,40 @@ export const ScanProgressDialog: FC<ScanProgressDialogProps> = ({
     try {
       const status = await getFlowRunStatus(scanId).unwrap();
 
-      if (status.state_name === "Completed") {
+      pollErrorCountRef.current = 0;
+      setPollError("");
+
+      const {
+        terminal,
+        failed,
+        progress: statePercent,
+      } = classifyFlowState(status.state_name);
+
+      if (terminal) {
         setScanCompleted(true);
-        if (intervalRef.current) {
-          clearInterval(intervalRef.current);
-        }
-      } else if (
-        status.state_name === "Failed" ||
-        status.state_name === "Crashed"
-      ) {
-        setScanCompleted(true);
-        setScanFailed(true);
+        setScanFailed(failed);
         if (intervalRef.current) {
           clearInterval(intervalRef.current);
         }
       }
+
       setLog(status.state_name);
-      if (status.state_name in FLOW_STATE_MAP) {
-        setProgress(
-          FLOW_STATE_MAP[status.state_name as keyof typeof FLOW_STATE_MAP],
-        );
+      if (statePercent !== undefined) {
+        setProgress(statePercent);
       }
     } catch (e) {
+      pollErrorCountRef.current += 1;
       console.error("Failed to fetch scan progress", e);
+
+      if (pollErrorCountRef.current >= MAX_CONSECUTIVE_POLL_ERRORS) {
+        if (intervalRef.current) {
+          clearInterval(intervalRef.current);
+        }
+        setPollError(
+          "Lost contact with the scan job. It may still be running — " +
+            "close this dialog and check the flow run status.",
+        );
+      }
     }
   }, [scanId]);
 
@@ -142,7 +155,7 @@ export const ScanProgressDialog: FC<ScanProgressDialogProps> = ({
   }, []);
 
   useEffect(() => {
-    if (open && scanId !== "" && !scanCompleted) {
+    if (open && scanId !== "" && !scanCompleted && !pollError) {
       // Initial fetch
       fetchScanProgress();
 
@@ -154,7 +167,7 @@ export const ScanProgressDialog: FC<ScanProgressDialogProps> = ({
         }
       };
     }
-  }, [open, scanId, scanCompleted, fetchScanProgress]);
+  }, [open, scanId, scanCompleted, pollError, fetchScanProgress]);
 
   return (
     <Dialog
@@ -169,13 +182,13 @@ export const ScanProgressDialog: FC<ScanProgressDialogProps> = ({
           Scanning... Estimated time depends on selected database
         </div>
         <LinearProgress variant="determinate" value={progress} />
-        <div className="scan-progress-dialog__log">{log}</div>
+        <div className="scan-progress-dialog__log">{pollError || log}</div>
       </div>
       <div className="scan-progress-dialog__actions">
         <Button
           onClick={handleBack}
           variant="outlined"
-          disabled={!scanCompleted || loading}
+          disabled={loading}
         >
           Back
         </Button>
