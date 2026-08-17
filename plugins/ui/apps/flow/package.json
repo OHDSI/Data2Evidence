@@ -11,7 +11,8 @@
     "build": "vite build",
     "build:dev": "vite build --mode=development",
     "build:watch": "vite build --mode=development --watch",
-    "clean": "rimraf ./dist"
+    "clean": "rimraf ./dist",
+    "test:unit": "vitest"
   },
   "dependencies": {
     "@fontsource-variable/ibm-plex-sans": "^5.2.8",
@@ -60,7 +61,9 @@
     "webpack": "^5.76.0",
     "webpack-cli": "^4.10.0",
     "webpack-dev-server": "^5.2.1",
-    "@types/pako": "^2.0.3"
+    "@types/pako": "^2.0.3",
+    "jsdom": "^24.0.0",
+    "vitest": "^4.0.18"
   },
   "keywords": [],
   "author": "D4L",
