@@ -615,9 +615,11 @@ export const i18nDefault = {
     EDIT_DB_DETAILS_DIALOG__VOCAB_SCHEMA: "Vocabulary / CDM schemas",
     EDIT_TENANT_ROLE_DIALOG__CANCEL: "Cancel",
     EDIT_TENANT_ROLE_DIALOG__EDIT: "Edit roles",
+    EDIT_TENANT_ROLE_DIALOG__ERROR: "Something went wrong while updating user role. Please try again.",
+    EDIT_TENANT_ROLE_DIALOG__NO_CHANGES: "No role changes were made.",
     EDIT_TENANT_ROLE_DIALOG__ROLES: "Roles",
-    EDIT_TENANT_ROLE_DIALOG__SAVE: "Save",
     EDIT_TENANT_ROLE_DIALOG__SUCCESS: "User roles updated successfully",
+    EDIT_TENANT_ROLE_DIALOG__UPDATE: "Update",
     EXECUTE_FLOW_DIALOG__ERROR_DESCRIPTION:
       "Please try again. To report the error, please send an email to your administrator.",
     FEATURE__ADMIN_ONLY_SHARING: "Admin-only sharing",
