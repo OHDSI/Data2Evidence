@@ -11,6 +11,7 @@ from prefect.artifacts import create_markdown_artifact
 
 from .types import INISettings, FileSaveResponse, WhiteRabbitRunType
 from .types import WHITERABBIT_BIN_PATH, WHITERABBIT_CSV_DIR, WHITERABBIT_DIR_PATH  
+from .paths import ensure_whiterabbit_dirs, require_whiterabbit_dist
 
 from _shared_flow_utils.dao.DBDao import DBDao
 from _shared_flow_utils.api.WhiteRabbitAPI import WhiteRabbitAPI
@@ -54,6 +55,9 @@ def create_white_rabbit_settings(scan_type: WhiteRabbitRunType, scan_settings: d
     config["settings"] = ini_content.dump_settings_json()
 
     config_path = f"{WHITERABBIT_DIR_PATH}/config.ini"
+
+    ensure_whiterabbit_dirs(WHITERABBIT_DIR_PATH, WHITERABBIT_CSV_DIR)
+    require_whiterabbit_dist(WHITERABBIT_BIN_PATH)
 
     logger.debug(f"Writing file config.ini to {config_path}...")
     
