@@ -54,6 +54,13 @@
 import { ref, computed, watch, onMounted, onBeforeUnmount, nextTick, useTemplateRef } from 'vue'
 import { useStore } from 'vuex'
 import DropDownMenu from './DropDownMenu.vue'
+import {
+  buildColorAxisMenuData,
+  findAxisMenuItem,
+  reconcileColorAxisSelection,
+  type ColorAxisMenuItem,
+  type ColorAxisSelection,
+} from '@/utils/colorAxisSelection'
 
 // Props & Emits
 const props = defineProps<{ parentContainer: any; selectedAxis: number | null; disabled?: boolean }>()
@@ -81,7 +88,7 @@ const selectedKey = ref<string | null>(null)
 const selectionTooltip = computed(() =>
   selectedAttrText.value ? `${selectedFilterText.value} - ${selectedAttrText.value}` : getText('MRI_PA_SELECT_X_AXIS')
 )
-const axisMenuData = ref<any[]>([])
+const axisMenuData = ref<ColorAxisMenuItem[]>([])
 
 // Lifecycle
 let isUnmounted = false
@@ -127,108 +134,37 @@ watch(selectedAxisIndex, () => {
 watch(() => props.selectedAxis, reconcileSelection)
 
 // Methods
+// Menu building and reconciliation live in @/utils/colorAxisSelection so they can be unit-tested
+// without mounting this component. Everything below only maps their result onto local state.
 function buildMenuData() {
-  const allAxes = getAllAxes.value || []
-  const menuData: any[] = []
-  if (!getMriFrontendConfig.value) {
-    axisMenuData.value = menuData
-    return
-  }
-  let menuIdx = 0
-  for (let i = 0; i <= 1; i++) {
-    const axis = allAxes[i]
-    if (axis?.props?.filterCardId && axis?.props?.key) {
-      const filterCard = getMriFrontendConfig.value.getFilterCardByInstanceId(axis.props.filterCardId)
-      if (!filterCard) continue
-      let attrName = ''
-      filterCard.aAllAttributes.forEach((attribute: any) => {
-        if (attribute.sConfigPath.split('.').pop() === axis.props.key) {
-          attrName = attribute.oInternalConfigAttribute.name
-        }
-      })
-      if (attrName) {
-        let filterCardName = filterCard.oInternalConfigFilterCard.name
-        if (!filterCardName || filterCardName.indexOf('undefined') > -1) {
-          filterCardName = getText('MRI_PA_FILTERCARD_TITLE_BASIC_DATA')
-        }
-        let filterCardCode = ''
-        if (getChartableFilterCards.value) {
-          getChartableFilterCards.value.forEach((fCard: any) => {
-            if (fCard.instanceId === axis.props.filterCardId) {
-              filterCardCode = fCard.name.replace(filterCardName, '').trim()
-            }
-          })
-        }
-        if (filterCardCode) {
-          filterCardCode = filterCardCode + ' - '
-        }
-        const filterText = `${filterCardCode}${filterCardName}`
-        menuData.push({
-          idx: menuIdx,
-          subMenuStyle: {},
-          text: `${filterText} - ${attrName}`,
-          hasSubMenu: false,
-          isSeperator: false,
-          subMenu: [],
-          disabled: false,
-          data: { axisIndex: i, filterText, attrText: attrName },
-        })
-        menuIdx += 1
-      }
-    }
-  }
-  if (selectedAxisIndex.value !== null && menuData.length > 0) {
-    menuData.push({
-      idx: (menuIdx += 1),
-      hasSubMenu: false,
-      isSeperator: true,
-    })
-    menuData.push({
-      idx: (menuIdx += 1),
-      subMenuStyle: {},
-      text: getText('MRI_PA_MENUITEM_NONE'),
-      hasSubMenu: false,
-      isSeperator: false,
-      subMenu: [],
-      disabled: false,
-      data: { action: 'clear' },
-    })
-  }
-  axisMenuData.value = menuData
+  axisMenuData.value = buildColorAxisMenuData({
+    allAxes: getAllAxes.value,
+    mriFrontendConfig: getMriFrontendConfig.value,
+    chartableFilterCards: getChartableFilterCards.value,
+    getText,
+    hasSelection: selectedAxisIndex.value !== null,
+  })
 }
 
-// Keep this button and the store-owned selection (props.selectedAxis) in agreement.
-// The chart resolves the color attribute from that index at render time, so an index the button
-// silently fails to adopt would still color the bars — with the button reading as empty and the
-// user unable to clear it. Adopt what the menu can offer, reject what it cannot.
 function reconcileSelection() {
-  // Menu not built yet (config still loading): nothing to reconcile against.
-  if (!getMriFrontendConfig.value) return
+  const decision = reconcileColorAxisSelection({
+    configReady: !!getMriFrontendConfig.value,
+    storeAxisIndex: props.selectedAxis,
+    allAxes: getAllAxes.value,
+    menuData: axisMenuData.value,
+    selection: currentSelection(),
+  })
 
-  const storeAxisIndex = props.selectedAxis
-  if (storeAxisIndex === null || storeAxisIndex === undefined) {
-    if (selectedAxisIndex.value !== null) {
-      resetSelection()
-    }
+  if (decision.action === 'adopt') {
+    applySelection(decision.selection)
     return
   }
 
-  const axis = getAllAxes.value?.[storeAxisIndex]
-  const menuItem = axisMenuData.value.find((item: any) => item.data && item.data.axisIndex === storeAxisIndex)
-  // An already-adopted axis that now carries a different attribute is not the selection the user
-  // made: the coloring must not follow the axis onto whatever was put there instead.
-  const repointed =
-    selectedAxisIndex.value === storeAxisIndex &&
-    (axis?.props?.filterCardId !== selectedFilterCardId.value || axis?.props?.key !== selectedKey.value)
-
-  if (!menuItem || repointed) {
+  if (decision.action === 'clear') {
     resetSelection()
-    emit('colorAxisSelected', null)
-    return
-  }
-
-  if (selectedAxisIndex.value !== storeAxisIndex) {
-    selectAxisInternal(storeAxisIndex)
+    if (decision.notify) {
+      emit('colorAxisSelected', null)
+    }
   }
 }
 
@@ -253,7 +189,7 @@ function handleClick(data: any) {
       resetSelection()
       emit('colorAxisSelected', null)
     } else {
-      const menuItem = axisMenuData.value.find((item: any) => item.data && item.data.axisIndex === data.axisIndex)
+      const menuItem = findAxisMenuItem(axisMenuData.value, data.axisIndex)
       if (menuItem) {
         emit('colorAxisSelected', data.axisIndex)
       }
@@ -262,16 +198,23 @@ function handleClick(data: any) {
   closeMenu()
 }
 
-function selectAxisInternal(axisIndex: number) {
-  const menuItem = axisMenuData.value.find((item: any) => item.data && item.data.axisIndex === axisIndex)
-  if (menuItem) {
-    selectedFilterText.value = menuItem.data.filterText
-    selectedAttrText.value = menuItem.data.attrText
-    selectedAxisIndex.value = axisIndex
-    const axis = getAllAxes.value[axisIndex]
-    selectedFilterCardId.value = axis?.props?.filterCardId ?? null
-    selectedKey.value = axis?.props?.key ?? null
+function currentSelection(): ColorAxisSelection | null {
+  if (selectedAxisIndex.value === null) return null
+  return {
+    axisIndex: selectedAxisIndex.value,
+    filterText: selectedFilterText.value,
+    attrText: selectedAttrText.value,
+    filterCardId: selectedFilterCardId.value,
+    key: selectedKey.value,
   }
+}
+
+function applySelection(selection: ColorAxisSelection) {
+  selectedFilterText.value = selection.filterText
+  selectedAttrText.value = selection.attrText
+  selectedAxisIndex.value = selection.axisIndex
+  selectedFilterCardId.value = selection.filterCardId
+  selectedKey.value = selection.key
 }
 
 function resetSelection() {
