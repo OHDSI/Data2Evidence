@@ -1115,10 +1115,12 @@ services:
         umask 077 &&
         mkdir -p /tmp/cert &&
         printf '%s' "$$TLS__INTERNAL__CRT" > /tmp/cert/cert.pem &&
-        printf '%s' "$$TLS__INTERNAL__KEY" > /tmp/cert/key.pem
+        printf '%s' "$$TLS__INTERNAL__KEY" > /tmp/cert/key.pem &&
+        printf '%s' "$$TLS__INTERNAL__CA_CRT" > /tmp/cert/ca.pem
         ) &&
         export HTTPS_CERT_PATH=/tmp/cert/cert.pem &&
         export HTTPS_KEY_PATH=/tmp/cert/key.pem &&
+        export NODE_EXTRA_CA_CERTS=/tmp/cert/ca.pem &&
         npm run cli db seed -- --swe && npm run cli db alteration deploy latest && node packages/core/d2e-grants.mjs && npm start
     restart: ${DOCKER__RESTART_POLICY:-unless-stopped}
     environment:
@@ -1132,6 +1134,14 @@ services:
       # Browser-visible URLs are derived per-request via TRUST_PROXY_HEADER=true + X-Forwarded-* from Caddy,
       # so users still see https://localhost:41100/... for sign-in/authorize.
       ENDPOINT: https://${PROJECT_NAME:-d2e}-logto-1.${TLS__INTERNAL__DOMAIN:-d2e.local}:3001
+      # Base URL the bundled connectors (alp-azuread, alp-entra-external-id) use to
+      # call Logto's own API. They defaulted to http://localhost:$PORT, but with
+      # HTTPS_CERT_PATH set there is no plaintext listener left, so those calls now
+      # fail with ECONNRESET — which only shows up once a social connector is
+      # configured. It must be a name the internal cert covers: `localhost` is not
+      # in the SAN, hence the container's own FQDN. Verified against the internal CA
+      # via NODE_EXTRA_CA_CERTS above; there is no verification bypass.
+      LOGTO__SELF_BASE_URL: https://${PROJECT_NAME:-d2e}-logto-1.${TLS__INTERNAL__DOMAIN:-d2e.local}:3001
       LOGTO_API_M2M_CLIENT_ID: ${LOGTO_API_M2M_CLIENT_ID}
       LOGTO_API_M2M_CLIENT_SECRET: ${LOGTO_API_M2M_CLIENT_SECRET}
       LOGTO_ROLES_AZ_GROUPS_MAPPING: ${LOGTO_ROLES_AZ_GROUPS_MAPPING:-{"role.systemadmin":"37b5364a-348c-494f-b67f-a59a40e52ab7","role.useradmin":"90597adc-92af-4649-8151-68c3b7feb66c","role.dashboardviewer":"50a3b140-21eb-46dd-9d81-61a77cbc81f5"}}
