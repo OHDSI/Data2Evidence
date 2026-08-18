@@ -116,6 +116,14 @@ services:
         printf '%s' "$$TLS__INTERNAL__KEY" > /usr/src/cert/key.pem
         printf '%s' "$$TLS__INTERNAL__CA_CRT" > /usr/src/cert/ca.pem
         cp /usr/src/cert/ca.pem /usr/local/share/ca-certificates/d2e-internal-ca.crt
+        # Optional additional trust anchors, for upstreams that are not ours — the
+        # PS config server is typically external/HANA-side with its own CA. This is
+        # the supported way to reach such a server: the edge-function shim has no
+        # per-request TLS control and there is no verification bypass.
+        # Accepts one or more concatenated PEM blocks.
+        if [ -n "$${TLS__EXTRA__CA_CRTS:-}" ]; then
+          printf '%s\n' "$$TLS__EXTRA__CA_CRTS" > /usr/local/share/ca-certificates/d2e-extra-ca.crt
+        fi
         update-ca-certificates
         # This command replaces the image's own CMD, so the --enable-otel flag
         # from Dockerfile.v2 never runs here; it must be re-added to this exec.
@@ -131,6 +139,10 @@ services:
       # honors DENO_TLS_CA_STORE=system, so it trusts the internal CA installed into
       # the OS store by the command above (via update-ca-certificates).
       DENO_TLS_CA_STORE: system
+      # Extra trust anchors for non-internal upstreams (e.g. an external PS config
+      # server with its own CA). One or more concatenated PEM blocks; installed into
+      # the OS store by the command above, so DENO_TLS_CA_STORE=system picks them up.
+      TLS__EXTRA__CA_CRTS: ${TLS__EXTRA__CA_CRTS:-}
       # Java analog of DENO_TLS_CA_STORE for the embedded native WebAPI. The GraalVM
       # libwebapi-native.so bakes its truststore at build time and ignores the OS store
       # (update-ca-certificates), so WebApiNativeLibrary.start() reads this PEM at startup
