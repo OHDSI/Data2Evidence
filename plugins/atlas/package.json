@@ -9,16 +9,17 @@
   ],
   "scripts": {
     "postinstall": "node scripts/postinstall.js",
+    "prepack": "node scripts/verify-plugins.js",
     "build": "vite build && vite build --config vite.portal.config.mjs",
     "build:cohorts": "vite build",
     "build:portal": "vite build --config vite.portal.config.mjs",
     "dev": "vite"
   },
   "dependencies": {
-    "@ohdsi/atlas3": "0.1.0-20260807154358-a68bb1b",
+    "@ohdsi/atlas3": "0.1.0-20260817035540-9baa99a",
     "@ohdsi/network-plugin": "file:./trex-notebook/plugins/network",
     "@ohdsi/notebook-plugin": "file:./trex-notebook/plugins/notebook-plugin",
-    "@ohdsi/pythia-plugin": "0.1.0-develop.14.gf8bbfc7",
+    "@ohdsi/pythia-plugin": "0.1.0-develop.18.g80bf4aa",
     "@ohdsi/results-viewer": "0.2.0-20260721005526.g6593d88",
     "@ohdsi/strategus-plugin": "file:./trex-notebook/plugins/strategus",
     "@ohdsi/studies-plugin": "file:./trex-notebook/plugins/studies",

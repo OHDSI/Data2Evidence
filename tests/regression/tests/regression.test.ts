@@ -55,7 +55,7 @@ const STATUS_RANK: Record<string, number> = { fail: 3, warn: 2, pass: 1, "no-bas
 interface GroupedResult {
   name: string;
   status: CompareStatus;
-  totalCurrentP95Ms: number;
+  totalCurrentP50Ms: number;
   totalBaselineP95Ms: number | null;
   deltaFraction: number | null;
   totalMinMs: number;
@@ -80,16 +80,16 @@ function groupResults(results: CompareResult[]): GroupedResult[] {
       (worst, m) => STATUS_RANK[m.status] > STATUS_RANK[worst] ? m.status : worst,
       "no-baseline"
     );
-    const totalCurrentP95Ms = members.reduce((s, m) => s + m.currentP95Ms, 0);
+    const totalCurrentP50Ms = members.reduce((s, m) => s + m.currentP50Ms, 0);
     const anyNoBaseline = members.some(m => m.baselineP95Ms === null);
     const totalBaselineP95Ms = anyNoBaseline ? null : members.reduce((s, m) => s + m.baselineP95Ms!, 0);
     const deltaFraction = totalBaselineP95Ms !== null
-      ? (totalCurrentP95Ms - totalBaselineP95Ms) / totalBaselineP95Ms
+      ? (totalCurrentP50Ms - totalBaselineP95Ms) / totalBaselineP95Ms
       : null;
     return {
       name,
       status,
-      totalCurrentP95Ms,
+      totalCurrentP50Ms,
       totalBaselineP95Ms,
       deltaFraction,
       totalMinMs: members.reduce((s, m) => s + m.minMs, 0),
@@ -107,7 +107,7 @@ function writeDetailedReport(results: CompareResult[]): void {
 
 function printTable(results: GroupedResult[]): void {
   const COL_SCENARIO = 60;
-  const COL_P95      = 26;
+  const COL_METRIC   = 26;
   const COL_MIN      = 8;
   const COL_MAX      = 8;
   const COL_DELTA    = 8;
@@ -115,30 +115,30 @@ function printTable(results: GroupedResult[]): void {
 
   const pad  = (s: string, n: number) => s.padEnd(n);
   const lpad = (s: string, n: number) => s.padStart(n);
-  const divider = `${"─".repeat(COL_SCENARIO + 2)}┼${"─".repeat(COL_P95 + 2)}┼${"─".repeat(COL_MIN + 2)}┼${"─".repeat(COL_MAX + 2)}┼${"─".repeat(COL_DELTA + 2)}┼${"─".repeat(COL_STATUS + 2)}`;
+  const divider = `${"─".repeat(COL_SCENARIO + 2)}┼${"─".repeat(COL_METRIC + 2)}┼${"─".repeat(COL_MIN + 2)}┼${"─".repeat(COL_MAX + 2)}┼${"─".repeat(COL_DELTA + 2)}┼${"─".repeat(COL_STATUS + 2)}`;
   const row = (a: string, b: string, c: string, d: string, e: string, f: string) =>
-    ` ${pad(a, COL_SCENARIO)} │ ${pad(b, COL_P95)} │ ${lpad(c, COL_MIN)} │ ${lpad(d, COL_MAX)} │ ${lpad(e, COL_DELTA)} │ ${pad(f, COL_STATUS)}`;
+    ` ${pad(a, COL_SCENARIO)} │ ${pad(b, COL_METRIC)} │ ${lpad(c, COL_MIN)} │ ${lpad(d, COL_MAX)} │ ${lpad(e, COL_DELTA)} │ ${pad(f, COL_STATUS)}`;
 
   const lines: string[] = [
     "",
     "Performance Regression Results",
     divider,
-    row("Scenario", "p95 (baseline)", "min", "max", "Δ%", "Status"),
+    row("Scenario", "p50 (baseline p95)", "min", "max", "Δ%", "Status"),
     divider,
   ];
 
   for (const r of results) {
-    const p95BaselineStr =
+    const metricStr =
       r.totalBaselineP95Ms !== null
-        ? `${r.totalCurrentP95Ms.toFixed(1)}ms (${r.totalBaselineP95Ms.toFixed(1)}ms)`
-        : `${r.totalCurrentP95Ms.toFixed(1)}ms (no baseline)`;
+        ? `${r.totalCurrentP50Ms.toFixed(1)}ms (${r.totalBaselineP95Ms.toFixed(1)}ms)`
+        : `${r.totalCurrentP50Ms.toFixed(1)}ms (no baseline)`;
     const minStr = `${r.totalMinMs.toFixed(1)}ms`;
     const maxStr = `${r.totalMaxMs.toFixed(1)}ms`;
     const deltaStr =
       r.deltaFraction !== null
         ? `${r.deltaFraction >= 0 ? "+" : ""}${(r.deltaFraction * 100).toFixed(1)}%`
         : "-";
-    lines.push(row(r.name, p95BaselineStr, minStr, maxStr, deltaStr, STATUS_ICON[r.status]));
+    lines.push(row(r.name, metricStr, minStr, maxStr, deltaStr, STATUS_ICON[r.status]));
   }
 
   lines.push(divider);
@@ -149,8 +149,8 @@ function printTable(results: GroupedResult[]): void {
     lines.push("Scenarios exceeding fail threshold:");
     for (const r of failing) {
       lines.push(
-        `  ✗ ${r.name}: p95 ${r.totalCurrentP95Ms.toFixed(1)}ms` +
-        ` (baseline ${r.totalBaselineP95Ms!.toFixed(1)}ms, +${(r.deltaFraction! * 100).toFixed(1)}%)`
+        `  ✗ ${r.name}: p50 ${r.totalCurrentP50Ms.toFixed(1)}ms` +
+        ` (baseline p95 ${r.totalBaselineP95Ms!.toFixed(1)}ms, +${(r.deltaFraction! * 100).toFixed(1)}%)`
       );
     }
   }
@@ -161,8 +161,8 @@ function printTable(results: GroupedResult[]): void {
     lines.push("Scenarios exceeding warn threshold:");
     for (const r of warning) {
       lines.push(
-        `  ⚠ ${r.name}: p95 ${r.totalCurrentP95Ms.toFixed(1)}ms` +
-        ` (baseline ${r.totalBaselineP95Ms!.toFixed(1)}ms, +${(r.deltaFraction! * 100).toFixed(1)}%)`
+        `  ⚠ ${r.name}: p50 ${r.totalCurrentP50Ms.toFixed(1)}ms` +
+        ` (baseline p95 ${r.totalBaselineP95Ms!.toFixed(1)}ms, +${(r.deltaFraction! * 100).toFixed(1)}%)`
       );
     }
   }
@@ -208,8 +208,8 @@ if (scenarios.length === 0) {
       expect(comparison.status, `${scenario.name}: no baseline found — run the baseline writer first`).not.toBe("no-baseline");
       expect(
         comparison.status,
-        `${scenario.name} p95 ${timing.p95Ms.toFixed(1)}ms exceeded fail threshold` +
-        (comparison.baselineP95Ms ? ` (baseline ${comparison.baselineP95Ms.toFixed(1)}ms)` : "")
+        `${scenario.name} p50 ${timing.p50Ms.toFixed(1)}ms exceeded fail threshold` +
+        (comparison.baselineP95Ms ? ` (baseline p95 ${comparison.baselineP95Ms.toFixed(1)}ms)` : "")
       ).not.toBe("fail");
     });
   }

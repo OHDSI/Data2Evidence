@@ -92,8 +92,15 @@ export const getDbCredentialsByCode = (databaseCode: string): {
     if (cred.code === databaseCode) {
       const readCred = cred.credentials?.find(c => c.userScope === 'Read')
         || cred.credentials?.[0];
+      const dialect = cred.dialect === 'postgres' ? 'postgresql' : cred.dialect;
 
-      if (!readCred?.username || !readCred?.password) {
+      // BigQuery entries authenticate with a service account (host = GCP
+      // project, name = default dataset — see the admin UI's BigQueryForm),
+      // never with username/password rows. Requiring them here made every
+      // BigQuery dataset creation abort with a 400 "No database credentials
+      // found" before the WebAPI source could be created.
+      const needsUserPass = dialect?.toLowerCase() !== 'bigquery';
+      if (needsUserPass && (!readCred?.username || !readCred?.password)) {
         console.warn(
           `No usable database credentials found for code "${databaseCode}".`,
         );
@@ -104,9 +111,9 @@ export const getDbCredentialsByCode = (databaseCode: string): {
         host: cred.host,
         port: cred.port,
         database: cred.name,
-        dialect: cred.dialect === 'postgres' ? 'postgresql' : cred.dialect,
-        username: readCred.username,
-        password: readCred.password,
+        dialect,
+        username: readCred?.username ?? '',
+        password: readCred?.password ?? '',
       };
     }
   }

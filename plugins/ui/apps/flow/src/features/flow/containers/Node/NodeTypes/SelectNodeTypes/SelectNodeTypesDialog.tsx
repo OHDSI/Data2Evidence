@@ -27,6 +27,7 @@ export const SelectNodeTypesDialog: FC<SelectNodeTypesDialogProps> = ({
     <Dialog
       className="select-node-type-dialog"
       title="Select node type"
+      closable
       sx={{
         "& .MuiDialog-container": {
           "& .MuiPaper-root": {

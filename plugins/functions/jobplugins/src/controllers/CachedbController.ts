@@ -3,6 +3,7 @@ import { param, validationResult } from "express-validator";
 import { validateCreateCachedbFileFlowRunDto } from "../middlewares/CachedbValidatorMiddlewares.ts";
 import { CachedbService } from "../services/CachedbService.ts";
 import { PortalServerAPI } from "../api/PortalServerAPI.ts";
+import { resolveCacheWriteTarget } from "../utils/cacheWriteTarget.ts";
 
 export class CachedbController {
   private cachedbService: CachedbService;
@@ -60,17 +61,19 @@ export class CachedbController {
       const dataset = await portalServerApi.getDataset(params.datasetId);
       const { databaseCode, schemaName, resultsSchemaName, vocabSchemaName } =
         dataset;
-      const cacheId = dataset.cacheId ?? databaseCode;
 
+      // Read side comes from the source dataset; the cache file is WRITTEN to the cache
+      // dataset's own catalog. See resolveCacheWriteTarget for why these differ.
       const cacheDatasetId = params?.cacheDatasetId;
       let snapshotSchemaName;
+      let cacheDataset;
 
       if (cacheDatasetId) {
-        const { schemaName } = await portalServerApi.getDataset(
-          params.cacheDatasetId
-        );
-        snapshotSchemaName = schemaName;
+        cacheDataset = await portalServerApi.getDataset(cacheDatasetId);
+        snapshotSchemaName = cacheDataset.schemaName;
       }
+
+      const cacheId = resolveCacheWriteTarget(dataset, cacheDataset);
 
       let snapshotCopyConfig;
       if (params.snapshotCopyConfig) {
