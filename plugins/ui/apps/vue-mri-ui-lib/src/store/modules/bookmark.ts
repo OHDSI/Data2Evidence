@@ -27,10 +27,6 @@ const state = {
   loadError: false,
   canDatasetMaterializeCohorts: false,
   canMaterializeCohortDatasetId: '',
-  // Dataset the cached `bookmarks` list was loaded for. This module's state is a plain
-  // object, so Vuex shares it across the per-mount store instances (see App.vue) and the
-  // list outlives a single-spa unmount. Without this stamp, re-entering Cohorts under a
-  // different dataset renders the previous dataset's cohorts until the new load returns.
   bookmarksDatasetId: '',
   isRestoringBookmark: false,
   activeBookmarkBaseline: null as any,
@@ -351,14 +347,8 @@ const actions = {
   fireBookmarkQuery({ state, commit, dispatch, rootGetters }, { method = 'post', params, bookmarkId, cancelToken }) {
     commit(types.SET_BOOKMARKS_LOADING, { loading: true })
     const isLoadAll = params.cmd === 'loadAll'
-    // Dataset this request is for. Captured now so a response that lands after the user
-    // switched datasets again can be recognised as stale.
     const requestDatasetId = isLoadAll ? rootGetters.getSelectedDataset.id : ''
     if (isLoadAll && requestDatasetId !== state.bookmarksDatasetId) {
-      // Drop the previous dataset's cohorts up front rather than on response. The cohorts
-      // pane hides its spinner while the list is non-empty (Bookmarks.vue isBookmarksLoading),
-      // so leaving them in place presents another dataset's cohorts as a finished result for
-      // the whole duration of the request.
       commit(types.RESET_ALL_BOOKMARKS)
     }
     let url = ''
@@ -386,8 +376,6 @@ const actions = {
       .then(({ data }) => {
         let toastMessage = ''
         if (isLoadAll) {
-          // Ignore stale responses: the user may have switched datasets again while this
-          // request was in flight, and the newer request owns the list.
           if (rootGetters.getSelectedDataset.id !== requestDatasetId) {
             return data
           }
@@ -422,8 +410,6 @@ const actions = {
         return data
       })
       .catch(error => {
-        // A failure for a dataset the user has already navigated away from must not paint an
-        // error state over the load that replaced it.
         if (isLoadAll && rootGetters.getSelectedDataset.id === requestDatasetId) {
           // Cohort list load failures surface as an in-list error state (see Bookmarks.vue).
           // Keep rethrowing so awaiting callers retain their current control flow.
@@ -798,7 +784,6 @@ const mutations = {
     modulestate.bookmarks = []
     modulestate.materializedCohorts = []
     modulestate.atlasCohortDefinitions = []
-    // The cleared list no longer belongs to any dataset, so the next load must repopulate it.
     modulestate.bookmarksDatasetId = ''
   },
   [types.RESET_DATASET_CACHE](modulestate) {

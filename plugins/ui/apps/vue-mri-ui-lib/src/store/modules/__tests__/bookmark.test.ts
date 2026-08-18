@@ -1,9 +1,6 @@
 import { vi, describe, expect, it } from 'vitest'
 
 vi.mock('axios')
-// Path is relative to this test file, so it must resolve to src/stores/notifications —
-// the module bookmark.ts imports. '../../stores/notifications' resolves to
-// src/store/stores/notifications from here and silently mocks nothing.
 vi.mock('@/stores/notifications', () => ({
   useNotificationStore: () => ({
     setToastMessage: vi.fn(),
@@ -387,11 +384,6 @@ describe('store - bookmark', () => {
 
     const flushMicrotasks = () => new Promise(resolve => setTimeout(resolve, 0))
 
-    // Regression cover for the "Cohorts list shows cohorts from a different dataset with no
-    // loading indicator" bug. Vuex module state is an object (not a factory), so the bookmark
-    // list survives a single-spa unmount. Re-entering Cohorts under a new dataset therefore
-    // renders the previous dataset's cohorts, and Bookmarks.vue suppresses its spinner while
-    // the list is non-empty. Clearing the cache up front is what restores the spinner.
     describe('fireBookmarkQuery - dataset switch', () => {
       const buildRootGetters = (datasetId: string) => ({
         getMriFrontendConfig: {
@@ -419,8 +411,6 @@ describe('store - bookmark', () => {
           { method: 'get', params: { cmd: 'loadAll' } }
         )
 
-        // Asserted while the request is still in flight: the stale rows must already be gone,
-        // otherwise the cohorts pane renders the previous dataset's cohorts as a final result.
         expect(commit).toHaveBeenCalledWith(types.RESET_ALL_BOOKMARKS)
 
         request.resolve({ data: {} })
@@ -442,7 +432,6 @@ describe('store - bookmark', () => {
           { method: 'get', params: { cmd: 'loadAll' } }
         )
 
-        // Same dataset: no flash of an empty list on a plain refresh.
         expect(commit).not.toHaveBeenCalledWith(types.RESET_ALL_BOOKMARKS)
 
         request.resolve({ data: {} })

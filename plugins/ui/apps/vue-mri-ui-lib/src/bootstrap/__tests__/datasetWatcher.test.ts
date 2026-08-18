@@ -72,8 +72,6 @@ describe('bootstrap/datasetWatcher', () => {
 
     const calls: string[] = []
     const vuexStore = {
-      // Simulates the shared plain-object Vuex state surviving a single-spa
-      // unmount: the app was last loaded for ds-1, but is now remounted under ds-2.
       getters: { getSelectedDataset: { id: 'ds-1' } },
       commit: vi.fn((name: string) => calls.push(`commit:${name}`)),
       dispatch: vi.fn(async (name: string) => {
@@ -163,8 +161,6 @@ describe('bootstrap/datasetWatcher', () => {
       dispatch,
     } as any)
 
-    // Install-time reload is in flight (blocked in requestMriConfig); a live
-    // dataset change arrives and must own the completion effects.
     await vi.waitFor(() => {
       expect(requestMriConfigCount).toBe(1)
     })
@@ -179,7 +175,6 @@ describe('bootstrap/datasetWatcher', () => {
           mutation === SET_DATASET_RELOAD_IN_PROGRESS && payload?.datasetReloadInProgress === false
       )
       expect(finishCalls.length).toBe(1)
-      // Only the subscriber's reload may reach the bookmark refresh.
       const refreshCalls = dispatch.mock.calls.filter(([action]) => action === 'refreshBookmarksForDatasetSwitch')
       expect(refreshCalls.length).toBe(1)
     })

@@ -41,8 +41,6 @@ export default {
 .splash-container--overlay {
   position: absolute;
   inset: 0;
-  // Fully opaque: the overlay masks a dataset switch, and the previous
-  // dataset's content must not ghost through while the reload is in flight.
   opacity: 1 !important;
 }
 </style>
