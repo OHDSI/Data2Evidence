@@ -371,9 +371,6 @@ jobs:
       - name: print logs for trex
         if: ${{ always() || cancelled() || failure() }}
         run: docker logs alp-trex -t
-      - name: print logs for alp-minerva-pg-mgmt-init-1
-        if: ${{ always() || cancelled() || failure() }}
-        run: docker logs alp-minerva-pg-mgmt-init-1 -t
       - name: print logs for alp-logto-post-init
         if: ${{ always() || cancelled() || failure() }}
         run: docker logs alp-logto-post-init-1 -t

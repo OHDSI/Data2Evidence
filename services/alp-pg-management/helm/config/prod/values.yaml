@@ -1,8 +1,0 @@
-# Values for Devlopment Environment cdm.
-
-env: 
-  azureCR:
-    imageTag: v23.1-kita-dake
-  d4lNexus:
-    repository: alp-docker-releases.alp-dev.org
-    imageTag: v23.1-kita-dake
