@@ -208,15 +208,6 @@ services:
       # - ./services/alp-logto/connector-oidc-patched/lib:/etc/logto/packages/connectors/connector-oidc/lib
       # - ./services/alp-logto/connector-alp-azuread/lib:/etc/logto/packages/connectors/connector-alp-azuread/lib
 
-  alp-minerva-pg-mgmt-init:
-    ports:
-      - 9211:9211
-    build:
-      context: services/alp-pg-management
-      dockerfile: Dockerfile
-    volumes:
-      - ./services/alp-pg-management/app:/home/docker/app
-
   alp-minerva-postgres:
     ports:
       - 41190:5432

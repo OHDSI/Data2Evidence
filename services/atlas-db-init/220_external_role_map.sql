@@ -46,16 +46,9 @@ BEGIN
     RAISE NOTICE 'External role mapping: % row(s) added, % stale row(s) removed', seeded, pruned;
 END $$;
 
--- Verify. Gated the same way as the seed: naming a missing relation is a parse
--- error, which ON_ERROR_STOP would turn into a failed init.
-SELECT EXISTS (
-    SELECT 1 FROM information_schema.tables
-    WHERE table_schema = 'webapi' AND table_name = 'sec_external_role_map'
-) AS have_role_map \gset
-
-\if :have_role_map
-SELECT m.origin, m.external_claim, r.name AS role_name
-FROM webapi.sec_external_role_map m
-JOIN webapi.sec_role r ON r.id = m.role_id
-ORDER BY r.name, m.external_claim;
-\endif
+-- The verification SELECT that used to live here was gated with psql's \gset
+-- and \if. These files are no longer run through psql: trex applies them over
+-- the wire protocol, which cannot execute meta-commands, and because the simple
+-- query protocol parses the whole file before executing any of it, a single
+-- \gset meant NOTHING in this file ran — including the seed above. The counts
+-- raised by the DO block cover what the verification query reported.
