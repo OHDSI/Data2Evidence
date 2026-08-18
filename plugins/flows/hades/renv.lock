@@ -935,6 +935,7 @@
       "RemoteUsername": "data2evidence",
       "RemoteRepo": "d2e-DatabaseConnector",
       "RemoteRef": "alp-dqd"
+      "RemoteSha": "3f7c6abffeb2b95d80ef8e1cf61957b956ca0643"
     },
     "DeepPatientLevelPrediction": {
       "Package": "DeepPatientLevelPrediction",
@@ -2699,7 +2700,8 @@
       "RemoteHost": "api.github.com",
       "RemoteUsername": "data2evidence",
       "RemoteRepo": "d2e-SqlRender",
-      "RemoteRef": "alp-dqd"
+      "RemoteRef": "alp-dqd",
+      "RemoteSha": d03b900f1f26bf33197e9b82a5321d9b6f7b545b
     },
     "TTR": {
       "Package": "TTR",
