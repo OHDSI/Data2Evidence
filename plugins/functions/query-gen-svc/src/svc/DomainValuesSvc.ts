@@ -9,11 +9,6 @@ import {
 
 const DEFAULT_SUGGESTIONS_LIMIT = 100;
 
-/**
- * The suggestion limit reaches this service as an untrusted query parameter, and it
- * is inlined into the generated SQL. Only a plain positive integer is accepted.
- * Anything else returns null, so that the caller uses the default limit.
- */
 export function toPositiveInteger(value: unknown): number | null {
     if (typeof value !== "number" && typeof value !== "string") {
         return null;
@@ -42,10 +37,14 @@ export class DomainValuesSvc {
         this.searchQuery = searchQuery;
         this.jsonWalk = getJsonWalkFunction(config);
         this.configAttrObj = this.jsonWalk(attributePath)[0].obj;
-        this.suggestionsLimit =
+        const requestedLimit =
             toPositiveInteger(suggestionsLimit) ??
             toPositiveInteger(this.configAttrObj.suggestionLimit) ??
             DEFAULT_SUGGESTIONS_LIMIT;
+        const maxLimit = toPositiveInteger(config.panelOptions?.domainValuesLimit);
+        this.suggestionsLimit = maxLimit
+            ? Math.min(requestedLimit, maxLimit)
+            : requestedLimit;
         this.useRefText = this.configAttrObj.useRefText;
         this.exprToUse = this.configAttrObj.useRefValue
             ? "referenceExpression"
@@ -537,14 +536,6 @@ function getDistinctValuesFromReference(
         sQuery.queryString = removeEmptySearchCondition(sQuery.queryString);
     }
 
-    // Cap the result set. A reference filter that only scopes by OMOP domain (for
-    // example "Procedure source concept code") matches the full vocabulary once the
-    // empty-search predicate is removed. Without this cap, analytics-svc counts more
-    // rows than panelOptions.domainValuesLimit and answers 204, and the filter card
-    // shows no values at all. See data2evidence/project#31.
-    // The limit is inlined, not bound with "%f", because domainValuesQuery.ts sends
-    // only queryString to analytics-svc and drops the parameter placeholders.
-    // toPositiveInteger() in the constructor keeps the value safe to inline.
     sQuery.queryString = `${sQuery.queryString.trimEnd()} LIMIT ${suggestionsLimit} `;
 
     return sQuery;

@@ -94,9 +94,6 @@ describe("DomainValuesSvc empty-search handling", () => {
 describe("DomainValuesSvc reference-path row limit (project#31)", () => {
     const baseConfig = { chartOptions: { minCohortSize: 0 } };
 
-    // Mirrors the "Procedure source concept code" attribute of the OMOP_HANA_LEAN
-    // config. After the empty-search predicate is stripped, only the domain filter
-    // is left, so the reference query must still be capped.
     const procedureConfig = (extraAttrProps = {}) => ({
         ...baseConfig,
         patient: {
@@ -175,10 +172,6 @@ describe("DomainValuesSvc reference-path row limit (project#31)", () => {
         }
     });
 
-    // The OMOP_HANA_LEAN "source concept code" filters search the concept name, the
-    // concept code, and the concept code without dots. That puts three copies of
-    // @SEARCH_QUERY in one OR group. removeEmptySearchCondition() finds only the
-    // first copy, so this guards that the whole group still goes away.
     const CODE_SEARCH_FILTER =
         "@REF.DOMAIN_ID = 'Condition' AND (@REF.CONCEPT_NAME LIKE_REGEXPR '@SEARCH_QUERY' FLAG 'i'" +
         " OR @REF.CONCEPT_CODE LIKE_REGEXPR '@SEARCH_QUERY' FLAG 'i'" +
@@ -218,9 +211,23 @@ describe("DomainValuesSvc reference-path row limit (project#31)", () => {
         expect(sql).toContain("LIMIT 100");
     });
 
+    it("clamps the limit to panelOptions.domainValuesLimit", async () => {
+        const config = { ...procedureConfig(), panelOptions: { domainValuesLimit: 50 } };
+        const svc = new DomainValuesSvc(config, PATH, 999999999, "");
+        const result = await svc.generateQuery();
+
+        expect(result.queryString.toUpperCase()).toContain("LIMIT 50");
+    });
+
+    it("keeps a limit that is below panelOptions.domainValuesLimit", async () => {
+        const config = { ...procedureConfig(), panelOptions: { domainValuesLimit: 50 } };
+        const svc = new DomainValuesSvc(config, PATH, 25, "");
+        const result = await svc.generateQuery();
+
+        expect(result.queryString.toUpperCase()).toContain("LIMIT 25");
+    });
+
     it("inlines the limit instead of leaving a bound parameter placeholder", async () => {
-        // domainValuesQuery.ts sends only queryString over HTTP, so the SQL must be
-        // self-contained. A "%f" parameter would leave a {guid} token behind.
         const svc = new DomainValuesSvc(procedureConfig(), PATH, 10, "");
         const result = await svc.generateQuery();
 
