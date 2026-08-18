@@ -1,18 +1,24 @@
 import axios, { AxiosRequestConfig } from "./_axios.ts";
 import { env } from "../env";
+
+// TLS trust note: this API previously passed an explicit `httpsAgent` carrying
+// the internal CA. The fetch-based shim accepts and ignores `httpsAgent`, so
+// there is no per-request TLS control here any more — trust comes solely from
+// the runtime's system CA store (DENO_TLS_CA_STORE=system in trex).
+//
+// The PS config server is typically external/HANA-side rather than one of our
+// own containers, so its certificate may not chain to the internal CA. To reach
+// such a server, add its CA to TLS__EXTRA__CA_CRTS (see docker-compose.yml,
+// trex) — the entrypoint installs it into the OS store before startup. There is
+// deliberately no verification bypass.
 export default class PsConfigServerAPI {
     private readonly baseUrl: string;
     private readonly oauthUrl: string;
-    // private readonly httpsAgent: any;
 
     constructor() {
         if (env.SERVICE_ROUTES.psConfig) {
             this.baseUrl = env.SERVICE_ROUTES.psConfig;
             this.oauthUrl = env.ALP_GATEWAY_OAUTH__URL;
-            // this.httpsAgent = new https.Agent({
-            //     rejectUnauthorized: true,
-            //     ca: env.TLS__INTERNAL__CA_CRT?.replace(/\\n/g, "\n"),
-            // });
         }
         if (!this.baseUrl) {
             throw new Error("PS Config Server URL is not configured!");
@@ -20,9 +26,7 @@ export default class PsConfigServerAPI {
     }
 
     private async getRequestConfig(token: string) {
-        let options: AxiosRequestConfig = { 
-            //httpsAgent: this.httpsAgent 
-            };
+        let options: AxiosRequestConfig = {};
         if (token) {
             options = {
                 ...options,
