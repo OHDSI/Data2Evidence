@@ -68,7 +68,14 @@ export class JobPluginsAPI {
         result.data.state_type === "COMPLETED" &&
         result.data.parameters.options.executeConceptRecordCount !== false
       ) {
-        return result.data.parameters.options.resultsSchema;
+        const { resultsSchema, databaseCode, useSourceConnection } =
+          result.data.parameters.options;
+        // A source-connection run wrote achilles_result_concept_count to the source
+        // database, which trex exposes as a separate DuckDB catalog. Unqualified, the
+        // name resolves against the cache and silently yields zero counts.
+        return useSourceConnection && databaseCode
+          ? `${databaseCode}__srcdb.${resultsSchema}`
+          : resultsSchema;
       } else {
         return "";
       }

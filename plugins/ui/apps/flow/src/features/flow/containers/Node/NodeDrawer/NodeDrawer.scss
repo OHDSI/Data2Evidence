@@ -19,6 +19,11 @@
 
   &__content {
     flex: 1;
+    // Without this, a flex item's min-height defaults to its content size, so a full-height
+    // child (e.g. the Concept Mapping plugin's wizard) can't actually fill this area - it
+    // just grows the drawer instead. This is what lets `height: 100%` / `flex: 1` work for
+    // whatever gets mounted here.
+    min-height: 0;
     padding: 1.5em;
     display: flex;
     flex-direction: column;

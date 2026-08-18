@@ -10,6 +10,38 @@ export function sanitizeIdForCacheId(id: string): string {
   const cleaned = id.replace(/-/g, '_')
   return /^[0-9]/.test(cleaned) ? `_${cleaned}` : cleaned
 }
+
+// A dataset row of this type is queried straight against its source database: the cache
+// for a `source` dataset is built on its *child* cache dataset (see createDatasetSnapshot),
+// never on the source row itself, so the source row must not name a cache catalog.
+export const SOURCE_DATASET_TYPE = 'source'
+
+export interface CacheIdInput {
+  dialect?: string | null
+  type?: string | null
+  id?: string | null
+  databaseCode?: string | null
+}
+
+// Single source of truth for a dataset's default cache_id. Every write path that persists
+// or transmits a cache_id must go through this, otherwise the value stored in the DB and
+// the value handed to trex /attach can drift.
+//
+// The two databaseCode branches are deliberately separate — they hold for different
+// reasons and neither subsumes the other:
+//   * dialect === 'hana'  — HANA is queried directly; no DuckDB cache exists for ANY HANA
+//     dataset regardless of type (this is the only branch covering hana + type 'webapi').
+//   * type === 'source'   — the source row's cache lives on its child cache dataset, so on
+//     any dialect a source row pointing at sanitizeIdForCacheId(id) names a catalog nobody
+//     builds. Consumers resolve `cacheId ?? databaseCode`, so a bogus non-null value
+//     suppresses the fallback and queries hit a missing catalog. See issue #2877.
+export function resolveCacheId(dataset: CacheIdInput): string | null {
+  if (dataset.dialect === 'hana') return dataset.databaseCode ?? null
+  if (dataset.type === SOURCE_DATASET_TYPE) return dataset.databaseCode ?? null
+  if (dataset.id) return sanitizeIdForCacheId(dataset.id)
+  return dataset.databaseCode ?? null
+}
+
 @Entity('dataset')
 export class Dataset extends Audit {
   @PrimaryColumn({ type: 'uuid' })
@@ -81,12 +113,6 @@ export class Dataset extends Audit {
   @BeforeInsert()
   applyCacheIdDefault() {
     if (this.cacheId != null) return
-    // HANA datasets are queried directly, so the cacheId is the databaseCode
-    // rather than a sanitized per-dataset UUID.
-    if (this.dialect === 'hana') {
-      this.cacheId = this.databaseCode
-    } else if (this.id) {
-      this.cacheId = sanitizeIdForCacheId(this.id)
-    }
+    this.cacheId = resolveCacheId(this)
   }
 }

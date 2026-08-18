@@ -11,13 +11,13 @@ export class FeatureService {
   private readonly NON_PLUGIN_FEATURES = [
     {
       featureFlag: 'atlas',
-      name: 'Atlas',
+      name: 'Atlas (experimental)',
       nameI18nKey: 'FEATURE__ATLAS',
       defaultEnabled: true
     },
     {
       featureFlag: 'pythia',
-      name: 'Pythia (Atlas AI assistant)',
+      name: 'Pythia (Atlas AI assistant) (experimental)',
       nameI18nKey: 'FEATURE__PYTHIA',
       defaultEnabled: false
     },
@@ -65,13 +65,13 @@ export class FeatureService {
     },
     {
       featureFlag: 'sibyl',
-      name: 'Sibyl',
+      name: 'Sibyl (experimental)',
       nameI18nKey: 'FEATURE__SIBYL',
       defaultEnabled: false
     },
     {
       featureFlag: 'dataExploration',
-      name: 'Data Exploration',
+      name: 'Data Exploration (experimental)',
       nameI18nKey: 'FEATURE__DATA_EXPLORATION',
       defaultEnabled: false
     }
