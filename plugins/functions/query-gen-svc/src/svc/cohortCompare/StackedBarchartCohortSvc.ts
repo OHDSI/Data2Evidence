@@ -254,6 +254,7 @@ export class StackedBarChartCohortSvc extends BaseCohortSvc {
                     HAVING COUNT(DISTINCT(%(cohortPatientIdColumn)UNSAFE)) >= ${censoringThreshold}`;
 
                     let query = QueryObject.formatDict(sql, dict);
+                    query.sqlReturnOn = true;
 
                     return new Promise<CohortQueryType>((resolve) => {
                         resolve({

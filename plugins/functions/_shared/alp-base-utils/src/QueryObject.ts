@@ -21,8 +21,7 @@ function replaceAll(input, find, replace) {
  *
  * @param {String}  queryString           sql query with value placeholders (optional, defaults to "")
  * @param {Array}   parameterPlaceholders array holding sql parameters (placeholders) to be inserted (optional, defaults to empty array)
- * @param {Boolean} sqlReturnOn           kept for call-site compatibility. The constructor ignores it and always sets the flag to true,
- *                                        so the result object always contains the sql query.
+ * @param {Boolean} sqlReturnOn           boolean flag indicating whether the result object contains the sql query (optional, defaults to false)
  */
 export class QueryObject {
   /**
@@ -153,13 +152,7 @@ export class QueryObject {
   ) {
     this.queryString = queryString || "";
     this.parameterPlaceholders = parameterPlaceholders || [];
-
-    // The result object always contains the sql query. The former SQL_RETURN_ON
-    // environment variable is removed, and the constructor argument no longer
-    // changes this value. Assign the field on an instance after construction to
-    // suppress the sql. clone(), concat() and join() build new objects, so they
-    // do not keep that assignment.
-    this.sqlReturnOn = true;
+    this.sqlReturnOn = sqlReturnOn ?? false;
   }
 
   public shortId(): string {

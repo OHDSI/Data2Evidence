@@ -191,10 +191,12 @@ export class QueryGenSvc {
             );
         return interactionFAST.map((fast) => ({
             entity: fast.entity,
-            query: queryEngine.getSQL(
-                tempTableConfig,
-                tempTablePholderTable,
-                fast.fast
+            query: this.serializeQueryObject(
+                queryEngine.getSQL(
+                    tempTableConfig,
+                    tempTablePholderTable,
+                    fast.fast
+                )
             ),
         }));
     }
@@ -312,7 +314,7 @@ export class QueryGenSvc {
         return {
             queryString: qo.queryString,
             parameterPlaceholders: qo.parameterPlaceholders,
-            sqlReturnOn: qo.sqlReturnOn,
+            sqlReturnOn: true,
         };
     }
 
