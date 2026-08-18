@@ -57,10 +57,13 @@ services:
     extra_hosts:
       - "${CADDY__D2E__PUBLIC_FQDN:-${CADDY__ALP__PUBLIC_FQDN:-localhost}}:host-gateway"
     depends_on:
-      alp-minerva-pg-mgmt-init:
-        condition: service_completed_successfully
-      alp-logto-post-init:
-        condition: service_completed_successfully
+      # trex now provisions the database itself (runD2eBootstrap), so it only
+      # needs Postgres up. It deliberately does NOT wait for alp-logto-post-init
+      # any more: logto cannot migrate until trex has created logto_postgres and
+      # the logto schema, so trex must start FIRST. Keeping the old edge would
+      # deadlock (trex -> post-init -> logto -> trex's bootstrap).
+      alp-minerva-postgres:
+        condition: service_healthy
     networks:
       alp:
         priority: 20
@@ -76,6 +79,10 @@ services:
       # be scanned; trex runs it against _config (the alp Postgres catalog) and
       # tracks applied versions in notebook.refinery_schema_history.
       - ./services/trex/migrations/notebook:/usr/src/bundled-plugins/notebook-schema:ro
+      # WebAPI/Logto seeding SQL, applied by the d2e-compat atlas-db-init block
+      # once webapi.sec_role and logto.users exist. Replaces the webapi-init
+      # container, which ran the same files through psql.
+      - ./services/atlas-db-init:/usr/src/atlas-db-init:ro
     ports:
       - "8090:8080"
     healthcheck:
@@ -185,6 +192,55 @@ services:
       # the studies/notebooks tables provisioned by the notebook-schema
       # migrations plugin mounted above.
       PG_SCHEMA: ${PG_SCHEMA:-trexdb,notebook}
+      # ── DB bootstrap (replaces the alp-minerva-pg-mgmt-init container) ──────
+      # trex's d2e-compat runD2eBootstrap() reads these before plugin init and
+      # provisions the login users, the anon/authenticated/service_role roles,
+      # the schemas and their grants. Same contract the retired container used,
+      # so the SQL is unchanged and re-runs idempotently on every boot.
+      POSTGRES_MANAGE_CONFIG: |-
+        {
+         "databases": {
+          "+${PG_DB_NAME:-alp}": {
+           "schemas": {
+            "+cdw_config": {},
+            "+jobplugins": {},
+            "+logto": {},
+            "+portal": {},
+            "+public": {},
+            "+qe_config": {},
+            "+terminology": {},
+            "+usermgmt": {},
+            "+files_manager": {},
+            "+perseus": {},
+            "+white_rabbit": {},
+            "+trex": {},
+            "+storage": {},
+            "+strategus": {},
+            "+notebook": {},
+            "+network": {}
+           }
+          }
+         }
+        }
+      POSTGRES_MANAGE_USERS: |-
+        {
+         "${PG_DB_NAME:-alp}": {
+          "manager": "${PG_ADMIN_USER:-alp_pg_admin_user}",
+          "managerPassword": "${PG_ADMIN_PASSWORD}",
+          "reader": "${PG_WRITE_USER:-alp_pg_write_user}",
+          "readerPassword": "${PG_WRITE_PASSWORD}",
+          "writer": "${PG_WRITE_USER:-alp_pg_write_user}",
+          "writerPassword": "${PG_WRITE_PASSWORD}",
+          "logtoManager": "${PG_LOGTO_MANAGER:-${PG__LOGTO_MANAGER_USER:-logto_postgres}}",
+          "logtoManagerPassword": "${PG__LOGTO_MANAGER_PASSWORD}"
+         }
+        }
+      POSTGRES_MANAGE_ROLES_USERS: ${POSTGRES_MANAGE_ROLES_USERS:-{}}
+      # Beacon that flips as soon as the bootstrap above succeeds, minutes
+      # before trex itself is healthy. alp-logto polls it: it cannot use
+      # depends_on, because trex -> alp-logto-post-init -> alp-logto would
+      # make that a circular dependency.
+      D2E_BOOTSTRAP_READY_PORT: ${D2E_BOOTSTRAP_READY_PORT:-8099}
       TREX_SQL_PASSWORD: ${TREX__SQL__PASSWORD:?TREX__SQL__PASSWORD must be set (run d2e init); refusing default pencil}
       TREX__SQL__PORT: ${TREX__SQL__PORT:-5433}
       TREX__SQL__DBNAME: postgres
@@ -452,88 +508,6 @@ services:
       OTEL_EXPORTER_OTLP_HEADERS: ${OTEL_EXPORTER_OTLP_HEADERS:-}
       OTEL_SERVICE_NAME: ${OTEL_SERVICE_NAME:-}
 
-  alp-minerva-pg-mgmt-init:
-    container_name: &c15 ${PROJECT_NAME:-d2e}-minerva-pg-mgmt-init-1
-    depends_on:
-      alp-minerva-postgres:
-        condition: service_healthy
-    hostname: ${PROJECT_NAME:-d2e}-minerva-pg-mgmt-init-1.${TLS__INTERNAL__DOMAIN:-alp.local}
-    image: ${DOCKER_IMAGE_PREFIX:-ghcr.io/ohdsi/}d2e-pg-mgmt-init:${DOCKER_TAG_NAME:-develop}
-    logging:
-      options:
-        tag: *c15
-    networks:
-      alp:
-        priority: 20
-    platform: linux/amd64
-    environment:
-      <<:
-        - *x-tls
-      NODE_ENV: development
-      ALP_DB_LOGLEVEL: ${ALP_DB_LOGLEVEL:-info}
-      POSTGRES_CONNECTION_CONFIG: |-
-        {
-         "connectionTimeoutMillis": 60000,
-         "database": "${PG_DB_NAME:-alp}",
-         "host": "${PG_HOST:-${PROJECT_NAME:-d2e}-minerva-postgres-1}",
-         "idle_in_transaction_session_timeout": 60000,
-         "password": "${PG_SUPER_PASSWORD}",
-         "port": "${PG_PORT:-5432}",
-         "query_timeout": 60000,
-         "statement_timeout": 60000,
-         "user": "${PG_SUPER_USER:-postgres}",
-         "ssl": false
-        }
-      POSTGRES_MANAGE_CONFIG: |-
-        {
-         "databases": {
-          "+${PG_DB_NAME:-alp}": {
-           "schemas": {
-            "+cdw_config": {},
-            "+jobplugins": {},
-            "+logto": {},
-            "+portal": {},
-            "+public": {},
-            "+qe_config": {},
-            "+terminology": {},
-            "+usermgmt": {},
-            "+files_manager": {},
-            "+perseus": {},
-            "+white_rabbit": {},
-            "+trex": {},
-            "+storage": {},
-            "+strategus": {},
-            "+notebook": {},
-            "+network": {}
-           }
-          }
-         }
-        }
-      POSTGRES_ALTER_EXTENSION_CONFIG: |-
-        {
-         "databases": {
-          }
-        }
-      POSTGRES_MANAGE_USERS: |-
-        {
-         "${PG_DB_NAME:-alp}": {
-          "manager": "${PG_ADMIN_USER:-alp_pg_admin_user}",
-          "managerPassword": "${PG_ADMIN_PASSWORD}",
-          "reader": "${PG_WRITE_USER:-alp_pg_write_user}",
-          "readerPassword": "${PG_WRITE_PASSWORD}",
-          "writer": "${PG_WRITE_USER:-alp_pg_write_user}",
-          "writerPassword": "${PG_WRITE_PASSWORD}",
-          "logtoManager": "${PG_LOGTO_MANAGER:-${PG__LOGTO_MANAGER_USER:-logto_postgres}}",
-          "logtoManagerPassword": "${PG__LOGTO_MANAGER_PASSWORD}"
-         }
-        }
-      POSTGRES_MANAGE_ROLES_USERS: ${POSTGRES_MANAGE_ROLES_USERS:-{}}
-      POSTGRES_SUPERUSER: ${PG_SUPER_USER:-postgres}
-      POSTGRES_SUPERUSER_PASSWORD: ${PG_SUPER_PASSWORD}
-      POSTGRES_CONFIG_DB_NAME: ${PG_DB_NAME:-alp}
-      PORT: 41110
-      sqlOnly: false
-
   alp-caddy:
     container_name: &c1 ${PROJECT_NAME:-d2e}-caddy
     hostname: ${PROJECT_NAME:-d2e}-caddy.${TLS__INTERNAL__DOMAIN:-alp.local}
@@ -736,8 +710,9 @@ services:
     depends_on:
       alp-logto-post-init:
         condition: service_completed_successfully
-      alp-minerva-pg-mgmt-init:
-        condition: service_completed_successfully
+      # Needs the alp_pg_* users, which trex's bootstrap creates.
+      trex:
+        condition: service_healthy
     healthcheck:
       interval: 30s
       retries: 30
@@ -928,8 +903,10 @@ services:
   alp-logto:
     container_name: &c8 ${PROJECT_NAME:-d2e}-logto-1
     depends_on:
-      alp-minerva-pg-mgmt-init:
-        condition: service_completed_successfully
+      # Only Postgres: the wait for trex's bootstrap is the beacon poll in the
+      # entrypoint below, not a depends_on edge (that would be circular).
+      alp-minerva-postgres:
+        condition: service_healthy
     healthcheck:
       interval: 20s
       retries: 30
@@ -956,7 +933,18 @@ services:
     entrypoint:
       - sh
       - -c
-      - npm run cli db seed -- --swe && npm run cli db alteration deploy latest && node packages/core/d2e-grants.mjs && npm start
+      - |
+        # Wait for trex's DB bootstrap to create logto_postgres and the logto
+        # schema before migrating. This is a poll rather than a depends_on
+        # because trex -> alp-logto-post-init -> alp-logto already exists, so an
+        # edge back to trex would be a circular dependency. The beacon answers
+        # as soon as the bootstrap commits, minutes before trex is healthy.
+        # node is used deliberately: this image has neither curl nor wget.
+        until node -e "fetch('http://${PROJECT_NAME:-d2e}-trex:${D2E_BOOTSTRAP_READY_PORT:-8099}/').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"; do
+          echo "waiting for the trex database bootstrap ..."
+          sleep 2
+        done
+        npm run cli db seed -- --swe && npm run cli db alteration deploy latest && node packages/core/d2e-grants.mjs && npm start
     restart: ${DOCKER__RESTART_POLICY:-unless-stopped}
     environment:
       <<:
@@ -1065,8 +1053,6 @@ services:
         condition: service_healthy
       alp-minerva-postgres:
         condition: service_healthy
-      alp-minerva-pg-mgmt-init:
-        condition: service_completed_successfully
     platform: linux/amd64
     healthcheck:
       test:
@@ -1155,50 +1141,3 @@ services:
       data:
     profiles: [hana]
 
-  # WebAPI database initialization (runs SQL scripts after WebAPI is healthy)
-  webapi-init:
-    image: postgres:16-alpine
-    container_name: ${PROJECT_NAME:-d2e}-webapi-init
-    platform: linux/amd64
-    depends_on:
-      trex:
-        condition: service_healthy
-      alp-logto-post-init:
-        condition: service_completed_successfully
-    networks:
-      alp:
-        priority: 20
-      data:
-        priority: 10
-    volumes:
-      - ./services/atlas-db-init:/scripts:ro
-    environment:
-      PGHOST: ${PG_HOST:-${PROJECT_NAME:-d2e}-minerva-postgres-1}
-      PGPORT: ${PG_PORT:-5432}
-      PGUSER: ${PG_SUPER_USER:-postgres}
-      PGPASSWORD: ${PG_SUPER_PASSWORD}
-      PGDATABASE: ${PG_DB_NAME:-alp}
-    healthcheck:
-      # Only healthy after the SQL scripts have finished successfully.
-      test: ["CMD", "test", "-f", "/tmp/webapi-init.done"]
-      interval: 5s
-      timeout: 2s
-      retries: 120
-      start_period: 5s
-    command: >
-      sh -c '
-        set -e;
-        echo "Waiting for logto.users table...";
-        for i in $$(seq 1 60); do
-          if psql -tAc "SELECT 1 FROM information_schema.tables WHERE table_schema = '\''logto'\'' AND table_name = '\''users'\''" | grep -q 1; then
-            echo "logto.users table found";
-            break;
-          fi;
-          echo "Waiting... ($$i/60)";
-          sleep 2;
-        done;
-        for f in /scripts/*.sql; do psql -v ON_ERROR_STOP=1 -f "$$f"; done;
-        touch /tmp/webapi-init.done;
-        echo "webapi-init: SQL scripts complete";
-        tail -f /dev/null
-      '
