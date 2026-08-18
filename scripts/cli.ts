@@ -79,10 +79,10 @@ class D2ECli {
   extract_compose_file(): void {
     const dest = path.join(this.compose_dir, "docker-compose.yml");
     this.write_embedded_file(dest, dockerComposeContent);
-    // Stage the atlas-db-init SQL scripts next to the compose file so the
-    // webapi-init service's `./services/atlas-db-init:/scripts` bind mount
-    // resolves. These live at repo root but aren't present where the
-    // distributed CLI runs, so we write the embedded copies here.
+    // Stage the atlas-db-init SQL scripts next to the compose file so trex's
+    // `./services/atlas-db-init:/usr/src/atlas-db-init` bind mount resolves.
+    // These live at repo root but aren't present where the distributed CLI
+    // runs, so we write the embedded copies here.
     const atlasDbInitDir = path.join(
       this.compose_dir,
       "services",
