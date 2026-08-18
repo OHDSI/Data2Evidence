@@ -1290,6 +1290,13 @@ services:
     hostname: ${PROJECT_NAME:-d2e}-supabase-storage-1.${TLS__INTERNAL__DOMAIN:-d2e.local}
     # Custom image: postgresql-client pre-installed for offline capability, plus
     # nginx terminating internal TLS in front of storage-api (no native TLS).
+    #
+    # Build it locally before the first start:  docker compose build supabase-storage
+    # (docker-compose-local.yml carries the build stanza; `npm run start` does not
+    # build.) The entrypoint below lives only in this custom image, so a published
+    # tag built before that entrypoint existed fails to start with
+    # `stat /usr/src/entrypoint.sh: no such file or directory`. CI is unaffected —
+    # it builds this image from source and deploys it by run tag.
     image: ${DOCKER_IMAGE_PREFIX:-ghcr.io/ohdsi/}d2e-supabase-storage:${DOCKER_TAG_NAME:-develop}
     logging:
       options:
