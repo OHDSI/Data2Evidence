@@ -1013,12 +1013,33 @@ services:
       alp:
         priority: 20
     platform: linux/amd64
+    # The image's ENTRYPOINT is ["npm","run","seed"] with no shell, so the CA has
+    # to be written here. NODE_EXTRA_CA_CERTS is the only route that works in this
+    # image: it has no update-ca-certificates, and Node does not read the OS trust
+    # store anyway. Verified that Node 18's global fetch (undici) honours it.
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        mkdir -p /tmp/cert
+        printf '%s' "$$TLS__INTERNAL__CA_CRT" > /tmp/cert/ca.pem
+        if [ ! -s /tmp/cert/ca.pem ]; then
+          echo "FATAL: TLS__INTERNAL__CA_CRT is empty; refusing to seed without CA trust" >&2
+          exit 1
+        fi
+        export NODE_EXTRA_CA_CERTS=/tmp/cert/ca.pem
+        exec npm run seed
     environment:
       ENV_TYPE: ${ENV_TYPE:-local}
-      # logto's admin API (LOGTO__ADMIN_SERVER__FQDN_URL) is now TLS-only with the
-      # shared self-signed internal cert; this container has no CA trust wiring,
-      # so skip cert validation for its outbound fetch() calls to logto.
-      NODE_TLS_REJECT_UNAUTHORIZED: "0"
+      # This container POSTs the M2M client secret, the basic-auth credentials and
+      # every LOGTO__CLIENT_APPS secret to logto's admin API over the internal TLS
+      # endpoint, so it verifies that endpoint against the internal CA. Only the CA
+      # is passed, not the *x-tls anchor, which would also hand it the internal
+      # private key it has no use for.
+      TLS__INTERNAL__CA_CRT: ${TLS__INTERNAL__CA_CRT}
+      # Used by src/middleware/logto.ts to derive the admin-server URL when
+      # LOGTO__ADMIN_SERVER__FQDN_URL is unset; without it the fallback assumes a
+      # container name the deployment may not use.
+      PROJECT_NAME: ${PROJECT_NAME:-d2e}
       PG__DB_NAME: alp
       PG__HOST: ${PG_HOST:-${PROJECT_NAME:-d2e}-minerva-postgres-1}
       PG__PASSWORD: ${PG__LOGTO_MANAGER_PASSWORD}
