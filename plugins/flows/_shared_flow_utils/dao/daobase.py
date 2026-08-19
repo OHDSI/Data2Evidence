@@ -25,11 +25,29 @@ from _shared_flow_utils.types import (
 SYSTEM_SCHEMAS = {"postgres": ["information_schema", "pg_catalog", "public"]}
 
 
+def build_bigquery_r_connection_string(
+    project: str, client_email: str, key_path: str, path_to_driver: str
+) -> str:
+    """Build R DatabaseConnector connection string for BigQuery."""
+    conn_url = (
+        "jdbc:bigquery://https://www.googleapis.com/bigquery/v2:443;"
+        f"ProjectId={project};OAuthType=0;"
+        f"OAuthServiceAcctEmail={client_email};"
+        f"OAuthPvtKeyPath={key_path}"
+    )
+    return (
+        "connectionDetails <- DatabaseConnector::createConnectionDetails("
+        f"dbms = 'bigquery', connectionString = '{conn_url}', "
+        f"user = '', password = '', pathToDriver = '{path_to_driver}')"
+    )
+
+
 class DialectDrivers(BaseModel):
     class jdbc:
         postgres: str = "jdbc:postgresql"
         hana: str = "jdbc:sap"
         duckdb: str = "jdbc:duckdb"
+        bigquery: str = "jdbc:bigquery"
         trex: str = "jdbc:postgresql"
 
     class sqlalchemy:
@@ -49,6 +67,7 @@ class DialectDrivers(BaseModel):
     class database_connector:
         postgres: str = "postgresql"
         hana: str = "hana"
+        bigquery: str = "bigquery"
         trex: str = "postgresql"
 
     class cachedb:
@@ -394,6 +413,16 @@ class DaoBase(ABC):
                     else None
                 )
                 conn_url += extra_config
+            case SupportedDatabaseDialects.BIGQUERY:
+                key_path = Secret.load("google-service-account-json").get()
+                if not os.path.isfile(key_path):
+                    DaoBase.create_service_account_credentials_file(database_credentials)
+                return build_bigquery_r_connection_string(
+                    project=host,
+                    client_email=database_credentials.client_email,
+                    key_path=key_path,
+                    path_to_driver=DaoBase.path_to_driver,
+                )
 
         match user_type:
             case UserType.ADMIN_USER:

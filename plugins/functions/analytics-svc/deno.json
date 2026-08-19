@@ -91,6 +91,7 @@
         "./src/dao/DBDAO": "./src/dao/DBDAO.ts",
         "./src/utils/TerminologySvcProxy": "./src/utils/TerminologySvcProxy.ts",
         "./src/utils/conceptSetRef": "./src/utils/conceptSetRef.ts",
+        "./src/utils/dcResultsSchema": "./src/utils/dcResultsSchema.ts",
         "./src/utils/dataset-filter/query-builder": "./src/utils/dataset-filter/query-builder.ts",
         "./src/utils/dataset-filter/filter-scope-query-builder": "./src/utils/dataset-filter/filter-scope-query-builder.ts",
         "./src/utils/AuditLogger": "./src/utils/AuditLogger.ts",

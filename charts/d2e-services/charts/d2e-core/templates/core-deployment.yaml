@@ -285,7 +285,7 @@ spec:
           args:
             [
               "-c",
-              "npm run cli db seed -- --swe && npx @logto/cli db alteration rollback 1.23.0 && npx @logto/cli db alteration deploy 1.23.1",
+              "npm run cli db seed -- --swe && npm run cli db alteration deploy latest && node packages/core/d2e-grants.mjs",
             ]
           resources:
             {{- toYaml .Values.global.resources.logtoSeedInit | nindent 12 }}

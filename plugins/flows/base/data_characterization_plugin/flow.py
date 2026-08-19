@@ -91,6 +91,10 @@ def data_characterization_plugin(options: DCOptionsType):
     )
     # Resolve to absolute path so R uses the same directory regardless of its working directory
     achilles_params.outputFolder = os.path.abspath(achilles_params.outputFolder)
+    # Direct-BigQuery runs need SqlRender temp-table emulation (BQ has no temp
+    # tables); emulate into the results schema.
+    if not use_trex_connection and dbdao.dialect == SupportedDatabaseDialects.BIGQUERY:
+        achilles_params.tempEmulationSchema = achilles_params.resultsSchema
     # For TREX connections, set vocabSchemaName to schemaName
     if not is_hana and use_trex_connection:
         # Qualify reads against the cache catalog; resultsSchema stays unprefixed so dbdao.create_schema doesn't quote "catalog.schema" as one literal.
@@ -98,8 +102,20 @@ def data_characterization_plugin(options: DCOptionsType):
         achilles_params.schemaName = f"{catalog}.{options.schemaName}"
         achilles_params.vocabSchemaName = achilles_params.schemaName
 
+    if not use_trex_connection:
+        logger.info(
+            f"Source-connection run: results schema '{achilles_params.resultsSchema}' is the "
+            "dataset's registered WebAPI Results schema. Drop-schema-on-failure hooks are "
+            "DISABLED and only DC-owned tables are cleared."
+        )
+
     dc_schema = create_results_schema(
-        achilles_params.resultsSchema, achilles_params.vocabSchemaName, dbdao, logger, is_hana=is_hana
+        achilles_params.resultsSchema,
+        achilles_params.vocabSchemaName,
+        dbdao,
+        logger,
+        is_hana=is_hana,
+        use_trex_connection=use_trex_connection,
     )
 
     if not is_hana and use_trex_connection:
@@ -107,25 +123,18 @@ def data_characterization_plugin(options: DCOptionsType):
             dbdao.clear_pg_cache()
 
     if dc_schema:
-        execute_achilles_wo = execute_achilles.with_options(
-            on_failure=[
-                partial(
-                    drop_schema_hook,
-                    **dict(dbdao=dbdao, schema=achilles_params.resultsSchema),
-                )
-            ]
+        execute_achilles_wo = with_drop_schema_on_failure(
+            execute_achilles, dbdao, achilles_params.resultsSchema, use_trex_connection
         )
 
         partial_failure = execute_achilles_wo(achilles_params, flow_run_id)
 
         if options.executeConceptRecordCount:
-            execute_concept_record_count_wo = execute_concept_record_count.with_options(
-                on_failure=[
-                    partial(
-                        drop_schema_hook,
-                        **dict(dbdao=dbdao, schema=achilles_params.resultsSchema),
-                    )
-                ]
+            execute_concept_record_count_wo = with_drop_schema_on_failure(
+                execute_concept_record_count,
+                dbdao,
+                achilles_params.resultsSchema,
+                use_trex_connection,
             )
             execute_concept_record_count_wo(
                 achilles_params.resultsSchema,
@@ -143,16 +152,19 @@ def data_characterization_plugin(options: DCOptionsType):
             )
 
         if not use_trex_connection:
-            execute_export_to_ares_wo = execute_export_to_ares.with_options(
-                on_failure=[
-                    partial(
-                        drop_schema_hook,
-                        **dict(dbdao=dbdao, schema=achilles_params.resultsSchema),
-                    )
-                ]
+            # No drop-schema hook here by construction: this branch only runs in
+            # source-connection mode, where the results schema is the customer's live
+            # WebAPI Results schema.
+            execute_export_to_ares_wo = with_drop_schema_on_failure(
+                execute_export_to_ares,
+                dbdao,
+                achilles_params.resultsSchema,
+                use_trex_connection,
             )
 
             execute_export_to_ares_wo(achilles_params, cdm_source)
+
+            invalidate_trex_source_cache(options, dbdao.dialect, logger)
 
         # Partial results were kept above; mark the flow failed without dropping them.
         if partial_failure:
@@ -163,7 +175,57 @@ def data_characterization_plugin(options: DCOptionsType):
             )
 
 
-def create_results_schema(results_schema: str, vocab_schema: str, dbdao, logger, is_hana: bool = False):
+def invalidate_trex_source_cache(options: DCOptionsType, dialect: str, logger):
+    """
+    A source-connection run rewrites the achilles tables straight on the source
+    database. trex reads them back through its DuckDB ATTACH of that source, which
+    caches the remote catalog, so it can otherwise keep resolving the table versions
+    this run dropped. A stale cache only costs the reader correct results, never the
+    run itself — so a failure here is logged, not raised.
+    """
+    clear_sql = (
+        "CALL bigquery_clear_cache()"
+        if dialect == SupportedDatabaseDialects.BIGQUERY
+        else "CALL pg_clear_cache()"
+    )
+    try:
+        TrexDao(
+            database_code=options.databaseCode, cache_id=options.cacheId
+        ).execute_sql(clear_sql)
+        logger.info(f"Invalidated the trex source catalog cache via {clear_sql}")
+    except Exception as e:
+        logger.warning(
+            f"Could not invalidate the trex source catalog cache ({clear_sql}): {e}. "
+            "Data characterization results may read stale until trex re-attaches."
+        )
+
+
+def with_drop_schema_on_failure(task_obj, dbdao, results_schema: str, use_trex_connection: bool):
+    """
+    Attach the DROP SCHEMA CASCADE failure hook, but ONLY for legacy trex runs.
+
+    Legacy runs create a throwaway per-run results schema, so dropping it on failure
+    is the correct cleanup. Source-connection runs write into the dataset's registered
+    WebAPI Results daimon schema — a live customer schema holding Atlas artifacts —
+    so a failed task must never drop it.
+    """
+    if not use_trex_connection:
+        return task_obj
+    return task_obj.with_options(
+        on_failure=[
+            partial(drop_schema_hook, **dict(dbdao=dbdao, schema=results_schema))
+        ]
+    )
+
+
+def create_results_schema(
+    results_schema: str,
+    vocab_schema: str,
+    dbdao,
+    logger,
+    is_hana: bool = False,
+    use_trex_connection: bool = True,
+):
     try:
         # create results schema
         existing_schema = dbdao.check_schema_exists(results_schema)
@@ -172,7 +234,7 @@ def create_results_schema(results_schema: str, vocab_schema: str, dbdao, logger,
             logger.warning(
                 f"Results schema '{results_schema}' already exists. This will drop existing achilles tables."
             )
-            drop_existing_achilles_tables(results_schema, dbdao)
+            drop_existing_achilles_tables(results_schema, dbdao, use_trex_connection)
         else:
             create_schema_task(dbdao, results_schema)
 
@@ -200,35 +262,37 @@ def create_results_schema(results_schema: str, vocab_schema: str, dbdao, logger,
         # Use safe_substitute because of 'US$' in sql script
         sql_script = sql_template.safe_substitute(schema_params)
 
-        create_tables_wo = create_results_tables.with_options(
-            on_failure=[
-                partial(drop_schema_hook, **dict(dbdao=dbdao, schema=results_schema))
-            ]
+        create_tables_wo = with_drop_schema_on_failure(
+            create_results_tables, dbdao, results_schema, use_trex_connection
         )
 
         create_tables_wo(sql_script, dbdao)
 
         # task
         if dbdao.dialect == SupportedDatabaseDialects.HANA:
-            enable_audit_policies_wo = (
-                enable_and_create_audit_policies_task.with_options(
-                    on_failure=[
-                        partial(
-                            drop_schema_hook, **dict(dbdao=dbdao, schema=results_schema)
-                        )
-                    ]
-                )
+            enable_audit_policies_wo = with_drop_schema_on_failure(
+                enable_and_create_audit_policies_task,
+                dbdao,
+                results_schema,
+                use_trex_connection,
             )
 
             enable_audit_policies_wo(dbdao, results_schema)
 
-        create_and_assign_roles_wo = create_and_assign_roles_task.with_options(
-            on_failure=[
-                partial(drop_schema_hook, **dict(dbdao=dbdao, schema=results_schema))
-            ]
-        )
+        if use_trex_connection:
+            create_and_assign_roles_wo = with_drop_schema_on_failure(
+                create_and_assign_roles_task, dbdao, results_schema, use_trex_connection
+            )
 
-        create_and_assign_roles_wo(dbdao, results_schema)
+            create_and_assign_roles_wo(dbdao, results_schema)
+        else:
+            # Source-connection mode targets the customer's own database; DC must not
+            # create roles/users there or grant on their live Results schema.
+            logger.info(
+                "Skipping create_and_assign_roles for source-connection run: "
+                f"'{results_schema}' is a customer-managed WebAPI Results schema "
+                f"(dialect={dbdao.dialect})."
+            )
 
         logger.info(
             f"Data Characterization results schema '{results_schema}' successfully created!"
@@ -336,10 +400,13 @@ def execute_achilles(achilles_params: AchillesParams, flow_run_id: str):
                 verboseMode=achilles_params.verboseMode,
                 excludeAnalysisIds=convert_to_int_vector(achilles_params.excludeAnalysisIds),
                 createIndices=achilles_params.createIndices,
-                cacheId=achilles_params.cacheId or "",
+                # The cache catalog only exists on the trex connection; a direct source
+                # connection rejects `USE`.
+                cacheId=(achilles_params.cacheId or "") if achilles_params.use_trex_connection else "",
                 # Render HANA-dialect SQL while keeping the postgres/pgwire JDBC driver:
                 # the R side overrides the connection's `dbms` attribute to this value.
                 translateDialect="hana" if achilles_params.is_hana else "",
+                tempEmulationSchema=achilles_params.tempEmulationSchema,
             )
 
         # Task might succeed if there are failed analyses so need to check for error report or failed analyses inside output folder
@@ -439,41 +506,16 @@ def execute_achilles(achilles_params: AchillesParams, flow_run_id: str):
 
 
 @task(log_prints=True, task_run_name="drop_existing_achilles_tables_{results_schema}")
-def drop_existing_achilles_tables(results_schema: str, dbdao):
+def drop_existing_achilles_tables(results_schema: str, dbdao, use_trex_connection: bool = True):
     logger = get_run_logger()
-    tables = [
-        #"cohort",
-        "cohort_censor_stats",
-        "cohort_inclusion",
-        "cohort_inclusion_result",
-        "cohort_inclusion_stats",
-        "cohort_summary_stats",
-        "cohort_cache",
-        "cohort_censor_stats_cache",
-        "cohort_inclusion_result_cache",
-        "cohort_inclusion_stats_cache",
-        "cohort_summary_stats_cache",
-        "feas_study_inclusion_stats",
-        "feas_study_index_stats",
-        "feas_study_result",
-        "heracles_analysis",
-        "heracles_heel_results",
-        "heracles_results",
-        "heracles_results_dist",
-        "heracles_periods",
-        "cohort_sample_element",
-        "ir_analysis_dist",
-        "ir_analysis_result",
-        "ir_analysis_strata_stats",
-        "ir_strata",
-        "cc_results",
-        "pathway_analysis_codes",
-        "pathway_analysis_events",
-        "pathway_analysis_paths",
-        "pathway_analysis_stats",
-        "concept_hierarchy",
-        "achilles_result_concept_count"
-    ]
+    tables = tables_to_drop(use_trex_connection)
+
+    if not use_trex_connection:
+        logger.info(
+            f"Source-connection run: limiting the pre-run cleanup of '{results_schema}' to "
+            "DC-owned tables so Atlas artifacts (cohorts, IR analyses, pathways, heracles) "
+            "in the live WebAPI Results schema are preserved."
+        )
 
     logger.info(f"Dropping existing Achilles tables in schema '{results_schema}': {tables}")
 

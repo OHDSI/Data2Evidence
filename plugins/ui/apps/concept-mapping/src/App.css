@@ -11,3 +11,16 @@
     flex: 1;
   }
 }
+
+/* Establishes the full-height chain when this app is mounted as a remote plugin (the flow
+   app's NodeDrawer, not the standalone #root above) - flex: 1 fills whatever flex-column
+   ancestor hosts it (node-drawer__content), height: 100% covers the standalone case where
+   #root already resolves a real height. min-height: 0 lets it actually shrink to that
+   available space instead of growing to its content. */
+.conceptmapping__container {
+  flex: 1;
+  min-height: 0;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}

@@ -6,11 +6,18 @@ import { setImportData, clearImportData } from "./import-data";
 import {
   setInitialData,
   clearData,
-  setSingleMapping,
   setMultipleMapping,
   setSelectedData,
   clearSelectedData,
 } from "./mapping-data";
+import {
+  setWizardStep,
+  setSourceData,
+  setDatasetId,
+  setLoadRecommendation,
+  resetDownstream,
+  setMappingStarted,
+} from "./wizard";
 
 export enum ACTION_TYPES {
   SET_FEEDBACK = "SET_FEEDBACK",
@@ -21,10 +28,15 @@ export enum ACTION_TYPES {
   CLEAR_IMPORT_DATA = "CLEAR_IMPORT_DATA",
   SET_INITAL_DATA = "SET_INITAL_DATA",
   CLEAR_DATA = "CLEAR_DATA",
-  SET_SINGLE_MAPPING = "SET_SINGLE_MAPPING",
   SET_MULTIPLE_MAPPING = "SET_MULTIPLE_MAPPING",
   SET_SELECTED_DATA = "SET_SELECTED_DATA",
   CLEAR_SELECTED_DATA = "CLEAR_SELECTED_DATA",
+  SET_WIZARD_STEP = "SET_WIZARD_STEP",
+  SET_SOURCE_DATA = "SET_SOURCE_DATA",
+  SET_DATASET_ID = "SET_DATASET_ID",
+  SET_LOAD_RECOMMENDATION = "SET_LOAD_RECOMMENDATION",
+  RESET_DOWNSTREAM = "RESET_DOWNSTREAM",
+  SET_MAPPING_STARTED = "SET_MAPPING_STARTED",
 }
 
 type ActionType = keyof typeof ACTION_TYPES;
@@ -39,10 +51,15 @@ const actionMap = new Map<ActionType, ActionFunction>([
   [ACTION_TYPES.CLEAR_IMPORT_DATA, clearImportData],
   [ACTION_TYPES.SET_INITAL_DATA, setInitialData],
   [ACTION_TYPES.CLEAR_DATA, clearData],
-  [ACTION_TYPES.SET_SINGLE_MAPPING, setSingleMapping],
   [ACTION_TYPES.SET_MULTIPLE_MAPPING, setMultipleMapping],
   [ACTION_TYPES.SET_SELECTED_DATA, setSelectedData],
   [ACTION_TYPES.CLEAR_SELECTED_DATA, clearSelectedData],
+  [ACTION_TYPES.SET_WIZARD_STEP, setWizardStep],
+  [ACTION_TYPES.SET_SOURCE_DATA, setSourceData],
+  [ACTION_TYPES.SET_DATASET_ID, setDatasetId],
+  [ACTION_TYPES.SET_LOAD_RECOMMENDATION, setLoadRecommendation],
+  [ACTION_TYPES.RESET_DOWNSTREAM, resetDownstream],
+  [ACTION_TYPES.SET_MAPPING_STARTED, setMappingStarted],
 ]);
 
 export interface DispatchType {

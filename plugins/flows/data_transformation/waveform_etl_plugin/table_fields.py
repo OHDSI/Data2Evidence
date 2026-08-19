@@ -1,0 +1,118 @@
+# omop5.4
+PERSON_FIELDNAMES = [
+    "person_id",
+    "gender_concept_id",
+    "year_of_birth",
+    "month_of_birth",
+    "day_of_birth",
+    "birth_datetime",
+    "race_concept_id",
+    "ethnicity_concept_id",
+    "location_id",
+    "provider_id",
+    "care_site_id",
+    "person_source_value",
+    "gender_source_value",
+    "gender_source_concept_id",
+    "race_source_value",
+    "race_source_concept_id",
+    "ethnicity_source_value",
+    "ethnicity_source_concept_id",
+]
+
+# omop5.4
+VISIT_OCCURRENCE_FIELDNAMES = [
+    "visit_occurrence_id",
+    "person_id",
+    "visit_concept_id",
+    "visit_start_date",
+    "visit_start_datetime",
+    "visit_end_date",
+    "visit_end_datetime",
+    "visit_type_concept_id",
+    "provider_id",
+    "care_site_id",
+    "visit_source_value",
+    "visit_source_concept_id",
+    "admitted_from_concept_id",
+    "admitted_from_source_value",
+    "discharged_to_concept_id",
+    "discharged_to_source_value",
+    "preceding_visit_occurrence_id",
+]
+
+WAVEFORM_FILES_FIELDNAMES = [
+    "group_id",
+    "person_source_id",
+    "visit_occurrence_source_id",
+    "visit_detail_source_id",
+    "session_start",
+    "session_end",
+    "file_start",
+    "file_end",
+    "src_file",
+    "trg_file",
+    "person_id",
+    "visit_occurrence_id",
+    "visit_detail_id",
+]
+
+WAVEFORM_CHANNELS_FIELDNAMES = [
+    "group_id",
+    "person_source_id",
+    "visit_occurrence_source_id",
+    "trg_file",
+    "channel_name",
+    "sample_units",
+    "sample_rate",
+    "sample_rate_units",
+    "gain",
+    "gain_units",
+    "segment_length",
+]
+
+WAVEFORM_OCCURRENCE_FIELDNAMES = [
+    "waveform_occurrence_id",
+    "waveform_occurrence_concept_id",
+    "person_id",
+    "waveform_occurrence_start_datetime",
+    "waveform_occurrence_end_datetime",
+    "visit_occurrence_id",
+    "visit_detail_id",
+    "preceding_waveform_occurrence_id",
+    "waveform_format_concept_id",
+    "waveform_occurrence_source_value",
+    "num_of_files",
+    "waveform_format_source_value",
+]
+
+WAVEFORM_REGISTRY_FIELDNAMES = [
+    "waveform_registry_id",
+    "waveform_occurrence_id",
+    "waveform_feature_id",
+    "person_id",
+    "waveform_file_start_datetime",
+    "waveform_file_end_datetime",
+    "visit_occurrence_id",
+    "visit_detail_id",
+    "file_extension_concept_id",
+    "file_extension_source_value",
+    "waveform_source_file_uri",
+    "waveform_target_file_uri",
+]
+
+WAVEFORM_CHANNEL_METADATA_FIELDNAMES = [
+    "waveform_channel_metadata_id",
+    "waveform_registry_id",
+    "procedure_occurrence_id",
+    "device_exposure_id",
+    "waveform_channel_source_value",
+    "channel_concept_id",
+    "metadata_source_value",
+    "metadata_concept_id",
+    "value_as_number",
+    "value_as_concept_id",
+    "value_as_string",
+    "unit_concept_id",
+    "unit_source_value",
+]
