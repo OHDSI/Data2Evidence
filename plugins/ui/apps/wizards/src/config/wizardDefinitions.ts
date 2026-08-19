@@ -337,6 +337,20 @@ const mockWizardConfigs: WizardConfig[] = [
     fields: WIZARD_FIELDS,
   },
   {
+    id: "30-day-readmission",
+    name: "30-Day Readmission",
+    description:
+      "This wizard will calculate the 30-day readmission rate for a particular clinical condition. This calculation is done in SQL, and this works by finding an inpatient discharge associated with the condition and determining if the patient has a subsequent inpatient admission within 30 days of that discharge.",
+    fields: WIZARD_FIELDS,
+  },
+  {
+    id: "length-of-stay",
+    name: "Length of Stay",
+    description:
+      "This wizard will calculate the average length of hospital stay for a particular clinical condition. This calculation is done in SQL, and this works by finding inpatient visits associated with the condition and computing the number of days between the visit start and visit end dates.",
+    fields: WIZARD_FIELDS,
+  },
+  {
     id: "cross-sectional-demographics",
     name: "Cross sectional Demographics",
     description: "Assessment of hypertension and cholesterol levels in post-operative patients.",
