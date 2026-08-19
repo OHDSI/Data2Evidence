@@ -227,6 +227,10 @@ jobs:
             DOCKER_BUILD_FILE_PATH: ./services/enterprise-gateway/kernels/R_ohdsi_docker/Dockerfile
             DOCKER_BUILD_CONTEXT_PATH: .
             build_disable: ${{ (needs.setup.outputs.changes_rkernel != 'true') && 'true' || 'false' }}
+            # Multi-arch: Posit Package Manager's binary CRAN mirror
+            # (`__linux__/<codename>`) only ships x86_64, so Rprofile.site picks
+            # the date-pinned SOURCE snapshot when R.version$arch != x86_64 and
+            # arm64 compiles from source. Expect a long build under QEMU.
           - AZ_REG_REPOSITORY: d2e-dataflow-gen-worker
             # Slowest job in the matrix (~1h50m) and it rebuilt on every run,
             # including changes it cannot possibly bake. Gate it on the paths it
@@ -244,6 +248,10 @@ jobs:
             # the rotating token cannot poison its cache key.
             cache_enabled: "true"
             needs_github_pat_secret: "true"
+            # Multi-arch: REQUIRES every flow env to declare linux-aarch64 in
+            # plugins/flows/*/pyproject.toml `platforms` and to be re-locked.
+            # Provisioning is `pixi install --frozen` (lockfile-only), so the
+            # arm64 leg fails on any env whose lockfile is still linux-64 only.
           - AZ_REG_REPOSITORY: d2e-supabase-storage
             DOCKER_BUILD_FILE_PATH: ./services/supabase-storage/Dockerfile
             DOCKER_BUILD_CONTEXT_PATH: ./services/supabase-storage
@@ -273,6 +281,12 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Set up QEMU
+        if: ${{ contains(matrix.PLATFORMS || 'linux/amd64,linux/arm64', 'arm64') }}
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: arm64
+
       - uses: docker/setup-buildx-action@v3
         id: builder
 
@@ -284,7 +298,7 @@ jobs:
           builder: ${{ steps.builder.outputs.name }}
           context: ${{ matrix.DOCKER_BUILD_CONTEXT_PATH }}
           file: ${{ matrix.DOCKER_BUILD_FILE_PATH }}
-          platforms: linux/amd64
+          platforms: ${{ matrix.PLATFORMS || 'linux/amd64,linux/arm64' }}
           push: true
           pull: ${{ matrix.pull_base == 'true' || false }}
           tags: ${{ env.REG_URL }}/${{ matrix.AZ_REG_REPOSITORY }}:${{ env.RUN_TAG }}
@@ -637,6 +651,11 @@ jobs:
             echo "$(basename "$f"): $(tar -xzOf "$f" package/package.json | jq -r '.name + " " + .version')"
           done
 
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: arm64
+
       - uses: docker/setup-buildx-action@v3
         id: builder
 
@@ -688,6 +707,11 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: arm64
+
       - uses: docker/setup-buildx-action@v3
         id: builder
 
@@ -697,7 +721,7 @@ jobs:
           builder: ${{ steps.builder.outputs.name }}
           context: ./tests/e2e
           file: ./tests/e2e/Dockerfile
-          platforms: linux/amd64
+          platforms: linux/amd64,linux/arm64
           push: true
           tags: ${{ env.REG_URL }}/d2e-e2e:${{ env.RUN_TAG }}
           provenance: false
