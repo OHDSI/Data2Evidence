@@ -21,7 +21,8 @@ function replaceAll(input, find, replace) {
  *
  * @param {String}  queryString           sql query with value placeholders (optional, defaults to "")
  * @param {Array}   parameterPlaceholders array holding sql parameters (placeholders) to be inserted (optional, defaults to empty array)
- * @param {Boolean} sqlReturnOn           boolean flag indicating whether the result object contains the sql query (optional, defaults to false)
+ * @param {Boolean} sqlReturnOn           boolean flag indicating whether the result object contains the sql query (optional, defaults to
+ *                                        settings.sqlReturnOn if present, otherwise false)
  */
 export class QueryObject {
   /**
@@ -152,7 +153,11 @@ export class QueryObject {
   ) {
     this.queryString = queryString || "";
     this.parameterPlaceholders = parameterPlaceholders || [];
-    this.sqlReturnOn = sqlReturnOn ?? false;
+
+    // implements priority of passed value over global settings value over default value, similar to
+    // "this.sqlReturnOn = sqlReturnOn || settings.sqlReturnOn || false" which fails in cases where variables eval to false
+    this.sqlReturnOn =
+      sqlReturnOn || (Deno.env.get("SQL_RETURN_ON") === "true" ? true : false);
   }
 
   public shortId(): string {

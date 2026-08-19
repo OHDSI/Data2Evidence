@@ -9,8 +9,21 @@ import { DBError as dbe } from "@alp/alp-base-utils";
 import DBError = dbe.DBError;
 import MRIEndpointErrorHandler from "../../utils/MRIEndpointErrorHandler";
 import { convertZlibBase64ToJson } from "@alp/alp-base-utils";
+import { env } from "../../env";
 
+const sqlReturnOn: boolean = env.SQL_RETURN_ON === "true" ? true : false;
 const envVarUtils = new EnvVarUtils(Deno.env.toObject());
+
+let _stripDbgInfo = (result) => {
+    if (typeof result === "string") {
+        return result;
+    }
+
+    ["sql", "sqlParameters", "debug"].forEach((k) => (result[k] = undefined));
+    return result;
+};
+let _processResult = (result) =>
+    result && !sqlReturnOn ? _stripDbgInfo(result) : result;
 
 /**
  * Retrieves list of cohort definitions
@@ -120,7 +133,7 @@ export async function populationQuery(req: IMRIRequest, res, next) {
                                             "attachment; filename=" + sFilename,
                                         "content-Type": "text/csv",
                                     });
-                                    _sendResult(err, result);
+                                    _sendResult(err, _processResult(result));
                                 }
                             }
                             console.time(
