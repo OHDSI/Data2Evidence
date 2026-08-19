@@ -52,7 +52,6 @@
           "surface": "analysis-tabs",
           "name": "Wizard",
           "icon": "mdi-auto-fix",
-          "hint": "Create analyses with guided D2E workflows.",
           "insertBefore": "feature-analyses"
         }
       ],

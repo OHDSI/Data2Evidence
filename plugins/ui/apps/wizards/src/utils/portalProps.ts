@@ -17,24 +17,33 @@ function getAtlasStoredDatasetId(): string | undefined {
 }
 
 /**
- * Normalize the host-specific dataset context consumed by Wizards.
+ * Normalize the host-specific context consumed by Wizards.
  *
- * The portal already supplies datasetId directly. D2E WebAPI exposes Atlas
+ * The portal already supplies datasetId and username directly. D2E WebAPI exposes Atlas
  * sources with sourceKey equal to the D2E dataset id, so an Atlas parcel can
  * use hostContext.sourceKey without another lookup or request interceptor. The
  * installed AnalysisHub does not yet pass sourceKey on initial mount, so use
- * Atlas's persisted vocabulary selection as a compatibility fallback.
+ * Atlas's persisted vocabulary selection as a compatibility fallback. Atlas
+ * parcels expose the signed-in user through authContext but do not currently
+ * copy that username to the top-level Wizard props.
  */
 export function normalizeWizardPortalProps(props: PortalProps): PortalProps {
   const datasetId = getNonEmptyString(props.datasetId);
-  if (datasetId) {
-    return datasetId === props.datasetId ? props : { ...props, datasetId };
+  if (props.isAtlas !== true) {
+    return datasetId && datasetId !== props.datasetId ? { ...props, datasetId } : props;
   }
 
-  if (props.isAtlas !== true) return props;
+  const resolvedDatasetId =
+    datasetId ?? getNonEmptyString(props.hostContext?.sourceKey) ?? getAtlasStoredDatasetId();
+  const username = getNonEmptyString(props.username) ?? getNonEmptyString(props.authContext?.user?.username);
 
-  const sourceKey = getNonEmptyString(props.hostContext?.sourceKey) ?? getAtlasStoredDatasetId();
-  return sourceKey ? { ...props, datasetId: sourceKey } : props;
+  if (resolvedDatasetId === props.datasetId && username === props.username) return props;
+
+  return {
+    ...props,
+    ...(resolvedDatasetId ? { datasetId: resolvedDatasetId } : {}),
+    ...(username ? { username } : {}),
+  };
 }
 
 // Atlas labels Wizard events with the manifest id but omits appId from the

@@ -70,6 +70,26 @@ describe("normalizeWizardPortalProps", () => {
     ).toBe("host-atlas-dataset");
   });
 
+  it("uses the authenticated Atlas username when the parcel omits the top-level username", () => {
+    expect(
+      normalizeWizardPortalProps({
+        isAtlas: true,
+        authContext: { user: { username: "atlas-researcher" } },
+      }).username,
+    ).toBe("atlas-researcher");
+  });
+
+  it("preserves the username supplied directly by the portal", () => {
+    const props: PortalProps = {
+      username: "portal-researcher",
+      isAtlas: false,
+      authContext: { user: { username: "atlas-researcher" } },
+    };
+
+    expect(normalizeWizardPortalProps(props)).toBe(props);
+    expect(normalizeWizardPortalProps(props).username).toBe("portal-researcher");
+  });
+
   it("does not treat an Atlas source key as a portal dataset id", () => {
     const props: PortalProps = {
       isAtlas: false,
