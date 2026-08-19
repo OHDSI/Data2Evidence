@@ -66,6 +66,13 @@ jobs:
         with:
           submodules: recursive
 
+      # _axios.ts is duplicated across the plugin functions until it moves into a
+      # shared module. Nothing else keeps the copies in sync, so a fix applied to
+      # one silently leaves the others broken — which is how the header and
+      # arraybuffer regressions reached review. Fails the run on drift.
+      - name: Check _axios shim copies are in sync
+        run: node internal/scripts/check-axios-shim-sync.mjs
+
       - id: tag
         run: |
           SHORT_SHA=$(git rev-parse --short HEAD)
@@ -834,7 +841,12 @@ jobs:
           openssl x509 -req -in "$D/srv.csr" \
             -CA "$D/ca.crt" -CAkey "$D/ca.key" -CAcreateserial \
             -out "$D/srv.crt" -days 30 -extfile "$D/srv.ext" 2>/dev/null
-          openssl x509 -in "$D/srv.crt" -noout -ext subjectAltName
+          # Assert, don't just print: `openssl x509 -noout -ext subjectAltName`
+          # exits 0 and prints "No extensions in certificate" when the SAN is
+          # missing, so on its own it cannot fail the job it exists to guard.
+          openssl x509 -in "$D/srv.crt" -noout -ext subjectAltName \
+            | tee /dev/stderr | grep -q 'DNS:\*\.d2e\.local'
+          openssl verify -CAfile "$D/ca.crt" "$D/srv.crt"
 
       - name: Helm install (using just-built images)
         run: |

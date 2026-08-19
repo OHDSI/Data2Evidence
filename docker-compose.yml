@@ -120,9 +120,32 @@ services:
         # PS config server is typically external/HANA-side with its own CA. This is
         # the supported way to reach such a server: the edge-function shim has no
         # per-request TLS control and there is no verification bypass.
-        # Accepts one or more concatenated PEM blocks.
+        #
+        # Accepts one or more concatenated PEM blocks, split into one file each:
+        # update-ca-certificates appends a whole file to the bundle but only hashes
+        # its FIRST certificate into the CApath symlinks, so a multi-cert file would
+        # be trusted by bundle readers and silently ignored by CApath readers.
+        # The value needs real newlines; a .env-style string with literal \n will
+        # not parse, so the count is asserted below rather than failing later at
+        # the first TLS call.
         if [ -n "$${TLS__EXTRA__CA_CRTS:-}" ]; then
-          printf '%s\n' "$$TLS__EXTRA__CA_CRTS" > /usr/local/share/ca-certificates/d2e-extra-ca.crt
+          printf '%s\n' "$$TLS__EXTRA__CA_CRTS" |
+            awk 'BEGIN{n=0} /^-----BEGIN CERTIFICATE-----$$/{n++} n>0{print > ("/usr/local/share/ca-certificates/d2e-extra-ca-" n ".crt")}'
+          got=0
+          for f in /usr/local/share/ca-certificates/d2e-extra-ca-*.crt; do
+            [ -e "$$f" ] || continue
+            if grep -qx -- '-----END CERTIFICATE-----' "$$f"; then
+              got=$$((got + 1))
+            else
+              echo "FATAL: $$f has no END line; TLS__EXTRA__CA_CRTS is truncated or malformed" >&2
+              exit 1
+            fi
+          done
+          if [ "$$got" -eq 0 ]; then
+            echo "FATAL: TLS__EXTRA__CA_CRTS is set but contains no PEM certificate. It needs real newlines -- a .env-style value with literal \\n will not parse." >&2
+            exit 1
+          fi
+          echo "installed $$got extra CA certificate(s)"
         fi
         update-ca-certificates
         # This command replaces the image's own CMD, so the --enable-otel flag
@@ -1119,6 +1142,12 @@ services:
         printf '%s' "$$TLS__INTERNAL__KEY" > /tmp/cert/key.pem &&
         printf '%s' "$$TLS__INTERNAL__CA_CRT" > /tmp/cert/ca.pem
         ) &&
+        for pair in cert:TLS__INTERNAL__CRT key:TLS__INTERNAL__KEY ca:TLS__INTERNAL__CA_CRT; do
+          if [ ! -s "/tmp/cert/$${pair%%:*}.pem" ]; then
+            echo "FATAL: $${pair##*:} is empty; refusing to start" >&2
+            exit 1
+          fi
+        done &&
         export HTTPS_CERT_PATH=/tmp/cert/cert.pem &&
         export HTTPS_KEY_PATH=/tmp/cert/key.pem &&
         export NODE_EXTRA_CA_CERTS=/tmp/cert/ca.pem &&
