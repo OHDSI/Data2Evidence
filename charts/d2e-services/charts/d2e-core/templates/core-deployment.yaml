@@ -201,7 +201,7 @@ spec:
                   name: "{{ .Release.Name }}-{{ .Chart.Name }}"
                   key: TLS__INTERNAL__CRT
             - name: TLS__INTERNAL__DOMAIN
-              value: {{ (.Values.global.tls).internalDomain | default "d2e.local" }}
+              value: {{ ((.Values.global).tls).internalDomain | default "d2e.local" | quote }}
             - name: TLS__INTERNAL__KEY
               valueFrom:
                 secretKeyRef:
@@ -344,7 +344,7 @@ spec:
             - name: NODE_ENV
               value: production
             - name: TLS__INTERNAL__DOMAIN
-              value: {{ (.Values.global.tls).internalDomain | default "d2e.local" }}
+              value: {{ ((.Values.global).tls).internalDomain | default "d2e.local" | quote }}
             - name: TRUST_PROXY_HEADER
               value: "true"
             - name: PORT

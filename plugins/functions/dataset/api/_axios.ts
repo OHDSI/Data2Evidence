@@ -104,6 +104,16 @@ async function core(
   const timeout: number | undefined = config.timeout ?? defaults.timeout;
   const controller = new AbortController();
   const timer = timeout ? setTimeout(() => controller.abort(), timeout) : undefined;
+  // A caller-supplied signal is chained into our controller rather than replacing
+  // it. Passing config.signal straight to fetch would leave the timeout aborting a
+  // controller nobody is listening to, so the request could outlive `timeout`.
+  if (config.signal) {
+    if (config.signal.aborted) {
+      controller.abort();
+    } else {
+      config.signal.addEventListener("abort", () => controller.abort(), { once: true });
+    }
+  }
   const cfgForError = { method: method.toLowerCase(), url, headers };
 
   // The timer is cleared in the `finally` below, not as soon as `fetch` resolves:
@@ -117,7 +127,7 @@ async function core(
         method,
         headers,
         body,
-        signal: config.signal ?? controller.signal,
+        signal: controller.signal,
       });
     } catch (e: any) {
       const aborted = e?.name === "AbortError";
@@ -158,7 +168,10 @@ async function core(
 
     // A lowercase-keyed plain object, as axios returned. Call sites use bracket
     // access (e.g. headers['total-number']), which a Headers instance does not
-    // support. Note repeated headers (set-cookie) collapse to one joined value.
+    // support. Caveat: Headers iteration yields each set-cookie separately, so
+    // fromEntries keeps only the last one, where axios exposed an array. Nothing
+    // under plugins/functions reads set-cookie off a response, so this is not a
+    // live regression.
     const resHeaders = Object.fromEntries(res.headers);
 
     if (res.status >= 200 && res.status < 300) {

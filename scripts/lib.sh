@@ -1,8 +1,6 @@
 # sourced library functions used by:
 # - scripts/cli.sh
-# - internal/scripts/flatten-env.sh
-# - internal/scripts/gen-env-internal.sh
-# - internal/scripts/set-env.sh
+# (the three internal/scripts/*.sh consumers this used to list are gone)
 
 [ -z $DOTENV_FILE ] && echo . FATAL DOTENV_FILE is not set
 
