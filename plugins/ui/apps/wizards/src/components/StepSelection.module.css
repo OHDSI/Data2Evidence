@@ -6,9 +6,14 @@
   box-sizing: border-box;
 }
 
+/* Atlas currently appends analysis plugin tabs after its built-in tabs. */
+:global(.analysis-hub__tabs-rail .v-tab[value="plugin:wizards:wizards"]) {
+  order: -1;
+}
+
 .header {
   margin-top: 20px;
-  margin-bottom: 48px;
+  margin-bottom: 24px;
 }
 
 .header h2 {
@@ -25,6 +30,75 @@
   margin: 0;
   color: #666;
   font-size: 14px;
+}
+
+.sourceToolbar {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+  margin-bottom: 20px;
+}
+
+.sourceSelector {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: min(100%, 260px);
+  min-height: 48px;
+  border: 1px solid #b7b7b7;
+  border-radius: 8px;
+  background: #fff;
+  box-sizing: border-box;
+}
+
+.sourceSelector:focus-within {
+  border-color: #000080;
+  box-shadow: 0 0 0 1px #000080;
+}
+
+.sourceLabel {
+  position: absolute;
+  top: -9px;
+  left: 42px;
+  padding: 0 6px;
+  background: #fff;
+  color: #666;
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.sourceIcon {
+  flex: 0 0 auto;
+  width: 24px;
+  height: 24px;
+  margin-left: 14px;
+  fill: #666;
+  stroke: #666;
+  stroke-width: 1.2;
+}
+
+.sourceControl {
+  width: 100%;
+  min-width: 0;
+  height: 46px;
+  padding: 8px 38px 6px 10px;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: #222;
+  font: inherit;
+  cursor: pointer;
+}
+
+.sourceControl:disabled {
+  color: #777;
+  cursor: default;
+}
+
+.sourceError {
+  color: #c00;
+  font-size: 13px;
 }
 
 .grid {
