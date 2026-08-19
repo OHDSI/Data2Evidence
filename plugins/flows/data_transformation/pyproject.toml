@@ -163,8 +163,18 @@ packaging = "<25"
 compilers = "*"
 make = "*"
 
+[tool.pixi.feature.test.dependencies]
+pytest = "9.*"
+
 [tool.pixi.environments]
 default = { solve-group = "default" }
+# Own solve-group (no solve-group key) on purpose: putting the test env in the
+# default solve-group makes a test-only dependency perturb the environment that
+# ships in the worker image — pytest's deps flipped colorama, exceptiongroup,
+# pluggy, pygments and typing_extensions from pypi wheels to conda packages in
+# `default`. Isolated, `default` stays byte-identical. Not provisioned into the
+# image either: provision-envs.sh installs only default, ner and bunny.
+test = { features = ["test"] }
 # Own solve-group: the NER stack's pins (scipy 1.16, torch 2.8 cpu) must not
 # constrain the default environment.
 ner = { features = ["ner"], no-default-feature = true }

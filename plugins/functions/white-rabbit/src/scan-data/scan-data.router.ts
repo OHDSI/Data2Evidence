@@ -60,7 +60,12 @@ export class ScanDataRouter {
           );
           res.setHeader("Content-Type", "application/octet-stream");
           res.status(200).send(result);
-        } catch (error) {}
+        } catch (error) {
+          this.logger.error(
+            `Error when getting scan report: ${JSON.stringify(error)}`
+          );
+          next(error);
+        }
       }
     );
 

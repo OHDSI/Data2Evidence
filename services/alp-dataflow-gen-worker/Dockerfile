@@ -16,6 +16,14 @@
 # Trade-off carried over: pixi-cache hardlinks dedupe only within a stage;
 # light-group COPYs materialize full copies. Build-time wins over size here.
 
+# WhiteRabbit dist (Java) for data_transformation's white_rabbit_plugin.
+# Standalone stage, deliberately NOT part of the heavy-env FROM lineage, so
+# BuildKit pulls it concurrently and only the copied layer reaches the final
+# image. Pinned by digest: :master is a floating tag on a package last
+# published ~Jan 2025, and the plugin depends on d2e-only patches
+# (rabbitInAHat --generateWordReport) that upstream OHDSI/WhiteRabbit lacks.
+FROM ghcr.io/data2evidence/whiterabbit@sha256:bfebf252d3c69d1c9e5b195964f85732d539c23e68760e2c3d492a4a0265d124 AS whiterabbit_base
+
 FROM ubuntu:24.04 AS staging
 RUN apt-get update && apt-get install -y --no-install-recommends python3 \
     && rm -rf /var/lib/apt/lists/*
@@ -126,6 +134,11 @@ RUN pixi install --locked --manifest-path /opt/worker/pyproject.toml
 COPY services/alp-dataflow-gen-worker/run-flow.sh /app/
 COPY services/alp-dataflow-gen-worker/entrypoint.sh /entrypoint.sh
 COPY plugins/flows/drivers /app/inst/drivers/
+# white_rabbit_plugin resolves /app/whiterabbit (white_rabbit_plugin/types.py).
+# csvfiles is the working dir CSV scans download into and WhiteRabbit writes
+# ScanReport.xlsx into. No chown needed: this image has no USER directive.
+COPY --from=whiterabbit_base /dist /app/whiterabbit/dist
+RUN mkdir -p /app/whiterabbit/csvfiles
 RUN chmod 755 /app/run-flow.sh /app/provision-envs.sh /entrypoint.sh
 
 # Light groups from their parallel stages (baked warm cache: release plugins

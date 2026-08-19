@@ -11,6 +11,11 @@ from prefect.artifacts import create_markdown_artifact
 
 from .types import INISettings, FileSaveResponse, WhiteRabbitRunType
 from .types import WHITERABBIT_BIN_PATH, WHITERABBIT_CSV_DIR, WHITERABBIT_DIR_PATH  
+from .paths import (
+    clear_csv_working_dir,
+    ensure_whiterabbit_dirs,
+    require_whiterabbit_dist,
+)
 
 from _shared_flow_utils.dao.DBDao import DBDao
 from _shared_flow_utils.api.WhiteRabbitAPI import WhiteRabbitAPI
@@ -54,6 +59,9 @@ def create_white_rabbit_settings(scan_type: WhiteRabbitRunType, scan_settings: d
     config["settings"] = ini_content.dump_settings_json()
 
     config_path = f"{WHITERABBIT_DIR_PATH}/config.ini"
+
+    ensure_whiterabbit_dirs(WHITERABBIT_DIR_PATH, WHITERABBIT_CSV_DIR)
+    require_whiterabbit_dist(WHITERABBIT_BIN_PATH)
 
     logger.debug(f"Writing file config.ini to {config_path}...")
     
@@ -152,6 +160,14 @@ def download_files_from_supabase_storage(node_id: str, supabase_api: SupabaseSto
     and downloads all matching CSV files to the WHITERABBIT_CSV_DIR directory.
     '''
     logger = get_run_logger()
+
+    # Every node downloads into this one flat directory and the scan runs with
+    # tables_to_scan="*", so leftovers from a previous scan (or another node)
+    # would silently appear as extra tables in this scan's report.
+    removed = clear_csv_working_dir(WHITERABBIT_CSV_DIR)
+    if removed:
+        logger.info(f"Removed {removed} stale CSV file(s) from {WHITERABBIT_CSV_DIR}")
+
     files_uploaded = supabase_api.list_files(node_id)
     csv_files = [file for file in files_uploaded if file.get('type') == 'CSV']
     
