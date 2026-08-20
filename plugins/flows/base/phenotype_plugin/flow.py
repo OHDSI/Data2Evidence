@@ -107,16 +107,18 @@ def atlas_cohort_definitions(
     logger = get_run_logger()
     phenotype_api = PhenotypeAPI()
     created_cohorts = []
+    name_index = phenotype_api.get_cohort_name_index(dataset_id)
+    logger.info(f"Indexed {len(name_index)} existing WebAPI cohort definitions")
 
     for cohort_def in cohort_definitions:
         try:
             result = phenotype_api.create_single_cohort_definition(
-                cohort_def, dataset_id, user_name
+                cohort_def, dataset_id, user_name, name_index
             )
             created_cohorts.append(result)
         except Exception as e:
             error_message = (
-                f"Failed to create cohort {cohort_def['cohortId']}: {str(e)}"
+                f"Failed to save cohort {cohort_def['cohortId']}: {str(e)}"
             )
             logger.error(error_message)
             raise Exception(error_message) from e
