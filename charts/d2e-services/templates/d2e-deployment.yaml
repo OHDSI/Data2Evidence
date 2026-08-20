@@ -102,7 +102,7 @@ spec:
             [
               "sh",
               "-c",
-              "while :;do sleep 20 && wget -O success http://idp.{{ .Release.Namespace }}.svc.cluster.local:443/api/status && if test -f success; then exit 0; fi; done",
+              "while :;do sleep 20 && wget --ca-certificate=/etc/d2e/tls/ca.pem -O success https://idp.{{ .Release.Namespace }}.svc.cluster.local:443/api/status && if test -f success; then exit 0; fi; done",
             ]
         - name: logto-post-init
           env:
@@ -226,7 +226,7 @@ spec:
                   name: "{{ .Release.Name }}-{{ .Chart.Name }}"
                   key: LOGTO__ROLES_SCOPES
             - name: LOGTO__ADMIN_SERVER__FQDN_URL
-              value: "http://idp-admin.{{ .Release.Namespace }}.svc.cluster.local:443"
+              value: "https://idp-admin.{{ .Release.Namespace }}.svc.cluster.local:443"
             - name: LOGTO__ALP_ADMIN_APP
               value: '{"application": {"id": "$(LOGTO_API_M2M_CLIENT_ID)", "name":"alp-admin","description":"alp-admin", "secret": "$(LOGTO_API_M2M_CLIENT_SECRET)"}, "role": { "name":"api-access","description":"Logto API access"}}'
             - name: LOGTO__TERM_OF_USE_URL
@@ -562,7 +562,7 @@ spec:
             - name: IDP__ALP_ADMIN__RESOURCE
               value: https://default.logto.app/api
             - name: IDP__BASE_URL
-              value: http://idp.{{ .Release.Namespace }}.svc.cluster.local:443
+              value: https://idp.{{ .Release.Namespace }}.svc.cluster.local:443
             - name: IDP__FETCH_USER_INFO_TYPE
               value: logto
             - name: IDP__INITIAL_USER__NAME
@@ -588,7 +588,7 @@ spec:
             - name: LOCAL_DEBUG
               value: "false"
             - name: LOGTO__ADMIN_SERVER__FQDN_URL
-              value: http://idp-admin.{{ .Release.Namespace }}.svc.cluster.local:443
+              value: https://idp-admin.{{ .Release.Namespace }}.svc.cluster.local:443
             - name: LOGTO__DEFAULT_TENANT__FQDN_URL
               value: https://default.logto.app/api
             - name: LOGTO__AUDIENCES
@@ -601,7 +601,7 @@ spec:
                   name: "{{ .Release.Name }}-{{ .Chart.Name }}"
                   key: LOGTO__SCOPE
             - name: LOGTO__TOKEN_URL
-              value: http://idp.{{ .Release.Namespace }}.svc.cluster.local:443/oidc/token
+              value: https://idp.{{ .Release.Namespace }}.svc.cluster.local:443/oidc/token
             - name: LOGTO__ISSUER
               value: "http://gateway.{{ .Release.Namespace }}.svc.cluster.local/oidc"
             - name: NODE_ENV

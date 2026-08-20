@@ -335,8 +335,12 @@ spec:
               value: "60000"
             - name: ADMIN_DISABLE_LOCALHOST
               value: "false"
+            # Scheme follows the listener: with HTTPS_CERT_PATH set below there
+            # is no plaintext listener left on either port. (docker-compose
+            # leaves ADMIN_ENDPOINT unset entirely and lets Logto derive it;
+            # kept explicit here to preserve the chart's existing behaviour.)
             - name: ADMIN_ENDPOINT
-              value: "http://localhost:3002"
+              value: "https://localhost:3002"
             - name: DB_URL
               valueFrom:
                 secretKeyRef:
@@ -371,6 +375,23 @@ spec:
             # is enough -- no cert-writing entrypoint needed.
             - name: NODE_EXTRA_CA_CERTS
               value: /etc/d2e/tls/ca.pem
+            # Logto terminates TLS natively on both :3001 and :3002 once these
+            # point at a cert/key pair. Files come from the d2e-tls mount, so no
+            # cert-writing shell is needed here either.
+            - name: HTTPS_CERT_PATH
+              value: /etc/d2e/tls/cert.pem
+            - name: HTTPS_KEY_PATH
+              value: /etc/d2e/tls/key.pem
+            # Base URL the bundled connectors (alp-azuread, alp-entra-external-id)
+            # use to call Logto's own API. They default to http://localhost:$PORT,
+            # but with HTTPS_CERT_PATH set there is no plaintext listener left, so
+            # those calls fail with ECONNRESET -- which only surfaces once a social
+            # connector is configured. It must be a name the internal certificate
+            # covers: `localhost` is not in the SAN, hence the service FQDN.
+            # Verified against the internal CA via NODE_EXTRA_CA_CERTS above;
+            # there is no verification bypass.
+            - name: LOGTO__SELF_BASE_URL
+              value: https://idp.{{ .Release.Namespace }}.svc.cluster.local:443
           image: ghcr.io/ohdsi/d2e-logto:{{ .Values.global.image.tag }}
           imagePullPolicy: Always
           volumeMounts:
@@ -387,6 +408,9 @@ spec:
             httpGet:
               path: /api/status
               port: 3001
+              # :3001 now serves TLS. The kubelet does not verify the server
+              # certificate for httpGet probes, so no CA reference is needed.
+              scheme: HTTPS
             failureThreshold: 5
             initialDelaySeconds: 100
             periodSeconds: 5

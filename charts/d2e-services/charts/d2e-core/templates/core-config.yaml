@@ -57,10 +57,16 @@ data:
 
         handle @logto {
             uri strip_prefix /d2e/logto
-            reverse_proxy http://idp.{{ .Release.Namespace }}.svc.cluster.local {
+            reverse_proxy https://idp.{{ .Release.Namespace }}.svc.cluster.local {
             	header_up Host {$CADDY__D2E__PUBLIC_FQDN}
                 header_up X-Forwarded-Host {$CADDY__D2E__PUBLIC_FQDN}
             	transport http {
+                    tls
+                    # The internal CA is not in Caddy's system pool -- the
+                    # alpine image has no update-ca-certificates step -- so the
+                    # trust pool has to name the mounted file explicitly.
+                    # Without this the https:// upstream fails to verify.
+                    tls_trust_pool file /etc/d2e/tls/ca.pem
                     read_buffer 8192
                 }
             }
@@ -125,7 +131,12 @@ data:
             path /oidc/*
         }
         handle @oidc {
-            reverse_proxy http://idp.{{ .Release.Namespace }}.svc.cluster.local
+            reverse_proxy https://idp.{{ .Release.Namespace }}.svc.cluster.local {
+            	transport http {
+                    tls
+                    tls_trust_pool file /etc/d2e/tls/ca.pem
+                }
+            }
         }
         handle /check-liveness* {
             respond "OK-HTTP"
