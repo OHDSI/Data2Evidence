@@ -29,6 +29,24 @@ spec:
                 operator: NotIn
                 values:
                 - d2e
+      volumes:
+        # Logto terminates TLS on :3001/:3002 from this mounted pair (see
+        # HTTPS_CERT_PATH on the logto container) and verifies its own outbound
+        # calls against ca.pem via NODE_EXTRA_CA_CERTS. The key is 0400 because
+        # it is the only private material here; the CA and cert are public.
+        - name: d2e-tls
+          secret:
+            secretName: "{{ .Release.Name }}-{{ .Chart.Name }}"
+            items:
+              - key: TLS__INTERNAL__CA_CRT
+                path: ca.pem
+                mode: 0444
+              - key: TLS__INTERNAL__CRT
+                path: cert.pem
+                mode: 0444
+              - key: TLS__INTERNAL__KEY
+                path: key.pem
+                mode: 0400
       initContainers:
         - name: supabase-storage-pre-init
           env:
@@ -349,8 +367,16 @@ spec:
               value: "true"
             - name: PORT
               value: "3001"
+            # Node reads its extra trust anchors from a file, so the mount alone
+            # is enough -- no cert-writing entrypoint needed.
+            - name: NODE_EXTRA_CA_CERTS
+              value: /etc/d2e/tls/ca.pem
           image: ghcr.io/ohdsi/d2e-logto:{{ .Values.global.image.tag }}
           imagePullPolicy: Always
+          volumeMounts:
+            - mountPath: /etc/d2e/tls
+              name: d2e-tls
+              readOnly: true
           lifecycle:
             postStart:
               exec:

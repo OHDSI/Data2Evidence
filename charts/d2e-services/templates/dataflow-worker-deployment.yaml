@@ -40,6 +40,10 @@ spec:
               "-c",
               "while :;do sleep {{ .Values.dataflowWorker.readinessSleep }} && wget -O success-trex http://trex-http.{{ .Release.Namespace }}.svc.cluster.local:443/trex/_internal/health && wget -O success-dataflow http://dataflow-gen.{{ .Release.Namespace }}.svc.cluster.local:443/d2e/api/health && if test -f success-trex; then if test -f success-dataflow; then exit 0; fi; fi; done",
             ]
+          volumeMounts:
+            - mountPath: /etc/d2e/tls
+              name: d2e-tls
+              readOnly: true
           resources:
             requests:
               cpu: 50m
@@ -140,6 +144,16 @@ spec:
         - name: d2e-worker-cm
           configMap:
             name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+        # Internal CA only: nothing in this pod terminates TLS, so the private
+        # key stays out. 0444 because a CA certificate is public material and
+        # every consumer must be able to read it whatever user it runs as.
+        - name: d2e-tls
+          secret:
+            secretName: "{{ .Release.Name }}-{{ .Chart.Name }}"
+            items:
+              - key: TLS__INTERNAL__CA_CRT
+                path: ca.pem
+                mode: 0444
       containers:
         - name: dataflow-gen-worker
           env:
@@ -185,8 +199,6 @@ spec:
               value: /home/docker/fhir
             - name: ACHILLES_THREAD_COUNT
               value: "5"
-            - name: PYTHON_VERIFY_SSL
-              value: "false"
             - name: PG__HOST
               valueFrom:
                 secretKeyRef:
@@ -300,6 +312,9 @@ spec:
           args:
             - >-
               rm -rf /root/.prefect/storage/run_cache.db /root/.prefect/storage/events.db;
+              cp /etc/d2e/tls/ca.pem /usr/local/share/ca-certificates/d2e-internal-ca.crt;
+              update-ca-certificates;
+              python -c 'import certifi; open(certifi.where(), "a").write("\n" + open("/etc/d2e/tls/ca.pem").read() + "\n")';
               prefect work-pool create "${PREFECT_POOL:-process-pool}" --type ${WORKPOOL_TYPE:-process};
               prefect worker start --pool "${PREFECT_POOL:-process-pool}" --type ${WORKPOOL_TYPE:-process}
               --name prefect-${WORKPOOL_TYPE:-process}-worker --with-healthcheck
@@ -310,6 +325,9 @@ spec:
             - mountPath: /opt/prefect/libs/baseJobTemplate.json
               name: d2e-worker-cm
               subPath: baseJobTemplate.json
+            - mountPath: /etc/d2e/tls
+              name: d2e-tls
+              readOnly: true
           resources:
             {{- toYaml .Values.global.resources.dataflowGenWorker | nindent 12 }}
           livenessProbe:

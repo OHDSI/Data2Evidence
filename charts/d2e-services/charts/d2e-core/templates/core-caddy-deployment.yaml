@@ -85,6 +85,9 @@ spec:
             - mountPath: /data/caddy/certificates/local/k8s.d2e.sg/k8s.d2e.sg.key
               name: caddy-local-pki
               subPath: SERVER__KEY
+            - mountPath: /etc/d2e/tls
+              name: d2e-tls
+              readOnly: true
       volumes:
         - name: d2e-caddy-cm
           configMap:
@@ -92,3 +95,14 @@ spec:
         - name: caddy-local-pki
           secret:
             secretName: "{{ .Release.Name }}-{{ .Chart.Name }}-caddy"
+        # Internal CA for `tls_trust_pool file` on the trex upstreams. Note this
+        # is the chart-level secret, not the -caddy one above: the -caddy secret
+        # holds Caddy's own edge PKI, not the internal CA. CA only -- Caddy is a
+        # client on these hops, never the server.
+        - name: d2e-tls
+          secret:
+            secretName: "{{ .Release.Name }}-{{ .Chart.Name }}"
+            items:
+              - key: TLS__INTERNAL__CA_CRT
+                path: ca.pem
+                mode: 0444

@@ -40,6 +40,19 @@ spec:
         - name: atlas-db-init
           configMap:
             name: "{{ .Release.Name }}-{{ .Chart.Name }}-atlas-db-init"
+        # Internal CA, delivered as a file the way caddy-local-pki already is.
+        # Only the CA lands here: trex writes its own cert/key from
+        # TLS__INTERNAL__* env, and nothing in this pod terminates TLS on the
+        # mounted pair, so the private key stays out of the pod. 0444 because
+        # every consumer must be able to read it whatever user it runs as -- a
+        # CA certificate is public material.
+        - name: d2e-tls
+          secret:
+            secretName: "{{ .Release.Name }}-{{ .Chart.Name }}"
+            items:
+              - key: TLS__INTERNAL__CA_CRT
+                path: ca.pem
+                mode: 0444
         {{- if .Values.features.materializeCohorts }}
         - name: materialize-cohorts-pki
           secret:
@@ -81,6 +94,10 @@ spec:
           image: busybox:latest
           resources:
             {{- toYaml .Values.global.resources.logtoCheck | nindent 12 }}
+          volumeMounts:
+            - mountPath: /etc/d2e/tls
+              name: d2e-tls
+              readOnly: true
           command:
             [
               "sh",
@@ -227,9 +244,17 @@ spec:
                 configMapKeyRef:
                   name: "{{ .Release.Name }}-{{ .Chart.Name }}"
                   key: LOGTO__CUSTOM_CSS
+            # Node reads its extra trust anchors from a file, so the mount alone
+            # is enough -- no entrypoint override needed to materialise the CA.
+            - name: NODE_EXTRA_CA_CERTS
+              value: /etc/d2e/tls/ca.pem
 
           image: ghcr.io/ohdsi/d2e-logto-post-init:{{ .Values.global.image.tag }}
           imagePullPolicy: Always
+          volumeMounts:
+            - mountPath: /etc/d2e/tls
+              name: d2e-tls
+              readOnly: true
           resources:
             {{- toYaml .Values.global.resources.logtoPostInit | nindent 12 }}
       containers:
@@ -391,6 +416,14 @@ spec:
               mkdir -p /usr/src/cert
               printf '%s' "$TLS__INTERNAL__CRT" > /usr/src/cert/cert.pem
               printf '%s' "$TLS__INTERNAL__KEY" > /usr/src/cert/key.pem
+              # Three runtimes share this container and each finds its trust
+              # anchors somewhere different. The OS store covers shell/curl and,
+              # via DENO_TLS_CA_STORE=system, the Deno edge functions. GraalVM
+              # WebAPI ignores the OS store entirely and reads WEBAPI_TRUST_CERTS.
+              # All three are required: a pod-level curl check passes while the
+              # other two runtimes still fail.
+              cp /etc/d2e/tls/ca.pem /usr/local/share/ca-certificates/d2e-internal-ca.crt
+              update-ca-certificates
               exec /usr/src/entrypoint.sh ${TREX_OTEL_ENABLED:+--enable-otel}
           env:
             - name: RUST_BACKTRACE
@@ -972,6 +1005,18 @@ spec:
                 secretKeyRef:
                   name: "{{ .Release.Name }}-{{ .Chart.Name }}"
                   key: TLS__INTERNAL__KEY
+            # The trexas worker HTTP client honors DENO_TLS_CA_STORE=system, so
+            # the Deno edge functions trust the internal CA that this container's
+            # args install into the OS store via update-ca-certificates.
+            - name: DENO_TLS_CA_STORE
+              value: system
+            # Java analog of the above for the embedded native WebAPI. The GraalVM
+            # libwebapi-native.so bakes its truststore at build time and ignores the
+            # OS store, so WebApiNativeLibrary.start() reads this PEM at startup and
+            # installs a composite SSLContext (JDK roots + the internal CA) before
+            # Spring boots -- needed for OIDC discovery/JWKS over internal TLS.
+            - name: WEBAPI_TRUST_CERTS
+              value: /etc/d2e/tls/ca.pem
             - name: TREX__SQL__PORT
               value: "443"
             - name: TREX_SQL_PASSWORD
@@ -1051,6 +1096,9 @@ spec:
           volumeMounts:
             - mountPath: /usr/src/data
               name: trex-volume
+            - mountPath: /etc/d2e/tls
+              name: d2e-tls
+              readOnly: true
             {{- if .Values.features.materializeCohorts }}
             - mountPath: /usr/src/cert/client.crt
               name: materialize-cohorts-client-pki
