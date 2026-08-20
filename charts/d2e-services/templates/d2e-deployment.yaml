@@ -315,7 +315,7 @@ spec:
             - name: PREFECT_API_DEFAULT_LIMIT
               value: "5000"
             - name: DB_CREDENTIALS_MGR__API_URL
-              value: "http://trex-http.{{ .Release.Namespace }}.svc.cluster.local:443/db-credentials/db/"
+              value: "https://trex.{{ .Release.Namespace }}.svc.cluster.local:443/db-credentials/db/"
             - name: DB_CREDENTIALS__PRIVATE_KEY
               valueFrom:
                 secretKeyRef:
@@ -518,7 +518,7 @@ spec:
             - name: DATABASE_CREDENTIALS
               value: "{}"
             - name: DB_CREDENTIALS_MGR__API_URL
-              value: "http://trex-http.{{ .Release.Namespace }}.svc.cluster.local:443/db-credentials/db/"
+              value: "https://trex.{{ .Release.Namespace }}.svc.cluster.local:443/db-credentials/db/"
             - name: EXCLUDE_ANALYSIS_IDS
               valueFrom:
                 configMapKeyRef:

@@ -88,7 +88,8 @@ data:
             reverse_proxy https://{$TREX__D2E__INTERNAL_FQDN} {
                 header_up Host {$CADDY__D2E__PUBLIC_FQDN}
             	transport http {
-                    tls_insecure_skip_verify
+                    tls
+                    tls_trust_pool file /etc/d2e/tls/ca.pem
             	}
             }
         }
@@ -101,7 +102,7 @@ data:
                 import proxy_headers_default
             	transport http {
                     tls
-                    tls_insecure_skip_verify
+                    tls_trust_pool file /etc/d2e/tls/ca.pem
                     read_buffer 8192
             	}
             }
