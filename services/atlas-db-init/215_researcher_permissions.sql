@@ -50,7 +50,11 @@ BEGIN
         VALUES (role_id, perm_id)
         ON CONFLICT ON CONSTRAINT role_permission_unique DO NOTHING;
 
-        granted := granted + 1;
+        -- FOUND is false when the conflict does nothing, so reruns do not
+        -- report grants that already existed.
+        IF FOUND THEN
+            granted := granted + 1;
+        END IF;
     END LOOP;
 
     RAISE NOTICE 'Researcher concept-set grants: % applied, % skipped, role_id %',
@@ -58,9 +62,30 @@ BEGIN
 END $$;
 
 -- Verify
-SELECT r.name AS role_name, p.value, p.description
-FROM webapi.sec_role_permission rp
-JOIN webapi.sec_role r ON rp.role_id = r.id
-JOIN webapi.sec_permission p ON rp.permission_id = p.id
-WHERE p.value IN ('create:conceptset', 'read:conceptset', 'write:conceptset')
-ORDER BY r.name, p.value;
+-- Guarded by the same table check as the grant block. The scripts run under
+-- ON_ERROR_STOP=1, so an unguarded query on a missing table would fail the
+-- init even though the grant block above skipped cleanly.
+DO $$
+DECLARE
+    rec RECORD;
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.tables
+        WHERE table_schema = 'webapi' AND table_name = 'sec_role_permission'
+    ) THEN
+        RAISE NOTICE 'webapi.sec_role_permission not found, skipping verification';
+        RETURN;
+    END IF;
+
+    FOR rec IN
+        SELECT r.name AS role_name, p.value, p.description
+        FROM webapi.sec_role_permission rp
+        JOIN webapi.sec_role r ON rp.role_id = r.id
+        JOIN webapi.sec_permission p ON rp.permission_id = p.id
+        WHERE p.value IN ('create:conceptset', 'read:conceptset', 'write:conceptset')
+        ORDER BY r.name, p.value
+    LOOP
+        RAISE NOTICE 'concept-set grant: role %, permission % (%)',
+            rec.role_name, rec.value, rec.description;
+    END LOOP;
+END $$;
