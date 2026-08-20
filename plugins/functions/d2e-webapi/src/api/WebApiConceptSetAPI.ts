@@ -1,3 +1,5 @@
+import { WebApiAccessDeniedError } from "../errors/ConceptSetErrors.ts";
+
 const DEFAULT_WEBAPI_URL = "http://localhost:33001/WebAPI";
 
 export interface IWebApiConceptSetHeader {
@@ -332,6 +334,12 @@ export class WebApiConceptSetAPI {
     });
 
     if (!response.ok) {
+      if (response.status === 401 || response.status === 403) {
+        throw new WebApiAccessDeniedError(
+          response.status,
+          "concept set existence",
+        );
+      }
       throw new Error(
         `Failed to check WebAPI concept set existence for ${validatedId}: ${response.status}`,
       );

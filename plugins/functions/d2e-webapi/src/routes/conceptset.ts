@@ -9,11 +9,15 @@ import {
   ConceptSetItemsResponseDto,
   ConceptSetCreateDto,
   ConceptSetInUseErrorDto,
+  WebApiAccessDeniedErrorDto,
   IConceptSetCheckResponseDto,
   IncludedConceptsRequestDto,
   IncludedConceptsResponseDto,
 } from "../dto/conceptset.ts";
-import { ConceptSetInUseError } from "../errors/ConceptSetErrors.ts";
+import {
+  ConceptSetInUseError,
+  WebApiAccessDeniedError,
+} from "../errors/ConceptSetErrors.ts";
 
 import {
   getConceptSet,
@@ -189,7 +193,10 @@ export const conceptset: FastifyPluginAsyncZod = async function (app) {
         tags: ["conceptset"],
         params: z.object({ id: ConceptSetIdParamSchema }),
         querystring: z.object({ name: z.string() }),
-        response: { 200: z.number() },
+        response: {
+          200: z.number(),
+          403: WebApiAccessDeniedErrorDto,
+        },
         security: [
           {
             bearerAuth: [],
@@ -201,13 +208,25 @@ export const conceptset: FastifyPluginAsyncZod = async function (app) {
     async (req, res) => {
       const { id } = req.params;
       const { name } = req.query;
-      const result = await checkIfConceptSetExists(
-        req.token,
-        req.datasetId,
-        id,
-        name
-      );
-      res.send(result);
+      try {
+        const result = await checkIfConceptSetExists(
+          req.token,
+          req.datasetId,
+          id,
+          name
+        );
+        res.send(result);
+      } catch (error) {
+        if (error instanceof WebApiAccessDeniedError) {
+          res.status(403).send({
+            error: "WEBAPI_ACCESS_DENIED",
+            message:
+              "You do not have permission to check concept set names. Ask an administrator for concept set access.",
+          });
+          return;
+        }
+        throw error;
+      }
     }
   );
 
