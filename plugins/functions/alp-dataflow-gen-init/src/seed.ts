@@ -13,13 +13,24 @@ export async function seed(): Promise<void> {
   // create prefect variables
   const prefectVariables = env.VARIABLES;
 
+  // Collect rather than abort, for the same reason as the secrets loop below.
+  // A single 502 here (observed in CI: "[502] Failed to create/update Prefect
+  // variable service_routes!") used to throw straight out of seed(), so the
+  // secrets loop never ran and every flow then failed on a missing secret.
+  const variableFailures: string[] = [];
   for (const varName in prefectVariables) {
     if (prefectVariables.hasOwnProperty(varName)) {
       const variable: PrefectVariable = {
         name: varName,
         value: prefectVariables[varName],
       };
-      const variableName = await prefectApi.createPrefectVariable(variable);
+      try {
+        const variableName = await prefectApi.createPrefectVariable(variable);
+      } catch (error: any) {
+        variableFailures.push(
+          `${varName} (${error.response?.status ?? error.code ?? error.message})`
+        );
+      }
     }
   }
 
@@ -50,11 +61,22 @@ export async function seed(): Promise<void> {
       }
     }
   }
-  if (secretFailures.length > 0) {
-    throw new Error(
-      `Failed to create ${secretFailures.length} Prefect secret(s): ` +
-        secretFailures.join(", ")
-    );
+  // Report variables and secrets together: a partial seed is what makes flows
+  // fail much later with an unhelpful "Unable to find block document" error, so
+  // name everything that is missing in one place.
+  if (variableFailures.length > 0 || secretFailures.length > 0) {
+    const parts = [];
+    if (variableFailures.length > 0) {
+      parts.push(
+        `${variableFailures.length} variable(s): ${variableFailures.join(", ")}`
+      );
+    }
+    if (secretFailures.length > 0) {
+      parts.push(
+        `${secretFailures.length} secret(s): ${secretFailures.join(", ")}`
+      );
+    }
+    throw new Error(`Prefect seeding incomplete — failed to create ${parts.join("; ")}`);
   }
 
   const dbm = Trex.databaseManager();
