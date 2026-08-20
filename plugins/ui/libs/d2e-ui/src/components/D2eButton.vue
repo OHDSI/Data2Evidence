@@ -15,16 +15,17 @@
 
 <script lang="ts">
 export const VARIANT_MAP = {
-  // Literal hex, not the `primary` theme key: inside the portal scope
+  // `mri-brand`, not the `primary` theme key: inside the portal scope
   // (.mri-app-vue-container) Bootstrap 4's scoped `.bg-primary`/`.text-primary`
   // utilities win over Vuetify's same-named utilities and render invalid
-  // (transparent/blue). A literal color becomes an inline style and wins.
-  primary: { variant: "flat", color: "#000080" },
-  secondary: { variant: "outlined", color: "#000080" },
+  // (transparent/blue). Bootstrap defines no `mri-brand` utilities, so the
+  // theme key is safe. Same mechanism as `danger` -> `feedback-error`.
+  primary: { variant: "flat", color: "mri-brand" },
+  secondary: { variant: "outlined", color: "mri-brand" },
   // The design red is the existing feedback-error token (#A3293D), not the
   // Bootstrap red on the theme's `error` key.
   danger: { variant: "flat", color: "feedback-error" },
-  ghost: { variant: "text", color: "#000080" },
+  ghost: { variant: "text", color: "mri-brand" },
 } as const;
 
 export const SIZE_MAP = { sm: "small", md: undefined, lg: "large" } as const;
