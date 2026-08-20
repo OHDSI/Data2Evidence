@@ -834,8 +834,14 @@ jobs:
           # extensions unless told otherwise. Without a SAN the cert validates
           # against nothing at all, since clients ignore CN when no SAN is
           # present — which only became visible once the chart started verifying.
+          # A wildcard matches exactly one label, so `*.d2e.cluster.local` does
+          # NOT cover `idp.d2e.svc.cluster.local`. The chart addresses every
+          # internal service by its cluster DNS name, so the SAN needs the
+          # namespace-scoped entries too or every hop fails hostname
+          # verification. The `*.d2e.local` entries are kept so one cert still
+          # serves docker-compose.
           printf '%s\n' \
-            'subjectAltName=DNS:*.d2e.local,DNS:d2e.local,DNS:*.d2e.cluster.local,DNS:d2e.cluster.local' \
+            "subjectAltName=DNS:*.${NAMESPACE}.svc.cluster.local,DNS:*.${NAMESPACE}.svc,DNS:*.d2e.local,DNS:d2e.local,DNS:*.d2e.cluster.local,DNS:d2e.cluster.local" \
             'keyUsage=critical,digitalSignature' \
             'extendedKeyUsage=serverAuth,clientAuth' > "$D/srv.ext"
           openssl x509 -req -in "$D/srv.csr" \
@@ -845,7 +851,7 @@ jobs:
           # exits 0 and prints "No extensions in certificate" when the SAN is
           # missing, so on its own it cannot fail the job it exists to guard.
           openssl x509 -in "$D/srv.crt" -noout -ext subjectAltName \
-            | tee /dev/stderr | grep -q 'DNS:\*\.d2e\.local'
+            | tee /dev/stderr | grep -q "DNS:\*\.${NAMESPACE}\.svc\.cluster\.local"
           openssl verify -CAfile "$D/ca.crt" "$D/srv.crt"
 
       - name: Helm install (using just-built images)

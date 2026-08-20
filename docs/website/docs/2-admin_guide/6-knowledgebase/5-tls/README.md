@@ -87,6 +87,25 @@ sets SNI), and a certificate whose SAN does not cover the name being dialled loo
   resolves the domain to the `d2e.local` default, and the certificate is issued to match.
 - **No action is needed** if you never set either variable — defaults are consistent.
 
+### Kubernetes deployments
+
+In Kubernetes the internal hops are addressed by cluster service DNS, not by
+`TLS__INTERNAL__DOMAIN`. The certificate supplied via `global.secrets.TLS__INTERNAL__CRT`
+must therefore also cover the cluster's service DNS, or every internal hop fails hostname
+verification once TLS is enabled:
+
+```
+DNS:*.<namespace>.svc.cluster.local
+DNS:*.<namespace>.svc
+```
+
+A wildcard matches exactly one label, so `*.d2e.cluster.local` does **not** cover
+`idp.d2e.svc.cluster.local`. `<namespace>` is the release namespace, so deploying into a
+different namespace requires a certificate issued for that namespace.
+
+Keep the `*.d2e.local` entries alongside these so one certificate still serves both
+docker-compose and Kubernetes.
+
 ## Trusting an external CA
 
 Some upstreams are not ours and are not chained to the internal CA — the PS config server is
