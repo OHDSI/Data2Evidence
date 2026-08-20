@@ -371,6 +371,15 @@ spec:
                 echo "Waiting... ($i/120)";
                 sleep 5;
               done;
+              echo "Waiting for webapi coarse permissions...";
+              for i in $(seq 1 60); do
+                if psql -tAc "SELECT 1 FROM webapi.sec_permission WHERE value = 'read:conceptset'" | grep -q 1; then
+                  echo "webapi coarse permissions found";
+                  break;
+                fi;
+                echo "Waiting... ($i/60)";
+                sleep 5;
+              done;
               echo "Waiting for logto.users table...";
               for i in $(seq 1 60); do
                 if psql -tAc "SELECT 1 FROM information_schema.tables WHERE table_schema = 'logto' AND table_name = 'users'" | grep -q 1; then
