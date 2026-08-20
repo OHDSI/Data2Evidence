@@ -41,7 +41,7 @@ const lifecycles = singleSpaVue({
   },
   async handleInstance(app: any, props: PortalContextState) {
     await initGlobalsOnce()
-    applyAppTheme('d2e')
+    applyAppTheme()
 
     const pinia = createPinia()
     app.use(pinia)

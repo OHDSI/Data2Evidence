@@ -8,27 +8,26 @@ describe('bootstrap/themeBootstrap', () => {
   it('applies d2e theme class and removes atlas class', async () => {
     const { applyAppTheme } = await import('../themeBootstrap')
 
-    applyAppTheme('atlas')
-    applyAppTheme('d2e')
+    applyAppTheme()
 
     expect(document.body.classList.contains('theme-d2e')).toBe(true)
     expect(document.body.classList.contains('theme-atlas')).toBe(false)
   })
 
-  it('applies atlas theme class and removes d2e class', async () => {
+  it('removes a previously applied atlas class', async () => {
     const { applyAppTheme } = await import('../themeBootstrap')
 
-    applyAppTheme('d2e')
-    applyAppTheme('atlas')
+    document.body.classList.add('theme-atlas')
+    applyAppTheme()
 
-    expect(document.body.classList.contains('theme-atlas')).toBe(true)
-    expect(document.body.classList.contains('theme-d2e')).toBe(false)
+    expect(document.body.classList.contains('theme-atlas')).toBe(false)
+    expect(document.body.classList.contains('theme-d2e')).toBe(true)
   })
 
   it('loads theme stylesheet module without throwing', async () => {
     const { applyAppTheme } = await import('../themeBootstrap')
 
-    applyAppTheme('d2e')
+    applyAppTheme()
     expect(typeof applyAppTheme).toBe('function')
   })
 })

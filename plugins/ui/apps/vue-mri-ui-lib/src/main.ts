@@ -20,17 +20,13 @@ const isAtlas = import.meta.env.VITE_STANDALONE_ATLAS === 'true'
 
 if (isAtlas) {
   app = createApp(RootLayout as unknown as Component)
-  applyAppTheme('atlas')
-
-  // For local development, uncomment to use D2E theme
-  // applyAppTheme('d2e')
 
   // Initialize registries
   initializeApps()
   initializeComponents()
 } else {
   app = createApp(App as unknown as Component)
-  applyAppTheme('d2e')
+  applyAppTheme()
 }
 
 const pinia = createPinia()
