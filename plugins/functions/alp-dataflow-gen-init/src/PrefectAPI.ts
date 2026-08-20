@@ -20,6 +20,40 @@ export class PrefectAPI {
     };
   }
 
+  /**
+   * Block until Prefect answers, or throw.
+   *
+   * nginx terminates TLS in front of Prefect and starts before it, so an
+   * unready Prefect returns 502/503 straight away rather than refusing the
+   * connection. Every seeding call below treats that as fatal, so without this
+   * wait a slow Prefect start leaves all variables and secrets uncreated and
+   * flows fail much later with "Unable to find block document named ...".
+   */
+  public async waitUntilReady(
+    timeoutMs = 300_000,
+    intervalMs = 3_000,
+  ): Promise<void> {
+    const url = `${this.baseURL}/health`;
+    const deadline = Date.now() + timeoutMs;
+    let lastReason = "no attempt made";
+
+    while (Date.now() < deadline) {
+      try {
+        await axios.get(url, this.createOptions());
+        return;
+      } catch (error: any) {
+        lastReason = error.response?.status
+          ? `HTTP ${error.response.status}`
+          : (error.code ?? error.message ?? "unknown error");
+      }
+      await new Promise((resolve) => setTimeout(resolve, intervalMs));
+    }
+    throw new Error(
+      `Prefect at ${url} not ready after ${Math.round(timeoutMs / 1000)}s ` +
+        `(last: ${lastReason}); refusing to seed partially`,
+    );
+  }
+
   public async createPrefectVariable(
     variableObj: PrefectVariable
   ): Promise<string> {

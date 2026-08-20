@@ -85,6 +85,15 @@ services:
         condition: service_completed_successfully
       alp-logto-post-init:
         condition: service_completed_successfully
+      # trex seeds Prefect variables/secrets and re-seeds 'database-credentials'
+      # as soon as it boots. nginx now fronts Prefect, so an unready Prefect
+      # answers 502 immediately instead of refusing the connection — a fast
+      # failure the seeders treat as fatal, leaving every secret uncreated and
+      # flows failing later with "Unable to find block document named
+      # trex-sql-password". The healthcheck uses `curl -f`, which rejects that
+      # 502, so waiting for healthy means waiting for Prefect itself.
+      alp-dataflow-gen:
+        condition: service_healthy
     networks:
       alp:
         priority: 20

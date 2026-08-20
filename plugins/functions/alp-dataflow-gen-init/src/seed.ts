@@ -6,6 +6,10 @@ import { customDockerWorkpool, customProcessWorkpool } from "./customWorkpool";
 export async function seed(): Promise<void> {
   let prefectApi = new PrefectAPI();
 
+  // Prefect sits behind nginx, which is listening before Prefect is: an unready
+  // Prefect answers 502 immediately, and the calls below treat that as fatal.
+  await prefectApi.waitUntilReady();
+
   // create prefect variables
   const prefectVariables = env.VARIABLES;
 
@@ -22,17 +26,35 @@ export async function seed(): Promise<void> {
   // create prefect secrets
   const prefectSecrets = env.SECRETS;
 
+  // Create every secret, then report. Previously one failure aborted the loop,
+  // so a single bad value silently left the remaining secrets uncreated and the
+  // first flow to need one failed with "Unable to find block document named ...".
+  // Collect instead: create what can be created, and fail loudly naming all of
+  // the ones that could not.
+  const secretFailures: string[] = [];
   for (const secretName in prefectSecrets) {
     if (prefectSecrets.hasOwnProperty(secretName)) {
       const secretOptions: PrefectSecret = {
         value: prefectSecrets[secretName],
       };
-      const secretBlockId = await prefectApi.createBlockDocument(
-        secretName,
-        secretOptions,
-        BlockType.SECRET
-      );
+      try {
+        const secretBlockId = await prefectApi.createBlockDocument(
+          secretName,
+          secretOptions,
+          BlockType.SECRET
+        );
+      } catch (error: any) {
+        secretFailures.push(
+          `${secretName} (${error.response?.status ?? error.code ?? error.message})`
+        );
+      }
     }
+  }
+  if (secretFailures.length > 0) {
+    throw new Error(
+      `Failed to create ${secretFailures.length} Prefect secret(s): ` +
+        secretFailures.join(", ")
+    );
   }
 
   const dbm = Trex.databaseManager();
