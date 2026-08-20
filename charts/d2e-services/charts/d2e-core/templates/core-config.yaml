@@ -2,7 +2,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: {{ .Release.Name }}-{{ .Chart.Name }}-caddy
-  namespace: d2e
+  namespace: {{ .Release.Namespace }}
 data:
   Caddyfile: |
     {
@@ -57,7 +57,7 @@ data:
 
         handle @logto {
             uri strip_prefix /d2e/logto
-            reverse_proxy http://idp.d2e.svc.cluster.local {
+            reverse_proxy http://idp.{{ .Release.Namespace }}.svc.cluster.local {
             	header_up Host {$CADDY__D2E__PUBLIC_FQDN}
                 header_up X-Forwarded-Host {$CADDY__D2E__PUBLIC_FQDN}
             	transport http {
@@ -125,7 +125,7 @@ data:
             path /oidc/*
         }
         handle @oidc {
-            reverse_proxy http://idp.d2e.svc.cluster.local
+            reverse_proxy http://idp.{{ .Release.Namespace }}.svc.cluster.local
         }
         handle /check-liveness* {
             respond "OK-HTTP"
@@ -153,7 +153,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: {{ .Release.Name }}-{{ .Chart.Name }}
-  namespace: d2e
+  namespace: {{ .Release.Namespace }}
 data:
   CADDY__D2E__INTERNAL_FQDN: "{{ .Values.global.config.CADDY__D2E__INTERNAL_FQDN }}"
   CADDY__D2E__PUBLIC_FQDN: "{{ .Values.global.config.CADDY__D2E__PUBLIC_FQDN }}"
