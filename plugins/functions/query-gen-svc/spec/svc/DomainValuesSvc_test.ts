@@ -227,6 +227,13 @@ describe("DomainValuesSvc reference-path row limit (project#31)", () => {
         expect(result.queryString.toUpperCase()).toContain("LIMIT 25");
     });
 
+    it("falls back to the analytics-svc default when the config has no domainValuesLimit", async () => {
+        const svc = new DomainValuesSvc(procedureConfig(), PATH, 5000, "");
+        const result = await svc.generateQuery();
+
+        expect(result.queryString.toUpperCase()).toContain("LIMIT 200");
+    });
+
     it("inlines the limit instead of leaving a bound parameter placeholder", async () => {
         const svc = new DomainValuesSvc(procedureConfig(), PATH, 10, "");
         const result = await svc.generateQuery();

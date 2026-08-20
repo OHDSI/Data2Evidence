@@ -8,6 +8,7 @@ import {
 } from "@alp/alp-base-utils";
 
 const DEFAULT_SUGGESTIONS_LIMIT = 100;
+const DEFAULT_DOMAIN_VALUES_LIMIT = 200;
 
 export function toPositiveInteger(value: unknown): number | null {
     if (typeof value !== "number" && typeof value !== "string") {
@@ -41,10 +42,10 @@ export class DomainValuesSvc {
             toPositiveInteger(suggestionsLimit) ??
             toPositiveInteger(this.configAttrObj.suggestionLimit) ??
             DEFAULT_SUGGESTIONS_LIMIT;
-        const maxLimit = toPositiveInteger(config.panelOptions?.domainValuesLimit);
-        this.suggestionsLimit = maxLimit
-            ? Math.min(requestedLimit, maxLimit)
-            : requestedLimit;
+        const maxLimit =
+            toPositiveInteger(config.panelOptions?.domainValuesLimit) ??
+            DEFAULT_DOMAIN_VALUES_LIMIT;
+        this.suggestionsLimit = Math.min(requestedLimit, maxLimit);
         this.useRefText = this.configAttrObj.useRefText;
         this.exprToUse = this.configAttrObj.useRefValue
             ? "referenceExpression"
