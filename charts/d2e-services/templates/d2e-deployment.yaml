@@ -286,20 +286,30 @@ spec:
               value: /d2e/api
             - name: PREFECT_UI_SERVE_BASE
               value: /d2e
+            # Relative API URL: the UI calls whatever origin it was loaded
+            # from, so API calls stay same-origin and avoid the cross-origin
+            # CORS preflight that the in-container nginx answers with 503. Must
+            # line up with PREFECT_SERVER_API_BASE_PATH above.
             - name: PREFECT_UI_API_URL
-              value: http://0.0.0.0:41120/d2e/api
+              value: /d2e/api
             - name: PREFECT_UI_URL
-              value: http://0.0.0.0:41120/d2e
+              value: https://127.0.0.1:41120/d2e
             - name: PREFECT_LOGGING_LEVEL
               value: DEBUG
             - name: PREFECT_LOGGING_SERVER_LEVEL
               value: WARNING
+            # Prefect itself stays on loopback, HTTP only. nginx -- started by
+            # the image entrypoint -- is the only thing listening on 41120,
+            # terminating TLS with the shared TLS__INTERNAL__* cert and
+            # proxying to 127.0.0.1:41121. The entrypoint hardcodes that
+            # upstream, so these two values are load-bearing: leaving Prefect
+            # on 0.0.0.0:41120 would collide with nginx.
             - name: PREFECT_SERVER_API_HOST
-              value: "0.0.0.0"
+              value: 127.0.0.1
             - name: PREFECT_UI_STATIC_DIRECTORY
               value: /app/ui-files
             - name: PREFECT_SERVER_API_PORT
-              value: "41120"
+              value: "41121"
             - name: PREFECT_API_ENABLE_HTTP2
               value: "False"
             - name: PREFECT_API_DEFAULT_LIMIT
@@ -325,10 +335,35 @@ spec:
               value: "https://alp-default"
             - name: IDP_SUBJECT_PROP
               value: "sub"
-          command: ["/bin/sh"]
-          args: ["-c", "prefect server start"]
-          image: prefecthq/prefect:3.6.10-python3.12
-          imagePullPolicy: IfNotPresent
+            # Read by the image entrypoint to write the nginx cert/key and set
+            # server_name on the TLS listener.
+            - name: TLS__INTERNAL__CRT
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: TLS__INTERNAL__CRT
+            - name: TLS__INTERNAL__KEY
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: TLS__INTERNAL__KEY
+            - name: TLS__INTERNAL__CA_CRT
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: TLS__INTERNAL__CA_CRT
+            - name: DATAFLOW_GEN_HOSTNAME
+              value: dataflow-gen.{{ .Release.Namespace }}.svc.cluster.local
+          # No command/args override: the baked entrypoint writes the internal
+          # cert, starts nginx (TLS on 41120 -> Prefect on loopback 41121),
+          # then execs `prefect server start`. Overriding it would skip nginx
+          # and leave the hop plaintext.
+          #
+          # This image is FROM prefecthq/prefect:3.6.10-python3.12 -- the same
+          # base and version the chart ran directly -- plus nginx and that
+          # entrypoint, so the swap changes no Prefect behaviour.
+          image: ghcr.io/ohdsi/d2e-dataflow-gen:{{ .Values.global.image.tag }}
+          imagePullPolicy: Always
           ports:
             - containerPort: 41120
               protocol: TCP
@@ -342,6 +377,9 @@ spec:
             httpGet:
               path: /d2e/api/health
               port: 41120
+              # nginx terminates TLS on 41120. The kubelet does not verify the
+              # server certificate for httpGet probes, so no CA is needed.
+              scheme: HTTPS
             failureThreshold: 5
             initialDelaySeconds: 120
             periodSeconds: 10
@@ -944,9 +982,9 @@ spec:
                   name: "{{ .Release.Name }}-{{ .Chart.Name }}"
                   key: PG__SSL
             - name: PREFECT_API_URL
-              value: http://dataflow-gen.{{ .Release.Namespace }}.svc.cluster.local:443/d2e/api
+              value: https://dataflow-gen.{{ .Release.Namespace }}.svc.cluster.local:443/d2e/api
             - name: PREFECT_HEALTH_CHECK
-              value: "http://dataflow-gen.{{ .Release.Namespace }}.svc.cluster.local:443/d2e/api/health"
+              value: "https://dataflow-gen.{{ .Release.Namespace }}.svc.cluster.local:443/d2e/api/health"
             - name: PREFECT_POOL
               value: "process-pool"
             - name: WORKPOOL_TYPE
