@@ -1,0 +1,211 @@
+<template>
+  <v-dialog
+    :model-value="modelValue"
+    :max-width="maxWidth"
+    :persistent="persistent || busy"
+    :attach="attach"
+    role="dialog"
+    aria-modal="true"
+    :aria-labelledby="title ? titleId : undefined"
+    v-bind="forwardAttrs"
+    @update:model-value="onModelValueUpdate"
+  >
+    <v-card
+      class="d2e-dialog"
+      :data-testid="dataTestId"
+    >
+      <header class="d2e-dialog__header">
+        <h2
+          v-if="title"
+          :id="titleId"
+          class="d2e-dialog__title"
+        >
+          {{ title }}
+        </h2>
+        <v-btn
+          v-if="showClose"
+          class="d2e-dialog__close"
+          icon="mdi-close"
+          variant="text"
+          size="small"
+          :aria-label="closeLabel"
+          :disabled="busy"
+          data-testid="d2e-dialog-close"
+          @click="closeFromButton"
+        />
+      </header>
+
+      <v-divider />
+
+      <div class="d2e-dialog__body">
+        <slot />
+        <div
+          v-if="busy"
+          class="d2e-dialog__busy"
+        >
+          <v-progress-circular
+            indeterminate
+            color="primary"
+            aria-label="Loading"
+          />
+        </div>
+      </div>
+
+      <template v-if="$slots.actions">
+        <v-divider />
+        <div class="d2e-dialog__actions">
+          <slot name="actions" />
+        </div>
+      </template>
+    </v-card>
+  </v-dialog>
+</template>
+
+<script setup lang="ts">
+import { computed, nextTick, ref, useAttrs, watch } from 'vue'
+
+interface Props {
+  modelValue: boolean
+  title?: string
+  maxWidth?: number | string
+  persistent?: boolean
+  showClose?: boolean
+  closeLabel?: string
+  busy?: boolean
+  attach?: string | boolean
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  title: undefined,
+  maxWidth: 600,
+  persistent: false,
+  showClose: true,
+  closeLabel: 'Close dialog',
+  busy: false,
+  attach: '#app',
+})
+
+const emit = defineEmits<{
+  'update:modelValue': [open: boolean]
+  close: []
+}>()
+
+defineOptions({ inheritAttrs: false })
+
+const titleId = `d2e-dialog-title-${Math.random().toString(36).slice(2, 10)}`
+
+const attrs = useAttrs()
+
+// data-testid belongs on the card (the visible dialog surface); everything
+// else (transition, scrollable, aria-* and friends) is forwarded to v-dialog.
+const dataTestId = computed(() => (attrs['data-testid'] as string | undefined) ?? undefined)
+
+const forwardAttrs = computed(() => {
+  const { 'data-testid': _testId, ...rest } = attrs as Record<string, unknown>
+  void _testId
+  return rest
+})
+
+const previouslyFocused = ref<HTMLElement | null>(null)
+
+watch(
+  () => props.modelValue,
+  (open, prev) => {
+    if (open && !prev) {
+      const active = (typeof document !== 'undefined' ? document.activeElement : null) as HTMLElement | null
+      previouslyFocused.value = active && typeof active.focus === 'function' ? active : null
+      return
+    }
+    if (!open && prev) {
+      const target = previouslyFocused.value
+      previouslyFocused.value = null
+      if (target && typeof target.focus === 'function') {
+        nextTick(() => {
+          try {
+            target.focus()
+          } catch {
+            void 0
+          }
+        })
+      }
+    }
+  },
+  { immediate: true }
+)
+
+function onModelValueUpdate(open: boolean) {
+  // A busy dialog must not close through any path.
+  if (props.busy && !open) return
+  emit('update:modelValue', open)
+  if (!open) emit('close')
+}
+
+function closeFromButton() {
+  if (props.busy) return
+  emit('update:modelValue', false)
+  emit('close')
+}
+</script>
+
+<style scoped lang="scss">
+.d2e-dialog {
+  position: relative;
+  width: 100%;
+  overflow: hidden !important;
+  border-radius: 16px !important;
+  background: var(--d2e-color-white);
+  box-shadow: var(--d2e-elevation-e16);
+  font-family: var(--d2e-font-family);
+
+  &__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 24px 24px 12px;
+  }
+
+  &__title {
+    margin: 0;
+    font-size: var(--d2e-font-heading5-size);
+    font-weight: var(--d2e-font-heading5-weight);
+    line-height: var(--d2e-font-heading5-line-height);
+    letter-spacing: var(--d2e-font-heading5-letter-spacing);
+    color: var(--d2e-color-primary);
+  }
+
+  &__close {
+    flex: none;
+    color: var(--d2e-color-primary);
+    border-radius: 50% !important;
+  }
+
+  &__body {
+    position: relative;
+    padding: 16px 24px 24px;
+    font-size: var(--d2e-font-body1-size);
+    line-height: var(--d2e-font-body1-line-height);
+    color: var(--d2e-color-neutral-black);
+  }
+
+  &__actions {
+    display: flex;
+    gap: 16px;
+    padding: 16px 24px;
+
+    :deep(.v-btn) {
+      flex: 1 1 0;
+      min-width: 0;
+    }
+  }
+
+  &__busy {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgb(255 255 255 / 70%);
+  }
+}
+</style>

@@ -1,3 +1,7 @@
+export { default as D2eDialog } from './components/D2eDialog.vue'
+export { default as D2eButton } from './components/D2eButton.vue'
+export { default as D2eTextField } from './components/D2eTextField.vue'
+export type { D2eButtonVariant, D2eButtonSize } from './components/D2eButton.vue'
 export { tokens } from './tokens/tokens'
 export type { D2eTokens } from './tokens/tokens'
 export { buildD2eVuetifyOptions } from './tokens/theme'
