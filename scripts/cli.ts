@@ -91,20 +91,40 @@ class D2ECli {
       "services",
       "atlas-db-init"
     );
-    try {
-      fs.mkdirSync(atlasDbInitDir, { recursive: true });
-    } catch (err: any) {
-      if (err?.code === "EACCES" || err?.code === "EPERM") {
-        console.warn(
-          `Warning: could not create ${atlasDbInitDir} (permission denied). ` +
-            `Skipping atlas-db-init staging; continuing with existing files.`
-        );
-        return;
-      }
-      throw err;
+    if (!this.replace_staged_dir(atlasDbInitDir)) {
+      return;
     }
     for (const [name, content] of Object.entries(atlasDbInitScripts)) {
       this.write_embedded_file(path.join(atlasDbInitDir, name), content);
+    }
+  }
+
+  // Clear the staged directory before rewriting it, so its contents always
+  // match the embedded set exactly. webapi-init globs whatever it finds
+  // (`for f in /scripts/*.sql`) instead of reading a manifest, so a script a
+  // previous CLI version staged and no longer ships would still be executed --
+  // and under ON_ERROR_STOP=1 one that no longer applies fails the whole init.
+  // Removing first makes stale scripts impossible rather than something to
+  // detect after the fact.
+  //
+  // Only the directory this CLI authors is removed. compose_dir is the repo
+  // root when the CLI runs from a checkout, so the `services/` above this holds
+  // the real service sources and must never be touched.
+  private replace_staged_dir(dir: string): boolean {
+    try {
+      fs.rmSync(dir, { recursive: true, force: true });
+      fs.mkdirSync(dir, { recursive: true });
+      return true;
+    } catch (err: any) {
+      if (err?.code === "EACCES" || err?.code === "EPERM") {
+        console.warn(
+          `Warning: could not replace ${dir} (permission denied). ` +
+            `It looks owned by another user (e.g. root from a release download). ` +
+            `Continuing with the existing files.`
+        );
+        return false;
+      }
+      throw err;
     }
   }
   private write_embedded_file(dest: string, content: string): void {
