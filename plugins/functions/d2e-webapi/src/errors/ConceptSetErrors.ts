@@ -38,3 +38,18 @@ export class ConceptSetExpressionError extends Error {
     this.name = "ConceptSetExpressionError";
   }
 }
+
+/**
+ * Thrown when WebAPI refuses a request because the caller has no permission.
+ * Route handlers map this error to the upstream status, so that a denial does
+ * not reach the browser as a 500.
+ */
+export class WebApiAccessDeniedError extends Error {
+  constructor(
+    public readonly status: number,
+    public readonly operation: string,
+  ) {
+    super(`WebAPI denied the ${operation} request (${status})`);
+    this.name = "WebApiAccessDeniedError";
+  }
+}

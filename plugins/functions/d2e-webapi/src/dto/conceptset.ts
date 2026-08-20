@@ -182,3 +182,11 @@ export type IIncludedConceptsRequestDto = z.infer<
 >;
 
 export const IncludedConceptsResponseDto = z.array(IncludedConceptDto);
+
+export const WebApiAccessDeniedErrorDto = z.object({
+  error: z.literal("WEBAPI_ACCESS_DENIED"),
+  message: z.string(),
+});
+export type IWebApiAccessDeniedErrorDto = z.infer<
+  typeof WebApiAccessDeniedErrorDto
+>;

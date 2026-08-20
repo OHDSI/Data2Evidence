@@ -35,7 +35,7 @@ const {
   mapWebApiConceptSetToFacadeConceptSet,
 } = await import("./conceptset.service.ts");
 
-const { ConceptSetExpressionError } = await import(
+const { ConceptSetExpressionError, WebApiAccessDeniedError } = await import(
   "../errors/ConceptSetErrors.ts"
 );
 const { WebApiConceptSetAPI } = await import("../api/WebApiConceptSetAPI.ts");
@@ -893,6 +893,30 @@ Deno.test("checkIfConceptSetExists propagates WebAPI errors instead of returning
       Error,
       "WebAPI unavailable",
     );
+  } finally {
+    TerminologySvcAPI.prototype.getConceptSets = originalGetConceptSetsTerm;
+    WebApiConceptSetAPI.prototype.checkIfConceptSetExists =
+      originalCheckIfConceptSetExists;
+  }
+});
+
+Deno.test("checkIfConceptSetExists surfaces a WebAPI denial as a typed error", async () => {
+  const originalGetConceptSetsTerm = TerminologySvcAPI.prototype.getConceptSets;
+  const originalCheckIfConceptSetExists =
+    WebApiConceptSetAPI.prototype.checkIfConceptSetExists;
+
+  try {
+    TerminologySvcAPI.prototype.getConceptSets = () =>
+      Promise.resolve([] as unknown as ITerminologyConceptSet[]);
+    WebApiConceptSetAPI.prototype.checkIfConceptSetExists = () =>
+      Promise.reject(new WebApiAccessDeniedError(403, "concept set existence"));
+
+    const error = await assertRejects(
+      () => checkIfConceptSetExists("token", "dataset-1", 0, "Name"),
+      WebApiAccessDeniedError,
+    );
+    assertEquals(error.status, 403);
+    assertEquals(error.name, "WebApiAccessDeniedError");
   } finally {
     TerminologySvcAPI.prototype.getConceptSets = originalGetConceptSetsTerm;
     WebApiConceptSetAPI.prototype.checkIfConceptSetExists =
