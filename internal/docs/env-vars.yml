@@ -117,7 +117,7 @@ LOGTO__CLIENTID_PASSWORD__BASIC_AUTH:
   publish: true
   type: base64 encoded
 LOGTO__SELF_BASE_URL:
-  comment: Base URL Logto's bundled connectors use to reach Logto's own API. Required when Logto serves TLS (no plaintext listener remains); must be a name the internal certificate covers, so the container FQDN rather than `localhost`. Defaults to `http://localhost:$PORT`.
+  comment: Base URL Logto's bundled connectors use to reach Logto's own API. Required when Logto serves TLS (no plaintext listener remains); must be a name the internal certificate covers, so the container FQDN rather than `localhost`. Defaults to `http://localhost:$PORT`. In Kubernetes the helm chart sets it to `https://idp.<release-namespace>.svc.cluster.local:443`, which the certificate's `*.<namespace>.svc.cluster.local` SAN covers.
   publish: true
   type: string
 MINIO__SECRET_KEY:
