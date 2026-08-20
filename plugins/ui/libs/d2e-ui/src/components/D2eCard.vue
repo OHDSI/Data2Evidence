@@ -1,5 +1,5 @@
 <template>
-  <section class="d2e-card">
+  <section class="d2e-card" :style="{ width }">
     <header v-if="title || $slots.header" class="d2e-card__header">
       <slot name="header">{{ title }}</slot>
     </header>
@@ -16,10 +16,12 @@
 <script setup lang="ts">
 interface Props {
   title?: string;
+  width?: string;
 }
 
 withDefaults(defineProps<Props>(), {
   title: undefined,
+  width: "336px",
 });
 </script>
 
@@ -29,7 +31,6 @@ withDefaults(defineProps<Props>(), {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  width: 336px;
   padding: 16px;
   background: var(--d2e-color-neutral-xtra-lightest);
   border-radius: 12px;

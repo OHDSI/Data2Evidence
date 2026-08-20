@@ -1,5 +1,5 @@
 <template>
-  <D2eCard>
+  <D2eCard :width="width">
     <template #header>
       <div class="d2e-exploration-card__title-row">
         <v-checkbox
@@ -53,6 +53,7 @@ export interface D2eExplorationCardMetadataRow {
 
 interface Props {
   name: string;
+  width?: string;
   selected?: boolean;
   checkboxLabel?: string;
   status?: {
@@ -72,6 +73,7 @@ interface Props {
 }
 
 withDefaults(defineProps<Props>(), {
+  width: "336px",
   selected: false,
   checkboxLabel: "Select exploration",
   status: undefined,
