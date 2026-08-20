@@ -21,6 +21,59 @@ def download_toolbar_head_content():
             href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,500,0,0&icon_names=download",
         ),
         ui.tags.style("""
+            /* Layout rules normally supplied by shiny's bslib toolbar component
+               (shiny>=1.7 only). Inlined here so the toolbar also renders
+               correctly on older shiny, e.g. the version bundled by shinylive/pyodide. */
+            .bslib-toolbar {
+                display: flex;
+                flex-wrap: wrap;
+                align-items: center;
+                gap: 0;
+            }
+            .bslib-toolbar[data-align="right"] {
+                margin-left: auto;
+                justify-content: end;
+            }
+            .bslib-toolbar-input-select {
+                padding-inline: 0.25rem;
+                height: 1.75rem;
+                display: inline-flex;
+                align-items: center;
+                width: auto !important;
+                border-radius: 0.25rem;
+                gap: 0.05rem;
+            }
+            .bslib-toolbar-input-select select {
+                appearance: auto;
+                background-image: none;
+                padding: 0.1rem 0.5rem 0.1rem 0.1rem;
+                border: none;
+                background-color: transparent;
+                color: currentColor;
+                line-height: 1;
+                width: auto;
+                min-width: fit-content;
+                font-family: inherit;
+            }
+            .bslib-toolbar-input-select select:focus {
+                outline: none;
+                box-shadow: none;
+            }
+            .bslib-toolbar-input-select .bslib-toolbar-icon {
+                display: inline-flex;
+                align-items: center;
+                margin-left: 0.15rem;
+            }
+            .bslib-toolbar-input-select label,
+            .bslib-toolbar-input-select label.control-label {
+                font-weight: 600;
+                margin-bottom: 0;
+                display: inline-flex;
+                align-items: center;
+            }
+            .bslib-toolbar-input-select .bslib-toolbar-label {
+                margin-left: 0.15rem;
+            }
             #download_format-select,
             #download_format-select option,
             .bslib-toolbar .bslib-toolbar-input-select,
@@ -153,25 +206,69 @@ def download_toolbar_head_content():
 
 
 def create_download_toolbar(filename_prefix="download"):
-    """Returns the download toolbar with hidden download links."""
-    return ui.toolbar(
-        ui.toolbar_input_select(
-            id="download_format",
-            label="\u200b",
-            choices={"": "Download", **download_format_options},
-            selected="",
-            icon=download_icon(),
-            tooltip="Download",
-        ),
-        ui.div(
-            ui.download_link("download_csv", ""),
-            ui.download_link("download_svg", ""),
-            ui.download_link("download_png", ""),
-            id="download-hidden-buttons",
-            data_filename_prefix=filename_prefix,
-            style="display: none;",
-        ),
-        align="right",
+    """Returns the download toolbar with hidden download links.
+
+    Built from plain tags rather than shiny.ui.toolbar / toolbar_input_select
+    (only available in shiny>=1.7) so it also works on older shiny versions,
+    e.g. the one bundled by shinylive/pyodide.
+    """
+    select_id = "download_format-select"
+
+    icon_elem = ui.tags.span(
+        download_icon(),
+        {
+            "class": "bslib-toolbar-icon action-icon",
+            "aria-hidden": "true",
+            "role": "none",
+            "tabindex": "-1",
+        },
+        style="pointer-events: none",
+    )
+
+    label_elem = ui.tags.label(
+        icon_elem,
+        ui.tags.span("Download", class_="bslib-toolbar-label action-label visually-hidden"),
+        {
+            "id": "download_format-label",
+            "class": "control-label",
+            "for": select_id,
+        },
+    )
+
+    options = [ui.tags.option("Download", value="", selected=True)]
+    options += [
+        ui.tags.option(label, value=key) for key, label in download_format_options.items()
+    ]
+
+    select_tag = ui.tags.select(
+        *options,
+        {
+            "id": select_id,
+            "class": "form-select form-select-sm bslib-toolbar-select",
+            "data-shiny-no-bind-input": True,
+        },
+    )
+
+    select_container = ui.div(
+        label_elem,
+        select_tag,
+        id="download_format",
+        class_="bslib-toolbar-input-select shiny-input-container",
+    )
+
+    hidden_links = ui.div(
+        ui.download_link("download_csv", ""),
+        ui.download_link("download_svg", ""),
+        ui.download_link("download_png", ""),
+        id="download-hidden-buttons",
+        data_filename_prefix=filename_prefix,
+        style="display: none;",
+    )
+
+    return ui.div(
+        select_container,
+        hidden_links,
+        {"class": "bslib-toolbar bslib-gap-spacing", "data-align": "right"},
     )
 
 
