@@ -106,6 +106,47 @@ different namespace requires a certificate issued for that namespace.
 Keep the `*.d2e.local` entries alongside these so one certificate still serves both
 docker-compose and Kubernetes.
 
+#### `SERVICE_ROUTES` must include a `prefect` route
+
+`config.SERVICE_ROUTES` is supplied in values, not templated by the chart, and is seeded
+verbatim into Prefect as the `service_routes` variable. It **must** contain a `prefect` entry:
+the Prefect client throws `No url is set for Prefect` in its constructor when the key is absent,
+which aborts seeding before any request is made — no variables, no secrets, and every flow then
+fails with `Unable to find block document named trex-sql-password`.
+
+For a release in namespace `<namespace>`:
+
+```json
+"prefect": "https://dataflow-gen.<namespace>.svc.cluster.local:443/d2e/api"
+```
+
+Port 443 is the Service port, which targets container port 41120 — unlike docker-compose, which
+dials 41120 directly. Every route in this map must use a name the certificate's SAN covers, so
+`<namespace>` has to match the release.
+
+#### Image requirements
+
+Two behaviours internal TLS depends on live in the trex image, not the chart, so a chart
+deployed with an older image will fail in ways the manifests cannot explain:
+
+- **Prefect readiness wait.** nginx binds Prefect's port before Prefect is listening and answers
+  502 in the gap. Kubernetes cannot order this away — `dataflow-gen` and `trex` are containers in
+  the same pod, so they start in parallel, and an initContainer that waited for Prefect would
+  deadlock because initContainers complete before `dataflow-gen` starts. The wait therefore lives
+  in the seeding function (`PrefectAPI.waitUntilReady`). Without it, seeding races Prefect's
+  startup and can leave every secret uncreated.
+- **Runtime CA trust for the embedded WebAPI.** The GraalVM native image bakes its truststore at
+  build time and ignores the OS store, so it reads `WEBAPI_TRUST_CERTS` instead. Confirm the
+  image supports it:
+
+  ```bash
+  docker run --rm --entrypoint sh <trex-image> -c \
+    'grep -ac WEBAPI_TRUST_CERTS /usr/lib/libwebapi-native.so'
+  ```
+
+  Expect `1` or more. A `0` means OIDC discovery over internal TLS will fail with
+  `PKIX path building failed` and trex will not finish booting.
+
 #### Which hops are on TLS
 
 All four internal service-to-service hops in `charts/d2e-services`, with no verification
