@@ -302,8 +302,15 @@ spec:
           args:
             [
               "-c",
-              "npm run cli db seed -- --swe && npm run cli db alteration deploy {{ .Values.global.logtoAlterationTarget | default "latest" }} && node packages/core/d2e-grants.mjs",
+              "npm run cli db seed -- --swe && node packages/core/d2e-ensure-saml-tables.mjs && npm run cli db alteration deploy {{ .Values.global.logtoAlterationTarget | default "latest" }} && node packages/core/d2e-grants.mjs",
             ]
+          volumeMounts:
+            # subPath so only this file is added to packages/core; a directory
+            # mount would hide node_modules and break the slonik import.
+            - name: logto-seed-scripts
+              mountPath: /etc/logto/packages/core/d2e-ensure-saml-tables.mjs
+              subPath: d2e-ensure-saml-tables.mjs
+              readOnly: true
           resources:
             {{- toYaml .Values.global.resources.logtoSeedInit | nindent 12 }}
       containers:
@@ -387,3 +394,7 @@ spec:
               protocol: TCP
             - containerPort: 3002
               protocol: TCP
+      volumes:
+        - name: logto-seed-scripts
+          configMap:
+            name: "{{ .Release.Name }}-{{ .Chart.Name }}-logto-seed-scripts"

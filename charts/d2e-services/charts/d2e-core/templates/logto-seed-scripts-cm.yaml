@@ -1,0 +1,20 @@
+{{/*
+  Scripts mounted into logto-seed-init.
+
+  Delivered as a ConfigMap rather than baked into the logto image so the fix
+  ships with the chart: the image is built from a pinned upstream digest, and
+  requiring a rebuild would tie a schema repair to an image release.
+
+  The mount target is packages/core (see core-deployment.yaml) because the
+  script imports @silverhand/slonik as a bare specifier, which only resolves
+  from packages/core/node_modules in the pruned production image. NODE_PATH
+  does not help here -- ESM ignores it.
+*/}}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: "{{ .Release.Name }}-{{ .Chart.Name }}-logto-seed-scripts"
+  namespace: d2e
+data:
+  d2e-ensure-saml-tables.mjs: |
+{{ .Files.Get "files/d2e-ensure-saml-tables.mjs" | indent 4 }}
