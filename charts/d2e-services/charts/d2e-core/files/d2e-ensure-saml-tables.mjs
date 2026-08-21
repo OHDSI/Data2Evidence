@@ -30,17 +30,19 @@
  * `@silverhand/slonik` import resolves from packages/core/node_modules.
  */
 import { createPool, sql } from '@silverhand/slonik';
-import { pathToFileURL } from 'node:url';
 
 const TABLE = 'saml_application_sessions';
 
-// Absolute path, NOT a specifier relative to this module. This file is
-// delivered as a Kubernetes subPath mount, so its realpath is under
-// /var/lib/kubelet/... -- and Node's ESM loader resolves relative specifiers
-// against the realpath, which would look for the alteration next to the
-// kubelet volume and fail with ERR_MODULE_NOT_FOUND.
-const ALTERATION_PATH =
-  '/etc/logto/packages/cli/alteration-scripts/1.23.0-1735012422-add-saml-application-sessions-table.js';
+// The statements below are copied verbatim from the alteration that creates
+// this table (1.23.0-1735012422) and from applyTableRls() in its
+// utils/1704934999-tables.js, rather than imported from them.
+//
+// packages/cli/alteration-scripts is populated at container start, not baked
+// into the image -- its mtime is the container's start time while its parent
+// carries the image build date. This script runs between `db seed` and
+// `db alteration deploy`, when those files are not yet present, so importing
+// the alteration fails with ERR_MODULE_NOT_FOUND. Inlining keeps the repair
+// independent of when that directory is filled in.
 
 const databaseUrl = process.env.DB_URL;
 
@@ -59,23 +61,61 @@ try {
   if (present) {
     console.log(`[d2e-ensure-saml] ${TABLE} already present; nothing to do.`);
   } else {
-    console.log(`[d2e-ensure-saml] ${TABLE} is missing; replaying its creating alteration.`);
-    const { default: alteration } = await import(pathToFileURL(ALTERATION_PATH).href);
+    console.log(`[d2e-ensure-saml] ${TABLE} is missing; recreating it.`);
 
-    // Mirror the CLI's deployAlteration: beforeUp outside the transaction, up()
-    // inside one. Without the transaction a failure part-way through up() would
-    // leave the table created but its RLS policies unapplied -- and the guard
-    // above would then skip it on every later run, permanently leaving the
-    // tenant roles without privileges.
+    const { currentDatabase } = await pool.one(
+      sql`select current_database() as "currentDatabase"`
+    );
+    const baseRole = sql.identifier([`logto_tenant_${currentDatabase.replaceAll('-', '_')}`]);
+    const table = sql.identifier([TABLE]);
+
+    // One transaction: a failure between the CREATE and the RLS statements
+    // would otherwise leave the table present but unprotected, and the guard
+    // above would skip it on every later run -- leaving the tenant roles
+    // permanently without privileges on it.
     //
-    // The alteration timestamp is deliberately NOT advanced: the watermark
-    // already records this alteration as applied. This repairs the object the
+    // relay_state is varchar(256) here, matching the original alteration;
+    // 1.35.0-1765255453 widens it to 512 when the chain replays afterwards.
+    //
+    // The alteration watermark is deliberately NOT advanced: it already
+    // records this alteration as applied. This restores the object the
     // rollback removed, it does not re-apply the alteration.
-    if (alteration.beforeUp) {
-      await alteration.beforeUp(pool);
-    }
     await pool.transaction(async (connection) => {
-      await alteration.up(connection);
+      await connection.query(sql`
+        create table ${table} (
+          tenant_id varchar(21) not null
+            references tenants (id) on update cascade on delete cascade,
+          id varchar(32) not null,
+          application_id varchar(21) not null
+            references applications (id) on update cascade on delete cascade,
+          saml_request_id varchar(128) not null,
+          oidc_state varchar(32),
+          relay_state varchar(256),
+          raw_auth_request text not null,
+          created_at timestamptz not null default(now()),
+          expires_at timestamptz not null,
+          primary key (tenant_id, id),
+          constraint saml_application_sessions__application_type
+            check (check_application_type(application_id, 'SAML'))
+        );
+      `);
+
+      // Verbatim from applyTableRls() in utils/1704934999-tables.js.
+      await connection.query(sql`
+        create trigger set_tenant_id before insert on ${table}
+          for each row execute procedure set_tenant_id();
+
+        alter table ${table} enable row level security;
+
+        create policy ${sql.identifier([`${TABLE}_tenant_id`])} on ${table}
+          as restrictive
+          using (tenant_id = (select id from tenants where db_user = current_user));
+
+        create policy ${sql.identifier([`${TABLE}_modification`])} on ${table}
+          using (true);
+
+        grant select, insert, update, delete on ${table} to ${baseRole};
+      `);
     });
     const { confirmed } = await pool.one(
       sql`select to_regclass(${TABLE}) is not null as "confirmed"`
