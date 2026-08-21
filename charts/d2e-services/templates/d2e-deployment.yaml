@@ -384,6 +384,21 @@ spec:
             initialDelaySeconds: 120
             periodSeconds: 10
             timeoutSeconds: 20
+          # nginx listens on 41120 before Prefect does, answering 502 in the gap.
+          # httpGet treats anything outside 200-399 as failure, so this makes
+          # "ready" mean "Prefect answers" rather than "nginx is up", and keeps
+          # the dataflow-gen Service from routing to a container that would 502.
+          # Note this gates Service endpoints only, not sibling containers in
+          # this pod — trex's seeding waits via PrefectAPI.waitUntilReady().
+          readinessProbe:
+            httpGet:
+              path: /d2e/api/health
+              port: 41120
+              scheme: HTTPS
+            failureThreshold: 30
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 5
         - name: webapi-init
           image: postgres:16-alpine
           resources:
