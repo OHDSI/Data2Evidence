@@ -1,14 +1,20 @@
 import React, { FC, useCallback, useEffect, useMemo } from "react";
-import { NodeProps } from "reactflow";
-import { useSelector } from "react-redux";
+import { IconButton } from "@mui/material";
+import ArrowBackOutlinedIcon from "@mui/icons-material/ArrowBackOutlined";
+import { Node, NodeProps } from "reactflow";
+import { useSelector, shallowEqual } from "react-redux";
 import { useFormData } from "~/features/flow/hooks";
-import { NodeState } from "~/features/flow/types";
+import { NodeState, NodeDataState } from "~/features/flow/types";
+import { selectSourceNodes } from "~/features/flow/selectors";
 import { dispatch, RootState } from "~/store";
 import { pluginMetadata } from "~/FlowApp";
 import {
   markStatusAsDraft,
+  replaceEdges,
+  selectEdges,
   selectNodeById,
   setNode,
+  setSaveFlowDialog,
 } from "~/features/flow/reducers";
 import { NodeDrawer, NodeDrawerProps } from "../../NodeDrawer/NodeDrawer";
 import { PluginRenderer } from "../../../Plugin/PluginRenderer";
@@ -40,6 +46,21 @@ export const ConceptMappingDrawer: FC<ConceptMappingDrawerProps> = ({
   const nodeState = useSelector((state: RootState) =>
     selectNodeById(state, node.id)
   );
+  const sourceNodes = useSelector(
+    (state: RootState) => selectSourceNodes(state, node.id) as Node<NodeDataState>[],
+    shallowEqual
+  );
+  const upstream = sourceNodes[0];
+  const edges = useSelector(selectEdges);
+  const dataflowId = useSelector((state: RootState) => state.flow.dataflowId);
+
+  // Disconnects this Concept Mapping node from its upstream source by removing every edge
+  // whose target is this node (its incoming connection) - triggered from the plugin's
+  // connected-node card (the unlink icon).
+  const onDisconnectSource = useCallback(() => {
+    dispatch(replaceEdges(edges.filter((e) => e.target !== node.id)));
+    dispatch(markStatusAsDraft());
+  }, [edges, node.id]);
 
   useEffect(() => {
     if (node.data) {
@@ -51,12 +72,14 @@ export const ConceptMappingDrawer: FC<ConceptMappingDrawerProps> = ({
     } else {
       setFormData({
         ...EMPTY_FORM_DATA,
-        ...NodeChoiceMap["rabbit_in_a_hat"].defaultData,
+        ...NodeChoiceMap["concept_mapping_node"].defaultData,
       });
     }
   }, [node.data]);
 
-  const handleOk = useCallback(() => {
+  // No "Apply" button: the node auto-persists on close. Closing the drawer commits the
+  // latest formData into the redux node (mirrors DataMappingDrawer's persist-on-close).
+  const persistAndClose = useCallback(() => {
     const updated: NodeState<ConceptMappingNodeData> = {
       ...nodeState,
       data: formData,
@@ -67,23 +90,74 @@ export const ConceptMappingDrawer: FC<ConceptMappingDrawerProps> = ({
     typeof onClose === "function" && onClose();
   }, [formData]);
 
+  // Persists the node, closes the drawer, and prompts the user to save the dataflow
+  // canvas by opening the shared SaveFlowDialog (same dialog RunFlowButton/ExportFlowButton use).
+  const saveAndClose = useCallback(() => {
+    const updated: NodeState<ConceptMappingNodeData> = {
+      ...nodeState,
+      data: formData,
+    };
+    dispatch(setNode(updated));
+    dispatch(markStatusAsDraft());
+    typeof onClose === "function" && onClose();
+    dispatch(setSaveFlowDialog({ visible: true, dataflowId }));
+  }, [formData, nodeState, onClose, dataflowId]);
+
   const pluginData = useMemo(() => {
+    const sourceNode = upstream
+      ? {
+          name: upstream.data?.name ?? "",
+          type: upstream.type ?? "",
+          description: upstream.data?.description ?? "",
+          map: (upstream.data as any)?.map,
+          result: (upstream.data as any)?.result,
+        }
+      : undefined;
     return {
-      // TODO: Add locale support when available
-      // locale: "en",
       mappingSuggestion: pluginMetadata.data.mappingSuggestion,
       data: node.data.data,
+      sourceNode,
       onChange: (data: any) => onFormDataChange({ data }),
+      onDisconnectSource,
+      onSaveAndClose: saveAndClose,
+      dataflowId,
+      nodeId: node.id,
     };
-  }, [node.data.data, pluginMetadata.data.mappingSuggestion]);
+  }, [
+    node.data.data,
+    pluginMetadata.data.mappingSuggestion,
+    upstream,
+    onDisconnectSource,
+    saveAndClose,
+    dataflowId,
+    node.id,
+  ]);
+
+  // The wizard's current step lives inside the plugin, but it streams back here via the
+  // plugin's onChange (formData.data.wizard). Read it so the header can show a back arrow
+  // once the user has left Step 1; the arrow itself dispatches a window event the plugin's
+  // StepFlow listens for (it owns the step transition).
+  const currentStep = (formData.data as any)?.wizard?.currentStep ?? 0;
+  const headerLeft =
+    currentStep > 0 ? (
+      <IconButton
+        aria-label="back"
+        onClick={() => window.dispatchEvent(new CustomEvent("concept-mapping-back"))}
+        sx={{ mr: 1, color: "inherit" }}
+      >
+        <ArrowBackOutlinedIcon />
+      </IconButton>
+    ) : undefined;
 
   return (
     <NodeDrawer
       {...props}
       disableEnforceFocus
-      width="1400px"
-      onOk={handleOk}
-      onClose={onClose}
+      // Width/positioning are fully controlled by SCSS now (see .concept-mapping-drawer
+      // .MuiDrawer-paper in ConceptMappingNode.scss) - no `width` prop here.
+      hideFooter
+      headerLeft={headerLeft}
+      onClose={persistAndClose}
     >
       <PluginRenderer
         path="/resources/concept-mapping/module.js"

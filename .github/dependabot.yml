@@ -1,0 +1,59 @@
+version: 2
+
+# NOTE: plugins/flows/* is deliberately absent. Those environments are managed
+# by pixi (pixi.lock), which Dependabot cannot parse. They previously used uv
+# (uv.lock); when those files were deleted in the pixi migration Dependabot
+# never re-scanned, leaving hundreds of alerts open against manifests that no
+# longer exist. Listing them here would recreate that problem.
+
+updates:
+  - package-ecosystem: "npm"
+    directories:
+      - "/"
+      - "/docs/website"
+      - "/services/trex"
+      - "/services/alp-logto/connector-physionet-oidc"
+      - "/tests/backend_integration_tests/pg"
+      - "/tests/backend_integration_tests/hana"
+      - "/tests/regression"
+      - "/plugins/ui"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+    groups:
+      npm-minor-and-patch:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
+
+  - package-ecosystem: "pip"
+    directories:
+      - "/plugins/ui/alp-libs/python/pyqe"
+      - "/plugins/ui/alp-libs/python/pyodidepyqe"
+      - "/plugins/ui/alp-libs/python/pyomopql"
+      - "/plugins/ui/alp-libs/python/pystrategus"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+    groups:
+      pip-minor-and-patch:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+    groups:
+      actions-minor-and-patch:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"

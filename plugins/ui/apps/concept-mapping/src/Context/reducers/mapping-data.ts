@@ -1,4 +1,4 @@
-import { ConceptMappingState, csvDataType, conceptData } from "../../types";
+import { ConceptMappingState, csvDataType } from "../../types";
 import { StandardConcepts } from "../../types";
 
 export const setInitialData = (state: ConceptMappingState, payload: csvDataType): ConceptMappingState => {
@@ -14,31 +14,6 @@ export const clearData = (state: ConceptMappingState): ConceptMappingState => ({
   },
 });
 
-export const setSingleMapping = (state: ConceptMappingState, payload: conceptData): ConceptMappingState => {
-  const index = state.csvData.data.findIndex((data) => data === state.selectedData);
-  return {
-    ...state,
-    csvData: {
-      ...state.csvData,
-      data: [
-        ...state.csvData.data.slice(0, index),
-        {
-          ...state.csvData.data[index],
-          conceptId: payload.conceptId,
-          conceptName: payload.conceptName,
-          domainId: payload.domainId,
-          system: payload.system,
-          validStartDate: payload.validStartDate,
-          validEndDate: payload.validEndDate,
-          validity: payload.validity,
-          status: "checked",
-        },
-        ...state.csvData.data.slice(index + 1),
-      ],
-    },
-  };
-};
-
 export const setMultipleMapping = (state: ConceptMappingState, payload: StandardConcepts[]): ConceptMappingState => {
   return {
     ...state,
@@ -48,7 +23,7 @@ export const setMultipleMapping = (state: ConceptMappingState, payload: Standard
         const updatedRow = payload.find((item) => item.index === index);
         if (updatedRow) {
           const { index: _, ...rest } = updatedRow;
-          return { ...row, ...rest, status: "checked" };
+          return { ...row, ...rest, status: "unchecked" };
         }
         return row;
       }),

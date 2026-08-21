@@ -43,6 +43,7 @@ jobs:
       random_runner: ${{ steps.shuffle.outputs.random_runner }}
       run_tag: ${{ steps.tag.outputs.run_tag }}
       canonical_tag: ${{ steps.tag.outputs.canonical_tag }}
+      fallback_tag: ${{ steps.tag.outputs.fallback_tag }}
       is_develop_push: ${{ steps.tag.outputs.is_develop_push }}
       is_release_push: ${{ steps.tag.outputs.is_release_push }}
       is_publish_push: ${{ steps.tag.outputs.is_publish_push }}
@@ -101,9 +102,15 @@ jobs:
           if [[ "$IS_DEVELOP_PUSH" == "true" || "$IS_RELEASE_PUSH" == "true" ]]; then
             IS_PUBLISH_PUSH=true
           fi
+          # Source tag a skipped build copies its RUN_TAG from: the canonical
+          # tag of the branch this run targets.
+          BASE_REF="${{ github.base_ref }}"
+          FALLBACK_TAG="${BASE_REF:-develop}"
+          FALLBACK_TAG="${FALLBACK_TAG//\//-}"
           {
             echo "run_tag=${RUN_TAG}"
             echo "canonical_tag=${CANONICAL_TAG}"
+            echo "fallback_tag=${FALLBACK_TAG}"
             echo "plugins_tag=${PLUGINS_TAG}"
             echo "is_pr_or_mg=${IS_PR_OR_MG}"
             echo "is_develop_push=${IS_DEVELOP_PUSH}"
@@ -197,6 +204,7 @@ jobs:
     runs-on: ${{ needs.setup.outputs.random_runner }}
     env:
       RUN_TAG: ${{ needs.setup.outputs.run_tag }}
+      FALLBACK_TAG: ${{ needs.setup.outputs.fallback_tag }}
       # branch-scoped registry-cache suffix (tag-safe)
       CACHE_SLUG: ${{ github.head_ref && format('pr-{0}', github.event.pull_request.number) || 'develop' }}
     strategy:
@@ -269,6 +277,7 @@ jobs:
         id: builder
 
       - name: Build and Push
+        id: build
         if: ${{ matrix.build_disable != 'true' || github.event_name == 'workflow_dispatch' || needs.setup.outputs.is_develop_push == 'true' || contains(github.ref_name, 'release/') || github.event_name == 'merge_group' }}
         uses: docker/build-push-action@v6
         with:
@@ -290,6 +299,27 @@ jobs:
             GIT_COMMIT_ARG=${{ github.sha }}
             BUILD_TYPE=OSS
             ${{ env.DOCKER_BUILD_ARG1 }}
+
+      # A skipped build (build_disable) pushes no RUN_TAG, but consumers ask for
+      # ONE tag across the whole image set — docker compose pulls every service
+      # at DOCKER_TAG_NAME — so a single hole fails the whole pull with
+      # "manifest unknown" on an image nobody touched. imagetools copies the
+      # manifest server-side, so this costs a registry call, not a rebuild, and
+      # keeps multi-arch lists intact.
+      - name: Publish run tag for skipped build
+        if: steps.build.outcome == 'skipped'
+        run: |
+          DST=${REG_URL}/${{ matrix.AZ_REG_REPOSITORY }}:${RUN_TAG}
+          for SRC_TAG in "${FALLBACK_TAG}" develop; do
+            SRC=${REG_URL}/${{ matrix.AZ_REG_REPOSITORY }}:${SRC_TAG}
+            if docker manifest inspect "$SRC" >/dev/null 2>&1; then
+              echo "Build skipped; publishing $DST from $SRC"
+              docker buildx imagetools create -t "$DST" "$SRC"
+              exit 0
+            fi
+          done
+          echo "::error::no source tag available to publish ${DST} from"
+          exit 1
 
       - name: Prune system
         if: always()
@@ -437,6 +467,30 @@ jobs:
         run: |
           npm install
           npm run build:portal
+      # Patient Analytics (Data Exploration) is an Atlas3 sub-plugin too, but it lives
+      # in the UI monorepo instead of the trex-notebook submodule, so it is built and
+      # staged here rather than by the atlas postinstall — and it has to run AFTER the
+      # step above, whose postinstall recreates resources/atlas from scratch.
+      # --workspaces=false keeps npm out of the surrounding bun-managed monorepo.
+      # Mirrors the same steps in scripts/build-atlas.sh; keep the two in sync.
+      - name: Build Atlas sub-plugin (patient-analytics)
+        if: ${{ matrix.ATLAS }}
+        env:
+          CI: "true"
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          PA_DIR=plugins/ui/apps/vue-mri-ui-lib
+          ( cd "$PA_DIR" && npm install --workspaces=false --legacy-peer-deps && npm run build:atlas )
+          if [ ! -f "$PA_DIR/dist-atlas/index.system.js" ]; then
+            echo "::error::patient-analytics did not produce dist-atlas/index.system.js"
+            exit 1
+          fi
+          PA_DEST=plugins/atlas/resources/atlas/plugins/patient-analytics
+          rm -rf "$PA_DEST"
+          mkdir -p "$PA_DEST"
+          cp -r "$PA_DIR/dist-atlas/." "$PA_DEST/"
+          echo "Staged patient-analytics at /atlas/plugins/patient-analytics"
       - name: Patch Package
         if: ${{ matrix.NPM }}
         working-directory: ${{ matrix.PKGPATH }}
@@ -601,7 +655,7 @@ jobs:
             GIT_COMMIT_ARG=${{ github.sha }}
             BUILD_TYPE=OSS
             PLUGINS_FEED=${{ needs.setup.outputs.is_release_push == 'true' && 'stable' || 'd2e' }}
-            PLUGINS_FROM_REGISTRY=@ohdsi/pythia-agent@0.1.0-develop.14.gf8bbfc7
+            PLUGINS_FROM_REGISTRY=@ohdsi/pythia-agent@0.1.0-develop.18.g80bf4aa
           secrets: |
             "PLUGINS_REGISTRY=${{ secrets.PLUGINS_REGISTRY }}"
             "github_token=${{ secrets.GITHUB_TOKEN }}"

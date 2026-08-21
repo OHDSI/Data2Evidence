@@ -18,7 +18,7 @@ import {
 } from "../../types.d.ts";
 import { UserMgmtService } from "../../user-mgmt/user-mgmt.service.ts";
 import { WebApiSourceService } from "../../webapi/webapi-source.service.ts";
-import { sanitizeIdForCacheId } from "../entity/dataset.entity.ts";
+import { resolveCacheId } from "../entity/dataset.entity.ts";
 import {
   Dataset,
   DatasetAttribute,
@@ -95,13 +95,10 @@ export class DatasetCommandService {
       const entity = this.datasetRepo.create(
         this.swapVariables<Dataset>(dataset, SWAP_TO.DATASET),
       );
-      // insertDataset bypasses @BeforeInsert (TypeORM .insert() skips hooks); mirror Dataset.applyCacheIdDefault explicitly.
+      // insertDataset bypasses @BeforeInsert (TypeORM .insert() skips hooks); mirror
+      // Dataset.applyCacheIdDefault by calling the same resolver it uses.
       if (entity.cacheId == null) {
-        if (entity.dialect === "hana") {
-          entity.cacheId = entity.databaseCode;
-        } else if (entity.id) {
-          entity.cacheId = sanitizeIdForCacheId(entity.id);
-        }
+        entity.cacheId = resolveCacheId(entity);
       }
       const result = await this.datasetRepo.insertDataset(
         entityMgr,
@@ -169,16 +166,10 @@ export class DatasetCommandService {
     );
 
     // Best-effort: notify trex to (re)attach the new dataset's cache file and source DB
-    // so a freshly-set cache_id becomes available without a trex restart. The cache_id
-    // mirrors the entity's @BeforeInsert default (databaseCode for HANA, sanitized dataset
-    // id otherwise) when the DTO doesn't supply one.
-    const cacheId =
-      datasetDto.cacheId ??
-      (datasetDto.dialect === "hana"
-        ? datasetDto.databaseCode
-        : datasetDto.id
-          ? sanitizeIdForCacheId(datasetDto.id)
-          : datasetDto.databaseCode);
+    // so a freshly-set cache_id becomes available without a trex restart. Resolved through
+    // the same helper the insert path uses, so the attached value cannot drift from the
+    // value persisted to cache_id.
+    const cacheId = datasetDto.cacheId ?? resolveCacheId(datasetDto);
     await this.trexApiService.attach({
       cacheIds: cacheId ? [cacheId] : [],
       connectionIds: datasetDto.databaseCode ? [datasetDto.databaseCode] : [],
@@ -501,8 +492,18 @@ export class DatasetCommandService {
         type: newType,
         tenantId,
         databaseCode,
-        // Snapshot points at the same cache catalog as its source (falls back to source id for legacy rows).
-        cacheId: sourceDataset.cacheId ?? sanitizeIdForCacheId(sourceDatasetId),
+        // A cache dataset owns its own catalog, named after its OWN id — the cache file is
+        // written against this row (see resolveCacheWriteTarget in jobplugins), not the
+        // source row. It must not inherit the source's cache_id: for a `source` row that
+        // value is the databaseCode (issue #2877), which would make the cache build write
+        // into the source connection's own catalog. Resolved through the shared helper so
+        // HANA keeps its databaseCode — it is queried directly and has no DuckDB cache.
+        cacheId: resolveCacheId({
+          dialect,
+          type: newType,
+          id: snapshotId,
+          databaseCode,
+        }),
         dialect,
         schemaName,
         vocabSchemaName: finalVocabSchemaName,
