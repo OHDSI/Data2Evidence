@@ -54,7 +54,22 @@ try {
   } else {
     console.log(`[d2e-ensure-saml] ${TABLE} is missing; replaying its creating alteration.`);
     const { default: alteration } = await import(ALTERATION);
-    await alteration.up(pool);
+
+    // Mirror the CLI's deployAlteration: beforeUp outside the transaction, up()
+    // inside one. Without the transaction a failure part-way through up() would
+    // leave the table created but its RLS policies unapplied -- and the guard
+    // above would then skip it on every later run, permanently leaving the
+    // tenant roles without privileges.
+    //
+    // The alteration timestamp is deliberately NOT advanced: the watermark
+    // already records this alteration as applied. This repairs the object the
+    // rollback removed, it does not re-apply the alteration.
+    if (alteration.beforeUp) {
+      await alteration.beforeUp(pool);
+    }
+    await pool.transaction(async (connection) => {
+      await alteration.up(connection);
+    });
     const { confirmed } = await pool.one(
       sql`select to_regclass(${TABLE}) is not null as "confirmed"`
     );
