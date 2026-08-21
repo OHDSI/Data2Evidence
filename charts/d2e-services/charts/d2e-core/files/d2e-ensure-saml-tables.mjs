@@ -30,10 +30,17 @@
  * `@silverhand/slonik` import resolves from packages/core/node_modules.
  */
 import { createPool, sql } from '@silverhand/slonik';
+import { pathToFileURL } from 'node:url';
 
 const TABLE = 'saml_application_sessions';
-const ALTERATION =
-  '../cli/alteration-scripts/1.23.0-1735012422-add-saml-application-sessions-table.js';
+
+// Absolute path, NOT a specifier relative to this module. This file is
+// delivered as a Kubernetes subPath mount, so its realpath is under
+// /var/lib/kubelet/... -- and Node's ESM loader resolves relative specifiers
+// against the realpath, which would look for the alteration next to the
+// kubelet volume and fail with ERR_MODULE_NOT_FOUND.
+const ALTERATION_PATH =
+  '/etc/logto/packages/cli/alteration-scripts/1.23.0-1735012422-add-saml-application-sessions-table.js';
 
 const databaseUrl = process.env.DB_URL;
 
@@ -53,7 +60,7 @@ try {
     console.log(`[d2e-ensure-saml] ${TABLE} already present; nothing to do.`);
   } else {
     console.log(`[d2e-ensure-saml] ${TABLE} is missing; replaying its creating alteration.`);
-    const { default: alteration } = await import(ALTERATION);
+    const { default: alteration } = await import(pathToFileURL(ALTERATION_PATH).href);
 
     // Mirror the CLI's deployAlteration: beforeUp outside the transaction, up()
     // inside one. Without the transaction a failure part-way through up() would
