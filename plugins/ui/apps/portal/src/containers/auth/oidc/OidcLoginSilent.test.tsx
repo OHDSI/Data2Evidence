@@ -18,7 +18,7 @@ jest.mock("react-router-dom", () => ({
 
 let mockIdToken = "id-token-1";
 let mockIdTokenPayload: any = { sub: "user-1" };
-const mockAccessTokenPayload: any = { roles: ["role.researcher.demo"] };
+let mockAccessTokenPayload: any = { roles: ["role.researcher.demo"], iat: 1000 };
 
 jest.mock("@axa-fr/react-oidc", () => ({
   useOidc: () => ({ login: jest.fn() }),
@@ -68,6 +68,7 @@ describe("OidcLoginSilent - NoAccess after token refresh during tab inactivity",
     sessionStorage.clear();
     mockIdToken = "id-token-1";
     mockIdTokenPayload = { sub: "user-1" };
+    mockAccessTokenPayload = { roles: ["role.researcher.demo"], iat: 1000 };
   });
 
   it("recovers access once a fresh token/session becomes available after the initial bootstrap raced a stale token", async () => {
@@ -98,6 +99,7 @@ describe("OidcLoginSilent - NoAccess after token refresh during tab inactivity",
     });
     mockIdToken = "id-token-2";
     mockIdTokenPayload = { sub: "user-1", iat: 12345 };
+    mockAccessTokenPayload = { roles: ["role.researcher.demo"], iat: 2000 };
 
     rerender(
       <AppProvider>
@@ -149,6 +151,61 @@ describe("OidcLoginSilent - NoAccess after token refresh during tab inactivity",
     });
     mockIdToken = "id-token-2";
     mockIdTokenPayload = { sub: "user-1", iat: 12345 };
+    mockAccessTokenPayload = { roles: ["role.researcher.demo", "role.researcher.study-1"], iat: 2000 };
+
+    rerender(
+      <AppProvider>
+        <OidcLoginSilent onReady={onReady} />
+        <Probe />
+      </AppProvider>
+    );
+
+    await waitFor(() => expect(mockGetUserGroupList).toHaveBeenCalledTimes(2));
+    await waitFor(() => expect(mockSyncWebApiRoles).toHaveBeenCalledTimes(2));
+    await waitFor(() => expect(readProbe().canAccessResearcherPortal).toBe(true));
+  });
+
+  it("re-syncs on a silent token refresh even when the OIDC provider leaves the id_token unchanged", async () => {
+    mockGetUserGroupList.mockResolvedValueOnce({
+      userId: "user-1",
+      groups: [],
+      alpRoleMap: {},
+      alp_tenant_id: [],
+      alp_role_study_researcher: [],
+      alp_role_tenant_viewer: [],
+      alp_role_user_admin: false,
+      alp_role_system_admin: false,
+      alp_role_dashboard_viewer: false,
+      alp_role_etl_mapping_contributor: false,
+    });
+
+    const { rerender } = render(
+      <AppProvider>
+        <OidcLoginSilent onReady={onReady} />
+        <Probe />
+      </AppProvider>
+    );
+
+    await waitFor(() => expect(mockGetUserGroupList).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(mockSyncWebApiRoles).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(readProbe().canAccessResearcherPortal).toBe(false));
+
+    mockGetUserGroupList.mockResolvedValueOnce({
+      userId: "user-1",
+      groups: [],
+      alpRoleMap: {},
+      alp_tenant_id: [],
+      alp_role_study_researcher: ["study-1"],
+      alp_role_tenant_viewer: [],
+      alp_role_user_admin: false,
+      alp_role_system_admin: false,
+      alp_role_dashboard_viewer: false,
+      alp_role_etl_mapping_contributor: false,
+    });
+    // id_token and its payload are untouched here — only the access token was
+    // renewed, mirroring an OIDC provider that doesn't reissue id_token on a
+    // refresh_token grant.
+    mockAccessTokenPayload = { roles: ["role.researcher.demo"], iat: 2000 };
 
     rerender(
       <AppProvider>

@@ -18,7 +18,7 @@ interface OidcLoginSilentProps {
 let firstTimeLoggedIn = false;
 let bootstrapSettled = false;
 let bootstrapFailed = false;
-let lastAttemptedIdToken: string | null | undefined = null;
+let lastAttemptedAccessTokenIat: number | null | undefined = null;
 
 export const OidcLoginSilent: FC<OidcLoginSilentProps> = ({ onReady }) => {
   const navigate = useNavigate();
@@ -74,19 +74,21 @@ export const OidcLoginSilent: FC<OidcLoginSilentProps> = ({ onReady }) => {
     [navigate, setUserGroup, clearUser]
   );
 
+  const accessTokenIat = (accessTokenPayload as { iat?: number } | undefined)?.iat;
+
   useEffect(() => {
     setIdToken(idToken);
     setIdTokenClaim(idTokenPayload);
 
     const idpUserId = idTokenPayload?.[subProp];
-    const isNewToken = idToken !== lastAttemptedIdToken;
+    const isNewToken = accessTokenIat !== lastAttemptedAccessTokenIat;
     const needsSync = idpUserId && isNewToken;
 
     if (needsSync) {
       const isFirstLogin = !firstTimeLoggedIn || bootstrapFailed;
       firstTimeLoggedIn = true;
       bootstrapFailed = false;
-      lastAttemptedIdToken = idToken;
+      lastAttemptedAccessTokenIat = accessTokenIat;
       loggedIn(idpUserId, isFirstLogin).finally(() => {
         bootstrapSettled = true;
         onReady?.();
@@ -97,7 +99,7 @@ export const OidcLoginSilent: FC<OidcLoginSilentProps> = ({ onReady }) => {
     if (bootstrapSettled) {
       onReady?.();
     }
-  }, [idToken, idTokenPayload, loggedIn, onReady]);
+  }, [idToken, idTokenPayload, accessTokenIat, loggedIn, onReady]);
 
   return null;
 };
