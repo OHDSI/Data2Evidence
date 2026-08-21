@@ -282,10 +282,27 @@ spec:
           image: ghcr.io/ohdsi/d2e-logto:{{ .Values.global.image.tag }}
           imagePullPolicy: Always
           command: ["/bin/sh"]
+          # The alteration target is pinnable so an environment whose logto
+          # schema cannot reach `latest` is not left unbootable.
+          #
+          # `db seed --swe` skips seeding when the schema already exists, so an
+          # existing environment never receives objects that upstream added to
+          # the baseline rather than via an alteration. `deploy latest` then
+          # replays the whole chain, and any alteration that assumes such an
+          # object fails -- e.g. deploying 1.40.0 onto a long-lived schema dies
+          # in 1.35.0-1765255453-update-saml-session-relay-state-to-varchar-512
+          # with `relation "saml_application_sessions" does not exist`. The
+          # alteration runs in a transaction, so nothing is applied and the
+          # init container crash-loops, taking idp (and everything that waits
+          # on it) down with it.
+          #
+          # Defaults to `latest`, so environments that upgrade cleanly are
+          # unaffected. Set global.logtoAlterationTarget to a specific version
+          # to hold an environment at a known-good point.
           args:
             [
               "-c",
-              "npm run cli db seed -- --swe && npm run cli db alteration deploy latest && node packages/core/d2e-grants.mjs",
+              "npm run cli db seed -- --swe && npm run cli db alteration deploy {{ .Values.global.logtoAlterationTarget | default "latest" }} && node packages/core/d2e-grants.mjs",
             ]
           resources:
             {{- toYaml .Values.global.resources.logtoSeedInit | nindent 12 }}
