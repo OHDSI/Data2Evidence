@@ -62,6 +62,38 @@ spec:
             secretName: "{{ .Release.Name }}-{{ .Chart.Name }}-materialize-cohorts-client"
         {{- end }}
       initContainers:
+        # Fail fast on TLS material that is configured but unusable. A blank
+        # secret key mounts as a zero-byte file, and each consumer then fails
+        # separately and obscurely (PKIX / UnknownIssuer) with nothing naming the
+        # real cause. Compose gets this from a FATAL guard in its entrypoints; in
+        # Kubernetes an initContainer is the equivalent — it runs before every
+        # container and depends on nothing in this pod, so it cannot deadlock.
+        # Uses the trex image because trex is a container in this pod already:
+        # no extra pull, no second tag to keep in step, and it has openssl.
+        - name: tls-material-check
+          image: ghcr.io/ohdsi/d2e-trex:{{ .Values.global.image.tag }}
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              set -e
+              f=/etc/d2e/tls/ca.pem
+              if [ ! -s "$f" ]; then
+                echo "FATAL: $f is empty or missing — check global.secrets.TLS__INTERNAL__CA_CRT" >&2
+                exit 1
+              fi
+              if ! openssl x509 -in "$f" -noout >/dev/null 2>&1; then
+                echo "FATAL: $f is not a valid PEM certificate — check global.secrets.TLS__INTERNAL__CA_CRT" >&2
+                exit 1
+              fi
+              echo "internal CA present and parseable: $(openssl x509 -in "$f" -noout -subject)"
+          resources:
+            requests:
+              cpu: 50m
+              memory: 50Mi
+          volumeMounts:
+            - mountPath: /etc/d2e/tls
+              name: d2e-tls
+              readOnly: true
         - name: trex-init
           image: busybox:latest
           resources:
