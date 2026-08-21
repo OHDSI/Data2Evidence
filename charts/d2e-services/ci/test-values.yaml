@@ -53,7 +53,8 @@ config:
       "alpdb": "https://trex.d2e.svc.cluster.local:443/gateway/api/db",
       "analytics": "https://trex.d2e.svc.cluster.local:443",
       "trex": "https://trex.d2e.svc.cluster.local:443",
-      "logto": "https://idp.d2e.svc.cluster.local:443"
+      "logto": "https://idp.d2e.svc.cluster.local:443",
+      "prefect": "https://dataflow-gen.d2e.svc.cluster.local:443/d2e/api"
     }
   baseJobTemplate:
     configuration: |

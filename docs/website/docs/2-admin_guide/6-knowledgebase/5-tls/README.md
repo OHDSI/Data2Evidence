@@ -124,6 +124,21 @@ Port 443 is the Service port, which targets container port 41120 — unlike dock
 dials 41120 directly. Every route in this map must use a name the certificate's SAN covers, so
 `<namespace>` has to match the release.
 
+`charts/d2e-services/ci/test-values.yaml` carries a working example, pinned to the `d2e`
+namespace that CI deploys into:
+
+```json
+{
+  "alpdb":   "https://trex.d2e.svc.cluster.local:443/gateway/api/db",
+  "analytics": "https://trex.d2e.svc.cluster.local:443",
+  "trex":    "https://trex.d2e.svc.cluster.local:443",
+  "logto":   "https://idp.d2e.svc.cluster.local:443",
+  "prefect": "https://dataflow-gen.d2e.svc.cluster.local:443/d2e/api"
+}
+```
+
+Copy the shape, not the namespace.
+
 #### Image requirements
 
 Two behaviours internal TLS depends on live in the trex image, not the chart, so a chart
