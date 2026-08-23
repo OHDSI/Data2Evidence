@@ -173,6 +173,10 @@ export const FlowPanel: FC<FlowPanelProps> = () => {
     [nodes]
   );
 
+  const handleNodesDelete = useCallback(() => {
+    dispatch(markStatusAsDraft());
+  }, []);
+
   const handleEdgesChange = useCallback(
     (changes: EdgeChange[]) => {
       const updates = applyEdgeChanges(changes, edges);
@@ -403,6 +407,8 @@ export const FlowPanel: FC<FlowPanelProps> = () => {
         fitView
         fitViewOptions={fitViewOptions}
         nodeTypes={NODE_TYPES}
+        deleteKeyCode={["Backspace", "Delete"]}
+        onNodesDelete={handleNodesDelete}
         onNodesChange={handleNodesChange}
         onEdgesChange={handleEdgesChange}
         onConnect={handleConnect}

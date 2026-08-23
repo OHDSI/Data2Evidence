@@ -1,15 +1,18 @@
-import React, { ReactNode } from "react";
-import { NodeProps } from "reactflow";
+import React, { ReactNode, useCallback } from "react";
+import { NodeProps, useReactFlow } from "reactflow";
 import classNames from "classnames";
 import {
   Box,
   EditNoBoxIcon,
   DragIndicatorIcon,
   Button,
+  TrashIcon,
 } from "@portal/components";
 import { NodeDataState } from "../../../types";
 import { HandleIOType } from "../NodeTypes";
 import { SourceHandle, TargetHandle } from "../CustomHandle/CustomHandle";
+import { dispatch } from "../../../../../store";
+import { markStatusAsDraft } from "../../../reducers";
 import "./NodeLayout.scss";
 
 export interface NodeLayoutProps<T> {
@@ -35,10 +38,36 @@ export const NodeLayout = <T extends NodeDataState>({
   RightHandle = "default",
   LeftHandle = "default",
 }: NodeLayoutProps<T>) => {
+  const { deleteElements } = useReactFlow();
   const classes = classNames("node", className, {
     "node--has-setting": typeof onSettingClick === "function",
     "node--has-error": resultType === "error",
   });
+
+  const deleteNode = useCallback(async () => {
+    await deleteElements({ nodes: [{ id: node.id }] });
+    dispatch(markStatusAsDraft());
+  }, [deleteElements, node.id]);
+
+  const handleDeleteClick = useCallback(
+    (event: React.MouseEvent<SVGSVGElement>) => {
+      event.stopPropagation();
+      deleteNode();
+    },
+    [deleteNode]
+  );
+
+  const handleDeleteKeyDown = useCallback(
+    (event: React.KeyboardEvent<SVGSVGElement>) => {
+      // Activate on Enter/Space like a native button (Space would otherwise scroll).
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        event.stopPropagation();
+        deleteNode();
+      }
+    },
+    [deleteNode]
+  );
 
   return (
     <div className={classes}>
@@ -61,6 +90,16 @@ export const NodeLayout = <T extends NodeDataState>({
           {title}
         </Box>
         <Box display="flex" gap={2}>
+          <Box display="inline-flex">
+            <TrashIcon
+              onClick={handleDeleteClick}
+              onKeyDown={handleDeleteKeyDown}
+              role="button"
+              tabIndex={0}
+              aria-label="Delete node"
+              className="node__setting node__delete nodrag"
+            />
+          </Box>
           {typeof onSettingClick === "function" && (
             <Box display="inline-flex">
               <EditNoBoxIcon

@@ -84,7 +84,9 @@ function isValidWildcardFlag(val: string): boolean {
 
 function isValidConceptIdArray(arr: unknown): arr is number[] {
   if (!Array.isArray(arr) || arr.length === 0) return false;
-  return arr.every((item) => typeof item === "number" && Number.isInteger(item) && item >= 0);
+  return arr.every(
+    (item) => typeof item === "number" && Number.isInteger(item) && item >= 0,
+  );
 }
 
 function sanitizeParamValue(value: string): string {
@@ -223,10 +225,7 @@ function substituteTemplateParams(
       /\{\{WILDCARD_FLAG5\}\}/g,
       additionalParams["WILDCARD_FLAG5"] || "",
     )
-    .replace(
-      /\{\{CONCEPT_IDS\}\}/g,
-      conceptIds ? conceptIds.join(",") : "",
-    );
+    .replace(/\{\{CONCEPT_IDS\}\}/g, conceptIds ? conceptIds.join(",") : "");
 
   const remainingPlaceholders = extractPlaceholders(result);
   const missingParams: string[] = [];
@@ -271,6 +270,9 @@ async function resolveTemplate(
 ): Promise<SqlQueryTemplate> {
   const envTemplates = env.SQL_QUERY_TEMPLATES;
   if (envTemplates) {
+    console.log(
+      `Using SQL_QUERY_TEMPLATES from environment for templateId: ${templateId}`,
+    );
     const sqlText = envTemplates[templateId];
     if (sqlText) {
       return {
@@ -284,6 +286,9 @@ async function resolveTemplate(
     throw new Error(`Template not found: ${templateId}`);
   }
 
+  console.log(
+    `Resolving template from portal service for templateId: ${templateId}`,
+  );
   const serviceRoutes = env.SERVICE_ROUTES || {};
   const baseUrl =
     serviceRoutes.portalServer || serviceRoutes["portal-server"] || "";
@@ -301,6 +306,14 @@ async function resolveTemplate(
     `&type=${encodeURIComponent(type)}` +
     `&name=${encodeURIComponent(name)}` +
     `&queryName=${encodeURIComponent(templateId)}`;
+
+  console.log(
+    `datasetId: ${datasetId}, type: ${type}, name: ${name}, templateId: ${templateId}`,
+  );
+
+  console.log(
+    `Resolving template from portal service: ${url} with token: ${token}`,
+  );
 
   try {
     const result = await channel.get(url, {
@@ -528,6 +541,9 @@ router.post("/", async (req: Request, res: Response) => {
       "yearRange",
       "conditions",
       "conceptIds",
+      "visitConcept",
+      "followUpDays",
+      "conceptCodes",
     ]);
 
     const additionalParams: Record<string, string> = {};
@@ -553,6 +569,16 @@ router.post("/", async (req: Request, res: Response) => {
           });
         }
       });
+    }
+    if (typeof req.body.visitConcept === "string") {
+      additionalParams["VISIT_CONCEPT"] = req.body.visitConcept;
+    }
+
+    if (typeof req.body.followUpDays === "string") {
+      additionalParams["FOLLOWUP_DAYS"] = req.body.followUpDays;
+    }
+    if (typeof req.body.conceptCodes === "string") {
+      additionalParams["CONCEPT_CODES"] = req.body.conceptCodes;
     }
 
     let substitutedSql: string;
@@ -594,10 +620,9 @@ router.post("/", async (req: Request, res: Response) => {
       if (conn.dialect === "hana") {
         const userObj = getUser(req);
         await applySessionVariables(conn, {
-          APPLICATION:
-            `${env.PROJECT_NAME}-WIZARD_${type}_${name}_${templateId}`,
-          APPLICATIONUSER: userObj.getEmail() || userObj.userObject.name ||
-            userObj.getUser(),
+          APPLICATION: `${env.PROJECT_NAME}-WIZARD_${type}_${name}_${templateId}`,
+          APPLICATIONUSER:
+            userObj.getEmail() || userObj.userObject.name || userObj.getUser(),
         });
       }
 
@@ -669,4 +694,3 @@ router.post("/", async (req: Request, res: Response) => {
 
 app.use("/parquet-export", router);
 app.listen(8000);
-  

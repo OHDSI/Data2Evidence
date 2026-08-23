@@ -2,6 +2,8 @@ from prefect import flow, task
 from prefect.logging import get_run_logger
 from prefect_shell import ShellOperation
 import os
+import shutil
+import uuid
 from .types import ShinyLivePluginType
 
 from _shared_flow_utils.api.PortalServerAPI import PortalServerAPI
@@ -32,17 +34,27 @@ def shiny_live_plugin(options: ShinyLivePluginType):
         language=options.language,
         app_code=options.app_code
     )
-    docs_dir = build_shiny_live_assets(
-        language=options.language,
-        app_dir=app_dir
-    )
-    upload_result = upload_shiny_live_folder(
-        docs_dir=docs_dir,
-        dataset_id=options.dataset_id,
-        config_type=options.config_type,
-        name=options.name,
-        language=options.language
-    )
+
+    try:
+        docs_dir = build_shiny_live_assets(
+            language=options.language,
+            app_dir=app_dir
+        )
+
+        upload_result = upload_shiny_live_folder(
+            docs_dir=docs_dir,
+            dataset_id=options.dataset_id,
+            config_type=options.config_type,
+            name=options.name,
+            language=options.language
+        )
+    finally:
+        try:
+            shutil.rmtree(app_dir)
+            logger.info(f"Cleaned up temporary directory {app_dir}")
+        except OSError as e:
+            logger.error(f"Failed to clean up temporary directory {app_dir}: {e}")
+            raise
 
     return {
         'status': 'success',
@@ -67,7 +79,8 @@ def create_shiny_live_folder(dataset_id: str, language: str, app_code: str) -> s
 
     logger = get_run_logger()
 
-    app_dir = os.path.join("/tmp/shiny_live_app", dataset_id)
+    # uuid path to ensure unique directory for each concurrent run, preventing conflicts
+    app_dir = os.path.join("/tmp/shiny_live_app", f"{dataset_id}", f"{uuid.uuid4().hex}")
 
     try:
         os.makedirs(app_dir, exist_ok=True)
@@ -105,16 +118,27 @@ def build_shiny_live_assets(language: str, app_dir: str) -> str:
     logger = get_run_logger()
     logger.info(f"Building Shiny Live app assets in {app_dir}...")
 
-    if language == "r":
-        r_script_path = os.path.join(
-            os.path.dirname(__file__), "build_shiny_live.R")
+    utils_dir = os.path.join(os.path.dirname(__file__), "utils")
 
-        # TODO: Consider using rpy2 for better integration once this issuse is resolved:  https://github.com/rpy2/rpy2/issues/1121
-        logger.info(
-            f"Running R script to build Shiny Live assets: {r_script_path}")
-        logger.info(f"App directory: {app_dir}")
-        ShellOperation(
-            commands=[f"Rscript {r_script_path} '{app_dir}' '{os.path.join(app_dir, 'docs')}'"], stream_output=True).run()
+    for utils_file in os.listdir(utils_dir):
+        utils_file_src = os.path.join(utils_dir, utils_file)
+        if not os.path.isfile(utils_file_src):
+            continue
+        utils_file_dest = os.path.join(app_dir, utils_file)
+        shutil.copyfile(utils_file_src, utils_file_dest)
+        logger.info(f"Bundled {utils_file} into {utils_file_dest}")
+
+    if language == "r":
+        raise NotImplementedError("Shiny Live app building for 'R' is not implemented yet.")
+        # r_script_path = os.path.join(
+        #     os.path.dirname(__file__), "build_shiny_live.R")
+
+        # # TODO: Consider using rpy2 for better integration once this issuse is resolved:  https://github.com/rpy2/rpy2/issues/1121
+        # logger.info(
+        #     f"Running R script to build Shiny Live assets: {r_script_path}")
+        # logger.info(f"App directory: {app_dir}")
+        # ShellOperation(
+        #     commands=[f"Rscript {r_script_path} '{app_dir}' '{os.path.join(app_dir, 'docs')}'"], stream_output=True).run()
 
     elif language == "python":
         logger.info("Building Python Shiny Live app assets...")

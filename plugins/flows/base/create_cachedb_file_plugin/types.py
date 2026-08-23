@@ -41,6 +41,11 @@ class CopyParameters:
 
     chunk_size: int | None
 
+    # Discard any resumable partial copy for this schema before planning.
+    fresh_copy: bool = False
+    # Plan and log only: nothing is created, copied or dropped.
+    dry_run: bool = False
+
 
 class DatamartTableConfig(BaseModel):
     table_name: str = Field(alias="tableName")
@@ -92,6 +97,15 @@ class CreateCacheOptions(BaseModel):
     results_schema_name: Optional[str] = Field(
         default=None, alias="resultsSchemaName")
     chunk_size: Optional[int] = Field(default=None, alias="chunkSize")
+
+    # Discard the partial state left by a failed run instead of resuming it.
+    # Only tables that are not already COMPLETE are discarded, and only once
+    # per (flow run, target schema) -- see checkpoint.apply_fresh_copy.
+    fresh_copy: Optional[bool] = Field(default=False, alias="freshCopy")
+
+    # Plan and log only. Nothing is created, copied or dropped; dryRun wins
+    # over freshCopy.
+    dry_run: Optional[bool] = Field(default=False, alias="dryRun")
 
     # Optional flag used to determine which tables to create duckdb FTS indexes.
     # By default creates FTS indexes for concept and concept_synonym tables.
