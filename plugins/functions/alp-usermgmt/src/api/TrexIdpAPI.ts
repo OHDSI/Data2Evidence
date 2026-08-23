@@ -11,13 +11,14 @@ const MISSING_KEY_MESSAGE =
 // TREX__SERVICE_ROLE_KEY is an explicit override. trex injects the same
 // credential it uses internally as SUPABASE_SERVICE_ROLE_KEY into every
 // function worker's environment, usermgmt included, so that is the default
-// source. Neither being set must not resolve to an empty string: that would
-// send `Authorization: Bearer ` and fail as a confusing 401 instead of this
-// explicit error.
+// source. Resolving to '' rather than throwing is deliberate: this class is a
+// constructor dependency of UserGroupService, and a deployment with
+// IDP__ROLE_STORE=logto has neither variable set and never reaches trex.
+// Throwing here would take usermgmt down at DI time over a credential it never
+// uses. post() raises instead, at the point the key is actually needed, so an
+// empty bearer still never goes on the wire.
 export function resolveServiceRoleKey(explicit: string | undefined, injected: string | undefined): string {
-  if (explicit) return explicit
-  if (injected) return injected
-  throw new Error(MISSING_KEY_MESSAGE)
+  return explicit || injected || ''
 }
 
 @Service()

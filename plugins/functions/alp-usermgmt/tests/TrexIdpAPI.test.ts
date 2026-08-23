@@ -1,4 +1,4 @@
-import { assertEquals, assertRejects, assertThrows } from "jsr:@std/assert";
+import { assertEquals, assertRejects } from "jsr:@std/assert";
 import { TrexIdpAPI, resolveServiceRoleKey } from "../src/api/TrexIdpAPI.ts";
 
 const stubFetch = (calls: Array<{ url: string; body: unknown }>, status = 204) =>
@@ -46,20 +46,21 @@ Deno.test("the supabase-injected key is used when no override is set", () => {
   assertEquals(resolveServiceRoleKey(undefined, "injected-key"), "injected-key");
 });
 
-Deno.test("neither variable set raises an error naming both", () => {
-  assertThrows(
-    () => resolveServiceRoleKey(undefined, undefined),
-    Error,
-    "TREX__SERVICE_ROLE_KEY",
-  );
-  assertThrows(
-    () => resolveServiceRoleKey(undefined, undefined),
-    Error,
-    "SUPABASE_SERVICE_ROLE_KEY",
-  );
+Deno.test("neither variable set resolves empty rather than throwing", () => {
+  // Construction must not fail: this class is a constructor dependency of
+  // UserGroupService, and an IDP__ROLE_STORE=logto deployment has neither
+  // variable and never calls trex. Throwing here would take usermgmt down at
+  // DI time over a credential it never uses.
+  assertEquals(resolveServiceRoleKey(undefined, undefined), "");
+  assertEquals(resolveServiceRoleKey("", ""), "");
 });
 
-Deno.test("assigning with no service role key raises rather than issuing a request", async () => {
+Deno.test("constructing with neither variable set does not throw", () => {
+  const api = new TrexIdpAPI("http://trex/admin/roles", resolveServiceRoleKey(undefined, undefined));
+  assertEquals(typeof api.assignRolesToUser, "function");
+});
+
+Deno.test("assigning with no service role key raises naming both variables", async () => {
   const calls: Array<{ url: string; body: unknown }> = [];
   const api = new TrexIdpAPI("http://trex/admin/roles", "", stubFetch(calls));
   await assertRejects(
@@ -67,5 +68,18 @@ Deno.test("assigning with no service role key raises rather than issuing a reque
     Error,
     "TREX__SERVICE_ROLE_KEY",
   );
+  await assertRejects(
+    () => api.assignRolesToUser("user-1", ["USER_ADMIN"]),
+    Error,
+    "SUPABASE_SERVICE_ROLE_KEY",
+  );
+  // Never an empty bearer on the wire.
+  assertEquals(calls.length, 0);
+});
+
+Deno.test("removing with no service role key also raises before any request", async () => {
+  const calls: Array<{ url: string; body: unknown }> = [];
+  const api = new TrexIdpAPI("http://trex/admin/roles", "", stubFetch(calls));
+  await assertRejects(() => api.removeRolesFromUser("user-1", ["USER_ADMIN"]), Error);
   assertEquals(calls.length, 0);
 });
