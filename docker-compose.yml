@@ -469,7 +469,10 @@ services:
       # issuing the tokens they travel in.
       IDP__ROLE_STORE: "trex"
       TREX__ADMIN_URL: "http://${PROJECT_NAME:-d2e}-trex:33001/trex/admin/roles"
-      TREX__SERVICE_ROLE_KEY: ${TREX__SERVICE_ROLE_KEY}
+      # Optional override only: usermgmt runs as a function worker inside the
+      # trex container, and trex already injects this same credential as
+      # SUPABASE_SERVICE_ROLE_KEY into every such worker's environment.
+      TREX__SERVICE_ROLE_KEY: ${TREX__SERVICE_ROLE_KEY:-}
       USERMGMT__AUTO_PROVISION_ENABLED: ${USERMGMT__AUTO_PROVISION_ENABLED:-false}
       USERMGMT__AUTO_PROVISION_CONNECTORS: ${USERMGMT__AUTO_PROVISION_CONNECTORS:-}
       USERMGMT__AUTO_PROVISION_DEFAULT_TENANT_ID: ${USERMGMT__AUTO_PROVISION_DEFAULT_TENANT_ID:-}

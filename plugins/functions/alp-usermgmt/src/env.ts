@@ -33,6 +33,7 @@ export const env = {
   IDP_ALP_ADMIN_RESOURCE: Deno.env.get("IDP__ALP_ADMIN__RESOURCE"),
   TREX_ADMIN_URL: Deno.env.get("TREX__ADMIN_URL"),
   TREX_SERVICE_ROLE_KEY: Deno.env.get("TREX__SERVICE_ROLE_KEY"),
+  SUPABASE_SERVICE_ROLE_KEY: Deno.env.get("SUPABASE_SERVICE_ROLE_KEY"),
   IDP_ROLE_STORE: Deno.env.get("IDP__ROLE_STORE"),
   SSL_PRIVATE_KEY: Deno.env.get("TLS__INTERNAL__KEY")?.replace(/\\n/g, '\n'),
   SSL_PUBLIC_CERT: Deno.env.get("TLS__INTERNAL__CRT")?.replace(/\\n/g, '\n'),

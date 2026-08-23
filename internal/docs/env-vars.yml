@@ -195,6 +195,6 @@ TREX__ADMIN_URL:
   publish: false
   type: string
 TREX__SERVICE_ROLE_KEY:
-  comment: Service role key usermgmt authenticates to the trex admin API with
+  comment: Optional override for the trex admin API credential; defaults to trex's own injected SUPABASE_SERVICE_ROLE_KEY
   publish: false
   type: string
