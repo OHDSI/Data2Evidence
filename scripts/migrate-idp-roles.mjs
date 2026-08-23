@@ -4,8 +4,10 @@
 //
 // Two things move: usermgmt's users are re-keyed from the Logto subject id to
 // the trex user id, and their group memberships are written into trex as
-// application roles. Users are matched by email because the two stores share no
-// identifier — which is the whole reason a migration is needed.
+// application roles. Users are matched between the two stores because they
+// share no identifier — which is the whole reason a migration is needed. The
+// stores don't even agree on what they're matching: usermgmt has a username,
+// trex has an email. See matchTrexUser for the matching rule.
 //
 // canonicalRoleNames, the ROLES/LOGTO_ROLES/LOGTO_ROLE_NAMES maps, and
 // datasetResearcherScopes below are deliberate duplicates of the functions and
@@ -143,33 +145,94 @@ export function buildGroupRoleAndScopes(group, datasetsById) {
   return { role: logtoRole, scopes: [logtoRole] };
 }
 
+function normalize(value) {
+  return String(value ?? "").trim().toLowerCase();
+}
+
+function localPart(email) {
+  const s = normalize(email);
+  const at = s.indexOf("@");
+  return at === -1 ? s : s.slice(0, at);
+}
+
+/**
+ * Matches one usermgmt user against the trex users, by usermgmt's username
+ * (misleadingly carried in the `email` field — see planMigration's doc) since
+ * the two stores share no identifier and don't even agree on what they're
+ * matching: usermgmt has a username, trex has an email.
+ *
+ * 1. Exact, case-insensitive match of the username against a trex email.
+ * 2. Failing that, case-insensitive match of the username against the local
+ *    part of a trex email (before the @) — covers 'admin' matching
+ *    'admin@trex.local'.
+ * 3. If step 2 yields more than one candidate, this is not a match: returns
+ *    { ambiguous: [...candidate emails] } rather than guessing. Assigning one
+ *    person's roles to another is worse than assigning nobody's.
+ *
+ * Returns { trexUser } | { ambiguous: string[] } | null (no match at all).
+ */
+export function matchTrexUser(username, byEmail, byLocalPart) {
+  const key = normalize(username);
+
+  const exact = byEmail.get(key);
+  if (exact) return { trexUser: exact };
+
+  const candidates = byLocalPart.get(key) ?? [];
+  if (candidates.length === 1) return { trexUser: candidates[0] };
+  if (candidates.length > 1) {
+    return { ambiguous: candidates.map((u) => u.email) };
+  }
+  return null;
+}
+
+function indexTrexUsers(trexUsers) {
+  const byEmail = new Map(trexUsers.map((u) => [normalize(u.email), u]));
+  const byLocalPart = new Map();
+  for (const u of trexUsers) {
+    const key = localPart(u.email);
+    if (!key) continue;
+    if (!byLocalPart.has(key)) byLocalPart.set(key, []);
+    byLocalPart.get(key).push(u);
+  }
+  return { byEmail, byLocalPart };
+}
+
 /**
  * Plans the migration: which usermgmt users need re-keying to their trex user
- * id, which role assignments their existing groups translate to, and which
- * usermgmt users have no matching trex account at all.
+ * id, which role assignments their existing groups translate to, which
+ * usermgmt users have no matching trex account at all, and which usermgmt
+ * users matched more than one trex account and were migrated for neither.
  *
- * usermgmtUsers: [{ id, email, idpUserId }]
+ * usermgmtUsers: [{ id, email, idpUserId }] — `email` here is usermgmt's
+ *   username column; it is named `email` for continuity with earlier drafts
+ *   of this planner and because the exact-match path treats it as one. See
+ *   matchTrexUser for the actual matching rule.
  * trexUsers: [{ id, email }]
  * groups: [{ userId, role, scopes? }] — one entry per usermgmt.user_group row,
  *   userId is the usermgmt user id, scopes already resolved (see
  *   buildGroupRoleAndScopes).
  */
 export function planMigration(usermgmtUsers, trexUsers, groups) {
-  const byEmail = new Map(
-    trexUsers.map((u) => [String(u.email ?? "").trim().toLowerCase(), u]),
-  );
+  const { byEmail, byLocalPart } = indexTrexUsers(trexUsers);
 
   const rekey = [];
   const assign = [];
   const unmatched = [];
+  const ambiguous = [];
 
   for (const user of usermgmtUsers) {
-    const email = String(user.email ?? "").trim().toLowerCase();
-    const trexUser = byEmail.get(email);
-    if (!trexUser) {
+    const match = matchTrexUser(user.email, byEmail, byLocalPart);
+
+    if (!match) {
       unmatched.push(user.email);
       continue;
     }
+    if (match.ambiguous) {
+      ambiguous.push({ email: user.email, candidates: match.ambiguous });
+      continue;
+    }
+
+    const trexUser = match.trexUser;
 
     // Skip users already pointing at trex so the command can be re-run after a
     // partial failure without producing spurious changes.
@@ -186,8 +249,15 @@ export function planMigration(usermgmtUsers, trexUsers, groups) {
     }
   }
 
-  return { rekey, assign, unmatched };
+  return { rekey, assign, unmatched, ambiguous };
 }
+
+// Thrown for a failure this script cannot fix by itself — the stack isn't
+// reachable, or trex rejected a call because of that. Caught at the top level
+// and reported as a short message, never a raw stack trace: an operator
+// running a tool that rewrites identity keys should never have to read
+// execFileSync internals to find out docker isn't running.
+class EnvironmentError extends Error {}
 
 function escapeSqlLiteral(value) {
   return String(value).replace(/'/g, "''");
@@ -203,34 +273,63 @@ function psqlArgs(extra) {
   return ["exec", psqlContainer(), "psql", "-h", "localhost", "-U", user, "-d", database, ...extra];
 }
 
+function dbEnvironmentError(cause) {
+  const container = psqlContainer();
+  const detail = String(cause?.stderr ?? cause?.message ?? "").trim();
+  return new EnvironmentError(
+    `Could not reach the Postgres container "${container}". ` +
+      `Make sure the d2e stack is running and that PROJECT_NAME matches it ` +
+      `(currently "${process.env.PROJECT_NAME || "d2e"}").` +
+      (detail ? `\n(${detail})` : ""),
+  );
+}
+
 // Runs a read-only query and returns its rows as parsed JSON. Wraps the query
 // so a single psql invocation always yields exactly one JSON array, empty rows
 // included, regardless of the underlying result shape.
 function queryJson(sql) {
   const wrapped = `SELECT COALESCE(json_agg(row_to_json(t)), '[]'::json) FROM (${sql}) t;`;
-  const out = execFileSync("docker", psqlArgs(["-tAc", wrapped]), { encoding: "utf-8" });
-  return JSON.parse(out.trim() || "[]");
+  try {
+    const out = execFileSync("docker", psqlArgs(["-tAc", wrapped]), { encoding: "utf-8" });
+    return JSON.parse(out.trim() || "[]");
+  } catch (err) {
+    throw dbEnvironmentError(err);
+  }
 }
 
 function execSql(sql) {
-  execFileSync("docker", psqlArgs(["-c", sql]), { stdio: "inherit" });
+  try {
+    execFileSync("docker", psqlArgs(["-c", sql]), { stdio: "inherit" });
+  } catch (err) {
+    throw dbEnvironmentError(err);
+  }
 }
 
 async function assignRole(userId, role) {
   const baseUrl = process.env.TREX__ADMIN_URL;
   if (!baseUrl) {
-    throw new Error("TREX__ADMIN_URL is not set; cannot assign roles in trex");
+    throw new EnvironmentError("TREX__ADMIN_URL is not set; cannot assign roles in trex.");
   }
-  const res = await fetch(`${baseUrl}/assign`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${process.env.TREX__SERVICE_ROLE_KEY ?? ""}`,
-    },
-    body: JSON.stringify({ userId, role }),
-  });
+  let res;
+  try {
+    res = await fetch(`${baseUrl}/assign`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${process.env.TREX__SERVICE_ROLE_KEY ?? ""}`,
+      },
+      body: JSON.stringify({ userId, role }),
+    });
+  } catch (err) {
+    throw new EnvironmentError(
+      `Could not reach trex at ${baseUrl}. Make sure the d2e stack is running and ` +
+        `TREX__ADMIN_URL is correct.\n(${err?.message ?? err})`,
+    );
+  }
   if (!res.ok) {
-    throw new Error(`trex role assign failed for user ${userId}, role "${role}": ${res.status}`);
+    throw new EnvironmentError(
+      `trex rejected role assignment for user ${userId}, role "${role}": HTTP ${res.status}`,
+    );
   }
 }
 
@@ -243,9 +342,15 @@ function printPlan(plan) {
   for (const a of plan.assign) {
     console.log(`  ${a.email} (${a.userId}): ${a.role}`);
   }
-  console.log(`\nUnmatched usermgmt users, no trex account by email (${plan.unmatched.length}):`);
+  console.log(`\nUnmatched usermgmt users, no trex account found (${plan.unmatched.length}):`);
   for (const email of plan.unmatched) {
     console.log(`  ${email}`);
+  }
+  console.log(
+    `\nAmbiguous usermgmt users, more than one candidate trex account and migrated for none (${plan.ambiguous.length}):`,
+  );
+  for (const a of plan.ambiguous) {
+    console.log(`  ${a.email}: candidates ${a.candidates.join(", ")}`);
   }
   if (plan.rekey.length > 0) {
     console.log(
@@ -273,14 +378,7 @@ function writeRollbackFile(filePath, rekey) {
   writeFileSync(filePath, JSON.stringify(rollbackRows(rekey), null, 2));
 }
 
-/**
- * Reads the current state of usermgmt and trex, plans the migration, prints
- * it, and — only with apply: true — performs it: role assignments first, then
- * the re-key, so a run that fails partway leaves affected users still on
- * Logto with some roles already copied (recoverable by re-running) rather than
- * on trex with none (locked out).
- */
-export async function runMigration({ apply = false } = {}) {
+async function runMigrationUnsafe({ apply }) {
   const usermgmtUsers = queryJson(
     `SELECT id, username AS email, idp_user_id AS "idpUserId" FROM usermgmt."user"`,
   );
@@ -330,9 +428,9 @@ export async function runMigration({ apply = false } = {}) {
     rollbackPath = rollbackFilePath();
     writeRollbackFile(rollbackPath, plan.rekey);
   }
-  const usermgmtById = new Map(usermgmtUsers.map((u) => [String(u.email ?? "").trim().toLowerCase(), u]));
+  const usermgmtById = new Map(usermgmtUsers.map((u) => [normalize(u.email), u]));
   for (const r of plan.rekey) {
-    const source = usermgmtById.get(r.email.trim().toLowerCase());
+    const source = usermgmtById.get(normalize(r.email));
     if (!source) continue;
     execSql(`
       UPDATE usermgmt."user"
@@ -346,6 +444,30 @@ export async function runMigration({ apply = false } = {}) {
 
   console.log("\nMigration complete.");
   return plan;
+}
+
+/**
+ * Reads the current state of usermgmt and trex, plans the migration, prints
+ * it, and — only with apply: true — performs it: role assignments first, then
+ * the re-key, so a run that fails partway leaves affected users still on
+ * Logto with some roles already copied (recoverable by re-running) rather than
+ * on trex with none (locked out).
+ *
+ * An environmental failure (docker/postgres unreachable, trex unreachable or
+ * rejecting the call) is reported as a short message and exits the process
+ * with status 1 — not a raw stack trace — regardless of whether this was
+ * invoked from the CLI or run standalone.
+ */
+export async function runMigration({ apply = false } = {}) {
+  try {
+    return await runMigrationUnsafe({ apply });
+  } catch (err) {
+    if (err instanceof EnvironmentError) {
+      console.error(`\n${err.message}`);
+      process.exit(1);
+    }
+    throw err;
+  }
 }
 
 const isMainModule = import.meta.url === `file://${process.argv[1]}`;
