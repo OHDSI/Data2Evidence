@@ -7,20 +7,64 @@
 // application roles. Users are matched by email because the two stores share no
 // identifier — which is the whole reason a migration is needed.
 //
-// canonicalRoleNames and datasetResearcherScopes below are deliberate
-// duplicates of the functions of the same behaviour in
+// canonicalRoleNames, the ROLES/LOGTO_ROLES/LOGTO_ROLE_NAMES maps, and
+// datasetResearcherScopes below are deliberate duplicates of the functions and
+// constants of the same behaviour in
 // plugins/functions/alp-usermgmt/src/services/UserGroupService.ts and
 // plugins/functions/alp-usermgmt/src/const.ts. This script runs under plain
 // Node; that package is Deno-only TypeScript (typedi, Deno.env, jsr: imports),
 // so it cannot be imported from here. Keep the two copies in sync by hand —
 // each is covered by its own tests pinning the same canonical strings.
 //
-// Dry run by default. Nothing about this is reversible once applied.
+// Dry run by default. --apply writes a rollback file before re-keying anyone
+// (see rollbackFilePath), but the role assignments it makes in trex are not
+// undone by it.
 
 import { execFileSync } from "node:child_process";
+import { writeFileSync } from "node:fs";
+import { resolve } from "node:path";
 
-// ROLES.STUDY_RESEARCHER in plugins/functions/alp-usermgmt/src/const.ts.
-const STUDY_RESEARCHER_ROLE = "RESEARCHER";
+// ROLES (the internal role constants) and LOGTO_ROLES / LOGTO_ROLE_NAMES (the
+// canonical role-name strings) below are deliberate duplicates of
+// plugins/functions/alp-usermgmt/src/const.ts. See the file header for why.
+const ROLES = {
+  ALP_USER_ADMIN: "ALP_USER_ADMIN",
+  ALP_SYSTEM_ADMIN: "ALP_SYSTEM_ADMIN",
+  ALP_DASHBOARD_VIEWER: "ALP_DASHBOARD_VIEWER",
+  ETL_MAPPING_CONTRIBUTOR: "ETL_MAPPING_CONTRIBUTOR",
+  TENANT_ADMIN: "TENANT_ADMIN",
+  TENANT_VIEWER: "TENANT_VIEWER",
+  STUDY_ADMIN: "STUDY_ADMIN",
+  STUDY_RESEARCHER: "RESEARCHER",
+  STUDY_WRITE_DQD_RESEARCHER: "STUDY_WRITE_DQD_RESEARCHER",
+  STUDY_RESULTS_READ_RESEARCHER: "STUDY_RESULTS_READ_RESEARCHER",
+  ALP_SHARED: "ALP_SHARED",
+};
+
+const LOGTO_ROLES = {
+  USER_ADMIN: "role.useradmin",
+  SYSTEM_ADMIN: "role.systemadmin",
+  DASHBOARD_VIEWER: "role.dashboardviewer",
+  TENANT_VIEWER: "role.viewer",
+  RESEARCHER: "role.researcher",
+  JOB_RUNNER: "role.jobrunner",
+  STUDY_RESULTS_READER: "role.studyresultsreader",
+  ETL_MAPPING_CONTRIBUTOR: "role.etlmappingcontributor",
+};
+
+// Internal ROLES.* -> canonical role.* name. Roles with no entry here
+// (TENANT_ADMIN, STUDY_ADMIN, ALP_SHARED) fall back to their raw name, exactly
+// as LOGTO_ROLE_NAMES[role] || role does in UserGroupService.ts.
+const LOGTO_ROLE_NAMES = {
+  [ROLES.ALP_USER_ADMIN]: LOGTO_ROLES.USER_ADMIN,
+  [ROLES.ALP_SYSTEM_ADMIN]: LOGTO_ROLES.SYSTEM_ADMIN,
+  [ROLES.ALP_DASHBOARD_VIEWER]: LOGTO_ROLES.DASHBOARD_VIEWER,
+  [ROLES.TENANT_VIEWER]: LOGTO_ROLES.TENANT_VIEWER,
+  [ROLES.STUDY_RESEARCHER]: LOGTO_ROLES.RESEARCHER,
+  [ROLES.STUDY_WRITE_DQD_RESEARCHER]: LOGTO_ROLES.JOB_RUNNER,
+  [ROLES.STUDY_RESULTS_READ_RESEARCHER]: LOGTO_ROLES.STUDY_RESULTS_READER,
+  [ROLES.ETL_MAPPING_CONTRIBUTOR]: LOGTO_ROLES.ETL_MAPPING_CONTRIBUTOR,
+};
 
 // Kebab-case because Logto rejected spaces in scope names; trex stores the
 // canonical sec_role names directly. Mirrors WEBAPI_RESEARCHER_SCOPES in
@@ -75,20 +119,28 @@ export function canonicalRoleNames(role, scopes) {
  * buildLogtoRoleName does via a dataset lookup, rather than read from a column
  * that does not exist.
  *
+ * The role name itself goes through LOGTO_ROLE_NAMES first, same as
+ * buildLogtoRoleName: a dataset-scoped researcher group is
+ * "role.researcher.<tokenDatasetCode>", not "RESEARCHER.<tokenDatasetCode>" —
+ * ROLES.STUDY_RESEARCHER is the internal value stored in b2c_group.role, but
+ * LOGTO_ROLES.RESEARCHER ("role.researcher") is the name trex actually stores.
+ *
  * Returns null when a RESEARCHER group's dataset cannot be resolved, matching
  * buildLogtoRoleName's own skip-and-warn behaviour — such a group contributes
  * no role assignment rather than one built from missing data.
  */
 export function buildGroupRoleAndScopes(group, datasetsById) {
-  if (group.role === STUDY_RESEARCHER_ROLE && group.studyId) {
+  const logtoRole = LOGTO_ROLE_NAMES[group.role] || group.role;
+
+  if (group.role === ROLES.STUDY_RESEARCHER && group.studyId) {
     const dataset = datasetsById.get(group.studyId);
     if (!dataset?.tokenDatasetCode) {
       return null;
     }
-    const role = `${STUDY_RESEARCHER_ROLE}.${dataset.tokenDatasetCode}`;
+    const role = `${logtoRole}.${dataset.tokenDatasetCode}`;
     return { role, scopes: datasetResearcherScopes(role, group.studyId, dataset.type) };
   }
-  return { role: group.role, scopes: [group.role] };
+  return { role: logtoRole, scopes: [logtoRole] };
 }
 
 /**
@@ -195,6 +247,30 @@ function printPlan(plan) {
   for (const email of plan.unmatched) {
     console.log(`  ${email}`);
   }
+  if (plan.rekey.length > 0) {
+    console.log(
+      `\n--apply will write a rollback file (idp-rekey-<timestamp>.json) recording ` +
+        `{ username, from, to } for every user above before re-keying any of them.`,
+    );
+  }
+}
+
+// One JSON array of { username, from, to } per re-keyed user, named with the
+// UTC time the run started so repeated runs never collide. Written before the
+// first UPDATE — an admin who needs to reverse the re-key later has the old
+// idp_user_id for every affected user, without usermgmt owning a metadata
+// column purely to hold it.
+function rollbackFilePath() {
+  const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+  return resolve(process.cwd(), `idp-rekey-${timestamp}.json`);
+}
+
+export function rollbackRows(rekey) {
+  return rekey.map((r) => ({ username: r.email, from: r.from, to: r.to }));
+}
+
+function writeRollbackFile(filePath, rekey) {
+  writeFileSync(filePath, JSON.stringify(rollbackRows(rekey), null, 2));
 }
 
 /**
@@ -246,21 +322,26 @@ export async function runMigration({ apply = false } = {}) {
   }
 
   console.log(`Applying ${plan.rekey.length} re-key(s)...`);
-  // user_metadata does not exist on usermgmt."user" yet: this migration is
-  // what first needs it, so it is created here rather than in a separate
-  // migration this script would then depend on.
-  execSql(`ALTER TABLE usermgmt."user" ADD COLUMN IF NOT EXISTS user_metadata JSONB DEFAULT '{}'::jsonb;`);
+  let rollbackPath = null;
+  if (plan.rekey.length > 0) {
+    // Written before the first UPDATE: usermgmt owns its own table's schema
+    // (migrations, ORM) and this CLI must not alter it, so the previous
+    // idp_user_id is preserved out-of-band instead of in a new column.
+    rollbackPath = rollbackFilePath();
+    writeRollbackFile(rollbackPath, plan.rekey);
+  }
   const usermgmtById = new Map(usermgmtUsers.map((u) => [String(u.email ?? "").trim().toLowerCase(), u]));
   for (const r of plan.rekey) {
     const source = usermgmtById.get(r.email.trim().toLowerCase());
     if (!source) continue;
     execSql(`
       UPDATE usermgmt."user"
-         SET user_metadata = COALESCE(user_metadata, '{}'::jsonb)
-                           || jsonb_build_object('previousIdpUserId', idp_user_id),
-             idp_user_id = '${escapeSqlLiteral(r.to)}'
+         SET idp_user_id = '${escapeSqlLiteral(r.to)}'
        WHERE id = '${escapeSqlLiteral(source.id)}'
     `);
+  }
+  if (rollbackPath) {
+    console.log(`\nWrote rollback file: ${rollbackPath}`);
   }
 
   console.log("\nMigration complete.");

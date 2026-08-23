@@ -1,5 +1,10 @@
-import { assertEquals } from "jsr:@std/assert";
-import { buildGroupRoleAndScopes, canonicalRoleNames, planMigration } from "../migrate-idp-roles.mjs";
+import { assertEquals, assertMatch } from "jsr:@std/assert";
+import {
+  buildGroupRoleAndScopes,
+  canonicalRoleNames,
+  planMigration,
+  rollbackRows,
+} from "../migrate-idp-roles.mjs";
 
 Deno.test("matches users by email and plans a re-key plus role assignments", () => {
   const plan = planMigration(
@@ -77,10 +82,19 @@ Deno.test("an unrecognised scope is passed through untouched", () => {
 
 // --- buildGroupRoleAndScopes: reconstructs the {role, scopes} pair that
 // usermgmt.user_group cannot store directly, since it has no scopes column.
+// The role name goes through the same LOGTO_ROLE_NAMES map buildLogtoRoleName
+// (UserGroupService.ts) uses — trex stores "role.useradmin", not "ALP_USER_ADMIN".
 
-Deno.test("a non-researcher group is its own role and sole scope", () => {
+Deno.test("an unscoped group maps to its LOGTO_ROLE_NAMES entry", () => {
   const built = buildGroupRoleAndScopes({ role: "ALP_USER_ADMIN", studyId: null }, new Map());
-  assertEquals(built, { role: "ALP_USER_ADMIN", scopes: ["ALP_USER_ADMIN"] });
+  assertEquals(built, { role: "role.useradmin", scopes: ["role.useradmin"] });
+});
+
+Deno.test("a role with no LOGTO_ROLE_NAMES entry falls back to its raw name", () => {
+  // TENANT_ADMIN, STUDY_ADMIN and ALP_SHARED are not in the map, same as
+  // LOGTO_ROLE_NAMES[role] || role in UserGroupService.ts.
+  const built = buildGroupRoleAndScopes({ role: "STUDY_ADMIN", studyId: null }, new Map());
+  assertEquals(built, { role: "STUDY_ADMIN", scopes: ["STUDY_ADMIN"] });
 });
 
 Deno.test("a dataset-scoped researcher group expands to the full scope set for a webapi dataset", () => {
@@ -88,9 +102,12 @@ Deno.test("a dataset-scoped researcher group expands to the full scope set for a
     ["ds-1", { id: "ds-1", tokenDatasetCode: "Demo", type: "webapi" }],
   ]);
   const built = buildGroupRoleAndScopes({ role: "RESEARCHER", studyId: "ds-1" }, datasetsById);
-  assertEquals(built.role, "RESEARCHER.Demo");
+  // "role.researcher.<code>", not "RESEARCHER.<code>": LOGTO_ROLES.RESEARCHER
+  // is the canonical name trex stores, ROLES.STUDY_RESEARCHER ("RESEARCHER")
+  // is only the internal value in b2c_group.role.
+  assertEquals(built.role, "role.researcher.Demo");
   assertEquals(built.scopes, [
-    "RESEARCHER.Demo",
+    "role.researcher.Demo",
     "role.researcher.ds-1",
     "source-user-ds-1",
     "cohort-reader",
@@ -104,7 +121,7 @@ Deno.test("a non-webapi dataset gets the base researcher scopes only", () => {
     ["ds-1", { id: "ds-1", tokenDatasetCode: "Demo", type: "hana" }],
   ]);
   const built = buildGroupRoleAndScopes({ role: "RESEARCHER", studyId: "ds-1" }, datasetsById);
-  assertEquals(built.scopes, ["RESEARCHER.Demo", "role.researcher.ds-1"]);
+  assertEquals(built.scopes, ["role.researcher.Demo", "role.researcher.ds-1"]);
 });
 
 Deno.test("a researcher group whose dataset cannot be resolved is skipped, not guessed at", () => {
@@ -135,7 +152,7 @@ Deno.test("a researcher group contributes every canonical name it grants, not ju
   assertEquals(
     plan.assign.map((a) => a.role),
     [
-      "RESEARCHER.Demo",
+      "role.researcher.Demo",
       "role.researcher.ds-1",
       "Source user (ds-1)",
       "cohort reader",
@@ -143,4 +160,33 @@ Deno.test("a researcher group contributes every canonical name it grants, not ju
       "concept set creator",
     ],
   );
+});
+
+// --- rollbackRows: the content written to the rollback file before the
+// re-key. Written out-of-band because usermgmt owns its own table's schema —
+// this CLI must not add a column to it to hold the previous idp_user_id.
+
+Deno.test("rollback rows carry username/from/to for every re-keyed user, nothing else", () => {
+  const rows = rollbackRows([
+    { email: "a@x.test", from: "logto-a", to: "trex-a" },
+    { email: "b@x.test", from: null, to: "trex-b" },
+  ]);
+  assertEquals(rows, [
+    { username: "a@x.test", from: "logto-a", to: "trex-a" },
+    { username: "b@x.test", from: null, to: "trex-b" },
+  ]);
+});
+
+Deno.test("an empty rekey plan produces an empty rollback file, not one entry per usermgmt user", () => {
+  assertEquals(rollbackRows([]), []);
+});
+
+Deno.test("rollback rows serialise to valid, re-parseable JSON", () => {
+  const json = JSON.stringify(
+    rollbackRows([{ email: "a@x.test", from: "logto-a", to: "trex-a" }]),
+    null,
+    2,
+  );
+  assertMatch(json, /"username": "a@x\.test"/);
+  assertEquals(JSON.parse(json), [{ username: "a@x.test", from: "logto-a", to: "trex-a" }]);
 });
