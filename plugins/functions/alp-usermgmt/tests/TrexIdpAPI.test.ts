@@ -1,5 +1,5 @@
-import { assertEquals, assertRejects } from "jsr:@std/assert";
-import { TrexIdpAPI } from "../src/api/TrexIdpAPI.ts";
+import { assertEquals, assertRejects, assertThrows } from "jsr:@std/assert";
+import { TrexIdpAPI, resolveServiceRoleKey } from "../src/api/TrexIdpAPI.ts";
 
 const stubFetch = (calls: Array<{ url: string; body: unknown }>, status = 204) =>
   ((url: string, init: RequestInit) => {
@@ -36,4 +36,36 @@ Deno.test("a failed call raises rather than reporting success", async () => {
   // stored when it is not.
   const api = new TrexIdpAPI("http://trex/admin/roles", "key", stubFetch([], 500));
   await assertRejects(() => api.assignRolesToUser("user-1", ["USER_ADMIN"]));
+});
+
+Deno.test("an explicit TREX__SERVICE_ROLE_KEY wins over the injected supabase key", () => {
+  assertEquals(resolveServiceRoleKey("explicit-key", "injected-key"), "explicit-key");
+});
+
+Deno.test("the supabase-injected key is used when no override is set", () => {
+  assertEquals(resolveServiceRoleKey(undefined, "injected-key"), "injected-key");
+});
+
+Deno.test("neither variable set raises an error naming both", () => {
+  assertThrows(
+    () => resolveServiceRoleKey(undefined, undefined),
+    Error,
+    "TREX__SERVICE_ROLE_KEY",
+  );
+  assertThrows(
+    () => resolveServiceRoleKey(undefined, undefined),
+    Error,
+    "SUPABASE_SERVICE_ROLE_KEY",
+  );
+});
+
+Deno.test("assigning with no service role key raises rather than issuing a request", async () => {
+  const calls: Array<{ url: string; body: unknown }> = [];
+  const api = new TrexIdpAPI("http://trex/admin/roles", "", stubFetch(calls));
+  await assertRejects(
+    () => api.assignRolesToUser("user-1", ["USER_ADMIN"]),
+    Error,
+    "TREX__SERVICE_ROLE_KEY",
+  );
+  assertEquals(calls.length, 0);
 });
