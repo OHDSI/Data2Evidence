@@ -33,6 +33,15 @@ export function resolveRoleStore(raw: string | undefined): 'trex' | 'logto' {
   return raw === 'logto' ? 'logto' : 'trex'
 }
 
+// LOGTO__ROLES_SCOPES (docker-compose.yml) paired these Logto roles with extra
+// scopes that are webapi.sec_role names in their own right, not Logto/trex
+// role names. That pairing lived only in Logto's configuration, so it has to
+// be reproduced here for those names to keep reaching WebAPI.
+const IMPLIED_CANONICAL_ROLES: Record<string, string[]> = {
+  'role.systemadmin': ['admin'],
+  'role.viewer': ['anonymous']
+}
+
 /**
  * The canonical names one group grants, from the Logto role and scope pair.
  *
@@ -60,7 +69,10 @@ export function canonicalRoleNames(role: string, scopes: string[]): string[] {
     return kebab[name] ?? name
   }
 
-  return [...new Set([role, ...scopes].map(expand))]
+  const input = [role, ...scopes]
+  const implied = input.flatMap(name => IMPLIED_CANONICAL_ROLES[name] ?? [])
+
+  return [...new Set([...input, ...implied].map(expand))]
 }
 
 @Service()

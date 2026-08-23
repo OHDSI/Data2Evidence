@@ -46,3 +46,37 @@ Deno.test("an unrecognised scope is passed through untouched", () => {
   // Better a name nothing maps than a silently dropped grant.
   assertEquals(canonicalRoleNames("X", ["X", "some-future-scope"]), ["X", "some-future-scope"]);
 });
+
+// --- LOGTO__ROLES_SCOPES fan-out (docker-compose.yml): under Logto these two
+// roles also carried a webapi.sec_role name that is not a role/scope name of
+// its own. That pairing lived only in Logto's configuration, so it must be
+// reproduced here or the trex path silently drops it.
+
+Deno.test("role.systemadmin also grants the WebAPI admin role", () => {
+  const names = canonicalRoleNames("role.systemadmin", ["role.systemadmin"]);
+  assertEquals(names, ["role.systemadmin", "admin"]);
+});
+
+Deno.test("role.viewer also grants the WebAPI anonymous role", () => {
+  const names = canonicalRoleNames("role.viewer", ["role.viewer"]);
+  assertEquals(names, ["role.viewer", "anonymous"]);
+});
+
+Deno.test("the researcher expansion is unaffected by the fan-out and still yields its full six names", () => {
+  const names = canonicalRoleNames("RESEARCHER.Demo", [
+    "RESEARCHER.Demo",
+    "role.researcher.7dffaaeb-c3cd-434c-bd2c-08cb34267acc",
+    "source-user-7dffaaeb-c3cd-434c-bd2c-08cb34267acc",
+    "cohort-reader",
+    "cohort-creator",
+    "concept-set-creator",
+  ]);
+  assertEquals(names, [
+    "RESEARCHER.Demo",
+    "role.researcher.7dffaaeb-c3cd-434c-bd2c-08cb34267acc",
+    "Source user (7dffaaeb-c3cd-434c-bd2c-08cb34267acc)",
+    "cohort reader",
+    "cohort creator",
+    "concept set creator",
+  ]);
+});
