@@ -171,13 +171,15 @@ services:
       # it is the same container that issues the tokens, so there is no TLS or
       # forwarded-header question to work around.
       SECURITY_AUTH_OIDC_CLIENTID: ${TREX__OIDC__WEBAPI_CLIENT_ID:-d2e-webapi}
-      SECURITY_AUTH_OIDC_APISECRET: ${TREX__OIDC__WEBAPI_CLIENT_SECRET}
+      SECURITY_AUTH_OIDC_APISECRET: ${TREX__OIDC__WEBAPI_CLIENT_SECRET:?TREX__OIDC__WEBAPI_CLIENT_SECRET must be set (run d2e init)}
       SECURITY_AUTH_OIDC_URL: "http://${PROJECT_NAME:-d2e}-trex:33001/trex/oidc/.well-known/openid-configuration"
       # External URL for browser redirects - used to rewrite internal OIDC URLs to external ones
       SECURITY_AUTH_OIDC_EXTERNALURL: "https://${CADDY__D2E__PUBLIC_FQDN:-${CADDY__ALP__PUBLIC_FQDN:-localhost}}:${CADDY_PORT:-${PORT:-443}}/trex/oidc"
       SECURITY_AUTH_OIDC_LOGOUTURL: "https://${CADDY__D2E__PUBLIC_FQDN:-${CADDY__ALP__PUBLIC_FQDN:-localhost}}:${CADDY_PORT:-${PORT:-443}}/trex/oidc/session/end"
-      # trex emits the role as `trex_role`; Logto emitted a `roles` array.
-      SECURITY_AUTH_OIDC_ROLESCLAIM: "trex_role"
+      # trex emits the application role array as `roles`; `trex_role` is a
+      # different claim entirely — trex's own admin/user system role, which
+      # must never be read as a WebAPI role.
+      SECURITY_AUTH_OIDC_ROLESCLAIM: "roles"
       # NOTE: scopes `openid profile email` are added by default by the new WebAPI; extraScopes no longer required
       # OAuth callback URLs - must use external URL for browser redirects
       # NOTE: callback path now includes /openid segment (Spring oauth2Login convention).
@@ -250,7 +252,7 @@ services:
       # registration is upserted on every boot, so these values are the source of
       # truth and a changed URL needs no manual fix-up.
       TREX_OIDC_CLIENT_ID: ${TREX__OIDC__WEBAPI_CLIENT_ID:-d2e-webapi}
-      TREX_OIDC_CLIENT_SECRET: ${TREX__OIDC__WEBAPI_CLIENT_SECRET}
+      TREX_OIDC_CLIENT_SECRET: ${TREX__OIDC__WEBAPI_CLIENT_SECRET:?TREX__OIDC__WEBAPI_CLIENT_SECRET must be set (run d2e init)}
       TREX_OIDC_CLIENT_NAME: "D2E WebAPI"
       # Spring's oauth2Login appends the registration id, hence the /openid tail.
       TREX_OIDC_CLIENT_REDIRECT_URIS: "https://${CADDY__D2E__PUBLIC_FQDN:-${CADDY__ALP__PUBLIC_FQDN:-localhost}}:${CADDY_PORT:-${PORT:-443}}/WebAPI/user/oauth/callback/openid"
@@ -463,6 +465,11 @@ services:
       AUTO_GRANT_RESEARCHER_BY_DATASET_CODES: ${AUTO_GRANT_RESEARCHER_BY_DATASET_CODES:-${AZ_AUTO_GRANT_RESEARCHER_BY_DATASET_CODES:-}}
       IDP__AUTO_PROVISION_USERS: ${IDP__AUTO_PROVISION_USERS:-false}
       USER_MGMT__ROLE_SOURCE: ${USER_MGMT__ROLE_SOURCE:-logto}
+      # Role assignments are written to trex, which is also the identity provider
+      # issuing the tokens they travel in.
+      IDP__ROLE_STORE: "trex"
+      TREX__ADMIN_URL: "http://${PROJECT_NAME:-d2e}-trex:33001/trex/admin/roles"
+      TREX__SERVICE_ROLE_KEY: ${TREX__SERVICE_ROLE_KEY}
       USERMGMT__AUTO_PROVISION_ENABLED: ${USERMGMT__AUTO_PROVISION_ENABLED:-false}
       USERMGMT__AUTO_PROVISION_CONNECTORS: ${USERMGMT__AUTO_PROVISION_CONNECTORS:-}
       USERMGMT__AUTO_PROVISION_DEFAULT_TENANT_ID: ${USERMGMT__AUTO_PROVISION_DEFAULT_TENANT_ID:-}
