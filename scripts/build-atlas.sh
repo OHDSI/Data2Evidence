@@ -83,7 +83,9 @@ echo "[build-atlas] Staged patient-analytics at /atlas/plugins/patient-analytics
 echo "[build-atlas] Packing Atlas plugin into $ARTIFACTS_DIR ..."
 mkdir -p "$ARTIFACTS_DIR"
 rm -f "$ARTIFACTS_DIR"/data2evidence-atlas-*.tgz
-TARBALL="$(cd "$ATLAS_DIR" && npm pack --silent)"
+# --silent quiets npm itself but not the prepack hook, whose verify-plugins
+# output would otherwise end up in $TARBALL. The filename is the last line.
+TARBALL="$(cd "$ATLAS_DIR" && npm pack --silent | tail -n 1)"
 mv "$ATLAS_DIR/$TARBALL" "$ARTIFACTS_DIR/"
 echo "[build-atlas] Staged $ARTIFACTS_DIR/$TARBALL"
 echo "[build-atlas] Done. Build the trex image to bake it in (docker compose build trex)."
