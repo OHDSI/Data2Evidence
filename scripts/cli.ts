@@ -263,12 +263,16 @@ class D2ECli {
       SUPABASE_STORAGE_JWT_SECRET: `${this.SUPABASE_STORAGE_JWT_SECRET}`,
       SUPABASE_STORAGE_JWT_TOKEN: `${this.SUPABASE_STORAGE_JWT_TOKEN}`,
       PROJECT_NAME: `${this.PROJECT_NAME}`,
-      USER_MGMT__ROLE_SOURCE: `logto`,
+      // Roles come from usermgmt's own groups. The 'logto' setting makes it ask
+      // Logto's API instead, which cannot answer for a user who authenticated
+      // against trex.
+      USER_MGMT__ROLE_SOURCE: `usermgmt`,
       TREX__SQL__PASSWORD: `${this.generate_random_password(
         this.DEFAULT_PASSWORD_LENGTH,
       )}`,
       // Shared between WebAPI's OIDC client and the registration trex seeds for
       // it, so the two are generated together and cannot drift apart.
+      TREX__OIDC__WEBAPI_CLIENT_ID: `d2e-webapi`,
       TREX__OIDC__WEBAPI_CLIENT_SECRET: `${this.generate_random_password(
         this.DEFAULT_PASSWORD_LENGTH,
       )}`,
@@ -647,10 +651,17 @@ class D2ECli {
     }
   }
 
+  /**
+   * True only for an env written before the role source was a setting at all.
+   * Those stacks still need the one-time migration; an env that names a source
+   * has already made its choice, and for anything other than logto - a
+   * deployment whose IdP is trex, say - syncing roles into Logto would be
+   * migrating them somewhere nothing reads.
+   */
   needsSyncRoles(): boolean {
     if (!fs.existsSync(this.ENVFILE)) return false;
     const env = fs.readFileSync(this.ENVFILE, "utf-8");
-    return !/^USER_MGMT__ROLE_SOURCE=logto\s*$/m.test(env);
+    return !/^USER_MGMT__ROLE_SOURCE=/m.test(env);
   }
 
   isFullStart(opts: CliOptions): boolean {
