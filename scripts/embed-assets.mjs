@@ -17,11 +17,30 @@ const atlasDbInitScripts = Object.fromEntries(
     .map((f) => [f, readFileSync(join(atlasDbInitDir, f), "utf8")])
 );
 
+// Same for the notebook-schema migration plugin: trex mounts it onto its plugin
+// path, so an unstaged mount would leave an empty plugin directory behind.
+const notebookDir = join(__dirname, "../services/trex/migrations/notebook");
+const notebookSchemaFiles = {
+  "package.json": readFileSync(join(notebookDir, "package.json"), "utf8"),
+  ...Object.fromEntries(
+    readdirSync(join(notebookDir, "migrations"))
+      .filter((f) => f.endsWith(".sql"))
+      .sort()
+      .map((f) => [
+        `migrations/${f}`,
+        readFileSync(join(notebookDir, "migrations", f), "utf8"),
+      ])
+  ),
+};
+
 writeFileSync(
   join(__dirname, "docker-compose-embed.ts"),
   `export const dockerComposeContent = ${JSON.stringify(content)};\n` +
     `export const atlasDbInitScripts: Record<string, string> = ${JSON.stringify(
       atlasDbInitScripts
+    )};\n` +
+    `export const notebookSchemaFiles: Record<string, string> = ${JSON.stringify(
+      notebookSchemaFiles
     )};\n`
 );
 

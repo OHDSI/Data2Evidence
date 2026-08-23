@@ -1068,13 +1068,15 @@ jobs:
           # trex applies atlas-db-init in d2eBoot() before it starts listening, so a
           # healthy trex means the seeding (including the logto admin user) has run.
           echo "Waiting for trex to become healthy..."
+          healthy=0
           for i in $(seq 1 60); do
             status=$(docker ps -a --filter "name=${PROJECT_NAME:-d2e}-trex" --format '{{.Status}}')
             if echo "$status" | grep -q "(healthy)"; then
               echo "trex is healthy; atlas-db-init has run"
+              healthy=1
               break
             fi
-            if echo "$status" | grep -qE "Exited \([1-9]"; then
+            if echo "$status" | grep -qE "Exited \("; then
               echo "trex failed to start!"
               docker logs ${PROJECT_NAME:-d2e}-trex || true
               exit 1
@@ -1082,6 +1084,11 @@ jobs:
             echo "Waiting for trex... ($i/60)"
             sleep 5
           done
+          if [ "$healthy" != "1" ]; then
+            echo "trex never reported healthy; atlas-db-init cannot be assumed to have run"
+            docker logs ${PROJECT_NAME:-d2e}-trex || true
+            exit 1
+          fi
 
       - name: Pull e2e Docker image
         run: |
