@@ -9,7 +9,7 @@
   "authProviders": [
     {
       "name": "OpenID",
-      "url": "../atlas-login/",
+      "url": "user/login/openid",
       "ajax": false,
       "icon": "mdi-login-variant",
       "isUseCredentialsForm": false
