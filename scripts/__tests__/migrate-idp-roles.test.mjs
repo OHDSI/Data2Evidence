@@ -2,6 +2,7 @@ import { assertEquals, assertMatch } from "jsr:@std/assert";
 import {
   buildGroupRoleAndScopes,
   canonicalRoleNames,
+  matchTrexUser,
   planMigration,
   rollbackRows,
 } from "../migrate-idp-roles.mjs";
@@ -189,4 +190,78 @@ Deno.test("rollback rows serialise to valid, re-parseable JSON", () => {
   );
   assertMatch(json, /"username": "a@x\.test"/);
   assertEquals(JSON.parse(json), [{ username: "a@x.test", from: "logto-a", to: "trex-a" }]);
+});
+
+// --- matchTrexUser: usermgmt keys users by username, trex keys them by
+// email — the stores don't even agree on what they're matching, so this is
+// tested directly, not just through planMigration.
+
+function indexed(trexUsers) {
+  const byEmail = new Map(trexUsers.map((u) => [u.email.toLowerCase(), u]));
+  const byLocalPart = new Map();
+  for (const u of trexUsers) {
+    const key = u.email.toLowerCase().split("@")[0];
+    if (!byLocalPart.has(key)) byLocalPart.set(key, []);
+    byLocalPart.get(key).push(u);
+  }
+  return { byEmail, byLocalPart };
+}
+
+Deno.test("step 1: an exact, case-insensitive match against a trex email wins outright", () => {
+  const { byEmail, byLocalPart } = indexed([{ id: "trex-a", email: "A@X.test" }]);
+  assertEquals(matchTrexUser("a@x.test", byEmail, byLocalPart), {
+    trexUser: { id: "trex-a", email: "A@X.test" },
+  });
+});
+
+Deno.test("step 2: a username matches the local part of a trex email, live-data shape", () => {
+  // The case this migration exists to handle: usermgmt username = 'admin',
+  // trex email = 'admin@trex.local'. No exact match, but exactly one
+  // local-part candidate.
+  const { byEmail, byLocalPart } = indexed([{ id: "trex-a", email: "admin@trex.local" }]);
+  assertEquals(matchTrexUser("admin", byEmail, byLocalPart), {
+    trexUser: { id: "trex-a", email: "admin@trex.local" },
+  });
+});
+
+Deno.test("step 3: two trex emails sharing a local part make the user ambiguous, not matched", () => {
+  const { byEmail, byLocalPart } = indexed([
+    { id: "trex-a", email: "admin@trex.local" },
+    { id: "trex-b", email: "admin@other.test" },
+  ]);
+  assertEquals(matchTrexUser("admin", byEmail, byLocalPart), {
+    ambiguous: ["admin@trex.local", "admin@other.test"],
+  });
+});
+
+Deno.test("no exact match and no local-part match at all is unmatched, not ambiguous", () => {
+  const { byEmail, byLocalPart } = indexed([{ id: "trex-a", email: "someone-else@trex.local" }]);
+  assertEquals(matchTrexUser("admin", byEmail, byLocalPart), null);
+});
+
+Deno.test("an ambiguous user is migrated for nothing: no rekey, no assign, reported separately from unmatched", () => {
+  const plan = planMigration(
+    [{ id: "um-1", email: "admin", idpUserId: "logto-admin" }],
+    [
+      { id: "trex-a", email: "admin@trex.local" },
+      { id: "trex-b", email: "admin@other.test" },
+    ],
+    [{ userId: "um-1", role: "USER_ADMIN" }],
+  );
+  assertEquals(plan.rekey, []);
+  assertEquals(plan.assign, []);
+  assertEquals(plan.unmatched, []);
+  assertEquals(plan.ambiguous, [
+    { email: "admin", candidates: ["admin@trex.local", "admin@other.test"] },
+  ]);
+});
+
+Deno.test("a username resolved via local-part matching still plans a re-key and role assignments", () => {
+  const plan = planMigration(
+    [{ id: "um-1", email: "admin", idpUserId: "q9j5vjrmba9x" }],
+    [{ id: "trex-a", email: "admin@trex.local" }],
+    [{ userId: "um-1", role: "USER_ADMIN" }],
+  );
+  assertEquals(plan.rekey, [{ email: "admin", from: "q9j5vjrmba9x", to: "trex-a" }]);
+  assertEquals(plan.assign, [{ email: "admin", userId: "trex-a", role: "USER_ADMIN" }]);
 });
