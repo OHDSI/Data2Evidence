@@ -1,11 +1,15 @@
+import { Service } from 'typedi'
+import { env } from '../env'
+
 // Role writes against the trex identity provider. The Logto equivalent also
 // managed scopes; trex stores role names only, and the name is what the token
 // carries and what downstream mapping reads, so there is nothing else to send.
 
+@Service()
 export class TrexIdpAPI {
   constructor(
-    private readonly baseUrl: string,
-    private readonly serviceRoleKey: string,
+    private readonly baseUrl: string = env.TREX_ADMIN_URL ?? '',
+    private readonly serviceRoleKey: string = env.TREX_SERVICE_ROLE_KEY ?? '',
     private readonly fetchImpl: typeof fetch = fetch,
   ) {}
 
