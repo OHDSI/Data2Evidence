@@ -934,15 +934,20 @@ services:
         # schema before migrating. This is a poll rather than a depends_on
         # because trex -> alp-logto-post-init -> alp-logto already exists, so an
         # edge back to trex would be a circular dependency.
-        # DB_URL already carries exactly the precondition: connecting proves the
-        # logto_postgres login exists, and to_regnamespace proves its schema does.
-        # node is used deliberately: this image has neither curl nor wget, but it
-        # does ship the pg client logto itself runs on.
+        # The gate has to be the privilege, not the schema. trex creates the schema
+        # owned by postgres and grants logto_postgres CREATE on it as a separate
+        # step, so a gate on existence alone lets logto start inside that window;
+        # it then half-seeds and dies, and because the seed is not idempotent for
+        # its logto_tenant_* roles, every later restart fails on "role already
+        # exists" - a permanent crash loop from one early start.
+        # Connecting proves the login exists, has_schema_privilege proves the
+        # grant landed. node is used deliberately: this image has neither curl nor
+        # wget, but it does ship the pg client logto itself runs on.
         until node -e "
           const { Client } = require('pg');
           const c = new Client({ connectionString: process.env.DB_URL });
           c.connect()
-            .then(() => c.query(\"select to_regnamespace('logto') is not null as ok\"))
+            .then(() => c.query(\"select case when to_regnamespace('logto') is null then false else has_schema_privilege(current_user, 'logto', 'CREATE') end as ok\"))
             .then(r => { c.end(); process.exit(r.rows[0].ok ? 0 : 1); })
             .catch(() => { try { c.end(); } catch (_) {} process.exit(1); });
         "; do
