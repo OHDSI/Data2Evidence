@@ -236,11 +236,6 @@ services:
          }
         }
       POSTGRES_MANAGE_ROLES_USERS: ${POSTGRES_MANAGE_ROLES_USERS:-{}}
-      # Beacon that flips as soon as the bootstrap above succeeds, minutes
-      # before trex itself is healthy. alp-logto polls it: it cannot use
-      # depends_on, because trex -> alp-logto-post-init -> alp-logto would
-      # make that a circular dependency.
-      D2E_BOOTSTRAP_READY_PORT: ${D2E_BOOTSTRAP_READY_PORT:-8099}
       TREX_SQL_PASSWORD: ${TREX__SQL__PASSWORD:?TREX__SQL__PASSWORD must be set (run d2e init); refusing default pencil}
       TREX__SQL__PORT: ${TREX__SQL__PORT:-5433}
       TREX__SQL__DBNAME: postgres
@@ -938,10 +933,19 @@ services:
         # Wait for trex's DB bootstrap to create logto_postgres and the logto
         # schema before migrating. This is a poll rather than a depends_on
         # because trex -> alp-logto-post-init -> alp-logto already exists, so an
-        # edge back to trex would be a circular dependency. The beacon answers
-        # as soon as the bootstrap commits, minutes before trex is healthy.
-        # node is used deliberately: this image has neither curl nor wget.
-        until node -e "fetch('http://${PROJECT_NAME:-d2e}-trex:${D2E_BOOTSTRAP_READY_PORT:-8099}/').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"; do
+        # edge back to trex would be a circular dependency.
+        # DB_URL already carries exactly the precondition: connecting proves the
+        # logto_postgres login exists, and to_regnamespace proves its schema does.
+        # node is used deliberately: this image has neither curl nor wget, but it
+        # does ship the pg client logto itself runs on.
+        until node -e "
+          const { Client } = require('pg');
+          const c = new Client({ connectionString: process.env.DB_URL });
+          c.connect()
+            .then(() => c.query(\"select to_regnamespace('logto') is not null as ok\"))
+            .then(r => { c.end(); process.exit(r.rows[0].ok ? 0 : 1); })
+            .catch(() => { try { c.end(); } catch (_) {} process.exit(1); });
+        "; do
           echo "waiting for the trex database bootstrap ..."
           sleep 2
         done
