@@ -16,13 +16,52 @@ import { B2cGroupService } from './B2cGroupService'
 import { UserService } from './UserService'
 import { IPortalDataset, ITokenUser, RoleMap, UserGroupMetadata } from '../types'
 import { createLogger } from '../Logger'
-import { LogtoAPI, PortalAPI } from '../api'
+import { LogtoAPI, PortalAPI, TrexIdpAPI } from '../api'
 import { env, getAutoGrantDatasetCodes } from '../env'
 
 export type SyncRoleResult =
   | { status: 'synced' }
   | { status: 'skipped'; reason: string }
   | { status: 'failed'; reason: string }
+
+/**
+ * Which identity provider holds role assignments. Logto remains selectable for a
+ * deployment that has not migrated; anything unrecognised means trex, so a typo
+ * fails towards the provider this system now authenticates against.
+ */
+export function resolveRoleStore(raw: string | undefined): 'trex' | 'logto' {
+  return raw === 'logto' ? 'logto' : 'trex'
+}
+
+/**
+ * The canonical names one group grants, from the Logto role and scope pair.
+ *
+ * Logto forbade spaces in scope names, so d2e stored `cohort-reader` and
+ * `source-user-<id>` and had LOGTO__CUSTOM_JWT rewrite them into the token. trex
+ * has no such limit, so the names webapi.sec_role actually holds are stored
+ * directly and no rewriting stage is needed.
+ *
+ * The scope set is what carried authorization, so every scope becomes a name:
+ * dropping any of them would quietly remove access.
+ */
+export function canonicalRoleNames(role: string, scopes: string[]): string[] {
+  const sourceUser = /^source-user-(.+)$/
+  const kebab: Record<string, string> = {
+    'cohort-reader': 'cohort reader',
+    'cohort-creator': 'cohort creator',
+    'concept-set-creator': 'concept set creator'
+  }
+
+  const expand = (name: string): string => {
+    const match = sourceUser.exec(name)
+    if (match) return `Source user (${match[1]})`
+    // Unknown scopes pass through: a name nothing maps is recoverable, a
+    // dropped grant is not.
+    return kebab[name] ?? name
+  }
+
+  return [...new Set([role, ...scopes].map(expand))]
+}
 
 @Service()
 export class UserGroupService {
@@ -33,7 +72,8 @@ export class UserGroupService {
     private readonly userGroupRepo: UserGroupRepository,
     private readonly groupService: B2cGroupService,
     private readonly userService: UserService,
-    private readonly logtoAPI: LogtoAPI
+    private readonly logtoAPI: LogtoAPI,
+    private readonly trexIdpAPI: TrexIdpAPI
   ) {}
 
   async getUserGroupsMetadataByIdpUserId(
@@ -259,12 +299,25 @@ export class UserGroupService {
 
       const { role, scopes } = logtoRole
 
+      const store = resolveRoleStore(env.IDP_ROLE_STORE)
+      // One group is one Logto role plus its scopes, but several trex roles:
+      // trex has no scope concept, so each name is stored in its own right.
+      const names = canonicalRoleNames(role, scopes)
+
       if (action === 'assign') {
-        await this.logtoAPI.assignRoleToUser(user.idpUserId, role, scopes)
-        this.logger.info(`Assigned Logto role ${role} to user ${user.idpUserId}`)
+        if (store === 'trex') {
+          await this.trexIdpAPI.assignRolesToUser(user.idpUserId, names)
+        } else {
+          await this.logtoAPI.assignRoleToUser(user.idpUserId, role, scopes)
+        }
+        this.logger.info(`Assigned ${names.length} role(s) to user ${user.idpUserId} in ${store}`)
       } else {
-        await this.logtoAPI.removeRoleFromUser(user.idpUserId, role)
-        this.logger.info(`Removed Logto role ${role} from user ${user.idpUserId}`)
+        if (store === 'trex') {
+          await this.trexIdpAPI.removeRolesFromUser(user.idpUserId, names)
+        } else {
+          await this.logtoAPI.removeRoleFromUser(user.idpUserId, role)
+        }
+        this.logger.info(`Removed ${names.length} role(s) from user ${user.idpUserId} in ${store}`)
       }
       return { status: 'synced' }
     } catch (err) {
