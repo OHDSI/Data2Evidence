@@ -131,6 +131,17 @@ if (existsSync(loginSrc)) {
   console.log('[postinstall] Copied login bridge to resources/login');
 }
 
+// D2E sign-in page (served at /d2e-login): where trex's OIDC provider sends a
+// browser that has no session, since trex hosts no login UI of its own.
+const d2eLoginSrc = join(rootDir, 'd2e-login');
+const d2eLoginDest = join(rootDir, 'resources', 'd2e-login');
+if (existsSync(d2eLoginSrc)) {
+  rmSync(d2eLoginDest, { recursive: true, force: true });
+  mkdirSync(d2eLoginDest, { recursive: true });
+  cpSync(d2eLoginSrc, d2eLoginDest, { recursive: true });
+  console.log('[postinstall] Copied D2E login page to resources/d2e-login');
+}
+
 // Table-driven plugin loader: copy each published SystemJS plugin's dist into
 // resources/atlas/plugins/<id>/ and apply any endpoint repoints. Mirrors how
 // @ohdsi/atlas3 itself is staged; see plugins.standalone.json for registration.
