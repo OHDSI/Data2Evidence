@@ -7,8 +7,8 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const content = readFileSync(join(__dirname, "../docker-compose.yml"), "utf8");
 
 // Bundle the atlas-db-init SQL scripts so the distributed CLI can stage them
-// next to the embedded compose file. The webapi-init service bind-mounts
-// ./services/atlas-db-init into /scripts, which only exists at repo root.
+// next to the embedded compose file. trex bind-mounts ./services/atlas-db-init
+// into /usr/src/atlas-db-init, a path that only exists at repo root.
 const atlasDbInitDir = join(__dirname, "../services/atlas-db-init");
 const atlasDbInitScripts = Object.fromEntries(
   readdirSync(atlasDbInitDir)

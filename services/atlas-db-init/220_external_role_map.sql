@@ -46,9 +46,6 @@ BEGIN
     RAISE NOTICE 'External role mapping: % row(s) added, % stale row(s) removed', seeded, pruned;
 END $$;
 
--- The verification SELECT that used to live here was gated with psql's \gset
--- and \if. These files are no longer run through psql: trex applies them over
--- the wire protocol, which cannot execute meta-commands, and because the simple
--- query protocol parses the whole file before executing any of it, a single
--- \gset meant NOTHING in this file ran — including the seed above. The counts
--- raised by the DO block cover what the verification query reported.
+-- Do not use psql meta-commands (\gset, \if) in this file: trex applies it over
+-- the wire protocol, and the simple query protocol parses the whole file before
+-- executing any of it, so one meta-command stops every statement from running.

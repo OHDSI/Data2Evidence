@@ -161,7 +161,6 @@ jobs:
               - "plugins/functions/query-gen-svc/**"
               - "services/mri-db/**"
               - "services/alp-logto/**"
-              - "services/alp-pg-management/**"
               - "services/trex/**"
               - "package.json"
               - "docker-compose.yml"
@@ -1064,21 +1063,23 @@ jobs:
           ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }} -c ./docker-compose-ci.yml start
 
 
-      - name: Wait for webapi-init to complete
+      - name: Wait for trex to finish the atlas-db-init seeding
         run: |
-          echo "Waiting for webapi-init to complete (ensures logto admin user is created)..."
+          # trex applies atlas-db-init in d2eBoot() before it starts listening, so a
+          # healthy trex means the seeding (including the logto admin user) has run.
+          echo "Waiting for trex to become healthy..."
           for i in $(seq 1 60); do
-            status=$(docker ps -a --filter "name=webapi-init" --format '{{.Status}}')
+            status=$(docker ps -a --filter "name=${PROJECT_NAME:-d2e}-trex" --format '{{.Status}}')
             if echo "$status" | grep -q "(healthy)"; then
-              echo "webapi-init completed successfully"
+              echo "trex is healthy; atlas-db-init has run"
               break
             fi
             if echo "$status" | grep -qE "Exited \([1-9]"; then
-              echo "webapi-init failed!"
-              docker logs d2e-webapi-init || true
+              echo "trex failed to start!"
+              docker logs ${PROJECT_NAME:-d2e}-trex || true
               exit 1
             fi
-            echo "Waiting for webapi-init... ($i/60)"
+            echo "Waiting for trex... ($i/60)"
             sleep 5
           done
 
