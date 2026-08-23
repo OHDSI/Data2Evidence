@@ -79,6 +79,11 @@ services:
       # be scanned; trex runs it against _config (the alp Postgres catalog) and
       # tracks applied versions in notebook.refinery_schema_history.
       - ./services/trex/migrations/notebook:/usr/src/bundled-plugins/notebook-schema:ro
+      # d2e's DB provisioning (login users, supabase roles, schemas, grants),
+      # applied as a trex provision plugin BEFORE any other plugin loads.
+      # Already baked into the image; mounted so a source edit takes effect on
+      # restart without a rebuild.
+      - ./services/trex/provision/d2e-bootstrap:/usr/src/bundled-plugins/d2e-bootstrap:ro
       # WebAPI/Logto seeding SQL, applied by the d2e-compat atlas-db-init block
       # once webapi.sec_role and logto.users exist. Replaces the webapi-init
       # container, which ran the same files through psql.
@@ -976,14 +981,17 @@ services:
         # it then half-seeds and dies, and because the seed is not idempotent for
         # its logto_tenant_* roles, every later restart fails on "role already
         # exists" - a permanent crash loop from one early start.
-        # Connecting proves the login exists, has_schema_privilege proves the
-        # grant landed. node is used deliberately: this image has neither curl nor
+        # The seed opens with `create schema if not exists logto`, and Postgres
+        # checks CREATE on the database before it checks whether the schema
+        # exists, so database CREATE is part of the gate too.
+        # Connecting proves the login exists, the privilege checks prove the
+        # grants landed. node is used deliberately: this image has neither curl nor
         # wget, but it does ship the pg client logto itself runs on.
         until node -e "
           const { Client } = require('pg');
           const c = new Client({ connectionString: process.env.DB_URL });
           c.connect()
-            .then(() => c.query(\"select case when to_regnamespace('logto') is null then false else has_schema_privilege(current_user, 'logto', 'CREATE') end as ok\"))
+            .then(() => c.query(\"select has_database_privilege(current_user, current_database(), 'CREATE') and case when to_regnamespace('logto') is null then false else has_schema_privilege(current_user, 'logto', 'CREATE') end as ok\"))
             .then(r => { c.end(); process.exit(r.rows[0].ok ? 0 : 1); })
             .catch(() => { try { c.end(); } catch (_) {} process.exit(1); });
         "; do
