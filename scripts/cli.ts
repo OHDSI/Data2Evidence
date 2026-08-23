@@ -263,10 +263,10 @@ class D2ECli {
       SUPABASE_STORAGE_JWT_SECRET: `${this.SUPABASE_STORAGE_JWT_SECRET}`,
       SUPABASE_STORAGE_JWT_TOKEN: `${this.SUPABASE_STORAGE_JWT_TOKEN}`,
       PROJECT_NAME: `${this.PROJECT_NAME}`,
-      // Roles come from usermgmt's own groups. The 'logto' setting makes it ask
-      // Logto's API instead, which cannot answer for a user who authenticated
-      // against trex.
-      USER_MGMT__ROLE_SOURCE: `usermgmt`,
+      // "logto" selects the token-claims path: usermgmt reads the `roles` claim
+      // out of the bearer token rather than any Logto API, so it holds for any
+      // IdP that emits a compatible list - trex included.
+      USER_MGMT__ROLE_SOURCE: `logto`,
       TREX__SQL__PASSWORD: `${this.generate_random_password(
         this.DEFAULT_PASSWORD_LENGTH,
       )}`,
