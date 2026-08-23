@@ -13,7 +13,7 @@ Deno.test("matches users by email and plans a re-key plus role assignments", () 
     [{ id: "trex-a", email: "a@x.test" }],
     [{ userId: "um-1", role: "USER_ADMIN" }],
   );
-  assertEquals(plan.rekey, [{ email: "a@x.test", from: "logto-a", to: "trex-a" }]);
+  assertEquals(plan.rekey, [{ id: "um-1", email: "a@x.test", from: "logto-a", to: "trex-a" }]);
   assertEquals(plan.assign, [{ email: "a@x.test", userId: "trex-a", role: "USER_ADMIN" }]);
   assertEquals(plan.unmatched, []);
 });
@@ -79,6 +79,42 @@ Deno.test("names are unique and keep their order", () => {
 
 Deno.test("an unrecognised scope is passed through untouched", () => {
   assertEquals(canonicalRoleNames("X", ["X", "some-future-scope"]), ["X", "some-future-scope"]);
+});
+
+// --- LOGTO__ROLES_SCOPES fan-out: this file's own copy, must behave like the
+// one in UserGroupService.ts (pinned there by that package's own tests).
+
+Deno.test("role.systemadmin also grants the WebAPI admin role", () => {
+  assertEquals(canonicalRoleNames("role.systemadmin", ["role.systemadmin"]), [
+    "role.systemadmin",
+    "admin",
+  ]);
+});
+
+Deno.test("role.viewer also grants the WebAPI anonymous role", () => {
+  assertEquals(canonicalRoleNames("role.viewer", ["role.viewer"]), [
+    "role.viewer",
+    "anonymous",
+  ]);
+});
+
+Deno.test("the researcher expansion is unaffected by the fan-out and still yields its full six names", () => {
+  const names = canonicalRoleNames("RESEARCHER.Demo", [
+    "RESEARCHER.Demo",
+    "role.researcher.7dffaaeb-c3cd-434c-bd2c-08cb34267acc",
+    "source-user-7dffaaeb-c3cd-434c-bd2c-08cb34267acc",
+    "cohort-reader",
+    "cohort-creator",
+    "concept-set-creator",
+  ]);
+  assertEquals(names, [
+    "RESEARCHER.Demo",
+    "role.researcher.7dffaaeb-c3cd-434c-bd2c-08cb34267acc",
+    "Source user (7dffaaeb-c3cd-434c-bd2c-08cb34267acc)",
+    "cohort reader",
+    "cohort creator",
+    "concept set creator",
+  ]);
 });
 
 // --- buildGroupRoleAndScopes: reconstructs the {role, scopes} pair that
@@ -167,14 +203,14 @@ Deno.test("a researcher group contributes every canonical name it grants, not ju
 // re-key. Written out-of-band because usermgmt owns its own table's schema —
 // this CLI must not add a column to it to hold the previous idp_user_id.
 
-Deno.test("rollback rows carry username/from/to for every re-keyed user, nothing else", () => {
+Deno.test("rollback rows carry username/id/from/to for every re-keyed user, nothing else", () => {
   const rows = rollbackRows([
-    { email: "a@x.test", from: "logto-a", to: "trex-a" },
-    { email: "b@x.test", from: null, to: "trex-b" },
+    { id: "um-1", email: "a@x.test", from: "logto-a", to: "trex-a" },
+    { id: "um-2", email: "b@x.test", from: null, to: "trex-b" },
   ]);
   assertEquals(rows, [
-    { username: "a@x.test", from: "logto-a", to: "trex-a" },
-    { username: "b@x.test", from: null, to: "trex-b" },
+    { username: "a@x.test", id: "um-1", from: "logto-a", to: "trex-a" },
+    { username: "b@x.test", id: "um-2", from: null, to: "trex-b" },
   ]);
 });
 
@@ -184,12 +220,14 @@ Deno.test("an empty rekey plan produces an empty rollback file, not one entry pe
 
 Deno.test("rollback rows serialise to valid, re-parseable JSON", () => {
   const json = JSON.stringify(
-    rollbackRows([{ email: "a@x.test", from: "logto-a", to: "trex-a" }]),
+    rollbackRows([{ id: "um-1", email: "a@x.test", from: "logto-a", to: "trex-a" }]),
     null,
     2,
   );
   assertMatch(json, /"username": "a@x\.test"/);
-  assertEquals(JSON.parse(json), [{ username: "a@x.test", from: "logto-a", to: "trex-a" }]);
+  assertEquals(JSON.parse(json), [
+    { username: "a@x.test", id: "um-1", from: "logto-a", to: "trex-a" },
+  ]);
 });
 
 // --- matchTrexUser: usermgmt keys users by username, trex keys them by
@@ -262,6 +300,27 @@ Deno.test("a username resolved via local-part matching still plans a re-key and 
     [{ id: "trex-a", email: "admin@trex.local" }],
     [{ userId: "um-1", role: "USER_ADMIN" }],
   );
-  assertEquals(plan.rekey, [{ email: "admin", from: "q9j5vjrmba9x", to: "trex-a" }]);
+  assertEquals(plan.rekey, [{ id: "um-1", email: "admin", from: "q9j5vjrmba9x", to: "trex-a" }]);
   assertEquals(plan.assign, [{ email: "admin", userId: "trex-a", role: "USER_ADMIN" }]);
+});
+
+Deno.test("two usermgmt users whose usernames differ only in case each keep their own rekey identity", () => {
+  // The apply step used to re-resolve each rekey entry by re-normalising its
+  // email and looking the usermgmt user up again — a map keyed by normalised
+  // email, so "Admin" and "admin" collapsed to one entry and one of these two
+  // users was re-keyed twice while the other kept its stale idp_user_id.
+  // Carrying the usermgmt id on the entry itself avoids the re-resolution
+  // (and the collision) entirely.
+  const plan = planMigration(
+    [
+      { id: "um-1", email: "Admin", idpUserId: "logto-1" },
+      { id: "um-2", email: "admin", idpUserId: "logto-2" },
+    ],
+    [{ id: "trex-a", email: "admin@trex.local" }],
+    [],
+  );
+  assertEquals(plan.rekey, [
+    { id: "um-1", email: "Admin", from: "logto-1", to: "trex-a" },
+    { id: "um-2", email: "admin", from: "logto-2", to: "trex-a" },
+  ]);
 });
