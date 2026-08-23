@@ -38,6 +38,8 @@ window.addEventListener('message', (event: MessageEvent<PaContextMessage>) => {
     locale: data.locale || 'en',
     qeSvcUrl: data.qeSvcUrl || window.location.origin,
   }
+  // Serves alp-terminology-open, which only the portal answers otherwise.
+  void import('./utils/atlasTerminologyBridge').then(m => m.installAtlasTerminologyBridge())
   void import('./main')
 })
 

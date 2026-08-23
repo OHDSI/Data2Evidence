@@ -17,9 +17,21 @@ type AtlasPluginProps = {
   releaseId?: string
   username?: string
   locale?: string
+  messageBus?: HostMessageBusLike
 }
 
+/** The slice of the Atlas host message bus this parcel uses. */
+type HostMessageBusLike = {
+  request?: (type: string, payload?: unknown) => Promise<unknown>
+}
+
+type ConceptSetChoice = { conceptSetId: number | string; name: string }
+
 const TOKEN_REFRESH_INTERVAL_MS = 5 * 60 * 1000
+
+// Hosts without conceptSet:choose never answer the request, so the bridge gives
+// up rather than leaving the iframe waiting on a reply that cannot come.
+const CHOOSER_TIMEOUT_MS = 60 * 1000
 
 let iframe: HTMLIFrameElement | null = null
 let tokenTimer: ReturnType<typeof setInterval> | null = null
@@ -104,12 +116,40 @@ export const mount = async (props: AtlasPluginProps) => {
     )
   }
 
+  // The iframe cannot open an Atlas dialog, so a request to pick a concept set is
+  // relayed to the host message bus and the answer posted back under the id the
+  // iframe sent, which is how it matches the reply to its pending request.
+  const chooseConceptSet = async (requestId: string, title?: string) => {
+    const reply = (choice: ConceptSetChoice | null) =>
+      iframe?.contentWindow?.postMessage(
+        { type: 'pa-concept-set-chosen', requestId, choice },
+        window.location.origin
+      )
+
+    const request = props.messageBus?.request
+    if (!request) {
+      reply(null)
+      return
+    }
+
+    try {
+      const timeout = new Promise<null>(resolve => setTimeout(() => resolve(null), CHOOSER_TIMEOUT_MS))
+      const choice = await Promise.race([request.call(props.messageBus, 'conceptSet:choose', { title }), timeout])
+      reply((choice as ConceptSetChoice) ?? null)
+    } catch {
+      reply(null)
+    }
+  }
+
   // The boot script announces readiness; also post on iframe load in case the
   // announcement fired before this listener was attached.
   readyListener = (event: MessageEvent) => {
     if (event.origin !== window.location.origin) return
     if (event.source !== iframe?.contentWindow) return
     if (event.data?.type === 'pa-ready') void postContext()
+    if (event.data?.type === 'pa-choose-concept-set') {
+      void chooseConceptSet(event.data.requestId, event.data.title)
+    }
   }
   window.addEventListener('message', readyListener)
   iframe.addEventListener('load', () => void postContext())
