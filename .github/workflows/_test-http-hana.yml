@@ -133,22 +133,9 @@ jobs:
           echo "Waiting 160 secs for services to start..."
           sleep 160
           echo "Trex Health check..."
+          # trex applies atlas-db-init in d2eBoot() before it listens, so a healthy
+          # trex means the seeding (including the logto admin user) has run.
           curl --max-time 120 --fail -k https://localhost:41100/trex/_internal/health
-          echo "Waiting for webapi-init to complete (ensures logto admin user is created)..."
-          for i in $(seq 1 60); do
-            status=$(docker ps -a --filter "name=webapi-init" --format '{{.Status}}')
-            if echo "$status" | grep -q "(healthy)"; then
-              echo "webapi-init completed successfully"
-              break
-            fi
-            if echo "$status" | grep -qE "Exited \([1-9]"; then
-              echo "webapi-init failed!"
-              docker logs ${PROJECT_NAME:-alp}-webapi-init || true
-              exit 1
-            fi
-            echo "Waiting for webapi-init... ($i/60)"
-            sleep 5
-          done
 
       - name: Check status of docker containers
         run: docker ps -a
