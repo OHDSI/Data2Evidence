@@ -87,6 +87,17 @@ function datasetResearcherScopes(roleName, datasetId, type) {
   return scopes;
 }
 
+// LOGTO__ROLES_SCOPES (docker-compose.yml) paired these Logto roles with extra
+// scopes that are webapi.sec_role names in their own right, not Logto/trex
+// role names. That pairing lived only in Logto's configuration, so it has to
+// be reproduced here for those names to keep reaching WebAPI. Mirrors
+// IMPLIED_CANONICAL_ROLES in
+// plugins/functions/alp-usermgmt/src/services/UserGroupService.ts.
+const IMPLIED_CANONICAL_ROLES = {
+  "role.systemadmin": ["admin"],
+  "role.viewer": ["anonymous"],
+};
+
 /**
  * The canonical names one group grants, from its role and scope pair.
  *
@@ -110,7 +121,10 @@ export function canonicalRoleNames(role, scopes) {
     return kebab[name] ?? name;
   };
 
-  return [...new Set([role, ...scopes].map(expand))];
+  const input = [role, ...scopes];
+  const implied = input.flatMap((name) => IMPLIED_CANONICAL_ROLES[name] ?? []);
+
+  return [...new Set([...input, ...implied].map(expand))];
 }
 
 /**
@@ -237,7 +251,7 @@ export function planMigration(usermgmtUsers, trexUsers, groups) {
     // Skip users already pointing at trex so the command can be re-run after a
     // partial failure without producing spurious changes.
     if (user.idpUserId !== trexUser.id) {
-      rekey.push({ email: user.email, from: user.idpUserId, to: trexUser.id });
+      rekey.push({ id: user.id, email: user.email, from: user.idpUserId, to: trexUser.id });
     }
 
     for (const group of groups.filter((g) => g.userId === user.id)) {
@@ -371,7 +385,7 @@ function rollbackFilePath() {
 }
 
 export function rollbackRows(rekey) {
-  return rekey.map((r) => ({ username: r.email, from: r.from, to: r.to }));
+  return rekey.map((r) => ({ username: r.email, id: r.id, from: r.from, to: r.to }));
 }
 
 function writeRollbackFile(filePath, rekey) {
@@ -428,14 +442,11 @@ async function runMigrationUnsafe({ apply }) {
     rollbackPath = rollbackFilePath();
     writeRollbackFile(rollbackPath, plan.rekey);
   }
-  const usermgmtById = new Map(usermgmtUsers.map((u) => [normalize(u.email), u]));
   for (const r of plan.rekey) {
-    const source = usermgmtById.get(normalize(r.email));
-    if (!source) continue;
     execSql(`
       UPDATE usermgmt."user"
          SET idp_user_id = '${escapeSqlLiteral(r.to)}'
-       WHERE id = '${escapeSqlLiteral(source.id)}'
+       WHERE id = '${escapeSqlLiteral(r.id)}'
     `);
   }
   if (rollbackPath) {
