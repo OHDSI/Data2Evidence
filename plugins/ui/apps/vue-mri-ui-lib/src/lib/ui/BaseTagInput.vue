@@ -92,7 +92,6 @@
 
 <script lang="ts">
 import appIcon from './app-icon.vue'
-import { openConceptInAtlas } from '../../utils/atlasConceptViewer'
 
 const matchOperatorsRe = /[|\\{}()[\]^$+*?.]/g
 function escapeStringRegExp(str) {
@@ -462,12 +461,6 @@ export default {
       })
     },
     tagClickHandler(props) {
-      // Embedded in Atlas, a concept tag is a link into the Atlas concept viewer.
-      // Removal stays on the tag's own × button, and openConceptInAtlas reports
-      // false when running standalone, so the focus behaviour below is unchanged
-      // outside Atlas and for non-concept tags.
-      if (this.componentType === 'concept' && openConceptInAtlas(props.option)) return
-
       if (this.$refs.multiselect?.$refs?.search) {
         this.$refs.multiselect.$refs.search.blur()
       }

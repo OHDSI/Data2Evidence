@@ -7,9 +7,6 @@
  * the Atlas shell document. This parcel only creates the iframe and relays the
  * auth/dataset context to it via postMessage, re-posting a fresh token
  * periodically because tokens expire while the plugin stays mounted.
- *
- * It also relays the other direction: the iframe cannot navigate its host, so
- * requests to open the Atlas concept viewer arrive as messages handled here.
  */
 
 type AtlasPluginProps = {
@@ -42,16 +39,6 @@ export const bootstrap = async () => undefined
 
 const CONTAINER_ID = 'plugin-patient-analytics'
 const CONTAINER_TIMEOUT_MS = 5000
-const SELECTED_SOURCE_KEY = 'atlas3:trexsql:selectedDataSource'
-
-/** Where the Atlas shell records the data source the user picked. */
-const selectedAtlasSource = (): string => {
-  try {
-    return window.localStorage.getItem(SELECTED_SOURCE_KEY) || ''
-  } catch {
-    return ''
-  }
-}
 
 /**
  * Atlas renders the mount point as part of its route view, which can land after
@@ -117,26 +104,12 @@ export const mount = async (props: AtlasPluginProps) => {
     )
   }
 
-  // Atlas serves the concept viewer as the hash route /concept/:sourceKey/:conceptId,
-  // and re-validates both segments itself, so an unusable message is dropped rather
-  // than pushing the shell to a route that cannot resolve.
-  //
-  // The iframe only knows the dataset the host delivered in pa-context, which is
-  // empty when the plugin is opened without one; Atlas still knows which source is
-  // selected, so fall back to that before giving up.
-  const openConceptViewer = ({ sourceKey, conceptId }: { sourceKey?: string; conceptId?: number }) => {
-    const key = sourceKey || props.datasetId || selectedAtlasSource()
-    if (!key || !Number.isInteger(conceptId)) return
-    window.location.hash = `#/concept/${encodeURIComponent(key)}/${conceptId}`
-  }
-
   // The boot script announces readiness; also post on iframe load in case the
   // announcement fired before this listener was attached.
   readyListener = (event: MessageEvent) => {
     if (event.origin !== window.location.origin) return
     if (event.source !== iframe?.contentWindow) return
     if (event.data?.type === 'pa-ready') void postContext()
-    if (event.data?.type === 'pa-open-concept') openConceptViewer(event.data)
   }
   window.addEventListener('message', readyListener)
   iframe.addEventListener('load', () => void postContext())
