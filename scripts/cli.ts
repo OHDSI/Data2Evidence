@@ -1084,6 +1084,23 @@ class D2ECli {
         const r = await this.syncRoles();
         if (!r.ok) process.exit(1);
       });
+    this.program
+      .command("migrate-idp-roles")
+      .description(
+        "Move role assignments from Logto to the trex identity provider (one-time migration)",
+      )
+      .option(
+        "--apply",
+        "Perform the changes; without this the plan is only printed",
+      )
+      .action(async (opts) => {
+        dotenvConfig({ path: this.ENVFILE });
+        this.load_env_variables();
+        const { runMigration } = await import(
+          path.join(__dirname, "migrate-idp-roles.mjs")
+        );
+        await runMigration({ apply: Boolean(opts.apply) });
+      });
   }
 
   run(): void {
