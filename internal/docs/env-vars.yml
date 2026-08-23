@@ -186,3 +186,15 @@ TREX__OIDC__WEBAPI_CLIENT_SECRET:
   comment: OIDC client secret shared by WebAPI and the registration trex seeds for it
   publish: false
   type: string
+IDP__ROLE_STORE:
+  comment: Which identity provider holds role assignments usermgmt writes to ('trex' or 'logto')
+  publish: false
+  type: string
+TREX__ADMIN_URL:
+  comment: trex admin API endpoint usermgmt calls to assign/remove roles
+  publish: false
+  type: string
+TREX__SERVICE_ROLE_KEY:
+  comment: Service role key usermgmt authenticates to the trex admin API with
+  publish: false
+  type: string
