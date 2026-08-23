@@ -8,7 +8,11 @@ import * as fs from "fs";
 import * as readline from "readline";
 import { execSync } from "child_process";
 import { LibUtils } from "./lib";
-import { dockerComposeContent, atlasDbInitScripts } from "./docker-compose-embed";
+import {
+  dockerComposeContent,
+  atlasDbInitScripts,
+  notebookSchemaFiles,
+} from "./docker-compose-embed";
 import { setupDemo } from "./setupdemo";
 import { checkSetupDemoFlow } from "./check-setupdemo-flow";
 import { setupHTTPTestEnv as runSetupHTTPTestEnv } from "./setuphttptestenv";
@@ -102,6 +106,34 @@ class D2ECli {
     }
     for (const [name, content] of Object.entries(atlasDbInitScripts)) {
       this.write_embedded_file(path.join(atlasDbInitDir, name), content);
+    }
+    this.stage_embedded_tree(
+      path.join(this.compose_dir, "services", "trex", "migrations", "notebook"),
+      notebookSchemaFiles
+    );
+  }
+
+  // trex mounts the notebook-schema plugin onto its plugin path, so leaving the
+  // mount source absent would put an empty plugin directory in front of it.
+  private stage_embedded_tree(
+    root: string,
+    files: Record<string, string>
+  ): void {
+    for (const [name, content] of Object.entries(files)) {
+      const dest = path.join(root, name);
+      try {
+        fs.mkdirSync(path.dirname(dest), { recursive: true });
+      } catch (err: any) {
+        if (err?.code === "EACCES" || err?.code === "EPERM") {
+          console.warn(
+            `Warning: could not create ${path.dirname(dest)} (permission denied). ` +
+              `Skipping ${root} staging; continuing with existing files.`
+          );
+          return;
+        }
+        throw err;
+      }
+      this.write_embedded_file(dest, content);
     }
   }
   private write_embedded_file(dest: string, content: string): void {

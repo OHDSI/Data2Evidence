@@ -315,9 +315,12 @@ const ManageViewerDialog: FC<ManageViewerDialogProps> = ({ config, open, onClose
           </div>
         </div>
 
-        <div className="manage-viewer-dialog__header__content">
-          <Button onClick={handleBuildAssets} text={getText(i18nKeys.MANAGE_VIEWER_DIALOG__BUILD_SHINY)} loading={loading} />
-        </div>
+        {/* shiny-live only builds python/r assets; Strategus configs are shiny-server only. */}
+        {ViewerType.SHINY_SERVER !== templateLanguage && (
+          <div className="manage-viewer-dialog__header__content">
+            <Button onClick={handleBuildAssets} text={getText(i18nKeys.MANAGE_VIEWER_DIALOG__BUILD_SHINY)} loading={loading} />
+          </div>
+        )}
       </div>
       <Divider />
 
