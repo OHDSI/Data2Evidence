@@ -267,6 +267,11 @@ class D2ECli {
       TREX__SQL__PASSWORD: `${this.generate_random_password(
         this.DEFAULT_PASSWORD_LENGTH,
       )}`,
+      // Shared between WebAPI's OIDC client and the registration trex seeds for
+      // it, so the two are generated together and cannot drift apart.
+      TREX__OIDC__WEBAPI_CLIENT_SECRET: `${this.generate_random_password(
+        this.DEFAULT_PASSWORD_LENGTH,
+      )}`,
       // Root encryption key for trex's KEK/DEK wrapping and JWT signing. The
       // trexsql entrypoint refuses to start without it (must be valid base64 of
       // >=32 bytes, i.e. >=40 chars); 32 random bytes -> 44-char base64.

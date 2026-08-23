@@ -178,3 +178,11 @@ TLS__INTERNAL__CRT:
 TLS__INTERNAL__KEY:
   comment: Internal Microservice TLS Communication Private
   publish: true
+TREX__OIDC__WEBAPI_CLIENT_ID:
+  comment: OIDC client id WebAPI presents to the trex identity provider
+  publish: false
+  type: string
+TREX__OIDC__WEBAPI_CLIENT_SECRET:
+  comment: OIDC client secret shared by WebAPI and the registration trex seeds for it
+  publish: false
+  type: string
