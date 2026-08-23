@@ -1,0 +1,6 @@
+{
+  "name": "@data2evidence/d2e-bootstrap",
+  "version": "0.0.1",
+  "description": "Provisions d2e's login users, supabase roles, schemas and grants before trex loads any plugin",
+  "trex": { "provision": { "module": "./index.ts" } }
+}
