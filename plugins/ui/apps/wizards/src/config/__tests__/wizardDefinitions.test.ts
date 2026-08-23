@@ -30,10 +30,10 @@ describe("wizardDefinitions", () => {
   });
 
   describe("getWizardDefinitions", () => {
-    it("should return an array with exactly 5 wizards", async () => {
+    it("should return an array with exactly 8 wizards", async () => {
       const wizards = await getWizardDefinitions();
       expect(Array.isArray(wizards)).toBe(true);
-      expect(wizards.length).toBe(5);
+      expect(wizards.length).toBe(8);
     });
 
     it("should return wizards with required fields", async () => {
@@ -86,10 +86,18 @@ describe("wizardDefinitions", () => {
       });
     });
 
-    it("does not synthesize sections for development mock wizards", async () => {
+    it("does not synthesize sections for wizards without an explicit layout", async () => {
       const wizards = await getWizardDefinitions();
+      const wizardsWithoutLayout = wizards.filter((wizard) => wizard.id !== "loss-to-follow-up");
 
-      expect(wizards.every((wizard) => wizard.sections === undefined)).toBe(true);
+      expect(wizardsWithoutLayout.every((wizard) => wizard.sections === undefined)).toBe(true);
+    });
+
+    it("passes through the configured section layout for the loss-to-follow-up wizard", async () => {
+      const wizard = await getWizardById("loss-to-follow-up");
+
+      expect(wizard?.sections).toHaveLength(3);
+      expect(wizard?.sections?.map((section) => section.id)).toEqual(["person", "measurement", "observation"]);
     });
   });
 
@@ -169,6 +177,32 @@ describe("wizardDefinitions", () => {
       expect(wizard?.steps[0].type).toBe("form");
     });
 
+    it("should have 30-day-readmission wizard with correct structure", async () => {
+      const wizard = await getWizardById("30-day-readmission");
+
+      expect(wizard).toBeDefined();
+      expect(wizard?.id).toBe("30-day-readmission");
+      expect(wizard?.name).toBe("30-Day Readmission");
+      expect(wizard?.description).toBe(
+        "This wizard will calculate the 30-day readmission rate for a particular clinical condition. This calculation is done in SQL, and this works by finding an inpatient discharge associated with the condition and determining if the patient has a subsequent inpatient admission within 30 days of that discharge.",
+      );
+      expect(wizard?.steps).toHaveLength(1);
+      expect(wizard?.steps[0].type).toBe("form");
+    });
+
+    it("should have length-of-stay wizard with correct structure", async () => {
+      const wizard = await getWizardById("length-of-stay");
+
+      expect(wizard).toBeDefined();
+      expect(wizard?.id).toBe("length-of-stay");
+      expect(wizard?.name).toBe("Length of Stay");
+      expect(wizard?.description).toBe(
+        "This wizard will calculate the average length of hospital stay for a particular clinical condition. This calculation is done in SQL, and this works by finding inpatient visits associated with the condition and computing the number of days between the visit start and visit end dates.",
+      );
+      expect(wizard?.steps).toHaveLength(1);
+      expect(wizard?.steps[0].type).toBe("form");
+    });
+
     it("should have cross-sectional-demographics wizard with correct structure", async () => {
       const wizard = await getWizardById("cross-sectional-demographics");
 
@@ -194,12 +228,38 @@ describe("wizardDefinitions", () => {
       expect(wizard?.steps[0].type).toBe("form");
     });
 
+    it("should have loss-to-follow-up wizard with correct structure and section layout", async () => {
+      const wizard = await getWizardById("loss-to-follow-up");
+
+      expect(wizard).toBeDefined();
+      expect(wizard?.id).toBe("loss-to-follow-up");
+      expect(wizard?.name).toBe("Loss to Follow-up (LTFU)");
+      expect(wizard?.description).toBe(
+        "This wizard will calculate the loss to follow-up rate for a particular clinical event, frequently used in clinical trial investigations and quality improvement research. This calculation works by finding patients who did not return for an expected visit within a time window you specify.",
+      );
+      expect(wizard?.steps).toHaveLength(1);
+      expect(wizard?.steps[0].type).toBe("form");
+
+      const [personSection, measurementSection, observationSection] = wizard?.sections ?? [];
+      expect(personSection.groups[0].fieldIds).toEqual(["age", "gender", "ethnicity", "race"]);
+      expect(measurementSection.groups[0].fieldIds).toEqual(["height", "weight", "bmi"]);
+      expect(measurementSection.groups[0].validation).toEqual({
+        minAnswered: 1,
+        maxAnswered: 2,
+        message: "Enter 1 or 2 of Height, Weight, and BMI.",
+      });
+      expect(observationSection.groups[0].fieldIds).toEqual(["year"]);
+    });
+
     it("should have all new wizards with age field mapped to config", async () => {
       const wizardIds = [
         "calculate-incidence",
         "calculate-prevalence",
         "calculate-mortality",
+        "30-day-readmission",
+        "length-of-stay",
         "cross-sectional-demographics",
+        "loss-to-follow-up",
       ];
 
       for (const id of wizardIds) {
