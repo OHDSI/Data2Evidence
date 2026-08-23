@@ -18,6 +18,8 @@ type AtlasPluginProps = {
   username?: string
   locale?: string
   messageBus?: HostMessageBusLike
+  appId?: string
+  containerId?: string
 }
 
 /** The slice of the Atlas host message bus this parcel uses. */
@@ -36,6 +38,7 @@ const CHOOSER_TIMEOUT_MS = 60 * 1000
 let iframe: HTMLIFrameElement | null = null
 let tokenTimer: ReturnType<typeof setInterval> | null = null
 let readyListener: ((event: MessageEvent) => void) | null = null
+let propsListener: ((event: Event) => void) | null = null
 
 const resolveAppUrl = (): string => {
   // import.meta.url is the SystemJS module URL of index.system.js, i.e.
@@ -85,6 +88,12 @@ export const mount = async (props: AtlasPluginProps) => {
 
   container.style.height = 'calc(100vh - 60px)'
 
+  // Atlas resolves the dataset when its source list loads, which can be after the
+  // props for this mount were built, and it announces the late value with
+  // custom-props-changed on its own window - out of reach of the iframe. Track it
+  // here and re-post so the app is not left without a dataset.
+  let datasetId = props.datasetId || ''
+
   const getToken = props.getToken ?? (async () => props.authContext?.token ?? '')
 
   iframe = document.createElement('iframe')
@@ -106,7 +115,7 @@ export const mount = async (props: AtlasPluginProps) => {
       {
         type: 'pa-context',
         token,
-        datasetId: props.datasetId || '',
+        datasetId: datasetId || '',
         releaseId: props.releaseId || '',
         username: props.username || '',
         locale: props.locale || 'en',
@@ -152,6 +161,21 @@ export const mount = async (props: AtlasPluginProps) => {
     }
   }
   window.addEventListener('message', readyListener)
+
+  propsListener = (event: Event) => {
+    const detail = (event as CustomEvent<{ appId?: string; containerId?: string; datasetId?: string }>).detail
+    if (!detail) return
+    const mine =
+      (!props.appId && !props.containerId) ||
+      (props.appId && detail.appId === props.appId) ||
+      (props.containerId && detail.containerId === props.containerId)
+    if (!mine) return
+    if (!detail.datasetId || detail.datasetId === datasetId) return
+    datasetId = detail.datasetId
+    void postContext()
+  }
+  window.addEventListener('custom-props-changed', propsListener)
+
   iframe.addEventListener('load', () => void postContext())
 
   tokenTimer = setInterval(() => void postContext(), TOKEN_REFRESH_INTERVAL_MS)
@@ -168,6 +192,10 @@ export const unmount = async () => {
   if (readyListener) {
     window.removeEventListener('message', readyListener)
     readyListener = null
+  }
+  if (propsListener) {
+    window.removeEventListener('custom-props-changed', propsListener)
+    propsListener = null
   }
   iframe?.remove()
   iframe = null
