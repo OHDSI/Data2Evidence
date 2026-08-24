@@ -1,4 +1,4 @@
-import axios from "./_axios.ts";
+import axios from "../../_shared/_axios.ts";
 import { env } from "./env";
 import { BlockType } from "./types";
 import { PrefectVariable } from "./types";

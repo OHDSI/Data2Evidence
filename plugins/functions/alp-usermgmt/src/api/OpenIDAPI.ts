@@ -1,4 +1,4 @@
-import { AxiosResponse } from "./_axios.ts"
+import { AxiosResponse } from "../../../_shared/_axios.ts"
 import jwt from 'jsonwebtoken'
 import https from 'https'
 import { post } from './request-util'

@@ -3,8 +3,23 @@ set -e
 
 mkdir -p /usr/src/cert
 printf '%s' "$TLS__INTERNAL__CRT" > /usr/src/cert/cert.pem
-printf '%s' "$TLS__INTERNAL__KEY" > /usr/src/cert/key.pem
+# The key would otherwise inherit the default 022 umask and land 0644 — readable
+# by every user in the container. Scoped to this one write on purpose: the
+# certificate and CA are public material and must stay readable by non-root
+# consumers (nginx workers, python), and /usr/src/cert must stay traversable.
+(umask 077; printf '%s' "$TLS__INTERNAL__KEY" > /usr/src/cert/key.pem)
 printf '%s' "$TLS__INTERNAL__CA_CRT" > /usr/src/cert/ca.pem
+
+# Outbound trust for the internal CA (same move as trex, the dataflow worker and
+# supabase-storage), so this container can reach other TLS-only internal
+# services. Two mechanisms are needed: the OS store covers shell/curl, and
+# Python reads certifi's bundle rather than the OS store. Skipped when the CA is
+# absent so a plaintext deployment still starts.
+if [ -s /usr/src/cert/ca.pem ]; then
+  cp /usr/src/cert/ca.pem /usr/local/share/ca-certificates/d2e-internal-ca.crt
+  update-ca-certificates
+  python -c 'import certifi; open(certifi.where(), "a").write("\n" + open("/usr/src/cert/ca.pem").read() + "\n")'
+fi
 
 mkdir -p /etc/nginx/conf.d
 cat <<EOT > /etc/nginx/conf.d/dataflow-gen.conf

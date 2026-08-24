@@ -1,4 +1,4 @@
-import { AxiosRequestConfig } from "./_axios.ts";
+import { AxiosRequestConfig } from "../../_shared/_axios.ts";
 import { services, env } from "../env.ts";
 
 //import { createLogger } from '../Logger'

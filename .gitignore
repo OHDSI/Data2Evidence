@@ -85,4 +85,5 @@ scripts/create_users.mjs
 /secrets/
 .playwright-mcp/
 docs/superpowers/
+docs/plans/
 d2e-skill/
