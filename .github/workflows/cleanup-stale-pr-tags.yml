@@ -29,6 +29,7 @@ jobs:
           - d2e-logto
           - d2e-logto-post-init
           - d2e-trex
+          - d2e-dataflow-gen
           - d2e-dataflow-gen-worker
           - d2e-supabase-storage
     steps:
