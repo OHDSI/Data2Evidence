@@ -32,6 +32,64 @@ describe('store - domainService', () => {
 
   describe('actions', () => {
     describe('loadValuesForAttributePath', () => {
+      const rootGettersFixture = {
+        getMriConfig: { meta: { configId: 'mock-config-id', configVersion: 'mock-config-version' } },
+        getSelectedDataset: { id: 'mock-id' },
+      }
+
+      it('refetches on an empty search when the cache holds narrowed search results', async () => {
+        const attributePathUid = 'patient.attributes.smoker__123'
+        const state = {
+          domainValues: {
+            [attributePathUid]: {
+              isLoaded: true,
+              isLoading: false,
+              isFullList: false,
+              datasetId: 'mock-id',
+              values: [{ value: 'fever', score: 1, text: 'fever' }],
+            },
+          },
+        }
+        const commit = vi.fn()
+        const dispatch = vi.fn(() => Promise.resolve({ data: { data: [{ value: 'all values', score: 1 }] } }))
+
+        await domainService.actions.loadValuesForAttributePath(
+          { state, commit, rootGetters: rootGettersFixture, dispatch },
+          { attributePathUid, searchQuery: '' }
+        )
+
+        expect(dispatch).toHaveBeenCalled()
+        const data = commit.mock.calls[commit.mock.calls.length - 1][1].data
+        expect(data.isFullList).toBe(true)
+        expect(data.values[0].value).toEqual('all values')
+      })
+
+      it('reuses the cache on an empty search when it holds the full list', async () => {
+        const attributePathUid = 'patient.attributes.smoker__456'
+        const cached = [{ value: 'all values', score: 1, text: 'all values' }]
+        const state = {
+          domainValues: {
+            [attributePathUid]: {
+              isLoaded: true,
+              isLoading: false,
+              isFullList: true,
+              datasetId: 'mock-id',
+              values: cached,
+            },
+          },
+        }
+        const commit = vi.fn()
+        const dispatch = vi.fn(() => Promise.resolve({ data: { data: [] } }))
+
+        const result = await domainService.actions.loadValuesForAttributePath(
+          { state, commit, rootGetters: rootGettersFixture, dispatch },
+          { attributePathUid, searchQuery: '' }
+        )
+
+        expect(dispatch).not.toHaveBeenCalled()
+        expect(result).toEqual(cached)
+      })
+
       it('calls a backendservice if data is not yet loaded', () => {
         const attributePathUid = 'patient.attributes.smoker__123'
         const searchQuery = 'fever'

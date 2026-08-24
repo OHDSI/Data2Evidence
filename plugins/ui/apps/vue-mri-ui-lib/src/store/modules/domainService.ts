@@ -11,6 +11,7 @@ const latestRequestTimes: { [key: string]: number } = {}
 declare interface IDomainValueItem {
   isLoaded: boolean
   isLoading: boolean
+  isFullList?: boolean
   datasetId?: string
   loadedStatus?: 'HAS_RESULTS' | 'NO_RESULTS' | 'TOO_MANY_RESULTS'
   values: Array<{
@@ -54,9 +55,17 @@ const actions = {
     const mriConfig = rootGetters.getMriConfig
     const datasetId = rootGetters.getSelectedDataset.id
 
-    // Skip if already loaded for this dataset (only for full list fetches, not searches)
+    // Reuse the cache only when it holds the unfiltered list. After a search the
+    // stored values are the narrowed subset, so clearing the box must refetch.
     const existing = state.domainValues[attributePathUid]
-    if (!searchQuery && existing?.isLoaded && !existing?.isLoading && existing?.datasetId === datasetId && datasetId) {
+    if (
+      !searchQuery &&
+      existing?.isFullList &&
+      existing?.isLoaded &&
+      !existing?.isLoading &&
+      existing?.datasetId === datasetId &&
+      datasetId
+    ) {
       return Promise.resolve(existing.values)
     }
 
@@ -101,6 +110,7 @@ const actions = {
         values,
         isLoading: false,
         isLoaded: true,
+        isFullList: !searchQuery,
         loadedStatus,
         datasetId,
       }
