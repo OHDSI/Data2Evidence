@@ -7,20 +7,6 @@ import {
     replacePlaceholderWithCustomString,
 } from "@alp/alp-base-utils";
 
-const DEFAULT_SUGGESTIONS_LIMIT = 100;
-const DEFAULT_DOMAIN_VALUES_LIMIT = 200;
-
-export function toPositiveInteger(value: unknown): number | null {
-    if (typeof value !== "number" && typeof value !== "string") {
-        return null;
-    }
-    const parsed = Number(value);
-    if (!Number.isSafeInteger(parsed) || parsed <= 0) {
-        return null;
-    }
-    return parsed;
-}
-
 export class DomainValuesSvc {
     private configAttrObj;
     private jsonWalk;
@@ -38,14 +24,8 @@ export class DomainValuesSvc {
         this.searchQuery = searchQuery;
         this.jsonWalk = getJsonWalkFunction(config);
         this.configAttrObj = this.jsonWalk(attributePath)[0].obj;
-        const requestedLimit =
-            toPositiveInteger(suggestionsLimit) ??
-            toPositiveInteger(this.configAttrObj.suggestionLimit) ??
-            DEFAULT_SUGGESTIONS_LIMIT;
-        const maxLimit =
-            toPositiveInteger(config.panelOptions?.domainValuesLimit) ??
-            DEFAULT_DOMAIN_VALUES_LIMIT;
-        this.suggestionsLimit = Math.min(requestedLimit, maxLimit);
+        this.suggestionsLimit =
+            suggestionsLimit || this.configAttrObj.suggestionLimit || 100;
         this.useRefText = this.configAttrObj.useRefText;
         this.exprToUse = this.configAttrObj.useRefValue
             ? "referenceExpression"
@@ -536,8 +516,6 @@ function getDistinctValuesFromReference(
     if (!searchQuery) {
         sQuery.queryString = removeEmptySearchCondition(sQuery.queryString);
     }
-
-    sQuery.queryString = `${sQuery.queryString.trimEnd()} LIMIT ${suggestionsLimit} `;
 
     return sQuery;
 }
