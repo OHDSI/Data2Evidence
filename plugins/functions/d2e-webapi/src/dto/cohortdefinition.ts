@@ -45,34 +45,29 @@ const WebAPICohortUserDto = z.object({
   login: z.string(),
 });
 
-// Mirrors what WebAPI actually returns for a tag, which is looser than it looks:
-// a tag that has never been edited carries no modifiedBy/modifiedDate, an unstyled
-// one carries no icon or color, and the access flags come back as
-// writeAccess/readAccess rather than hasWriteAccess. Dates are epoch millis, not
-// strings. Requiring any of these made every cohort-definition response fail
-// serialization (FST_ERR_RESPONSE_SERIALIZATION) the moment a cohort carried a
-// tag -- which never happened until cohorts started being tagged.
+// A tag that has never been edited carries no modifiedBy/modifiedDate, and an
+// unstyled one has no icon or color. WebAPI also names the access flags
+// writeAccess/readAccess, and sends dates as epoch millis.
 const WebAPICohortTagDto = z.object({
-  name: z.string(),
   id: z.number(),
-  writeAccess: z.boolean().optional(),
-  readAccess: z.boolean().optional(),
-  hasWriteAccess: z.boolean().optional(),
+  name: z.string(),
+  type: z.enum(["SYSTEM", "CUSTOM", "PRIZM"]),
+  count: z.number(),
+  groups: z.array(z.unknown()),
+  showGroup: z.boolean(),
+  multiSelection: z.boolean(),
+  permissionProtected: z.boolean(),
+  mandatory: z.boolean(),
+  allowCustom: z.boolean(),
+  writeAccess: z.boolean(),
+  readAccess: z.boolean(),
+  createdBy: WebAPICohortUserDto,
+  createdDate: z.union([z.number(), z.string()]),
   modifiedBy: WebAPICohortUserDto.optional(),
-  createdBy: WebAPICohortUserDto.optional(),
-  createdDate: z.union([z.number(), z.string()]).optional(),
   modifiedDate: z.union([z.number(), z.string()]).optional(),
   icon: z.string().nullish(),
-  permissionProtected: z.boolean().optional(),
-  multiSelection: z.boolean().optional(),
-  mandatory: z.boolean().optional(),
-  type: z.enum(["SYSTEM", "CUSTOM", "PRIZM"]).optional(),
-  description: z.string().nullish(),
-  count: z.number().optional(),
-  groups: z.array(z.unknown()).optional(),
   color: z.string().nullish(),
-  showGroup: z.boolean().optional(),
-  allowCustom: z.boolean().optional(),
+  description: z.string().nullish(),
 });
 
 export const WebAPICohortDefinitionResponseDto = z.object({

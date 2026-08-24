@@ -116,10 +116,8 @@ def atlas_cohort_definitions(
     name_index = phenotype_api.get_cohort_name_index(dataset_id)
     logger.info(f"Indexed {len(name_index)} existing WebAPI cohort definitions")
 
-    statuses = {
-        cohort_def.get("status") or "Unspecified"
-        for cohort_def in cohort_definitions
-    }
+    # get_cohort_definitions.R already maps blank/NA to "Unspecified".
+    statuses = {cohort_def["status"] for cohort_def in cohort_definitions}
     phenotype_library_tag, status_tags = phenotype_tag_api.resolve_import_tags(
         dataset_id, statuses
     )
@@ -129,7 +127,7 @@ def atlas_cohort_definitions(
 
     for cohort_def in cohort_definitions:
         try:
-            status = cohort_def.get("status") or "Unspecified"
+            status = cohort_def["status"]
             result = phenotype_api.create_single_cohort_definition(
                 cohort_def,
                 dataset_id,
@@ -140,7 +138,9 @@ def atlas_cohort_definitions(
             cohort_ids_by_status.setdefault(status, []).append(result["id"])
         except Exception as e:
             error_message = (
-                f"Failed to save cohort {cohort_def['cohortId']}: {str(e)}"
+                f"Failed to save cohort {cohort_def['cohortId']}: {str(e)}. "
+                f"{len(created_cohorts)} cohorts were written before this and are "
+                f"still untagged; re-run the flow to finish them."
             )
             logger.error(error_message)
             raise Exception(error_message) from e
@@ -155,12 +155,6 @@ def atlas_cohort_definitions(
 def tag_cohort_definitions(phenotype_tag_api, dataset_id: str, phenotype_library_tag: dict,
                            status_tags: dict, cohort_ids_by_status: dict) -> None:
     """Record where the cohorts came from, and what their review status is.
-
-    WebAPI ignores tags supplied on cohort create/update, so they are applied
-    afterwards through the tag API. One call carries every tag in it to every
-    cohort in it, so the provenance tag goes on in a single request and each
-    status takes one more -- eight requests for the whole library, rather than
-    two per cohort.
     """
     logger = get_run_logger()
     all_cohort_ids = [i for ids in cohort_ids_by_status.values() for i in ids]
