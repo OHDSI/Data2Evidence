@@ -218,7 +218,12 @@ export const conceptset: FastifyPluginAsyncZod = async function (app) {
         res.send(result);
       } catch (error) {
         if (error instanceof WebApiAccessDeniedError) {
-          res.status(403).send({
+          // Keep a server-side record. Without it a denial leaves no trace,
+          // because this branch replaces the error that Fastify used to log.
+          console.warn(
+            `WebAPI denied the concept set name check for dataset ${req.datasetId}: ${error.message}`,
+          );
+          res.status(error.status).send({
             error: "WEBAPI_ACCESS_DENIED",
             message:
               "You do not have permission to check concept set names. Ask an administrator for concept set access.",

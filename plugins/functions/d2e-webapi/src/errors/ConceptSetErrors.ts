@@ -41,6 +41,8 @@ export class ConceptSetExpressionError extends Error {
 
 /**
  * Thrown when WebAPI refuses a request because the caller has no permission.
+ * Only a WebAPI 403 raises this error. A 401 is an authentication problem, not
+ * a permission problem, so it stays on the generic error path.
  * Route handlers map this error to the upstream status, so that a denial does
  * not reach the browser as a 500.
  */
