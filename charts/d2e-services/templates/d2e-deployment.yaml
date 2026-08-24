@@ -431,69 +431,6 @@ spec:
             initialDelaySeconds: 10
             periodSeconds: 10
             timeoutSeconds: 5
-        - name: webapi-init
-          image: postgres:16-alpine
-          resources:
-            requests:
-              cpu: 10m
-              memory: 50Mi
-            limits:
-              cpu: 50m
-              memory: 50Mi
-          env:
-            - name: PGHOST
-              valueFrom:
-                secretKeyRef:
-                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
-                  key: POSTGRES_HOST
-            - name: PGPORT
-              value: "5432"
-            - name: PGUSER
-              valueFrom:
-                secretKeyRef:
-                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
-                  key: POSTGRES_SUPERUSER
-            - name: PGPASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
-                  key: POSTGRES_SUPERUSER_PASSWORD
-            - name: PGDATABASE
-              valueFrom:
-                secretKeyRef:
-                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
-                  key: POSTGRES_CONFIG_DB
-          volumeMounts:
-            - mountPath: /scripts
-              name: atlas-db-init
-              readOnly: true
-          command:
-            - sh
-            - -c
-            - |
-              set -e;
-              echo "Waiting for webapi.sec_role table...";
-              for i in $(seq 1 120); do
-                if psql -tAc "SELECT 1 FROM information_schema.tables WHERE table_schema = 'webapi' AND table_name = 'sec_role'" | grep -q 1; then
-                  echo "webapi.sec_role table found";
-                  break;
-                fi;
-                echo "Waiting... ($i/120)";
-                sleep 5;
-              done;
-              echo "Waiting for logto.users table...";
-              for i in $(seq 1 60); do
-                if psql -tAc "SELECT 1 FROM information_schema.tables WHERE table_schema = 'logto' AND table_name = 'users'" | grep -q 1; then
-                  echo "logto.users table found";
-                  break;
-                fi;
-                echo "Waiting... ($i/60)";
-                sleep 2;
-              done;
-              for f in /scripts/*.sql; do psql -v ON_ERROR_STOP=1 -f "$$f"; done;
-              touch /tmp/webapi-init.done;
-              echo "webapi-init: SQL scripts complete";
-              tail -f /dev/null
         - name: trex
           command: ["/bin/sh", "-c"]
           args:
@@ -1023,6 +960,53 @@ spec:
                 secretKeyRef:
                   name: "{{ .Release.Name }}-{{ .Chart.Name }}"
                   key: POSTGRES_CONFIG_WRITE_PASSWORD
+            # ── DB bootstrap (replaces the pg-mgmt-init initContainer) ────────
+            # Same secret keys and the same $(VAR) expansion the retired
+            # initContainer used. Order matters: kubelet only expands $(VAR) for
+            # variables declared EARLIER in this list, so every reference below
+            # is defined above it.
+            - name: PG_LOGTO_MANAGER
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: POSTGRES_IDP_ADMIN_USER
+            - name: PG_LOGTO_MANAGER_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: POSTGRES_IDP_ADMIN_PASSWORD
+            - name: POSTGRES_MANAGE_USERS
+              value: |-
+                {
+                 "$(PG__DB_NAME)": {
+                  "manager": "$(PG_ADMIN_USER)",
+                  "managerPassword": "$(PG_ADMIN_PASSWORD)",
+                  "reader": "$(PG_WRITE_USER)",
+                  "readerPassword": "$(PG_WRITE_PASSWORD)",
+                  "writer": "$(PG_WRITE_USER)",
+                  "writerPassword": "$(PG_WRITE_PASSWORD)",
+                  "logtoManager": "$(PG_LOGTO_MANAGER)",
+                  "logtoManagerPassword": "$(PG_LOGTO_MANAGER_PASSWORD)"
+                 }
+                }
+            - name: POSTGRES_MANAGE_CONFIG
+              value: |-
+                {
+                 "databases": {
+                  "+$(PG__DB_NAME)": {
+                   "schemas": {
+                    "+cdw_config": {}, "+jobplugins": {}, "+logto": {},
+                    "+portal": {}, "+public": {}, "+qe_config": {},
+                    "+terminology": {}, "+usermgmt": {}, "+files_manager": {},
+                    "+perseus": {}, "+white_rabbit": {}, "+trex": {},
+                    "+storage": {}, "+strategus": {}, "+notebook": {},
+                    "+network": {}
+                   }
+                  }
+                 }
+                }
+            - name: POSTGRES_MANAGE_ROLES_USERS
+              value: "{}"
             - name: PG__SSL
               valueFrom:
                 secretKeyRef:
@@ -1181,9 +1165,11 @@ spec:
           volumeMounts:
             - mountPath: /usr/src/data
               name: trex-volume
-            - mountPath: /etc/d2e/tls
-              name: d2e-tls
-              readOnly: true
+            # WebAPI/Logto seeding SQL, applied by the d2e-compat atlas-db-init
+            # block once webapi.sec_role and logto.users exist. Replaces the
+            # webapi-init container, which ran the same files through psql.
+            - mountPath: /usr/src/atlas-db-init
+              name: atlas-db-init
             {{- if .Values.features.materializeCohorts }}
             - mountPath: /usr/src/cert/client.crt
               name: materialize-cohorts-client-pki

@@ -7,7 +7,6 @@
 | `D2E_MEMORY_LIMIT`                              | string         | Dynamically Calculated Limit                                                        |
 | `DB_CREDENTIALS__INTERNAL__DECRYPT_PRIVATE_KEY` | rsaPrivateKey  | To Encrypt Dbcredentials Entered In Admin>Setup>Databases>Configure (No Passphrase) |
 | `DB_CREDENTIALS__INTERNAL__PUBLIC_KEY`          | x509publicKey  | To Encrypt Database Credentials String                                              |
-| `DICOM__HEALTH_CHECK_PASSWORD`                  | string         | deprecated                                                                          |
 | `DOCKER_TAG_NAME`                               | string         | default tag                                                                         |
 | `ENV_TYPE`                                      | string         | local or remote ; also refers to .env.${ENV_TYPE}                                   |
 | `GH_TOKEN`                                      | string         | GitHub Token Passed To Trex                                                         |
@@ -30,7 +29,6 @@
 | `PG_SUPER_PASSWORD`                             | password       | All Permissions                                                                     |
 | `PG_WRITE_PASSWORD`                             | password       | Write Permissions Only                                                              |
 | `PG__LOGTO_MANAGER_PASSWORD`                    | string         |
-| `REDIS_PASSWORD`                                | string         | Redis Password                                                                      |
 | `TLS__CADDY_DIRECTIVE`                          | string         | Generate self-signed or public x509 certificate                                     |
 | `TLS__EXTRA__CA_CRTS`                           | string         | Extra trust anchors for non-internal upstreams; concatenated PEM blocks with real newlines |
 | `TLS__INTERNAL__DOMAIN`                         | string         | Internal DNS domain for service-to-service TLS; must match the certificate SAN (default `d2e.local`) |
