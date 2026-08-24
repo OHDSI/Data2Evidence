@@ -5,10 +5,8 @@ from prefect.logging import get_run_logger
 
 from _shared_flow_utils.api.BaseAPI import BaseAPI
 class PhenotypeAPI(BaseAPI):
-    # The library import is ~1100 sequential writes, and the edge worker serving
-    # them drops a connection every few hundred requests under that load
-    # ("connection closed before message completed" / "error writing a body to
-    # connection"). Without retries a single drop costs the whole run.
+    # The edge worker drops a connection every few hundred sequential writes, and
+    # the library import makes ~1100 of them.
     WRITE_ATTEMPTS = 3
     RETRY_BACKOFF_SECONDS = 2
 
@@ -60,10 +58,8 @@ class PhenotypeAPI(BaseAPI):
             "createdDate": current_time,
             "modifiedBy": user_name,
             "modifiedDate": current_time,
-            # Inert. WebAPI ignores this field on create and update, and the
-            # d2e-webapi plugin's schema only accepts strings here anyway
-            # ("body/tags/0 Expected string, received object"). Tags are applied
-            # separately via PhenotypeTagAPI.assign_tags_to_cohorts.
+            # Inert: WebAPI ignores tags on create/update. They are applied via
+            # PhenotypeTagAPI.assign_tags_to_cohorts.
             "tags": [],
         }
         # datasetId travels in the header, not the body.
@@ -126,11 +122,9 @@ class PhenotypeAPI(BaseAPI):
                               name_index, reason, attempt):
         """Decide whether a failed write is worth another attempt.
 
-        A dropped connection does not mean a dropped write -- a cohort that came
-        back "500 connection closed before message completed" had already been
-        committed. Since cohort names are globally unique (uq_cd_name), blindly
-        re-POSTing would turn that success into a duplicate-name error, so re-read
-        the name first and let the next attempt use PUT if the row is now there.
+        A dropped connection does not mean a dropped write: a cohort that returned
+        "500 connection closed" had already been committed. Names are globally
+        unique (uq_cd_name), so re-read the index and let the retry use PUT.
         """
         if attempt >= self.WRITE_ATTEMPTS:
             error_msg = (

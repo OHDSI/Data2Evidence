@@ -5,19 +5,15 @@ from _shared_flow_utils.api.BaseAPI import BaseAPI
 
 
 class PhenotypeTagAPI(BaseAPI):
-    """Resolve WebAPI tags used by Phenotype Library cohort imports.
+    """Resolve the WebAPI tags applied to Phenotype Library cohort imports.
 
-    Cohorts imported from the library carry two tags: a provenance tag naming the
-    library, and a tag for the cohort's review status. Both live under a technical
-    group that exists only to satisfy WebAPI's rule that every tag belongs to a
-    group -- the group itself is never applied to a cohort.
+    Each cohort carries two: its source, and its review status. The groups holding
+    them are seeded in SQL and never assigned to a cohort themselves.
     """
 
-    # Both groups are seeded by
-    # services/atlas-db-init/220_imported_cohort_metadata_tag_group.sql.
-    # The split is deliberate: the source tag coexists with others, while the
-    # status tags are mutually exclusive, and multi_selection is a property of
-    # the group rather than of the tag.
+    # Seeded by services/atlas-db-init/220_imported_cohort_metadata_tag_group.sql.
+    # Two groups because multi_selection is a property of the group: statuses are
+    # mutually exclusive, the source tag is not.
     SOURCE_GROUP = "Imported Cohort Metadata"
     STATUS_GROUP = "Cohort Review Status"
     PHENOTYPE_LIBRARY_TAG = "Phenotype Library"
@@ -43,12 +39,10 @@ class PhenotypeTagAPI(BaseAPI):
         return response.json()
 
     def _create_tag(self, dataset_id: str, name: str, group_id: int) -> dict:
-        """Create a tag inside the technical group.
+        """Create a tag inside one of the seeded groups.
 
-        groups must be non-empty: WebAPI returns 400 for an empty list and 500 if
-        the field is missing, which is why the group is seeded in SQL rather than
-        created here. allowCustom/showGroup are group-level concerns -- nothing
-        nests below these tags.
+        groups must be non-empty: WebAPI 400s on an empty list and 500s if the
+        field is absent, which is why groups cannot be created through the API.
         """
         headers = self.headers.copy()
         headers["datasetId"] = dataset_id
@@ -125,17 +119,10 @@ class PhenotypeTagAPI(BaseAPI):
     def assign_tags_to_cohorts(self, dataset_id: str, tag_ids: list, cohort_ids: list) -> None:
         """Attach a set of tags to a set of cohort definitions in one request.
 
-        Deliberately not the per-cohort POST /cohortdefinition/{id}/tag: that route
-        takes a single tag id, so a full library import costs two requests per
-        cohort (~2200) and blows Trex's rate limit of 5000 requests per 15 minutes
-        -- observed twice, both times failing around 90% through. multiAssign
-        applies every tag to every cohort in the payload, so it is one call per
-        distinct set of cohorts: one for the provenance tag across the whole
-        import, and one per status.
-
-        WebAPI still routes each pair through the same assignTag it uses for the
-        single-tag route, so re-assigning is a no-op and assigning a status still
-        retires the previous one via the single-selection group.
+        Not the per-cohort POST /cohortdefinition/{id}/tag: that takes one tag id,
+        so a full import costs ~2200 requests and exceeds Trex's rate limit of
+        5000 per 15 minutes. WebAPI routes each pair through the same assignTag,
+        so re-assigning stays a no-op and the single-selection swap still applies.
         """
         if not tag_ids or not cohort_ids:
             return
