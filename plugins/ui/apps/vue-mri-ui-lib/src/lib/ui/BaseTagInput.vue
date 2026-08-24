@@ -222,10 +222,12 @@ export default {
       return updatedList
     },
     emptyStateMessage() {
-      if (this.domainValues.isLoading) {
+      const status = this.domainValues.loadedStatus
+      // No status yet means the first request has not resolved.
+      if (this.domainValues.isLoading || !status) {
         return this.texts.loadingSuggestions
       }
-      if (this.domainValues.loadedStatus === 'TOO_MANY_RESULTS') {
+      if (status === 'TOO_MANY_RESULTS') {
         return this.texts.tooManyValues
       }
       return this.texts.noSuggestions
