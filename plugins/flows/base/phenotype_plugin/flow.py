@@ -83,6 +83,7 @@ def get_cohort_definitions(cohorts_id: str, vocabschema_name: str, materialize: 
                     "cohortName": str(result[i].rx2("cohortName")[0]),
                     "json": str(result[i].rx2("json")[0]),
                     "sql": str(result[i].rx2("sql")[0]),
+                    "status": str(result[i].rx2("status")[0]),
                 }
                 cohort_definitions.append(cohort_def)
             return cohort_definitions
@@ -110,19 +111,50 @@ def atlas_cohort_definitions(
     name_index = phenotype_api.get_cohort_name_index(dataset_id)
     logger.info(f"Indexed {len(name_index)} existing WebAPI cohort definitions")
 
+    # cohort id -> Phenotype Library status, collected while writing so the tag
+    # pass does not have to re-read anything.
+    status_by_cohort = {}
+
     for cohort_def in cohort_definitions:
         try:
             result = phenotype_api.create_single_cohort_definition(
                 cohort_def, dataset_id, user_name, name_index
             )
             created_cohorts.append(result)
+            status_by_cohort[result["id"]] = cohort_def.get("status") or "Unspecified"
         except Exception as e:
             error_message = (
                 f"Failed to save cohort {cohort_def['cohortId']}: {str(e)}"
             )
             logger.error(error_message)
             raise Exception(error_message) from e
+
+    tag_cohort_definitions(phenotype_api, dataset_id, status_by_cohort)
     return created_cohorts
+
+
+def tag_cohort_definitions(phenotype_api, dataset_id: str, status_by_cohort: dict) -> None:
+    """Tag every cohort with its Phenotype Library status.
+
+    Produces a two-level structure in Atlas -- a 'Phenotype Library' group with
+    one child tag per status -- so the cohorts can be filtered by provenance and
+    by review state.
+    """
+    logger = get_run_logger()
+    if not status_by_cohort:
+        return
+
+    # Invert to {status: [cohortId, ...]} so each status costs one bulk call
+    # rather than one call per cohort.
+    cohorts_by_status = {}
+    for cohort_id, status in status_by_cohort.items():
+        cohorts_by_status.setdefault(status, []).append(cohort_id)
+
+    status_tags = phenotype_api.ensure_status_tags(dataset_id, cohorts_by_status.keys())
+
+    for status, cohort_ids in sorted(cohorts_by_status.items()):
+        phenotype_api.assign_tag_to_cohorts(dataset_id, status_tags[status], cohort_ids)
+        logger.info(f"Tagged {len(cohort_ids)} cohort definitions as '{status}'")
 
 
 @task(log_prints=True)
