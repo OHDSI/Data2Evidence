@@ -3,7 +3,11 @@ set -e
 
 mkdir -p /usr/src/cert
 printf '%s' "$TLS__INTERNAL__CRT" > /usr/src/cert/cert.pem
-printf '%s' "$TLS__INTERNAL__KEY" > /usr/src/cert/key.pem
+# The key would otherwise inherit the default 022 umask and land 0644 — readable
+# by every user in the container. Scoped to this one write on purpose: the
+# certificate and CA are public material and must stay readable by non-root
+# consumers (nginx workers, python), and /usr/src/cert must stay traversable.
+(umask 077; printf '%s' "$TLS__INTERNAL__KEY" > /usr/src/cert/key.pem)
 printf '%s' "$TLS__INTERNAL__CA_CRT" > /usr/src/cert/ca.pem
 
 # Outbound trust for the internal CA (same move as trex and the dataflow worker),

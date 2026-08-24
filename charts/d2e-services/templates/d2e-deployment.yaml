@@ -500,7 +500,7 @@ spec:
             - |
               mkdir -p /usr/src/cert
               printf '%s' "$TLS__INTERNAL__CRT" > /usr/src/cert/cert.pem
-              printf '%s' "$TLS__INTERNAL__KEY" > /usr/src/cert/key.pem
+              (umask 077; printf '%s' "$TLS__INTERNAL__KEY" > /usr/src/cert/key.pem)
               # Three runtimes share this container and each finds its trust
               # anchors somewhere different. The OS store covers shell/curl and,
               # via DENO_TLS_CA_STORE=system, the Deno edge functions. GraalVM

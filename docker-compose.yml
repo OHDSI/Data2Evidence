@@ -122,7 +122,7 @@ services:
       - |
         mkdir -p /usr/src/cert
         printf '%s' "$$TLS__INTERNAL__CRT" > /usr/src/cert/cert.pem
-        printf '%s' "$$TLS__INTERNAL__KEY" > /usr/src/cert/key.pem
+        (umask 077; printf '%s' "$$TLS__INTERNAL__KEY" > /usr/src/cert/key.pem)
         printf '%s' "$$TLS__INTERNAL__CA_CRT" > /usr/src/cert/ca.pem
         cp /usr/src/cert/ca.pem /usr/local/share/ca-certificates/d2e-internal-ca.crt
         # Optional additional trust anchors, for upstreams that are not ours — the
