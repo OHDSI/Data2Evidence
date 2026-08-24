@@ -9,6 +9,7 @@ from .types import PhenotypeOptionsType
 from _shared_flow_utils.types import UserType
 from _shared_flow_utils.dao.DBDao import DBDao
 from _shared_flow_utils.api.PhenotypeAPI import PhenotypeAPI
+from _shared_flow_utils.api.PhenotypeTagAPI import PhenotypeTagAPI
 
 os.environ["plugin_name"] = "phenotype_plugin"
 
@@ -107,21 +108,36 @@ def atlas_cohort_definitions(
     """
     logger = get_run_logger()
     phenotype_api = PhenotypeAPI()
+    phenotype_tag_api = PhenotypeTagAPI()
     created_cohorts = []
     name_index = phenotype_api.get_cohort_name_index(dataset_id)
     logger.info(f"Indexed {len(name_index)} existing WebAPI cohort definitions")
 
-    # cohort id -> Phenotype Library status, collected while writing so the tag
-    # pass does not have to re-read anything.
-    status_by_cohort = {}
+    statuses = {
+        cohort_def.get("status") or "Unspecified"
+        for cohort_def in cohort_definitions
+    }
+    phenotype_library_tag, status_tags = phenotype_tag_api.resolve_import_tags(
+        dataset_id, statuses
+    )
 
     for cohort_def in cohort_definitions:
         try:
+            status = cohort_def.get("status") or "Unspecified"
             result = phenotype_api.create_single_cohort_definition(
-                cohort_def, dataset_id, user_name, name_index
+                cohort_def,
+                dataset_id,
+                user_name,
+                name_index,
             )
             created_cohorts.append(result)
-            status_by_cohort[result["id"]] = cohort_def.get("status") or "Unspecified"
+            tag_cohort_definition(
+                phenotype_tag_api,
+                dataset_id,
+                result["id"],
+                phenotype_library_tag,
+                status_tags[status],
+            )
         except Exception as e:
             error_message = (
                 f"Failed to save cohort {cohort_def['cohortId']}: {str(e)}"
@@ -129,32 +145,25 @@ def atlas_cohort_definitions(
             logger.error(error_message)
             raise Exception(error_message) from e
 
-    tag_cohort_definitions(phenotype_api, dataset_id, status_by_cohort)
+    logger.info(f"Tagged {len(created_cohorts)} cohort definitions")
     return created_cohorts
 
 
-def tag_cohort_definitions(phenotype_api, dataset_id: str, status_by_cohort: dict) -> None:
-    """Tag every cohort with its Phenotype Library status.
+def tag_cohort_definition(phenotype_tag_api, dataset_id: str, cohort_definition_id: int,
+                          phenotype_library_tag: dict, status_tag: dict) -> None:
+    """Record where the cohort came from, and what its review status is.
 
-    Produces a two-level structure in Atlas -- a 'Phenotype Library' group with
-    one child tag per status -- so the cohorts can be filtered by provenance and
-    by review state.
+    WebAPI ignores tags supplied on cohort create/update, so each is applied
+    through the dedicated assign route. Re-assigning a tag already present is a
+    no-op, and assigning the status retires whichever status was there before --
+    the status group is single-selection, so WebAPI clears the old one itself.
     """
-    logger = get_run_logger()
-    if not status_by_cohort:
-        return
-
-    # Invert to {status: [cohortId, ...]} so each status costs one bulk call
-    # rather than one call per cohort.
-    cohorts_by_status = {}
-    for cohort_id, status in status_by_cohort.items():
-        cohorts_by_status.setdefault(status, []).append(cohort_id)
-
-    status_tags = phenotype_api.ensure_status_tags(dataset_id, cohorts_by_status.keys())
-
-    for status, cohort_ids in sorted(cohorts_by_status.items()):
-        phenotype_api.assign_tag_to_cohorts(dataset_id, status_tags[status], cohort_ids)
-        logger.info(f"Tagged {len(cohort_ids)} cohort definitions as '{status}'")
+    phenotype_tag_api.assign_tag_to_cohort(
+        dataset_id, cohort_definition_id, phenotype_library_tag["id"]
+    )
+    phenotype_tag_api.assign_tag_to_cohort(
+        dataset_id, cohort_definition_id, status_tag["id"]
+    )
 
 
 @task(log_prints=True)

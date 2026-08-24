@@ -25,38 +25,22 @@ get_cohort_definitions <- function(cohortsID, vocabschemaName, materialize = FAL
     # be tagged by it, so ask for the unfiltered log.
     phenotypeLog <- PhenotypeLibrary::getPhenotypeLog(showHidden = TRUE)
 
-    # buildCohortQuery throws on cohorts CirceR cannot render. That was invisible
-    # while the default filter hid most of the library; over the full set one bad
-    # cohort would abort the whole run, so skip and report instead.
-    build_sql_safely <- function(cohortDefinitionSets, vocabschemaName) {
-        for (i in 1:nrow(cohortDefinitionSets)) {
-            cohortDefinitionSets$sql[i] <- tryCatch(
-                CirceR::buildCohortQuery(
-                    cohortDefinitionSets$json[i],
-                    options = CirceR::createGenerateOptions(generateStats = TRUE, vocabularySchema = vocabschemaName)
-                ),
-                error = function(e) {
-                    warning(sprintf("Skipping cohort %s: CirceR could not build SQL (%s)",
-                                    cohortDefinitionSets$cohortId[i], conditionMessage(e)))
-                    NA_character_
-                }
-            )
-        }
-        return(cohortDefinitionSets[!is.na(cohortDefinitionSets$sql), ])
-    }
-
     create_cohort_definitionsets <- function(cohortsID, vocabschemaName) {
         # CirceR version 1.1.1 does not support cohort 344, and CirceR version 1.3.3 (currently used) does not support cohort 921
         if (is.character(cohortsID) && cohortsID == 'default') {
             cohortDefinitionSets <- PhenotypeLibrary::getPlCohortDefinitionSet(phenotypeLog$cohortId[1:nrow(phenotypeLog)])
             cohortDefinitionSets <- cohortDefinitionSets[cohortDefinitionSets$cohortId!=921,]
-            cohortDefinitionSets <- build_sql_safely(cohortDefinitionSets, vocabschemaName)
+            for (i in 1:nrow(cohortDefinitionSets)) {
+                cohortDefinitionSets$sql[i] <- CirceR::buildCohortQuery(cohortDefinitionSets$json[i], options = CirceR::createGenerateOptions(generateStats = TRUE, vocabularySchema = vocabschemaName))
+            }
         } else if (class(cohortsID) == "integer") {
             if (921 %in% cohortsID) {
                 cohortsID <- cohortsID[cohortsID!=921]
             }
             cohortDefinitionSets <- PhenotypeLibrary::getPlCohortDefinitionSet(cohortsID)
-            cohortDefinitionSets <- build_sql_safely(cohortDefinitionSets, vocabschemaName)
+            for (i in 1:nrow(cohortDefinitionSets)) {
+                cohortDefinitionSets$sql[i] <- CirceR::buildCohortQuery(cohortDefinitionSets$json[i], options = CirceR::createGenerateOptions(generateStats = TRUE, vocabularySchema = vocabschemaName))
+            }
         }
 
         # getPlCohortDefinitionSet returns only cohortId/cohortName/json/sql; the
