@@ -371,15 +371,6 @@ spec:
                 echo "Waiting... ($i/120)";
                 sleep 5;
               done;
-              echo "Waiting for webapi coarse permissions...";
-              for i in $(seq 1 60); do
-                if psql -tAc "SELECT 1 FROM webapi.sec_permission WHERE value = 'read:conceptset'" | grep -q 1; then
-                  echo "webapi coarse permissions found";
-                  break;
-                fi;
-                echo "Waiting... ($i/60)";
-                sleep 5;
-              done;
               echo "Waiting for logto.users table...";
               for i in $(seq 1 60); do
                 if psql -tAc "SELECT 1 FROM information_schema.tables WHERE table_schema = 'logto' AND table_name = 'users'" | grep -q 1; then
@@ -389,6 +380,21 @@ spec:
                 echo "Waiting... ($i/60)";
                 sleep 2;
               done;
+              echo "Waiting for webapi coarse permissions...";
+              for i in $(seq 1 60); do
+                if psql -tAc "SELECT 1 FROM webapi.sec_permission WHERE value = 'read:conceptset'" | grep -q 1; then
+                  echo "webapi coarse permissions found";
+                  break;
+                fi;
+                echo "Waiting... ($i/60)";
+                sleep 5;
+              done;
+              if ! psql -tAc "SELECT 1 FROM webapi.sec_permission WHERE value = 'read:conceptset'" | grep -q 1; then
+                echo "ERROR: webapi.sec_permission has no read:conceptset row after 300s.";
+                echo "ERROR: The WebAPI image does not seed the coarse permissions, or flyway did not finish.";
+                echo "ERROR: The researcher concept-set grants would be skipped without a trace. Stopping.";
+                exit 1;
+              fi;
               for f in /scripts/*.sql; do psql -v ON_ERROR_STOP=1 -f "$$f"; done;
               touch /tmp/webapi-init.done;
               echo "webapi-init: SQL scripts complete";
