@@ -1,5 +1,7 @@
 import json
 import unittest
+
+import requests
 from unittest.mock import Mock, patch
 
 from _shared_flow_utils.api.PhenotypeAPI import PhenotypeAPI
@@ -98,17 +100,22 @@ class PhenotypeTagAPITest(unittest.TestCase):
         )
 
     @patch("_shared_flow_utils.api.PhenotypeTagAPI.requests.post")
-    def test_assign_tag_posts_bare_integer(self, post):
+    def test_multi_assign_sends_tags_and_cohorts_in_one_call(self, post):
         post.return_value = Mock(status_code=200, text="")
 
-        self.api.assign_tag_to_cohort("dataset-1", 456, 11)
+        self.api.assign_tags_to_cohorts("dataset-1", [11], [456, 457, 458])
 
+        self.assertEqual("https://webapi/tag/multiAssign", post.call_args.args[0])
         self.assertEqual(
-            "https://webapi/cohortdefinition/456/tag", post.call_args.args[0]
+            {"tags": [11], "assets": {"cohorts": [456, 457, 458]}},
+            post.call_args.kwargs["json"],
         )
-        # The handler signature is `@RequestBody final int tagId` -- a bare int,
-        # not an object.
-        self.assertEqual(11, post.call_args.kwargs["json"])
+
+    @patch("_shared_flow_utils.api.PhenotypeTagAPI.requests.post")
+    def test_multi_assign_skips_empty_input(self, post):
+        self.api.assign_tags_to_cohorts("dataset-1", [11], [])
+        self.api.assign_tags_to_cohorts("dataset-1", [], [456])
+        post.assert_not_called()
 
 
 class PhenotypeAPITest(unittest.TestCase):
@@ -163,6 +170,65 @@ class PhenotypeAPITest(unittest.TestCase):
         self.assertEqual(
             {"123_Type 2 diabetes": 456}, self.api.get_cohort_name_index("dataset-1")
         )
+
+
+    @patch("_shared_flow_utils.api.PhenotypeAPI.time.sleep", Mock())
+    @patch("_shared_flow_utils.api.PhenotypeAPI.get_run_logger")
+    @patch("_shared_flow_utils.api.PhenotypeAPI.requests.get")
+    @patch("_shared_flow_utils.api.PhenotypeAPI.requests.post")
+    def test_retries_a_dropped_connection(self, post, get, get_run_logger):
+        # First attempt dies mid-flight; the name index shows nothing was written,
+        # so the second attempt is another POST and succeeds.
+        post.side_effect = [
+            requests.exceptions.ConnectionError("connection closed"),
+            Mock(status_code=201, json=Mock(return_value={"id": 456})),
+        ]
+        get.return_value = Mock(status_code=200, json=Mock(return_value=[]))
+
+        result = self.api.create_single_cohort_definition(
+            self.cohort, "dataset-1", "user", {}
+        )
+
+        self.assertEqual(456, result["id"])
+        self.assertEqual(2, post.call_count)
+
+    @patch("_shared_flow_utils.api.PhenotypeAPI.time.sleep", Mock())
+    @patch("_shared_flow_utils.api.PhenotypeAPI.get_run_logger")
+    @patch("_shared_flow_utils.api.PhenotypeAPI.requests.put")
+    @patch("_shared_flow_utils.api.PhenotypeAPI.requests.get")
+    @patch("_shared_flow_utils.api.PhenotypeAPI.requests.post")
+    def test_lost_reply_that_actually_wrote_becomes_an_update(
+        self, post, get, put, get_run_logger
+    ):
+        # The POST reply is lost but the row landed: the refreshed index finds it,
+        # so the retry must PUT rather than POST again into uq_cd_name.
+        post.return_value = Mock(status_code=500, text="connection closed")
+        get.return_value = Mock(
+            status_code=200,
+            json=Mock(return_value=[{"id": 456, "name": "123_Type 2 diabetes"}]),
+        )
+        put.return_value = Mock(status_code=200, json=Mock(return_value={"id": 456}))
+
+        result = self.api.create_single_cohort_definition(
+            self.cohort, "dataset-1", "user", {}
+        )
+
+        self.assertEqual(456, result["id"])
+        self.assertEqual(1, post.call_count)
+        self.assertEqual(1, put.call_count)
+
+    @patch("_shared_flow_utils.api.PhenotypeAPI.time.sleep", Mock())
+    @patch("_shared_flow_utils.api.PhenotypeAPI.get_run_logger")
+    @patch("_shared_flow_utils.api.PhenotypeAPI.requests.post")
+    def test_4xx_is_not_retried(self, post, get_run_logger):
+        post.return_value = Mock(status_code=400, text="bad payload")
+
+        with self.assertRaises(Exception):
+            self.api.create_single_cohort_definition(
+                self.cohort, "dataset-1", "user", {}
+            )
+
+        self.assertEqual(1, post.call_count)
 
 
 if __name__ == "__main__":

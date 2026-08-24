@@ -122,34 +122,37 @@ class PhenotypeTagAPI(BaseAPI):
         }
         return by_name[self.PHENOTYPE_LIBRARY_TAG.lower()], status_tags
 
-    def assign_tag_to_cohort(
-        self, dataset_id: str, cohort_definition_id: int, tag_id: int
-    ) -> None:
-        """Attach one tag to one cohort definition.
+    def assign_tags_to_cohorts(self, dataset_id: str, tag_ids: list, cohort_ids: list) -> None:
+        """Attach a set of tags to a set of cohort definitions in one request.
 
-        WebAPI ignores the tags field on cohort create/update, so tags have to be
-        applied through this dedicated route. The body is a bare JSON integer --
-        the handler signature is `@RequestBody final int tagId`, not an object.
+        Deliberately not the per-cohort POST /cohortdefinition/{id}/tag: that route
+        takes a single tag id, so a full library import costs two requests per
+        cohort (~2200) and blows Trex's rate limit of 5000 requests per 15 minutes
+        -- observed twice, both times failing around 90% through. multiAssign
+        applies every tag to every cohort in the payload, so it is one call per
+        distinct set of cohorts: one for the provenance tag across the whole
+        import, and one per status.
 
-        Re-assigning a tag the cohort already carries is a no-op, which keeps flow
-        re-runs safe. Assigning a status also retires whichever status the cohort
-        carried before: AbstractDaoService.assignTag clears the other tags in a
-        single-selection group, and the status group is declared that way.
+        WebAPI still routes each pair through the same assignTag it uses for the
+        single-tag route, so re-assigning is a no-op and assigning a status still
+        retires the previous one via the single-selection group.
         """
+        if not tag_ids or not cohort_ids:
+            return
         headers = self.headers.copy()
         headers["datasetId"] = dataset_id
-        url = (
-            f"{self.get_service_route('webapi')}cohortdefinition/"
-            f"{cohort_definition_id}/tag"
-        )
+        payload = {
+            "tags": list(tag_ids),
+            "assets": {"cohorts": list(cohort_ids)},
+        }
         response = requests.post(
-            url,
+            f"{self.tag_url}/multiAssign",
             headers=headers,
-            json=tag_id,
+            json=payload,
             verify=self.get_verify_value(),
         )
         if response.status_code not in [200, 201, 204]:
             raise Exception(
-                f"Failed to assign tag {tag_id} to cohort definition "
-                f"{cohort_definition_id}: {response.status_code} - {response.text}"
+                f"Failed to assign tags {list(tag_ids)} to {len(cohort_ids)} cohort "
+                f"definitions: {response.status_code} - {response.text}"
             )
