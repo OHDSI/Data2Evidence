@@ -208,15 +208,6 @@ services:
       # - ./services/alp-logto/connector-oidc-patched/lib:/etc/logto/packages/connectors/connector-oidc/lib
       # - ./services/alp-logto/connector-alp-azuread/lib:/etc/logto/packages/connectors/connector-alp-azuread/lib
 
-  alp-minerva-pg-mgmt-init:
-    ports:
-      - 9211:9211
-    build:
-      context: services/alp-pg-management
-      dockerfile: Dockerfile
-    volumes:
-      - ./services/alp-pg-management/app:/home/docker/app
-
   alp-minerva-postgres:
     ports:
       - 41190:5432
@@ -226,11 +217,6 @@ services:
     ports:
       - "15432:5432"
 
-  dicom-server:
-    # uses 8042 port on the container
-    ports:
-      - 8042:8042
-
   alp-logto-post-init:
     build:
       context: ./services/alp-logto/post-init
@@ -238,37 +224,10 @@ services:
     # volumes:
     #   - ./services/alp-logto/post-init:/home/docker
 
-  enterprise-gateway:
-    build:
-      context: ./services/enterprise-gateway
-      dockerfile: Dockerfile
-    environment:
-      EG_ALLOW_ORIGIN: "https://${CADDY__D2E__PUBLIC_FQDN:-${CADDY__ALP__PUBLIC_FQDN:-localhost}}${PORT:+:${PORT:-41100}}"
-    volumes:
-      - ./services/enterprise-gateway/r-strategus-lib/rD2E:/app/rD2E
-      - ./services/enterprise-gateway/kernels/R_ohdsi_docker:/usr/local/share/jupyter/kernels/R_ohdsi_docker
-  
-  enterprise-gateway-viewer:
-    build:
-      context: ./services/enterprise-gateway
-      dockerfile: Dockerfile
-    environment:
-      EG_ALLOW_ORIGIN: "https://${CADDY__D2E__PUBLIC_FQDN:-${CADDY__ALP__PUBLIC_FQDN:-localhost}}${PORT:+:${PORT:-41100}}"
-    volumes:
-      - ./services/enterprise-gateway/r-strategus-lib/rD2E:/app/rD2E
-      - ./services/enterprise-gateway/kernels/R_ohdsi_docker:/usr/local/share/jupyter/kernels/R_ohdsi_docker
-
   supabase-storage:
     build:
       context: ./services/supabase-storage
       dockerfile: Dockerfile
-
-  logging:
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-    environment:
-      - DOZZLE_ENABLE_SHELL=${DOZZLE_ENABLE_SHELL:-false}
-      - DOZZLE_ENABLE_ACTIONS=true
 
   materialize-cohorts:
     profiles:

@@ -217,38 +217,34 @@ jobs:
           ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }} -d ./plugins/functions stop
           ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }} -d ./plugins/functions start
 
-      - name: Wait for webapi-init to complete
+      - name: Wait for trex to finish the atlas-db-init seeding
         if: success() || failure()
         run: |
-          # Stacks that have retired the webapi-init container never create it,
-          # so there is nothing to wait for. Without this the loop ran all 60
-          # iterations against an empty status and fell out of the bottom: five
-          # minutes wasted, every time.
-          if [ -z "$(docker ps -a --filter 'name=webapi-init' --format '{{.Names}}')" ]; then
-            echo "No webapi-init container in this stack — nothing to wait for."
-            exit 0
-          fi
-          echo "Waiting for webapi-init to complete (ensures logto admin user is created)..."
+          # The webapi-init container is gone: trex applies atlas-db-init itself,
+          # in d2eBoot() before it starts listening. So a healthy trex means the
+          # seeding (including the logto admin user) has already run.
+          echo "Waiting for trex to become healthy..."
+          healthy=0
           for i in $(seq 1 60); do
-            status=$(docker ps -a --filter "name=webapi-init" --format '{{.Status}}')
+            status=$(docker ps -a --filter "name=d2e-trex" --format '{{.Status}}')
             if echo "$status" | grep -q "(healthy)"; then
-              echo "webapi-init completed successfully"
-              exit 0
+              echo "trex is healthy; atlas-db-init has run"
+              healthy=1
+              break
             fi
-            if echo "$status" | grep -qE "Exited \([1-9]"; then
-              echo "webapi-init failed!"
-              docker logs d2e-webapi-init || true
+            if echo "$status" | grep -qE "Exited \("; then
+              echo "trex failed to start!"
+              docker logs d2e-trex || true
               exit 1
             fi
-            echo "Waiting for webapi-init... ($i/60)"
+            echo "Waiting for trex... ($i/60)"
             sleep 5
           done
-          # Falling out of the loop used to exit 0, so a webapi-init that never
-          # came healthy passed exactly like one that did — a wait that cannot
-          # fail is not a wait.
-          echo "webapi-init never became healthy after 5 minutes"
-          docker logs d2e-webapi-init || true
-          exit 1
+          docker logs d2e-trex 2>&1 | grep -i "atlas-db-init" || echo "no atlas-db-init lines in trex logs yet"
+          if [ "$healthy" != "1" ]; then
+            echo "trex never reported healthy; atlas-db-init cannot be assumed to have run"
+            exit 1
+          fi
 
       - name: Verify app is reachable
         if: success() || failure()

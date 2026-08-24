@@ -6,7 +6,7 @@
 # not by a forked main. See docs/superpowers/specs/2026-06-20-d2e-trex-main-migration-design.md
 # NOTE: trexsql has no `develop` tag — use `dev`, or pin an immutable sha-<commit>.
 # Pinned to the same base develop's Dockerfile.v2 uses.
-ARG TREXSQL_TAG=sha-dec4a9508dcc57597c64422d6a27a36daaf74e27
+ARG TREXSQL_TAG=sha-d6d6a16be5048fdef03030c3158f6bf28506ff48
 FROM ghcr.io/ohdsi/trexsql:${TREXSQL_TAG}
 
 USER root
@@ -18,6 +18,10 @@ COPY ./cdw_data/built_in /usr/src/cdw_data/built_in
 # d2e logto worker served by the D2E_COMPAT /logto route.
 COPY ./logto /usr/src/logto
 
+# d2e's boot-time database provisioning (trex.provision plugin kind). trex
+# aborts boot without it when POSTGRES_MANAGE_CONFIG is set.
+COPY ./provision/d2e-bootstrap /usr/src/bundled-plugins/d2e-bootstrap
+
 # LOCAL-TEST workaround: the trexsql base installs DuckDB extensions under
 # DUCKDB_EXTENSION_DIRECTORY (/usr/share/trexsql/extensions), but worker
 # connections' `LOAD <ext>` resolves against DuckDB's default ~/.duckdb path, so
@@ -27,7 +31,7 @@ RUN mkdir -p /home/node/.duckdb/extensions && \
     cp -r /usr/share/trexsql/extensions/* /home/node/.duckdb/extensions/ 2>/dev/null || true
 
 RUN mkdir -p /var/log/d2e/audit && \
-    chown -R node:node /usr/src/cdw_data /usr/src/logto /home/node/.duckdb /var/log/d2e/audit
+    chown -R node:node /usr/src/cdw_data /usr/src/logto /usr/src/bundled-plugins/d2e-bootstrap /home/node/.duckdb /var/log/d2e/audit
 USER node
 
 # Entrypoint + SWARM_CONFIG-driven startup are inherited from trexsql.

@@ -2,8 +2,6 @@ name: ${PROJECT_NAME:-d2e}
 networks:
   alp:
   data:
-  enterprise-gateway:
-  enterprise-gateway-viewer:
 
 volumes:
   caddy:
@@ -13,7 +11,6 @@ volumes:
   r-libs:
   trex:
   demodb-data:
-  dicom-sqlite-storage:
   hana-data:
   supabase-storage-data:
   hades-data:
@@ -38,9 +35,6 @@ x-envs:
     PG__IDLE_TIMEOUT_IN_MS: ${PG__IDLE_TIMEOUT_IN_MS:-30000}
     PG__DIALECT: postgresql
     PG__SSL: ${PG__SSL:-false}
-  redis: &x-redis
-    REDIS_HOST: ${REDIS_HOST:-${PROJECT_NAME:-d2e}-minerva-redis-1}
-    REDIS_PORT: ${REDIS_PORT:-6379}
   trex_sql: &x-trex-sql
     TREX__SQL__HOST: ${PROJECT_NAME:-d2e}-trex
     TREX__SQL__PORT: ${TREX__SQL__PORT:-5433}
@@ -53,24 +47,6 @@ x-envs:
     TLS__INTERNAL__CRT: ${TLS__INTERNAL__CRT}
     TLS__INTERNAL__DOMAIN: ${TLS__INTERNAL__DOMAIN:-alp.local}
     TLS__INTERNAL__KEY: ${TLS__INTERNAL__KEY}
-  enterprise-gateway: &x-enterprise-gateway
-    EG_KERNEL_LAUNCH_TIMEOUT: ${EG_KERNEL_LAUNCH_TIMEOUT:-300}
-    EG_KERNEL_INFO_TIMEOUT: ${EG_KERNEL_INFO_TIMEOUT:-60}
-    EG_CULL_IDLE_TIMEOUT: ${EG_CULL_IDLE_TIMEOUT:-600}
-    EG_CULL_CONNECTED: ${EG_CULL_CONNECTED:-True}
-    EG_CULL_BUSY: ${EG_CULL_BUSY:-True}
-    # Use double-defaulting for B/C.  Support for EG_KERNEL_WHITELIST will be removed in a future release
-    EG_ALLOWED_KERNELS: ${EG_ALLOWED_KERNELS:-${EG_KERNEL_WHITELIST:-'r_ohdsi_docker'}} # /jupyter/api/kernelspecs
-    EG_MIRROR_WORKING_DIRS: ${EG_MIRROR_WORKING_DIRS:-False}
-    EG_RESPONSE_PORT: ${EG_RESPONSE_PORT:-8877}
-    KG_PORT: ${KG_PORT:-8888}
-    EG_BASE_URL: /jupyter
-    EG_DEFAULT_KERNEL_NAME: "r_ohdsi_docker"
-    EG_DOCKER_MODE: docker
-    EG_ALLOW_ORIGIN: "https://${CADDY__D2E__PUBLIC_FQDN:-${CADDY__ALP__PUBLIC_FQDN:-localhost}}${PORT:+:${PORT:-443}}"
-    TREX__ENDPOINT_URL: "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001"
-    EG_ENV_WHITELIST: "KERNEL_USERNAME"
-    EG_MAX_KERNELS_PER_USER: 1
 
 services:
   # OHDSI WebAPI for Atlas3 (with trex dependencies)
@@ -81,22 +57,37 @@ services:
     extra_hosts:
       - "${CADDY__D2E__PUBLIC_FQDN:-${CADDY__ALP__PUBLIC_FQDN:-localhost}}:host-gateway"
     depends_on:
-      alp-minerva-pg-mgmt-init:
-        condition: service_completed_successfully
-      alp-logto-post-init:
-        condition: service_completed_successfully
+      # trex now provisions the database itself (runD2eBootstrap), so it only
+      # needs Postgres up. It deliberately does NOT wait for alp-logto-post-init
+      # any more: logto cannot migrate until trex has created logto_postgres and
+      # the logto schema, so trex must start FIRST. Keeping the old edge would
+      # deadlock (trex -> post-init -> logto -> trex's bootstrap).
+      alp-minerva-postgres:
+        condition: service_healthy
     networks:
       alp:
         priority: 20
       data:
         priority: 10
-      enterprise-gateway-viewer:
-        priority: 20
     volumes:
       - trex:/usr/src/data
       - cdw-config-cachedb-data-1:/usr/src/cdw_data/dynamically_generated
       - hades-data:/data/hades
       - audit-logs:/var/log/d2e/audit
+      # `notebook` schema (studies/notebooks) + its PostGraphile grants, applied
+      # as a trex migrations plugin. Must land under a PLUGINS_DEV_PATH entry to
+      # be scanned; trex runs it against _config (the alp Postgres catalog) and
+      # tracks applied versions in notebook.refinery_schema_history.
+      - ./services/trex/migrations/notebook:/usr/src/bundled-plugins/notebook-schema:ro
+      # d2e's DB provisioning (login users, supabase roles, schemas, grants),
+      # applied as a trex provision plugin BEFORE any other plugin loads.
+      # Already baked into the image; mounted so a source edit takes effect on
+      # restart without a rebuild.
+      - ./services/trex/provision/d2e-bootstrap:/usr/src/bundled-plugins/d2e-bootstrap:ro
+      # WebAPI/Logto seeding SQL, applied by the d2e-compat atlas-db-init block
+      # once webapi.sec_role and logto.users exist. Replaces the webapi-init
+      # container, which ran the same files through psql.
+      - ./services/atlas-db-init:/usr/src/atlas-db-init:ro
     ports:
       - "8090:8080"
     healthcheck:
@@ -203,8 +194,53 @@ services:
       PG__HOST: ${PG_HOST:-${PROJECT_NAME:-d2e}-minerva-postgres-1}
       PG__PORT: ${PG_PORT:-5432}
       # Schemas PostGraphile introspects for /trex/graphql - `notebook` exposes
-      # the studies/notebooks tables from services/trex/migrations/notebook.
+      # the studies/notebooks tables provisioned by the notebook-schema
+      # migrations plugin mounted above.
       PG_SCHEMA: ${PG_SCHEMA:-trexdb,notebook}
+      # ── DB bootstrap (replaces the alp-minerva-pg-mgmt-init container) ──────
+      # trex's d2e-compat runD2eBootstrap() reads these before plugin init and
+      # provisions the login users, the anon/authenticated/service_role roles,
+      # the schemas and their grants. Same contract the retired container used,
+      # so the SQL is unchanged and re-runs idempotently on every boot.
+      POSTGRES_MANAGE_CONFIG: |-
+        {
+         "databases": {
+          "+${PG_DB_NAME:-alp}": {
+           "schemas": {
+            "+cdw_config": {},
+            "+jobplugins": {},
+            "+logto": {},
+            "+portal": {},
+            "+public": {},
+            "+qe_config": {},
+            "+terminology": {},
+            "+usermgmt": {},
+            "+files_manager": {},
+            "+perseus": {},
+            "+white_rabbit": {},
+            "+trex": {},
+            "+storage": {},
+            "+strategus": {},
+            "+notebook": {},
+            "+network": {}
+           }
+          }
+         }
+        }
+      POSTGRES_MANAGE_USERS: |-
+        {
+         "${PG_DB_NAME:-alp}": {
+          "manager": "${PG_ADMIN_USER:-alp_pg_admin_user}",
+          "managerPassword": "${PG_ADMIN_PASSWORD}",
+          "reader": "${PG_WRITE_USER:-alp_pg_write_user}",
+          "readerPassword": "${PG_WRITE_PASSWORD}",
+          "writer": "${PG_WRITE_USER:-alp_pg_write_user}",
+          "writerPassword": "${PG_WRITE_PASSWORD}",
+          "logtoManager": "${PG_LOGTO_MANAGER:-${PG__LOGTO_MANAGER_USER:-logto_postgres}}",
+          "logtoManagerPassword": "${PG__LOGTO_MANAGER_PASSWORD}"
+         }
+        }
+      POSTGRES_MANAGE_ROLES_USERS: ${POSTGRES_MANAGE_ROLES_USERS:-{}}
       TREX_SQL_PASSWORD: ${TREX__SQL__PASSWORD:?TREX__SQL__PASSWORD must be set (run d2e init); refusing default pencil}
       TREX__SQL__PORT: ${TREX__SQL__PORT:-5433}
       TREX__SQL__DBNAME: postgres
@@ -270,14 +306,9 @@ services:
         "filesManager": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/files-manager/api",
         "whiteRabbit": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/white-rabbit/api",
         "alpdb": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/gateway/api/db",
-        "dicomServer": "http://${PROJECT_NAME:-d2e}-dicom-server-1:8042",
         "logto": "http://${PROJECT_NAME:-d2e}-logto-1:3001",
-        "jupyter-gateway": "http://${PROJECT_NAME:-d2e}-enterprise-gateway:8888/jupyter",
-        "jupyter-gateway-viewer": "http://${PROJECT_NAME:-d2e}-enterprise-gateway-viewer:8888/jupyter",
-        "docker-logs": "http://${PROJECT_NAME:-d2e}-logging-1:8080",
         "supabaseStorage": "http://${PROJECT_NAME:-d2e}-supabase-storage-1:9000",
         "dataflowStorage": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/system-portal/supabase-storage",
-        "mlflow": "http://${PROJECT_NAME:-d2e}-mlflow:5000",
         "mcp-server": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/mcp/chat",
         "materializeCohorts": "https://${PROJECT_NAME:-d2e}-materialize-cohorts:3333",
         "fhirServer": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:8094",
@@ -387,7 +418,6 @@ services:
       USE_PUBLIC_WEBAPI_PROXY: ${USE_PUBLIC_WEBAPI_PROXY:-false}
       PUBLIC_WEBAPI_PROXY_URL: ${PUBLIC_WEBAPI_PROXY_URL:-http://localhost:3001}
       PUBLIC_WEBAPI_DATASOURCE: ${PUBLIC_WEBAPI_DATASOURCE:-SYNPUF1K}
-      REDIS_PASSWORD: ${REDIS_PASSWORD}
       SQL_RETURN_ON: ${SQL_RETURN_ON:-false}
       AZURE_OPENAI_API_KEY: ${AZURE_OPENAI_API_KEY:-}
       AZURE_OPENAI_API_ENDPOINT: ${AZURE_OPENAI_API_ENDPOINT:-}
@@ -479,88 +509,6 @@ services:
       OTEL_EXPORTER_OTLP_HEADERS: ${OTEL_EXPORTER_OTLP_HEADERS:-}
       OTEL_SERVICE_NAME: ${OTEL_SERVICE_NAME:-}
 
-  alp-minerva-pg-mgmt-init:
-    container_name: &c15 ${PROJECT_NAME:-d2e}-minerva-pg-mgmt-init-1
-    depends_on:
-      alp-minerva-postgres:
-        condition: service_healthy
-    hostname: ${PROJECT_NAME:-d2e}-minerva-pg-mgmt-init-1.${TLS__INTERNAL__DOMAIN:-alp.local}
-    image: ${DOCKER_IMAGE_PREFIX:-ghcr.io/ohdsi/}d2e-pg-mgmt-init:${DOCKER_TAG_NAME:-develop}
-    logging:
-      options:
-        tag: *c15
-    networks:
-      alp:
-        priority: 20
-    platform: linux/amd64
-    environment:
-      <<:
-        - *x-tls
-      NODE_ENV: development
-      ALP_DB_LOGLEVEL: ${ALP_DB_LOGLEVEL:-info}
-      POSTGRES_CONNECTION_CONFIG: |-
-        {
-         "connectionTimeoutMillis": 60000,
-         "database": "${PG_DB_NAME:-alp}",
-         "host": "${PG_HOST:-${PROJECT_NAME:-d2e}-minerva-postgres-1}",
-         "idle_in_transaction_session_timeout": 60000,
-         "password": "${PG_SUPER_PASSWORD}",
-         "port": "${PG_PORT:-5432}",
-         "query_timeout": 60000,
-         "statement_timeout": 60000,
-         "user": "${PG_SUPER_USER:-postgres}",
-         "ssl": false
-        }
-      POSTGRES_MANAGE_CONFIG: |-
-        {
-         "databases": {
-          "+${PG_DB_NAME:-alp}": {
-           "schemas": {
-            "+cdw_config": {},
-            "+jobplugins": {},
-            "+logto": {},
-            "+portal": {},
-            "+public": {},
-            "+qe_config": {},
-            "+terminology": {},
-            "+usermgmt": {},
-            "+files_manager": {},
-            "+perseus": {},
-            "+white_rabbit": {},
-            "+trex": {},
-            "+storage": {},
-            "+strategus": {},
-            "+notebook": {},
-            "+network": {}
-           }
-          }
-         }
-        }
-      POSTGRES_ALTER_EXTENSION_CONFIG: |-
-        {
-         "databases": {
-          }
-        }
-      POSTGRES_MANAGE_USERS: |-
-        {
-         "${PG_DB_NAME:-alp}": {
-          "manager": "${PG_ADMIN_USER:-alp_pg_admin_user}",
-          "managerPassword": "${PG_ADMIN_PASSWORD}",
-          "reader": "${PG_WRITE_USER:-alp_pg_write_user}",
-          "readerPassword": "${PG_WRITE_PASSWORD}",
-          "writer": "${PG_WRITE_USER:-alp_pg_write_user}",
-          "writerPassword": "${PG_WRITE_PASSWORD}",
-          "logtoManager": "${PG_LOGTO_MANAGER:-${PG__LOGTO_MANAGER_USER:-logto_postgres}}",
-          "logtoManagerPassword": "${PG__LOGTO_MANAGER_PASSWORD}"
-         }
-        }
-      POSTGRES_MANAGE_ROLES_USERS: ${POSTGRES_MANAGE_ROLES_USERS:-{}}
-      POSTGRES_SUPERUSER: ${PG_SUPER_USER:-postgres}
-      POSTGRES_SUPERUSER_PASSWORD: ${PG_SUPER_PASSWORD}
-      POSTGRES_CONFIG_DB_NAME: ${PG_DB_NAME:-alp}
-      PORT: 41110
-      sqlOnly: false
-
   alp-caddy:
     container_name: &c1 ${PROJECT_NAME:-d2e}-caddy
     hostname: ${PROJECT_NAME:-d2e}-caddy.${TLS__INTERNAL__DOMAIN:-alp.local}
@@ -571,10 +519,6 @@ services:
         tag: *c1
     networks:
       alp:
-        priority: 20
-      enterprise-gateway:
-        priority: 20
-      enterprise-gateway-viewer:
         priority: 20
     command: >
       sh -c "
@@ -647,47 +591,6 @@ services:
               transport http {
                 read_buffer 8192
               }
-            }
-          }
-
-          @jupyter_websocket {
-            path /jupyter/*
-            header Connection *Upgrade*
-            header Upgrade websocket
-          }
-
-          @strategus_websocket {
-            path /strategus-results/*
-            header Connection *Upgrade*
-            header Upgrade websocket
-          }
-          
-          handle @jupyter_websocket {
-            reverse_proxy https://${PROJECT_NAME:-d2e}-trex:33000 {
-              transport http {
-                tls
-                tls_insecure_skip_verify
-                read_buffer 8192
-              }
-              method GET
-              rewrite /usermgmt/api/me/is_token_valid_internal
-              header_up X-Forwarded-Method {method}
-              header_up X-Forwarded-Uri {uri}
-              header_up authorization {http.request.uri.query.token}
-              @good status 2xx
-              handle_response @good {
-                request_header Remote-User {rp.header.Remote-User}
-                request_header Remote-Email {rp.header.Remote-Email}
-              }
-            }
-            reverse_proxy @jupyter_websocket http://${PROJECT_NAME:-d2e}-enterprise-gateway:8888
-          }
-
-          handle @strategus_websocket {
-            @study_id path_regexp ^/strategus-results/([^/]+)/(.*)$
-            handle @study_id {
-              uri strip_prefix /strategus-results/{re.1}
-              reverse_proxy {re.1}:3838
             }
           }
 
@@ -808,8 +711,9 @@ services:
     depends_on:
       alp-logto-post-init:
         condition: service_completed_successfully
-      alp-minerva-pg-mgmt-init:
-        condition: service_completed_successfully
+      # Needs the alp_pg_* users, which trex's bootstrap creates.
+      trex:
+        condition: service_healthy
     healthcheck:
       interval: 30s
       retries: 30
@@ -1000,8 +904,10 @@ services:
   alp-logto:
     container_name: &c8 ${PROJECT_NAME:-d2e}-logto-1
     depends_on:
-      alp-minerva-pg-mgmt-init:
-        condition: service_completed_successfully
+      # Only Postgres: the wait for trex's bootstrap is the beacon poll in the
+      # entrypoint below, not a depends_on edge (that would be circular).
+      alp-minerva-postgres:
+        condition: service_healthy
     healthcheck:
       interval: 20s
       retries: 30
@@ -1028,7 +934,35 @@ services:
     entrypoint:
       - sh
       - -c
-      - npm run cli db seed -- --swe && npm run cli db alteration deploy latest && node packages/core/d2e-grants.mjs && npm start
+      - |
+        # Wait for trex's DB bootstrap to create logto_postgres and the logto
+        # schema before migrating. This is a poll rather than a depends_on
+        # because trex -> alp-logto-post-init -> alp-logto already exists, so an
+        # edge back to trex would be a circular dependency.
+        # The gate has to be the privilege, not the schema. trex creates the schema
+        # owned by postgres and grants logto_postgres CREATE on it as a separate
+        # step, so a gate on existence alone lets logto start inside that window;
+        # it then half-seeds and dies, and because the seed is not idempotent for
+        # its logto_tenant_* roles, every later restart fails on "role already
+        # exists" - a permanent crash loop from one early start.
+        # The seed opens with `create schema if not exists logto`, and Postgres
+        # checks CREATE on the database before it checks whether the schema
+        # exists, so database CREATE is part of the gate too.
+        # Connecting proves the login exists, the privilege checks prove the
+        # grants landed. node is used deliberately: this image has neither curl nor
+        # wget, but it does ship the pg client logto itself runs on.
+        until node -e "
+          const { Client } = require('pg');
+          const c = new Client({ connectionString: process.env.DB_URL });
+          c.connect()
+            .then(() => c.query(\"select has_database_privilege(current_user, current_database(), 'CREATE') and case when to_regnamespace('logto') is null then false else has_schema_privilege(current_user, 'logto', 'CREATE') end as ok\"))
+            .then(r => { c.end(); process.exit(r.rows[0].ok ? 0 : 1); })
+            .catch(() => { try { c.end(); } catch (_) {} process.exit(1); });
+        "; do
+          echo "waiting for the trex database bootstrap ..."
+          sleep 2
+        done
+        npm run cli db seed -- --swe && npm run cli db alteration deploy latest && node packages/core/d2e-grants.mjs && npm start
     restart: ${DOCKER__RESTART_POLICY:-unless-stopped}
     environment:
       <<:
@@ -1072,10 +1006,6 @@ services:
         priority: 20
       data:
         priority: 10
-      enterprise-gateway:
-        priority: 10
-      enterprise-gateway-viewer:
-        priority: 10
     restart: ${DOCKER__RESTART_POLICY:-unless-stopped}
     command:
       - "postgres"
@@ -1092,30 +1022,6 @@ services:
         - *x-tls
       POSTGRES_DB: ${PG_DB_NAME:-alp}
       POSTGRES_PASSWORD: ${PG_SUPER_PASSWORD}
-
-  # Applies the trex `notebook` schema migrations into the alp DB so
-  # PostGraphile can persist studies/notebooks. Idempotent (CREATE ... IF NOT
-  # EXISTS) so re-runs are safe.
-  notebook-migrate:
-    container_name: ${PROJECT_NAME:-d2e}-notebook-migrate
-    image: postgres:16
-    depends_on:
-      alp-minerva-postgres:
-        condition: service_healthy
-    networks:
-      alp:
-        priority: 20
-      data:
-        priority: 10
-    environment:
-      PGPASSWORD: ${PG_SUPER_PASSWORD}
-    volumes:
-      - ./services/trex/migrations/notebook:/migrations/notebook:ro
-    entrypoint:
-      - /bin/sh
-      - -c
-      - 'for f in /migrations/notebook/V*.sql; do echo "applying $$f"; psql -h ${PG_HOST:-${PROJECT_NAME:-d2e}-minerva-postgres-1} -U postgres -d alp -v ON_ERROR_STOP=1 -f "$$f"; done'
-    restart: "no"
 
   demodb:
     image: ohdsi/broadsea-atlasdb:2.3.0
@@ -1158,25 +1064,6 @@ services:
       retries: 10
     restart: ${DOCKER__RESTART_POLICY:-unless-stopped}
 
-  redis:
-    command: redis-server --requirepass ${REDIS_PASSWORD}
-    container_name: &c26 ${PROJECT_NAME:-d2e}-minerva-redis-1
-    healthcheck:
-      interval: 20s
-      retries: 10
-      start_period: 60s
-      timeout: 30s
-      test: redis-cli --no-auth-warning -a ${REDIS_PASSWORD} ping | grep PONG
-    hostname: ${PROJECT_NAME:-d2e}-minerva-redis-1.${TLS__INTERNAL__DOMAIN:-alp.local}
-    image: redis:7
-    logging:
-      options:
-        tag: *c26
-    networks:
-      alp:
-        priority: 20
-    restart: ${DOCKER__RESTART_POLICY:-unless-stopped}
-
   supabase-storage:
     container_name: &c19 ${PROJECT_NAME:-d2e}-supabase-storage-${BASE_PORT:-1}
     depends_on:
@@ -1184,8 +1071,6 @@ services:
         condition: service_healthy
       alp-minerva-postgres:
         condition: service_healthy
-      alp-minerva-pg-mgmt-init:
-        condition: service_completed_successfully
     platform: linux/amd64
     healthcheck:
       test:
@@ -1256,121 +1141,6 @@ services:
       TENANT_ID: stub
       REGION: stub
 
-  dicom-server:
-    # uses 8042 port on the container
-    image: orthancteam/orthanc:24.6.1
-    container_name: &c27 ${PROJECT_NAME:-d2e}-dicom-server-${BASE_PORT:-1}
-    logging:
-      options:
-        tag: *c27
-    restart: ${DOCKER__RESTART_POLICY:-unless-stopped}
-    networks:
-      alp:
-      data:
-    hostname: ${PROJECT_NAME:-d2e}-dicom-server-1.${TLS__INTERNAL__DOMAIN:-alp.local}
-    environment:
-      VERBOSE_ENABLED: true
-      VERBOSE_STARTUP: true
-      ORTHANC__NAME: D2E Dicom Service
-      ORTHANC__AWS_S3_STORAGE__BUCKET_NAME: dicom-images
-      ORTHANC__AWS_S3_STORAGE__ENDPOINT: http://${MINIO__ENDPOINT:-alp-minerva-s3}:${MINIO__PORT:-9000}
-      ORTHANC__AWS_S3_STORAGE__ACCESS_KEY: ${MINIO__ACCESS_KEY:-root}
-      ORTHANC__AWS_S3_STORAGE__SECRET_KEY: ${MINIO__SECRET_KEY}
-      ORTHANC__AWS_S3_STORAGE__VIRTUAL_ADDRESSING: false
-      ORTHANC__AWS_S3_STORAGE__REGION: ${MINIO__REGION:-ap-southeast-1}
-      ORTHANC__AUTHENTICATION_ENABLED: false
-    healthcheck:
-      test:
-        [
-          "CMD-SHELL",
-          "/probes/test-aliveness.py --user=healthcheck --pwd=${DICOM__HEALTH_CHECK_PASSWORD}",
-        ]
-      start_period: 10s
-      interval: 20s
-      retries: 20
-      timeout: 60s
-    volumes:
-      - dicom-sqlite-storage:/var/lib/orthanc/db
-    profiles: [dicom]
-
-  enterprise-gateway:
-    image: ${DOCKER_IMAGE_PREFIX:-ghcr.io/ohdsi/}d2e-enterprise-gateway:${DOCKER_TAG_NAME:-develop}
-    container_name: &c28 ${PROJECT_NAME:-d2e}-enterprise-gateway
-    healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8888/jupyter/api || exit 1"]
-      interval: 30s
-      timeout: 30s
-      retries: 5
-      start_period: 30s
-    platform: linux/amd64
-    logging:
-      options:
-        tag: *c28
-    networks:
-      enterprise-gateway:
-    user: root # Run as root
-    environment:
-      <<:
-        - *x-enterprise-gateway
-      EG_DOCKER_NETWORK: ${EG_DOCKER_NETWORK:-${PROJECT_NAME:-d2e}_enterprise-gateway}
-    volumes:
-      - "/var/run/docker.sock:/var/run/docker.sock"
-    labels:
-      app: "enterprise-gateway"
-      component: "enterprise-gateway"
-    deploy:
-      replicas: 1
-      endpoint_mode: dnsrr
-      labels:
-        app: "enterprise-gateway"
-        component: "enterprise-gateway"
-
-  enterprise-gateway-viewer:
-    image: ${DOCKER_IMAGE_PREFIX:-ghcr.io/ohdsi/}d2e-enterprise-gateway:${DOCKER_TAG_NAME:-develop}
-    container_name: &c29 ${PROJECT_NAME:-d2e}-enterprise-gateway-viewer
-    healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8888/jupyter/api || exit 1"]
-      interval: 30s
-      timeout: 30s
-      retries: 5
-      start_period: 30s
-    platform: linux/amd64
-    logging:
-      options:
-        tag: *c29
-    networks:
-      enterprise-gateway-viewer:
-    user: root # Run as root
-    environment:
-      <<:
-        - *x-enterprise-gateway
-      EG_DOCKER_NETWORK: ${EG_DOCKER_NETWORK:-${PROJECT_NAME:-d2e}_enterprise-gateway-viewer}
-    volumes:
-      - "/var/run/docker.sock:/var/run/docker.sock"
-    labels:
-      app: "enterprise-gateway-viewer"
-      component: "enterprise-gateway-viewer"
-    deploy:
-      replicas: 1
-      endpoint_mode: dnsrr
-      labels:
-        app: "enterprise-gateway-viewer"
-        component: "enterprise-gateway-viewer"
-
-  mlflow:
-    image: ghcr.io/mlflow/mlflow:v3.0.0
-    container_name: &c31 ${PROJECT_NAME:-d2e}-mlflow
-    platform: linux/amd64
-    logging:
-      options:
-        tag: *c31
-    networks:
-      alp:
-      data:
-      enterprise-gateway:
-    command: mlflow server --host 0.0.0.0 --port 5000
-    profiles: [mlflow]
-
   hana:
     container_name: hana
     hostname: hana
@@ -1389,62 +1159,3 @@ services:
       data:
     profiles: [hana]
 
-  logging:
-    image: amir20/dozzle:v8.13.9
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock:ro
-    read_only: true
-    networks:
-      alp:
-    environment:
-      - DOZZLE_FILTER=name=${PROJECT_NAME:-d2e}
-      - DOZZLE_BASE=/dockerlogs
-      - DOZZLE_NO_ANALYTICS=true
-
-  # WebAPI database initialization (runs SQL scripts after WebAPI is healthy)
-  webapi-init:
-    image: postgres:16-alpine
-    container_name: ${PROJECT_NAME:-d2e}-webapi-init
-    platform: linux/amd64
-    depends_on:
-      trex:
-        condition: service_healthy
-      alp-logto-post-init:
-        condition: service_completed_successfully
-    networks:
-      alp:
-        priority: 20
-      data:
-        priority: 10
-    volumes:
-      - ./services/atlas-db-init:/scripts:ro
-    environment:
-      PGHOST: ${PG_HOST:-${PROJECT_NAME:-d2e}-minerva-postgres-1}
-      PGPORT: ${PG_PORT:-5432}
-      PGUSER: ${PG_SUPER_USER:-postgres}
-      PGPASSWORD: ${PG_SUPER_PASSWORD}
-      PGDATABASE: ${PG_DB_NAME:-alp}
-    healthcheck:
-      # Only healthy after the SQL scripts have finished successfully.
-      test: ["CMD", "test", "-f", "/tmp/webapi-init.done"]
-      interval: 5s
-      timeout: 2s
-      retries: 120
-      start_period: 5s
-    command: >
-      sh -c '
-        set -e;
-        echo "Waiting for logto.users table...";
-        for i in $$(seq 1 60); do
-          if psql -tAc "SELECT 1 FROM information_schema.tables WHERE table_schema = '\''logto'\'' AND table_name = '\''users'\''" | grep -q 1; then
-            echo "logto.users table found";
-            break;
-          fi;
-          echo "Waiting... ($$i/60)";
-          sleep 2;
-        done;
-        for f in /scripts/*.sql; do psql -v ON_ERROR_STOP=1 -f "$$f"; done;
-        touch /tmp/webapi-init.done;
-        echo "webapi-init: SQL scripts complete";
-        tail -f /dev/null
-      '

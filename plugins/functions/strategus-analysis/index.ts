@@ -1,7 +1,6 @@
 import express, { Application } from "express";
 import http from "http";
 import dataSource from "./src/db/datasource.ts";
-import { StrategusResultsRouter } from "./src/strategus-results/routes.ts";
 import StrategusAnalysisRouter from "./src/analysis/routes.ts";
 import StrategusViewerTemplateRouter from "./src/templates/routes.ts";
 
@@ -17,10 +16,6 @@ export class App {
   }
 
   async start() {
-    this.app.use(
-      "/strategus-results",
-      new StrategusResultsRouter(this.server).router
-    );
     this.app.use(
       "/strategus/template",
       new StrategusViewerTemplateRouter().router
