@@ -223,13 +223,10 @@ export default {
       return updatedList
     },
     showEmptyState() {
-      // concept fields open the terminology modal instead of a list, and several
-      // query-filter callers pass empty values on purpose to keep them silent.
       return this.componentType !== 'concept'
     },
     emptyStateMessage() {
       const status = this.domainValues.loadedStatus
-      // No status yet means the first request has not resolved.
       if (this.domainValues.isLoading || !status) {
         return this.texts.loadingSuggestions
       }

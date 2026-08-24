@@ -55,8 +55,6 @@ const actions = {
     const mriConfig = rootGetters.getMriConfig
     const datasetId = rootGetters.getSelectedDataset.id
 
-    // Reuse the cache only when it holds the unfiltered list. After a search the
-    // stored values are the narrowed subset, so clearing the box must refetch.
     const existing = state.domainValues[attributePathUid]
     if (
       !searchQuery &&
@@ -125,7 +123,6 @@ const actions = {
       return data.values
     })
       .catch(error => {
-        // A cancel means a newer request is already in flight; it owns the state.
         if (axios.isCancel(error) || latestRequestTimes[attributePathUid] !== requestTime) {
           return []
         }
