@@ -474,15 +474,6 @@
             "route": "setup"
           },
           {
-            "name": "Logs",
-            "nameI18nKey": "UI_PLUGIN_LOGS",
-            "pluginPath": "plugins/SystemAdmin/D2ELogs/module",
-            "visible": true,
-            "featureFlag": "d2eLogs",
-            "defaultEnabled": false,
-            "route": "docker-logs"
-          },
-          {
             "type": "app",
             "autoMount": true,
             "visible": false,
