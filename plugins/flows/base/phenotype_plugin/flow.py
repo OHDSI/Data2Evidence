@@ -124,6 +124,9 @@ def atlas_cohort_definitions(
         dataset_id, statuses
     )
 
+    # Collected while writing, applied in bulk afterwards -- see tag_cohort_definitions.
+    cohort_ids_by_status = {}
+
     for cohort_def in cohort_definitions:
         try:
             status = cohort_def.get("status") or "Unspecified"
@@ -134,13 +137,7 @@ def atlas_cohort_definitions(
                 name_index,
             )
             created_cohorts.append(result)
-            tag_cohort_definition(
-                phenotype_tag_api,
-                dataset_id,
-                result["id"],
-                phenotype_library_tag,
-                status_tags[status],
-            )
+            cohort_ids_by_status.setdefault(status, []).append(result["id"])
         except Exception as e:
             error_message = (
                 f"Failed to save cohort {cohort_def['cohortId']}: {str(e)}"
@@ -148,25 +145,41 @@ def atlas_cohort_definitions(
             logger.error(error_message)
             raise Exception(error_message) from e
 
-    logger.info(f"Tagged {len(created_cohorts)} cohort definitions")
+    tag_cohort_definitions(
+        phenotype_tag_api, dataset_id, phenotype_library_tag, status_tags,
+        cohort_ids_by_status,
+    )
     return created_cohorts
 
 
-def tag_cohort_definition(phenotype_tag_api, dataset_id: str, cohort_definition_id: int,
-                          phenotype_library_tag: dict, status_tag: dict) -> None:
-    """Record where the cohort came from, and what its review status is.
+def tag_cohort_definitions(phenotype_tag_api, dataset_id: str, phenotype_library_tag: dict,
+                           status_tags: dict, cohort_ids_by_status: dict) -> None:
+    """Record where the cohorts came from, and what their review status is.
 
-    WebAPI ignores tags supplied on cohort create/update, so each is applied
-    through the dedicated assign route. Re-assigning a tag already present is a
-    no-op, and assigning the status retires whichever status was there before --
-    the status group is single-selection, so WebAPI clears the old one itself.
+    WebAPI ignores tags supplied on cohort create/update, so they are applied
+    afterwards through the tag API. One call carries every tag in it to every
+    cohort in it, so the provenance tag goes on in a single request and each
+    status takes one more -- eight requests for the whole library, rather than
+    two per cohort.
     """
-    phenotype_tag_api.assign_tag_to_cohort(
-        dataset_id, cohort_definition_id, phenotype_library_tag["id"]
+    logger = get_run_logger()
+    all_cohort_ids = [i for ids in cohort_ids_by_status.values() for i in ids]
+    if not all_cohort_ids:
+        return
+
+    phenotype_tag_api.assign_tags_to_cohorts(
+        dataset_id, [phenotype_library_tag["id"]], all_cohort_ids
     )
-    phenotype_tag_api.assign_tag_to_cohort(
-        dataset_id, cohort_definition_id, status_tag["id"]
+    logger.info(
+        f"Tagged {len(all_cohort_ids)} cohort definitions as "
+        f"'{phenotype_library_tag['name']}'"
     )
+
+    for status, cohort_ids in sorted(cohort_ids_by_status.items()):
+        phenotype_tag_api.assign_tags_to_cohorts(
+            dataset_id, [status_tags[status]["id"]], cohort_ids
+        )
+        logger.info(f"Tagged {len(cohort_ids)} cohort definitions as '{status}'")
 
 
 @task(log_prints=True)
