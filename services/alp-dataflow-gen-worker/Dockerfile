@@ -25,9 +25,10 @@
 # later RUN can only add whiteouts. The pixi cache lives on a cache mount
 # instead of in a layer for the same reason: it is a build input, and at
 # runtime provision-envs.sh refills it on demand for artifact-delivered
-# plugins. Residual duplication is the heavy lineage's own JDK and python,
-# ~1.5GB, which only collapsing the lineage into one RUN could remove — at the
-# cost of the per-stage registry cache.
+# plugins. Residual duplication is what the separate layers cannot share: 3.2GB
+# across 477 inodes >=1MB, chiefly four JDKs, ten CPython runtimes, and arrow /
+# duckdb / openblas once per env. Only building the whole tree in one RUN could
+# collapse it, at the cost of the per-stage registry cache.
 
 FROM ubuntu:24.04 AS staging
 RUN apt-get update && apt-get install -y --no-install-recommends python3 \
