@@ -1,4 +1,4 @@
-import axios, { AxiosRequestConfig } from "./_axios.ts";
+import axios, { AxiosRequestConfig } from "../../../_shared/_axios.ts";
 import { env } from "../env";
 
 // TLS trust note: this API previously passed an explicit `httpsAgent` carrying

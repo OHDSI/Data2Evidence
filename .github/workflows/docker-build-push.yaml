@@ -66,12 +66,6 @@ jobs:
         with:
           submodules: recursive
 
-      # _axios.ts is duplicated across the plugin functions until it moves into a
-      # shared module. Nothing else keeps the copies in sync, so a fix applied to
-      # one silently leaves the others broken — which is how the header and
-      # arraybuffer regressions reached review. Fails the run on drift.
-      - name: Check _axios shim copies are in sync
-        run: node internal/scripts/check-axios-shim-sync.mjs
 
       - id: tag
         run: |

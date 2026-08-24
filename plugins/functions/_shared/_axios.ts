@@ -14,9 +14,6 @@
 //   and loose type aliases. Config honored: headers, timeout, responseType:"arraybuffer".
 //   httpsAgent is accepted and ignored. Non-2xx rejects with an axios-shaped error.
 //
-// NOTE: this file is duplicated across the plugin functions and the copies must
-// stay byte-identical — internal/scripts/check-axios-shim-sync.mjs enforces it.
-// Edit one copy, then run `node internal/scripts/check-axios-shim-sync.mjs --fix`.
 
 import { Buffer } from "node:buffer";
 

@@ -1,4 +1,4 @@
-import axios, { AxiosRequestConfig } from "./_axios.ts";
+import axios, { AxiosRequestConfig } from "../../_shared/_axios.ts";
 //import { createLogger } from '../Logger'
 import * as dotenv from "npm:dotenv";
 dotenv.config();
