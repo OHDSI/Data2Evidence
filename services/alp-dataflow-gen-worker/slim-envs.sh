@@ -5,8 +5,8 @@
 #   --strip <plugin-dir>...  drop build-only content from every pixi env under
 #                            each plugin dir (toolchain, headers, static
 #                            archives, JDK sources, bytecode caches)
-#   --dedupe <root>          collapse byte-identical regular files under <root>
-#                            into hardlinks
+#   --dedupe <root>...       collapse byte-identical files in the pixi envs
+#                            under each root into hardlinks
 #
 # Both must run in the SAME RUN as the provisioning they follow. A later layer
 # cannot shrink an earlier one, and overlayfs copies a file up before linking
@@ -59,28 +59,22 @@ strip_dirs() {
 # Envs provisioned in one layer duplicate their common stack byte for byte —
 # pixi hardlinks packages out of its cache only within a single build stage, so
 # every env carries its own python, arrow, duckdb and JDK.
-dedupe() { # $1 = root
-  python3 - "$1" <<'EOF'
+dedupe() { # $1... = roots to search for pixi envs
+  python3 - "$@" <<'PYEOF'
 import hashlib, os, stat, sys
 
-root = sys.argv[1]
-
-# Symlinks carry no data, and a file smaller than a block saves nothing.
-by_size = {}
-for dirpath, _, filenames in os.walk(root):
-    for name in filenames:
-        path = os.path.join(dirpath, name)
-        try:
-            st = os.lstat(path)
-        except OSError:
-            continue
-        if not stat.S_ISREG(st.st_mode) or st.st_size < 4096:
-            continue
-        # Group on the metadata a hardlink would have to share, not just size:
-        # two copies of one package file can differ in mode between envs.
-        by_size.setdefault(
-            (st.st_size, st.st_mode, st.st_uid, st.st_gid), []
-        ).append((path, st))
+# Only .pixi/envs payloads. A plugin's own sources are staged into every plugin
+# that shares them (_shared_flow_utils), and linking those would couple plugin
+# directories that the rest of the system treats as independently mutable —
+# run-flow.sh's dev overlay rewrites one plugin's sources in place. They are
+# ~150KB against gigabytes of env payload, so skipping them costs nothing.
+env_roots = []
+for base in sys.argv[1:]:
+    for dirpath, dirnames, _ in os.walk(base):
+        if os.path.basename(dirpath) == "envs" \
+                and os.path.basename(os.path.dirname(dirpath)) == ".pixi":
+            env_roots.extend(os.path.join(dirpath, d) for d in dirnames)
+            dirnames[:] = []
 
 
 def digest(path):
@@ -91,8 +85,25 @@ def digest(path):
     return h.digest()
 
 
+# Symlinks carry no data, and a file smaller than a block saves nothing.
+# Group on the metadata a hardlink would have to share, not just the size: two
+# copies of one package file can differ in mode between envs.
+by_key = {}
+for root in env_roots:
+    for dirpath, _, filenames in os.walk(root):
+        for name in filenames:
+            path = os.path.join(dirpath, name)
+            try:
+                st = os.lstat(path)
+            except OSError:
+                continue
+            if not stat.S_ISREG(st.st_mode) or st.st_size < 4096:
+                continue
+            key = (st.st_size, st.st_mode, st.st_uid, st.st_gid)
+            by_key.setdefault(key, []).append((path, st))
+
 saved = links = 0
-for (size, _mode, _uid, _gid), entries in by_size.items():
+for (size, _mode, _uid, _gid), entries in by_key.items():
     if len(entries) < 2:
         continue
     by_hash = {}
@@ -102,11 +113,9 @@ for (size, _mode, _uid, _gid), entries in by_size.items():
         except OSError:
             continue
     for group in by_hash.values():
-        if len(group) < 2:
-            continue
         canon, canon_st = group[0]
         for path, st in group[1:]:
-            if st.st_ino == canon_st.st_ino and st.st_dev == canon_st.st_dev:
+            if (st.st_ino, st.st_dev) == (canon_st.st_ino, canon_st.st_dev):
                 continue
             tmp = path + ".dedupe-tmp"
             try:
@@ -122,11 +131,11 @@ for (size, _mode, _uid, _gid), entries in by_size.items():
             links += 1
 
 print(f"slim-envs: deduped {links} files, {saved / 2**30:.2f} GiB", file=sys.stderr)
-EOF
+PYEOF
 }
 
 case "${1:-}" in
   --strip)  shift; strip_dirs "$@" ;;
-  --dedupe) shift; dedupe "$1" ;;
-  *) echo "usage: slim-envs.sh --strip <plugin-dir>... | --dedupe <root>" >&2; exit 2 ;;
+  --dedupe) shift; dedupe "$@" ;;
+  *) echo "usage: slim-envs.sh --strip <plugin-dir>... | --dedupe <root>..." >&2; exit 2 ;;
 esac
