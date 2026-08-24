@@ -9,7 +9,15 @@ on:
     types: [demosetup-tunnel]
 
 concurrency:
-  group: ${{ github.workflow }}
+  # One tunnel per branch, not one per repository. The group was the workflow
+  # name alone, so a tunnel for one PR queued behind a tunnel for an unrelated
+  # one — with duration_minutes up to 330 that is hours of waiting for a run
+  # that shares nothing with the one holding the lock.
+  # repository_dispatch always reports github.ref as the default branch, so the
+  # payload ref is the only thing that distinguishes two dispatches.
+  group: ${{ github.workflow }}-${{ github.event.client_payload.ref || github.ref }}
+  # Still queue rather than cancel: a second dispatch for the same branch must
+  # not kill a tunnel someone is already using.
   cancel-in-progress: false
 
 env:
