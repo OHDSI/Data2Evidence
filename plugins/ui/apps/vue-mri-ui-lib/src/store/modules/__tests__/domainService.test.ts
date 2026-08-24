@@ -90,6 +90,22 @@ describe('store - domainService', () => {
         expect(result).toEqual(cached)
       })
 
+      it('settles the state when the request fails, instead of spinning forever', async () => {
+        const attributePathUid = 'patient.attributes.smoker__789'
+        const state = { domainValues: {} }
+        const commit = vi.fn()
+        const dispatch = vi.fn(() => Promise.reject(new Error('boom')))
+
+        await domainService.actions.loadValuesForAttributePath(
+          { state, commit, rootGetters: rootGettersFixture, dispatch },
+          { attributePathUid, searchQuery: '' }
+        )
+
+        const data = commit.mock.calls[commit.mock.calls.length - 1][1].data
+        expect(data.isLoading).toBe(false)
+        expect(data.loadedStatus).toBe('NO_RESULTS')
+      })
+
       it('calls a backendservice if data is not yet loaded', () => {
         const attributePathUid = 'patient.attributes.smoker__123'
         const searchQuery = 'fever'

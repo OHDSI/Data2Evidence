@@ -83,6 +83,8 @@ const actions = {
       data: { values: [], isLoading: true, isLoaded: true },
     })
 
+    const isEmptySearch = !searchQuery || searchQuery.trim() === ''
+
     return dispatch('ajaxAuth', {
       method: 'get',
       cancelToken,
@@ -110,19 +112,36 @@ const actions = {
         values,
         isLoading: false,
         isLoaded: true,
-        isFullList: !searchQuery,
+        isFullList: isEmptySearch,
         loadedStatus,
         datasetId,
       }
       if (data?.values?.[0]?.value) {
         const fuse = new Fuse(data.values, { includeScore: true, keys: ['value', { name: 'text', weight: 10 }] })
         const searchResults = fuse.search(searchQuery)
-        const emptySearch = !searchQuery || searchQuery.trim() === ''
-        data.values = emptySearch ? data.values : searchResults.map(result => result.item)
+        data.values = isEmptySearch ? data.values : searchResults.map(result => result.item)
       }
       commit(types.DOMAIN_SET_VALUES, { attributePath: attributePathUid, data })
       return data.values
     })
+      .catch(error => {
+        // A cancel means a newer request is already in flight; it owns the state.
+        if (axios.isCancel(error) || latestRequestTimes[attributePathUid] !== requestTime) {
+          return []
+        }
+        commit(types.DOMAIN_SET_VALUES, {
+          attributePath: attributePathUid,
+          data: {
+            values: [],
+            isLoading: false,
+            isLoaded: true,
+            isFullList: false,
+            loadedStatus: 'NO_RESULTS',
+            datasetId,
+          },
+        })
+        return []
+      })
   },
 }
 

@@ -35,7 +35,8 @@
       :clear-on-select="true"
       open-direction="bottom"
       name="multiselect"
-      :showNoOptions="true"
+      :showNoOptions="showEmptyState"
+      :showNoResults="showEmptyState"
     >
       <template v-slot:option="props">{{ formatCustomOption(props.option) }}</template>
       <template v-slot:clear>
@@ -220,6 +221,11 @@ export default {
       }
 
       return updatedList
+    },
+    showEmptyState() {
+      // concept fields open the terminology modal instead of a list, and several
+      // query-filter callers pass empty values on purpose to keep them silent.
+      return this.componentType !== 'concept'
     },
     emptyStateMessage() {
       const status = this.domainValues.loadedStatus
