@@ -6,6 +6,7 @@ import { PageProps, SystemAdminPageMetadata } from "@portal/plugin";
 import { store } from "./store";
 import { theme } from "./theme/theme";
 import { FlowLayout } from "./features/flow/containers/FlowLayout";
+import { useFlowUnsavedChanges } from "./features/flow/hooks";
 import { FlowMetadataParams } from ".";
 import { PortalProps } from "./types";
 import "./monaco";
@@ -24,6 +25,8 @@ export let pluginMetadata:
 
 const FlowApp: FC<FlowAppProps> = (props: FlowAppProps) => {
   const [customProps, setCustomProps] = useState<Partial<PortalProps>>({});
+
+  useFlowUnsavedChanges();
 
   useEffect(() => {
     const handlePropsChange = (event: Event) => {

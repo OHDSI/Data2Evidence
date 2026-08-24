@@ -37,8 +37,17 @@ export interface ScanMetadata {
   dataType: string;
   databaseCode?: string;
   schemaName?: string;
+  /** Human-readable summary, kept for the existing drawer display. */
   fileName?: string;
   delimiter?: string;
+  /** Tables (DB scan) or file names (CSV scan) the user selected. */
+  selectedTables?: string[];
+  /**
+   * Names of CSVs already uploaded for this node. The bytes live server-side
+   * under the node id (POST/GET /jobplugins/dataflow/node/file), so only this
+   * reference is persisted in the revision — never the file contents.
+   */
+  uploadedFileNames?: string[];
 }
 
 interface ScanDataDialogProps {
@@ -47,6 +56,8 @@ interface ScanDataDialogProps {
   nodeId: string;
   setScanId: (id: string) => void;
   setScanMetadata: (metadata: ScanMetadata) => void;
+  /** Scan configuration from the saved revision, replayed into the form. */
+  initialMetadata?: ScanMetadata;
 }
 
 const EMPTY_DBCONNECTION_FORM_DATA = {
@@ -83,6 +94,7 @@ export const ScanDataDialog: FC<ScanDataDialogProps> = ({
   nodeId,
   setScanId,
   setScanMetadata,
+  initialMetadata,
 }) => {
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
   const [availableTables, setAvailableTables] = useState<string[]>([]);
@@ -117,6 +129,40 @@ export const ScanDataDialog: FC<ScanDataDialogProps> = ({
     };
   }, []);
 
+  // Seed ONCE per open cycle. `initialMetadata` is `formData.scanMetadata` in
+  // the drawer, which gets a fresh object identity on every setFormData — so
+  // depending on its identity would re-run this effect mid-dialog and snap the
+  // user's in-progress selections back to the saved values.
+  const seededForOpenRef = useRef(false);
+
+  useEffect(() => {
+    if (!open) {
+      seededForOpenRef.current = false;
+      return;
+    }
+    if (seededForOpenRef.current || !initialMetadata?.dataType) return;
+    seededForOpenRef.current = true;
+
+    setInternalDataType(initialMetadata.dataType);
+    setSelectedTables(initialMetadata.selectedTables ?? []);
+
+    if (initialMetadata.dataType === "csv") {
+      setDelimiter(initialMetadata.delimiter ?? DELIMITERS[0].value);
+      // Previously uploaded CSVs are already stored server-side under this
+      // node id, so listing their names is enough to re-select them without
+      // re-uploading.
+      setAvailableTables(initialMetadata.uploadedFileNames ?? []);
+    } else {
+      setDbConnectionForm({
+        databaseCode: initialMetadata.databaseCode ?? "",
+        schema: initialMetadata.schemaName ?? "",
+      });
+      // A configuration that was previously applied was, by definition,
+      // connectable. The user can still re-test the connection.
+      setCanConnect(true);
+    }
+  }, [open, initialMetadata]);
+
   const handleClose = useCallback(
     (type: CloseDialogType) => {
       typeof onClose === "function" && onClose(type);
@@ -136,6 +182,8 @@ export const ScanDataDialog: FC<ScanDataDialogProps> = ({
           dataType: "csv",
           fileName: uploadedFiles.map((f) => f.name).join(", "),
           delimiter,
+          selectedTables,
+          uploadedFileNames: uploadedFiles.map((f) => f.name),
         });
       } else {
         await scanDBData();
@@ -143,6 +191,7 @@ export const ScanDataDialog: FC<ScanDataDialogProps> = ({
           dataType: "postgresql",
           databaseCode: dbConnectionForm.databaseCode,
           schemaName: dbConnectionForm.schema,
+          selectedTables,
         });
       }
       handleClose("success");
