@@ -114,6 +114,11 @@ spec:
                psql -c "GRANT service_role TO ${POSTGRES_CONFIG_ADMIN_USER};" &&
                psql -c "GRANT anon TO ${POSTGRES_CONFIG_WRITE_USER};" &&
                psql -c "GRANT authenticated TO ${POSTGRES_CONFIG_WRITE_USER};" &&
+               echo "Ensure service_role can reach storage.buckets.." &&
+               psql -v ON_ERROR_STOP=1 -c "SET ROLE ${POSTGRES_CONFIG_ADMIN_USER};
+                 DROP POLICY IF EXISTS d2e_service_role_all ON storage.buckets;
+                 CREATE POLICY d2e_service_role_all ON storage.buckets
+                   FOR ALL TO service_role USING (true) WITH CHECK (true);" &&
                echo "Supabase Storage roles assignment complete!" &&
                exit 0'
             ]
