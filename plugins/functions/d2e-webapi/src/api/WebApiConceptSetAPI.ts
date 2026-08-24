@@ -334,7 +334,10 @@ export class WebApiConceptSetAPI {
     });
 
     if (!response.ok) {
-      if (response.status === 401 || response.status === 403) {
+      // Only a 403 is a permission denial. A 401 means the token is absent,
+      // invalid, or expired, which is not a permission problem, so it must not
+      // reach the caller as a permission message.
+      if (response.status === 403) {
         throw new WebApiAccessDeniedError(
           response.status,
           "concept set existence",

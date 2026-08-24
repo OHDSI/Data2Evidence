@@ -924,21 +924,40 @@ Deno.test("checkIfConceptSetExists surfaces a WebAPI denial as a typed error", a
   }
 });
 
-Deno.test("WebApiConceptSetAPI.checkIfConceptSetExists maps fetch 401 and 403 to a typed denial", async () => {
+Deno.test("WebApiConceptSetAPI.checkIfConceptSetExists maps fetch 403 to a typed denial", async () => {
   const originalFetch = globalThis.fetch;
 
   try {
-    for (const status of [401, 403]) {
-      globalThis.fetch = (() =>
-        Promise.resolve(new Response(null, { status }))) as typeof fetch;
+    globalThis.fetch = (() =>
+      Promise.resolve(new Response(null, { status: 403 }))) as typeof fetch;
 
-      const api = new WebApiConceptSetAPI("token");
-      const error = await assertRejects(
-        () => api.checkIfConceptSetExists(0, "Name"),
-        WebApiAccessDeniedError,
-      );
-      assertEquals(error.status, status);
-    }
+    const api = new WebApiConceptSetAPI("token");
+    const error = await assertRejects(
+      () => api.checkIfConceptSetExists(0, "Name"),
+      WebApiAccessDeniedError,
+    );
+    assertEquals(error.status, 403);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+Deno.test("WebApiConceptSetAPI.checkIfConceptSetExists keeps a 401 as a plain error", async () => {
+  // A 401 means the token is absent, invalid, or expired. It is not a
+  // permission problem, so it must not become a permission message.
+  const originalFetch = globalThis.fetch;
+
+  try {
+    globalThis.fetch = (() =>
+      Promise.resolve(new Response(null, { status: 401 }))) as typeof fetch;
+
+    const api = new WebApiConceptSetAPI("token");
+    const error = await assertRejects(
+      () => api.checkIfConceptSetExists(0, "Name"),
+      Error,
+      "Failed to check WebAPI concept set existence for 0: 401",
+    );
+    assertEquals(error instanceof WebApiAccessDeniedError, false);
   } finally {
     globalThis.fetch = originalFetch;
   }
