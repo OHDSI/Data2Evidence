@@ -71,9 +71,14 @@ RUN mkdir -p /usr/src/data/cache /usr/src/data/plugins /usr/src/data/flow_stagin
 # cross-directory hardlinks in Deno-packed tarballs that GNU tar -x rejects.
 COPY scripts/extract-plugin-tarball.py /scripts/
 RUN mkdir -p /usr/src/bundled-plugins
-COPY plugin-artifacts/ /tmp/plugin-artifacts/
-RUN set -eu; \
-    if [ -d /tmp/plugin-artifacts ] && ls /tmp/plugin-artifacts/*.tgz >/dev/null 2>&1; then \
+# Bind-mounted, not COPY'd: the tarballs are a build input consumed by this RUN
+# and the `rm -rf` that used to follow ran a layer too late to reclaim them, so
+# the image carried ~830MB of .tgz it never reads again. plugin-artifacts/ is
+# always in the context (.gitkeep) — empty for local builds, which take the
+# registry path below instead.
+RUN --mount=type=bind,source=plugin-artifacts,target=/tmp/plugin-artifacts \
+    set -eu; \
+    if ls /tmp/plugin-artifacts/*.tgz >/dev/null 2>&1; then \
       for TGZ in /tmp/plugin-artifacts/*.tgz; do \
         NAME="$(tar -xzOf "$TGZ" package/package.json | jq -r .name)"; \
         SHORT="$(printf '%s' "$NAME" | sed 's|@[^/]*/||')"; \
@@ -82,8 +87,7 @@ RUN set -eu; \
         mkdir -p "$DEST"; \
         python3 /scripts/extract-plugin-tarball.py "$TGZ" "$DEST" 1; \
       done; \
-    fi; \
-    rm -rf /tmp/plugin-artifacts
+    fi
 
 # PLUGINS_REGISTRY (BuildKit secret) overrides the feed when present.
 COPY scripts/fetch-external-plugins.sh /scripts/
@@ -136,20 +140,27 @@ RUN mkdir -p ./logto
 COPY ./logto ./logto
 COPY ./cdw_data/built_in /usr/src/cdw_data/built_in
 
-# Seed DuckDB's default per-user extension path so trex's main `LOAD <ext>`
-# (icu/fts) resolves — the base installs to DUCKDB_EXTENSION_DIRECTORY
-# (/usr/share/trexsql/extensions) but worker connections look in ~/.duckdb.
-# This image runs as root, so /root/.duckdb. (Belt-and-suspenders for node too.)
+# Point DuckDB's default per-user extension path at the base image's extension
+# directory so trex's main `LOAD <ext>` (icu/fts) resolves — the base installs
+# to DUCKDB_EXTENSION_DIRECTORY (/usr/share/trexsql/extensions) but worker
+# connections look in ~/.duckdb. This image runs as root, so /root/.duckdb.
+#
+# A symlink, not a copy: `cp -r` duplicated the base's whole extension set into
+# /root/.duckdb, 745MB of second copies (17 extensions, spatial and bigquery
+# alone 158MB) that DuckDB resolves identically through a link. The base
+# already links /home/node's per-arch path at this same target.
 RUN set -eu; \
+    EXT_SRC="/usr/share/trexsql/extensions/v${DUCKDB_VERSION}/linux_${TARGETARCH}"; \
+    test -d "$EXT_SRC" || { echo "FATAL: base image has no $EXT_SRC" >&2; exit 1; }; \
     for HOME_DIR in /root /home/node; do \
-      mkdir -p "$HOME_DIR/.duckdb/extensions" && \
-      cp -r /usr/share/trexsql/extensions/* "$HOME_DIR/.duckdb/extensions/" 2>/dev/null || true; \
+      mkdir -p "$HOME_DIR/.duckdb/extensions/v${DUCKDB_VERSION}"; \
+      ln -sfn "$EXT_SRC" "$HOME_DIR/.duckdb/extensions/v${DUCKDB_VERSION}/linux_${TARGETARCH}"; \
     done; \
-    chown -R node:node /home/node/.duckdb 2>/dev/null || true; \
-    # The copy stays best-effort — the base symlinks /home/node's per-arch path at
-    # the same target, so cp reports "same file" there. Assert the outcome instead:
-    # these extensions now come only from the base image, so a silent copy failure
-    # would otherwise surface much later as a LOAD error at runtime.
+    chown node:node /home/node/.duckdb /home/node/.duckdb/extensions \
+      "/home/node/.duckdb/extensions/v${DUCKDB_VERSION}"; \
+    chown -h node:node "/home/node/.duckdb/extensions/v${DUCKDB_VERSION}/linux_${TARGETARCH}"; \
+    # These extensions come only from the base image, so a broken link would
+    # otherwise surface much later as a LOAD error at runtime.
     for lib in bigquery icu fts; do \
       test -s "/root/.duckdb/extensions/v${DUCKDB_VERSION}/linux_${TARGETARCH}/${lib}.duckdb_extension" \
         || { echo "FATAL: ${lib} missing from /root/.duckdb after seeding from the base image" >&2; exit 1; }; \
