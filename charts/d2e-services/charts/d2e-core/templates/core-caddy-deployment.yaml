@@ -4,7 +4,7 @@ metadata:
   labels:
     profile: d2e-core-caddy
   name: "{{ .Release.Name }}-{{ .Chart.Name }}-caddy"
-  namespace: d2e
+  namespace: {{ .Release.Namespace }}
 spec:
   replicas: 3
   selector:
@@ -42,7 +42,7 @@ spec:
                   name: "{{ .Release.Name }}-{{ .Chart.Name }}"
                   key: CADDY__D2E__PUBLIC_FQDN
             - name: TREX__D2E__INTERNAL_FQDN
-              value: trex.d2e.svc.cluster.local:443 # NOT trex-http!!
+              value: trex.{{ .Release.Namespace }}.svc.cluster.local:443 # NOT trex-http!!
             - name: TLS__CADDY_DIRECTIVE
               value: tls internal
           image: caddy:2.11-alpine
@@ -85,6 +85,9 @@ spec:
             - mountPath: /data/caddy/certificates/local/k8s.d2e.sg/k8s.d2e.sg.key
               name: caddy-local-pki
               subPath: SERVER__KEY
+            - mountPath: /etc/d2e/tls
+              name: d2e-tls
+              readOnly: true
       volumes:
         - name: d2e-caddy-cm
           configMap:
@@ -92,3 +95,14 @@ spec:
         - name: caddy-local-pki
           secret:
             secretName: "{{ .Release.Name }}-{{ .Chart.Name }}-caddy"
+        # Internal CA for `tls_trust_pool file` on the trex upstreams. Note this
+        # is the chart-level secret, not the -caddy one above: the -caddy secret
+        # holds Caddy's own edge PKI, not the internal CA. CA only -- Caddy is a
+        # client on these hops, never the server.
+        - name: d2e-tls
+          secret:
+            secretName: "{{ .Release.Name }}-{{ .Chart.Name }}"
+            items:
+              - key: TLS__INTERNAL__CA_CRT
+                path: ca.pem
+                mode: 0444
