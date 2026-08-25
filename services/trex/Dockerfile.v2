@@ -6,11 +6,12 @@
 # env-gated D2E_COMPAT layer (merged upstream), so the core is NOT vendored here —
 # this image only adds d2e's plugins, CDW data and logto.
 #
-# Two variants come off this file, differing only in the base:
-#   default          trexsql's lean `prod` target -> d2e-trex:<tag>, what
-#                    docker-compose.yml runs
-#   TREXSQL_REF=full trexsql's `full` target      -> d2e-trex:<tag>-devx, what
-#                    docker-compose-local.yml runs
+# Two variants come off this file, differing only in the base TREXSQL_REF:
+#   default (below)      trexsql's lean `prod` target -> d2e-trex:<tag>, what
+#                        docker-compose.yml runs
+#   the full base's ref  trexsql's `full` target      -> d2e-trex:<tag>-devx,
+#                        what docker-compose-local.yml runs (it passes the ref
+#                        as a build arg; CI does the same for the -devx tag)
 # The full base adds ~1.2GB compressed of dev tooling (playwright + chromium,
 # the Claude Code CLI, gh, bun/uv/prefect and the devx payload) that a deployed
 # stack never runs; TREX_DX_ENABLED only gates it at runtime, it is in the image
