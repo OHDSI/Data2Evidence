@@ -90,6 +90,9 @@ spec:
             requests:
               cpu: 50m
               memory: 50Mi
+            limits: 
+              cpu: 100m
+              memory: 100Mi
           volumeMounts:
             - mountPath: /etc/d2e/tls
               name: d2e-tls
