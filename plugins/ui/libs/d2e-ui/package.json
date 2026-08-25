@@ -8,7 +8,9 @@
     ".": "./src/index.ts",
     "./tokens.css": "./src/tokens/tokens.css"
   },
-  "files": ["src"],
+  "files": [
+    "src"
+  ],
   "scripts": {
     "tokens:build": "tsx scripts/build-tokens.ts",
     "tokens:check": "tsx scripts/build-tokens.ts && git diff --exit-code src/tokens/tokens.css",

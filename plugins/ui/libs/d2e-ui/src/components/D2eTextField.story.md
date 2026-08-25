@@ -13,20 +13,20 @@ Outlined text field wrapper with error and validation props.
 
 ## Props
 
-| Prop | Type | Default | Notes |
-| --- | --- | --- | --- |
-| `modelValue` | `string` | `''` | `v-model` |
-| `label` | `string` | `undefined` | Floating label |
-| `required` | `boolean` | `false` | Renders the label asterisk |
-| `errorMessages` | `string \| string[]` | `undefined` | Passed to Vuetify |
-| `maxlength` | `number \| string` | `undefined` | Passed to the input |
-| `placeholder` | `string` | `undefined` | Input placeholder |
-| `autofocus` | `boolean` | `false` | Focuses the input on mount |
+| Prop            | Type                 | Default     | Notes                      |
+| --------------- | -------------------- | ----------- | -------------------------- |
+| `modelValue`    | `string`             | `''`        | `v-model`                  |
+| `label`         | `string`             | `undefined` | Floating label             |
+| `required`      | `boolean`            | `false`     | Renders the label asterisk |
+| `errorMessages` | `string \| string[]` | `undefined` | Passed to Vuetify          |
+| `maxlength`     | `number \| string`   | `undefined` | Passed to the input        |
+| `placeholder`   | `string`             | `undefined` | Input placeholder          |
+| `autofocus`     | `boolean`            | `false`     | Focuses the input on mount |
 
 ## Events
 
-| Event | Payload |
-| --- | --- |
+| Event               | Payload  |
+| ------------------- | -------- |
 | `update:modelValue` | `string` |
 
 ## Slots

@@ -14,33 +14,33 @@
 </template>
 
 <script setup lang="ts">
-import { computed, useAttrs } from 'vue'
+import { computed, useAttrs } from "vue";
 
 interface Props {
-  modelValue?: string
-  label?: string
-  required?: boolean
-  errorMessages?: string | string[]
-  maxlength?: number | string
-  placeholder?: string
-  autofocus?: boolean
+  modelValue?: string;
+  label?: string;
+  required?: boolean;
+  errorMessages?: string | string[];
+  maxlength?: number | string;
+  placeholder?: string;
+  autofocus?: boolean;
 }
 
 withDefaults(defineProps<Props>(), {
-  modelValue: '',
+  modelValue: "",
   label: undefined,
   required: false,
   errorMessages: undefined,
   maxlength: undefined,
   placeholder: undefined,
   autofocus: false,
-})
+});
 
 defineEmits<{
-  'update:modelValue': [value: string]
-}>()
+  "update:modelValue": [value: string];
+}>();
 
-const attrs = useAttrs()
+const attrs = useAttrs();
 const forwardAttrs = computed(() => {
   const {
     modelValue: _modelValue,
@@ -51,14 +51,14 @@ const forwardAttrs = computed(() => {
     placeholder: _placeholder,
     autofocus: _autofocus,
     ...rest
-  } = attrs as Record<string, unknown>
-  void _modelValue
-  void _label
-  void _required
-  void _errorMessages
-  void _maxlength
-  void _placeholder
-  void _autofocus
-  return rest
-})
+  } = attrs as Record<string, unknown>;
+  void _modelValue;
+  void _label;
+  void _required;
+  void _errorMessages;
+  void _maxlength;
+  void _placeholder;
+  void _autofocus;
+  return rest;
+});
 </script>

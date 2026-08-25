@@ -10,16 +10,9 @@
     v-bind="forwardAttrs"
     @update:model-value="onModelValueUpdate"
   >
-    <v-card
-      class="d2e-dialog"
-      :data-testid="dataTestId"
-    >
+    <v-card class="d2e-dialog" :data-testid="dataTestId">
       <header class="d2e-dialog__header">
-        <h2
-          v-if="title"
-          :id="titleId"
-          class="d2e-dialog__title"
-        >
+        <h2 v-if="title" :id="titleId" class="d2e-dialog__title">
           {{ title }}
         </h2>
         <v-btn
@@ -39,10 +32,7 @@
 
       <div class="d2e-dialog__body">
         <slot />
-        <div
-          v-if="busy"
-          class="d2e-dialog__busy"
-        >
+        <div v-if="busy" class="d2e-dialog__busy">
           <v-progress-circular
             indeterminate
             color="primary"
@@ -62,17 +52,17 @@
 </template>
 
 <script setup lang="ts">
-import { computed, nextTick, ref, useAttrs, watch } from 'vue'
+import { computed, nextTick, ref, useAttrs, watch } from "vue";
 
 interface Props {
-  modelValue: boolean
-  title?: string
-  maxWidth?: number | string
-  persistent?: boolean
-  showClose?: boolean
-  closeLabel?: string
-  busy?: boolean
-  attach?: string | boolean
+  modelValue: boolean;
+  title?: string;
+  maxWidth?: number | string;
+  persistent?: boolean;
+  showClose?: boolean;
+  closeLabel?: string;
+  busy?: boolean;
+  attach?: string | boolean;
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -80,70 +70,75 @@ const props = withDefaults(defineProps<Props>(), {
   maxWidth: 600,
   persistent: false,
   showClose: true,
-  closeLabel: 'Close dialog',
+  closeLabel: "Close dialog",
   busy: false,
-  attach: '#app',
-})
+  attach: "#app",
+});
 
 const emit = defineEmits<{
-  'update:modelValue': [open: boolean]
-  close: []
-}>()
+  "update:modelValue": [open: boolean];
+  close: [];
+}>();
 
-defineOptions({ inheritAttrs: false })
+defineOptions({ inheritAttrs: false });
 
-const titleId = `d2e-dialog-title-${Math.random().toString(36).slice(2, 10)}`
+const titleId = `d2e-dialog-title-${Math.random().toString(36).slice(2, 10)}`;
 
-const attrs = useAttrs()
+const attrs = useAttrs();
 
 // data-testid belongs on the card (the visible dialog surface); everything
 // else (transition, scrollable, aria-* and friends) is forwarded to v-dialog.
-const dataTestId = computed(() => (attrs['data-testid'] as string | undefined) ?? undefined)
+const dataTestId = computed(
+  () => (attrs["data-testid"] as string | undefined) ?? undefined
+);
 
 const forwardAttrs = computed(() => {
-  const { 'data-testid': _testId, ...rest } = attrs as Record<string, unknown>
-  void _testId
-  return rest
-})
+  const { "data-testid": _testId, ...rest } = attrs as Record<string, unknown>;
+  void _testId;
+  return rest;
+});
 
-const previouslyFocused = ref<HTMLElement | null>(null)
+const previouslyFocused = ref<HTMLElement | null>(null);
 
 watch(
   () => props.modelValue,
   (open, prev) => {
     if (open && !prev) {
-      const active = (typeof document !== 'undefined' ? document.activeElement : null) as HTMLElement | null
-      previouslyFocused.value = active && typeof active.focus === 'function' ? active : null
-      return
+      const active = (
+        typeof document !== "undefined" ? document.activeElement : null
+      ) as HTMLElement | null;
+      previouslyFocused.value =
+        active && typeof active.focus === "function" ? active : null;
+      return;
     }
     if (!open && prev) {
-      const target = previouslyFocused.value
-      previouslyFocused.value = null
-      if (target && typeof target.focus === 'function') {
+      const target = previouslyFocused.value;
+      previouslyFocused.value = null;
+      if (target && typeof target.focus === "function") {
         nextTick(() => {
           try {
-            target.focus()
+            target.focus();
           } catch {
-            void 0
+            void 0;
           }
-        })
+        });
       }
     }
   },
   { immediate: true }
-)
+);
 
 function onModelValueUpdate(open: boolean) {
   // A busy dialog must not close through any path.
-  if (props.busy && !open) return
-  emit('update:modelValue', open)
-  if (!open) emit('close')
+  if (props.busy && !open) return;
+  emit("update:modelValue", open);
+  if (!open) emit("close");
 }
 
 function closeFromButton() {
-  if (props.busy) return
-  emit('update:modelValue', false)
-  emit('close')
+  if (props.busy) return;
+  emit("update:modelValue", false);
+  emit("close");
 }
 </script>
 
