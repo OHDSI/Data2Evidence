@@ -12,8 +12,9 @@ class PhenotypeTagAPI(BaseAPI):
     """
 
     # Seeded by services/atlas-db-init/220_imported_cohort_metadata_tag_group.sql.
-    # Two groups because multi_selection is a property of the group: statuses are
-    # mutually exclusive, the source tag is not.
+    # Two groups because multi_selection is a property of the group: statuses are mutually exclusive, the source tag is not.
+    REQUEST_TIMEOUT = (10, 30)
+
     SOURCE_GROUP = "Imported Cohort Metadata"
     STATUS_GROUP = "Cohort Review Status"
     PHENOTYPE_LIBRARY_TAG = "Phenotype Library"
@@ -30,7 +31,8 @@ class PhenotypeTagAPI(BaseAPI):
         headers = self.headers.copy()
         headers["datasetId"] = dataset_id
         response = requests.get(
-            self.tag_url, headers=headers, verify=self.get_verify_value()
+            self.tag_url, headers=headers, verify=self.get_verify_value(),
+            timeout=self.REQUEST_TIMEOUT
         )
         if response.status_code != 200:
             raise Exception(
@@ -64,6 +66,7 @@ class PhenotypeTagAPI(BaseAPI):
             headers=headers,
             json=payload,
             verify=self.get_verify_value(),
+            timeout=self.REQUEST_TIMEOUT,
         )
         if response.status_code not in [200, 201]:
             raise Exception(
@@ -137,6 +140,7 @@ class PhenotypeTagAPI(BaseAPI):
             headers=headers,
             json=payload,
             verify=self.get_verify_value(),
+            timeout=self.REQUEST_TIMEOUT,
         )
         if response.status_code not in [200, 201, 204]:
             raise Exception(
