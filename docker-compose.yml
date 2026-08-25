@@ -75,9 +75,10 @@ services:
       - hades-data:/data/hades
       - audit-logs:/var/log/d2e/audit
       # `notebook` schema (studies/notebooks) + its PostGraphile grants, applied
-      # as a trex migrations plugin. Must land under a PLUGINS_DEV_PATH entry to
-      # be scanned; trex runs it against _config (the alp Postgres catalog) and
-      # tracks applied versions in notebook.refinery_schema_history.
+      # as a trex migrations plugin. trex runs it against _config (the alp
+      # Postgres catalog) and tracks applied versions in
+      # notebook.refinery_schema_history. Already baked into the image; mounted
+      # so a source edit takes effect on restart without a rebuild.
       - ./services/trex/migrations/notebook:/usr/src/bundled-plugins/notebook-schema:ro
       # d2e's DB provisioning (login users, supabase roles, schemas, grants),
       # applied as a trex provision plugin BEFORE any other plugin loads.
