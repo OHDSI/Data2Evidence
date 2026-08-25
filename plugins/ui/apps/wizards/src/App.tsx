@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from "react";
 import { PortalProps } from "./types/portal";
 import { WizardProvider } from "./context/WizardContext";
 import { WizardShell } from "./components/WizardShell";
+import { isWizardPropsChangeForApp } from "./utils/portalProps";
 import "./global.css";
 
 function AppContent() {
@@ -12,9 +13,12 @@ export default function App(props: PortalProps) {
   const [customProps, setCustomProps] = useState<Partial<PortalProps>>({});
 
   useEffect(() => {
+    // Atlas publishes this event when its global source changes. The embedded
+    // Wizard selector also uses it to update this app immediately; Atlas does
+    // not consume events published by the Wizard.
     const handlePropsChange = (event: Event) => {
       const { appId, ...newProps } = (event as CustomEvent).detail || {};
-      if (appId === props.appId) {
+      if (isWizardPropsChangeForApp(appId, props.appId)) {
         setCustomProps(newProps);
       }
     };

@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useLayoutEffect, useRef } from "react";
 import { useWizardContext } from "../context/WizardContext";
 import { ErrorBoundary } from "./ErrorBoundary";
 import { StepSelection } from "./StepSelection";
@@ -23,8 +23,43 @@ const stepTypeRegistry: Record<StepType, React.ComponentType> = {
  * Main wizard renderer using step type registry.
  */
 export function WizardShell() {
-  const { currentStepIndex, selectedWizard, getCurrentStepConfig, setCurrentStepIndex, resetWizard } =
+  const { currentStepIndex, selectedWizard, getCurrentStepConfig, setCurrentStepIndex, resetWizard, portalProps } =
     useWizardContext();
+  const shellRef = useRef<HTMLDivElement>(null);
+
+  useLayoutEffect(() => {
+    const shell = shellRef.current;
+    if (!shell || portalProps.isAtlas !== true) return;
+
+    // page-card is owned by Atlas and supplies the outer spacing used here.
+    const pageCard = shell.closest<HTMLElement>(".page-card");
+
+    const fitShellToViewport = () => {
+      // Atlas owns the outer page and card spacing. Fit the Wizard between its
+      // mount point and the card's visible bottom so only the Wizard scrolls.
+      const pageWrapper = shell.closest<HTMLElement>(".page-wrapper");
+      const shellTop = shell.getBoundingClientRect().top;
+      const viewportBottom = Math.min(pageWrapper?.getBoundingClientRect().bottom ?? window.innerHeight, window.innerHeight);
+      const wrapperBottomPadding = Number.parseFloat(
+        pageWrapper ? window.getComputedStyle(pageWrapper).paddingBottom : "0",
+      );
+      const cardBottomPadding = Number.parseFloat(pageCard ? window.getComputedStyle(pageCard).paddingBottom : "0");
+      const availableHeight = Math.max(320, viewportBottom - shellTop - wrapperBottomPadding - cardBottomPadding);
+      shell.style.setProperty("--wizard-shell-height", `${availableHeight}px`);
+    };
+
+    const pageWrapper = shell.closest<HTMLElement>(".page-wrapper");
+    const resizeObserver = pageWrapper ? new ResizeObserver(fitShellToViewport) : undefined;
+    resizeObserver?.observe(pageWrapper);
+    const animationFrame = window.requestAnimationFrame(fitShellToViewport);
+    window.addEventListener("resize", fitShellToViewport);
+    return () => {
+      window.cancelAnimationFrame(animationFrame);
+      resizeObserver?.disconnect();
+      window.removeEventListener("resize", fitShellToViewport);
+      shell.style.removeProperty("--wizard-shell-height");
+    };
+  }, [currentStepIndex, portalProps.isAtlas]);
 
   // Handle invalid state: index > -1 but no wizard selected
   useEffect(() => {
@@ -84,7 +119,11 @@ export function WizardShell() {
   };
 
   return (
-    <div className={styles.shell}>
+    <div
+      ref={shellRef}
+      className={`${styles.shell} ${portalProps.isAtlas === true ? styles.atlasShell : ""}`}
+      data-atlas-wizard-step={portalProps.isAtlas === true && currentStepIndex >= 0 ? "" : undefined}
+    >
       <main className={styles.content}>
         <ErrorBoundary onReset={resetWizard}>{renderStep()}</ErrorBoundary>
       </main>

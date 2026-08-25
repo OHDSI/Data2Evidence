@@ -21,16 +21,22 @@ cache_root="${D2E_FLOWS_CACHE:-/var/lib/d2e-flows}"
 
 log() { echo "provision-envs: $*" >&2; }
 
+# HANA driver goes INTO the default env (a separate pixi env would have its
+# own empty R library — renv restores only into default). Same runtime-install
+# semantics as install_hana_drivers.sh in the docker-pool images.
+install_hana() { # $1 = plugin dir
+  local manifest="$1/pyproject.toml"
+  grep -q 'sqlalchemy-hana' "$manifest" || return 0
+  pixi run --frozen --manifest-path "$manifest" \
+    pip install --quiet "sqlalchemy-hana==${SQLALCHEMY_HANA_VERSION:-2.2.0}"
+}
+
 install_env() { # $1 = plugin dir
   local dir="$1" manifest="$1/pyproject.toml"
   [ -f "$manifest" ] || { log "no pyproject.toml in $dir"; return 1; }
   pixi install --frozen --manifest-path "$manifest" || return 1
-  # HANA driver goes INTO the default env (a separate pixi env would have its
-  # own empty R library — renv restores only into default). Same runtime-install
-  # semantics as install_hana_drivers.sh in the docker-pool images.
-  if [ "${INSTALL_SQLALCHEMY_HANA:-false}" = "true" ] && grep -q 'sqlalchemy-hana' "$manifest"; then
-    pixi run --frozen --manifest-path "$manifest" \
-      pip install --quiet "sqlalchemy-hana==${SQLALCHEMY_HANA_VERSION:-2.2.0}" || return 1
+  if [ "${INSTALL_SQLALCHEMY_HANA:-false}" = "true" ]; then
+    install_hana "$dir" || return 1
   fi
   # Additional named environments some plugins declare (e.g. the NER stack's
   # self-contained env in data_transformation).
@@ -61,7 +67,26 @@ provision_dir() { # $1 = extracted plugin dir, $2 = marker value
   if [ "${INSTALL_SQLALCHEMY_HANA:-false}" = "true" ] && grep -q 'sqlalchemy-hana' "$dir/pyproject.toml" 2>/dev/null; then
     stamp="$stamp:hana"
   fi
-  if [ "$(cat "$dir/.d2e-env-ready" 2>/dev/null)" = "$stamp" ]; then
+  local have
+  have="$(cat "$dir/.d2e-env-ready" 2>/dev/null)"
+  if [ "$have" = "$stamp" ]; then
+    return 0
+  fi
+  # Driver present but the flag is now off: an unused sqlalchemy-hana in the
+  # env is harmless, and there is nothing to undo — only setup tasks would
+  # re-run.
+  if [ "$have" = "$stamp:hana" ]; then
+    return 0
+  fi
+  # Provisioned already and only the HANA driver is missing: pip-install it in
+  # place. A full install_env would also re-run the plugin's setup-assets /
+  # setup-r tasks, and renv restore needs a compiler toolchain that the image
+  # build strips out of the baked envs (see slim-envs.sh).
+  if [ "${stamp%:hana}" != "$stamp" ] && [ "$have" = "${stamp%:hana}" ]; then
+    log "adding HANA driver to $dir"
+    install_hana "$dir" || return 1
+    printf '%s' "$stamp" > "$dir/.d2e-env-ready"
+    log "ready: $dir"
     return 0
   fi
   log "provisioning $dir"
