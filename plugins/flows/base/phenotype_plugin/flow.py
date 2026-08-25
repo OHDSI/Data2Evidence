@@ -32,7 +32,6 @@ def validate_integer_string(input_string: str) -> bool:
         logger.info(
             "Cohorts ID is set to 'default', retrieving all cohorts from the Phenotype."
         )
-        logger.warning("Cohort 921 is not supported currently, it will be skipped.")
         return True
     else:
         input_string = input_string.strip()
@@ -44,10 +43,6 @@ def validate_integer_string(input_string: str) -> bool:
                 error_message = f"""Input CohortsId: {input_string} is not supported, use ',' as seperator, e.g.: '3,4,25' """
                 logger.error(error_message)
                 raise ValueError(error_message)
-            if num.strip() == "921":
-                logger.warning(
-                    "Cohort 921 is not supported currently, it will be skipped."
-                )
         return True
 
 
