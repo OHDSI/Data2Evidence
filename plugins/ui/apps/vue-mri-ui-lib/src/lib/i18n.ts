@@ -850,7 +850,7 @@ export const i18n = {
     MRI_PA_LEAVE_DIALOG_MESSAGE2: 'Are you sure you want to leave this page?',
     MRI_PA_LEAVE_DIALOG_STAY: 'Stay on Page',
     MRI_PA_LEAVE_DIALOG_LEAVE: 'Leave Page',
-    MRI_PA_TOO_MANY_VALUES: 'Refine your search',
+    MRI_PA_TOO_MANY_VALUES: 'Too many values to list. Type to search.',
     MRI_PA_ENTER_SEARCH_TERM: 'Enter search term',
     MRI_PA_LOADING_SUGGESTIONS: 'Loading suggestions...',
     MRI_PA_LOADING: 'Loading...',

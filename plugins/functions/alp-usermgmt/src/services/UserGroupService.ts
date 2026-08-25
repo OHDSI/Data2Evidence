@@ -177,7 +177,7 @@ export class UserGroupService {
     userId: string,
     groupId: string,
     trx?: Knex,
-    options?: { skipUserValidation?: boolean }
+    options?: { skipUserValidation?: boolean; skipAuthzStamp?: boolean }
   ): Promise<undefined> {
     this.logger.debug(`Register user ${userId} to group ${groupId}`)
 
@@ -195,6 +195,9 @@ export class UserGroupService {
     }
 
     await this.addUserToGroup(userId, groupId, trx)
+    if (!opt.skipAuthzStamp) {
+      await this.userService.touchAuthzChangedAt(userId, trx)
+    }
     await this.syncRoleToLogto(userId, groupId, 'assign')
   }
 
@@ -231,7 +234,12 @@ export class UserGroupService {
     }
   }
 
-  async withdrawUserFromGroup(userId: string, groupId: string, trx?: Knex): Promise<undefined> {
+  async withdrawUserFromGroup(
+    userId: string,
+    groupId: string,
+    trx?: Knex,
+    options?: { skipAuthzStamp?: boolean }
+  ): Promise<undefined> {
     const userGroup = await this.getUserGroup(userId, groupId)
     if (!userGroup) {
       this.logger.warn(`User ${userId} does not belong to group ${groupId}`)
@@ -239,6 +247,9 @@ export class UserGroupService {
     }
 
     await this.userGroupRepo.delete({ user_id: userId, b2c_group_id: groupId }, trx)
+    if (!options?.skipAuthzStamp) {
+      await this.userService.touchAuthzChangedAt(userId, trx)
+    }
     await this.syncRoleToLogto(userId, groupId, 'remove', trx)
   }
 
