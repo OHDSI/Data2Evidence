@@ -235,6 +235,13 @@ services:
       # forwarded-header question to work around.
       SECURITY_AUTH_OIDC_CLIENTID: ${TREX__OIDC__WEBAPI_CLIENT_ID:-d2e-webapi}
       SECURITY_AUTH_OIDC_APISECRET: ${TREX__OIDC__WEBAPI_CLIENT_SECRET:?TREX__OIDC__WEBAPI_CLIENT_SECRET must be set (run d2e init)}
+      # SECURITY_AUTH_OIDC_APISECRET above is WebAPI's, and WebAPI now
+      # authenticates against trex. d2e-compat still verifies the portal's
+      # Logto tokens and historically read that same variable as Logto's
+      # secret, so it has to be given Logto's under its own name -- otherwise
+      # the portal code exchange goes to Logto carrying trex's secret and is
+      # rejected with 401.
+      LOGTO__CLIENT_SECRET: ${LOGTO__D2E_APP__CLIENT_SECRET:-${LOGTO__ALP_APP__CLIENT_SECRET}}
       SECURITY_AUTH_OIDC_URL: "http://${PROJECT_NAME:-d2e}-trex:33001/trex/oidc/.well-known/openid-configuration"
       # External URL for browser redirects - used to rewrite internal OIDC URLs to external ones
       SECURITY_AUTH_OIDC_EXTERNALURL: "https://${CADDY__D2E__PUBLIC_FQDN:-${CADDY__ALP__PUBLIC_FQDN:-localhost}}:${CADDY_PORT:-${PORT:-443}}/trex/oidc"
