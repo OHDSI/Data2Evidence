@@ -625,6 +625,12 @@ jobs:
       - uses: docker/setup-buildx-action@v3
         id: builder
 
+      # Two images off one Dockerfile, differing only in the trexsql base.
+      # The default is trexsql's lean prod target and is what docker-compose.yml
+      # runs; the -devx variant below uses the full base and is what
+      # docker-compose-local.yml runs. They share no layers, so this is a second
+      # full build rather than a cache resolve — the dev tooling lives in the
+      # base, and a later layer cannot delete it out of the image.
       - name: Build and Push trex image
         uses: docker/build-push-action@v6
         with:
@@ -641,6 +647,29 @@ jobs:
             BUILD_TYPE=OSS
             PLUGINS_FEED=${{ needs.setup.outputs.is_release_push == 'true' && 'stable' || 'd2e' }}
             PLUGINS_FROM_REGISTRY=@ohdsi/pythia-agent@0.1.0-develop.18.g80bf4aa
+          secrets: |
+            "PLUGINS_REGISTRY=${{ secrets.PLUGINS_REGISTRY }}"
+            "github_token=${{ secrets.GITHUB_TOKEN }}"
+
+      # Built on every run, not just develop, so the tag exists for whatever
+      # DOCKER_TAG_NAME a local stack is pointed at — release tags included.
+      - name: Build and Push trex devx image
+        uses: docker/build-push-action@v6
+        with:
+          builder: ${{ steps.builder.outputs.name }}
+          context: ./services/trex
+          file: ./services/trex/Dockerfile.v2
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ env.REG_URL }}/d2e-trex:${{ env.RUN_TAG }}-devx
+          provenance: false
+          sbom: false
+          build-args: |
+            GIT_COMMIT_ARG=${{ github.sha }}
+            BUILD_TYPE=OSS
+            PLUGINS_FEED=${{ needs.setup.outputs.is_release_push == 'true' && 'stable' || 'd2e' }}
+            PLUGINS_FROM_REGISTRY=@ohdsi/pythia-agent@0.1.0-develop.18.g80bf4aa
+            TREXSQL_REF=sha-5ce42757279f969bca123f0128a5c967ff2e3bd4@sha256:bad73e8323fc07fdd2dba7a25e6f7f1c2b3d6e86410b039f5e8629c0d0214cc6
           secrets: |
             "PLUGINS_REGISTRY=${{ secrets.PLUGINS_REGISTRY }}"
             "github_token=${{ secrets.GITHUB_TOKEN }}"

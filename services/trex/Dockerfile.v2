@@ -4,29 +4,36 @@
 # (started by core/server with SELECT webapi_start()), not as a separate Java
 # process. The base image already ships trex's canonical main/event core with the
 # env-gated D2E_COMPAT layer (merged upstream), so the core is NOT vendored here —
-# this image only adds d2e's plugins, CDW data, logto, ONNX and DuckDB extensions.
-
-FROM ghcr.io/ohdsi/trexsql:sha-d6d6a16be5048fdef03030c3158f6bf28506ff48@sha256:b2179d2d6ef25fb18b56dbeeed30b3206526bcd83a5bc3ac38d83403371349b6 AS base
+# this image only adds d2e's plugins, CDW data and logto.
+#
+# Two variants come off this file, differing only in the base TREXSQL_REF:
+#   default (below)      trexsql's lean `prod` target -> d2e-trex:<tag>, what
+#                        docker-compose.yml runs
+#   the full base's ref  trexsql's `full` target      -> d2e-trex:<tag>-devx,
+#                        what docker-compose-local.yml runs (it passes the ref
+#                        as a build arg; CI does the same for the -devx tag)
+# The full base adds ~1.2GB compressed of dev tooling (playwright + chromium,
+# the Claude Code CLI, gh, bun/uv/prefect and the devx payload) that a deployed
+# stack never runs; TREX_DX_ENABLED only gates it at runtime, it is in the image
+# either way. Pinned by tag AND index digest — `image:tag@digest` is valid, so
+# one arg carries both.
+ARG TREXSQL_REF=prod-sha-5ce42757279f969bca123f0128a5c967ff2e3bd4@sha256:e162d8282df32231b58297fd31fef8567272468c86a82c64d36ec76d0de0d6ca
+FROM ghcr.io/ohdsi/trexsql:${TREXSQL_REF} AS base
 
 USER root
 WORKDIR /usr/src
 
-# Selects arch-correct ONNX and DuckDB extension binaries (amd64/arm64).
+# Selects the arch-correct DuckDB extension directory (amd64/arm64).
 ARG TARGETARCH
 
-ENV ONNXRUNTIME_VERSION=1.20.1
 ENV DUCKDB_VERSION=1.4.4
 
 # Deps not in the slim node base (node/npm/tar/unzip already present).
-COPY install_onnx.sh /scripts/
+# jq reads each bundled tarball's package.json, python3 runs the two-pass
+# extract. wget went with the ONNX and ADBC installs the base now owns.
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    wget jq python3 \
+    jq python3 \
     && rm -rf /var/lib/apt/lists/*
-
-# ONNX Runtime for embeddings/semantic search (not shipped by the base).
-RUN /scripts/install_onnx.sh $ONNXRUNTIME_VERSION linux linux/${TARGETARCH} /root/onnxruntime && \
-    cp -a /root/onnxruntime/lib/libonnxruntime.so* /usr/lib/ && \
-    rm -rf /root/onnxruntime && ldconfig
 
 # NOTE: DuckDB extensions are NOT downloaded here. The base image owns that set
 # (see the trexsql Dockerfile's DUCKDB_*_EXTENSIONS) and installs it into
@@ -37,32 +44,9 @@ RUN /scripts/install_onnx.sh $ONNXRUNTIME_VERSION linux linux/${TARGETARCH} /roo
 #
 # To add an extension, add it to the base image rather than fetching it here.
 
-# Snowflake source support
-# The community `snowflake` DuckDB extension is a thin wrapper that dlopen()s the
-# Apache Arrow ADBC Snowflake driver at ATTACH time. That native driver is NOT
-# bundled with the extension, so install it into /usr/local/lib — a
-# version-independent path the extension searches (alongside
-# ~/.duckdb/extensions/<ver>/<platform>/ and /usr/lib). The driver is DuckDB-
-# version independent; only the CPU arch must match. Wheel from Apache Arrow
-# ADBC 1.8.0 on PyPI (immutable hashed URLs).
-RUN set -eu; \
-    case "$TARGETARCH" in \
-      amd64) WHL="https://files.pythonhosted.org/packages/b8/6f/ff6d76ca035f0f2308733e7c7e96aeb094d2927a1de1e1a1721593286d3e/adbc_driver_snowflake-1.8.0-py3-none-manylinux1_x86_64.manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_5_x86_64.whl" ;; \
-      arm64) WHL="https://files.pythonhosted.org/packages/a4/14/7f448f5be225a3c596aa1a14a704fb4d8a2871e306d8725f98028af4265f/adbc_driver_snowflake-1.8.0-py3-none-manylinux2014_aarch64.manylinux_2_17_aarch64.whl" ;; \
-      *) echo "unsupported TARGETARCH=$TARGETARCH for ADBC snowflake driver" >&2; exit 1 ;; \
-    esac; \
-    cd /tmp && wget -q "$WHL" -O adbc.whl && \
-    python3 -m zipfile -e adbc.whl adbc_extract && \
-    cp "$(find adbc_extract -name 'libadbc_driver_snowflake.so' | head -n1)" /usr/local/lib/ && \
-    ldconfig && rm -rf adbc.whl adbc_extract
-
-# Best-effort offline preinstall of the snowflake extension wrapper. Non-fatal:
-# if it isn't published for this DuckDB version/arch, the engine falls back to a
-# runtime `INSTALL snowflake FROM community` (which needs network on first use).
-RUN cd /root/.duckdb/extensions/v${DUCKDB_VERSION}/linux_${TARGETARCH} && \
-    ( wget -q https://community-extensions.duckdb.org/v${DUCKDB_VERSION}/linux_${TARGETARCH}/snowflake.duckdb_extension.gz && \
-      gzip -df snowflake.duckdb_extension.gz && echo "snowflake extension preinstalled for v${DUCKDB_VERSION}/linux_${TARGETARCH}" ) || \
-    echo "WARN: snowflake community extension not prebuilt for v${DUCKDB_VERSION}/linux_${TARGETARCH}; relying on runtime INSTALL"
+# NOTE: no snowflake ADBC driver install here either. The base ships both the
+# `snowflake` extension and the libadbc_driver_snowflake.so it dlopen()s at
+# ATTACH time, with the Apache-2.0 notices beside it.
 
 RUN mkdir -p /usr/src/data/cache /usr/src/data/plugins /usr/src/data/flow_staging /usr/src/cdw_data/built_in ./cert /var/log/d2e/audit \
  && chmod 1777 /usr/src/data/flow_staging
@@ -71,9 +55,14 @@ RUN mkdir -p /usr/src/data/cache /usr/src/data/plugins /usr/src/data/flow_stagin
 # cross-directory hardlinks in Deno-packed tarballs that GNU tar -x rejects.
 COPY scripts/extract-plugin-tarball.py /scripts/
 RUN mkdir -p /usr/src/bundled-plugins
-COPY plugin-artifacts/ /tmp/plugin-artifacts/
-RUN set -eu; \
-    if [ -d /tmp/plugin-artifacts ] && ls /tmp/plugin-artifacts/*.tgz >/dev/null 2>&1; then \
+# Bind-mounted, not COPY'd: the tarballs are a build input consumed by this RUN
+# and the `rm -rf` that used to follow ran a layer too late to reclaim them, so
+# the image carried ~830MB of .tgz it never reads again. plugin-artifacts/ is
+# always in the context (.gitkeep) — empty for local builds, which take the
+# registry path below instead.
+RUN --mount=type=bind,source=plugin-artifacts,target=/tmp/plugin-artifacts \
+    set -eu; \
+    if ls /tmp/plugin-artifacts/*.tgz >/dev/null 2>&1; then \
       for TGZ in /tmp/plugin-artifacts/*.tgz; do \
         NAME="$(tar -xzOf "$TGZ" package/package.json | jq -r .name)"; \
         SHORT="$(printf '%s' "$NAME" | sed 's|@[^/]*/||')"; \
@@ -82,8 +71,7 @@ RUN set -eu; \
         mkdir -p "$DEST"; \
         python3 /scripts/extract-plugin-tarball.py "$TGZ" "$DEST" 1; \
       done; \
-    fi; \
-    rm -rf /tmp/plugin-artifacts
+    fi
 
 # PLUGINS_REGISTRY (BuildKit secret) overrides the feed when present.
 COPY scripts/fetch-external-plugins.sh /scripts/
@@ -143,20 +131,32 @@ RUN mkdir -p ./logto
 COPY ./logto ./logto
 COPY ./cdw_data/built_in /usr/src/cdw_data/built_in
 
-# Seed DuckDB's default per-user extension path so trex's main `LOAD <ext>`
-# (icu/fts) resolves — the base installs to DUCKDB_EXTENSION_DIRECTORY
-# (/usr/share/trexsql/extensions) but worker connections look in ~/.duckdb.
-# This image runs as root, so /root/.duckdb. (Belt-and-suspenders for node too.)
+# Point DuckDB's default per-user extension path at the base image's extension
+# directory so trex's main `LOAD <ext>` (icu/fts) resolves — the base installs
+# to DUCKDB_EXTENSION_DIRECTORY (/usr/share/trexsql/extensions) but worker
+# connections look in ~/.duckdb. This image runs as root, so /root/.duckdb.
+#
+# A symlink, not a copy: `cp -r` duplicated the base's whole extension set into
+# /root/.duckdb, 745MB of second copies (17 extensions, spatial and bigquery
+# alone 158MB) that DuckDB resolves identically through a link. The base
+# already links /home/node's per-arch path at this same target.
 RUN set -eu; \
+    EXT_SRC="/usr/share/trexsql/extensions/v${DUCKDB_VERSION}/linux_${TARGETARCH}"; \
+    test -d "$EXT_SRC" || { echo "FATAL: base image has no $EXT_SRC" >&2; exit 1; }; \
     for HOME_DIR in /root /home/node; do \
-      mkdir -p "$HOME_DIR/.duckdb/extensions" && \
-      cp -r /usr/share/trexsql/extensions/* "$HOME_DIR/.duckdb/extensions/" 2>/dev/null || true; \
+      DEST="$HOME_DIR/.duckdb/extensions/v${DUCKDB_VERSION}/linux_${TARGETARCH}"; \
+      mkdir -p "$(dirname "$DEST")"; \
+      # rm -rf, not just `ln -sfn`: -f replaces a file or a symlink, but against
+      # a real directory ln silently creates the link *inside* it instead, which
+      # would leave a stale copy behind and break the assertions below.
+      rm -rf "$DEST"; \
+      ln -sfn "$EXT_SRC" "$DEST"; \
     done; \
-    chown -R node:node /home/node/.duckdb 2>/dev/null || true; \
-    # The copy stays best-effort — the base symlinks /home/node's per-arch path at
-    # the same target, so cp reports "same file" there. Assert the outcome instead:
-    # these extensions now come only from the base image, so a silent copy failure
-    # would otherwise surface much later as a LOAD error at runtime.
+    chown node:node /home/node/.duckdb /home/node/.duckdb/extensions \
+      "/home/node/.duckdb/extensions/v${DUCKDB_VERSION}"; \
+    chown -h node:node "/home/node/.duckdb/extensions/v${DUCKDB_VERSION}/linux_${TARGETARCH}"; \
+    # These extensions come only from the base image, so a broken link would
+    # otherwise surface much later as a LOAD error at runtime.
     for lib in bigquery icu fts; do \
       test -s "/root/.duckdb/extensions/v${DUCKDB_VERSION}/linux_${TARGETARCH}/${lib}.duckdb_extension" \
         || { echo "FATAL: ${lib} missing from /root/.duckdb after seeding from the base image" >&2; exit 1; }; \
