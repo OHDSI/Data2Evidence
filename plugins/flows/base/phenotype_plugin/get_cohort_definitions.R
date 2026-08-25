@@ -26,17 +26,12 @@ get_cohort_definitions <- function(cohortsID, vocabschemaName, materialize = FAL
     phenotypeLog <- PhenotypeLibrary::getPhenotypeLog(showHidden = TRUE)
 
     create_cohort_definitionsets <- function(cohortsID, vocabschemaName) {
-        # CirceR version 1.1.1 does not support cohort 344, and CirceR version 1.3.3 (currently used) does not support cohort 921
         if (is.character(cohortsID) && cohortsID == 'default') {
             cohortDefinitionSets <- PhenotypeLibrary::getPlCohortDefinitionSet(phenotypeLog$cohortId[1:nrow(phenotypeLog)])
-            cohortDefinitionSets <- cohortDefinitionSets[cohortDefinitionSets$cohortId!=921,]
             for (i in 1:nrow(cohortDefinitionSets)) {
                 cohortDefinitionSets$sql[i] <- CirceR::buildCohortQuery(cohortDefinitionSets$json[i], options = CirceR::createGenerateOptions(generateStats = TRUE, vocabularySchema = vocabschemaName))
             }
         } else if (class(cohortsID) == "integer") {
-            if (921 %in% cohortsID) {
-                cohortsID <- cohortsID[cohortsID!=921]
-            }
             cohortDefinitionSets <- PhenotypeLibrary::getPlCohortDefinitionSet(cohortsID)
             for (i in 1:nrow(cohortDefinitionSets)) {
                 cohortDefinitionSets$sql[i] <- CirceR::buildCohortQuery(cohortDefinitionSets$json[i], options = CirceR::createGenerateOptions(generateStats = TRUE, vocabularySchema = vocabschemaName))
