@@ -3,7 +3,7 @@ import { PrefectDeploymentName, PrefectFlowName } from "../const.ts";
 
 export interface ShinyLiveFlowRunDto {
   datasetId: string;
-  language: "python" | "r";
+  language: "python";
   appCode: string;
   type: string;
   name: string;
@@ -18,7 +18,13 @@ export class ShinyLiveService {
 
     const { datasetId, language, appCode, type, name } = shinyLiveFlowRunDto;
 
-    const flowRunName = `ShinyLive_${datasetId}_${language}`;
+    if (language !== "python") {
+      throw new Error(
+        `Language "${language}" is not supported. Only "python" is supported.`,
+      );
+    }
+
+    const flowRunName = `${name}_${datasetId}_${language}_${type}`;
     const parameters = {
       options: {
         dataset_id: datasetId,

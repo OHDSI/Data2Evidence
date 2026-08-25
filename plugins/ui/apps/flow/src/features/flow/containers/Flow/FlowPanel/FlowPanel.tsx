@@ -434,6 +434,7 @@ export const FlowPanel: FC<FlowPanelProps> = () => {
         fitView
         fitViewOptions={fitViewOptions}
         nodeTypes={NODE_TYPES}
+        deleteKeyCode={["Backspace", "Delete"]}
         onNodesDelete={handleNodesDelete}
         onNodesChange={handleNodesChange}
         onEdgesChange={handleEdgesChange}

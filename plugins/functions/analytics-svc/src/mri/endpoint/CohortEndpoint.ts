@@ -781,6 +781,37 @@ export class CohortEndpoint {
         }
     }
 
+    /**
+     * Resolves a single fully qualified relation to test whether it exists.
+     * Deliberately bypasses executeCohortQuery, which rewrites bare
+     * `<schema>.COHORT` references into `<catalog>.<schema>.COHORT` and would
+     * therefore double qualify an already qualified name.
+     */
+    private async trexRelationExists(
+        qualifiedTableName: string
+    ): Promise<boolean> {
+        const query = QueryObject.format(
+            `SELECT 1 FROM ${qualifiedTableName} WHERE 1 = 0`
+        );
+        try {
+            if (this.dialect === ANALYTICS_DB_DIALECTS.BIGQUERY) {
+                await query.executeQuery(this.connection);
+            } else {
+                await query.executeQueryOnWriteConnection(this.connection);
+            }
+            return true;
+        } catch (err) {
+            const message = err instanceof Error ? err.message : String(err);
+            if (
+                /Catalog Error/i.test(message) &&
+                /does not exist/i.test(message)
+            ) {
+                return false;
+            }
+            throw err;
+        }
+    }
+
     public async checkIfSchemaCanMaterializeCohort(): Promise<boolean> {
         // Checks if the schema has the required tables to materialize cohorts
         // To successfully materialize cohort, schema must have the following tables
@@ -794,24 +825,25 @@ export class CohortEndpoint {
             }
         };
 
-        let sql, sqlParams;
         if (this.connection.constructor.name === "TrexConnection") {
-            sql = `
-                    select
-                        count(1) AS COUNT_TABLES
-                    from
-                        information_schema.tables
-                    where
-                        table_catalog = %s
-                        and table_schema = %s
-                        and table_name in ('cohort', 'cohort_definition');
-                    `;
-            sqlParams = [
-                `${this.databaseCode}__srcdb`, // Check against source db
-                getsourceResultsSchemaName(),
-            ];
-        } else {
-            sql = `
+            // information_schema.tables is a view over duckdb_tables(), which
+            // materialises every table of every attached catalog before the
+            // WHERE is applied. One cache database is attached per dataset, so
+            // resolve the two relations directly instead of scanning them all.
+            const sourceSchema = `${this.databaseCode}__srcdb.${getsourceResultsSchemaName()}`;
+            for (const tableName of ["COHORT", "COHORT_DEFINITION"]) {
+                if (
+                    !(await this.trexRelationExists(
+                        `${sourceSchema}.${tableName}`
+                    ))
+                ) {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        const sql = `
                     SELECT
                         COUNT(1) AS COUNT_TABLES
                     FROM
@@ -820,10 +852,8 @@ export class CohortEndpoint {
                         SCHEMA_NAME = %s
                         AND TABLE_NAME IN ('COHORT', 'COHORT_DEFINITION');
                     `;
-            sqlParams = [this.schemaName];
-        }
         try {
-            const query = QueryObject.format(sql, ...sqlParams);
+            const query = QueryObject.format(sql, this.schemaName);
             const result = await this.executeCohortQuery(query);
             if (result.data[0]) {
                 // Result must be 2 for function to return true, meaning that both cohort and cohort definition tables exist
