@@ -1,5 +1,5 @@
 import { assertEquals } from "jsr:@std/assert";
-import { canonicalRoleNames, resolveRoleStore } from "../src/services/UserGroupService.ts";
+import { canonicalRoleNames, removableRoleNames, resolveRoleStore } from "../src/services/UserGroupService.ts";
 
 Deno.test("the role store defaults to trex and is explicit about logto", () => {
   assertEquals(resolveRoleStore(undefined), "trex");
@@ -80,3 +80,63 @@ Deno.test("the researcher expansion is unaffected by the fan-out and still yield
     "concept set creator",
   ]);
 });
+
+// Withdrawal must not revoke names another membership still grants. The WebAPI
+// scopes are dataset-independent constants, so every researcher group expands to
+// the same three names -- the case that made a naive removal wrong.
+const researcher = (datasetId: string) => ({
+  role: `role.researcher.ds-${datasetId}`,
+  scopes: [
+    `role.researcher.ds-${datasetId}`,
+    `role.researcher.${datasetId}`,
+    `source-user-${datasetId}`,
+    'cohort-reader',
+    'cohort-creator',
+    'concept-set-creator'
+  ]
+})
+
+Deno.test("removing one researcher group keeps the shared roles another still grants", () => {
+  const names = removableRoleNames(researcher("a"), [researcher("b")])
+  // Dataset A's own names go...
+  assertEquals(names.includes("role.researcher.ds-a"), true)
+  assertEquals(names.includes("Source user (a)"), true)
+  // ...while the names dataset B still grants stay.
+  assertEquals(names.includes("cohort reader"), false)
+  assertEquals(names.includes("cohort creator"), false)
+  assertEquals(names.includes("concept set creator"), false)
+  // And B's own names are never touched by A's withdrawal.
+  assertEquals(names.includes("role.researcher.ds-b"), false)
+  assertEquals(names.includes("Source user (b)"), false)
+})
+
+Deno.test("removing the last researcher group does revoke the shared roles", () => {
+  const names = removableRoleNames(researcher("a"), [])
+  assertEquals(names.includes("cohort reader"), true)
+  assertEquals(names.includes("cohort creator"), true)
+  assertEquals(names.includes("concept set creator"), true)
+  assertEquals(names.includes("role.researcher.ds-a"), true)
+})
+
+Deno.test("an unrelated remaining group does not retain researcher scopes", () => {
+  // A viewer grants role.viewer and anonymous, neither of which a researcher
+  // withdrawal should be blocked on.
+  const names = removableRoleNames(researcher("a"), [
+    { role: "role.viewer", scopes: ["role.viewer"] }
+  ])
+  assertEquals(names.includes("cohort reader"), true)
+})
+
+Deno.test("a remaining group holding the same implied role retains it", () => {
+  // role.systemadmin implies admin. Dropping one systemadmin group while another
+  // remains must not revoke the WebAPI admin role.
+  const names = removableRoleNames(
+    { role: "role.systemadmin", scopes: ["role.systemadmin"] },
+    [{ role: "role.systemadmin", scopes: ["role.systemadmin"] }]
+  )
+  assertEquals(names, [])
+})
+
+Deno.test("withdrawing a group the user holds twice over leaves nothing to revoke", () => {
+  assertEquals(removableRoleNames(researcher("a"), [researcher("a")]), [])
+})
