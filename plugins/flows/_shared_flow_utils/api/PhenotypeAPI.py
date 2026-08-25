@@ -5,12 +5,6 @@ from prefect.logging import get_run_logger
 
 from _shared_flow_utils.api.BaseAPI import BaseAPI
 class PhenotypeAPI(BaseAPI):
-    # The edge worker drops a connection every few hundred sequential writes, and
-    # the library import makes ~1100 of them.
-    WRITE_ATTEMPTS = 3
-    RETRY_BACKOFF_SECONDS = 2
-    REQUEST_TIMEOUT = (10, 30)
-
     def __init__(self):
         super().__init__()
         self.url = self.get_service_route("d2e-webapi")  
@@ -24,8 +18,7 @@ class PhenotypeAPI(BaseAPI):
         response = requests.get(
             self.cohort_definition_url,
             headers=headers,
-            verify=self.get_verify_value(),
-            timeout=self.REQUEST_TIMEOUT
+            verify=self.get_verify_value()
         )
 
         if response.status_code != 200:
@@ -52,6 +45,7 @@ class PhenotypeAPI(BaseAPI):
         name = f"{cohort_def['cohortId']}_{cohort_def['cohortName']}"
         existing_id = name_index.get(name)
         payload = {
+            "id": 0,
             "name": name,
             "description": f"Phenotype Library cohort: {cohort_def['cohortName']}",
             "expressionType": "SIMPLE_EXPRESSION",
@@ -60,8 +54,6 @@ class PhenotypeAPI(BaseAPI):
             "createdDate": current_time,
             "modifiedBy": user_name,
             "modifiedDate": current_time,
-            # Inert: WebAPI ignores tags on create/update. They are applied via
-            # PhenotypeTagAPI.assign_tags_to_cohorts.
             "tags": [],
         }
         # datasetId travels in the header, not the body.
@@ -69,85 +61,33 @@ class PhenotypeAPI(BaseAPI):
         verb = "Updating" if existing_id else "Creating"
         logger.info(f"{verb} cohort: {cohort_def['cohortName']} (ID: {cohort_def['cohortId']})")
 
-        for attempt in range(1, self.WRITE_ATTEMPTS + 1):
-            # Re-read each attempt: a previous attempt may have created the row
-            # even though its reply was lost, in which case this becomes a PUT.
-            existing_id = name_index.get(name)
-            try:
-                if existing_id:
-                    payload["id"] = existing_id
-                    response = requests.put(
-                        f"{self.cohort_definition_url}/{existing_id}",
-                        headers=headers,
-                        json=payload,
-                        verify=self.get_verify_value(),
-                        timeout=self.REQUEST_TIMEOUT
-                    )
-                else:
-                    payload["id"] = 0
-                    response = requests.post(
-                        self.cohort_definition_url,
-                        headers=headers,
-                        json=payload,
-                        verify=self.get_verify_value(),
-                        timeout=self.REQUEST_TIMEOUT
-                    )
-            except requests.exceptions.RequestException as request_error:
-                reason = f"{type(request_error).__name__}: {request_error}"
-                self._handle_write_failure(
-                    logger, cohort_def, name, dataset_id, name_index, reason, attempt
-                )
-                continue
-
-            if response.status_code in [200, 201]:
-                result = response.json()
-                name_index[name] = result["id"]
-                logger.info(
-                    f"{'Updated' if existing_id else 'Created'} WebAPI cohort definition "
-                    f"{result["id"]} for phenotype cohort {cohort_def['cohortId']}"
-                )
-                return result
-
-            if response.status_code < 500:
-                # 4xx is the server rejecting the payload; retrying cannot help.
-                error_msg = (
-                    f"Failed to {'update' if existing_id else 'create'} cohort "
-                    f"{cohort_def['cohortId']}: {response.status_code} - {response.text}"
-                )
-                logger.error(error_msg)
-                raise Exception(error_msg)
-
-            self._handle_write_failure(
-                logger, cohort_def, name, dataset_id, name_index,
-                f"{response.status_code} - {response.text}", attempt
+        if existing_id:
+            response = requests.put(
+                f"{self.cohort_definition_url}/{existing_id}",
+                headers=headers,
+                json=payload,
+                verify=self.get_verify_value()
+            )
+        else:
+            response = requests.post(
+                self.cohort_definition_url,
+                headers=headers,
+                json=payload,
+                verify=self.get_verify_value()
             )
 
-    def _handle_write_failure(self, logger, cohort_def, name, dataset_id,
-                              name_index, reason, attempt):
-        """Decide whether a failed write is worth another attempt.
-
-        A dropped connection does not mean a dropped write: a cohort that returned
-        "500 connection closed" had already been committed. Names are globally
-        unique (uq_cd_name), so re-read the index and let the retry use PUT.
-        """
-        if attempt >= self.WRITE_ATTEMPTS:
-            error_msg = (
-                f"Failed to save cohort {cohort_def['cohortId']} after "
-                f"{self.WRITE_ATTEMPTS} attempts: {reason}"
+        if response.status_code in [200, 201]:
+            result = response.json()
+            name_index[name] = result["id"]
+            logger.info(
+                f"{'Updated' if existing_id else 'Created'} WebAPI cohort definition "
+                f"{result["id"]} for phenotype cohort {cohort_def['cohortId']}"
             )
-            logger.error(error_msg)
-            raise Exception(error_msg)
+            return result
 
-        logger.warning(
-            f"Attempt {attempt}/{self.WRITE_ATTEMPTS} for cohort "
-            f"{cohort_def['cohortId']} failed ({reason}); retrying"
+        error_msg = (
+            f"Failed to {'update' if existing_id else 'create'} cohort "
+            f"{cohort_def['cohortId']}: {response.status_code} - {response.text}"
         )
-        time.sleep(self.RETRY_BACKOFF_SECONDS * attempt)
-
-        try:
-            refreshed = self.get_cohort_name_index(dataset_id)
-        except Exception as lookup_error:
-            logger.warning(f"Could not refresh the cohort name index: {lookup_error}")
-            return
-        if name in refreshed:
-            name_index[name] = refreshed[name]
+        logger.error(error_msg)
+        raise Exception(error_msg)
