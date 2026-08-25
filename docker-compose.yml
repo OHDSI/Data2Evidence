@@ -200,6 +200,14 @@ services:
       SECURITY_AUTH_WINDOWS_ENABLED: "false"
       SECURITY_AUTH_KERBEROS_ENABLED: "false"
       SECURITY_AUTH_OIDC_ENABLED: "true"
+      # trex boots WebAPI (await startNativeWebApi) BEFORE it starts listening,
+      # and that call blocks on fetching SECURITY_AUTH_OIDC_URL. With an external
+      # IdP that is a useful guard. Here the IdP is trex itself, so the discovery
+      # document is served by the very process doing the waiting: the fetch cannot
+      # succeed, the full budget burns, and WebAPI only launches once it expires -
+      # long enough for the container healthcheck to give up. Nothing external has
+      # to come up first, so there is nothing to wait for.
+      WEBAPI_OIDC_WAIT_MS: "0"
       SECURITY_AUTH_FACEBOOK_ENABLED: "false"
       SECURITY_AUTH_GITHUB_ENABLED: "false"
       SECURITY_AUTH_GOOGLE_ENABLED: "false"
