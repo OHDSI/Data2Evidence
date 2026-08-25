@@ -25,16 +25,16 @@ export class WebAPI {
       return { ok: false }
     }
 
-    const url = `${this.baseUrl}/user/me`
+    const url = `${this.baseUrl}/user/login/openidDirect`
     try {
       const response = await get(url, { headers: { Authorization: authorizationHeader } })
-      this.logger.info('WebAPI /user/me sync succeeded')
+      this.logger.info('WebAPI openidDirect sync succeeded')
       return { ok: true, status: response.status }
     } catch (err: any) {
       const status = err?.response?.status
       const body =
         typeof err?.response?.data === 'string' ? err.response.data : JSON.stringify(err?.response?.data || '')
-      this.logger.warn(`WebAPI /user/me sync failed (${status ?? 'no status'}): ${body.slice(0, 200)}`)
+      this.logger.warn(`WebAPI openidDirect sync failed (${status ?? 'no status'}): ${body.slice(0, 200)}`)
       return { ok: false, status }
     }
   }

@@ -28,7 +28,7 @@ log_error() { echo -e "${RED}[ERROR]${NC} $1"; }
 
 # Volumes to snapshot/restore
 # All volumes from docker-compose.yml that should be snapshotted/restored
-VOLUMES="caddy cachedb-data-1 cdw-config-cachedb-data-1 minio-data-1 pg-minerva-data-1 r-libs trex demodb-data dicom-sqlite-storage hana-data supabase-storage-data"
+VOLUMES="caddy cachedb-data-1 cdw-config-cachedb-data-1 minio-data-1 pg-minerva-data-1 r-libs trex demodb-data hana-data supabase-storage-data"
 
 # Environment settings to match CI
 export ENV_TYPE=remote

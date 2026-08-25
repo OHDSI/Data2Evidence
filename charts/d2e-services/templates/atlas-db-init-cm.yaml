@@ -2,7 +2,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: "{{ .Release.Name }}-{{ .Chart.Name }}-atlas-db-init"
-  namespace: d2e
+  namespace: {{ .Release.Namespace }}
 data:
   100_populate_source_source_daimon.sql: |
     -- Ensure ohdsi schema exists (should already exist from broadsea-atlasdb image)
@@ -212,121 +212,6 @@ data:
     JOIN webapi.sec_permission p ON rp.permission_id = p.id
     WHERE r.name = 'admin' AND r.system_role = true
     ORDER BY p.value;
-  205_seed_initial_admin.sql: |
-    -- Seed WebAPI admin users from Logto role.systemadmin role (idempotent)
-    -- Reads users with role.systemadmin role from Logto and creates them as WebAPI admins
-    -- This uses Logto tables directly to avoid timing issues with usermgmt migrations.
-    --
-    -- WebAPI requires each user to have:
-    -- 1. An entry in sec_user
-    -- 2. A "personal role" in sec_role with the same name as their login
-    -- 3. Assignment to their personal role in sec_user_role
-    -- 4. Assignment to any additional roles (e.g., admin) in sec_user_role
-
-    DO $$
-    DECLARE
-        admin_role_id INTEGER;
-        rec RECORD;
-        new_user_id INTEGER;
-        personal_role_id INTEGER;
-        users_synced INTEGER := 0;
-        logto_schema_exists BOOLEAN;
-    BEGIN
-        -- Check if logto schema and users table exist
-        SELECT EXISTS(
-            SELECT 1 FROM information_schema.tables
-            WHERE table_schema = 'logto' AND table_name = 'users'
-        ) INTO logto_schema_exists;
-
-        IF NOT logto_schema_exists THEN
-            RAISE NOTICE 'logto.users table not found, skipping admin user seeding';
-            RETURN;
-        END IF;
-
-        -- Get admin role id from WebAPI
-        SELECT id INTO admin_role_id FROM webapi.sec_role WHERE name = 'admin';
-
-        IF admin_role_id IS NULL THEN
-            RAISE NOTICE 'WebAPI admin role not found, skipping admin user seeding';
-            RETURN;
-        END IF;
-
-        -- Find all users with role.systemadmin role in Logto
-        -- Logto user.id is the same as idp_user_id in usermgmt
-        FOR rec IN
-            SELECT DISTINCT u.id as idp_user_id, u.username
-            FROM logto.users u
-            JOIN logto.users_roles ur ON u.id = ur.user_id
-            JOIN logto.roles r ON ur.role_id = r.id
-            WHERE r.name = 'role.systemadmin'
-              AND u.is_suspended = false
-        LOOP
-            -- Create user in WebAPI if not exists (using idp_user_id as login)
-            INSERT INTO webapi.sec_user (login, name)
-            VALUES (rec.idp_user_id, rec.idp_user_id)
-            ON CONFLICT (login) DO NOTHING
-            RETURNING id INTO new_user_id;
-
-            -- If user already existed, get their id
-            IF new_user_id IS NULL THEN
-                SELECT id INTO new_user_id FROM webapi.sec_user WHERE login = rec.idp_user_id;
-            END IF;
-
-            -- Create personal role for user (WebAPI requires this for permission management)
-            -- Personal roles have system_role = false
-            INSERT INTO webapi.sec_role (name, system_role)
-            VALUES (rec.idp_user_id, false)
-            ON CONFLICT DO NOTHING
-            RETURNING id INTO personal_role_id;
-
-            -- If personal role already existed, get its id
-            IF personal_role_id IS NULL THEN
-                SELECT id INTO personal_role_id FROM webapi.sec_role WHERE name = rec.idp_user_id AND system_role = false;
-            END IF;
-
-            -- Assign user to their personal role
-            IF personal_role_id IS NOT NULL THEN
-                INSERT INTO webapi.sec_user_role (user_id, role_id)
-                VALUES (new_user_id, personal_role_id)
-                ON CONFLICT DO NOTHING;
-            END IF;
-
-            -- Assign to admin role if not already assigned
-            INSERT INTO webapi.sec_user_role (user_id, role_id)
-            VALUES (new_user_id, admin_role_id)
-            ON CONFLICT DO NOTHING;
-
-            users_synced := users_synced + 1;
-            RAISE NOTICE 'Synced WebAPI admin: % (idp_user_id: %, webapi_user_id: %, personal_role_id: %)', rec.username, rec.idp_user_id, new_user_id, personal_role_id;
-        END LOOP;
-
-        IF users_synced = 0 THEN
-            RAISE NOTICE 'No role.systemadmin users found in Logto to sync';
-        ELSE
-            RAISE NOTICE 'Synced % role.systemadmin user(s) from Logto to WebAPI admin role', users_synced;
-        END IF;
-
-        -- Reset sequences to avoid conflicts when WebAPI creates users/roles via OIDC
-        -- This ensures the sequences are higher than any manually inserted IDs
-        PERFORM setval(
-            pg_get_serial_sequence('webapi.sec_user', 'id'),
-            COALESCE((SELECT MAX(id) FROM webapi.sec_user), 1)
-        );
-        RAISE NOTICE 'Reset webapi.sec_user sequence to %', (SELECT MAX(id) FROM webapi.sec_user);
-
-        PERFORM setval(
-            pg_get_serial_sequence('webapi.sec_role', 'id'),
-            COALESCE((SELECT MAX(id) FROM webapi.sec_role), 1)
-        );
-        RAISE NOTICE 'Reset webapi.sec_role sequence to %', (SELECT MAX(id) FROM webapi.sec_role);
-    END $$;
-
-    -- Verify WebAPI admin users
-    SELECT u.id, u.login, r.name as role_name
-    FROM webapi.sec_user u
-    JOIN webapi.sec_user_role ur ON u.id = ur.user_id
-    JOIN webapi.sec_role r ON ur.role_id = r.id
-    WHERE r.name = 'admin';
   210_trex_proxy_permissions.sql: |
     -- Trex proxy permissions setup (idempotent, runs on every startup)
     -- Grants access to trex proxy routes (/trexsql/d2e/*) for all authenticated users
@@ -367,3 +252,55 @@ data:
     JOIN webapi.sec_role r ON rp.role_id = r.id
     JOIN webapi.sec_permission p ON rp.permission_id = p.id
     WHERE p.value = 'trexsql:d2e:*';
+  220_external_role_map.sql: |
+    -- Seed webapi.sec_external_role_map from webapi.sec_role (idempotent, runs on every startup)
+    --
+    -- WebAPI resolves OIDC token claims to roles by exact lookup in sec_external_role_map.
+    -- The Logto JWT customizer already emits scope names that equal WebAPI role names
+    -- (LOGTO__JWT_SCOPE_REWRITES turns `cohort-reader` into `cohort reader`), so a row per
+    -- system role reproduces name matching without hand-maintaining a mapping list.
+    --
+    -- Only system roles are seeded: OidcGroupToRoleMapper resolves against them, and
+    -- LoginService only syncs roles that AuthorizationService.getRolesByOrigin returns,
+    -- which filters on system_role = true. Personal roles are therefore out of scope.
+
+    DO $$
+    DECLARE
+        seeded INTEGER := 0;
+        pruned INTEGER := 0;
+    BEGIN
+        IF NOT EXISTS (
+            SELECT 1 FROM information_schema.tables
+            WHERE table_schema = 'webapi' AND table_name = 'sec_external_role_map'
+        ) THEN
+            RAISE NOTICE 'webapi.sec_external_role_map not found, skipping external role mapping seed';
+            RETURN;
+        END IF;
+
+        -- Both casings are seeded because security.auth.oidc.rolesToUpperCase decides whether
+        -- WebAPI uppercases claim values before this (case-sensitive) lookup.
+        INSERT INTO webapi.sec_external_role_map (origin, external_claim, role_id, description)
+        SELECT 'OIDC', claim, r.id, 'Auto-seeded from webapi.sec_role'
+        FROM webapi.sec_role r
+        CROSS JOIN LATERAL (SELECT DISTINCT unnest(ARRAY[upper(r.name), r.name]) AS claim) c
+        WHERE r.system_role IS TRUE
+        ON CONFLICT ON CONSTRAINT unique_origin_claim_role DO NOTHING;
+
+        GET DIAGNOSTICS seeded = ROW_COUNT;
+
+        -- Drop auto-seeded rows whose role has since been renamed; hand-made mappings
+        -- (any other description) are left alone.
+        DELETE FROM webapi.sec_external_role_map m
+        USING webapi.sec_role r
+        WHERE m.role_id = r.id
+          AND m.description = 'Auto-seeded from webapi.sec_role'
+          AND m.external_claim NOT IN (upper(r.name), r.name);
+
+        GET DIAGNOSTICS pruned = ROW_COUNT;
+
+        RAISE NOTICE 'External role mapping: % row(s) added, % stale row(s) removed', seeded, pruned;
+    END $$;
+
+    -- Do not use psql meta-commands (\gset, \if) in this file: trex applies it over
+    -- the wire protocol, and the simple query protocol parses the whole file before
+    -- executing any of it, so one meta-command stops every statement from running.
