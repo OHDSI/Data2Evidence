@@ -242,7 +242,13 @@ services:
       # the portal code exchange goes to Logto carrying trex's secret and is
       # rejected with 401.
       LOGTO__CLIENT_SECRET: ${LOGTO__D2E_APP__CLIENT_SECRET:-${LOGTO__ALP_APP__CLIENT_SECRET}}
-      SECURITY_AUTH_OIDC_URL: "http://${PROJECT_NAME:-d2e}-trex:33001/trex/oidc/.well-known/openid-configuration"
+      # Must be the discovery document of the issuer trex advertises, on the same
+      # origin: Spring derives the issuer from this URL and refuses to build its
+      # ClientRegistration when the document disagrees ("Unable to resolve
+      # Configuration with the provided Issuer"), which takes WebAPI down with it.
+      # An internal address is therefore not interchangeable here, even though it
+      # reaches the same server.
+      SECURITY_AUTH_OIDC_URL: "https://${CADDY__D2E__PUBLIC_FQDN:-${CADDY__ALP__PUBLIC_FQDN:-localhost}}:${CADDY_PORT:-${PORT:-443}}/trex/oidc/.well-known/openid-configuration"
       # External URL for browser redirects - used to rewrite internal OIDC URLs to external ones
       SECURITY_AUTH_OIDC_EXTERNALURL: "https://${CADDY__D2E__PUBLIC_FQDN:-${CADDY__ALP__PUBLIC_FQDN:-localhost}}:${CADDY_PORT:-${PORT:-443}}/trex/oidc"
       SECURITY_AUTH_OIDC_LOGOUTURL: "https://${CADDY__D2E__PUBLIC_FQDN:-${CADDY__ALP__PUBLIC_FQDN:-localhost}}:${CADDY_PORT:-${PORT:-443}}/trex/oidc/session/end"
