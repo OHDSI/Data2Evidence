@@ -123,7 +123,10 @@ spec:
               cp -rfv /data/plugins/bunfig.toml /usr/src/data/plugins/bunfig.toml && exit 0",
             ]
         - name: logto-check
-          image: busybox:latest
+          # Not busybox: its wget has no --ca-certificate, only the
+          # --no-check-certificate bypass. The trex image is already pulled for
+          # this pod and ships curl, which verifies chain and hostname by default.
+          image: ghcr.io/ohdsi/d2e-trex:{{ .Values.global.image.tag }}
           resources:
             {{- toYaml .Values.global.resources.logtoCheck | nindent 12 }}
           volumeMounts:
@@ -134,7 +137,7 @@ spec:
             [
               "sh",
               "-c",
-              "while :;do sleep 20 && wget --ca-certificate=/etc/d2e/tls/ca.pem -O success https://idp.{{ .Release.Namespace }}.svc.cluster.local:443/api/status && if test -f success; then exit 0; fi; done",
+              "until curl -sf --cacert /etc/d2e/tls/ca.pem https://idp.{{ .Release.Namespace }}.svc.cluster.local:443/api/status >/dev/null; do echo 'waiting for logto ...'; sleep 20; done",
             ]
         - name: logto-post-init
           env:

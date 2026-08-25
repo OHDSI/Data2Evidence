@@ -33,12 +33,16 @@ spec:
       #       claimName: trex-pvc
       initContainers:
         - name: dependencies-check
-          image: busybox:latest
+          # Not busybox: its wget has no --ca-certificate, only the
+          # --no-check-certificate bypass. The worker image is already pulled for
+          # this pod and ships curl (see its Dockerfile), which verifies chain and
+          # hostname by default.
+          image: ghcr.io/ohdsi/d2e-dataflow-gen-worker:{{ .Values.global.image.tag }}
           command:
             [
               "sh",
               "-c",
-              "while :;do sleep {{ .Values.dataflowWorker.readinessSleep }} && wget --ca-certificate=/etc/d2e/tls/ca.pem -O success-trex https://trex.{{ .Release.Namespace }}.svc.cluster.local:443/trex/_internal/health && wget --ca-certificate=/etc/d2e/tls/ca.pem -O success-dataflow https://dataflow-gen.{{ .Release.Namespace }}.svc.cluster.local:443/d2e/api/health && if test -f success-trex; then if test -f success-dataflow; then exit 0; fi; fi; done",
+              "until curl -sf --cacert /etc/d2e/tls/ca.pem https://trex.{{ .Release.Namespace }}.svc.cluster.local:443/trex/_internal/health >/dev/null && curl -sf --cacert /etc/d2e/tls/ca.pem https://dataflow-gen.{{ .Release.Namespace }}.svc.cluster.local:443/d2e/api/health >/dev/null; do echo 'waiting for trex and dataflow-gen ...'; sleep {{ .Values.dataflowWorker.readinessSleep }}; done",
             ]
           volumeMounts:
             - mountPath: /etc/d2e/tls
