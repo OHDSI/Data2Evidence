@@ -4,29 +4,35 @@
 # (started by core/server with SELECT webapi_start()), not as a separate Java
 # process. The base image already ships trex's canonical main/event core with the
 # env-gated D2E_COMPAT layer (merged upstream), so the core is NOT vendored here —
-# this image only adds d2e's plugins, CDW data, logto, ONNX and DuckDB extensions.
-
-FROM ghcr.io/ohdsi/trexsql:sha-d6d6a16be5048fdef03030c3158f6bf28506ff48@sha256:b2179d2d6ef25fb18b56dbeeed30b3206526bcd83a5bc3ac38d83403371349b6 AS base
+# this image only adds d2e's plugins, CDW data and logto.
+#
+# Two variants come off this file, differing only in the base:
+#   default          trexsql's lean `prod` target -> d2e-trex:<tag>, what
+#                    docker-compose.yml runs
+#   TREXSQL_REF=full trexsql's `full` target      -> d2e-trex:<tag>-devx, what
+#                    docker-compose-local.yml runs
+# The full base adds ~1.2GB compressed of dev tooling (playwright + chromium,
+# the Claude Code CLI, gh, bun/uv/prefect and the devx payload) that a deployed
+# stack never runs; TREX_DX_ENABLED only gates it at runtime, it is in the image
+# either way. Pinned by tag AND index digest — `image:tag@digest` is valid, so
+# one arg carries both.
+ARG TREXSQL_REF=prod-sha-5ce42757279f969bca123f0128a5c967ff2e3bd4@sha256:e162d8282df32231b58297fd31fef8567272468c86a82c64d36ec76d0de0d6ca
+FROM ghcr.io/ohdsi/trexsql:${TREXSQL_REF} AS base
 
 USER root
 WORKDIR /usr/src
 
-# Selects arch-correct ONNX and DuckDB extension binaries (amd64/arm64).
+# Selects the arch-correct DuckDB extension directory (amd64/arm64).
 ARG TARGETARCH
 
-ENV ONNXRUNTIME_VERSION=1.20.1
 ENV DUCKDB_VERSION=1.4.4
 
 # Deps not in the slim node base (node/npm/tar/unzip already present).
-COPY install_onnx.sh /scripts/
+# jq reads each bundled tarball's package.json, python3 runs the two-pass
+# extract. wget went with the ONNX and ADBC installs the base now owns.
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    wget jq python3 \
+    jq python3 \
     && rm -rf /var/lib/apt/lists/*
-
-# ONNX Runtime for embeddings/semantic search (not shipped by the base).
-RUN /scripts/install_onnx.sh $ONNXRUNTIME_VERSION linux linux/${TARGETARCH} /root/onnxruntime && \
-    cp -a /root/onnxruntime/lib/libonnxruntime.so* /usr/lib/ && \
-    rm -rf /root/onnxruntime && ldconfig
 
 # NOTE: DuckDB extensions are NOT downloaded here. The base image owns that set
 # (see the trexsql Dockerfile's DUCKDB_*_EXTENSIONS) and installs it into
@@ -37,30 +43,9 @@ RUN /scripts/install_onnx.sh $ONNXRUNTIME_VERSION linux linux/${TARGETARCH} /roo
 #
 # To add an extension, add it to the base image rather than fetching it here.
 
-# Snowflake source support
-# The community `snowflake` DuckDB extension is a thin wrapper that dlopen()s the
-# Apache Arrow ADBC Snowflake driver at ATTACH time. That native driver is NOT
-# bundled with the extension, so install it into /usr/local/lib — a
-# version-independent path the extension searches (alongside
-# ~/.duckdb/extensions/<ver>/<platform>/ and /usr/lib). The driver is DuckDB-
-# version independent; only the CPU arch must match. Wheel from Apache Arrow
-# ADBC 1.8.0 on PyPI (immutable hashed URLs).
-RUN set -eu; \
-    case "$TARGETARCH" in \
-      amd64) WHL="https://files.pythonhosted.org/packages/b8/6f/ff6d76ca035f0f2308733e7c7e96aeb094d2927a1de1e1a1721593286d3e/adbc_driver_snowflake-1.8.0-py3-none-manylinux1_x86_64.manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_5_x86_64.whl" ;; \
-      arm64) WHL="https://files.pythonhosted.org/packages/a4/14/7f448f5be225a3c596aa1a14a704fb4d8a2871e306d8725f98028af4265f/adbc_driver_snowflake-1.8.0-py3-none-manylinux2014_aarch64.manylinux_2_17_aarch64.whl" ;; \
-      *) echo "unsupported TARGETARCH=$TARGETARCH for ADBC snowflake driver" >&2; exit 1 ;; \
-    esac; \
-    cd /tmp && wget -q "$WHL" -O adbc.whl && \
-    python3 -m zipfile -e adbc.whl adbc_extract && \
-    cp "$(find adbc_extract -name 'libadbc_driver_snowflake.so' | head -n1)" /usr/local/lib/ && \
-    ldconfig && rm -rf adbc.whl adbc_extract
-
-# NOTE: no snowflake extension preinstall here. The step that used to sit at
-# this point cd'd into /root/.duckdb/extensions/... eighty lines before anything
-# created it, so it always fell through to its WARN branch and never put an
-# extension in the image. The base image owns the extension set (see the note
-# above DUCKDB_* handling); trex bakes snowflake into it directly.
+# NOTE: no snowflake ADBC driver install here either. The base ships both the
+# `snowflake` extension and the libadbc_driver_snowflake.so it dlopen()s at
+# ATTACH time, with the Apache-2.0 notices beside it.
 
 RUN mkdir -p /usr/src/data/cache /usr/src/data/plugins /usr/src/data/flow_staging /usr/src/cdw_data/built_in ./cert /var/log/d2e/audit \
  && chmod 1777 /usr/src/data/flow_staging
