@@ -3,14 +3,9 @@ from __future__ import annotations
 import numpy as np
 from pydicom import dcmread
 from typing import TYPE_CHECKING
-from orthanc_api_client import OrthancApiClient
 
 from prefect import task
-from prefect.variables import Variable
 from prefect.logging import get_run_logger
-from prefect.context import TaskRunContext
-from prefect.serializers import JSONSerializer
-from prefect.filesystems import RemoteFileSystem as RFS
 
 from .utils import *
 from .types import *
@@ -635,59 +630,3 @@ def setup_vocab(dbdao, vocab_schema: str, to_truncate: bool):
     update_concept_table(dbdao, vocab_schema, to_truncate, task_logger)
     update_concept_relationship_table(dbdao, vocab_schema, to_truncate, task_logger)
 
-
-@task(
-    log_prints=True,
-    result_storage=RFS.load(Variable.get("flows_results_sb_name")),
-    result_storage_key="dicom_etl_{flow_run.id}.json",
-    result_serializer=JSONSerializer(),
-    persist_result=True
-)
-def upload_file_to_server(mapped_concepts_df: pd.DataFrame, image_occurrence_df: pd.DataFrame,
-                          api) -> FileUploadResultType:
-    logger = get_run_logger()
-    service_routes = Variable.get("service_routes")
-    dicom_server_url = service_routes.get("dicomServer")
-
-    file_df = mapped_concepts_df[[
-        "sop_instance_id", "filepath", "image_series_uid"]]
-    file_df = file_df.drop_duplicates(subset=["sop_instance_id", "filepath"])
-
-    file_df = file_df[["sop_instance_id", "filepath", "image_series_uid"]].merge(
-        image_occurrence_df[["image_occurrence_id",
-                             "image_series_uid"]], how="left",
-        left_on="image_series_uid", right_on="image_series_uid"
-    )
-
-    logger.info("Connecting to DICOM server..")
-    orthanc_a = OrthancApiClient(dicom_server_url, user='', pwd='')
-
-    logger.info(f"Uploading {len(file_df)} files to DICOM server..")
-    for index, row in file_df.iterrows():
-        orthanc_instance_id = orthanc_a.upload_file(row["filepath"])
-        if orthanc_instance_id:
-            file_df.at[index, "orthanc_instance_id"] = orthanc_instance_id
-
-            # because file is renamed to a random uuid when uploaded to dicom server
-            uploaded_filename = api.get_uploaded_file_name(
-                orthanc_instance_id[0])
-            file_df.at[index, "uploaded_filename"] = uploaded_filename
-        else:
-            error_msg = f"Orthanc_instance_id is {orthanc_instance_id}. Failed to upload file '{row["filepath"]}'"
-            logger.error(error_msg)
-            raise Exception(error_msg)
-
-    task_run_context = TaskRunContext.get().task_run.dict()
-    task_run_id = str(task_run_context.get("id"))
-    flow_run_id = str(task_run_context.get("flow_run_id"))
-
-    upload_results = file_df.to_dict(orient="records")
-
-    file_upload_result = {
-        "flow_run_id": flow_run_id,
-        "task_run_id": task_run_id,
-        "record": upload_results
-    }
-
-    # Persist as prefect result
-    return file_upload_result
