@@ -45,29 +45,25 @@ const WebAPICohortUserDto = z.object({
   login: z.string(),
 });
 
-// A tag that has never been edited carries no modifiedBy/modifiedDate, and an
-// unstyled one has no icon or color. WebAPI also names the access flags
-// writeAccess/readAccess, and sends dates as epoch millis.
 const WebAPICohortTagDto = z.object({
-  id: z.number(),
   name: z.string(),
+  id: z.number(),
+  hasWriteAccess: z.boolean().optional(),
+  modifiedBy: WebAPICohortUserDto.nullish(),
+  createdBy: WebAPICohortUserDto.nullish(),
+  createdDate: z.union([z.number(), z.string()]),
+  modifiedDate: z.union([z.number(), z.string()]).nullish(),
+  icon: z.string().nullish(),
+  permissionProtected: z.boolean(),
+  multiSelection: z.boolean(),
+  mandatory: z.boolean(),
   type: z.enum(["SYSTEM", "CUSTOM", "PRIZM"]),
+  description: z.string().nullish(),
   count: z.number(),
   groups: z.array(z.unknown()),
-  showGroup: z.boolean(),
-  multiSelection: z.boolean(),
-  permissionProtected: z.boolean(),
-  mandatory: z.boolean(),
-  allowCustom: z.boolean(),
-  writeAccess: z.boolean(),
-  readAccess: z.boolean(),
-  createdBy: WebAPICohortUserDto,
-  createdDate: z.union([z.number(), z.string()]),
-  modifiedBy: WebAPICohortUserDto.optional(),
-  modifiedDate: z.union([z.number(), z.string()]).optional(),
-  icon: z.string().nullish(),
   color: z.string().nullish(),
-  description: z.string().nullish(),
+  showGroup: z.boolean(),
+  allowCustom: z.boolean(),
 });
 
 export const WebAPICohortDefinitionResponseDto = z.object({
