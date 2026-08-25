@@ -1,10 +1,10 @@
 // The checklist mirrors the password policy seeded into Logto's sign-in
-// experience (services/alp-logto/post-init/src/main.ts): length 8-64 and at
+// experience (services/alp-logto/post-init/src/main.ts): length 8-256 and at
 // least 3 of the 4 character categories. Logto counts categories rather than
 // requiring a symbol, so requiring one here would reject passwords the server
 // accepts.
 export const PASSWORD_MIN_LENGTH = 8; // D1: mirrors the Logto policy length.min
-export const PASSWORD_MAX_LENGTH = 64; // D1: mirrors the Logto policy length.max
+export const PASSWORD_MAX_LENGTH = 256; // D1: mirrors the Logto policy length.max
 export const PASSWORD_CHARACTER_TYPES_MIN = 3; // mirrors the policy characterTypes.min
 
 // Mirrors PasswordPolicyChecker.symbols in Logto's core-kit (password-policy.ts).

@@ -30,11 +30,11 @@ describe("PASSWORD_RULES", () => {
     expect(PASSWORD_RULES.map((r) => r.id)).toEqual(["length", "characterTypes"]);
   });
 
-  it("length enforces the 8-64 window", () => {
+  it("length enforces the 8-256 window", () => {
     expect(byId.length.test("Ab1efgh")).toBe(false);
     expect(byId.length.test("Ab1efghi")).toBe(true);
-    expect(byId.length.test(`Ab1${"e".repeat(61)}`)).toBe(true);
-    expect(byId.length.test(`Ab1${"e".repeat(62)}`)).toBe(false);
+    expect(byId.length.test(`Ab1${"e".repeat(253)}`)).toBe(true);
+    expect(byId.length.test(`Ab1${"e".repeat(254)}`)).toBe(false);
   });
 
   it("characterTypes requires 3 of the 4 categories, not a symbol", () => {
@@ -102,7 +102,7 @@ describe("validateUsername", () => {
 });
 
 describe("PASSWORD_MAX_LENGTH", () => {
-  it("is 64 (D1)", () => {
-    expect(PASSWORD_MAX_LENGTH).toBe(64);
+  it("is 256 (D1)", () => {
+    expect(PASSWORD_MAX_LENGTH).toBe(256);
   });
 });

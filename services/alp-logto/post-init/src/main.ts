@@ -502,7 +502,7 @@ button[name="submit"]{ background: #000080 !important; }`,
     // D6: rejects are all off so the backend never rejects a password the
     // UI checklist has approved.
     passwordPolicy: {
-      length: { min: 8, max: 64 }, // D1
+      length: { min: 8, max: 256 }, // D1
       characterTypes: { min: 3 },
       rejects: {
         pwned: false,
