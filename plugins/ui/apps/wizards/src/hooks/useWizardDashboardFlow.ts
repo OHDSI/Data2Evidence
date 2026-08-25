@@ -31,7 +31,6 @@ const stageErrorMessages: Record<ActiveStage, string> = {
   "awaiting-cache": "We couldn't check your previous Wizard analyses. Please try again.",
   "saving-bookmark": "We couldn't save this Wizard analysis. Please try again.",
   materializing: "We couldn't generate the cohort. Please try again.",
-  "resolving-cohort": "The cohort is taking longer than expected. Please try again.",
   "opening-dashboard": "We couldn't open the dashboard. Please try again.",
 };
 
@@ -56,7 +55,6 @@ export function useWizardDashboardFlow({
   const abortRef = useRef<AbortController | null>(null);
   const lastInputRef = useRef<RunWizardDashboardFlowInput | null>(null);
   const pendingBookmarkRef = useRef<PendingWizardBookmark | null>(null);
-  const materializationSubmittedRef = useRef<string | null>(null);
   const activeStageRef = useRef<ActiveStage>("awaiting-cache");
   const loadInputRef = useRef<(() => Promise<OpenWizardDashboardInput>) | null>(null);
 
@@ -88,10 +86,6 @@ export function useWizardDashboardFlow({
           if (lastInputRef.current) lastInputRef.current.pendingBookmark = pendingBookmark;
           dispatch({ type: "bookmark-name", operationId, bookmarkName: pendingBookmark.bookmarkName });
         },
-        onMaterializationSubmitted: (bookmarkId) => {
-          materializationSubmittedRef.current = bookmarkId;
-          if (lastInputRef.current) lastInputRef.current.materializationSubmittedForBookmarkId = bookmarkId;
-        },
       })
         .then((result) => {
           dispatch({ type: "ready", operationId, result });
@@ -114,7 +108,6 @@ export function useWizardDashboardFlow({
     (loadInput: () => Promise<OpenWizardDashboardInput>) => {
       loadInputRef.current = loadInput;
       pendingBookmarkRef.current = null;
-      materializationSubmittedRef.current = null;
       const operationId = ++operationIdRef.current;
       abortRef.current?.abort();
       const controller = new AbortController();
@@ -166,8 +159,6 @@ export function useWizardDashboardFlow({
     execute({
       ...input,
       pendingBookmark: pendingBookmarkRef.current ?? input.pendingBookmark,
-      materializationSubmittedForBookmarkId:
-        materializationSubmittedRef.current ?? input.materializationSubmittedForBookmarkId,
     });
   }, [execute, openDashboard]);
 
@@ -180,7 +171,6 @@ export function useWizardDashboardFlow({
     abortRef.current?.abort();
     lastInputRef.current = null;
     pendingBookmarkRef.current = null;
-    materializationSubmittedRef.current = null;
     loadInputRef.current = null;
     dispatch({ type: "dataset-changed", datasetId });
   }, [datasetId]);
