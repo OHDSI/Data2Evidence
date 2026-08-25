@@ -22,6 +22,11 @@ COPY ./logto /usr/src/logto
 # aborts boot without it when POSTGRES_MANAGE_CONFIG is set.
 COPY ./provision/d2e-bootstrap /usr/src/bundled-plugins/d2e-bootstrap
 
+# The notebook schema's migrations (trex.migrations plugin kind). Baked so every
+# deploy path gets them: PG_SCHEMA creates the empty `notebook` schema whether or
+# not anything populates it.
+COPY ./migrations/notebook /usr/src/bundled-plugins/notebook-schema
+
 # LOCAL-TEST workaround: the trexsql base installs DuckDB extensions under
 # DUCKDB_EXTENSION_DIRECTORY (/usr/share/trexsql/extensions), but worker
 # connections' `LOAD <ext>` resolves against DuckDB's default ~/.duckdb path, so
@@ -31,7 +36,7 @@ RUN mkdir -p /home/node/.duckdb/extensions && \
     cp -r /usr/share/trexsql/extensions/* /home/node/.duckdb/extensions/ 2>/dev/null || true
 
 RUN mkdir -p /var/log/d2e/audit && \
-    chown -R node:node /usr/src/cdw_data /usr/src/logto /usr/src/bundled-plugins/d2e-bootstrap /home/node/.duckdb /var/log/d2e/audit
+    chown -R node:node /usr/src/cdw_data /usr/src/logto /usr/src/bundled-plugins/d2e-bootstrap /usr/src/bundled-plugins/notebook-schema /home/node/.duckdb /var/log/d2e/audit
 USER node
 
 # Entrypoint + SWARM_CONFIG-driven startup are inherited from trexsql.
