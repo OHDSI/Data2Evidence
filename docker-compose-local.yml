@@ -88,6 +88,16 @@ services:
         required: false
     environment:
       TREX_DX_ENABLED: "true"
+      # Local-dev only. WebAPI discovers OIDC from SECURITY_AUTH_OIDC_URL and
+      # requires the document it fetches to advertise the same origin, so the two
+      # must agree. Deployments use the public FQDN for both; here that FQDN is
+      # `localhost`, which inside this container is trex itself rather than the
+      # gateway, so the external URL is unreachable. Point both at the internal
+      # address instead, which keeps them consistent and lets WebAPI start.
+      # Browser-facing redirects are unaffected: they come from
+      # SECURITY_AUTH_OIDC_EXTERNALURL and TREX_OIDC_LOGIN_URL, both absolute.
+      TREX_OIDC_ISSUER: "http://localhost:33001"
+      SECURITY_AUTH_OIDC_URL: "http://localhost:33001/trex/oidc/.well-known/openid-configuration"
       # Enable trex's native email/password IDP for local dev (off by default in
       # the engine). Production d2e authenticates via Logto and leaves it unset.
       TREX_IDP_ENABLED: "true"

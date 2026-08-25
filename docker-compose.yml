@@ -200,14 +200,6 @@ services:
       SECURITY_AUTH_WINDOWS_ENABLED: "false"
       SECURITY_AUTH_KERBEROS_ENABLED: "false"
       SECURITY_AUTH_OIDC_ENABLED: "true"
-      # trex boots WebAPI (await startNativeWebApi) BEFORE it starts listening,
-      # and that call blocks on fetching SECURITY_AUTH_OIDC_URL. With an external
-      # IdP that is a useful guard. Here the IdP is trex itself, so the discovery
-      # document is served by the very process doing the waiting: the fetch cannot
-      # succeed, the full budget burns, and WebAPI only launches once it expires -
-      # long enough for the container healthcheck to give up. Nothing external has
-      # to come up first, so there is nothing to wait for.
-      WEBAPI_OIDC_WAIT_MS: "0"
       SECURITY_AUTH_FACEBOOK_ENABLED: "false"
       SECURITY_AUTH_GITHUB_ENABLED: "false"
       SECURITY_AUTH_GOOGLE_ENABLED: "false"
@@ -333,8 +325,6 @@ services:
       # Spring's oauth2Login appends the registration id, hence the /openid tail.
       TREX_OIDC_CLIENT_REDIRECT_URIS: "https://${CADDY__D2E__PUBLIC_FQDN:-${CADDY__ALP__PUBLIC_FQDN:-localhost}}:${CADDY_PORT:-${PORT:-443}}/WebAPI/user/oauth/callback/openid"
       TREX_OIDC_CLIENT_POST_LOGOUT_URIS: "https://${CADDY__D2E__PUBLIC_FQDN:-${CADDY__ALP__PUBLIC_FQDN:-localhost}}:${CADDY_PORT:-${PORT:-443}}/atlas/"
-      # The password grant behind the login page above.
-      TREX_IDP_ENABLED: "true"
       TREX_SQL_PASSWORD: ${TREX__SQL__PASSWORD:?TREX__SQL__PASSWORD must be set (run d2e init); refusing default pencil}
       TREX__SQL__PORT: ${TREX__SQL__PORT:-5433}
       TREX__SQL__DBNAME: postgres
