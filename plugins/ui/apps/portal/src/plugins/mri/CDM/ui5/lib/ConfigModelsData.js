@@ -344,7 +344,7 @@ sap.ui.define([
 			changeable: true,
 			attributes: [],
 			parentInteraction: [],
-			parentInteractionsMapping: { value: [], validity: { status: "valid", message: "" } },
+			parentInteractionsMapping: { value: "[]", validity: { status: "valid", message: "" } },
 			description: "",
 			isNew: true,
 			additionalInformation: "",

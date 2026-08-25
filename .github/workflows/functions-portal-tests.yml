@@ -1,0 +1,35 @@
+name: Portal Function Tests
+
+on:
+  workflow_dispatch:
+  pull_request:
+    types: [opened, ready_for_review, reopened, synchronize]
+  merge_group:
+  push:
+    branches:
+      - develop
+
+permissions:
+  contents: read
+
+jobs:
+  test-portal:
+    name: Run Portal Unit Tests
+    runs-on: ubuntu-latest
+    env:
+      PG__SSL: "false"
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Setup Deno
+        uses: denoland/setup-deno@v1
+        with:
+          deno-version: v2.5.6
+
+      - name: Run portal tests
+        working-directory: plugins/functions/portal
+        run: deno test --no-check --allow-all ./src/

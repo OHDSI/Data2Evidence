@@ -6,6 +6,25 @@ import { WebApiSourceApi } from './webapi-source.api.ts'
 import { IDbCredentials, IDaimonRequest, ISourceRequest } from './types.ts'
 import { findRoleByName, sourceUserRoleName } from './webapi-role.util.ts'
 
+// Mirrors org.ohdsi.webapi.common.DBMSType. A source whose dialect is absent there throws from
+// DataSourceDTOParser during WebAPI's connection check, and that exception escapes
+// SourceService.checkConnectionSafe — aborting priority daimon resolution for every source, not
+// just this one.
+const WEBAPI_SUPPORTED_DIALECTS = new Set([
+  'postgresql',
+  'sql server',
+  'pdw',
+  'redshift',
+  'oracle',
+  'impala',
+  'bigquery',
+  'netezza',
+  'hive',
+  'spark',
+  'snowflake',
+  'synapse',
+])
+
 @Injectable()
 export class WebApiSourceService {
   private readonly logger = createLogger(this.constructor.name)
@@ -18,6 +37,15 @@ export class WebApiSourceService {
     dbCredentials: IDbCredentials,
     authToken?: string
   ): Promise<void> {
+    const dialect = this.mapDialect(dataset.dialect)
+    if (!WEBAPI_SUPPORTED_DIALECTS.has(dialect)) {
+      await this.warnUnsupportedDialect(dataset.id, dialect, authToken)
+      if (dataset.schemaName) {
+        await this.triggerCacheCreation(dataset.id, dataset.schemaName, authToken)
+      }
+      return
+    }
+
     try {
       const sourceRequest = this.buildSourceRequest(dataset, datasetDetail, dbCredentials)
       const existing = await this.webApiSourceApi.getSourceByKey(dataset.id, authToken)
@@ -35,6 +63,20 @@ export class WebApiSourceService {
       this.logger.error(`Failed to sync WebAPI source for dataset ${dataset.id}: ${error}`)
       throw error
     }
+  }
+
+  private async warnUnsupportedDialect(
+    datasetId: string,
+    dialect: string,
+    authToken?: string
+  ): Promise<void> {
+    const existing = await this.webApiSourceApi.getSourceByKey(datasetId, authToken).catch(() => null)
+    const suffix = existing
+      ? `; existing source ${existing.sourceId} left in place and must be removed manually`
+      : ''
+    this.logger.warn(
+      `Skipping WebAPI sync for dataset ${datasetId}: WebAPI does not support dialect '${dialect}'${suffix}`
+    )
   }
 
   // Manual cache (re)build for a webapi dataset. Unlike the private
@@ -153,7 +195,8 @@ export class WebApiSourceService {
       hana: 'hana',
       duckdb: 'duckdb',
     }
-    return dialectMap[dialect?.toLowerCase()] || dialect
+    const key = dialect?.toLowerCase()
+    return dialectMap[key] ?? key
   }
 
   private buildJdbcUrl(credentials: IDbCredentials): string {
@@ -165,6 +208,16 @@ export class WebApiSourceService {
         return `jdbc:postgresql://${host}:${port}/${database}`
       case 'hana':
         return `jdbc:sap://${host}:${port}/`
+      case 'bigquery':
+        // Simba BigQuery JDBC URL. The database entry carries the GCP project
+        // in `host` and the default dataset in `name`/`database` (see the
+        // admin UI's BigQueryForm). OAuthType=3 = application default
+        // credentials: auth lives with the engine (the same model the DuckDB
+        // bigquery scanner uses for the TrexSQL cache build), never in the
+        // URL. bao's source_dsn parser requires the `ProjectId=` key — the
+        // generic `jdbc:bigquery://host:port/db` form broke the cache path.
+        return `jdbc:bigquery://https://www.googleapis.com/bigquery/v2:443;` +
+          `ProjectId=${host};DefaultDataset=${database};OAuthType=3;`
       default:
         this.logger.warn(`Unknown dialect ${dialect}, using generic JDBC URL`)
         return `jdbc:${dialect}://${host}:${port}/${database}`

@@ -4,10 +4,21 @@ import { useTranslation } from "../../hooks/use-translation";
 import { i18nKeys } from "../../Context/state";
 import "./CsvReader.scss";
 
+export interface CsvFileInfo {
+  name: string;
+  size: number;
+}
+
 export interface CsvReaderProps extends Omit<HTMLAttributes<HTMLDivElement>, "onError"> {
   fileEncoding?: string;
-  onFileLoaded: (data: { name: string; data: PapaParse.ParseResult<any> }) => void;
-  onError?: (error: Error) => void;
+  onFileLoaded: (data: { name: string; size: number; data: PapaParse.ParseResult<any> }) => void;
+  // Fires synchronously as soon as a file is picked/dropped, before the (async)
+  // FileReader read - lets a consumer show an "uploading" state for the real gap between
+  // pick and onFileLoaded/onError.
+  onFileSelected?: (fileInfo: CsvFileInfo) => void;
+  // fileInfo is included (when available) so a consumer can render the filename/size in an
+  // error state without having to track it separately.
+  onError?: (error: Error, fileInfo?: CsvFileInfo) => void;
   parseOptions?: PapaParse.ParseConfig;
 }
 
@@ -16,35 +27,41 @@ export const CsvReader: FC<CsvReaderProps> = ({
   style = {},
   fileEncoding,
   onFileLoaded,
+  onFileSelected,
   onError,
   parseOptions = {},
 }) => {
   const { getText } = useTranslation();
   const handleChangeFile = useCallback(
     (e: ChangeEvent<HTMLInputElement>) => {
-      const reader = new FileReader();
       const files: FileList = e.target.files!;
       if (files.length > 0) {
-        if (!["text/csv", "text/plain"].includes(files[0].type)) {
-          typeof onError === "function" && onError(new Error(getText(i18nKeys.CSV_READER__UNSUPPORTED_FILE_TYPE)));
+        const file = files[0];
+        const fileInfo: CsvFileInfo = { name: file.name, size: file.size };
+        typeof onFileSelected === "function" && onFileSelected(fileInfo);
+
+        if (!["text/csv", "text/plain"].includes(file.type)) {
+          typeof onError === "function" &&
+            onError(new Error(getText(i18nKeys.CSV_READER__UNSUPPORTED_FILE_TYPE)), fileInfo);
           return;
         }
 
+        const reader = new FileReader();
         reader.onload = () => {
           const csvData = PapaParse.parse(
             reader.result as string,
             Object.assign(parseOptions, {
-              error: onError,
+              error: (err: Error) => typeof onError === "function" && onError(err, fileInfo),
               encoding: fileEncoding,
             })
           );
-          onFileLoaded({ name: files[0].name, data: csvData });
+          onFileLoaded({ name: file.name, size: file.size, data: csvData });
         };
 
-        reader.readAsText(files[0], fileEncoding);
+        reader.readAsText(file, fileEncoding);
       }
     },
-    [onFileLoaded, onError, parseOptions, fileEncoding, getText]
+    [onFileLoaded, onFileSelected, onError, parseOptions, fileEncoding, getText]
   );
 
   const handleDrop = useCallback(

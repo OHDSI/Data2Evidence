@@ -53,6 +53,25 @@ function extractSessionVars(dbCredential: any): Record<string, string> {
     return out;
 }
 
+/**
+ * trex_hana_materialize_cohort's source_params_json is a JSON array of bare bind
+ * values, not the {type, value} objects _prepareQuery() returns in `placeholders`
+ 
+ * Accepts either shape: a {type, value} wrapper is unwrapped, an already-bare
+ * value is passed through. Absent values become null (SQL NULL). Keep this a
+ * 1:1 map — element order must stay aligned with the `?` markers in the SQL, and
+ * _prepareQuery() has already dropped the numeric placeholders it inlined.
+ */
+function flattenBindParameters(placeholders: any[]): any[] {
+    return (placeholders ?? []).map((placeholder: any) =>
+        placeholder !== null &&
+        typeof placeholder === "object" &&
+        "value" in placeholder
+            ? (placeholder.value ?? null)
+            : (placeholder ?? null)
+    );
+}
+
 export class CohortEndpoint {
     private constructor(
         public connection: ConnectionInterface,
@@ -192,15 +211,17 @@ export class CohortEndpoint {
         ) {
             // Special case for webapi, only needs to execute on source database and treats source database as default instead of cache
             if (this.datasetType === "webapi") {
-                query.queryString = query.queryString.replaceAll(
-                    this.schemaName,
-                    `${this.databaseCode}__srcdb.${this.schemaName}`
+                query.queryString = query.queryString.replace(
+                    new RegExp(`${this.schemaName}\\.COHORT\\b`, "gi"),
+                    `${this.databaseCode}__srcdb.${this.schemaName}.COHORT`
                 );
-                query.queryString = query.queryString.replaceAll(
-                    "$$RESULT_SCHEMA$$",
-                    `${this.databaseCode}__srcdb.${this.schemaName}`
+                query.queryString = query.queryString.replace(
+                    new RegExp(
+                        `${this.schemaName}\\.COHORT_DEFINITION\\b`,
+                        "gi"
+                    ),
+                    `${this.databaseCode}__srcdb.${this.schemaName}.COHORT_DEFINITION`
                 );
-
                 // Return early
                 return await query.executeQueryOnWriteConnection(
                     this.connection
@@ -210,6 +231,7 @@ export class CohortEndpoint {
             if (isWriteAction) {
                 // Additionally execute query on sourcedb
                 // Clone and manipulate query to execute on srcdb so that original query is unaffected
+                // Read from cache and insert into source in the same query execution
                 const queryClone = Object.create(Object.getPrototypeOf(query));
                 Object.assign(queryClone, structuredClone(query));
 
@@ -219,9 +241,17 @@ export class CohortEndpoint {
                     );
                 }
 
-                queryClone.queryString = queryClone.queryString.replaceAll(
-                    this.schemaName,
-                    `${this.databaseCode}__srcdb.${this.sourceResultsSchemaName}`
+                // Point COHORT and COHORT_DEFINITION schema relation to source database, so sql query reads from cache, and inserts into source.
+                queryClone.queryString = queryClone.queryString.replace(
+                    new RegExp(`${this.schemaName}\\.COHORT\\b`, "gi"),
+                    `${this.databaseCode}__srcdb.${this.sourceResultsSchemaName}.COHORT`
+                );
+                queryClone.queryString = queryClone.queryString.replace(
+                    new RegExp(
+                        `${this.schemaName}\\.COHORT_DEFINITION\\b`,
+                        "gi"
+                    ),
+                    `${this.databaseCode}__srcdb.${this.sourceResultsSchemaName}.COHORT_DEFINITION`
                 );
                 await queryClone.executeQueryOnWriteConnection(this.connection);
             }
@@ -232,14 +262,19 @@ export class CohortEndpoint {
     }
 
     private replaceSchemaAliasWithCohortSchema(sql: string) {
+        // Replace $$SCHEMA$$.COHORT
         sql = sql.replace(
-            /\$\$SCHEMA\$\$.COHORT/g,
+            /\$\$SCHEMA\$\$\.COHORT/g,
             `${this.schemaName}.COHORT`
         );
+        // Replace $$SCHEMA$$.COHORT_DEFINITION
         sql = sql.replace(
-            /\$\$SCHEMA\$\$.COHORT_DEFINITION/g,
+            /\$\$SCHEMA\$\$\.COHORT_DEFINITION/g,
             `${this.schemaName}.COHORT_DEFINITION`
         );
+
+        // Replace $$RESULT_SCHEMA$$
+        sql = sql.replace(/\$\$RESULT_SCHEMA\$\$/g, `${this.schemaName}`);
 
         return sql;
     }
@@ -595,24 +630,24 @@ export class CohortEndpoint {
 
             const url = buildHanaConnectionUrl(metadata.dbCredential);
             const sessionVars = extractSessionVars(metadata.dbCredential);
-
+            const sourceParams = flattenBindParameters(
+                preparedQuery.placeholders
+            );
             // The hana extension's trex_hana_materialize_cohort is registered on the
             // shared DuckDB database; reach it via a memory connection. %s = VARCHAR
             // params (sent as bind params), %f = the BIGINT cohort id (inlined as a
             // numeric literal so DuckDB parses it as BIGINT, not a coerced DOUBLE).
-            const memConn = (Trex as any).databaseManager().getConnection(
-                "memory",
-                "",
-                "",
-                "",
-                { duckdb: (sql: string) => sql }
-            );
+            const memConn = (Trex as any)
+                .databaseManager()
+                .getConnection("memory", "", "", "", {
+                    duckdb: (sql: string) => sql,
+                });
             try {
                 const materializeQuery = QueryObject.format(
                     "SELECT trex_hana_materialize_cohort(%s, %s, %s, %s, %f, %s) AS processed_rows",
                     url,
                     translatedSql,
-                    JSON.stringify(preparedQuery.placeholders ?? []),
+                    JSON.stringify(sourceParams),
                     this.schemaName,
                     Number(cohortDefinitionId),
                     JSON.stringify(sessionVars)
@@ -746,6 +781,37 @@ export class CohortEndpoint {
         }
     }
 
+    /**
+     * Resolves a single fully qualified relation to test whether it exists.
+     * Deliberately bypasses executeCohortQuery, which rewrites bare
+     * `<schema>.COHORT` references into `<catalog>.<schema>.COHORT` and would
+     * therefore double qualify an already qualified name.
+     */
+    private async trexRelationExists(
+        qualifiedTableName: string
+    ): Promise<boolean> {
+        const query = QueryObject.format(
+            `SELECT 1 FROM ${qualifiedTableName} WHERE 1 = 0`
+        );
+        try {
+            if (this.dialect === ANALYTICS_DB_DIALECTS.BIGQUERY) {
+                await query.executeQuery(this.connection);
+            } else {
+                await query.executeQueryOnWriteConnection(this.connection);
+            }
+            return true;
+        } catch (err) {
+            const message = err instanceof Error ? err.message : String(err);
+            if (
+                /Catalog Error/i.test(message) &&
+                /does not exist/i.test(message)
+            ) {
+                return false;
+            }
+            throw err;
+        }
+    }
+
     public async checkIfSchemaCanMaterializeCohort(): Promise<boolean> {
         // Checks if the schema has the required tables to materialize cohorts
         // To successfully materialize cohort, schema must have the following tables
@@ -759,24 +825,25 @@ export class CohortEndpoint {
             }
         };
 
-        let sql, sqlParams;
         if (this.connection.constructor.name === "TrexConnection") {
-            sql = `
-                    select
-                        count(1) AS COUNT_TABLES
-                    from
-                        information_schema.tables
-                    where
-                        table_catalog = %s
-                        and table_schema = %s
-                        and table_name in ('cohort', 'cohort_definition');
-                    `;
-            sqlParams = [
-                `${this.databaseCode}__srcdb`, // Check against source db
-                getsourceResultsSchemaName(),
-            ];
-        } else {
-            sql = `
+            // information_schema.tables is a view over duckdb_tables(), which
+            // materialises every table of every attached catalog before the
+            // WHERE is applied. One cache database is attached per dataset, so
+            // resolve the two relations directly instead of scanning them all.
+            const sourceSchema = `${this.databaseCode}__srcdb.${getsourceResultsSchemaName()}`;
+            for (const tableName of ["COHORT", "COHORT_DEFINITION"]) {
+                if (
+                    !(await this.trexRelationExists(
+                        `${sourceSchema}.${tableName}`
+                    ))
+                ) {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        const sql = `
                     SELECT
                         COUNT(1) AS COUNT_TABLES
                     FROM
@@ -785,10 +852,8 @@ export class CohortEndpoint {
                         SCHEMA_NAME = %s
                         AND TABLE_NAME IN ('COHORT', 'COHORT_DEFINITION');
                     `;
-            sqlParams = [this.schemaName];
-        }
         try {
-            const query = QueryObject.format(sql, ...sqlParams);
+            const query = QueryObject.format(sql, this.schemaName);
             const result = await this.executeCohortQuery(query);
             if (result.data[0]) {
                 // Result must be 2 for function to return true, meaning that both cohort and cohort definition tables exist

@@ -3,11 +3,12 @@ import ReactDOMClient from "react-dom/client";
 import singleSpaReact from "single-spa-react";
 import App from "./App";
 import { PortalProps } from "./types/portal";
+import { normalizeWizardPortalProps } from "./utils/portalProps";
 
 const lifecycles = singleSpaReact({
   React,
   ReactDOMClient,
-  rootComponent: (props: PortalProps) => <App {...props} />,
+  rootComponent: (props: PortalProps) => <App {...normalizeWizardPortalProps(props)} />,
   errorBoundary: (err, info) => {
     console.error("[Wizards] Error:", err, info);
 
@@ -24,6 +25,10 @@ const lifecycles = singleSpaReact({
     );
   },
   domElementGetter: (props: any): HTMLElement => {
+    if (props?.domElement) {
+      return props.domElement;
+    }
+
     const containerId = props?.containerId;
 
     if (containerId) {
@@ -39,4 +44,4 @@ const lifecycles = singleSpaReact({
   },
 });
 
-export const { bootstrap, mount, unmount } = lifecycles;
+export const { bootstrap, mount, unmount, update } = lifecycles;

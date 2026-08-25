@@ -4,7 +4,7 @@ metadata:
   labels:
     profile: d2e-dataflow-worker
   name: "{{ .Release.Name }}-{{ .Chart.Name }}-dataflow-worker"
-  namespace: d2e
+  namespace: {{ .Release.Namespace }}
 spec:
   replicas: 1
   selector:
@@ -38,8 +38,12 @@ spec:
             [
               "sh",
               "-c",
-              "while :;do sleep {{ .Values.dataflowWorker.readinessSleep }} && wget -O success-trex http://trex-http.d2e.svc.cluster.local:443/_internal/health && wget -O success-dataflow http://dataflow-gen.d2e.svc.cluster.local:443/d2e/api/health && if test -f success-trex; then if test -f success-dataflow; then exit 0; fi; fi; done",
+              "while :;do sleep {{ .Values.dataflowWorker.readinessSleep }} && wget --ca-certificate=/etc/d2e/tls/ca.pem -O success-trex https://trex.{{ .Release.Namespace }}.svc.cluster.local:443/trex/_internal/health && wget --ca-certificate=/etc/d2e/tls/ca.pem -O success-dataflow https://dataflow-gen.{{ .Release.Namespace }}.svc.cluster.local:443/d2e/api/health && if test -f success-trex; then if test -f success-dataflow; then exit 0; fi; fi; done",
             ]
+          volumeMounts:
+            - mountPath: /etc/d2e/tls
+              name: d2e-tls
+              readOnly: true
           resources:
             requests:
               cpu: 50m
@@ -140,6 +144,16 @@ spec:
         - name: d2e-worker-cm
           configMap:
             name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+        # Internal CA only: nothing in this pod terminates TLS, so the private
+        # key stays out. 0444 because a CA certificate is public material and
+        # every consumer must be able to read it whatever user it runs as.
+        - name: d2e-tls
+          secret:
+            secretName: "{{ .Release.Name }}-{{ .Chart.Name }}"
+            items:
+              - key: TLS__INTERNAL__CA_CRT
+                path: ca.pem
+                mode: 0444
       containers:
         - name: dataflow-gen-worker
           env:
@@ -185,8 +199,6 @@ spec:
               value: /home/docker/fhir
             - name: ACHILLES_THREAD_COUNT
               value: "5"
-            - name: PYTHON_VERIFY_SSL
-              value: "false"
             - name: PG__HOST
               valueFrom:
                 secretKeyRef:
@@ -210,7 +222,13 @@ spec:
             - name: PREFECT_API_DATABASE_CONNECTION_URL
               value: postgresql+asyncpg://$(PG__USER):$(PG__PASSWORD)@$(PG__HOST):5432/$(PG__DB_NAME)
             - name: PREFECT_API_URL
-              value: http://dataflow-gen.d2e.svc.cluster.local:443/d2e/api
+              value: https://dataflow-gen.{{ .Release.Namespace }}.svc.cluster.local:443/d2e/api
+            - name: INSTALL_SQLALCHEMY_HANA
+              value: "true"
+            - name: TREX_STORAGE_URL
+              value: "https://trex.{{ .Release.Namespace }}.svc.cluster.local:443/plugins/trex/storage-api"
+            - name: TREX_STORAGE_SERVICE_KEY
+              value: ""
             - name: PREFECT_API_ENABLE_HTTP2
               value: "False"
             - name: PREFECT_WORKER_WEBSERVER_HOST
@@ -224,7 +242,7 @@ spec:
             - name: PREFECT_EVENTS_ENABLED
               value: "false"
             - name: DB_CREDENTIALS_MGR__API_URL
-              value: "http://trex-http.d2e.svc.cluster.local:443/db-credentials/db/"
+              value: "https://trex.{{ .Release.Namespace }}.svc.cluster.local:443/db-credentials/db/"
             - name: DOCKER_REGISTRY_USERNAME
               value: dummy
             - name: DOCKER_REGISTRY_PASSWORD
@@ -258,32 +276,70 @@ spec:
                 secretKeyRef:
                   name: "{{ .Release.Name }}-{{ .Chart.Name }}"
                   key: TLS__INTERNAL__CA_CRT
-          command: ["/bin/sh"]
+            # cohort_discovery: Hutch Relay Task API connection, shared across
+            # every dataset's poller runs
+            - name: TASK_API_BASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: TASK_API_BASE_URL
+            - name: TASK_API_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: TASK_API_USERNAME
+            - name: TASK_API_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: TASK_API_PASSWORD
+            - name: TASK_API_TYPE
+              value: "a"
+            - name: TASK_API_ENFORCE_HTTPS
+              value: "true"
+            - name: LOW_NUMBER_SUPPRESSION_THRESHOLD
+              value: "10"
+            - name: ROUNDING_TARGET
+              value: "10"
+          command:
+            - /entrypoint.sh
+            - pixi
+            - run
+            - --manifest-path
+            - /opt/worker/pyproject.toml
+            - sh
+            - -c
           args:
-            [
-              "-c",
-              "rm -rf /root/.prefect/storage/run_cache.db /root/.prefect/storage/events.db; pip install prefect[kubernetes]==3.6.10 && prefect work-pool create 'docker-pool' --type kubernetes; prefect worker start --pool 'docker-pool' --type kubernetes --name prefect-docker-worker --with-healthcheck",
-            ]
-          image: prefecthq/prefect:3.6.10-python3.12
-          imagePullPolicy: IfNotPresent
+            - >-
+              rm -rf /root/.prefect/storage/run_cache.db /root/.prefect/storage/events.db;
+              cp /etc/d2e/tls/ca.pem /usr/local/share/ca-certificates/d2e-internal-ca.crt;
+              update-ca-certificates;
+              python -c 'import certifi; open(certifi.where(), "a").write("\n" + open("/etc/d2e/tls/ca.pem").read() + "\n")';
+              prefect work-pool create "${PREFECT_POOL:-process-pool}" --type ${WORKPOOL_TYPE:-process};
+              prefect worker start --pool "${PREFECT_POOL:-process-pool}" --type ${WORKPOOL_TYPE:-process}
+              --name prefect-${WORKPOOL_TYPE:-process}-worker --with-healthcheck
+              --limit {{ .Values.dataflowWorker.flowRunLimit | default 3 }}
+          image: ghcr.io/ohdsi/d2e-dataflow-gen-worker:{{ .Values.global.image.tag }}
+          imagePullPolicy: Always
           volumeMounts:
             - mountPath: /opt/prefect/libs/baseJobTemplate.json
               name: d2e-worker-cm
               subPath: baseJobTemplate.json
+            - mountPath: /etc/d2e/tls
+              name: d2e-tls
+              readOnly: true
           resources:
-            requests:
-              cpu: 100m
-              memory: 250Mi
-            limits:
-              cpu: 250m
-              memory: 1000Mi
+            {{- toYaml .Values.global.resources.dataflowGenWorker | nindent 12 }}
           livenessProbe:
             exec:
               command:
-                - wget
-                - -O
-                - liveness
-                - http://localhost:8080/health
+                - pixi
+                - run
+                - --manifest-path
+                - /opt/worker/pyproject.toml
+                - python
+                - -c
+                - "import urllib.request, sys; sys.exit(0 if 200 <= urllib.request.urlopen('http://localhost:8080/health', timeout=5).getcode() < 300 else 1)"
             failureThreshold: 5
             initialDelaySeconds: 120
             periodSeconds: 10

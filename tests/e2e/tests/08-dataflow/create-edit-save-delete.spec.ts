@@ -30,7 +30,12 @@ test(TEST_NAME, async ({ page }) => {
 
   // Edit python node
   await page.getByText('python_node_0').first().hover()
-  await page.getByText('python_node_0').first().locator('..').locator('svg').nth(1).click() // Click edit button
+  await page
+    .getByText('python_node_0')
+    .first()
+    .locator('..')
+    .locator('.node__setting:not(.node__delete)')
+    .click() // Click edit button
   await page.locator('d4l-input').filter({ hasText: 'Name' }).getByPlaceholder(' ').click()
   await page.locator('d4l-input').filter({ hasText: 'Name' }).getByPlaceholder(' ').fill('test_python_node')
   await page.locator('d4l-input').filter({ hasText: 'Description' }).getByPlaceholder(' ').click()

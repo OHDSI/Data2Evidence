@@ -19,6 +19,7 @@ import { useFeedback, useTranslation } from "../../../../contexts";
 
 interface ChangeUserPasswordDialogProps {
   userId: string;
+  userName?: string;
   open: boolean;
   onClose?: () => void;
 }
@@ -29,7 +30,7 @@ interface FormData {
 
 const EMPTY_FORM_DATA: FormData = { password: "" };
 
-export const ChangeUserPasswordDialog: FC<ChangeUserPasswordDialogProps> = ({ userId, open, onClose }) => {
+export const ChangeUserPasswordDialog: FC<ChangeUserPasswordDialogProps> = ({ userId, userName, open, onClose }) => {
   const { getText, i18nKeys } = useTranslation();
   const { setFeedback } = useFeedback();
   const [formData, setFormData] = useState<FormData>(EMPTY_FORM_DATA);
@@ -77,7 +78,7 @@ export const ChangeUserPasswordDialog: FC<ChangeUserPasswordDialogProps> = ({ us
       setFeedback({
         variant: "alert",
         type: "success",
-        message: getText(i18nKeys.CHANGE_USER_PASSWORD_DIALOG__PASSWORD_UPDATED),
+        message: getText(i18nKeys.CHANGE_USER_PASSWORD_DIALOG__PASSWORD_UPDATED, [userName ?? ""]),
         autoClose: 5000,
       });
       typeof onClose === "function" && onClose();
@@ -96,7 +97,7 @@ export const ChangeUserPasswordDialog: FC<ChangeUserPasswordDialogProps> = ({ us
     } finally {
       setLoading(false);
     }
-  }, [userId, formData.password, passwordValid, getText, setFeedback, onClose, i18nKeys]);
+  }, [userId, userName, formData.password, passwordValid, getText, setFeedback, onClose, i18nKeys]);
 
   return (
     <Dialog

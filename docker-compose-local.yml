@@ -1,10 +1,14 @@
 services:
   trex:
-    # Defaults to the same published image as docker-compose.yml so `compose pull`
-    # works; CI relies on that. Set TREX_IMAGE (e.g. d2e-trex:withr in .env.local) to
-    # keep a locally built R+HADES image under its own tag, where pulling the
-    # published one would otherwise overwrite it with an R-less build.
-    image: ${TREX_IMAGE:-${DOCKER_IMAGE_PREFIX:-ghcr.io/ohdsi/}d2e-trex:${DOCKER_TAG_NAME:-develop}}
+    # The -devx variant: same d2e layer as docker-compose.yml's image, but built
+    # on trexsql's full base, which carries playwright + chromium, the Claude
+    # Code CLI, gh and the devx payload (~1.2GB compressed). docker-compose.yml
+    # runs the lean one — TREX_DX_ENABLED only gates that tooling at runtime, so
+    # keeping it out of deployments needs a different image, not a flag.
+    # Set TREX_IMAGE (e.g. d2e-trex:withr in .env.local) to keep a locally built
+    # R+HADES image under its own tag, where pulling a published one would
+    # otherwise overwrite it with an R-less build.
+    image: ${TREX_IMAGE:-${DOCKER_IMAGE_PREFIX:-ghcr.io/ohdsi/}d2e-trex:${DOCKER_TAG_NAME:-develop}-devx}
     # No platform pin: the trexsql base and d2e-trex image are multi-arch
     # (amd64/arm64), so Docker runs/builds native to the host.
     entrypoint: ["/bin/sh", "-c"]
@@ -12,14 +16,19 @@ services:
       - |
         mkdir -p /usr/src/cert
         printf '%s' "$$TLS__INTERNAL__CRT" > /usr/src/cert/cert.pem
-        printf '%s' "$$TLS__INTERNAL__KEY" > /usr/src/cert/key.pem
+        (umask 077; printf '%s' "$$TLS__INTERNAL__KEY" > /usr/src/cert/key.pem)
+        printf '%s' "$$TLS__INTERNAL__CA_CRT" > /usr/src/cert/ca.pem
+        cp /usr/src/cert/ca.pem /usr/local/share/ca-certificates/d2e-internal-ca.crt
+        update-ca-certificates
         if [ "$${TREX_DX_ENABLED:-}" = "true" ] && [ -n "$${TREX_ROOT_KEY:-}" ]; then
           mkdir -p /trex-secrets
           printf 'TREX_ROOT_KEY=%s\n' "$$TREX_ROOT_KEY" > /trex-secrets/root.env
           TREX_SECRETS_DIR=/trex-secrets /usr/local/bin/trex-init || echo "[dx] trex-init failed; DevX REST may 401"
           set -a; . /trex-secrets/derived.env 2>/dev/null || true; set +a
         fi
-        exec /usr/src/entrypoint.sh
+        # This command replaces the image's own CMD, so the --enable-otel flag
+        # from Dockerfile.v2 never runs here; it must be re-added to this exec.
+        exec /usr/src/entrypoint.sh $${TREX_OTEL_ENABLED:+--enable-otel}
     build:
       context: ./services/trex
       dockerfile: ./Dockerfile.v2
@@ -27,8 +36,12 @@ services:
       secrets:
         - github_token
       args:
+        # Match the -devx image name above: without this a local build would use
+        # Dockerfile.v2's default (the lean prod base) and quietly produce an
+        # image with no devx tooling under a -devx tag.
+        TREXSQL_REF: ${TREXSQL_REF:-sha-5ce42757279f969bca123f0128a5c967ff2e3bd4@sha256:bad73e8323fc07fdd2dba7a25e6f7f1c2b3d6e86410b039f5e8629c0d0214cc6}
         # Local builds pull published plugins from the feed; CI uses plugin-artifacts/.
-        PLUGINS_FROM_REGISTRY: ${PLUGINS_FROM_REGISTRY:-@data2evidence/d2e-ui @data2evidence/d2e-functions @data2evidence/fhir @data2evidence/sibyl @data2evidence/d2e-flows @data2evidence/i2b2-flow @data2evidence/search-embedding-flow @data2evidence/data-management-flow @data2evidence/hades-flow @data2evidence/loyalty-score-flow @data2evidence/data-transformation-flow @ohdsi/pythia-agent@0.1.0-develop.14.gf8bbfc7}
+        PLUGINS_FROM_REGISTRY: ${PLUGINS_FROM_REGISTRY:-@data2evidence/d2e-ui @data2evidence/d2e-functions @data2evidence/fhir @data2evidence/sibyl @data2evidence/d2e-flows @data2evidence/i2b2-flow @data2evidence/search-embedding-flow @data2evidence/data-management-flow @data2evidence/hades-flow @data2evidence/loyalty-score-flow @data2evidence/data-transformation-flow @ohdsi/pythia-agent@0.1.0-develop.18.g80bf4aa}
         # Keep in sync with the `docker build --build-arg WITH_R=true` used to
         # produce the d2e-trex:withr tag above — `docker compose build trex`
         # must also bake R or it silently reverts to an R-less image.
@@ -38,7 +51,7 @@ services:
     networks:
       alp:
         aliases:
-          - ${PROJECT_NAME:-alp}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}
+          - ${PROJECT_NAME:-alp}-trex.${TLS__INTERNAL__DOMAIN:-d2e.local}
     ports:
       - 9229:9229
       - 25432:5432
@@ -75,6 +88,9 @@ services:
         required: false
     environment:
       TREX_DX_ENABLED: "true"
+      # Enable trex's native email/password IDP for local dev (off by default in
+      # the engine). Production d2e authenticates via Logto and leaves it unset.
+      TREX_IDP_ENABLED: "true"
       IS_SANDBOX: "1"
       BETTER_AUTH_URL: "https://localhost:${CADDY_PORT:-${PORT:-443}}/trex"
       PGRST_DB_URI: postgres://authenticator:authenticator_pass@${PG_HOST:-${PROJECT_NAME:-d2e}-minerva-postgres-1}:${PG_PORT:-5432}/alp
@@ -88,22 +104,22 @@ services:
       DEVX_ENCRYPTION_KEY: ${DEVX_ENCRYPTION_KEY:-}
       RUST_LOG: ${RUST_LOG:-info}
       RUST_BACKTRACE: ${RUST_BACKTRACE:-full}
+      # Local dev defaults to exporting traces to the jaeger service below.
+      TREX_OTEL_ENABLED: ${TREX_OTEL_ENABLED:-true}
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-http://jaeger:4318}
+      OTEL_EXPORTER_OTLP_PROTOCOL: ${OTEL_EXPORTER_OTLP_PROTOCOL:-http/protobuf}
+      OTEL_SERVICE_NAME: ${OTEL_SERVICE_NAME:-trex}
       LOCAL_DEBUG: "true"
       DATABASE_CREDENTIALS: ${DATABASE_CREDENTIALS:-{}}
       # Supabase Studio sidecar (LOCAL ONLY) — trex proxies /plugins/trex/studio/** to it.
-      STUDIO_INTERNAL_URL: http://${PROJECT_NAME:-d2e}-studio.${TLS__INTERNAL__DOMAIN:-alp.local}:3000
+      STUDIO_INTERNAL_URL: http://${PROJECT_NAME:-d2e}-studio.${TLS__INTERNAL__DOMAIN:-d2e.local}:3000
       EDGE_FUNCTIONS_MANAGEMENT_FOLDER: /app/edge-functions
       # Bind-mounted source plugins win over bundled ones with the same package name.
       # /usr/src/plugins-dev first so trex's own web/studio/notebook plugins load too.
       PLUGINS_DEV_PATH: "/usr/src/plugins-dev:/usr/src/bundled-plugins:/usr/src/plugins"
       SQL_QUERY_TEMPLATES: '{"cohort-members": "SELECT {{COHORT_ID}} AS cohort_id, CURRENT_TIMESTAMP AS exported_at", "patient-count": "SELECT COUNT(*) AS patient_count FROM {{SCHEMA}}.person"}'
-      # PhysioNet auto-provision / entitlements sync are OFF by default for local
-      # dev. To exercise the flow, set USERMGMT__AUTO_PROVISION_ENABLED=true and
-      # USERMGMT__ENTITLEMENTS_SYNC_ENABLED=true; the rest is pre-wired below.
-      USERMGMT__AUTO_PROVISION_ENABLED: ${USERMGMT__AUTO_PROVISION_ENABLED:-false}
+      # PhysioNet auto-provision / entitlements sync are OFF by default 
       USERMGMT__AUTO_PROVISION_CONNECTORS: ${USERMGMT__AUTO_PROVISION_CONNECTORS:-physionet}
-      USERMGMT__AUTO_PROVISION_DEFAULT_TENANT_ID: ${USERMGMT__AUTO_PROVISION_DEFAULT_TENANT_ID:-e0348e4d-2e17-43f2-a3c6-efd752d17c23}
-      USERMGMT__ENTITLEMENTS_SYNC_ENABLED: ${USERMGMT__ENTITLEMENTS_SYNC_ENABLED:-false}
       USERMGMT__ENTITLEMENTS_PHYSIONET_BASE_URL: ${USERMGMT__ENTITLEMENTS_PHYSIONET_BASE_URL:-http://physionet-host:8000}
       USERMGMT__ENTITLEMENTS_DATASET_MAPPING: '${USERMGMT__ENTITLEMENTS_DATASET_MAPPING:-{"demo":"demoeicu/1.0"}}'
       SWARM_CONFIG: |-
@@ -171,6 +187,9 @@ services:
       CADDY__CORS_LOCAL_UI: "import cors"
 
   alp-dataflow-gen:
+    build:
+      context: ./services/alp-dataflow-gen
+      dockerfile: Dockerfile
     ports:
       - 41120:41120
     environment:
@@ -194,23 +213,14 @@ services:
       dockerfile: Dockerfile
     extra_hosts:
       - "physionet-host:host-gateway"
-    volumes:
+    # volumes:
       # Overlay the bundled connector-oidc with a d2e-patched version that
       # writes the upstream access/refresh tokens to globalThis.tokenMap so the
       # Logto JWT customizer can surface them as physionet_access_token /
       # physionet_refresh_token claims. Mirrors the connector-alp-azuread
       # override pattern below.
-      - ./services/alp-logto/connector-oidc-patched/lib:/etc/logto/packages/connectors/connector-oidc/lib
+      # - ./services/alp-logto/connector-oidc-patched/lib:/etc/logto/packages/connectors/connector-oidc/lib
       # - ./services/alp-logto/connector-alp-azuread/lib:/etc/logto/packages/connectors/connector-alp-azuread/lib
-
-  alp-minerva-pg-mgmt-init:
-    ports:
-      - 9211:9211
-    build:
-      context: services/alp-pg-management
-      dockerfile: Dockerfile
-    volumes:
-      - ./services/alp-pg-management/app:/home/docker/app
 
   alp-minerva-postgres:
     ports:
@@ -221,11 +231,6 @@ services:
     ports:
       - "15432:5432"
 
-  dicom-server:
-    # uses 8042 port on the container
-    ports:
-      - 8042:8042
-
   alp-logto-post-init:
     build:
       context: ./services/alp-logto/post-init
@@ -233,37 +238,10 @@ services:
     # volumes:
     #   - ./services/alp-logto/post-init:/home/docker
 
-  enterprise-gateway:
-    build:
-      context: ./services/enterprise-gateway
-      dockerfile: Dockerfile
-    environment:
-      EG_ALLOW_ORIGIN: "https://${CADDY__D2E__PUBLIC_FQDN:-${CADDY__ALP__PUBLIC_FQDN:-localhost}}${PORT:+:${PORT:-41100}}"
-    volumes:
-      - ./services/enterprise-gateway/r-strategus-lib/rD2E:/app/rD2E
-      - ./services/enterprise-gateway/kernels/R_ohdsi_docker:/usr/local/share/jupyter/kernels/R_ohdsi_docker
-  
-  enterprise-gateway-viewer:
-    build:
-      context: ./services/enterprise-gateway
-      dockerfile: Dockerfile
-    environment:
-      EG_ALLOW_ORIGIN: "https://${CADDY__D2E__PUBLIC_FQDN:-${CADDY__ALP__PUBLIC_FQDN:-localhost}}${PORT:+:${PORT:-41100}}"
-    volumes:
-      - ./services/enterprise-gateway/r-strategus-lib/rD2E:/app/rD2E
-      - ./services/enterprise-gateway/kernels/R_ohdsi_docker:/usr/local/share/jupyter/kernels/R_ohdsi_docker
-
   supabase-storage:
     build:
       context: ./services/supabase-storage
       dockerfile: Dockerfile
-
-  logging:
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-    environment:
-      - DOZZLE_ENABLE_SHELL=${DOZZLE_ENABLE_SHELL:-false}
-      - DOZZLE_ENABLE_ACTIONS=true
 
   materialize-cohorts:
     profiles:
@@ -295,19 +273,33 @@ services:
       retries: 3
       start_period: 10s
 
+  # Jaeger UI for local trace inspection, on http://localhost:16686. Starts with
+  # the local stack because trex defaults to exporting traces here; gating it
+  # behind a profile would leave those exports pointing at nothing.
+  jaeger:
+    image: jaegertracing/all-in-one:1.62.0
+    networks:
+      alp:
+    environment:
+      COLLECTOR_OTLP_ENABLED: "true"
+    ports:
+      - 16686:16686
+      - 4317:4317
+      - 4318:4318
+
   # trex studio sidecar — LOCAL ONLY (intentionally not in docker-compose.yml).
   # Internal-only: no host port. trex proxies /plugins/trex/studio/** to it and
   # enforces its own admin-only gate.
   studio:
     image: ghcr.io/ohdsi/trex-studio:latest
     container_name: ${PROJECT_NAME:-d2e}-studio
-    hostname: ${PROJECT_NAME:-d2e}-studio.${TLS__INTERNAL__DOMAIN:-alp.local}
+    hostname: ${PROJECT_NAME:-d2e}-studio.${TLS__INTERNAL__DOMAIN:-d2e.local}
     restart: unless-stopped
     networks:
       alp:
         aliases:
           - studio
-          - ${PROJECT_NAME:-d2e}-studio.${TLS__INTERNAL__DOMAIN:-alp.local}
+          - ${PROJECT_NAME:-d2e}-studio.${TLS__INTERNAL__DOMAIN:-d2e.local}
     depends_on:
       trex:
         condition: service_healthy
@@ -334,9 +326,9 @@ services:
     environment:
       HOSTNAME: "0.0.0.0"
       # trex serves the supabase-compat surface under /trex at its internal endpoint.
-      SUPABASE_URL: http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/trex
+      SUPABASE_URL: http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-d2e.local}:33001/trex
       SUPABASE_PUBLIC_URL: https://localhost:41100/trex
-      STUDIO_PG_META_URL: http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/trex/pg/v1
+      STUDIO_PG_META_URL: http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-d2e.local}:33001/trex/pg/v1
       SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY:-}
       SUPABASE_SERVICE_KEY: ${SUPABASE_SERVICE_KEY:-}
       # Fallback direct DB access — trexdb lives in the alp Postgres.

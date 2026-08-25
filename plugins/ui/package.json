@@ -414,7 +414,7 @@
             "route": "demo-setup"
           },
           {
-            "description": "Migrate user artifacts to webapi",
+            "description": "Migrate user artifacts to WebAPI",
             "visible": true,
             "name": "Migrate user artifacts",
             "notes": "",
@@ -472,15 +472,6 @@
             "visible": true,
             "pluginPath": "plugins/Setup/module",
             "route": "setup"
-          },
-          {
-            "name": "Logs",
-            "nameI18nKey": "UI_PLUGIN_LOGS",
-            "pluginPath": "plugins/SystemAdmin/D2ELogs/module",
-            "visible": true,
-            "featureFlag": "d2eLogs",
-            "defaultEnabled": false,
-            "route": "docker-logs"
           },
           {
             "type": "app",

@@ -4,12 +4,22 @@ import type {
   FieldDefinition,
   WizardStepConfig,
   WizardSurface,
+  WizardFormSection,
 } from "../types/wizard";
 import { fetchCdwConfig, getAttributeByPath } from "./cdwConfig";
 import type { CdwConfig } from "./cdwConfig";
 import client from "../axios/request";
 
 const isDev = import.meta.env.DEV;
+
+export const DEFAULT_WIZARD_FORM_NOTE =
+  "Note: this is a very rough approximation that is just a starting point for a more comprehensive analysis.";
+
+export function resolveWizardFormNote(formNote: string | null | undefined): string | null {
+  if (formNote === undefined) return DEFAULT_WIZARD_FORM_NOTE;
+  const trimmedNote = formNote?.trim();
+  return trimmedNote || null;
+}
 
 /**
  * Default steps used by all wizards.
@@ -20,7 +30,7 @@ const DEFAULT_STEPS: WizardStepConfig[] = [
     id: "form",
     type: "form",
     title: "Form",
-    config: { submitLabel: "Open cohort", submitAction: "deep-link" },
+    config: { submitLabel: "Generate", submitAction: "deep-link" },
   },
 ];
 
@@ -265,6 +275,45 @@ const WIZARD_FIELDS: FieldDefinition[] = [
   },
 ];
 
+/**
+ * Layout for the Loss to Follow-up (LTFU) wizard's form.
+ */
+const LOSS_TO_FOLLOW_UP_SECTIONS: WizardFormSection[] = [
+  {
+    id: "person",
+    title: "Person",
+    groups: [{ id: "person-details", fieldIds: ["age", "gender", "ethnicity", "race"], columns: 2 }],
+  },
+  {
+    id: "measurement",
+    title: "Measurement",
+    groups: [
+      {
+        id: "body-measurement",
+        label: "Body measurement",
+        fieldIds: ["height", "weight", "bmi"],
+        columns: 3,
+        validation: {
+          minAnswered: 1,
+          maxAnswered: 2,
+          message: "Enter 1 or 2 of Height, Weight, and BMI.",
+        },
+      },
+      {
+        id: "vitals",
+        label: "Vitals",
+        fieldIds: ["systolicBp", "diastolicBp", "pulseRate", "respRate"],
+        columns: 2,
+      },
+    ],
+  },
+  {
+    id: "observation",
+    title: "Observation window",
+    groups: [{ id: "observation-details", fieldIds: ["year"], columns: 1 }],
+  },
+];
+
 const mockWizardConfigs: WizardConfig[] = [
   {
     id: "calculate-incidence",
@@ -288,6 +337,20 @@ const mockWizardConfigs: WizardConfig[] = [
     fields: WIZARD_FIELDS,
   },
   {
+    id: "30-day-readmission",
+    name: "30-Day Readmission",
+    description:
+      "This wizard will calculate the 30-day readmission rate for a particular clinical condition. This calculation is done in SQL, and this works by finding an inpatient discharge associated with the condition and determining if the patient has a subsequent inpatient admission within 30 days of that discharge.",
+    fields: WIZARD_FIELDS,
+  },
+  {
+    id: "length-of-stay",
+    name: "Length of Stay",
+    description:
+      "This wizard will calculate the average length of hospital stay for a particular clinical condition. This calculation is done in SQL, and this works by finding inpatient visits associated with the condition and computing the number of days between the visit start and visit end dates.",
+    fields: WIZARD_FIELDS,
+  },
+  {
     id: "cross-sectional-demographics",
     name: "Cross sectional Demographics",
     description: "Assessment of hypertension and cholesterol levels in post-operative patients.",
@@ -300,6 +363,14 @@ const mockWizardConfigs: WizardConfig[] = [
     surfaces: ["cohortBuilder"],
     flow: "table1-config",
     fields: [],
+  },
+  {
+    id: "loss-to-follow-up",
+    name: "Loss to Follow-up (LTFU)",
+    description:
+      "This wizard will calculate the loss to follow-up rate for a particular clinical event, frequently used in clinical trial investigations and quality improvement research. This calculation works by finding patients who did not return for an expected visit within a time window you specify.",
+    sections: LOSS_TO_FOLLOW_UP_SECTIONS,
+    fields: WIZARD_FIELDS,
   },
 ];
 
