@@ -56,13 +56,11 @@ RUN set -eu; \
     cp "$(find adbc_extract -name 'libadbc_driver_snowflake.so' | head -n1)" /usr/local/lib/ && \
     ldconfig && rm -rf adbc.whl adbc_extract
 
-# Best-effort offline preinstall of the snowflake extension wrapper. Non-fatal:
-# if it isn't published for this DuckDB version/arch, the engine falls back to a
-# runtime `INSTALL snowflake FROM community` (which needs network on first use).
-RUN cd /root/.duckdb/extensions/v${DUCKDB_VERSION}/linux_${TARGETARCH} && \
-    ( wget -q https://community-extensions.duckdb.org/v${DUCKDB_VERSION}/linux_${TARGETARCH}/snowflake.duckdb_extension.gz && \
-      gzip -df snowflake.duckdb_extension.gz && echo "snowflake extension preinstalled for v${DUCKDB_VERSION}/linux_${TARGETARCH}" ) || \
-    echo "WARN: snowflake community extension not prebuilt for v${DUCKDB_VERSION}/linux_${TARGETARCH}; relying on runtime INSTALL"
+# NOTE: no snowflake extension preinstall here. The step that used to sit at
+# this point cd'd into /root/.duckdb/extensions/... eighty lines before anything
+# created it, so it always fell through to its WARN branch and never put an
+# extension in the image. The base image owns the extension set (see the note
+# above DUCKDB_* handling); trex bakes snowflake into it directly.
 
 RUN mkdir -p /usr/src/data/cache /usr/src/data/plugins /usr/src/data/flow_staging /usr/src/cdw_data/built_in ./cert /var/log/d2e/audit \
  && chmod 1777 /usr/src/data/flow_staging
@@ -153,8 +151,13 @@ RUN set -eu; \
     EXT_SRC="/usr/share/trexsql/extensions/v${DUCKDB_VERSION}/linux_${TARGETARCH}"; \
     test -d "$EXT_SRC" || { echo "FATAL: base image has no $EXT_SRC" >&2; exit 1; }; \
     for HOME_DIR in /root /home/node; do \
-      mkdir -p "$HOME_DIR/.duckdb/extensions/v${DUCKDB_VERSION}"; \
-      ln -sfn "$EXT_SRC" "$HOME_DIR/.duckdb/extensions/v${DUCKDB_VERSION}/linux_${TARGETARCH}"; \
+      DEST="$HOME_DIR/.duckdb/extensions/v${DUCKDB_VERSION}/linux_${TARGETARCH}"; \
+      mkdir -p "$(dirname "$DEST")"; \
+      # rm -rf, not just `ln -sfn`: -f replaces a file or a symlink, but against
+      # a real directory ln silently creates the link *inside* it instead, which
+      # would leave a stale copy behind and break the assertions below.
+      rm -rf "$DEST"; \
+      ln -sfn "$EXT_SRC" "$DEST"; \
     done; \
     chown node:node /home/node/.duckdb /home/node/.duckdb/extensions \
       "/home/node/.duckdb/extensions/v${DUCKDB_VERSION}"; \
