@@ -52,6 +52,15 @@ into the library, and the stories do not change.
 
 ## Why the versions are pinned
 
-`vue` and `vuetify` must agree with `apps/vue-mri-ui-lib`. The explorer shows
-what the application renders, so a different version makes it lie. The parity
-test compares the three `package.json` files.
+`vue` and `vuetify` must stay close to `apps/vue-mri-ui-lib`. The explorer
+shows what the application renders, so a large difference makes it lie.
+
+`vuetify` agrees exactly, at 3.12.0.
+
+`vue` cannot agree exactly today. The application pins 3.5.17, and
+`@histoire/plugin-vue@1.0.0-beta.1` needs `vue ^3.5.26`. `npm ci` fails if you
+set 3.5.17 here. The explorer therefore pins 3.5.26, and the parity test
+compares the major and minor version only. Raise the application to 3.5.26 or
+later if you want an exact match.
+
+The parity test is `../src/__tests__/explorer-parity.test.ts`.
