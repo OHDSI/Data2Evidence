@@ -2,8 +2,6 @@ name: ${PROJECT_NAME:-d2e}
 networks:
   alp:
   data:
-  enterprise-gateway:
-  enterprise-gateway-viewer:
 
 volumes:
   caddy:
@@ -13,7 +11,6 @@ volumes:
   r-libs:
   trex:
   demodb-data:
-  dicom-sqlite-storage:
   hana-data:
   supabase-storage-data:
   hades-data:
@@ -21,7 +18,7 @@ volumes:
 
 x-envs:
   env_converter: &x-converter
-    URL__DATABASE_LIST__GET: http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/gateway/api/db/database-creds/
+    URL__DATABASE_LIST__GET: http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-d2e.local}:33001/gateway/api/db/database-creds/
     DB_CREDENTIALS__PRIVATE_KEY: ${DB_CREDENTIALS__INTERNAL__DECRYPT_PRIVATE_KEY}
     IDP__ALP_SVC__CLIENT_ID: ${LOGTO__D2E_SVC__CLIENT_ID:-${LOGTO__ALP_SVC__CLIENT_ID}}
     IDP__ALP_SVC__CLIENT_SECRET: ${LOGTO__D2E_SVC__CLIENT_SECRET:-${LOGTO__ALP_SVC__CLIENT_SECRET}}
@@ -38,65 +35,59 @@ x-envs:
     PG__IDLE_TIMEOUT_IN_MS: ${PG__IDLE_TIMEOUT_IN_MS:-30000}
     PG__DIALECT: postgresql
     PG__SSL: ${PG__SSL:-false}
-  redis: &x-redis
-    REDIS_HOST: ${REDIS_HOST:-${PROJECT_NAME:-d2e}-minerva-redis-1}
-    REDIS_PORT: ${REDIS_PORT:-6379}
   trex_sql: &x-trex-sql
     TREX__SQL__HOST: ${PROJECT_NAME:-d2e}-trex
     TREX__SQL__PORT: ${TREX__SQL__PORT:-5433}
     TREX__SQL__USER: postgres
     TREX__SQL__PASSWORD: ${TREX__SQL__PASSWORD:?TREX__SQL__PASSWORD must be set (run d2e init); refusing default pencil} # Password for the trex sql interface
     TREX__SQL__DBNAME: postgres
-  # "https://${PROJECT_NAME:-d2e}-minerva-portal-server-1.${TLS__INTERNAL__DOMAIN:-alp.local}:41105",
+  # "https://${PROJECT_NAME:-d2e}-minerva-portal-server-1.${TLS__INTERNAL__DOMAIN:-d2e.local}:41105",
   tls: &x-tls
     TLS__INTERNAL__CA_CRT: ${TLS__INTERNAL__CA_CRT}
     TLS__INTERNAL__CRT: ${TLS__INTERNAL__CRT}
-    TLS__INTERNAL__DOMAIN: ${TLS__INTERNAL__DOMAIN:-alp.local}
+    TLS__INTERNAL__DOMAIN: ${TLS__INTERNAL__DOMAIN:-d2e.local}
     TLS__INTERNAL__KEY: ${TLS__INTERNAL__KEY}
-  enterprise-gateway: &x-enterprise-gateway
-    EG_KERNEL_LAUNCH_TIMEOUT: ${EG_KERNEL_LAUNCH_TIMEOUT:-300}
-    EG_KERNEL_INFO_TIMEOUT: ${EG_KERNEL_INFO_TIMEOUT:-60}
-    EG_CULL_IDLE_TIMEOUT: ${EG_CULL_IDLE_TIMEOUT:-600}
-    EG_CULL_CONNECTED: ${EG_CULL_CONNECTED:-True}
-    EG_CULL_BUSY: ${EG_CULL_BUSY:-True}
-    # Use double-defaulting for B/C.  Support for EG_KERNEL_WHITELIST will be removed in a future release
-    EG_ALLOWED_KERNELS: ${EG_ALLOWED_KERNELS:-${EG_KERNEL_WHITELIST:-'r_ohdsi_docker'}} # /jupyter/api/kernelspecs
-    EG_MIRROR_WORKING_DIRS: ${EG_MIRROR_WORKING_DIRS:-False}
-    EG_RESPONSE_PORT: ${EG_RESPONSE_PORT:-8877}
-    KG_PORT: ${KG_PORT:-8888}
-    EG_BASE_URL: /jupyter
-    EG_DEFAULT_KERNEL_NAME: "r_ohdsi_docker"
-    EG_DOCKER_MODE: docker
-    EG_ALLOW_ORIGIN: "https://${CADDY__D2E__PUBLIC_FQDN:-${CADDY__ALP__PUBLIC_FQDN:-localhost}}${PORT:+:${PORT:-443}}"
-    TREX__ENDPOINT_URL: "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001"
-    EG_ENV_WHITELIST: "KERNEL_USERNAME"
-    EG_MAX_KERNELS_PER_USER: 1
 
 services:
   # OHDSI WebAPI for Atlas3 (with trex dependencies)
   trex:
     image: ${DOCKER_IMAGE_PREFIX:-ghcr.io/ohdsi/}d2e-trex:${DOCKER_TAG_NAME:-develop}
     container_name: ${PROJECT_NAME:-d2e}-trex
-    hostname: ${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}
+    hostname: ${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-d2e.local}
     extra_hosts:
       - "${CADDY__D2E__PUBLIC_FQDN:-${CADDY__ALP__PUBLIC_FQDN:-localhost}}:host-gateway"
     depends_on:
-      alp-minerva-pg-mgmt-init:
-        condition: service_completed_successfully
-      alp-logto-post-init:
-        condition: service_completed_successfully
+      # trex now provisions the database itself (runD2eBootstrap), so it only
+      # needs Postgres up. It deliberately does NOT wait for alp-logto-post-init
+      # any more: logto cannot migrate until trex has created logto_postgres and
+      # the logto schema, so trex must start FIRST. Keeping the old edge would
+      # deadlock (trex -> post-init -> logto -> trex's bootstrap).
+      alp-minerva-postgres:
+        condition: service_healthy
     networks:
       alp:
         priority: 20
       data:
         priority: 10
-      enterprise-gateway-viewer:
-        priority: 20
     volumes:
       - trex:/usr/src/data
       - cdw-config-cachedb-data-1:/usr/src/cdw_data/dynamically_generated
       - hades-data:/data/hades
       - audit-logs:/var/log/d2e/audit
+      # `notebook` schema (studies/notebooks) + its PostGraphile grants, applied
+      # as a trex migrations plugin. Must land under a PLUGINS_DEV_PATH entry to
+      # be scanned; trex runs it against _config (the alp Postgres catalog) and
+      # tracks applied versions in notebook.refinery_schema_history.
+      - ./services/trex/migrations/notebook:/usr/src/bundled-plugins/notebook-schema:ro
+      # d2e's DB provisioning (login users, supabase roles, schemas, grants),
+      # applied as a trex provision plugin BEFORE any other plugin loads.
+      # Already baked into the image; mounted so a source edit takes effect on
+      # restart without a rebuild.
+      - ./services/trex/provision/d2e-bootstrap:/usr/src/bundled-plugins/d2e-bootstrap:ro
+      # WebAPI/Logto seeding SQL, applied by the d2e-compat atlas-db-init block
+      # once webapi.sec_role and logto.users exist. Replaces the webapi-init
+      # container, which ran the same files through psql.
+      - ./services/atlas-db-init:/usr/src/atlas-db-init:ro
     ports:
       - "8090:8080"
     healthcheck:
@@ -113,7 +104,41 @@ services:
       - |
         mkdir -p /usr/src/cert
         printf '%s' "$$TLS__INTERNAL__CRT" > /usr/src/cert/cert.pem
-        printf '%s' "$$TLS__INTERNAL__KEY" > /usr/src/cert/key.pem
+        (umask 077; printf '%s' "$$TLS__INTERNAL__KEY" > /usr/src/cert/key.pem)
+        printf '%s' "$$TLS__INTERNAL__CA_CRT" > /usr/src/cert/ca.pem
+        cp /usr/src/cert/ca.pem /usr/local/share/ca-certificates/d2e-internal-ca.crt
+        # Optional additional trust anchors, for upstreams that are not ours — the
+        # PS config server is typically external/HANA-side with its own CA. This is
+        # the supported way to reach such a server: the edge-function shim has no
+        # per-request TLS control and there is no verification bypass.
+        #
+        # Accepts one or more concatenated PEM blocks, split into one file each:
+        # update-ca-certificates appends a whole file to the bundle but only hashes
+        # its FIRST certificate into the CApath symlinks, so a multi-cert file would
+        # be trusted by bundle readers and silently ignored by CApath readers.
+        # The value needs real newlines; a .env-style string with literal \n will
+        # not parse, so the count is asserted below rather than failing later at
+        # the first TLS call.
+        if [ -n "$${TLS__EXTRA__CA_CRTS:-}" ]; then
+          printf '%s\n' "$$TLS__EXTRA__CA_CRTS" |
+            awk 'BEGIN{n=0} /^-----BEGIN CERTIFICATE-----$$/{n++} n>0{print > ("/usr/local/share/ca-certificates/d2e-extra-ca-" n ".crt")}'
+          got=0
+          for f in /usr/local/share/ca-certificates/d2e-extra-ca-*.crt; do
+            [ -e "$$f" ] || continue
+            if grep -qx -- '-----END CERTIFICATE-----' "$$f"; then
+              got=$$((got + 1))
+            else
+              echo "FATAL: $$f has no END line; TLS__EXTRA__CA_CRTS is truncated or malformed" >&2
+              exit 1
+            fi
+          done
+          if [ "$$got" -eq 0 ]; then
+            echo "FATAL: TLS__EXTRA__CA_CRTS is set but contains no PEM certificate. It needs real newlines -- a .env-style value with literal \\n will not parse." >&2
+            exit 1
+          fi
+          echo "installed $$got extra CA certificate(s)"
+        fi
+        update-ca-certificates
         # This command replaces the image's own CMD, so the --enable-otel flag
         # from Dockerfile.v2 never runs here; it must be re-added to this exec.
         exec /usr/src/entrypoint.sh $${TREX_OTEL_ENABLED:+--enable-otel}
@@ -124,6 +149,21 @@ services:
         - *x-tls
         - *x-pg
         - *x-trex-sql
+      # With the rebuilt trexas runtime (cert_provider fix), the worker HTTP client
+      # honors DENO_TLS_CA_STORE=system, so it trusts the internal CA installed into
+      # the OS store by the command above (via update-ca-certificates).
+      DENO_TLS_CA_STORE: system
+      # Extra trust anchors for non-internal upstreams (e.g. an external PS config
+      # server with its own CA). One or more concatenated PEM blocks; installed into
+      # the OS store by the command above, so DENO_TLS_CA_STORE=system picks them up.
+      TLS__EXTRA__CA_CRTS: ${TLS__EXTRA__CA_CRTS:-}
+      # Java analog of DENO_TLS_CA_STORE for the embedded native WebAPI. The GraalVM
+      # libwebapi-native.so bakes its truststore at build time and ignores the OS store
+      # (update-ca-certificates), so WebApiNativeLibrary.start() reads this PEM at startup
+      # and installs a composite SSLContext (JDK roots + this internal CA) before Spring
+      # boots — needed for OIDC discovery/JWKS over the internal self-signed TLS. The file
+      # is written by this service's command above (line ~115).
+      WEBAPI_TRUST_CERTS: /usr/src/cert/ca.pem
       # Plugin paths for trex - must match volume mount at /usr/src/data
       PLUGINS_PATH: /usr/src/data/plugins
       DATASOURCE_DRIVERCLASSNAME: org.postgresql.Driver
@@ -184,8 +224,11 @@ services:
       # Property prefix updated for WebAPI p-hoffmann/openid branch: security.auth.openId.* (was security.oid.*)
       SECURITY_AUTH_OIDC_CLIENTID: ${LOGTO__D2E_APP__CLIENT_ID:-${LOGTO__ALP_APP__CLIENT_ID}}
       SECURITY_AUTH_OIDC_APISECRET: ${LOGTO__D2E_APP__CLIENT_SECRET:-${LOGTO__ALP_APP__CLIENT_SECRET}}
-      # Use Caddy's internal HTTP port (8080) for metadata discovery - avoids TLS issues
-      SECURITY_AUTH_OIDC_URL: "http://${PROJECT_NAME:-d2e}-caddy:8080/oidc/.well-known/openid-configuration"
+      # Discover OIDC metadata directly from Logto over HTTPS:3001 — same host/port as
+      # LOGTO__TOKEN_URL, so trex (token exchange) and WebAPI (discovery/JWKS) reach Logto
+      # consistently. The discovered issuer is still http://alp-caddy:8080/oidc (matches the
+      # token iss / LOGTO__ISSUER); only the fetch endpoint + jwks_uri are proper HTTPS on :3001.
+      SECURITY_AUTH_OIDC_URL: "https://${PROJECT_NAME:-d2e}-logto-1.${TLS__INTERNAL__DOMAIN:-d2e.local}:3001/oidc/.well-known/openid-configuration"
       # External URL for browser redirects - used to rewrite internal OIDC URLs to external ones
       SECURITY_AUTH_OIDC_EXTERNALURL: "https://${CADDY__D2E__PUBLIC_FQDN:-${CADDY__ALP__PUBLIC_FQDN:-localhost}}:${CADDY_PORT:-${PORT:-443}}/oidc"
       SECURITY_AUTH_OIDC_LOGOUTURL: "https://${CADDY__D2E__PUBLIC_FQDN:-${CADDY__ALP__PUBLIC_FQDN:-localhost}}:${CADDY_PORT:-${PORT:-443}}/oidc/session/end"
@@ -203,8 +246,53 @@ services:
       PG__HOST: ${PG_HOST:-${PROJECT_NAME:-d2e}-minerva-postgres-1}
       PG__PORT: ${PG_PORT:-5432}
       # Schemas PostGraphile introspects for /trex/graphql - `notebook` exposes
-      # the studies/notebooks tables from services/trex/migrations/notebook.
+      # the studies/notebooks tables provisioned by the notebook-schema
+      # migrations plugin mounted above.
       PG_SCHEMA: ${PG_SCHEMA:-trexdb,notebook}
+      # ── DB bootstrap (replaces the alp-minerva-pg-mgmt-init container) ──────
+      # trex's d2e-compat runD2eBootstrap() reads these before plugin init and
+      # provisions the login users, the anon/authenticated/service_role roles,
+      # the schemas and their grants. Same contract the retired container used,
+      # so the SQL is unchanged and re-runs idempotently on every boot.
+      POSTGRES_MANAGE_CONFIG: |-
+        {
+         "databases": {
+          "+${PG_DB_NAME:-alp}": {
+           "schemas": {
+            "+cdw_config": {},
+            "+jobplugins": {},
+            "+logto": {},
+            "+portal": {},
+            "+public": {},
+            "+qe_config": {},
+            "+terminology": {},
+            "+usermgmt": {},
+            "+files_manager": {},
+            "+perseus": {},
+            "+white_rabbit": {},
+            "+trex": {},
+            "+storage": {},
+            "+strategus": {},
+            "+notebook": {},
+            "+network": {}
+           }
+          }
+         }
+        }
+      POSTGRES_MANAGE_USERS: |-
+        {
+         "${PG_DB_NAME:-alp}": {
+          "manager": "${PG_ADMIN_USER:-alp_pg_admin_user}",
+          "managerPassword": "${PG_ADMIN_PASSWORD}",
+          "reader": "${PG_WRITE_USER:-alp_pg_write_user}",
+          "readerPassword": "${PG_WRITE_PASSWORD}",
+          "writer": "${PG_WRITE_USER:-alp_pg_write_user}",
+          "writerPassword": "${PG_WRITE_PASSWORD}",
+          "logtoManager": "${PG_LOGTO_MANAGER:-${PG__LOGTO_MANAGER_USER:-logto_postgres}}",
+          "logtoManagerPassword": "${PG__LOGTO_MANAGER_PASSWORD}"
+         }
+        }
+      POSTGRES_MANAGE_ROLES_USERS: ${POSTGRES_MANAGE_ROLES_USERS:-{}}
       TREX_SQL_PASSWORD: ${TREX__SQL__PASSWORD:?TREX__SQL__PASSWORD must be set (run d2e init); refusing default pencil}
       TREX__SQL__PORT: ${TREX__SQL__PORT:-5433}
       TREX__SQL__DBNAME: postgres
@@ -250,38 +338,33 @@ services:
       TPM_USE_NODE_MODULES: "false"
       SERVICE_ROUTES: |-
         {
-        "analytics": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001",
-        "bookmark": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/analytics-svc/api/services/bookmark",
-        "cdw": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001",
-        "d2e-webapi": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/d2e-webapi",
-        "webapi": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/WebAPI",
-        "paConfig": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/pa-config-svc",
-        "trex": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001",
-        "queryGen": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001",
-        "jobplugins": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001",
-        "portalServer": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/system-portal",
-        "dataset": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/gateway/api/dataset",
-        "usermgmt": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/usermgmt/api",
-        "strategus-analysis": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001",
-        "terminology": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/terminology",
-        "prefect": "http://${PROJECT_NAME:-d2e}-dataflow-gen-1:41120/d2e/api",
-        "idIssuerUrl": "http://${PROJECT_NAME:-d2e}-logto-1:3001/oidc",
+        "analytics": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-d2e.local}:33001",
+        "bookmark": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-d2e.local}:33001/analytics-svc/api/services/bookmark",
+        "cdw": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-d2e.local}:33001",
+        "d2e-webapi": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-d2e.local}:33001/d2e-webapi",
+        "webapi": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-d2e.local}:33001/WebAPI",
+        "paConfig": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-d2e.local}:33001/pa-config-svc",
+        "trex": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-d2e.local}:33001",
+        "queryGen": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-d2e.local}:33001",
+        "jobplugins": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-d2e.local}:33001",
+        "portalServer": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-d2e.local}:33001/system-portal",
+        "dataset": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-d2e.local}:33001/gateway/api/dataset",
+        "usermgmt": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-d2e.local}:33001/usermgmt/api",
+        "strategus-analysis": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-d2e.local}:33001",
+        "terminology": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-d2e.local}:33001/terminology",
+        "prefect": "https://${PROJECT_NAME:-d2e}-dataflow-gen-1.${TLS__INTERNAL__DOMAIN:-d2e.local}:41120/d2e/api",
+        "idIssuerUrl": "https://${PROJECT_NAME:-d2e}-logto-1.${TLS__INTERNAL__DOMAIN:-d2e.local}:3001/oidc",
         "minio": "",
-        "filesManager": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/files-manager/api",
-        "whiteRabbit": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/white-rabbit/api",
-        "alpdb": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/gateway/api/db",
-        "dicomServer": "http://${PROJECT_NAME:-d2e}-dicom-server-1:8042",
-        "logto": "http://${PROJECT_NAME:-d2e}-logto-1:3001",
-        "jupyter-gateway": "http://${PROJECT_NAME:-d2e}-enterprise-gateway:8888/jupyter",
-        "jupyter-gateway-viewer": "http://${PROJECT_NAME:-d2e}-enterprise-gateway-viewer:8888/jupyter",
-        "docker-logs": "http://${PROJECT_NAME:-d2e}-logging-1:8080",
-        "supabaseStorage": "http://${PROJECT_NAME:-d2e}-supabase-storage-1:9000",
-        "dataflowStorage": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/system-portal/supabase-storage",
-        "mlflow": "http://${PROJECT_NAME:-d2e}-mlflow:5000",
-        "mcp-server": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/mcp/chat",
+        "filesManager": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-d2e.local}:33001/files-manager/api",
+        "whiteRabbit": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-d2e.local}:33001/white-rabbit/api",
+        "alpdb": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-d2e.local}:33001/gateway/api/db",
+        "logto": "https://${PROJECT_NAME:-d2e}-logto-1.${TLS__INTERNAL__DOMAIN:-d2e.local}:3001",
+        "supabaseStorage": "https://${PROJECT_NAME:-d2e}-supabase-storage-1.${TLS__INTERNAL__DOMAIN:-d2e.local}:9000",
+        "dataflowStorage": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-d2e.local}:33001/system-portal/supabase-storage",
+        "mcp-server": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-d2e.local}:33001/mcp/chat",
         "materializeCohorts": "https://${PROJECT_NAME:-d2e}-materialize-cohorts:3333",
-        "fhirServer": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:8094",
-        "fhirGateway": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/fhir-gateway"
+        "fhirServer": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-d2e.local}:8094",
+        "fhirGateway": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-d2e.local}:33001/fhir-gateway"
         }
       PG_SUPER_PASSWORD: ${PG_SUPER_PASSWORD}
       PG_SUPER_USER: ${PG_SUPER_USER:-postgres}
@@ -290,12 +373,12 @@ services:
       PG_PASSWORD: ${PG_WRITE_PASSWORD}
       PG_USER: ${PG_WRITE_USER:-alp_pg_write_user}
       PORTAL__LOG_DISCLAIMER: ${PORTAL__LOG_DISCLAIMER:-false}
-      PREFECT_API_URL: ${PREFECT_API_URL:-http://${PROJECT_NAME:-d2e}-dataflow-gen-1:41120/d2e/api}
+      PREFECT_API_URL: ${PREFECT_API_URL:-https://${PROJECT_NAME:-d2e}-dataflow-gen-1.${TLS__INTERNAL__DOMAIN:-d2e.local}:41120/d2e/api}
       # Gates the alp-dataflow-gen-init function (waitforEnvVar: PREFECT_HEALTH_CHECK)
       # so trex waits for the Prefect API to be reachable before seeding its
       # variables/blocks/workpool. Without it the init runs at boot before Prefect
       # is up, crashes with ECONNREFUSED, and DQD flow runs later fail with 500.
-      PREFECT_HEALTH_CHECK: ${PREFECT_HEALTH_CHECK:-http://${PROJECT_NAME:-d2e}-dataflow-gen-1:41120/d2e/api/health}
+      PREFECT_HEALTH_CHECK: ${PREFECT_HEALTH_CHECK:-https://${PROJECT_NAME:-d2e}-dataflow-gen-1.${TLS__INTERNAL__DOMAIN:-d2e.local}:41120/d2e/api/health}
       # The trex core auto-deploys flow plugins to Prefect (core/server/plugin/flow.ts):
       # it waits for a worker pool named PREFECT_POOL before registering deployments
       # and sets work_pool_name to it. Must match the pool created by the
@@ -335,13 +418,13 @@ services:
       LOGTO__D2E_DATA__CLIENT_SECRET: ${LOGTO__D2E_DATA__CLIENT_SECRET:-${LOGTO__ALP_DATA__CLIENT_SECRET}}
       # Must equal the iss claim Logto stamps into tokens (= Logto's ENDPOINT + /oidc).
       # Used by trex-TS authn middleware (JWKS URL) and portal config (iss validation).
-      LOGTO__ISSUER: http://${PROJECT_NAME:-d2e}-caddy:8080/oidc
+      LOGTO__ISSUER: https://${PROJECT_NAME:-d2e}-logto-1.${TLS__INTERNAL__DOMAIN:-d2e.local}:3001/oidc
       LOGTO__RESOURCE_API: https://alp-default
       LOGTO__SCOPE: ${LOGTO__SCOPE:-openid offline_access profile email}
       LOGTO__SVC_CLIENT_ID: ${LOGTO__D2E_SVC__CLIENT_ID:-${LOGTO__ALP_SVC__CLIENT_ID}}
       LOGTO__SVC_CLIENT_SECRET: ${LOGTO__D2E_SVC__CLIENT_SECRET:-${LOGTO__ALP_SVC__CLIENT_SECRET}}
-      LOGTO__TOKEN_URL: http://${PROJECT_NAME:-d2e}-logto-1:3001/oidc/token
-      LOGTO__ADMIN_SERVER__FQDN_URL: http://${PROJECT_NAME:-d2e}-logto-1:3002
+      LOGTO__TOKEN_URL: https://${PROJECT_NAME:-d2e}-logto-1.${TLS__INTERNAL__DOMAIN:-d2e.local}:3001/oidc/token
+      LOGTO__ADMIN_SERVER__FQDN_URL: https://${PROJECT_NAME:-d2e}-logto-1.${TLS__INTERNAL__DOMAIN:-d2e.local}:3002
       LOGTO__DEFAULT_TENANT__FQDN_URL: ${LOGTO__DEFAULT_TENANT__FQDN_URL:-https://default.logto.app/api}
       LOGTO__CLIENTID_PASSWORD__BASIC_AUTH: ${LOGTO__CLIENTID_PASSWORD__BASIC_AUTH}
       LOGTO_API_M2M_CLIENT_ID: ${LOGTO_API_M2M_CLIENT_ID}
@@ -387,7 +470,6 @@ services:
       USE_PUBLIC_WEBAPI_PROXY: ${USE_PUBLIC_WEBAPI_PROXY:-false}
       PUBLIC_WEBAPI_PROXY_URL: ${PUBLIC_WEBAPI_PROXY_URL:-http://localhost:3001}
       PUBLIC_WEBAPI_DATASOURCE: ${PUBLIC_WEBAPI_DATASOURCE:-SYNPUF1K}
-      REDIS_PASSWORD: ${REDIS_PASSWORD}
       SQL_RETURN_ON: ${SQL_RETURN_ON:-false}
       AZURE_OPENAI_API_KEY: ${AZURE_OPENAI_API_KEY:-}
       AZURE_OPENAI_API_ENDPOINT: ${AZURE_OPENAI_API_ENDPOINT:-}
@@ -479,91 +561,9 @@ services:
       OTEL_EXPORTER_OTLP_HEADERS: ${OTEL_EXPORTER_OTLP_HEADERS:-}
       OTEL_SERVICE_NAME: ${OTEL_SERVICE_NAME:-}
 
-  alp-minerva-pg-mgmt-init:
-    container_name: &c15 ${PROJECT_NAME:-d2e}-minerva-pg-mgmt-init-1
-    depends_on:
-      alp-minerva-postgres:
-        condition: service_healthy
-    hostname: ${PROJECT_NAME:-d2e}-minerva-pg-mgmt-init-1.${TLS__INTERNAL__DOMAIN:-alp.local}
-    image: ${DOCKER_IMAGE_PREFIX:-ghcr.io/ohdsi/}d2e-pg-mgmt-init:${DOCKER_TAG_NAME:-develop}
-    logging:
-      options:
-        tag: *c15
-    networks:
-      alp:
-        priority: 20
-    platform: linux/amd64
-    environment:
-      <<:
-        - *x-tls
-      NODE_ENV: development
-      ALP_DB_LOGLEVEL: ${ALP_DB_LOGLEVEL:-info}
-      POSTGRES_CONNECTION_CONFIG: |-
-        {
-         "connectionTimeoutMillis": 60000,
-         "database": "${PG_DB_NAME:-alp}",
-         "host": "${PG_HOST:-${PROJECT_NAME:-d2e}-minerva-postgres-1}",
-         "idle_in_transaction_session_timeout": 60000,
-         "password": "${PG_SUPER_PASSWORD}",
-         "port": "${PG_PORT:-5432}",
-         "query_timeout": 60000,
-         "statement_timeout": 60000,
-         "user": "${PG_SUPER_USER:-postgres}",
-         "ssl": false
-        }
-      POSTGRES_MANAGE_CONFIG: |-
-        {
-         "databases": {
-          "+${PG_DB_NAME:-alp}": {
-           "schemas": {
-            "+cdw_config": {},
-            "+jobplugins": {},
-            "+logto": {},
-            "+portal": {},
-            "+public": {},
-            "+qe_config": {},
-            "+terminology": {},
-            "+usermgmt": {},
-            "+files_manager": {},
-            "+perseus": {},
-            "+white_rabbit": {},
-            "+trex": {},
-            "+storage": {},
-            "+strategus": {},
-            "+notebook": {},
-            "+network": {}
-           }
-          }
-         }
-        }
-      POSTGRES_ALTER_EXTENSION_CONFIG: |-
-        {
-         "databases": {
-          }
-        }
-      POSTGRES_MANAGE_USERS: |-
-        {
-         "${PG_DB_NAME:-alp}": {
-          "manager": "${PG_ADMIN_USER:-alp_pg_admin_user}",
-          "managerPassword": "${PG_ADMIN_PASSWORD}",
-          "reader": "${PG_WRITE_USER:-alp_pg_write_user}",
-          "readerPassword": "${PG_WRITE_PASSWORD}",
-          "writer": "${PG_WRITE_USER:-alp_pg_write_user}",
-          "writerPassword": "${PG_WRITE_PASSWORD}",
-          "logtoManager": "${PG_LOGTO_MANAGER:-${PG__LOGTO_MANAGER_USER:-logto_postgres}}",
-          "logtoManagerPassword": "${PG__LOGTO_MANAGER_PASSWORD}"
-         }
-        }
-      POSTGRES_MANAGE_ROLES_USERS: ${POSTGRES_MANAGE_ROLES_USERS:-{}}
-      POSTGRES_SUPERUSER: ${PG_SUPER_USER:-postgres}
-      POSTGRES_SUPERUSER_PASSWORD: ${PG_SUPER_PASSWORD}
-      POSTGRES_CONFIG_DB_NAME: ${PG_DB_NAME:-alp}
-      PORT: 41110
-      sqlOnly: false
-
   alp-caddy:
     container_name: &c1 ${PROJECT_NAME:-d2e}-caddy
-    hostname: ${PROJECT_NAME:-d2e}-caddy.${TLS__INTERNAL__DOMAIN:-alp.local}
+    hostname: ${PROJECT_NAME:-d2e}-caddy.${TLS__INTERNAL__DOMAIN:-d2e.local}
     platform: linux/amd64
     image: caddy:2.8-alpine
     logging:
@@ -572,13 +572,10 @@ services:
     networks:
       alp:
         priority: 20
-      enterprise-gateway:
-        priority: 20
-      enterprise-gateway-viewer:
-        priority: 20
     command: >
       sh -c "
         mkdir -p /srv/caddy-config &&
+        printf '%s' \"$$TLS__INTERNAL__CA_CRT\" > /srv/caddy-config/ca.pem &&
         cat <<EOT > /srv/caddy-config/Caddyfile
         {
           debug
@@ -637,7 +634,7 @@ services:
 
           handle @logto {
             uri strip_prefix /d2e/logto
-            reverse_proxy http://${PROJECT_NAME:-d2e}-logto-1:3001 {
+            reverse_proxy https://${PROJECT_NAME:-d2e}-logto-1.${TLS__INTERNAL__DOMAIN:-d2e.local}:3001 {
               import ${PROXY_HEADERS_MODE:-proxy_headers_default}
               # Host + X-Forwarded-* make Logto (TRUST_PROXY_HEADER=true) emit external URLs
               # for browser-facing endpoints (authorize/sign-in). The issuer claim itself is
@@ -645,49 +642,10 @@ services:
               # lets WebAPI's Spring OAuth2 client validate iss without TLS/DNS gymnastics.
               header_up Host ${CADDY__D2E__PUBLIC_FQDN:-${CADDY__ALP__PUBLIC_FQDN:-localhost}}${PORT:+:${PORT:-443}}
               transport http {
-                read_buffer 8192
-              }
-            }
-          }
-
-          @jupyter_websocket {
-            path /jupyter/*
-            header Connection *Upgrade*
-            header Upgrade websocket
-          }
-
-          @strategus_websocket {
-            path /strategus-results/*
-            header Connection *Upgrade*
-            header Upgrade websocket
-          }
-          
-          handle @jupyter_websocket {
-            reverse_proxy https://${PROJECT_NAME:-d2e}-trex:33000 {
-              transport http {
                 tls
-                tls_insecure_skip_verify
+                tls_trust_pool file /srv/caddy-config/ca.pem
                 read_buffer 8192
               }
-              method GET
-              rewrite /usermgmt/api/me/is_token_valid_internal
-              header_up X-Forwarded-Method {method}
-              header_up X-Forwarded-Uri {uri}
-              header_up authorization {http.request.uri.query.token}
-              @good status 2xx
-              handle_response @good {
-                request_header Remote-User {rp.header.Remote-User}
-                request_header Remote-Email {rp.header.Remote-Email}
-              }
-            }
-            reverse_proxy @jupyter_websocket http://${PROJECT_NAME:-d2e}-enterprise-gateway:8888
-          }
-
-          handle @strategus_websocket {
-            @study_id path_regexp ^/strategus-results/([^/]+)/(.*)$
-            handle @study_id {
-              uri strip_prefix /strategus-results/{re.1}
-              reverse_proxy {re.1}:3838
             }
           }
 
@@ -742,7 +700,12 @@ services:
             path /oidc/*
           }
           handle @oidc {
-            reverse_proxy http://${PROJECT_NAME:-d2e}-logto-1:3001
+            reverse_proxy https://${PROJECT_NAME:-d2e}-logto-1.${TLS__INTERNAL__DOMAIN:-d2e.local}:3001 {
+              transport http {
+                tls
+                tls_trust_pool file /srv/caddy-config/ca.pem
+              }
+            }
           }
 
           # Enable if need to access admin console
@@ -798,32 +761,31 @@ services:
       INSTANCE_SPECIFIC_CONFIG: ${INSTANCE_SPECIFIC_CONFIG:-}
       CADDY__D2E__ALIAS_PUBLIC_FQDN: ${CADDY__D2E__ALIAS_PUBLIC_FQDN:-${CADDY__ALP__ALIAS_PUBLIC_FQDN:-}}
       PROJECT_NAME: ${PROJECT_NAME:-d2e}
+      # Read by the entrypoint above to write /srv/caddy-config/ca.pem, which the
+      # tls_trust_pool directives use. Only the CA is passed — not the *x-tls
+      # anchor — so the internal private key stays out of this container.
+      TLS__INTERNAL__CA_CRT: ${TLS__INTERNAL__CA_CRT}
 
   alp-dataflow-gen:
-    command:
-      - sh
-      - -c
-      - "prefect server start"
     container_name: &c2 ${PROJECT_NAME:-d2e}-dataflow-gen-1
     depends_on:
       alp-logto-post-init:
         condition: service_completed_successfully
-      alp-minerva-pg-mgmt-init:
-        condition: service_completed_successfully
+      # Needs the alp_pg_* users, which trex's bootstrap creates.
+      trex:
+        condition: service_healthy
     healthcheck:
       interval: 30s
       retries: 30
       start_period: 30s
       test:
         [
-          "CMD",
-          "python",
-          "-c",
-          "import urllib.request, sys; sys.exit(0 if 200 <= urllib.request.urlopen('http://localhost:41120/d2e/api/health', timeout=5).getcode() < 300 else 1)",
+          "CMD-SHELL",
+          "curl -fk https://localhost:41120/d2e/api/health || exit 1",
         ]
       timeout: 30s
-    hostname: dataflow-gen-1
-    image: prefecthq/prefect:3.6.10-python3.12
+    hostname: &dataflow-gen-hostname ${PROJECT_NAME:-d2e}-dataflow-gen-1.${TLS__INTERNAL__DOMAIN:-d2e.local}
+    image: ${DOCKER_IMAGE_PREFIX:-ghcr.io/ohdsi/}d2e-dataflow-gen:${DOCKER_TAG_NAME:-develop}
     platform: linux/amd64
     logging:
       options:
@@ -840,18 +802,27 @@ services:
         - *x-pg
         - *x-tls
       LOCAL_DEBUG: "false"
+      DATAFLOW_GEN_HOSTNAME: *dataflow-gen-hostname
       PREFECT_API_DATABASE_CONNECTION_URL: postgresql+asyncpg://${PG_SUPER_USER:-postgres}:${PG_SUPER_PASSWORD}@${PG_HOST:-${PROJECT_NAME:-d2e}-minerva-postgres-1}:${PG_PORT:-5432}/${PG_DB_NAME:-alp}
       PREFECT_API_DEFAULT_LIMIT: 5000
       PREFECT_SERVER_API_BASE_PATH: /d2e/api
       PREFECT_UI_SERVE_BASE: /d2e
-      PREFECT_UI_API_URL: http://0.0.0.0:41120/d2e/api
-      PREFECT_UI_URL: http://0.0.0.0:41120/d2e
+      # Relative API URL: the UI calls whatever origin it was loaded from
+      # (localhost, 127.0.0.1, or the Caddy public FQDN), so API calls stay
+      # same-origin and avoid the cross-origin CORS preflight that the
+      # in-container nginx answers with 503. Must line up with
+      # PREFECT_SERVER_API_BASE_PATH (/d2e/api) above.
+      PREFECT_UI_API_URL: /d2e/api
+      PREFECT_UI_URL: https://127.0.0.1:41120/d2e
       PREFECT_LOGGING_LEVEL: DEBUG
       PREFECT_LOGGING_SERVER_LEVEL: WARNING
       PREFECT_SERVER_ANALYTICS_ENABLED: "false"
-      PREFECT_SERVER_API_HOST: 0.0.0.0
+      # Prefect itself stays on loopback, HTTP only; nginx (started by the
+      # image's entrypoint.sh) is the only thing listening on 41120/the
+      # docker network, terminating TLS with the shared TLS__INTERNAL__* cert.
+      PREFECT_SERVER_API_HOST: 127.0.0.1
       PREFECT_UI_STATIC_DIRECTORY: /app/ui-files
-      PREFECT_SERVER_API_PORT: 41120
+      PREFECT_SERVER_API_PORT: 41121
       PREFECT_API_ENABLE_HTTP2: False
 
   # Pixi process worker: flow runs execute as subprocesses in per-plugin pixi
@@ -869,10 +840,14 @@ services:
       - -c
       - >-
         rm -rf /root/.prefect/storage/run_cache.db /root/.prefect/storage/events.db;
+        printf '%s\n' "$$TLS__INTERNAL__CA_CRT" > /usr/local/share/ca-certificates/d2e-internal-ca.crt;
+        update-ca-certificates;
+        printf '\n%s\n' "$$TLS__INTERNAL__CA_CRT" >> "$$(python -c 'import certifi; print(certifi.where())')";
         prefect work-pool create '${PREFECT_POOL:-process-pool}' --type ${WORKPOOL_TYPE:-process};
         prefect worker start --pool '${PREFECT_POOL:-process-pool}' --type ${WORKPOOL_TYPE:-process}
         --name prefect-${WORKPOOL_TYPE:-process}-worker --with-healthcheck
         --limit ${D2E_WORKER_FLOW_RUN_LIMIT:-3}
+
     container_name: &c83 ${PROJECT_NAME:-d2e}-dataflow-gen-worker
     platform: linux/amd64
     depends_on:
@@ -896,7 +871,7 @@ services:
           "import urllib.request, sys; sys.exit(0 if 200 <= urllib.request.urlopen('http://localhost:8080/health', timeout=5).getcode() < 300 else 1)",
         ]
       timeout: 30s
-    hostname: ${PROJECT_NAME:-d2e}-dataflow-gen-worker.${TLS__INTERNAL__DOMAIN:-alp.local}
+    hostname: ${PROJECT_NAME:-d2e}-dataflow-gen-worker.${TLS__INTERNAL__DOMAIN:-d2e.local}
     image: ${DOCKER_IMAGE_PREFIX:-ghcr.io/ohdsi/}d2e-dataflow-gen-worker:${DOCKER_TAG_NAME:-develop}
     logging:
       options:
@@ -910,8 +885,17 @@ services:
       # not volumes. The docker.sock mount is gone with the docker worker.
       - trex:/app/duckdb_data
     environment:
-      PREFECT_API_URL: http://${PROJECT_NAME:-d2e}-dataflow-gen-1:41120/d2e/api
+      <<:
+        - *x-tls
+      PREFECT_API_URL: https://${PROJECT_NAME:-d2e}-dataflow-gen-1.${TLS__INTERNAL__DOMAIN:-d2e.local}:41120/d2e/api
       PREFECT_API_ENABLE_HTTP2: False
+      # Trust the internal self-signed CA across all Python HTTP stacks. The
+      # command writes the CA into the OS store (update-ca-certificates) and the
+      # certifi bundle; these point urllib/requests at the OS bundle (which then
+      # includes the CA). provision-envs (entrypoint, urllib) picks it up on its
+      # next 30s poll once the command has run.
+      SSL_CERT_FILE: /etc/ssl/certs/ca-certificates.crt
+      REQUESTS_CA_BUNDLE: /etc/ssl/certs/ca-certificates.crt
       INSTALL_SQLALCHEMY_HANA: ${INSTALL_SQLALCHEMY_HANA:-true}
       # trex-embedded supabase storage (artifact source); service key = JWT
       # with role service_role signed with trex's PGRST_JWT_SECRET
@@ -957,8 +941,33 @@ services:
       alp:
         priority: 20
     platform: linux/amd64
+    # The image's ENTRYPOINT is ["npm","run","seed"] with no shell, so the CA has
+    # to be written here. NODE_EXTRA_CA_CERTS is the only route that works in this
+    # image: it has no update-ca-certificates, and Node does not read the OS trust
+    # store anyway. Verified that Node 18's global fetch (undici) honours it.
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        mkdir -p /tmp/cert
+        printf '%s' "$$TLS__INTERNAL__CA_CRT" > /tmp/cert/ca.pem
+        if [ ! -s /tmp/cert/ca.pem ]; then
+          echo "FATAL: TLS__INTERNAL__CA_CRT is empty; refusing to seed without CA trust" >&2
+          exit 1
+        fi
+        export NODE_EXTRA_CA_CERTS=/tmp/cert/ca.pem
+        exec npm run seed
     environment:
       ENV_TYPE: ${ENV_TYPE:-local}
+      # This container POSTs the M2M client secret, the basic-auth credentials and
+      # every LOGTO__CLIENT_APPS secret to logto's admin API over the internal TLS
+      # endpoint, so it verifies that endpoint against the internal CA. Only the CA
+      # is passed, not the *x-tls anchor, which would also hand it the internal
+      # private key it has no use for.
+      TLS__INTERNAL__CA_CRT: ${TLS__INTERNAL__CA_CRT}
+      # Used by src/middleware/logto.ts to derive the admin-server URL when
+      # LOGTO__ADMIN_SERVER__FQDN_URL is unset; without it the fallback assumes a
+      # container name the deployment may not use.
+      PROJECT_NAME: ${PROJECT_NAME:-d2e}
       PG__DB_NAME: alp
       PG__HOST: ${PG_HOST:-${PROJECT_NAME:-d2e}-minerva-postgres-1}
       PG__PASSWORD: ${PG__LOGTO_MANAGER_PASSWORD}
@@ -989,7 +998,7 @@ services:
       LOGTO__ROLES: '[{"name":"role.systemadmin","description":"System admin","type":"User"},{"name":"role.useradmin","description":"User admin","type":"User"},{"name":"role.dashboardviewer","description":"Dashboard viewer","type":"User"},{"name":"role.viewer","description":"Viewer","type":"User"},{"name":"role.jobrunner","description":"Job runner","type":"User"},{"name":"role.studyresultsreader","description":"Study results reader","type":"User"},{"name":"role.etlmappingcontributor","description":"ETL mapping contributor","type":"User"}]'
       LOGTO__SCOPES: '[{"name":"role.systemadmin","description":"System admin"},{"name":"role.useradmin","description":"User admin"},{"name":"role.dashboardviewer","description":"Dashboard viewer"},{"name":"role.viewer","description":"Viewer"},{"name":"role.jobrunner","description":"Job runner"},{"name":"role.studyresultsreader","description":"Study results reader"},{"name":"role.etlmappingcontributor","description":"ETL mapping contributor"},{"name":"admin","description":"WebAPI admin role"},{"name":"anonymous","description":"WebAPI anonymous role"},{"name":"cohort-reader","description":"WebAPI cohort reader role (rewritten to \"cohort reader\" by JWT customizer)"},{"name":"cohort-creator","description":"WebAPI cohort creator role (rewritten to \"cohort creator\" by JWT customizer)"},{"name":"concept-set-creator","description":"WebAPI concept set creator role (rewritten to \"concept set creator\" by JWT customizer)"}]'
       LOGTO__ROLES_SCOPES: '[{"roleName":"role.systemadmin","scopeNames":["role.systemadmin","admin"]},{"roleName":"role.useradmin","scopeNames":["role.useradmin"]},{"roleName":"role.dashboardviewer","scopeNames":["role.dashboardviewer"]},{"roleName":"role.viewer","scopeNames":["role.viewer","anonymous"]},{"roleName":"role.jobrunner","scopeNames":["role.jobrunner"]},{"roleName":"role.studyresultsreader","scopeNames":["role.studyresultsreader"]},{"roleName":"role.etlmappingcontributor","scopeNames":["role.etlmappingcontributor"]}]'
-      LOGTO__ADMIN_SERVER__FQDN_URL: "http://${PROJECT_NAME:-d2e}-logto-1:3002"
+      LOGTO__ADMIN_SERVER__FQDN_URL: "https://${PROJECT_NAME:-d2e}-logto-1.${TLS__INTERNAL__DOMAIN:-d2e.local}:3002"
       LOGTO__CLIENTID_PASSWORD__BASIC_AUTH: ${LOGTO__CLIENTID_PASSWORD__BASIC_AUTH}
       LOGTO__ALP_ADMIN_APP: '{"application": {"id": "${LOGTO_API_M2M_CLIENT_ID}", "name":"alp-admin","description":"alp-admin", "secret": "${LOGTO_API_M2M_CLIENT_SECRET}"}, "role": { "name":"api-access","description":"Logto API access"}}'
       LOGTO__TERM_OF_USE_URL: ${LOGTO__TERM_OF_USE_URL:-}
@@ -1000,8 +1009,10 @@ services:
   alp-logto:
     container_name: &c8 ${PROJECT_NAME:-d2e}-logto-1
     depends_on:
-      alp-minerva-pg-mgmt-init:
-        condition: service_completed_successfully
+      # Only Postgres: the wait for trex's bootstrap is the beacon poll in the
+      # entrypoint below, not a depends_on edge (that would be circular).
+      alp-minerva-postgres:
+        condition: service_healthy
     healthcheck:
       interval: 20s
       retries: 30
@@ -1011,10 +1022,11 @@ services:
         - wget
         - --proxy
         - off
+        - --no-check-certificate
         - -O
         - logto.status
-        - http://localhost:3001/api/status
-    hostname: ${PROJECT_NAME:-d2e}-logto-1.${TLS__INTERNAL__DOMAIN:-alp.local}
+        - https://localhost:3001/api/status
+    hostname: ${PROJECT_NAME:-d2e}-logto-1.${TLS__INTERNAL__DOMAIN:-d2e.local}
     platform: linux/amd64
     image: ${DOCKER_IMAGE_PREFIX:-ghcr.io/ohdsi/}d2e-logto:${DOCKER_TAG_NAME:-develop}
     logging:
@@ -1028,7 +1040,55 @@ services:
     entrypoint:
       - sh
       - -c
-      - npm run cli db seed -- --swe && npm run cli db alteration deploy latest && node packages/core/d2e-grants.mjs && npm start
+      - |
+        # TLS material first: it is instant, and the guard below then fails fast on a
+        # misconfiguration instead of after the multi-minute database wait further down.
+        # umask is scoped to the writes so the private key lands 0600 while cert.pem
+        # and ca.pem stay readable to non-root consumers.
+        (
+          umask 077
+          mkdir -p /tmp/cert
+          printf '%s' "$$TLS__INTERNAL__CRT" > /tmp/cert/cert.pem
+          printf '%s' "$$TLS__INTERNAL__KEY" > /tmp/cert/key.pem
+          printf '%s' "$$TLS__INTERNAL__CA_CRT" > /tmp/cert/ca.pem
+        )
+        for pair in cert:TLS__INTERNAL__CRT key:TLS__INTERNAL__KEY ca:TLS__INTERNAL__CA_CRT; do
+          if [ ! -s "/tmp/cert/$${pair%%:*}.pem" ]; then
+            echo "FATAL: $${pair##*:} is empty; refusing to start" >&2
+            exit 1
+          fi
+        done
+        export HTTPS_CERT_PATH=/tmp/cert/cert.pem
+        export HTTPS_KEY_PATH=/tmp/cert/key.pem
+        export NODE_EXTRA_CA_CERTS=/tmp/cert/ca.pem
+        # Wait for trex's DB bootstrap to create logto_postgres and the logto
+        # schema before migrating. This is a poll rather than a depends_on
+        # because trex -> alp-logto-post-init -> alp-logto already exists, so an
+        # edge back to trex would be a circular dependency.
+        # The gate has to be the privilege, not the schema. trex creates the schema
+        # owned by postgres and grants logto_postgres CREATE on it as a separate
+        # step, so a gate on existence alone lets logto start inside that window;
+        # it then half-seeds and dies, and because the seed is not idempotent for
+        # its logto_tenant_* roles, every later restart fails on "role already
+        # exists" - a permanent crash loop from one early start.
+        # The seed opens with `create schema if not exists logto`, and Postgres
+        # checks CREATE on the database before it checks whether the schema
+        # exists, so database CREATE is part of the gate too.
+        # Connecting proves the login exists, the privilege checks prove the
+        # grants landed. node is used deliberately: this image has neither curl nor
+        # wget, but it does ship the pg client logto itself runs on.
+        until node -e "
+          const { Client } = require('pg');
+          const c = new Client({ connectionString: process.env.DB_URL });
+          c.connect()
+            .then(() => c.query(\"select has_database_privilege(current_user, current_database(), 'CREATE') and case when to_regnamespace('logto') is null then false else has_schema_privilege(current_user, 'logto', 'CREATE') end as ok\"))
+            .then(r => { c.end(); process.exit(r.rows[0].ok ? 0 : 1); })
+            .catch(() => { try { c.end(); } catch (_) {} process.exit(1); });
+        "; do
+          echo "waiting for the trex database bootstrap ..."
+          sleep 2
+        done
+        npm run cli db seed -- --swe && npm run cli db alteration deploy latest && node packages/core/d2e-grants.mjs && npm start
     restart: ${DOCKER__RESTART_POLICY:-unless-stopped}
     environment:
       <<:
@@ -1040,7 +1100,15 @@ services:
       # It must be reachable by backend services (e.g. WebAPI) that validate iss by fetching discovery.
       # Browser-visible URLs are derived per-request via TRUST_PROXY_HEADER=true + X-Forwarded-* from Caddy,
       # so users still see https://localhost:41100/... for sign-in/authorize.
-      ENDPOINT: http://${PROJECT_NAME:-d2e}-caddy:8080
+      ENDPOINT: https://${PROJECT_NAME:-d2e}-logto-1.${TLS__INTERNAL__DOMAIN:-d2e.local}:3001
+      # Base URL the bundled connectors (alp-azuread, alp-entra-external-id) use to
+      # call Logto's own API. They defaulted to http://localhost:$PORT, but with
+      # HTTPS_CERT_PATH set there is no plaintext listener left, so those calls now
+      # fail with ECONNRESET — which only shows up once a social connector is
+      # configured. It must be a name the internal cert covers: `localhost` is not
+      # in the SAN, hence the container's own FQDN. Verified against the internal CA
+      # via NODE_EXTRA_CA_CERTS above; there is no verification bypass.
+      LOGTO__SELF_BASE_URL: https://${PROJECT_NAME:-d2e}-logto-1.${TLS__INTERNAL__DOMAIN:-d2e.local}:3001
       LOGTO_API_M2M_CLIENT_ID: ${LOGTO_API_M2M_CLIENT_ID}
       LOGTO_API_M2M_CLIENT_SECRET: ${LOGTO_API_M2M_CLIENT_SECRET}
       LOGTO_ROLES_AZ_GROUPS_MAPPING: ${LOGTO_ROLES_AZ_GROUPS_MAPPING:-{"role.systemadmin":"37b5364a-348c-494f-b67f-a59a40e52ab7","role.useradmin":"90597adc-92af-4649-8151-68c3b7feb66c","role.dashboardviewer":"50a3b140-21eb-46dd-9d81-61a77cbc81f5"}}
@@ -1062,7 +1130,7 @@ services:
         - -d
         - ${POSTGRES_DB}
       timeout: 30s
-    hostname: ${PROJECT_NAME:-d2e}-minerva-postgres-1.${TLS__INTERNAL__DOMAIN:-alp.local}
+    hostname: ${PROJECT_NAME:-d2e}-minerva-postgres-1.${TLS__INTERNAL__DOMAIN:-d2e.local}
     image: postgres:15-alpine
     logging:
       options:
@@ -1071,10 +1139,6 @@ services:
       alp:
         priority: 20
       data:
-        priority: 10
-      enterprise-gateway:
-        priority: 10
-      enterprise-gateway-viewer:
         priority: 10
     restart: ${DOCKER__RESTART_POLICY:-unless-stopped}
     command:
@@ -1092,30 +1156,6 @@ services:
         - *x-tls
       POSTGRES_DB: ${PG_DB_NAME:-alp}
       POSTGRES_PASSWORD: ${PG_SUPER_PASSWORD}
-
-  # Applies the trex `notebook` schema migrations into the alp DB so
-  # PostGraphile can persist studies/notebooks. Idempotent (CREATE ... IF NOT
-  # EXISTS) so re-runs are safe.
-  notebook-migrate:
-    container_name: ${PROJECT_NAME:-d2e}-notebook-migrate
-    image: postgres:16
-    depends_on:
-      alp-minerva-postgres:
-        condition: service_healthy
-    networks:
-      alp:
-        priority: 20
-      data:
-        priority: 10
-    environment:
-      PGPASSWORD: ${PG_SUPER_PASSWORD}
-    volumes:
-      - ./services/trex/migrations/notebook:/migrations/notebook:ro
-    entrypoint:
-      - /bin/sh
-      - -c
-      - 'for f in /migrations/notebook/V*.sql; do echo "applying $$f"; psql -h ${PG_HOST:-${PROJECT_NAME:-d2e}-minerva-postgres-1} -U postgres -d alp -v ON_ERROR_STOP=1 -f "$$f"; done'
-    restart: "no"
 
   demodb:
     image: ohdsi/broadsea-atlasdb:2.3.0
@@ -1158,25 +1198,6 @@ services:
       retries: 10
     restart: ${DOCKER__RESTART_POLICY:-unless-stopped}
 
-  redis:
-    command: redis-server --requirepass ${REDIS_PASSWORD}
-    container_name: &c26 ${PROJECT_NAME:-d2e}-minerva-redis-1
-    healthcheck:
-      interval: 20s
-      retries: 10
-      start_period: 60s
-      timeout: 30s
-      test: redis-cli --no-auth-warning -a ${REDIS_PASSWORD} ping | grep PONG
-    hostname: ${PROJECT_NAME:-d2e}-minerva-redis-1.${TLS__INTERNAL__DOMAIN:-alp.local}
-    image: redis:7
-    logging:
-      options:
-        tag: *c26
-    networks:
-      alp:
-        priority: 20
-    restart: ${DOCKER__RESTART_POLICY:-unless-stopped}
-
   supabase-storage:
     container_name: &c19 ${PROJECT_NAME:-d2e}-supabase-storage-${BASE_PORT:-1}
     depends_on:
@@ -1184,25 +1205,26 @@ services:
         condition: service_healthy
       alp-minerva-postgres:
         condition: service_healthy
-      alp-minerva-pg-mgmt-init:
-        condition: service_completed_successfully
     platform: linux/amd64
     healthcheck:
-      test:
-        [
-          "CMD",
-          "wget",
-          "--proxy=off",
-          "--no-verbose",
-          "--tries=1",
-          "--spider",
-          "http://${PROJECT_NAME:-d2e}-supabase-storage-1:9000/status",
-        ]
+      # localhost is not a SAN on the internal cert, so validation is skipped here
+      # (the CA chain itself is exercised by callers on the docker network).
+      test: ["CMD-SHELL", "curl -fk https://localhost:9000/status || exit 1"]
       timeout: 30s
       interval: 10s
       retries: 20
       start_period: 40s
-    # Use custom image with postgresql-client pre-installed for offline capability
+    # Must be the FQDN: the internal cert's only SAN is *.${TLS__INTERNAL__DOMAIN}.
+    hostname: ${PROJECT_NAME:-d2e}-supabase-storage-1.${TLS__INTERNAL__DOMAIN:-d2e.local}
+    # Custom image: postgresql-client pre-installed for offline capability, plus
+    # nginx terminating internal TLS in front of storage-api (no native TLS).
+    #
+    # Build it locally before the first start:  docker compose build supabase-storage
+    # (docker-compose-local.yml carries the build stanza; `npm run start` does not
+    # build.) The entrypoint below lives only in this custom image, so a published
+    # tag built before that entrypoint existed fails to start with
+    # `stat /usr/src/entrypoint.sh: no such file or directory`. CI is unaffected —
+    # it builds this image from source and deploys it by run tag.
     image: ${DOCKER_IMAGE_PREFIX:-ghcr.io/ohdsi/}d2e-supabase-storage:${DOCKER_TAG_NAME:-develop}
     logging:
       options:
@@ -1215,7 +1237,9 @@ services:
     restart: ${DOCKER__RESTART_POLICY:-unless-stopped}
     volumes:
       - supabase-storage-data:/var/lib/storage
-    entrypoint: ["/bin/sh", "-c"]
+    # The image entrypoint writes the internal cert and starts nginx, then execs
+    # its arguments -- so the command below still runs exactly as before.
+    entrypoint: ["/usr/src/entrypoint.sh", "/bin/sh", "-c"]
     command: >
       "set -e;
       echo 'Waiting 30 seconds for trex migrations...';
@@ -1239,7 +1263,13 @@ services:
       <<:
         - *x-tls
       PROJECT_REF: ${PROJECT_REF:-default}
-      PORT: 9000
+      # storage-api stays on loopback, HTTP only; nginx (started by the image's
+      # entrypoint.sh) is the only thing listening on 9000/the docker network,
+      # terminating TLS with the shared TLS__INTERNAL__* cert. Resolution order in
+      # the image's config is SERVER_HOST || HOST and SERVER_PORT || PORT.
+      SERVER_HOST: 127.0.0.1
+      SERVER_PORT: 9001
+      PORT: 9001
       FILE_SIZE_LIMIT: 1048576000
       DATABASE_URL: postgres://${PG_SUPER_USER:-postgres}:${PG_SUPER_PASSWORD}@${PG_HOST:-${PROJECT_NAME:-d2e}-minerva-postgres-1}:${PG_PORT:-5432}/${PG_DB_NAME:-alp}
       PGRST_JWT_SECRET: ${SUPABASE_STORAGE_JWT_SECRET:?SUPABASE_STORAGE_JWT_SECRET must be set (run d2e init); refusing a known default secret}
@@ -1249,127 +1279,15 @@ services:
       SKIP_MIGRATIONS: "false"
       STORAGE_BACKEND: file
       GLOBAL_S3_BUCKET: stub
-      GLOBAL_S3_ENDPOINT: http://supabase-storage:9000/s3
-      GLOBAL_S3_PROTOCOL: "http"
+      # Inert under STORAGE_BACKEND=file, but kept consistent: the old value used the
+      # compose service name, which is not a SAN on the internal cert -- the FQDN is
+      # required if the S3 backend ever goes live.
+      GLOBAL_S3_ENDPOINT: https://${PROJECT_NAME:-d2e}-supabase-storage-1.${TLS__INTERNAL__DOMAIN:-d2e.local}:9000/s3
+      GLOBAL_S3_PROTOCOL: "https"
       GLOBAL_S3_FORCE_PATH_STYLE: true
       FILE_STORAGE_BACKEND_PATH: /var/lib/storage
       TENANT_ID: stub
       REGION: stub
-
-  dicom-server:
-    # uses 8042 port on the container
-    image: orthancteam/orthanc:24.6.1
-    container_name: &c27 ${PROJECT_NAME:-d2e}-dicom-server-${BASE_PORT:-1}
-    logging:
-      options:
-        tag: *c27
-    restart: ${DOCKER__RESTART_POLICY:-unless-stopped}
-    networks:
-      alp:
-      data:
-    hostname: ${PROJECT_NAME:-d2e}-dicom-server-1.${TLS__INTERNAL__DOMAIN:-alp.local}
-    environment:
-      VERBOSE_ENABLED: true
-      VERBOSE_STARTUP: true
-      ORTHANC__NAME: D2E Dicom Service
-      ORTHANC__AWS_S3_STORAGE__BUCKET_NAME: dicom-images
-      ORTHANC__AWS_S3_STORAGE__ENDPOINT: http://${MINIO__ENDPOINT:-alp-minerva-s3}:${MINIO__PORT:-9000}
-      ORTHANC__AWS_S3_STORAGE__ACCESS_KEY: ${MINIO__ACCESS_KEY:-root}
-      ORTHANC__AWS_S3_STORAGE__SECRET_KEY: ${MINIO__SECRET_KEY}
-      ORTHANC__AWS_S3_STORAGE__VIRTUAL_ADDRESSING: false
-      ORTHANC__AWS_S3_STORAGE__REGION: ${MINIO__REGION:-ap-southeast-1}
-      ORTHANC__AUTHENTICATION_ENABLED: false
-    healthcheck:
-      test:
-        [
-          "CMD-SHELL",
-          "/probes/test-aliveness.py --user=healthcheck --pwd=${DICOM__HEALTH_CHECK_PASSWORD}",
-        ]
-      start_period: 10s
-      interval: 20s
-      retries: 20
-      timeout: 60s
-    volumes:
-      - dicom-sqlite-storage:/var/lib/orthanc/db
-    profiles: [dicom]
-
-  enterprise-gateway:
-    image: ${DOCKER_IMAGE_PREFIX:-ghcr.io/ohdsi/}d2e-enterprise-gateway:${DOCKER_TAG_NAME:-develop}
-    container_name: &c28 ${PROJECT_NAME:-d2e}-enterprise-gateway
-    healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8888/jupyter/api || exit 1"]
-      interval: 30s
-      timeout: 30s
-      retries: 5
-      start_period: 30s
-    platform: linux/amd64
-    logging:
-      options:
-        tag: *c28
-    networks:
-      enterprise-gateway:
-    user: root # Run as root
-    environment:
-      <<:
-        - *x-enterprise-gateway
-      EG_DOCKER_NETWORK: ${EG_DOCKER_NETWORK:-${PROJECT_NAME:-d2e}_enterprise-gateway}
-    volumes:
-      - "/var/run/docker.sock:/var/run/docker.sock"
-    labels:
-      app: "enterprise-gateway"
-      component: "enterprise-gateway"
-    deploy:
-      replicas: 1
-      endpoint_mode: dnsrr
-      labels:
-        app: "enterprise-gateway"
-        component: "enterprise-gateway"
-
-  enterprise-gateway-viewer:
-    image: ${DOCKER_IMAGE_PREFIX:-ghcr.io/ohdsi/}d2e-enterprise-gateway:${DOCKER_TAG_NAME:-develop}
-    container_name: &c29 ${PROJECT_NAME:-d2e}-enterprise-gateway-viewer
-    healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8888/jupyter/api || exit 1"]
-      interval: 30s
-      timeout: 30s
-      retries: 5
-      start_period: 30s
-    platform: linux/amd64
-    logging:
-      options:
-        tag: *c29
-    networks:
-      enterprise-gateway-viewer:
-    user: root # Run as root
-    environment:
-      <<:
-        - *x-enterprise-gateway
-      EG_DOCKER_NETWORK: ${EG_DOCKER_NETWORK:-${PROJECT_NAME:-d2e}_enterprise-gateway-viewer}
-    volumes:
-      - "/var/run/docker.sock:/var/run/docker.sock"
-    labels:
-      app: "enterprise-gateway-viewer"
-      component: "enterprise-gateway-viewer"
-    deploy:
-      replicas: 1
-      endpoint_mode: dnsrr
-      labels:
-        app: "enterprise-gateway-viewer"
-        component: "enterprise-gateway-viewer"
-
-  mlflow:
-    image: ghcr.io/mlflow/mlflow:v3.0.0
-    container_name: &c31 ${PROJECT_NAME:-d2e}-mlflow
-    platform: linux/amd64
-    logging:
-      options:
-        tag: *c31
-    networks:
-      alp:
-      data:
-      enterprise-gateway:
-    command: mlflow server --host 0.0.0.0 --port 5000
-    profiles: [mlflow]
 
   hana:
     container_name: hana
@@ -1389,62 +1307,3 @@ services:
       data:
     profiles: [hana]
 
-  logging:
-    image: amir20/dozzle:v8.13.9
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock:ro
-    read_only: true
-    networks:
-      alp:
-    environment:
-      - DOZZLE_FILTER=name=${PROJECT_NAME:-d2e}
-      - DOZZLE_BASE=/dockerlogs
-      - DOZZLE_NO_ANALYTICS=true
-
-  # WebAPI database initialization (runs SQL scripts after WebAPI is healthy)
-  webapi-init:
-    image: postgres:16-alpine
-    container_name: ${PROJECT_NAME:-d2e}-webapi-init
-    platform: linux/amd64
-    depends_on:
-      trex:
-        condition: service_healthy
-      alp-logto-post-init:
-        condition: service_completed_successfully
-    networks:
-      alp:
-        priority: 20
-      data:
-        priority: 10
-    volumes:
-      - ./services/atlas-db-init:/scripts:ro
-    environment:
-      PGHOST: ${PG_HOST:-${PROJECT_NAME:-d2e}-minerva-postgres-1}
-      PGPORT: ${PG_PORT:-5432}
-      PGUSER: ${PG_SUPER_USER:-postgres}
-      PGPASSWORD: ${PG_SUPER_PASSWORD}
-      PGDATABASE: ${PG_DB_NAME:-alp}
-    healthcheck:
-      # Only healthy after the SQL scripts have finished successfully.
-      test: ["CMD", "test", "-f", "/tmp/webapi-init.done"]
-      interval: 5s
-      timeout: 2s
-      retries: 120
-      start_period: 5s
-    command: >
-      sh -c '
-        set -e;
-        echo "Waiting for logto.users table...";
-        for i in $$(seq 1 60); do
-          if psql -tAc "SELECT 1 FROM information_schema.tables WHERE table_schema = '\''logto'\'' AND table_name = '\''users'\''" | grep -q 1; then
-            echo "logto.users table found";
-            break;
-          fi;
-          echo "Waiting... ($$i/60)";
-          sleep 2;
-        done;
-        for f in /scripts/*.sql; do psql -v ON_ERROR_STOP=1 -f "$$f"; done;
-        touch /tmp/webapi-init.done;
-        echo "webapi-init: SQL scripts complete";
-        tail -f /dev/null
-      '
