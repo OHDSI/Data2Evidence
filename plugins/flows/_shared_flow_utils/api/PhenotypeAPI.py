@@ -9,6 +9,7 @@ class PhenotypeAPI(BaseAPI):
     # the library import makes ~1100 of them.
     WRITE_ATTEMPTS = 3
     RETRY_BACKOFF_SECONDS = 2
+    REQUEST_TIMEOUT = (10, 30)
 
     def __init__(self):
         super().__init__()
@@ -23,7 +24,8 @@ class PhenotypeAPI(BaseAPI):
         response = requests.get(
             self.cohort_definition_url,
             headers=headers,
-            verify=self.get_verify_value()
+            verify=self.get_verify_value(),
+            timeout=self.REQUEST_TIMEOUT
         )
 
         if response.status_code != 200:
@@ -78,7 +80,8 @@ class PhenotypeAPI(BaseAPI):
                         f"{self.cohort_definition_url}/{existing_id}",
                         headers=headers,
                         json=payload,
-                        verify=self.get_verify_value()
+                        verify=self.get_verify_value(),
+                        timeout=self.REQUEST_TIMEOUT
                     )
                 else:
                     payload["id"] = 0
@@ -86,7 +89,8 @@ class PhenotypeAPI(BaseAPI):
                         self.cohort_definition_url,
                         headers=headers,
                         json=payload,
-                        verify=self.get_verify_value()
+                        verify=self.get_verify_value(),
+                        timeout=self.REQUEST_TIMEOUT
                     )
             except requests.exceptions.RequestException as request_error:
                 reason = f"{type(request_error).__name__}: {request_error}"
