@@ -1,5 +1,5 @@
 import https from "node:https";
-import { AxiosRequestConfig } from "axios";
+import { AxiosRequestConfig } from "../../../_shared/_axios.ts";
 import { env, services } from "../env.ts";
 
 export class AnalyticsSvcAPI {
@@ -41,7 +41,8 @@ export class AnalyticsSvcAPI {
     resultsSchema: string,
     sourceKey: string,
     vocabSchema: string,
-    datasetId: string
+    datasetId: string,
+    useSourceConnection: boolean = false
   ) {
     const errorMessage = "Error while getting data characterization results";
     try {
@@ -56,7 +57,7 @@ export class AnalyticsSvcAPI {
         resultsSchema.toLowerCase()
       )}/${encodeURIComponent(sourceKey)}?datasetId=${encodeURIComponent(
         datasetId
-      )}`;
+      )}&useSourceConnection=${useSourceConnection}`;
       const response = await this.channel.get(url, options);
       if (response.status !== 200) {
         throw new Error(errorMessage);
@@ -76,7 +77,8 @@ export class AnalyticsSvcAPI {
     sourceKey: string,
     conceptId: string,
     vocabSchema: string,
-    datasetId: string
+    datasetId: string,
+    useSourceConnection: boolean = false
   ) {
     try {
       // URL segment uses cacheId (alias for the analytics-svc dataset lookup);
@@ -88,7 +90,9 @@ export class AnalyticsSvcAPI {
         resultsSchema.toLowerCase()
       )}/${encodeURIComponent(sourceKey)}/${encodeURIComponent(
         conceptId
-      )}?datasetId=${encodeURIComponent(datasetId)}`;
+      )}?datasetId=${encodeURIComponent(
+        datasetId
+      )}&useSourceConnection=${useSourceConnection}`;
       console.log(`Calling ${url} for conceptId ${conceptId}`);
       const options = this.createOptions("GET");
       const result = await this.channel.get(url, options);

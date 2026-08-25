@@ -151,3 +151,59 @@ def get_achilles_log_tail(output_folder: str, max_lines: int = 60) -> str | None
     except OSError:
         return None
     return "\n".join(lines[-max_lines:])
+
+
+# Every table an Achilles/WebAPI results schema can hold. In the legacy trex mode DC
+# owns a throwaway results schema per run, so it clears all of them before rebuilding.
+RESULTS_SCHEMA_TABLES = [
+    # "cohort",
+    "cohort_censor_stats",
+    "cohort_inclusion",
+    "cohort_inclusion_result",
+    "cohort_inclusion_stats",
+    "cohort_summary_stats",
+    "cohort_cache",
+    "cohort_censor_stats_cache",
+    "cohort_inclusion_result_cache",
+    "cohort_inclusion_stats_cache",
+    "cohort_summary_stats_cache",
+    "feas_study_inclusion_stats",
+    "feas_study_index_stats",
+    "feas_study_result",
+    "heracles_analysis",
+    "heracles_heel_results",
+    "heracles_results",
+    "heracles_results_dist",
+    "heracles_periods",
+    "cohort_sample_element",
+    "ir_analysis_dist",
+    "ir_analysis_result",
+    "ir_analysis_strata_stats",
+    "ir_strata",
+    "cc_results",
+    "pathway_analysis_codes",
+    "pathway_analysis_events",
+    "pathway_analysis_paths",
+    "pathway_analysis_stats",
+    "concept_hierarchy",
+    "achilles_result_concept_count",
+]
+
+
+def tables_to_drop(use_trex_connection: bool) -> list[str]:
+    """
+    Tables to drop before a DC run writes into `results_schema`.
+
+    Legacy (trex) runs own a throwaway results schema, so everything is cleared.
+    Source-connection runs write into the customer's LIVE WebAPI "Results" daimon
+    schema: the cohort/ir_analysis/pathway/heracles/cc_results tables are Atlas
+    artifacts that must survive, so only the tables DC itself produces are dropped
+    (the achilles_* tables plus concept_hierarchy).
+    """
+    if use_trex_connection:
+        return list(RESULTS_SCHEMA_TABLES)
+    return [
+        table
+        for table in RESULTS_SCHEMA_TABLES
+        if table.startswith("achilles_") or table == "concept_hierarchy"
+    ]

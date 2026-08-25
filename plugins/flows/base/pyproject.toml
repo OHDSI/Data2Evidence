@@ -25,7 +25,7 @@ dependencies = [
     "prefect-shell==0.3.1",
     "psycopg2-binary==2.9.9",
     "pydantic==2.10.6",
-    "pyjwt==2.12.0",
+    "pyjwt==2.13.0",
     "sqlalchemy==2.0.38",
     "sqlalchemy-bigquery==1.14.1",
     "shinylive==0.8.5",
@@ -41,7 +41,7 @@ hana = [
 dev = [
     "pytest==9.0.3",
     "ruff==0.12.7",
-    "uv==0.11.6",
+    "uv==0.11.15",
 ]
 
 [tool.pixi.workspace]

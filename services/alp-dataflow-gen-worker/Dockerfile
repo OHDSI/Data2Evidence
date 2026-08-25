@@ -4,14 +4,15 @@
 # provisioned from plugin artifacts (see run-flow.sh / provision-envs.sh);
 # installing or updating a flow plugin never requires rebuilding this image.
 #
-# Build topology: the R-heavy stages (base -> hades -> data_transformation)
-# form a FROM lineage ending in the final image, so each heavy env exists
-# exactly once as native layers — no COPY --from duplication (stage snapshot
-# + copied layer overran the CI runner's disk) — and the lineage serializes
-# them naturally (two concurrent bundled-duckdb links swap-thrashed the 16GB
-# runner into a 14h zombie). Order matches the old layered build: a dt-only
-# change rebuilds dt alone; hades changes rebuild hades+dt. Light python-only
-# groups build in parallel stages alongside and are COPY'd in (small).
+# Build topology: the heavy stages (hades -> data_transformation -> base) form a
+# FROM lineage ending in the final image, so each heavy env exists exactly once
+# as native layers — no COPY --from duplication (stage snapshot + copied layer
+# overran the CI runner's disk) — and the lineage serializes them naturally (two
+# concurrent bundled-duckdb links swap-thrashed the 16GB runner into a 14h
+# zombie). Ordered rarest-changing first, so the cheapest and most-churned group
+# sits last: a base change rebuilds base alone, data_transformation rebuilds
+# dt+base, hades rebuilds all three. Light python-only groups build in parallel
+# stages alongside and are COPY'd in (small).
 # Per-stage granularity is what the registry cache keys on (mode=max).
 # Trade-off carried over: pixi-cache hardlinks dedupe only within a stage;
 # light-group COPYs materialize full copies. Build-time wins over size here.
@@ -66,8 +67,11 @@ ENV PIXI_CACHE_DIR=/opt/pixi/cache \
 # available on conda-forge — the one flow-specific apt package.
 # git: pixi/uv fetch direct git dependencies (data_transformation's ner env)
 # during provisioning, before any env exists that could provide it.
+# unzip: entrypoint.sh runtime-unpacks the BigQuery JDBC driver zip (the
+# Simba driver is proprietary and cannot be baked into the image — see
+# entrypoint.sh for the download step).
 RUN apt-get update && apt-get install -y --no-install-recommends \
-        ca-certificates curl git python3 xvfb \
+        ca-certificates curl git python3 unzip xvfb \
     && rm -rf /var/lib/apt/lists/*
 RUN curl -fsSL "https://github.com/prefix-dev/pixi/releases/download/v${PIXI_VERSION}/pixi-x86_64-unknown-linux-musl" \
         -o /usr/local/bin/pixi && chmod +x /usr/local/bin/pixi
@@ -99,11 +103,14 @@ COPY --from=staging /staged/search-embedding-flow /var/lib/d2e-flows/search-embe
 RUN MAKEFLAGS=-j2 /app/provision-envs.sh --dir /var/lib/d2e-flows/search-embedding-flow/baked
 
 # Heavy-env lineage (each layer lands in the final image exactly once).
-FROM provisioner AS env-base
-COPY --from=staging /staged/d2e-flows /var/lib/d2e-flows/d2e-flows
-RUN MAKEFLAGS="-j$(nproc)" /app/provision-envs.sh --dir /var/lib/d2e-flows/d2e-flows/baked
-
-FROM env-base AS env-hades
+#
+# Ordered rarest-changing first. A stage invalidates every stage below it, so the
+# group that churns most belongs last: over the six months to 2026-08, plugins/
+# flows/base saw 34 commits against data_transformation's 20 and hades' 15, while
+# costing the least to rebuild (~13 min, against ~25 for data_transformation and
+# ~51 for hades). Leading with base meant its every change also rebuilt both R
+# envs - the whole ~89 minutes - for inputs that had not changed.
+FROM provisioner AS env-hades
 COPY --from=staging /staged/hades-flow /var/lib/d2e-flows/hades-flow
 # Secret mount, not a build-arg: the token differs per CI run and an ARG would
 # poison this stage's cache key (registry cache would never hit).
@@ -115,7 +122,11 @@ FROM env-hades AS env-data-transformation
 COPY --from=staging /staged/data-transformation-flow /var/lib/d2e-flows/data-transformation-flow
 RUN MAKEFLAGS="-j$(nproc)" /app/provision-envs.sh --dir /var/lib/d2e-flows/data-transformation-flow/baked
 
-FROM env-data-transformation
+FROM env-data-transformation AS env-base
+COPY --from=staging /staged/d2e-flows /var/lib/d2e-flows/d2e-flows
+RUN MAKEFLAGS="-j$(nproc)" /app/provision-envs.sh --dir /var/lib/d2e-flows/d2e-flows/baked
+
+FROM env-base
 # The worker's own Prefect environment (also pixi-managed, lockfile-pinned).
 COPY services/alp-dataflow-gen-worker/pyproject.toml services/alp-dataflow-gen-worker/pixi.lock /opt/worker/
 RUN pixi install --locked --manifest-path /opt/worker/pyproject.toml
