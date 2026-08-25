@@ -3,7 +3,6 @@ export type WizardDashboardStatus =
   | "awaiting-cache"
   | "saving-bookmark"
   | "materializing"
-  | "resolving-cohort"
   | "opening-dashboard"
   | "ready"
   | "error";

@@ -7,7 +7,6 @@ const stageMessages = {
   "awaiting-cache": "Checking your previous Wizard analyses…",
   "saving-bookmark": "Saving this Wizard analysis…",
   materializing: "Creating the cohort…",
-  "resolving-cohort": "Waiting for the cohort to become available…",
   "opening-dashboard": "Opening the dashboard…",
 } as const;
 
