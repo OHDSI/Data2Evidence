@@ -11,7 +11,7 @@ class PhenotypeTagAPI(BaseAPI):
     them are seeded in SQL and never assigned to a cohort themselves.
     """
 
-    # Seeded by services/atlas-db-init/220_imported_cohort_metadata_tag_group.sql.
+    # Seeded by services/atlas-db-init/230_imported_cohort_metadata_tag_group.sql.
     # Two groups because multi_selection is a property of the group: statuses are mutually exclusive, the source tag is not.
     REQUEST_TIMEOUT = (10, 30)
 
@@ -84,7 +84,7 @@ class PhenotypeTagAPI(BaseAPI):
             raise Exception(
                 f"Tag group '{group_name}' does not exist in WebAPI. It cannot be "
                 f"created through the API; apply "
-                f"services/atlas-db-init/220_imported_cohort_metadata_tag_group.sql "
+                f"services/atlas-db-init/230_imported_cohort_metadata_tag_group.sql "
                 f"(restarting the webapi-init container does this) and retry."
             )
         if not group.get("allowCustom", False):
