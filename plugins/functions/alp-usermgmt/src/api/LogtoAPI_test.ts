@@ -1,6 +1,6 @@
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
-import axios from 'axios'
+import axios from '../../../_shared/_axios.ts'
 import { LogtoAPI } from './LogtoAPI.ts'
 
 function createApi(): LogtoAPI {
