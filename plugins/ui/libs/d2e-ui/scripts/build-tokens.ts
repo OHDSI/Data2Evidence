@@ -16,19 +16,26 @@ function isPlainObject(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
+// CSS gives these properties no unit. A number for one of them is a ratio or a
+// scale value, not a length. `font-weight: 600px` and `line-height: 1.2px` are
+// both invalid, so the browser ignores them.
+const UNITLESS_KEYS = new Set(["weight", "lineHeight", "opacity", "zIndex"]);
+
 function collectEntries(
   prefix: string,
   value: unknown,
-  out: Array<[string, string]>
+  out: Array<[string, string]>,
+  key = ""
 ): void {
   if (isPlainObject(value)) {
-    for (const [key, child] of Object.entries(value)) {
-      collectEntries(`${prefix}-${kebabCase(key)}`, child, out);
+    for (const [childKey, child] of Object.entries(value)) {
+      collectEntries(`${prefix}-${kebabCase(childKey)}`, child, out, childKey);
     }
     return;
   }
   if (typeof value === "number") {
-    out.push([`--${prefix}`, `${value}px`]);
+    const unit = UNITLESS_KEYS.has(key) ? "" : "px";
+    out.push([`--${prefix}`, `${value}${unit}`]);
     return;
   }
   out.push([`--${prefix}`, String(value)]);

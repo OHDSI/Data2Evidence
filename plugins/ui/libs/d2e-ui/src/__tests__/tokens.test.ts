@@ -34,3 +34,18 @@ describe("tokens.css generator", () => {
     expect(css).toContain("--d2e-elevation-e16:");
   });
 });
+
+describe("unitless CSS properties", () => {
+  const css = generateTokensCss();
+
+  it("gives font weights no unit", () => {
+    const withUnit = css.match(/--d2e-[\w-]*weight: [\d.]+px;/g) ?? [];
+    expect(withUnit).toEqual([]);
+  });
+
+  it("gives ratio line heights no unit", () => {
+    // `button` is the one line height defined as an explicit length.
+    const ratios = css.match(/--d2e-[\w-]*line-height: [\d.]+px;/g) ?? [];
+    expect(ratios).toEqual(["  --d2e-font-button-line-height: 16px;".trim()]);
+  });
+});
