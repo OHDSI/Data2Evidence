@@ -1,10 +1,14 @@
 services:
   trex:
-    # Defaults to the same published image as docker-compose.yml so `compose pull`
-    # works; CI relies on that. Set TREX_IMAGE (e.g. d2e-trex:withr in .env.local) to
-    # keep a locally built R+HADES image under its own tag, where pulling the
-    # published one would otherwise overwrite it with an R-less build.
-    image: ${TREX_IMAGE:-${DOCKER_IMAGE_PREFIX:-ghcr.io/ohdsi/}d2e-trex:${DOCKER_TAG_NAME:-develop}}
+    # The -devx variant: same d2e layer as docker-compose.yml's image, but built
+    # on trexsql's full base, which carries playwright + chromium, the Claude
+    # Code CLI, gh and the devx payload (~1.2GB compressed). docker-compose.yml
+    # runs the lean one — TREX_DX_ENABLED only gates that tooling at runtime, so
+    # keeping it out of deployments needs a different image, not a flag.
+    # Set TREX_IMAGE (e.g. d2e-trex:withr in .env.local) to keep a locally built
+    # R+HADES image under its own tag, where pulling a published one would
+    # otherwise overwrite it with an R-less build.
+    image: ${TREX_IMAGE:-${DOCKER_IMAGE_PREFIX:-ghcr.io/ohdsi/}d2e-trex:${DOCKER_TAG_NAME:-develop}-devx}
     # No platform pin: the trexsql base and d2e-trex image are multi-arch
     # (amd64/arm64), so Docker runs/builds native to the host.
     entrypoint: ["/bin/sh", "-c"]
@@ -32,6 +36,10 @@ services:
       secrets:
         - github_token
       args:
+        # Match the -devx image name above: without this a local build would use
+        # Dockerfile.v2's default (the lean prod base) and quietly produce an
+        # image with no devx tooling under a -devx tag.
+        TREXSQL_REF: ${TREXSQL_REF:-sha-5ce42757279f969bca123f0128a5c967ff2e3bd4@sha256:bad73e8323fc07fdd2dba7a25e6f7f1c2b3d6e86410b039f5e8629c0d0214cc6}
         # Local builds pull published plugins from the feed; CI uses plugin-artifacts/.
         PLUGINS_FROM_REGISTRY: ${PLUGINS_FROM_REGISTRY:-@data2evidence/d2e-ui @data2evidence/d2e-functions @data2evidence/fhir @data2evidence/sibyl @data2evidence/d2e-flows @data2evidence/i2b2-flow @data2evidence/search-embedding-flow @data2evidence/data-management-flow @data2evidence/hades-flow @data2evidence/loyalty-score-flow @data2evidence/data-transformation-flow @ohdsi/pythia-agent@0.1.0-develop.18.g80bf4aa}
         # Keep in sync with the `docker build --build-arg WITH_R=true` used to

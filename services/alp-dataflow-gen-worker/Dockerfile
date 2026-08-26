@@ -11,11 +11,24 @@
 # concurrent bundled-duckdb links swap-thrashed the 16GB runner into a 14h
 # zombie). Ordered rarest-changing first, so the cheapest and most-churned group
 # sits last: a base change rebuilds base alone, data_transformation rebuilds
-# dt+base, hades rebuilds all three. Light python-only groups build in parallel
-# stages alongside and are COPY'd in (small).
+# dt+base, hades rebuilds all three. The light python-only groups share one
+# stage that builds in parallel alongside and is COPY'd in as a single tree.
 # Per-stage granularity is what the registry cache keys on (mode=max).
-# Trade-off carried over: pixi-cache hardlinks dedupe only within a stage;
-# light-group COPYs materialize full copies. Build-time wins over size here.
+#
+# Size: pixi-cache hardlinks dedupe only within a stage, and overlayfs copies a
+# file up before linking it, so nothing can be shared across stages after the
+# fact. Two consequences shape the layout. The light groups share one stage so
+# their common stack (python, arrow, duckdb, the JDK) is hardlinked once by
+# slim-envs.sh --dedupe before it is COPY'd — BuildKit preserves hardlinks
+# within a single COPY. And every provisioning RUN strips its own build-only
+# content (slim-envs.sh --strip) in the same layer that created it, because a
+# later RUN can only add whiteouts. The pixi cache lives on a cache mount
+# instead of in a layer for the same reason: it is a build input, and at
+# runtime provision-envs.sh refills it on demand for artifact-delivered
+# plugins. Residual duplication is what the separate layers cannot share: 3.2GB
+# across 477 inodes >=1MB, chiefly four JDKs, ten CPython runtimes, and arrow /
+# duckdb / openblas once per env. Only building the whole tree in one RUN could
+# collapse it, at the cost of the per-stage registry cache.
 
 FROM ubuntu:24.04 AS staging
 RUN apt-get update && apt-get install -y --no-install-recommends python3 \
@@ -78,29 +91,29 @@ RUN curl -fsSL "https://github.com/prefix-dev/pixi/releases/download/v${PIXI_VER
 
 FROM runtime-base AS provisioner
 COPY services/alp-dataflow-gen-worker/provision-envs.sh /app/provision-envs.sh
-RUN chmod 755 /app/provision-envs.sh
+COPY services/alp-dataflow-gen-worker/slim-envs.sh /app/slim-envs.sh
+RUN chmod 755 /app/provision-envs.sh /app/slim-envs.sh
 
-# One stage per group; marker COPYs are the dependency edges that keep the
-# heavy stages sequential (see header).
-FROM provisioner AS env-cohort-discovery
+# The five python-only groups in one stage: provisioned, stripped and
+# hardlink-deduped in a single RUN, so the stack they all carry (python, arrow,
+# duckdb, and a JDK in two of them) is stored once rather than five times.
+# Serialising them here costs little — they are download-bound, with no renv
+# compile among them — and the stage still builds in parallel with the heavy
+# lineage.
+FROM provisioner AS env-light
 COPY --from=staging /staged/cohort-discovery-flow /var/lib/d2e-flows/cohort-discovery-flow
-RUN MAKEFLAGS=-j2 /app/provision-envs.sh --dir /var/lib/d2e-flows/cohort-discovery-flow/baked
-
-FROM provisioner AS env-loyalty-score
 COPY --from=staging /staged/loyalty-score-flow /var/lib/d2e-flows/loyalty-score-flow
-RUN MAKEFLAGS=-j2 /app/provision-envs.sh --dir /var/lib/d2e-flows/loyalty-score-flow/baked
-
-FROM provisioner AS env-i2b2
 COPY --from=staging /staged/i2b2-flow /var/lib/d2e-flows/i2b2-flow
-RUN MAKEFLAGS=-j2 /app/provision-envs.sh --dir /var/lib/d2e-flows/i2b2-flow/baked
-
-FROM provisioner AS env-data-management
 COPY --from=staging /staged/data-management-flow /var/lib/d2e-flows/data-management-flow
-RUN MAKEFLAGS=-j2 /app/provision-envs.sh --dir /var/lib/d2e-flows/data-management-flow/baked
-
-FROM provisioner AS env-search-embedding
 COPY --from=staging /staged/search-embedding-flow /var/lib/d2e-flows/search-embedding-flow
-RUN MAKEFLAGS=-j2 /app/provision-envs.sh --dir /var/lib/d2e-flows/search-embedding-flow/baked
+RUN --mount=type=cache,target=/opt/pixi/cache,sharing=locked \
+    set -e; \
+    for group in cohort-discovery-flow loyalty-score-flow i2b2-flow \
+                 data-management-flow search-embedding-flow; do \
+      MAKEFLAGS="-j$(nproc)" /app/provision-envs.sh --dir "/var/lib/d2e-flows/$group/baked"; \
+    done; \
+    /app/slim-envs.sh --strip /var/lib/d2e-flows/*/baked; \
+    /app/slim-envs.sh --dedupe /var/lib/d2e-flows
 
 # Heavy-env lineage (each layer lands in the final image exactly once).
 #
@@ -115,35 +128,40 @@ COPY --from=staging /staged/hades-flow /var/lib/d2e-flows/hades-flow
 # Secret mount, not a build-arg: the token differs per CI run and an ARG would
 # poison this stage's cache key (registry cache would never hit).
 RUN --mount=type=secret,id=github_pat \
+    --mount=type=cache,target=/opt/pixi/cache,sharing=locked \
     MAKEFLAGS="-j$(nproc)" GITHUB_PAT="$(cat /run/secrets/github_pat 2>/dev/null || true)" \
-    /app/provision-envs.sh --dir /var/lib/d2e-flows/hades-flow/baked
+    /app/provision-envs.sh --dir /var/lib/d2e-flows/hades-flow/baked \
+ && /app/slim-envs.sh --strip /var/lib/d2e-flows/hades-flow/baked
 
 FROM env-hades AS env-data-transformation
 COPY --from=staging /staged/data-transformation-flow /var/lib/d2e-flows/data-transformation-flow
-RUN MAKEFLAGS="-j$(nproc)" /app/provision-envs.sh --dir /var/lib/d2e-flows/data-transformation-flow/baked
+RUN --mount=type=cache,target=/opt/pixi/cache,sharing=locked \
+    MAKEFLAGS="-j$(nproc)" /app/provision-envs.sh --dir /var/lib/d2e-flows/data-transformation-flow/baked \
+ && /app/slim-envs.sh --strip /var/lib/d2e-flows/data-transformation-flow/baked
 
 FROM env-data-transformation AS env-base
 COPY --from=staging /staged/d2e-flows /var/lib/d2e-flows/d2e-flows
-RUN MAKEFLAGS="-j$(nproc)" /app/provision-envs.sh --dir /var/lib/d2e-flows/d2e-flows/baked
+RUN --mount=type=cache,target=/opt/pixi/cache,sharing=locked \
+    MAKEFLAGS="-j$(nproc)" /app/provision-envs.sh --dir /var/lib/d2e-flows/d2e-flows/baked \
+ && /app/slim-envs.sh --strip /var/lib/d2e-flows/d2e-flows/baked
 
 FROM env-base
 # The worker's own Prefect environment (also pixi-managed, lockfile-pinned).
 COPY services/alp-dataflow-gen-worker/pyproject.toml services/alp-dataflow-gen-worker/pixi.lock /opt/worker/
-RUN pixi install --locked --manifest-path /opt/worker/pyproject.toml
+RUN --mount=type=cache,target=/opt/pixi/cache,sharing=locked \
+    pixi install --locked --manifest-path /opt/worker/pyproject.toml \
+ && /app/slim-envs.sh --strip /opt/worker
 
 COPY services/alp-dataflow-gen-worker/run-flow.sh /app/
 COPY services/alp-dataflow-gen-worker/entrypoint.sh /entrypoint.sh
 COPY plugins/flows/drivers /app/inst/drivers/
 RUN chmod 755 /app/run-flow.sh /app/provision-envs.sh /entrypoint.sh
 
-# Light groups from their parallel stages (baked warm cache: release plugins
+# Light groups as one deduped tree (baked warm cache: release plugins
 # provisioned at build so fresh workers are instant and offline-capable;
-# runtime artifact updates land beside them).
-COPY --from=env-cohort-discovery /var/lib/d2e-flows/cohort-discovery-flow /var/lib/d2e-flows/cohort-discovery-flow
-COPY --from=env-loyalty-score /var/lib/d2e-flows/loyalty-score-flow /var/lib/d2e-flows/loyalty-score-flow
-COPY --from=env-i2b2 /var/lib/d2e-flows/i2b2-flow /var/lib/d2e-flows/i2b2-flow
-COPY --from=env-data-management /var/lib/d2e-flows/data-management-flow /var/lib/d2e-flows/data-management-flow
-COPY --from=env-search-embedding /var/lib/d2e-flows/search-embedding-flow /var/lib/d2e-flows/search-embedding-flow
+# runtime artifact updates land beside them). One COPY, so the hardlinks
+# slim-envs.sh made in env-light survive into this layer.
+COPY --from=env-light /var/lib/d2e-flows /var/lib/d2e-flows
 
 WORKDIR /app
 ENTRYPOINT ["/entrypoint.sh"]
