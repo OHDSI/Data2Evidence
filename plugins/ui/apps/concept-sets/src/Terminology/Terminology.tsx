@@ -50,6 +50,7 @@ export interface TerminologyProps {
   open?: boolean;
   onClose?: (values: OnCloseReturnValues) => void;
   selectedConceptSetId?: string;
+  selectedConceptSetCanWrite?: boolean;
   mode?:
     | "CONCEPT_MAPPING"
     | "CONCEPT_SET"
@@ -210,18 +211,16 @@ const NameSection = ({
               />
             </div>
           )}
-          {isUserConceptSet && (
-            <Button
-              style={{ marginLeft: 10 }}
-              text={
-                conceptSetId
-                  ? getText(i18nKeys.TERMINOLOGY__UPDATE)
-                  : getText(i18nKeys.TERMINOLOGY__CREATE)
-              }
-              onClick={saveConceptSet}
-              disabled={isLoading}
-            />
-          )}
+          <Button
+            style={{ marginLeft: 10 }}
+            text={
+              conceptSetId
+                ? getText(i18nKeys.TERMINOLOGY__UPDATE)
+                : getText(i18nKeys.TERMINOLOGY__CREATE)
+            }
+            onClick={saveConceptSet}
+            disabled={isLoading || !isUserConceptSet}
+          />
           <Button
             variant="outlined"
             text={getText(i18nKeys.TERMINOLOGY__CLOSE)}
@@ -373,6 +372,7 @@ export const Terminology: FC<TerminologyProps> = ({
   open,
   onClose,
   selectedConceptSetId,
+  selectedConceptSetCanWrite,
   mode = "CONCEPT_SEARCH",
   selectedDatasetId,
   defaultFilters,
@@ -648,7 +648,9 @@ export const Terminology: FC<TerminologyProps> = ({
         setCurrentConceptSet(conceptSet);
         setConceptSetShared(conceptSet.shared);
         setIsUserConceptSet(
-          !!conceptSet.hasWriteAccess || conceptSet.createdBy === userName,
+          selectedConceptSetCanWrite !== undefined
+            ? !!selectedConceptSetCanWrite
+            : !!conceptSet.hasWriteAccess || conceptSet.createdBy === userName,
         );
         setErrorMsg("");
         return;
@@ -656,7 +658,7 @@ export const Terminology: FC<TerminologyProps> = ({
         setIsConceptSetLoading(false);
       }
     },
-    [activeDatasetId, userName],
+    [activeDatasetId, userName, selectedConceptSetCanWrite],
   );
   const isDrawer = !!onClose;
 
@@ -788,10 +790,11 @@ export const Terminology: FC<TerminologyProps> = ({
 
   useEffect(() => {
     if (selectedConceptSetId) {
+      setIsUserConceptSet(selectedConceptSetCanWrite ?? true);
       setConceptSetId(selectedConceptSetId);
       getConceptSet(selectedConceptSetId);
     }
-  }, [getConceptSet, selectedConceptSetId]);
+  }, [getConceptSet, selectedConceptSetId, selectedConceptSetCanWrite]);
 
   const onClickClose = useCallback(() => {
     if (!onClose) {
