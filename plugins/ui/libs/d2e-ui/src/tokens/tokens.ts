@@ -32,7 +32,18 @@ export const tokens = {
     textSecondary: "#00000099",
     white: "#FFFFFF",
   },
-  spacing: { xxs: 4, xs: 8, xsS: 12, s: 16, m: 24, l: 32, xl: 40, xxl: 56, xxxl: 64, number: 72 },
+  spacing: {
+    xxs: 4,
+    xs: 8,
+    xsS: 12,
+    s: 16,
+    m: 24,
+    l: 32,
+    xl: 40,
+    xxl: 56,
+    xxxl: 64,
+    number: 72,
+  },
   // Figma names: XS 4, S 8, M 16, L 24, XL 32. The legacy sm/md/lg keys keep
   // their original values (XS/S/M) for backward compatibility.
   radius: { sm: 4, md: 8, lg: 16, l: 24, xl: 32 },
@@ -53,7 +64,12 @@ export const tokens = {
     caption2: { size: 10, weight: 400, lineHeight: 1.4, letterSpacing: "0" },
     button: { size: 16, weight: 500, lineHeight: "16px", letterSpacing: "0" },
   },
-  modal: { sm: 540, md: 600, lg: 900, xl: 1200 },
+  // Figma variables Modal/S, Modal/L, Modal/XL. There is no Modal/M, and 600
+  // is not a size in the design system — an earlier extraction invented it.
+  // The MODAL SIZE GUIDE frame labels 900 "Medium" and 1200 "Large", which
+  // disagrees with these variable names. The values are certain; the naming is
+  // an open question with design.
+  modal: { s: 540, l: 900, xl: 1200 },
   elevation: {
     card: "0 0 10px rgba(0, 0, 0, 0.10)",
     e1: "0 2px 1px -1px rgba(0,0,0,0.20), 0 1px 1px 0 rgba(0,0,0,0.14), 0 1px 3px 0 rgba(0,0,0,0.12)",

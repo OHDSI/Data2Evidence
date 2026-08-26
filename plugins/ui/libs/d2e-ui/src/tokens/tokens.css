@@ -92,9 +92,8 @@
   --d2e-font-button-weight: 500;
   --d2e-font-button-line-height: 16px;
   --d2e-font-button-letter-spacing: 0;
-  --d2e-modal-sm: 540px;
-  --d2e-modal-md: 600px;
-  --d2e-modal-lg: 900px;
+  --d2e-modal-s: 540px;
+  --d2e-modal-l: 900px;
   --d2e-modal-xl: 1200px;
   --d2e-elevation-card: 0 0 10px rgba(0, 0, 0, 0.10);
   --d2e-elevation-e1: 0 2px 1px -1px rgba(0,0,0,0.20), 0 1px 1px 0 rgba(0,0,0,0.14), 0 1px 3px 0 rgba(0,0,0,0.12);

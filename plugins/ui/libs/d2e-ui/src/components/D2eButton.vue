@@ -7,7 +7,8 @@
     :loading="loading"
     :disabled="disabled"
     :block="block"
-    :icon="icon"
+    :prepend-icon="prependIcon"
+    :append-icon="appendIcon"
   >
     <slot />
   </v-btn>
@@ -43,7 +44,11 @@ interface Props {
   loading?: boolean;
   disabled?: boolean;
   block?: boolean;
-  icon?: string;
+  // Figma `Sub category` = Icon front / Icon back. Do not use v-btn's `icon`
+  // prop here: it makes the button icon-only and drops the label. For an
+  // icon-only control use D2eIconButton.
+  prependIcon?: string;
+  appendIcon?: string;
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -52,7 +57,8 @@ const props = withDefaults(defineProps<Props>(), {
   loading: false,
   disabled: false,
   block: false,
-  icon: undefined,
+  prependIcon: undefined,
+  appendIcon: undefined,
 });
 
 const resolvedVariant = computed(() => VARIANT_MAP[props.variant]);

@@ -10,6 +10,7 @@ const deleteOpen = ref(true);
 const materializeOpen = ref(true);
 const busyOpen = ref(true);
 const persistentOpen = ref(true);
+const sizeOpen = ref(true);
 const name = ref("SNRI Users");
 const description = ref("");
 </script>
@@ -19,6 +20,17 @@ const description = ref("");
     <Variant title="default">
       <D2eDialog v-model="open" title="Dialog title">
         Dialog body content.
+        <template #actions>
+          <D2eButton variant="secondary"> Cancel </D2eButton>
+          <D2eButton> Confirm </D2eButton>
+        </template>
+      </D2eDialog>
+    </Variant>
+
+    <Variant title="sizes (Modal/S, L, XL)">
+      <D2eDialog v-model="sizeOpen" title="Modal/L (900)" size="l">
+        Sizes come from the Figma variables: S 540, L 900, XL 1200. There is no
+        Modal/M — 600 was never a design size.
         <template #actions>
           <D2eButton variant="secondary"> Cancel </D2eButton>
           <D2eButton> Confirm </D2eButton>
@@ -75,9 +87,14 @@ const description = ref("");
       </D2eDialog>
     </Variant>
 
-    <Variant title="persistent (no scrim close)">
-      <D2eDialog v-model="persistentOpen" title="Persistent" persistent>
-        The scrim and Escape do not close this dialog.
+    <Variant title="no escape close (long form)">
+      <D2eDialog
+        v-model="persistentOpen"
+        title="Unsaved changes"
+        :close-on-escape="false"
+      >
+        The scrim never closes a dialog. Escape is disabled here too, because a
+        long form must raise a confirm-discard step instead.
         <template #actions>
           <D2eButton variant="secondary"> Cancel </D2eButton>
           <D2eButton> Confirm </D2eButton>

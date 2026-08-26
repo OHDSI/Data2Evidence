@@ -1,8 +1,9 @@
 <template>
   <v-dialog
     :model-value="modelValue"
-    :max-width="maxWidth"
-    :persistent="persistent || busy"
+    :max-width="resolvedMaxWidth"
+    persistent
+    no-click-animation
     :attach="attach"
     role="dialog"
     aria-modal="true"
@@ -10,7 +11,12 @@
     v-bind="forwardAttrs"
     @update:model-value="onModelValueUpdate"
   >
-    <v-card class="d2e-dialog" :data-testid="dataTestId">
+    <v-card
+      class="d2e-dialog"
+      :data-testid="dataTestId"
+      tabindex="-1"
+      @keydown.esc="onEscape"
+    >
       <header class="d2e-dialog__header">
         <h2 v-if="title" :id="titleId" class="d2e-dialog__title">
           {{ title }}
@@ -53,12 +59,21 @@
 
 <script setup lang="ts">
 import { computed, nextTick, ref, useAttrs, watch } from "vue";
+import { DIALOG_SIZE_MAP, type D2eDialogSize } from "./dialogSizes";
 
 interface Props {
   modelValue: boolean;
   title?: string;
+  /** Design size. Figma variables Modal/S 540, Modal/L 900, Modal/XL 1200. */
+  size?: D2eDialogSize;
+  /** Escape hatch. Overrides `size` when set. */
   maxWidth?: number | string;
-  persistent?: boolean;
+  /**
+   * MODAL CLOSE BEHAVIOR (Figma 2106:162) says Escape closes informational
+   * modals, but raises a confirm-discard step for long forms and multi-step
+   * flows. Set false there and handle the confirmation in the parent.
+   */
+  closeOnEscape?: boolean;
   showClose?: boolean;
   closeLabel?: string;
   busy?: boolean;
@@ -67,13 +82,18 @@ interface Props {
 
 const props = withDefaults(defineProps<Props>(), {
   title: undefined,
-  maxWidth: 600,
-  persistent: false,
+  size: "s",
+  maxWidth: undefined,
+  closeOnEscape: true,
   showClose: true,
   closeLabel: "Close dialog",
   busy: false,
   attach: "#app",
 });
+
+const resolvedMaxWidth = computed(
+  () => props.maxWidth ?? DIALOG_SIZE_MAP[props.size],
+);
 
 const emit = defineEmits<{
   "update:modelValue": [open: boolean];
@@ -89,7 +109,7 @@ const attrs = useAttrs();
 // data-testid belongs on the card (the visible dialog surface); everything
 // else (transition, scrollable, aria-* and friends) is forwarded to v-dialog.
 const dataTestId = computed(
-  () => (attrs["data-testid"] as string | undefined) ?? undefined
+  () => (attrs["data-testid"] as string | undefined) ?? undefined,
 );
 
 const forwardAttrs = computed(() => {
@@ -125,7 +145,7 @@ watch(
       }
     }
   },
-  { immediate: true }
+  { immediate: true },
 );
 
 function onModelValueUpdate(open: boolean) {
@@ -133,6 +153,15 @@ function onModelValueUpdate(open: boolean) {
   if (props.busy && !open) return;
   emit("update:modelValue", open);
   if (!open) emit("close");
+}
+
+// The overlay never dismisses a modal — MODAL CLOSE BEHAVIOR (Figma 2106:162)
+// says "Don't dismiss modal, no action" for every modal type. `v-dialog` is
+// therefore always persistent, and Escape is handled here instead.
+function onEscape() {
+  if (props.busy || !props.closeOnEscape) return;
+  emit("update:modelValue", false);
+  emit("close");
 }
 
 function closeFromButton() {

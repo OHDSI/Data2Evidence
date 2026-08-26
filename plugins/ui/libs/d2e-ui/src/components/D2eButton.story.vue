@@ -29,10 +29,21 @@ import D2eButton from "./D2eButton.vue";
       </div>
     </Variant>
 
-    <Variant title="with icon">
-      <div style="display: flex; gap: 12px">
-        <D2eButton icon="mdi-plus"> Add </D2eButton>
-        <D2eButton icon="mdi-delete" variant="danger"> Delete </D2eButton>
+    <Variant title="icon front">
+      <div class="row">
+        <D2eButton prepend-icon="mdi-bell"> Label </D2eButton>
+        <D2eButton prepend-icon="mdi-bell" variant="secondary">
+          Label
+        </D2eButton>
+      </div>
+    </Variant>
+
+    <Variant title="icon back">
+      <div class="row">
+        <D2eButton append-icon="mdi-bell"> Label </D2eButton>
+        <D2eButton append-icon="mdi-bell" variant="secondary">
+          Label
+        </D2eButton>
       </div>
     </Variant>
 
