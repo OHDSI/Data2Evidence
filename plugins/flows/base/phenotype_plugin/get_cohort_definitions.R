@@ -18,12 +18,7 @@ get_cohort_definitions <- function(cohortsID, vocabschemaName, materialize = FAL
     vocabschemaName <- toString(vocabschemaName)
     library('PhenotypeLibrary')
     library('CirceR')
-    # showHidden = TRUE keeps the whole library. The default (FALSE) drops any
-    # cohort flagged isReferenceCohort, anything whose status is not "pending" or
-    # "accepted", and any name carrying [W] (withdrawn) or [D] (deprecated) --
-    # 1100 rows down to 703. We want every status represented so the cohorts can
-    # be tagged by it, so ask for the unfiltered log.
-    phenotypeLog <- PhenotypeLibrary::getPhenotypeLog(showHidden = TRUE)
+    phenotypeLog <- PhenotypeLibrary::getPhenotypeLog(showHidden = FALSE)
 
     create_cohort_definitionsets <- function(cohortsID, vocabschemaName) {
         if (is.character(cohortsID) && cohortsID == 'default') {
