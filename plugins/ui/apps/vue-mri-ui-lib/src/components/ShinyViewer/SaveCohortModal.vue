@@ -535,7 +535,7 @@ export default {
       const url = '/analytics-svc/api/services/cohort'
 
       this.savingStep = 'materializing-cohort'
-      const materializeResponse = await this.onAddCohortOkButtonPress({ params, url })
+      const materializeResponse = await this.onAddCohortOkButtonPress({ params, url, suppressToast: true })
       const cohortDefinitionId = Number(materializeResponse?.cohortDefinitionId)
 
       if (!Number.isInteger(cohortDefinitionId)) {

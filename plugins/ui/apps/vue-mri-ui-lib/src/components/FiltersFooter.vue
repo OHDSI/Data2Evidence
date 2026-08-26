@@ -314,6 +314,7 @@ export default {
       this.showResetDialog = true
     },
     async saveBookmark() {
+      if (this.isSavingBookmark) return
       if (this.hasChanges) {
         if (this.hasExceededLength) return
 

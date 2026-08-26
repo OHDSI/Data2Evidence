@@ -419,7 +419,8 @@ const actions = {
           useNotificationStore().setAlertMessage({
             message: errorMessage,
           })
-        } else {
+        }
+        if (params.cmd === 'delete' || !errorMessage) {
           throw error
         }
       })
