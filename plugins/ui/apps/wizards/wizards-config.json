@@ -36,7 +36,7 @@
               ],
               "columns": 3,
               "validation": {
-                "minAnswered": 1,
+                "minAnswered": 0,
                 "maxAnswered": 2,
                 "message": "Enter 1 or 2 of Height, Weight, and BMI."
               }
@@ -86,21 +86,21 @@
           "id": "gender",
           "type": "text",
           "label": "Gender",
-          "required": true,
+          "required": false,
           "configPath": "patient.attributes.Gender_concept_name"
         },
         {
           "id": "ethnicity",
           "type": "text",
           "label": "Ethnicity",
-          "required": true,
+          "required": false,
           "configPath": "patient.attributes.ethnicityName"
         },
         {
           "id": "race",
           "type": "text",
           "label": "Race",
-          "required": true,
+          "required": false,
           "configPath": "patient.attributes.raceName"
         },
         {
@@ -156,7 +156,7 @@
           "type": "num",
           "label": "Resp Rate",
           "placeholder": "bpm",
-          "required": true,
+          "required": false,
           "configPath": "patient.interactions.measurement.attributes.numval",
           "filterCardPath": "patient.interactions.measurement",
           "fixedAttributes": [
@@ -172,7 +172,7 @@
           "type": "num",
           "label": "Pulse Rate",
           "placeholder": "bpm",
-          "required": true,
+          "required": false,
           "configPath": "patient.interactions.measurement.attributes.numval",
           "filterCardPath": "patient.interactions.measurement",
           "fixedAttributes": [
@@ -188,7 +188,7 @@
           "type": "num",
           "label": "Systolic Blood Pressure",
           "placeholder": "mmHg",
-          "required": true,
+          "required": false,
           "configPath": "patient.interactions.measurement.attributes.numval",
           "filterCardPath": "patient.interactions.measurement",
           "fixedAttributes": [
@@ -204,7 +204,7 @@
           "type": "num",
           "label": "Diastolic Blood Pressure",
           "placeholder": "mmHg",
-          "required": true,
+          "required": false,
           "configPath": "patient.interactions.measurement.attributes.numval",
           "filterCardPath": "patient.interactions.measurement",
           "fixedAttributes": [
@@ -305,7 +305,7 @@
               ],
               "columns": 3,
               "validation": {
-                "minAnswered": 1,
+                "minAnswered": 0,
                 "maxAnswered": 2,
                 "message": "Enter 1 or 2 of Height, Weight, and BMI."
               }
@@ -355,21 +355,21 @@
           "id": "gender",
           "type": "text",
           "label": "Gender",
-          "required": true,
+          "required": false,
           "configPath": "patient.attributes.Gender_concept_name"
         },
         {
           "id": "ethnicity",
           "type": "text",
           "label": "Ethnicity",
-          "required": true,
+          "required": false,
           "configPath": "patient.attributes.ethnicityName"
         },
         {
           "id": "race",
           "type": "text",
           "label": "Race",
-          "required": true,
+          "required": false,
           "configPath": "patient.attributes.raceName"
         },
         {
@@ -425,7 +425,7 @@
           "type": "num",
           "label": "Resp Rate",
           "placeholder": "bpm",
-          "required": true,
+          "required": false,
           "configPath": "patient.interactions.measurement.attributes.numval",
           "filterCardPath": "patient.interactions.measurement",
           "fixedAttributes": [
@@ -441,7 +441,7 @@
           "type": "num",
           "label": "Pulse Rate",
           "placeholder": "bpm",
-          "required": true,
+          "required": false,
           "configPath": "patient.interactions.measurement.attributes.numval",
           "filterCardPath": "patient.interactions.measurement",
           "fixedAttributes": [
@@ -457,7 +457,7 @@
           "type": "num",
           "label": "Systolic Blood Pressure",
           "placeholder": "mmHg",
-          "required": true,
+          "required": false,
           "configPath": "patient.interactions.measurement.attributes.numval",
           "filterCardPath": "patient.interactions.measurement",
           "fixedAttributes": [
@@ -473,7 +473,7 @@
           "type": "num",
           "label": "Diastolic Blood Pressure",
           "placeholder": "mmHg",
-          "required": true,
+          "required": false,
           "configPath": "patient.interactions.measurement.attributes.numval",
           "filterCardPath": "patient.interactions.measurement",
           "fixedAttributes": [
@@ -574,7 +574,7 @@
               ],
               "columns": 3,
               "validation": {
-                "minAnswered": 1,
+                "minAnswered": 0,
                 "maxAnswered": 2,
                 "message": "Enter 1 or 2 of Height, Weight, and BMI."
               }
@@ -624,21 +624,21 @@
           "id": "gender",
           "type": "text",
           "label": "Gender",
-          "required": true,
+          "required": false,
           "configPath": "patient.attributes.Gender_concept_name"
         },
         {
           "id": "ethnicity",
           "type": "text",
           "label": "Ethnicity",
-          "required": true,
+          "required": false,
           "configPath": "patient.attributes.ethnicityName"
         },
         {
           "id": "race",
           "type": "text",
           "label": "Race",
-          "required": true,
+          "required": false,
           "configPath": "patient.attributes.raceName"
         },
         {
@@ -694,7 +694,7 @@
           "type": "num",
           "label": "Resp Rate",
           "placeholder": "bpm",
-          "required": true,
+          "required": false,
           "configPath": "patient.interactions.measurement.attributes.numval",
           "filterCardPath": "patient.interactions.measurement",
           "fixedAttributes": [
@@ -710,7 +710,7 @@
           "type": "num",
           "label": "Pulse Rate",
           "placeholder": "bpm",
-          "required": true,
+          "required": false,
           "configPath": "patient.interactions.measurement.attributes.numval",
           "filterCardPath": "patient.interactions.measurement",
           "fixedAttributes": [
@@ -726,7 +726,7 @@
           "type": "num",
           "label": "Systolic Blood Pressure",
           "placeholder": "mmHg",
-          "required": true,
+          "required": false,
           "configPath": "patient.interactions.measurement.attributes.numval",
           "filterCardPath": "patient.interactions.measurement",
           "fixedAttributes": [
@@ -742,7 +742,7 @@
           "type": "num",
           "label": "Diastolic Blood Pressure",
           "placeholder": "mmHg",
-          "required": true,
+          "required": false,
           "configPath": "patient.interactions.measurement.attributes.numval",
           "filterCardPath": "patient.interactions.measurement",
           "fixedAttributes": [
@@ -862,7 +862,7 @@
               ],
               "columns": 3,
               "validation": {
-                "minAnswered": 1,
+                "minAnswered": 0,
                 "maxAnswered": 2,
                 "message": "Enter 1 or 2 of Height, Weight, and BMI."
               }
