@@ -9,7 +9,18 @@
         {
           "id": "person",
           "title": "Person",
-          "groups": [{ "id": "person-details", "fieldIds": ["age", "gender", "ethnicity", "race"], "columns": 2 }]
+          "groups": [
+            {
+              "id": "person-details",
+              "fieldIds": [
+                "age",
+                "gender",
+                "ethnicity",
+                "race"
+              ],
+              "columns": 2
+            }
+          ]
         },
         {
           "id": "measurement",
@@ -18,7 +29,11 @@
             {
               "id": "body-measurement",
               "label": "Body measurement",
-              "fieldIds": ["height", "weight", "bmi"],
+              "fieldIds": [
+                "height",
+                "weight",
+                "bmi"
+              ],
               "columns": 3,
               "validation": {
                 "minAnswered": 1,
@@ -29,7 +44,12 @@
             {
               "id": "vitals",
               "label": "Vitals",
-              "fieldIds": ["systolicBp", "diastolicBp", "pulseRate", "respRate"],
+              "fieldIds": [
+                "systolicBp",
+                "diastolicBp",
+                "pulseRate",
+                "respRate"
+              ],
               "columns": 2
             }
           ]
@@ -40,7 +60,15 @@
           "groups": [
             {
               "id": "condition-details",
-              "fieldIds": ["year", "condition1", "condition2", "condition3", "condition4", "condition5", "condition6"],
+              "fieldIds": [
+                "year",
+                "condition1",
+                "condition2",
+                "condition3",
+                "condition4",
+                "condition5",
+                "condition6"
+              ],
               "columns": 1
             }
           ]
@@ -250,7 +278,18 @@
         {
           "id": "person",
           "title": "Person",
-          "groups": [{ "id": "person-details", "fieldIds": ["age", "gender", "ethnicity", "race"], "columns": 2 }]
+          "groups": [
+            {
+              "id": "person-details",
+              "fieldIds": [
+                "age",
+                "gender",
+                "ethnicity",
+                "race"
+              ],
+              "columns": 2
+            }
+          ]
         },
         {
           "id": "measurement",
@@ -259,7 +298,11 @@
             {
               "id": "body-measurement",
               "label": "Body measurement",
-              "fieldIds": ["height", "weight", "bmi"],
+              "fieldIds": [
+                "height",
+                "weight",
+                "bmi"
+              ],
               "columns": 3,
               "validation": {
                 "minAnswered": 1,
@@ -270,7 +313,12 @@
             {
               "id": "vitals",
               "label": "Vitals",
-              "fieldIds": ["systolicBp", "diastolicBp", "pulseRate", "respRate"],
+              "fieldIds": [
+                "systolicBp",
+                "diastolicBp",
+                "pulseRate",
+                "respRate"
+              ],
               "columns": 2
             }
           ]
@@ -281,7 +329,15 @@
           "groups": [
             {
               "id": "condition-details",
-              "fieldIds": ["year", "condition1", "condition2", "condition3", "condition4", "condition5", "condition6"],
+              "fieldIds": [
+                "year",
+                "condition1",
+                "condition2",
+                "condition3",
+                "condition4",
+                "condition5",
+                "condition6"
+              ],
               "columns": 1
             }
           ]
@@ -491,7 +547,18 @@
         {
           "id": "person",
           "title": "Person",
-          "groups": [{ "id": "person-details", "fieldIds": ["age", "gender", "ethnicity", "race"], "columns": 2 }]
+          "groups": [
+            {
+              "id": "person-details",
+              "fieldIds": [
+                "age",
+                "gender",
+                "ethnicity",
+                "race"
+              ],
+              "columns": 2
+            }
+          ]
         },
         {
           "id": "measurement",
@@ -500,7 +567,11 @@
             {
               "id": "body-measurement",
               "label": "Body measurement",
-              "fieldIds": ["height", "weight", "bmi"],
+              "fieldIds": [
+                "height",
+                "weight",
+                "bmi"
+              ],
               "columns": 3,
               "validation": {
                 "minAnswered": 1,
@@ -511,7 +582,12 @@
             {
               "id": "vitals",
               "label": "Vitals",
-              "fieldIds": ["systolicBp", "diastolicBp", "pulseRate", "respRate"],
+              "fieldIds": [
+                "systolicBp",
+                "diastolicBp",
+                "pulseRate",
+                "respRate"
+              ],
               "columns": 2
             }
           ]
@@ -522,7 +598,15 @@
           "groups": [
             {
               "id": "condition-details",
-              "fieldIds": ["year", "condition1", "condition2", "condition3", "condition4", "condition5", "condition6"],
+              "fieldIds": [
+                "year",
+                "condition1",
+                "condition2",
+                "condition3",
+                "condition4",
+                "condition5",
+                "condition6"
+              ],
               "columns": 1
             }
           ]
@@ -735,7 +819,15 @@
           "groups": [
             {
               "id": "condition-details",
-              "fieldIds": ["condition1", "year", "condition2", "condition3", "condition4", "condition5", "condition6"],
+              "fieldIds": [
+                "condition1",
+                "year",
+                "condition2",
+                "condition3",
+                "condition4",
+                "condition5",
+                "condition6"
+              ],
               "columns": 1
             }
           ]
@@ -743,7 +835,18 @@
         {
           "id": "person",
           "title": "Person",
-          "groups": [{ "id": "person-details", "fieldIds": ["age", "gender", "ethnicity", "race"], "columns": 2 }]
+          "groups": [
+            {
+              "id": "person-details",
+              "fieldIds": [
+                "age",
+                "gender",
+                "ethnicity",
+                "race"
+              ],
+              "columns": 2
+            }
+          ]
         },
         {
           "id": "measurement",
@@ -752,7 +855,11 @@
             {
               "id": "body-measurement",
               "label": "Body measurement",
-              "fieldIds": ["height", "weight", "bmi"],
+              "fieldIds": [
+                "height",
+                "weight",
+                "bmi"
+              ],
               "columns": 3,
               "validation": {
                 "minAnswered": 1,
@@ -763,7 +870,12 @@
             {
               "id": "vitals",
               "label": "Vitals",
-              "fieldIds": ["systolicBp", "diastolicBp", "pulseRate", "respRate"],
+              "fieldIds": [
+                "systolicBp",
+                "diastolicBp",
+                "pulseRate",
+                "respRate"
+              ],
               "columns": 2
             }
           ]
@@ -932,7 +1044,9 @@
       "id": "table1",
       "name": "Table 1",
       "description": "Generate a Table 1 summary using selected covariate concept sets.",
-      "surfaces": ["cohortBuilder"],
+      "surfaces": [
+        "cohortBuilder"
+      ],
       "flow": "table1-config",
       "fields": []
     }
