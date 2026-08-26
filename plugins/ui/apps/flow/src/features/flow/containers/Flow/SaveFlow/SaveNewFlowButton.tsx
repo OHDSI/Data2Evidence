@@ -11,9 +11,9 @@ export const SaveNewFlowButton: FC<SaveNewFlowButtonProps> = () => {
   }, []);
 
   return (
-    <Tooltip title="Create new dataflow">
+    <Tooltip title="Add Dataflow">
       <div>
-        <IconButton startIcon={<EmptyFileIcon />} onClick={handleClick} />
+        <IconButton aria-label="Add Dataflow" startIcon={<EmptyFileIcon />} onClick={handleClick} />
       </div>
     </Tooltip>
   );
