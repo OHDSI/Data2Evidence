@@ -73,6 +73,54 @@ Deno.test("legacy concept sets remain writable in facade responses", () => {
   assertEquals(conceptSet.source, "legacy");
 });
 
+Deno.test("legacy concept sets are writable only for their owner", () => {
+  const owned = mapLegacyConceptSetToWebApiConceptSet(
+    {
+      id: 21,
+      name: "Owned legacy set",
+      shared: false,
+      concepts: [],
+      userName: "owner-1",
+      createdBy: "owner-1",
+      modifiedBy: "owner-1",
+      createdDate: "2026-05-01T00:00:00.000Z",
+      modifiedDate: "2026-05-02T00:00:00.000Z",
+    },
+    "owner-1",
+  );
+  assertEquals(owned.hasWriteAccess, true);
+
+  const sharedFromSomeoneElse = mapLegacyConceptSetToWebApiConceptSet(
+    {
+      id: 22,
+      name: "Shared legacy set",
+      shared: true,
+      concepts: [],
+      userName: "owner-1",
+      createdBy: "owner-1",
+      modifiedBy: "owner-1",
+      createdDate: "2026-05-01T00:00:00.000Z",
+      modifiedDate: "2026-05-02T00:00:00.000Z",
+    },
+    "current-user",
+  );
+  assertEquals(sharedFromSomeoneElse.hasWriteAccess, false);
+
+  // Without a caller-provided user the historical writable default applies.
+  const noUser = mapLegacyConceptSetToWebApiConceptSet({
+    id: 23,
+    name: "No user legacy set",
+    shared: true,
+    concepts: [],
+    userName: "owner-1",
+    createdBy: "owner-1",
+    modifiedBy: "owner-1",
+    createdDate: "2026-05-01T00:00:00.000Z",
+    modifiedDate: "2026-05-02T00:00:00.000Z",
+  });
+  assertEquals(noUser.hasWriteAccess, true);
+});
+
 Deno.test("native WebAPI concept sets are exposed with compound facade ids", () => {
   const conceptSet = mapWebApiConceptSetToFacadeConceptSet({
     id: 42,

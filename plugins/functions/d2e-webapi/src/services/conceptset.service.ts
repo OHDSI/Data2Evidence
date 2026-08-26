@@ -95,6 +95,7 @@ export const getConceptSet = async (
   conceptSetId: string | number,
 ): Promise<IConceptSetResponseDto> => {
   const ref = parseConceptSetRef(conceptSetId);
+  const currentUserId = getCurrentUserId(token);
 
   if (ref.source === "webapi") {
     const webApiConceptSetApi = new WebApiConceptSetAPI(token);
@@ -110,7 +111,10 @@ export const getConceptSet = async (
     datasetId,
   );
 
-  return mapLegacyConceptSetToWebApiConceptSet(terminologyConceptSet);
+  return mapLegacyConceptSetToWebApiConceptSet(
+    terminologyConceptSet,
+    currentUserId,
+  );
 };
 
 export const getConceptSets = async (
@@ -119,6 +123,7 @@ export const getConceptSets = async (
 ): Promise<IConceptSetListResponseDto> => {
   const terminologySvcApi = new TerminologySvcAPI(token);
   const webApiConceptSetApi = new WebApiConceptSetAPI(token);
+  const currentUserId = getCurrentUserId(token);
 
   const [terminologyConceptSets, webApiConceptSets] = await Promise.all([
     terminologySvcApi.getConceptSets(datasetId),
@@ -126,7 +131,9 @@ export const getConceptSets = async (
   ]);
 
   const merged = [
-    ...terminologyConceptSets.map(mapLegacyConceptSetToWebApiConceptSet),
+    ...terminologyConceptSets.map((conceptSet) =>
+      mapLegacyConceptSetToWebApiConceptSet(conceptSet, currentUserId),
+    ),
     ...webApiConceptSets.map(mapWebApiConceptSetToFacadeConceptSet),
   ];
 
@@ -741,6 +748,7 @@ export const getIncludedConcepts = async (
 
 export const mapLegacyConceptSetToWebApiConceptSet = (
   conceptSet: ITerminologyConceptSet,
+  currentUserId?: string,
 ): IConceptSetResponseDto => {
   return {
     createdDate: Date.parse(conceptSet.createdDate),
@@ -752,7 +760,13 @@ export const mapLegacyConceptSetToWebApiConceptSet = (
       name: conceptSet.userName,
     },
     tags: [],
-    hasWriteAccess: true,
+    // A legacy set is writable only by its owner. A shared set owned by another
+    // user reports no write access, so the UI does not offer an active Update
+    // button. When the caller passes no user (for example in unit tests), keep
+    // the historical writable default so behaviour is unchanged.
+    hasWriteAccess: currentUserId
+      ? conceptSet.createdBy === currentUserId
+      : true,
     hasReadAccess: true,
     id: formatConceptSetRef({ source: "legacy", externalId: conceptSet.id }),
     externalId: conceptSet.id,
@@ -760,6 +774,21 @@ export const mapLegacyConceptSetToWebApiConceptSet = (
     shared: conceptSet.shared,
     source: "legacy",
   };
+};
+
+const getCurrentUserId = (token: string): string | undefined => {
+  try {
+    const encoded = token.replace(/^bearer\s+/i, "").split(".")[1];
+    if (!encoded) {
+      return undefined;
+    }
+    const base64 = encoded.replace(/-/g, "+").replace(/_/g, "/");
+    const padded = base64.padEnd(Math.ceil(base64.length / 4) * 4, "=");
+    const payload = JSON.parse(atob(padded)) as { sub?: unknown };
+    return typeof payload.sub === "string" ? payload.sub : undefined;
+  } catch {
+    return undefined;
+  }
 };
 
 export const mapWebApiConceptSetToFacadeConceptSet = (
