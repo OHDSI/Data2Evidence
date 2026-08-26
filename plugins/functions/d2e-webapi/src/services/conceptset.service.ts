@@ -437,21 +437,19 @@ export const checkIfConceptSetExists = async (
 ): Promise<number> => {
   const ref = parseConceptSetRef(conceptSetId);
   const terminologySvcApi = new TerminologySvcAPI(token);
-  const webApiConceptSetApi = new WebApiConceptSetAPI(token);
 
-  // Probe WebAPI with the source-scoped externalId so that an in-flight
-  // rename of the same row doesn't false-positive against itself. For
-  // legacy refs there is no WebAPI counterpart to exclude, so use 0 (a
-  // never-existing id) which still surfaces unrelated WebAPI duplicates.
-  const webApiExcludeId = ref.source === "webapi" ? ref.externalId : 0;
-
-  const [terminologyConceptSets, webApiExistsCount] = await Promise.all([
-    terminologySvcApi.getConceptSets(datasetId),
-    webApiConceptSetApi.checkIfConceptSetExists(
-      webApiExcludeId,
-      conceptSetName,
-    ),
-  ]);
+  // Only the legacy store is probed here. The WebAPI store enforces name
+  // uniqueness with the `uq_cs_name` constraint and reports a duplicate as
+  // HTTP 409 on create and on update, which the routes map to a typed error.
+  //
+  // Asking WebAPI the same question needs `read:conceptset` or
+  // `write:conceptset`. The `concept set creator` role holds neither, so a
+  // researcher-only user was denied here and could never save a concept set,
+  // even though the create itself was permitted. Atlas3 does not ask this
+  // question at all.
+  const terminologyConceptSets = await terminologySvcApi.getConceptSets(
+    datasetId,
+  );
 
   // For legacy refs we must exclude the same legacy row by id; for webapi
   // refs the legacy table is a disjoint namespace, so no row should match
@@ -464,7 +462,7 @@ export const checkIfConceptSetExists = async (
       : terminologyConceptSet.name === conceptSetName
   );
 
-  return (result === undefined ? 0 : 1) + webApiExistsCount;
+  return result === undefined ? 0 : 1;
 };
 
 const parseDateValue = (value: string | number): number => {
