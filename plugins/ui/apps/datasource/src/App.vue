@@ -1,19 +1,28 @@
 <template>
-  <!-- No with-background: DatasourceDescription mounts inside Atlas3's own
-       white AtlasCard (see DataSourcesView.vue), and a theme background fill
-       here was showing through as an unwanted light-gray tint. theme="light"
-       alone still establishes the CSS var scope (--v-theme-primary etc.). -->
+  <!-- theme="light" establishes the CSS var scope (--v-theme-primary etc.). -->
   <v-theme-provider theme="light">
+    <!-- Native detail: Atlas3's DataSourcesView mounts this in the
+         `datasource-sidebar` surface with a sourceKey (his PR — unchanged). -->
     <DatasourceDescription
       v-if="hostContext?.sourceKey"
       :source-key="hostContext.sourceKey"
       :token="authContext?.token ?? null"
+    />
+
+    <!-- Catalog / overview: mounted as a full page (no sourceKey). Clicking a
+         card opens Atlas3's native Data Sources report view for that source,
+         where his Description renders in the sidebar. -->
+    <DatasourceCatalog
+      v-else
+      :token="authContext?.token ?? null"
+      :on-select="openSource"
     />
   </v-theme-provider>
 </template>
 
 <script setup lang="ts">
 import DatasourceDescription from './views/DatasourceDescription.vue'
+import DatasourceCatalog from './views/DatasourceCatalog.vue'
 
 interface AuthContext {
   isAuthenticated: boolean
@@ -33,4 +42,10 @@ defineProps<{
   authContext: AuthContext
   hostContext?: HostContext
 }>()
+
+// Card click -> Atlas3's native Data Sources report view for the source.
+// Atlas3 route: /datasources/reports/:sourceKey?/:reportType?
+function openSource(sourceKey: string): void {
+  window.location.hash = `#/datasources/reports/${encodeURIComponent(sourceKey)}`
+}
 </script>

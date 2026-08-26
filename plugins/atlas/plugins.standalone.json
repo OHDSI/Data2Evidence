@@ -98,7 +98,9 @@
       "name": "Datasource",
       "version": "0.0.1",
       "entryPoint": "datasource/index.system.js",
-      "menuItems": [],
+      "menuItems": [
+        { "id": "datasource-catalog", "name": "Data sources", "route": "/plugins/datasource/", "icon": "mdi-database", "order": 5, "insertBefore": "concepts" }
+      ],
       "mountPoints": [
         { "id": "datasource-sidebar-info", "surface": "datasource-sidebar", "name": "Description", "icon": "mdi-file-document-outline", "group": "Overview", "order": 5, "insertBefore": "dashboard" }
       ],
