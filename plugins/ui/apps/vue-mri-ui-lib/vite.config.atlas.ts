@@ -9,13 +9,21 @@ export default defineConfig({
   publicDir: false,
 
   resolve: {
-    alias: {
-      // Source-export the local d2e component library rather than resolving the
-      // unpublished @d2e/ui package from the registry. Keep the tokens.css
-      // subpath ahead of the bare package prefix.
-      '@d2e/ui/tokens.css': path.resolve(__dirname, '../../libs/d2e-ui/src/tokens/tokens.css'),
-      '@d2e/ui': path.resolve(__dirname, '../../libs/d2e-ui/src/index.ts'),
-    },
+    alias: [
+      // @d2e/ui is private and unpublished, so the CI atlas build (npm install
+      // --workspaces=false) cannot resolve it from the registry. Source-export it
+      // from the lib and keep vue/vuetify on the app's installed copy so the
+      // library's own bare imports resolve during the isolated install.
+      { find: '@d2e/ui/tokens.css', replacement: path.resolve(__dirname, '../../libs/d2e-ui/src/tokens/tokens.css') },
+      { find: '@d2e/ui', replacement: path.resolve(__dirname, '../../libs/d2e-ui/src/index.ts') },
+      { find: 'vue', replacement: path.resolve(__dirname, 'node_modules/vue') },
+      { find: 'vuetify/styles', replacement: path.resolve(__dirname, 'node_modules/vuetify/lib/styles/main.css') },
+      {
+        find: /^vuetify\/(components|directives)(\/(.+))?$/,
+        replacement: path.resolve(__dirname, 'node_modules/vuetify/lib/$1$2'),
+      },
+      { find: /^vuetify$/, replacement: path.resolve(__dirname, 'node_modules/vuetify/lib/framework.js') },
+    ],
   },
 
   build: {

@@ -129,19 +129,30 @@ export default defineConfig(({ command, mode }) => {
     },
 
     resolve: {
-      alias: {
-        '@': path.resolve(__dirname, './src'),
-        // Source-export the local d2e component library instead of resolving the
-        // unpublished @d2e/ui package from the registry (CI installs with
-        // --workspaces=false). Declare the tokens.css subpath first so the more
-        // specific match wins over the bare @d2e/ui prefix.
-        '@d2e/ui/tokens.css': path.resolve(__dirname, '../../libs/d2e-ui/src/tokens/tokens.css'),
-        '@d2e/ui': path.resolve(__dirname, '../../libs/d2e-ui/src/index.ts'),
+      alias: [
+        // @d2e/ui is private and unpublished, so the CI atlas build (npm install
+        // --workspaces=false) cannot resolve it from the registry. Source-export it
+        // from the lib and keep vue/vuetify on the app's installed copy so the
+        // library's own bare imports resolve during the isolated install.
+        { find: '@d2e/ui/tokens.css', replacement: path.resolve(__dirname, '../../libs/d2e-ui/src/tokens/tokens.css') },
+        { find: '@d2e/ui', replacement: path.resolve(__dirname, '../../libs/d2e-ui/src/index.ts') },
         // Dedupe Vue to prevent multiple instances (matching webpack alias)
-        vue: path.resolve(__dirname, 'node_modules/vue'),
+        { find: 'vue', replacement: path.resolve(__dirname, 'node_modules/vue') },
+        // Vuetify ships its entries under lib/ and routes subpaths through its
+        // exports map. Resolve the JS entries the library (and app) use to the
+        // app's installed copy; leave Sass subpaths (vuetify/settings) alone so
+        // the Sass node importer can find them via the package's partials.
+        { find: 'vuetify/styles', replacement: path.resolve(__dirname, 'node_modules/vuetify/lib/styles/main.css') },
+        {
+          find: /^vuetify\/(components|directives)(\/(.+))?$/,
+          replacement: path.resolve(__dirname, 'node_modules/vuetify/lib/$1$2'),
+        },
+        { find: /^vuetify$/, replacement: path.resolve(__dirname, 'node_modules/vuetify/lib/framework.js') },
         // D3 v3 wrapper - provides access to window.d3 (loaded from public/vendor)
-        d3: path.resolve(__dirname, './src/lib/d3.ts'),
-      },
+        { find: 'd3', replacement: path.resolve(__dirname, './src/lib/d3.ts') },
+        // App-local imports (matching webpack alias)
+        { find: '@', replacement: path.resolve(__dirname, './src') },
+      ],
     },
 
     css: {
@@ -152,7 +163,9 @@ export default defineConfig(({ command, mode }) => {
           {
             postcssPlugin: 'remove-color-adjust',
             Declaration: {
-              'color-adjust': (decl) => { decl.remove() },
+              'color-adjust': decl => {
+                decl.remove()
+              },
             },
           },
         ],
