@@ -8,7 +8,6 @@ from .tasks import *
 import os
 
 from _shared_flow_utils.dao.DBDao import DBDao
-from _shared_flow_utils.api.DicomServerAPI import DicomServerAPI
 os.environ['plugin_name'] = 'dicom_etl_plugin'
 
 @flow(log_prints=True)
@@ -33,7 +32,6 @@ def dicom_etl_plugin(options: DICOMETLOptions):
 
         case FlowActionType.INGEST_METADATA:
             dicom_files_abs_path = options.dicom_files_abs_path
-            upload_files = options.upload_files
             person_patient_mapping = options.person_to_patient_mapping
             person_mapping_schema = person_patient_mapping.schema_name
 
@@ -112,8 +110,3 @@ def dicom_etl_plugin(options: DICOMETLOptions):
             else:
                 ingest_measurement(image_feature_df, cdm_schema, dbdao)
                 ingest_image_feature(image_feature_df, medical_imaging_schema, dbdao)
-
-            if len(mapped_concepts_df) > 0 and upload_files:
-                dicom_server_api = DicomServerAPI()
-                file_upload_result = upload_file_to_server(
-                    mapped_concepts_df, image_occurrence_df, dicom_server_api)

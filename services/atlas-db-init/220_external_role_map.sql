@@ -46,16 +46,6 @@ BEGIN
     RAISE NOTICE 'External role mapping: % row(s) added, % stale row(s) removed', seeded, pruned;
 END $$;
 
--- Verify. Gated the same way as the seed: naming a missing relation is a parse
--- error, which ON_ERROR_STOP would turn into a failed init.
-SELECT EXISTS (
-    SELECT 1 FROM information_schema.tables
-    WHERE table_schema = 'webapi' AND table_name = 'sec_external_role_map'
-) AS have_role_map \gset
-
-\if :have_role_map
-SELECT m.origin, m.external_claim, r.name AS role_name
-FROM webapi.sec_external_role_map m
-JOIN webapi.sec_role r ON r.id = m.role_id
-ORDER BY r.name, m.external_claim;
-\endif
+-- Do not use psql meta-commands (\gset, \if) in this file: trex applies it over
+-- the wire protocol, and the simple query protocol parses the whole file before
+-- executing any of it, so one meta-command stops every statement from running.

@@ -1,0 +1,45 @@
+name: Trex Provision Plugin Tests
+
+on:
+  pull_request:
+    paths:
+      - 'services/trex/provision/**'
+      - '.github/workflows/trex-provision-tests.yml'
+  push:
+    branches: [develop]
+    paths:
+      - 'services/trex/provision/**'
+      - '.github/workflows/trex-provision-tests.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  deno-test:
+    runs-on: ubuntu-latest
+    # The bootstrap builds role/schema/grant SQL that only a real server can
+    # validate — the privilege bug that crash-looped alp-logto was invisible to
+    # the unit tests. TEST_PG_URL turns the idempotency test on.
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - name: d2e-bootstrap tests
+        working-directory: services/trex/provision/d2e-bootstrap
+        env:
+          TEST_PG_URL: postgres://postgres:postgres@127.0.0.1:5432/postgres
+        run: deno test --allow-env --allow-net --allow-read --no-config
