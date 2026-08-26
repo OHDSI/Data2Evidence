@@ -36,12 +36,10 @@ export class StudyAccessRequestRouter {
 
     this.router.post('/', async (req: IAppRequest, res: Response, next: NextFunction) => {
       const tenantId = env.APP_TENANT_ID
-      const { userId, studyId, role } = req.body || {}
+      const { studyId, role } = req.body || {}
+      const userId = req.user.userId
 
-      if (!userId) {
-        this.logger.warn(`Param 'userId' is required`)
-        return res.status(400).send({ message: `Param 'userId' is required` })
-      } else if (!studyId) {
+      if (!studyId) {
         this.logger.warn(`Param 'studyId' is required`)
         return res.status(400).send({ message: `Param 'studyId' is required` })
       } else if (!role) {

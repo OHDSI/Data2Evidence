@@ -155,6 +155,13 @@ export interface IDatasetTagDto {
   name: string;
 }
 
+export type DataSourceAccessState =
+  | "no_access"
+  | "pending"
+  | "restricted"
+  | "read"
+  | "write";
+
 export interface IDatasetResponseDto {
   id: string;
   tenant: {
@@ -183,6 +190,7 @@ export interface IDatasetResponseDto {
   plugin: string;
   fhirDatasetId?: string;
   flowParameters?: DatasetFlowParameters | null;
+  accessState?: DataSourceAccessState;
 }
 
 export interface IDatasetSearchDto {

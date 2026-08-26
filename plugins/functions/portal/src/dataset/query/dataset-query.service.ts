@@ -4,6 +4,7 @@ import { RequestContextService } from "../../common/request-context.service.ts";
 import { createLogger } from "../../logger.ts";
 import { TenantService } from "../../tenant/tenant.service.ts";
 import {
+  DataSourceAccessState,
   IDataset,
   IDatasetQueryDto,
   IDatasetResponseDto,
@@ -107,8 +108,14 @@ export class DatasetQueryService {
     }
 
     const tenant = this.tenantService.getTenant();
+    const accessState = this.userId
+      ? this.getAccessStateForDataset(dataset.id, dataset.datasetDetail.showRequestAccess)
+      : undefined;
     const swapped = this.swapVariables(
-      await this.buildDatasetResponseDto(dataset, tenant),
+      {
+        ...this.buildDatasetResponseDto(dataset, tenant),
+        ...(accessState ? { accessState: await accessState } : {}),
+      },
       SWAP_TO.STUDY,
     );
     return swapped as IDataset;
@@ -155,13 +162,14 @@ export class DatasetQueryService {
       }
     }
 
+    const accessContext = isResearcher
+      ? await this.getDataSourceAccessContext()
+      : undefined;
+
     if (isResearcher) {
-      const datasetIds = await this.userMgmtService.getResearcherDatasetIds(
-        this.userId,
-      );
       query.andWhere(
         "(dataset.visibility_status = :hidden AND dataset.id = ANY(:datasetIds) OR dataset.visibility_status != :hidden)",
-        { hidden: "HIDDEN", datasetIds },
+        { hidden: "HIDDEN", datasetIds: [...accessContext.readDatasetIds] },
       );
     }
 
@@ -183,7 +191,20 @@ export class DatasetQueryService {
     const datasetDtos = await datasets.reduce<Promise<IDatasetResponseDto[]>>(
       async (accP, dataset) => {
         const acc = await accP;
-        const datasetDto = await this.buildDatasetResponseDto(dataset, tenant);
+        const datasetDto = {
+          ...this.buildDatasetResponseDto(dataset, tenant),
+          ...(accessContext
+            ? {
+              accessState: this.getAccessState(
+                dataset.id,
+                dataset.datasetDetail.showRequestAccess,
+                accessContext.writeDatasetIds,
+                accessContext.readDatasetIds,
+                accessContext.pendingDatasetIds,
+              ),
+            }
+            : {}),
+        };
 
         const { databaseCode, schemaName, dataModel, ...rest } = datasetDto;
         const formattedDataModel = dataModel.replace(/\s*\[.*?\]/, "").trim();
@@ -405,6 +426,54 @@ export class DatasetQueryService {
           sql: q.sql,
         })),
     }));
+  }
+
+  private async getDataSourceAccessContext() {
+    const [roleMemberships, pendingDatasetIds] = await Promise.all([
+      this.userMgmtService.getDataSourceRoleMemberships(this.userId),
+      this.userMgmtService.getUnresolvedRequestStudyIds(),
+    ]);
+
+    return {
+      readDatasetIds: new Set(roleMemberships.readStudyIds),
+      writeDatasetIds: roleMemberships.hasWriteAccess
+        ? new Set(roleMemberships.readStudyIds)
+        : new Set<string>(),
+      pendingDatasetIds: new Set(pendingDatasetIds),
+    };
+  }
+
+  private async getAccessStateForDataset(
+    datasetId: string,
+    showRequestAccess: boolean,
+  ): Promise<DataSourceAccessState> {
+    const accessContext = await this.getDataSourceAccessContext();
+    return this.getAccessState(
+      datasetId,
+      showRequestAccess,
+      accessContext.writeDatasetIds,
+      accessContext.readDatasetIds,
+      accessContext.pendingDatasetIds,
+    );
+  }
+
+  private getAccessState(
+    datasetId: string,
+    showRequestAccess: boolean,
+    writeDatasetIds: Set<string>,
+    readDatasetIds: Set<string>,
+    pendingDatasetIds: Set<string>,
+  ): DataSourceAccessState {
+    if (writeDatasetIds.has(datasetId)) {
+      return "write";
+    }
+    if (readDatasetIds.has(datasetId)) {
+      return "read";
+    }
+    if (pendingDatasetIds.has(datasetId)) {
+      return "pending";
+    }
+    return showRequestAccess ? "no_access" : "restricted";
   }
 
   buildDatasetResponseDto(

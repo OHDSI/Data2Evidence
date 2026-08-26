@@ -33,6 +33,15 @@ export interface IAppRequest extends Request {
   userGroupsCache?: Map<string, Promise<UserGroupMetadata>>
 }
 
+export interface DataSourceRoleMemberships {
+  readStudyIds: string[]
+  hasWriteAccess: boolean
+}
+
+export interface UnresolvedStudyAccessRequest {
+  studyId: string
+}
+
 export interface RoleMap {
   alp_tenant_id: string[] // list of all tenant ids
   alp_role_study_researcher: string[] // list of study ids

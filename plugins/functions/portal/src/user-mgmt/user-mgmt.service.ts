@@ -17,6 +17,14 @@ export class UserMgmtService {
     return userGroups.alp_role_study_researcher;
   }
 
+  async getDataSourceRoleMemberships(userId: string) {
+    return this.userMgmtApi.getDataSourceRoleMemberships(userId, this.jwt);
+  }
+
+  async getUnresolvedRequestStudyIds() {
+    return this.userMgmtApi.getUnresolvedRequestStudyIds(this.jwt);
+  }
+
   async ensureDatasetRole(datasetId: string, tokenStudyCode: string, type?: string) {
     return this.userMgmtApi.ensureDatasetRole(datasetId, tokenStudyCode, type, this.jwt);
   }

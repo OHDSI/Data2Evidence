@@ -1,40 +1,52 @@
-/**
- * Portal Plugin Entry Point
- *
- * This is the single-spa lifecycle for embedding Atlas3 in the researcher portal.
- * It wraps Atlas3 in an iframe and bridges auth from the portal.
- */
-import { h, createApp } from 'vue';
+import { computed, createApp, h, inject, ref } from 'vue';
 import singleSpaVue from 'single-spa-vue';
-import AtlasPortalWrapper from './components/AtlasPortalWrapper.vue';
+import DataSourceDetailPage from './data-sources/DataSourceDetailPage.vue';
+import DataSourceListPage from './data-sources/DataSourceListPage.vue';
+import { useDataSources } from './data-sources/use-data-sources';
+import './data-sources/data-sources.css';
 import type { PluginProps } from './types';
+
+const DataSourcesApp = {
+  setup() {
+    const pluginProps = inject<PluginProps>('pluginProps');
+    const getToken = pluginProps?.getToken ?? (async () => pluginProps?.authContext?.token ?? '');
+    const isAuthenticated = computed(() => Boolean(pluginProps?.getToken || pluginProps?.authContext?.isAuthenticated));
+    const sources = useDataSources(getToken);
+    const selectedId = ref<string | null>(null);
+
+    function select(id: string) {
+      selectedId.value = id;
+      window.history.pushState({ dataSourceId: id }, '', `#data-sources/${encodeURIComponent(id)}`);
+    }
+
+    function back() {
+      selectedId.value = null;
+      window.history.pushState({}, '', '#data-sources');
+    }
+
+    function syncRoute() {
+      const match = window.location.hash.match(/^#data-sources\/([^/?#]+)/);
+      selectedId.value = match ? decodeURIComponent(match[1]) : null;
+    }
+
+    window.addEventListener('popstate', syncRoute);
+    window.addEventListener('hashchange', syncRoute);
+    syncRoute();
+
+    return () => selectedId.value
+      ? h(DataSourceDetailPage, { sourceId: selectedId.value, sources, onBack: back })
+      : h(DataSourceListPage, { sources, isAuthenticated: isAuthenticated.value, onSelect: select });
+  },
+};
 
 const vueLifecycles = singleSpaVue({
   createApp,
-  appOptions: {
-    render() {
-      return h(AtlasPortalWrapper, {
-        name: (this as any).name,
-      });
-    },
-  },
+  appOptions: { render: () => h(DataSourcesApp) },
   handleInstance(app, props: PluginProps) {
-    // Provide plugin props to all components
     app.provide('pluginProps', props);
   },
 });
 
-export const bootstrap = (props: PluginProps) => {
-  console.log('[AtlasPortalPlugin] bootstrap', props);
-  return vueLifecycles.bootstrap(props);
-};
-
-export const mount = (props: PluginProps) => {
-  console.log('[AtlasPortalPlugin] mount', props);
-  return vueLifecycles.mount(props);
-};
-
-export const unmount = (props: PluginProps) => {
-  console.log('[AtlasPortalPlugin] unmount');
-  return vueLifecycles.unmount(props);
-};
+export const bootstrap = (props: PluginProps) => vueLifecycles.bootstrap(props);
+export const mount = (props: PluginProps) => vueLifecycles.mount(props);
+export const unmount = (props: PluginProps) => vueLifecycles.unmount(props);

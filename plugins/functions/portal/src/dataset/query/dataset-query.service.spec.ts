@@ -57,6 +57,27 @@ describe('DatasetQueryService', () => {
     expect(service).toBeDefined()
   })
 
+  it.each([
+    ['write', new Set(['dataset-id']), new Set(['dataset-id']), new Set(['dataset-id']), true],
+    ['read', new Set(), new Set(['dataset-id']), new Set(['dataset-id']), false],
+    ['pending', new Set(), new Set(), new Set(['dataset-id']), true],
+    ['restricted', new Set(), new Set(), new Set(), false],
+    ['no_access', new Set(), new Set(), new Set(), true]
+  ])(
+    'derives %s access state with write-first precedence',
+    (expected, writeDatasetIds, readDatasetIds, pendingDatasetIds, showRequestAccess) => {
+      expect(
+        (service as any).getAccessState(
+          'dataset-id',
+          showRequestAccess,
+          writeDatasetIds,
+          readDatasetIds,
+          pendingDatasetIds
+        )
+      ).toBe(expected)
+    }
+  )
+
   it('should find dataset with detail', async () => {
     // Given
     const mockDatasetDetail = { id: 'detail-id', name: 'detail-name', description: 'detail-description' }

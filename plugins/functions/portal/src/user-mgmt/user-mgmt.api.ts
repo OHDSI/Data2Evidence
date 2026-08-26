@@ -2,6 +2,14 @@ import { Injectable, SCOPE } from "@danet/core";
 import { services } from "../env.ts";
 import { UserGroup } from "../types.d.ts";
 
+interface UserGroupResponse extends UserGroup {
+  alp_role_study_write_dqd_researcher?: boolean;
+}
+
+interface UnresolvedStudyAccessRequest {
+  studyId: string;
+}
+
 const post = async <T = any>(
   url: string,
   data?: any,
@@ -35,6 +43,24 @@ export class UserMgmtApi {
     const url = `${this.url}/user-group/list`;
     const result = await this.channel.post(url, body, requestConfig);
     return result.data;
+  }
+
+  async getDataSourceRoleMemberships(
+    userId: string,
+    jwt: string,
+  ): Promise<{ readStudyIds: string[]; hasWriteAccess: boolean }> {
+    const userGroups = await this.getUserGroups(userId, jwt) as UserGroupResponse;
+    return {
+      readStudyIds: userGroups.alp_role_study_researcher || [],
+      hasWriteAccess: Boolean(userGroups.alp_role_study_write_dqd_researcher),
+    };
+  }
+
+  async getUnresolvedRequestStudyIds(jwt: string): Promise<string[]> {
+    const requestConfig = this.getRequestConfig(jwt);
+    const url = `${this.url}/study/access-request/me`;
+    const result = await this.channel.get(url, requestConfig);
+    return (result.data as UnresolvedStudyAccessRequest[]).map(({ studyId }) => studyId);
   }
 
   async ensureDatasetRole(datasetId: string, tokenStudyCode: string, type: string | undefined, jwt: string) {
