@@ -27,6 +27,7 @@
           icon="mdi-close"
           variant="text"
           size="small"
+          :ripple="false"
           :aria-label="closeLabel"
           :disabled="busy"
           data-testid="d2e-dialog-close"

@@ -9,6 +9,7 @@
     :block="block"
     :prepend-icon="prependIcon"
     :append-icon="appendIcon"
+    :ripple="false"
   >
     <slot />
   </v-btn>

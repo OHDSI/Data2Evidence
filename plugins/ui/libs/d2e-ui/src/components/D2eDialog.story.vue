@@ -10,13 +10,15 @@ const deleteOpen = ref(true);
 const materializeOpen = ref(true);
 const busyOpen = ref(true);
 const persistentOpen = ref(true);
-const sizeOpen = ref(true);
+const sizeSOpen = ref(true);
+const sizeLOpen = ref(true);
+const sizeXlOpen = ref(true);
 const name = ref("SNRI Users");
 const description = ref("");
 </script>
 
 <template>
-  <Story title="D2eDialog" group="components">
+  <Story title="D2eDialog" group="components" responsive-disabled>
     <Variant title="default">
       <D2eDialog v-model="open" title="Dialog title">
         Dialog body content.
@@ -27,10 +29,40 @@ const description = ref("");
       </D2eDialog>
     </Variant>
 
-    <Variant title="sizes (Modal/S, L, XL)">
-      <D2eDialog v-model="sizeOpen" title="Modal/L (900)" size="l">
-        Sizes come from the Figma variables: S 540, L 900, XL 1200. There is no
-        Modal/M — 600 was never a design size.
+    <Variant title="size S — 540 (default)">
+      <D2eDialog v-model="sizeSOpen" title="Modal/S" size="s">
+        <code>size="s"</code> — max-width 540 px. This is the default, and the
+        size the rename, delete and materialize frames use.
+        <template #actions>
+          <D2eButton variant="secondary"> Cancel </D2eButton>
+          <D2eButton> Confirm </D2eButton>
+        </template>
+      </D2eDialog>
+    </Variant>
+
+    <Variant title="size L — 900">
+      <D2eDialog v-model="sizeLOpen" title="Modal/L" size="l">
+        <code>size="l"</code> — max-width 900 px.
+        <p class="story-note">
+          The preview scales with the window. Below about 1900 px of browser
+          width the dialog clamps to the pane instead of reaching 900 px — which
+          is the same thing a real browser does at that size.
+        </p>
+        <template #actions>
+          <D2eButton variant="secondary"> Cancel </D2eButton>
+          <D2eButton> Confirm </D2eButton>
+        </template>
+      </D2eDialog>
+    </Variant>
+
+    <Variant title="size XL — 1200">
+      <D2eDialog v-model="sizeXlOpen" title="Modal/XL" size="xl">
+        <code>size="xl"</code> — max-width 1200 px.
+        <p class="story-note">
+          Needs roughly 2500 px of browser width to reach 1200 px; it clamps to
+          the pane below that. Figma also documents XL as responsive (40 px from
+          the window edge); that rule is not implemented yet.
+        </p>
         <template #actions>
           <D2eButton variant="secondary"> Cancel </D2eButton>
           <D2eButton> Confirm </D2eButton>
@@ -103,3 +135,12 @@ const description = ref("");
     </Variant>
   </Story>
 </template>
+
+<style scoped>
+.story-note {
+  margin: 12px 0 0;
+  font-size: 12px;
+  line-height: 1.4;
+  color: #595757;
+}
+</style>

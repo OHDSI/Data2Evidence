@@ -4,6 +4,7 @@
     :class="[`d2e-icon-button--${category}`, `d2e-icon-button--${size}`]"
     :style="containerStyle"
     icon
+    :ripple="false"
     :aria-label="ariaLabel"
     :disabled="disabled"
     @click="$emit('click', $event)"
