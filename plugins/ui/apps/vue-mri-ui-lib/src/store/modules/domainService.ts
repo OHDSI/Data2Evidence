@@ -11,6 +11,7 @@ const latestRequestTimes: { [key: string]: number } = {}
 declare interface IDomainValueItem {
   isLoaded: boolean
   isLoading: boolean
+  isFullList?: boolean
   datasetId?: string
   loadedStatus?: 'HAS_RESULTS' | 'NO_RESULTS' | 'TOO_MANY_RESULTS'
   values: Array<{
@@ -54,9 +55,15 @@ const actions = {
     const mriConfig = rootGetters.getMriConfig
     const datasetId = rootGetters.getSelectedDataset.id
 
-    // Skip if already loaded for this dataset (only for full list fetches, not searches)
     const existing = state.domainValues[attributePathUid]
-    if (!searchQuery && existing?.isLoaded && !existing?.isLoading && existing?.datasetId === datasetId && datasetId) {
+    if (
+      !searchQuery &&
+      existing?.isFullList &&
+      existing?.isLoaded &&
+      !existing?.isLoading &&
+      existing?.datasetId === datasetId &&
+      datasetId
+    ) {
       return Promise.resolve(existing.values)
     }
 
@@ -73,6 +80,8 @@ const actions = {
       attributePath: attributePathUid,
       data: { values: [], isLoading: true, isLoaded: true },
     })
+
+    const isEmptySearch = !searchQuery || searchQuery.trim() === ''
 
     return dispatch('ajaxAuth', {
       method: 'get',
@@ -101,18 +110,35 @@ const actions = {
         values,
         isLoading: false,
         isLoaded: true,
+        isFullList: isEmptySearch,
         loadedStatus,
         datasetId,
       }
       if (data?.values?.[0]?.value) {
         const fuse = new Fuse(data.values, { includeScore: true, keys: ['value', { name: 'text', weight: 10 }] })
         const searchResults = fuse.search(searchQuery)
-        const emptySearch = !searchQuery || searchQuery.trim() === ''
-        data.values = emptySearch ? data.values : searchResults.map(result => result.item)
+        data.values = isEmptySearch ? data.values : searchResults.map(result => result.item)
       }
       commit(types.DOMAIN_SET_VALUES, { attributePath: attributePathUid, data })
       return data.values
     })
+      .catch(error => {
+        if (axios.isCancel(error) || latestRequestTimes[attributePathUid] !== requestTime) {
+          return []
+        }
+        commit(types.DOMAIN_SET_VALUES, {
+          attributePath: attributePathUid,
+          data: {
+            values: [],
+            isLoading: false,
+            isLoaded: true,
+            isFullList: false,
+            loadedStatus: 'NO_RESULTS',
+            datasetId,
+          },
+        })
+        return []
+      })
   },
 }
 

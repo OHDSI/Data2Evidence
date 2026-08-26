@@ -11,7 +11,6 @@
   },
   "imports": {
     "@microsoft/microsoft-graph-client": "npm:@microsoft/microsoft-graph-client@3.0.1",
-    "axios": "npm:axios@1.6.0",
     "compression": "npm:compression@1.7.4",
     "dotenv": "npm:dotenv@10.0.0",
     "express": "npm:express@4.17.3",
@@ -29,6 +28,8 @@
     "https": "node:https",
     "crypto": "node:crypto",
     "path": "jsr:@std/path@^1.0.0",
+    "@std/assert": "jsr:@std/assert@^1.0.6",
+    "./src/authz-freshness": "./src/authz-freshness.ts",
     "./src/const": "./src/const.ts",
     "./src/HealthCheckMiddleware": "./src/HealthCheckMiddleware.ts",
     "./src/main": "./src/main.ts",
