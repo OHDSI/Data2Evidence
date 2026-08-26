@@ -12,7 +12,9 @@
     "baseUrl": ".",
     "types": ["node", "vitest/globals"],
     "paths": {
-      "@/*": ["src/*"]
+      "@/*": ["src/*"],
+      "@d2e/ui": ["../../libs/d2e-ui/src/index.ts"],
+      "@d2e/ui/tokens.css": ["../../libs/d2e-ui/src/tokens/tokens.css"]
     },
     "lib": ["esnext", "dom", "dom.iterable", "scripthost"],
     "skipLibCheck": true,

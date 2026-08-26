@@ -8,6 +8,16 @@ import path from 'path'
 export default defineConfig({
   publicDir: false,
 
+  resolve: {
+    alias: {
+      // Source-export the local d2e component library rather than resolving the
+      // unpublished @d2e/ui package from the registry. Keep the tokens.css
+      // subpath ahead of the bare package prefix.
+      '@d2e/ui/tokens.css': path.resolve(__dirname, '../../libs/d2e-ui/src/tokens/tokens.css'),
+      '@d2e/ui': path.resolve(__dirname, '../../libs/d2e-ui/src/index.ts'),
+    },
+  },
+
   build: {
     outDir: path.resolve(__dirname, 'dist-atlas'),
     emptyOutDir: true,

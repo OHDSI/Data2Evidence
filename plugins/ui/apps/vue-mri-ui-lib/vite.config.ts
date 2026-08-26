@@ -131,6 +131,12 @@ export default defineConfig(({ command, mode }) => {
     resolve: {
       alias: {
         '@': path.resolve(__dirname, './src'),
+        // Source-export the local d2e component library instead of resolving the
+        // unpublished @d2e/ui package from the registry (CI installs with
+        // --workspaces=false). Declare the tokens.css subpath first so the more
+        // specific match wins over the bare @d2e/ui prefix.
+        '@d2e/ui/tokens.css': path.resolve(__dirname, '../../libs/d2e-ui/src/tokens/tokens.css'),
+        '@d2e/ui': path.resolve(__dirname, '../../libs/d2e-ui/src/index.ts'),
         // Dedupe Vue to prevent multiple instances (matching webpack alias)
         vue: path.resolve(__dirname, 'node_modules/vue'),
         // D3 v3 wrapper - provides access to window.d3 (loaded from public/vendor)

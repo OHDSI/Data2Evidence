@@ -411,7 +411,6 @@
       "name": "vue-mri",
       "version": "2.0.0",
       "dependencies": {
-        "@d2e/ui": "^0.1.0",
         "@d4l/web-components-library": "^3.20.2",
         "@fontsource-variable/ibm-plex-sans": "^5.2.8",
         "@mdi/font": "^7.4.47",

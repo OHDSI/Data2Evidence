@@ -68,6 +68,12 @@ export default defineConfig({
     alias: {
       '@d4l/web-components-library/dist/loader': path.resolve(__dirname, 'src/bootstrap/d4lLoaderNativeEsm.ts'),
       '@': path.resolve(__dirname, './src'),
+      // Source-export the local d2e component library instead of resolving the
+      // unpublished @d2e/ui package from the registry (CI installs with
+      // --workspaces=false). Declare the tokens.css subpath first so the more
+      // specific match wins over the bare @d2e/ui prefix.
+      '@d2e/ui/tokens.css': path.resolve(__dirname, '../../libs/d2e-ui/src/tokens/tokens.css'),
+      '@d2e/ui': path.resolve(__dirname, '../../libs/d2e-ui/src/index.ts'),
       vue: path.resolve(__dirname, 'node_modules/vue'),
       d3: path.resolve(__dirname, './src/lib/d3.ts'),
     },
