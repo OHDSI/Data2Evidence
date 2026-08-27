@@ -323,8 +323,12 @@ services:
       TREX_OIDC_CLIENT_SECRET: ${TREX__OIDC__WEBAPI_CLIENT_SECRET:?TREX__OIDC__WEBAPI_CLIENT_SECRET must be set (run d2e init)}
       TREX_OIDC_CLIENT_NAME: "D2E WebAPI"
       # Spring's oauth2Login appends the registration id, hence the /openid tail.
-      TREX_OIDC_CLIENT_REDIRECT_URIS: "https://${CADDY__D2E__PUBLIC_FQDN:-${CADDY__ALP__PUBLIC_FQDN:-localhost}}:${CADDY_PORT:-${PORT:-443}}/WebAPI/user/oauth/callback/openid"
-      TREX_OIDC_CLIENT_POST_LOGOUT_URIS: "https://${CADDY__D2E__PUBLIC_FQDN:-${CADDY__ALP__PUBLIC_FQDN:-localhost}}:${CADDY_PORT:-${PORT:-443}}/atlas/"
+      # Two relying parties share this registration: WebAPI (Spring appends the
+      # /openid registration id) and the portal, whose callback d2e-compat builds
+      # from the same clientId. A redirect URI that is not listed here is refused
+      # at /authorize, so the portal cannot log in without its entry.
+      TREX_OIDC_CLIENT_REDIRECT_URIS: "https://${CADDY__D2E__PUBLIC_FQDN:-${CADDY__ALP__PUBLIC_FQDN:-localhost}}:${CADDY_PORT:-${PORT:-443}}/WebAPI/user/oauth/callback/openid,https://${CADDY__D2E__PUBLIC_FQDN:-${CADDY__ALP__PUBLIC_FQDN:-localhost}}:${CADDY_PORT:-${PORT:-443}}/d2e/portal/login-callback"
+      TREX_OIDC_CLIENT_POST_LOGOUT_URIS: "https://${CADDY__D2E__PUBLIC_FQDN:-${CADDY__ALP__PUBLIC_FQDN:-localhost}}:${CADDY_PORT:-${PORT:-443}}/atlas/,https://${CADDY__D2E__PUBLIC_FQDN:-${CADDY__ALP__PUBLIC_FQDN:-localhost}}:${CADDY_PORT:-${PORT:-443}}/d2e/portal"
       TREX_SQL_PASSWORD: ${TREX__SQL__PASSWORD:?TREX__SQL__PASSWORD must be set (run d2e init); refusing default pencil}
       TREX__SQL__PORT: ${TREX__SQL__PORT:-5433}
       TREX__SQL__DBNAME: postgres

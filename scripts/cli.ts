@@ -1093,13 +1093,22 @@ class D2ECli {
         "--apply",
         "Perform the changes; without this the plan is only printed",
       )
+      .option(
+        "--create-missing-users",
+        "Also create trex accounts for usermgmt users that have none. Off by " +
+          "default: this grants access to a system those users could not reach " +
+          "before, which a role migration should not do silently.",
+      )
       .action(async (opts) => {
         dotenvConfig({ path: this.ENVFILE });
         this.load_env_variables();
         const { runMigration } = await import(
           path.join(__dirname, "migrate-idp-roles.mjs")
         );
-        await runMigration({ apply: Boolean(opts.apply) });
+        await runMigration({
+          apply: Boolean(opts.apply),
+          createMissing: Boolean(opts.createMissingUsers),
+        });
       });
   }
 
