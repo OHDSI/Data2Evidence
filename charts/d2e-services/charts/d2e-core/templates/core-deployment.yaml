@@ -259,10 +259,15 @@ spec:
                psql -c "GRANT anon TO ${POSTGRES_CONFIG_WRITE_USER};" &&
                psql -c "GRANT authenticated TO ${POSTGRES_CONFIG_WRITE_USER};" &&
                echo "Ensure service_role can reach storage.buckets.." &&
-               psql -v ON_ERROR_STOP=1 -c "SET ROLE ${POSTGRES_CONFIG_ADMIN_USER};
-                 DROP POLICY IF EXISTS d2e_service_role_all ON storage.buckets;
-                 CREATE POLICY d2e_service_role_all ON storage.buckets
-                   FOR ALL TO service_role USING (true) WITH CHECK (true);" &&
+               { psql -c "GRANT ${POSTGRES_CONFIG_ADMIN_USER} TO CURRENT_USER;" ||
+                 echo "Could not join ${POSTGRES_CONFIG_ADMIN_USER} - relying on existing membership"; } &&
+               if psql -tAc "SELECT to_regclass(''storage.buckets'') IS NOT NULL" | grep -qx t; then
+                 psql -v ON_ERROR_STOP=1 -c "DROP POLICY IF EXISTS d2e_service_role_all ON storage.buckets;
+                   CREATE POLICY d2e_service_role_all ON storage.buckets
+                     FOR ALL TO service_role USING (true) WITH CHECK (true);";
+               else
+                 echo "storage.buckets does not exist yet - the policy is applied on a later start";
+               fi &&
                echo "Supabase Storage roles assignment complete!" &&
                exit 0'
             ]
