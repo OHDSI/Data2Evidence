@@ -167,6 +167,17 @@ export function buildBootstrapStatements(cfg: BootstrapConfig): string[] {
   // absent on every greenfield install. Reachability of storage.buckets is
   // provided by the service_role buckets policy migration instead.
   out.push(createGroupRole("service_role", "NOLOGIN INHERIT"));
+  // trex's V1__initial_schema creates supabase_admin WITH ... REPLICATION, which
+  // is superuser-only on managed Postgres, so V1 aborts and the whole trexdb
+  // schema is never created. V1 is checksum-verified and already applied in
+  // existing deployments, so it cannot be edited; pre-creating the role here
+  // makes V1's own IF NOT EXISTS guard skip the failing statement. No
+  // REPLICATION: V5__drop_realtime_admin drops this role and the _realtime
+  // schema a few migrations later, so nothing ever replicates as it.
+  out.push(createGroupRole("supabase_admin", "NOLOGIN"));
+  // Postgres 15 does not give a CREATEROLE creator membership in the role it
+  // just created, and bootstrap runs as the superuser that also runs V1.
+  out.push(`GRANT supabase_admin TO CURRENT_USER`);
 
   for (const dbKey of Object.keys(cfg.manageConfig.databases)) {
     if (!dbKey.startsWith("+")) continue; // only creation scenarios
@@ -190,6 +201,9 @@ export function buildBootstrapStatements(cfg: BootstrapConfig): string[] {
 
     // ── Role membership: manager gets service_role, reader anon, writer authenticated ──
     if (users.manager) out.push(`GRANT service_role TO ${quoteIdent(users.manager)}`);
+    // V1 creates the _realtime schema AUTHORIZATION supabase_admin, which needs
+    // membership in that role rather than mere CREATEROLE.
+    if (users.manager) out.push(`GRANT supabase_admin TO ${quoteIdent(users.manager)}`);
     if (users.reader) out.push(`GRANT anon TO ${quoteIdent(users.reader)}`);
     if (users.writer) out.push(`GRANT authenticated TO ${quoteIdent(users.writer)}`);
 

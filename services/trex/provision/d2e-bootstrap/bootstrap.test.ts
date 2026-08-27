@@ -76,6 +76,18 @@ Deno.test("creates the three supabase roles with the documented attributes", () 
   assertEquals(stmts.includes("BYPASSRLS"), false);
 });
 
+Deno.test("creates supabase_admin without REPLICATION so trex's V1 can be applied", () => {
+  const stmts = buildBootstrapStatements(CFG).join("\n");
+  // V1__initial_schema requests REPLICATION, which is superuser-only on managed
+  // Postgres; pre-creating the role makes V1's IF NOT EXISTS guard skip it.
+  assertEquals(stmts.includes("CREATE ROLE supabase_admin NOLOGIN"), true);
+  assertEquals(stmts.includes("REPLICATION"), false);
+  // V1 also creates the _realtime schema AUTHORIZATION supabase_admin, which
+  // needs membership -- for the manager and for the superuser running V1.
+  assertEquals(stmts.includes("GRANT supabase_admin TO CURRENT_USER"), true);
+  assertEquals(stmts.includes('GRANT supabase_admin TO "alp_pg_admin_user"'), true);
+});
+
 Deno.test("grants per-schema privileges and default privileges to reader and writer", () => {
   const stmts = buildBootstrapStatements(CFG);
   assertEquals(
