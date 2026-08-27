@@ -188,6 +188,21 @@ export class DemoService {
     }
 
     const portalAPI = new PortalAPI(token);
+
+    // Ask for the cache before waiting on it. Nothing else in this flow starts
+    // the job, so polling alone sat at activeJobStatus:null until the timeout
+    // below expired. Tolerate a failure here: if the cache is already building
+    // or present, the poll that follows is still the right thing to do.
+    try {
+      await portalAPI.refreshCache(dataset.id);
+    } catch (e) {
+      this.logger.warn(
+        `Could not start the cache job for ${dataset.id}; polling anyway: ${
+          e instanceof Error ? e.message : String(e)
+        }`,
+      );
+    }
+
     const pollTimeoutMs = 15 * 60 * 1000;
     const pollIntervalMs = 5000;
     const deadline = Date.now() + pollTimeoutMs;

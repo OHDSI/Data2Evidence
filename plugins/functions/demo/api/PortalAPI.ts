@@ -79,6 +79,21 @@ export class PortalAPI {
     }
   }
 
+  // Starts the cache job. getCacheStatus only reports; without this nothing ever
+  // builds the cache, so a caller that merely polls waits out its own timeout.
+  async refreshCache(datasetId: string): Promise<void> {
+    try {
+      const options = await this.getRequestConfig();
+      const url = `${this.baseURL}/dataset/${encodeURIComponent(datasetId)}/refresh-cache`;
+      await this.channel.post(url, {}, options);
+    } catch (error: any) {
+      const status = error.status || error.response?.status;
+      const responseData = error.response?.data;
+      console.error(`Error while refreshing cache: ${error.message}, status: ${status}, data: ${JSON.stringify(responseData)}`);
+      throw error;
+    }
+  }
+
   private getRequestConfig() {
     let options: AxiosRequestConfig = {};
 

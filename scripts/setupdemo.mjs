@@ -227,6 +227,16 @@ try {
             dispatcher: insecureAgent
         });
         const resp = await response.json();
+        // The progress map is held in memory by the function worker, so a
+        // recycled worker answers 404 {"message":...} with no `steps`. Report
+        // that plainly instead of dying on "resp.steps is not iterable", which
+        // hid the real state of the run.
+        if (!Array.isArray(resp?.steps)) {
+            console.error(
+                `Progress unavailable (HTTP ${response.status}): ${JSON.stringify(resp)}`
+            );
+            throw new Error('progress unavailable');
+        }
         for (const step of resp.steps) {
             console.log(`${step.step ?? 'N/A'}. ${step.message}. Status: ${step.status}`);
         }
