@@ -274,7 +274,8 @@ services:
             "+storage": {},
             "+strategus": {},
             "+notebook": {},
-            "+network": {}
+            "+network": {},
+            "+analytics": {}
            }
           }
          }

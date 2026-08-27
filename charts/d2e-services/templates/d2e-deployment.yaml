@@ -1000,7 +1000,7 @@ spec:
                     "+terminology": {}, "+usermgmt": {}, "+files_manager": {},
                     "+perseus": {}, "+white_rabbit": {}, "+trex": {},
                     "+storage": {}, "+strategus": {}, "+notebook": {},
-                    "+network": {}
+                    "+network": {}, "+analytics": {}
                    }
                   }
                  }
