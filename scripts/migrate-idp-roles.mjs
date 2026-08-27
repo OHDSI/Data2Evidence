@@ -22,6 +22,7 @@
 // (see rollbackFilePath), but the role assignments it makes in trex are not
 // undone by it.
 
+import crypto from "node:crypto";
 import { execFileSync } from "node:child_process";
 import { writeFileSync } from "node:fs";
 import { resolve } from "node:path";
@@ -319,6 +320,50 @@ function execSql(sql) {
   }
 }
 
+/**
+ * Provision a d2e user into trex.
+ *
+ * The password is random and is never reported: it exists only so the account
+ * row is complete. These users authenticate through whatever flow the
+ * deployment configures, and must reset before any password login works --
+ * migrating Logto's hashes is not possible, they use a different scheme.
+ */
+async function createTrexUser(email) {
+  const baseUrl = process.env.TREX__ADMIN_URL;
+  if (!baseUrl) {
+    throw new EnvironmentError("TREX__ADMIN_URL is not set; cannot create users in trex.");
+  }
+  // .../trex/admin/roles -> .../trex/auth/v1/admin/users
+  const usersUrl = baseUrl.replace(/\/admin\/roles\/?$/, "/auth/v1/admin/users");
+  const password = `${crypto.randomUUID()}${crypto.randomUUID().toUpperCase()}!1`;
+
+  let res;
+  try {
+    res = await fetch(usersUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${process.env.TREX__SERVICE_ROLE_KEY ?? ""}`,
+      },
+      body: JSON.stringify({ email, password, data: { provisionedFrom: "d2e-usermgmt" } }),
+    });
+  } catch (err) {
+    throw new EnvironmentError(
+      `Could not reach trex at ${usersUrl}.\n(${err?.message ?? err})`,
+    );
+  }
+  if (!res.ok) {
+    throw new EnvironmentError(
+      `trex rejected user creation for "${email}": HTTP ${res.status} ${await res.text()}`,
+    );
+  }
+  const body = await res.json().catch(() => null);
+  if (!body?.id) {
+    throw new EnvironmentError(`trex created "${email}" but returned no id`);
+  }
+  return body.id;
+}
+
 async function assignRole(userId, role) {
   const baseUrl = process.env.TREX__ADMIN_URL;
   if (!baseUrl) {
@@ -392,7 +437,7 @@ function writeRollbackFile(filePath, rekey) {
   writeFileSync(filePath, JSON.stringify(rollbackRows(rekey), null, 2));
 }
 
-async function runMigrationUnsafe({ apply }) {
+async function runMigrationUnsafe({ apply, createMissing }) {
   const usermgmtUsers = queryJson(
     `SELECT id, username AS email, idp_user_id AS "idpUserId" FROM usermgmt."user"`,
   );
@@ -420,12 +465,28 @@ async function runMigrationUnsafe({ apply }) {
     groups.push({ userId: group.userId, role: built.role, scopes: built.scopes });
   }
 
-  const plan = planMigration(usermgmtUsers, trexUsers, groups);
+  let plan = planMigration(usermgmtUsers, trexUsers, groups);
   printPlan(plan);
 
   if (!apply) {
     console.log("\nDry run only. Re-run with --apply to perform these changes.");
     return plan;
+  }
+
+  if (createMissing && plan.unmatched.length > 0) {
+    // Creating accounts is opt-in: it grants people access to a system they
+    // could not reach before, which is not something a role migration should do
+    // silently. Re-plan afterwards so the new users pick up their re-key and
+    // roles in this same run.
+    console.log(`\nCreating ${plan.unmatched.length} trex account(s)...`);
+    for (const email of plan.unmatched) {
+      const id = await createTrexUser(email);
+      console.log(`  created ${email} -> ${id}`);
+      trexUsers.push({ id, email });
+    }
+    plan = planMigration(usermgmtUsers, trexUsers, groups);
+    console.log("\nRe-planned after provisioning:");
+    printPlan(plan);
   }
 
   console.log(`\nApplying ${plan.assign.length} role assignment(s)...`);
@@ -469,9 +530,9 @@ async function runMigrationUnsafe({ apply }) {
  * with status 1 — not a raw stack trace — regardless of whether this was
  * invoked from the CLI or run standalone.
  */
-export async function runMigration({ apply = false } = {}) {
+export async function runMigration({ apply = false, createMissing = false } = {}) {
   try {
-    return await runMigrationUnsafe({ apply });
+    return await runMigrationUnsafe({ apply, createMissing });
   } catch (err) {
     if (err instanceof EnvironmentError) {
       console.error(`\n${err.message}`);
@@ -484,7 +545,8 @@ export async function runMigration({ apply = false } = {}) {
 const isMainModule = import.meta.url === `file://${process.argv[1]}`;
 if (isMainModule) {
   const apply = process.argv.slice(2).includes("--apply");
-  runMigration({ apply }).catch((err) => {
+  const createMissing = process.argv.slice(2).includes("--create-missing-users");
+  runMigration({ apply, createMissing }).catch((err) => {
     console.error(err);
     process.exit(1);
   });
