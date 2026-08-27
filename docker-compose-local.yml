@@ -101,6 +101,13 @@ services:
       # property. trex serves discovery on one event loop and is still doing boot
       # work then, so a short default turns a slow answer into a dead bean.
       JAVA_TOOL_OPTIONS: "-Dsun.net.client.defaultReadTimeout=120000 -Dsun.net.client.defaultConnectTimeout=30000"
+      # Local dev authenticates the portal against trex too (D2E_IDP=trex).
+      # The issuer stays internal: WebAPI must be able to FETCH the discovery
+      # document, and it runs inside this container. The browser never fetches
+      # it -- /portal/env.js hands the portal explicit endpoints built from the
+      # public gateway origin -- so it only has to match the `iss` claim, which
+      # it does.
+      D2E_IDP: "trex"
       TREX_OIDC_ISSUER: "http://localhost:33001"
       SECURITY_AUTH_OIDC_URL: "http://localhost:33001/trex/oidc/.well-known/openid-configuration"
       # Enable trex's native email/password IDP for local dev (off by default in
