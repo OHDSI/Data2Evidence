@@ -160,7 +160,13 @@ export function buildBootstrapStatements(cfg: BootstrapConfig): string[] {
   // ── Supabase roles (PostGraphile connects as authenticator and SET ROLEs) ──
   out.push(createGroupRole("anon", "NOLOGIN INHERIT"));
   out.push(createGroupRole("authenticated", "NOLOGIN INHERIT"));
-  out.push(createGroupRole("service_role", "NOLOGIN INHERIT BYPASSRLS"));
+  // No BYPASSRLS: setting that attribute requires superuser, which managed
+  // Postgres (Azure Flexible Server included) never grants -- even to a role
+  // that already holds it. Requesting it fails the statement outright with
+  // "must be superuser to change bypassrls attribute", leaving service_role
+  // absent on every greenfield install. Reachability of storage.buckets is
+  // provided by the service_role buckets policy migration instead.
+  out.push(createGroupRole("service_role", "NOLOGIN INHERIT"));
 
   for (const dbKey of Object.keys(cfg.manageConfig.databases)) {
     if (!dbKey.startsWith("+")) continue; // only creation scenarios

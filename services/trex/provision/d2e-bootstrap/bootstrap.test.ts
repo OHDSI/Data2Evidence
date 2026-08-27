@@ -70,7 +70,10 @@ Deno.test("creates the three supabase roles with the documented attributes", () 
   const stmts = buildBootstrapStatements(CFG).join("\n");
   assertEquals(stmts.includes("CREATE ROLE anon NOLOGIN INHERIT"), true);
   assertEquals(stmts.includes("CREATE ROLE authenticated NOLOGIN INHERIT"), true);
-  assertEquals(stmts.includes("CREATE ROLE service_role NOLOGIN INHERIT BYPASSRLS"), true);
+  // Without BYPASSRLS: it requires superuser, which managed Postgres does not
+  // grant, so requesting it leaves service_role uncreated.
+  assertEquals(stmts.includes("CREATE ROLE service_role NOLOGIN INHERIT"), true);
+  assertEquals(stmts.includes("BYPASSRLS"), false);
 });
 
 Deno.test("grants per-schema privileges and default privileges to reader and writer", () => {
