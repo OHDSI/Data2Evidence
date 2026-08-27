@@ -232,10 +232,33 @@ export class App {
         this.logger.info("service_role role already exists");
       }
 
+      // Create supabase_admin role
+      const supabaseAdminExists = await this.userDao.verifyIfUserExists(
+        client,
+        "supabase_admin"
+      );
+      if (!supabaseAdminExists) {
+        // trex's V1__initial_schema creates supabase_admin WITH ...
+        // REPLICATION, which is superuser-only on managed Postgres. That
+        // aborts V1, so trexdb is never created and trex dies on boot with
+        // "trexdb.kek_wrapped_dek not present". V1 is checksum-verified and
+        // already applied in existing deployments, so it cannot be edited --
+        // pre-creating the role here makes V1's own IF NOT EXISTS guard skip
+        // the failing statement.
+        //
+        // No REPLICATION: V5__drop_realtime_admin drops this role and the
+        // _realtime schema a few migrations later, because native realtime
+        // replaced the external container. Nothing ever replicates as it.
+        await client.query(`CREATE ROLE supabase_admin NOLOGIN;`);
+        this.logger.info("Created supabase_admin role successfully");
+      } else {
+        this.logger.info("supabase_admin role already exists");
+      }
+
       // Verify roles were created
       const result = await client.query(`
         SELECT rolname FROM pg_roles
-        WHERE rolname IN ('anon', 'authenticated', 'service_role')
+        WHERE rolname IN ('anon', 'authenticated', 'service_role', 'supabase_admin')
       `);
 
       const existingRoles = result.rows.map((row: any) => row.rolname);
@@ -249,6 +272,16 @@ export class App {
       if (existingRoles.includes("service_role")) {
         await client.query(`GRANT service_role TO "${pgUsers.manager}"`);
         this.logger.info(`Granted service_role to ${pgUsers.manager}`);
+      }
+
+      if (existingRoles.includes("supabase_admin")) {
+        // V1 creates the _realtime schema AUTHORIZATION supabase_admin, which
+        // needs membership in the role rather than mere CREATEROLE. Postgres 15
+        // gives the creator no membership, so grant it to the manager and to
+        // this connection, which is the superuser that also runs V1.
+        await client.query(`GRANT supabase_admin TO "${pgUsers.manager}"`);
+        await client.query(`GRANT supabase_admin TO CURRENT_USER`);
+        this.logger.info(`Granted supabase_admin to ${pgUsers.manager}`);
       }
 
       if (existingRoles.includes("anon")) {
