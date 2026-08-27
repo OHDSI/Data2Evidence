@@ -293,6 +293,49 @@ export class App {
         await client.query(`GRANT authenticated TO "${pgUsers.writer}"`);
         this.logger.info(`Granted authenticated to ${pgUsers.writer}`);
       }
+
+      // Postgres 15 stopped granting CREATE on schema public to PUBLIC. logto's
+      // roles.sql creates public.check_role_type -- hardcoded to public, not to
+      // its own schema -- so on a fresh database logto-seed-init dies with
+      // "permission denied for schema public", and the storage post-init
+      // likewise creates public.objects.
+      //
+      // public is owned by the platform admin role (azure_pg_admin on Azure),
+      // so these grants only take effect when POSTGRES_SUPERUSER is a member of
+      // it. A non-member gets "WARNING: no privileges were granted for public"
+      // and Postgres still reports success, so verify afterwards -- the symptom
+      // otherwise surfaces several init containers later as an unrelated error.
+      const publicCreators = [pgUsers.manager, pgUsers.logtoManager].filter(
+        (u): u is string => !!u
+      );
+      const publicUsers = [
+        pgUsers.writer,
+        ...existingRoles.filter((r: string) => r !== "supabase_admin"),
+      ].filter((u): u is string => !!u);
+
+      for (const user of publicCreators) {
+        await client.query(`GRANT USAGE, CREATE ON SCHEMA public TO "${user}"`);
+      }
+      for (const user of publicUsers) {
+        await client.query(`GRANT USAGE ON SCHEMA public TO "${user}"`);
+      }
+
+      for (const user of publicCreators) {
+        const check = await client.query(
+          `SELECT has_schema_privilege($1, 'public', 'CREATE') AS granted`,
+          [user]
+        );
+        if (check.rows[0]?.granted) {
+          this.logger.info(`Granted CREATE on schema public to ${user}`);
+        } else {
+          this.logger.error(
+            `Could not grant CREATE on schema public to ${user}. Schema public ` +
+              `is owned by the platform admin role, so the connecting user must ` +
+              `be a member of it (on Azure: GRANT azure_pg_admin TO <superuser>). ` +
+              `Without this, logto seeding fails with "permission denied for schema public".`
+          );
+        }
+      }
     } catch (error: any) {
       this.logger.error(`Error in Supabase role creation: ${error.message}`);
     }
