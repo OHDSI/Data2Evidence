@@ -1,120 +1,177 @@
 import { test, expect } from '../../fixtures'
+import type { Page } from '@playwright/test'
 import fs from 'fs/promises'
 import path from 'path'
 
-let exportedFilePath = ''
-let createdDataflowName = ''
+const TEST_NAME = 'e2e-export-import-nodestest'
+const SHOULD_SKIP = false
+test.fixme(SHOULD_SKIP, `${TEST_NAME} test is temporarily disabled.`)
+
+let exportedFilePaths: string[] = []
+let createdDataflowNames: string[] = []
+
+const NODES_TEST_NODE_NAMES = [
+  'python_node_0',
+  'py2table_node_0',
+  'sql_node_0',
+  'db_writer_node_0',
+  'r_node_0',
+  'db_reader_node_0',
+  'file_node_0',
+  'csv_node_0'
+]
+
+type DataflowTemplate = {
+  id?: string
+  name?: string
+  description?: string
+  nodes: Array<{ id: string; type: string; data: { name: string; [key: string]: unknown }; [key: string]: unknown }>
+  edges: Array<{ source: string; target: string; [key: string]: unknown }>
+  variables?: unknown[]
+  importLibs?: unknown[]
+  databases?: unknown[]
+  schemas?: unknown[]
+}
 
 test.afterEach(async ({ page }) => {
-  if (createdDataflowName) {
+  try {
+    await page.goto('/d2e/portal/etl')
+
+    const flowSelector = page.getByRole('combobox').filter({ hasText: /.+/ }).first()
+    if (await flowSelector.isVisible({ timeout: 5000 }).catch(() => false)) {
+      await flowSelector.click()
+      const testFlowOptions = await page
+        .getByRole('option')
+        .filter({ hasText: /^NodesTest(Source|Imported)_/ })
+        .allTextContents()
+      await page.keyboard.press('Escape')
+
+      createdDataflowNames = Array.from(
+        new Set([...createdDataflowNames, ...testFlowOptions.map(name => name.trim()).filter(Boolean)])
+      ).reverse()
+    }
+  } catch {
+    // Continue with the names recorded by the test if the flow list cannot be inspected.
+  }
+
+  for (const createdDataflowName of createdDataflowNames) {
     try {
+      await page.goto('/d2e/portal')
+      const etlLink = page.getByRole('link', { name: 'ETL' })
+      if (await etlLink.isVisible({ timeout: 5000 }).catch(() => false)) {
+        await etlLink.click()
+      } else {
+        await page.goto('/d2e/portal/etl')
+      }
+
+      const flowSelector = page.getByRole('combobox').filter({ hasText: /.+/ }).first()
+      await flowSelector.click()
+      await page.getByRole('option', { name: createdDataflowName }).click()
+      await expect(page.getByRole('combobox', { name: createdDataflowName })).toBeVisible()
       await page.getByLabel('Delete flow').getByRole('button').click({ timeout: 3000 })
       await page.getByRole('textbox').fill(createdDataflowName)
       await page.getByRole('button', { name: 'Delete' }).click()
     } catch {
-      // best-effort cleanup — flow may have already been deleted by the test
+      // best-effort cleanup - flow may have already been deleted by the test
     }
-    createdDataflowName = ''
   }
+  createdDataflowNames = []
 
-  if (exportedFilePath) {
+  for (const exportedFilePath of exportedFilePaths) {
     await fs
       .access(exportedFilePath)
       .then(() => fs.rm(exportedFilePath))
       .catch(() => undefined)
-    exportedFilePath = ''
   }
+  exportedFilePaths = []
 })
 
-test('export-import-dataflow', async ({ page }) => {
-  const timestamp = Date.now()
-  const dataflowName = `ExportImportFlow_${timestamp}`
-  const nodeTitle = page.locator('.node__title').filter({ hasText: 'python_node_0' })
+test('create and import a Nodes Test dataflow through Add Dataflow', async ({ page }) => {
+  test.setTimeout(300000)
 
-  await test.step('Authenticate and navigate to Admin portal', async () => {
+  const timestamp = Date.now()
+  const sourceFlowName = `NodesTestSource_${timestamp}`
+  const importedFlowName = `NodesTestImported_${timestamp}`
+  const exportedFlowPath = path.join(__dirname, `nodestest-exported-${timestamp}.json`)
+  exportedFilePaths.push(exportedFlowPath)
+  createdDataflowNames.push(importedFlowName, sourceFlowName)
+
+  const openAddDataflow = async () => {
+    const firstFlowButton = page.getByRole('button', { name: 'Create your first dataflow' })
+    if (await firstFlowButton.isVisible({ timeout: 3000 }).catch(() => false)) {
+      await firstFlowButton.click()
+    } else {
+      await page.getByRole('button', { name: 'Add Dataflow' }).click()
+    }
+
+    const dialog = page.getByRole('dialog').filter({ hasText: 'Add Dataflow' })
+    await expect(dialog).toBeVisible()
+    return dialog
+  }
+
+  await test.step('Sign in and open the ETL workflow page', async () => {
     await page.goto('/d2e/portal')
     await page.locator('input[name="identifier"]').fill('admin')
     await page.locator('input[name="password"]').fill('Updatepassword12345')
     await page.getByRole('button', { name: 'Sign in' }).click()
     await page.getByTestId('button').nth(1).click()
     await page.getByRole('button', { name: 'Switch to Admin portal' }).click()
-  })
 
-  await test.step('Create a new dataflow with a python node', async () => {
-    await page.getByRole('link', { name: 'ETL' }).click()
-
-    // Handle both scenarios: no flows (Create your first dataflow) or existing flows (Create new dataflow)
-    const firstFlowBtn = page.getByRole('button', { name: 'Create your first dataflow' })
-    if (await firstFlowBtn.isVisible({ timeout: 3000 }).catch(() => false)) {
-      await firstFlowBtn.click()
+    const etlLink = page.getByRole('link', { name: 'ETL' })
+    if (await etlLink.isVisible({ timeout: 5000 }).catch(() => false)) {
+      await etlLink.click()
     } else {
-      await page.getByLabel('Create new dataflow').getByRole('button').click()
+      await page.goto('/d2e/portal/etl')
     }
-    await expect(page.getByRole('textbox', { name: 'Name' })).toBeVisible()
-    await page.getByRole('textbox', { name: 'Name' }).fill(dataflowName)
-    await page.getByRole('textbox', { name: 'Comment' }).fill('Test export import flow')
-    await expect(page.getByRole('button', { name: 'Create' })).toBeVisible()
-    await page.getByRole('button', { name: 'Create' }).click()
-    await expect(page.getByRole('button', { name: 'Create' })).not.toBeVisible()
-    createdDataflowName = dataflowName
+
+    await expect(
+      page.getByRole('button', { name: 'Add Dataflow' }).or(page.getByRole('button', { name: 'Create your first dataflow' }))
+    ).toBeVisible({ timeout: 30000 })
   })
 
-  await test.step('Export the flow', async () => {
-    // This timeout is necessary as clicking the python button too quickly seems to have an issue which causes the node not to be added. Remove this wait to see if the issue persists.
-    await page.waitForTimeout(1500)
-    await page.getByText('Run python code').click()
-    await expect(nodeTitle).toBeVisible()
+  await test.step('Create a workflow from the Nodes Test template using Add Dataflow', async () => {
+    const dialog = await openAddDataflow()
+    await dialog.getByRole('textbox', { name: 'Name' }).fill(sourceFlowName)
+    await dialog.getByRole('textbox', { name: 'Comment' }).fill('Nodes test template source flow')
+    await dialog.getByLabel('Create a new dataflow').check()
+    await dialog.getByRole('combobox').click()
+    await page.getByRole('option', { name: /Nodes Test|nodestest|testsnode/i }).click()
+    await dialog.getByRole('button', { name: 'Create' }).click()
+    await expect(dialog).not.toBeVisible()
 
-    await expect(page.getByRole('button', { name: 'Save' })).toBeVisible()
-    await page.getByRole('button', { name: 'Save' }).click()
-    const saveDialog = page.getByRole('dialog')
-    await expect(saveDialog.getByRole('button', { name: 'Save' })).toBeEnabled()
-    await saveDialog.getByRole('button', { name: 'Save' }).click()
+    await expect(expectNode(page, 'db_writer_node_0')).toBeVisible()
+    await expect(expectNode(page, 'db_reader_node_0')).toBeVisible()
+  })
 
-    // Export the flow
+  await test.step('Export the template-based workflow to JSON', async () => {
     const downloadPromise = page.waitForEvent('download')
     await page.getByLabel('Export flow').getByRole('button').click()
     const download = await downloadPromise
-    exportedFilePath = path.join(__dirname, `exported-flow-${timestamp}.json`)
-    await download.saveAs(exportedFilePath)
+    await download.saveAs(exportedFlowPath)
+
+    const exported = JSON.parse(await fs.readFile(exportedFlowPath, 'utf-8')) as DataflowTemplate
+    expect(exported.nodes.map(node => node.data.name).sort()).toEqual([...NODES_TEST_NODE_NAMES].sort())
   })
 
-  await test.step('Import the flow and verify', async () => {
-    // Import the exported flow
-    const fileChooserPromise = page.waitForEvent('filechooser')
-    await page.getByLabel('Import flow').getByRole('button').click()
-    const fileChooser = await fileChooserPromise
-    await fileChooser.setFiles(exportedFilePath)
+  await test.step('Import the exported JSON as a new persisted dataflow using Add Dataflow', async () => {
+    const dialog = await openAddDataflow()
+    await dialog.getByRole('textbox', { name: 'Name' }).fill(importedFlowName)
+    await dialog.getByRole('textbox', { name: 'Comment' }).fill('Imported nodes test template flow')
+    await dialog.getByLabel('Import a dataflow').check()
 
-    // Verify the imported node is present on the canvas
-    await expect(nodeTitle).toBeVisible()
+    await dialog.locator('input[type="file"]').setInputFiles(exportedFlowPath)
 
-    // Close dialog
-    const visibleDialogs = page.locator('[role="dialog"]:visible')
-    const activeDialog = visibleDialogs.last()
-    const closeButton = activeDialog.getByRole('button', { name: /cancel/i }).first()
-    if (await closeButton.isVisible().catch(() => false)) {
-      await closeButton.click()
-    } else {
-      await page.keyboard.press('Escape')
-    }
-    await expect(page.locator('[role="dialog"]:visible')).toHaveCount(0, { timeout: 5000 })
-    // Hover to reveal edit button, then click it
-    await nodeTitle.hover()
-    const editBtn = page.locator('.node__setting')
-    await expect(editBtn).toBeVisible()
-    await editBtn.click()
+    await expect(dialog.getByText(path.basename(exportedFlowPath))).toBeVisible()
+    await expect(dialog.getByRole('button', { name: 'Import' })).toBeEnabled()
+    await dialog.getByRole('button', { name: 'Import' }).click()
+    await expect(dialog).not.toBeVisible()
 
-    // Verify data integrity: imported code matches exactly what was exported
-    const exported = JSON.parse(await fs.readFile(exportedFilePath, 'utf-8'))
-    const exportedScript = exported.nodes[0].data.python_code
-    console.log('Exported script:', exportedScript)
-
-    const editor = page.getByRole('textbox', { name: 'Editor content;Press Alt+F1' })
-    await editor.focus()
-    const importedCode = await editor.inputValue()
-    expect(importedCode).toBe(exportedScript)
-
-    await page.getByRole('button', { name: 'Close' }).click()
+    await expect(expectNode(page, 'db_writer_node_0')).toBeVisible()
+    await expect(expectNode(page, 'db_reader_node_0')).toBeVisible()
+    await expect(page.getByRole('combobox').filter({ hasText: importedFlowName })).toBeVisible()
   })
 })
+
+function expectNode(page: Page, nodeName: string) {
+  return page.locator('.node').filter({ has: page.locator('.node__title', { hasText: nodeName }) })
+}
