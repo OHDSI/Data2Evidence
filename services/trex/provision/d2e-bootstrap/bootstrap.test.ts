@@ -88,6 +88,30 @@ Deno.test("creates supabase_admin without REPLICATION so trex's V1 can be applie
   assertEquals(stmts.includes('GRANT supabase_admin TO "alp_pg_admin_user"'), true);
 });
 
+Deno.test("grants CREATE on schema public to the roles that create objects there", () => {
+  const stmts = buildBootstrapStatements(CFG);
+  const joined = stmts.join("\n");
+  // logto's roles.sql creates public.check_role_type, hardcoded to public.
+  assertEquals(
+    stmts.includes('GRANT USAGE, CREATE ON SCHEMA public TO "logto_postgres"'),
+    true,
+  );
+  assertEquals(
+    stmts.includes('GRANT USAGE, CREATE ON SCHEMA public TO "alp_pg_admin_user"'),
+    true,
+  );
+  // Readers of public.objects need schema USAGE, not CREATE.
+  assertEquals(stmts.includes("GRANT USAGE ON SCHEMA public TO service_role"), true);
+  assertEquals(
+    stmts.includes('GRANT USAGE ON SCHEMA public TO "alp_pg_write_user"'),
+    true,
+  );
+  // The grant is a silent no-op unless the bootstrap user owns public, so the
+  // result has to be checked rather than assumed.
+  assertStringIncludes(joined, "has_schema_privilege('logto_postgres', 'public', 'CREATE')");
+  assertStringIncludes(joined, "RAISE WARNING");
+});
+
 Deno.test("grants per-schema privileges and default privileges to reader and writer", () => {
   const stmts = buildBootstrapStatements(CFG);
   assertEquals(
