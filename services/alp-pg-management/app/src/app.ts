@@ -214,9 +214,19 @@ export class App {
         "service_role"
       );
       if (!serviceRoleExists) {
-        await client.query(
-          `CREATE ROLE service_role NOLOGIN INHERIT BYPASSRLS;`
-        );
+        // No BYPASSRLS: setting that attribute requires superuser, which
+        // managed Postgres (Azure Flexible Server included) never grants --
+        // even to a role that holds BYPASSRLS itself. Requesting it made this
+        // statement fail with "must be superuser to change bypassrls
+        // attribute" on every greenfield install, and because the surrounding
+        // catch only logged, pg-mgmt-init still exited 0 while service_role
+        // was missing and the GRANTs below were skipped. The failure then
+        // surfaced in the next init container as the misleading
+        // `role "service_role" does not exist`.
+        //
+        // Reachability of storage.buckets is provided by the
+        // d2e_service_role_all policy in the d2e-core chart instead.
+        await client.query(`CREATE ROLE service_role NOLOGIN INHERIT;`);
         this.logger.info("Created service_role role successfully");
       } else {
         this.logger.info("service_role role already exists");
