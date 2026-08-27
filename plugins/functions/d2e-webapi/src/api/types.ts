@@ -225,9 +225,10 @@ export const BookmarksSchema = z.object({
   schemaName: z.string(),
 });
 
+// Atlas cohort definitions were removed from GET /cohortdefinition; the list now
+// carries only bookmarks and their materialized cohorts.
 export const CombinedCohortDefinitionListSchema = z.union([
   BookmarkSchema,
-  AtlasCohortDefinitionSchema,
   MaterializedCohortSchema,
 ]);
 

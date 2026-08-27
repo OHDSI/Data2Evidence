@@ -7,7 +7,6 @@ import {
   ICombinedCohortDefnitionListItem,
   IMaterializedCohort,
   IBaseMaterializedCohort,
-  IAtlasCohortDefinition,
 } from "../api/types.ts";
 import { AnalyticsSvcAPI } from "../api/AnalyticsAPI.ts";
 import { JobPluginsAPI } from "../api/JobPluginsAPI.ts";
@@ -224,81 +223,12 @@ export const createCohortDefinition = async (
 export const getCohortDefinitionList = async (
   token: string,
   datasetId: string,
-  isAtlas: boolean,
 ): Promise<ICombinedCohortDefnitionListItem[]> => {
-  const webApiApi = new WebAPIAPI(token);
-
-  const parseDateToEpoch = (value: number | string | null | undefined) => {
-    if (typeof value === "number") {
-      return value;
-    }
-    if (typeof value === "string") {
-      const parsedDate = Date.parse(value);
-      return Number.isNaN(parsedDate) ? null : parsedDate;
-    }
-    return null;
-  };
-
-  const getUserName = (
-    value: string | null | undefined | { name?: string | null },
-  ) => {
-    if (typeof value === "string") {
-      return value;
-    }
-    if (value && typeof value === "object") {
-      return value.name ?? null;
-    }
-    return null;
-  };
-
-  const getTagName = (tag: string | { name?: string | null }) => {
-    if (typeof tag === "string") {
-      return tag;
-    }
-    return tag.name ?? "";
-  };
-
-  const mapAtlasCohortDefinitions = (
-    atlasCohortDefinitions: Awaited<
-      ReturnType<typeof webApiApi.getCohortDefinitionList>
-    >,
-  ): IAtlasCohortDefinition[] =>
-    atlasCohortDefinitions.map((atlasCohortDefinition) => ({
-      id: atlasCohortDefinition.id,
-      name: atlasCohortDefinition.name,
-      description: atlasCohortDefinition.description ?? null,
-      createdBy: getUserName(atlasCohortDefinition.createdBy),
-      createdDate: parseDateToEpoch(atlasCohortDefinition.createdDate),
-      modifiedBy: getUserName(atlasCohortDefinition.modifiedBy),
-      modifiedDate: parseDateToEpoch(atlasCohortDefinition.modifiedDate),
-      hasWriteAccess: atlasCohortDefinition.writeAccess,
-      hasReadAccess: atlasCohortDefinition.readAccess,
-      tags: (atlasCohortDefinition.tags ?? []).map(getTagName),
-    }));
-
-  // isAtlas=true only needs atlas cohort definitions and return early
-  if (isAtlas) {
-    const atlasCohortDefinitions = await webApiApi.getCohortDefinitionList();
-    return mapAtlasCohortDefinitions(atlasCohortDefinitions);
-  }
   const bookmarksApi = new BookmarksAPI(token);
   const analyticsSvcAPI = new AnalyticsSvcAPI(token);
   const materializedCohortFetchStartedAt = Date.now();
 
-  const [
-    atlasCohortDefinitions,
-    rawDataFromBookmarks,
-    baseMaterializedCohorts,
-  ] = await Promise.all([
-    webApiApi.getCohortDefinitionList().catch((error) => {
-      console.error(
-        "Failed to fetch atlas cohort definitions, continuing with empty list:",
-        error,
-      );
-      return [] as Awaited<
-        ReturnType<typeof webApiApi.getCohortDefinitionList>
-      >;
-    }),
+  const [rawDataFromBookmarks, baseMaterializedCohorts] = await Promise.all([
     bookmarksApi.getAllBookmarks(datasetId).catch((error) => {
       console.error(
         "Failed to fetch bookmarks, continuing with empty list:",
@@ -348,7 +278,7 @@ export const getCohortDefinitionList = async (
     })(),
   ]);
 
-  // Parse bookmark and atlas cohort definition
+  // Parse bookmarks
   const bookmarksParse = BookmarksSchema.safeParse(rawDataFromBookmarks);
   if (!bookmarksParse.success) {
     console.error(
@@ -359,18 +289,14 @@ export const getCohortDefinitionList = async (
   const parsedbookmarks = bookmarksParse.success
     ? bookmarksParse.data.bookmarks
     : [];
-  const parsedAtlasCohortDefinitions = mapAtlasCohortDefinitions(
-    atlasCohortDefinitions,
-  );
 
-  // Create mappings for materialized cohorts to bookmarks and atlas cohort definitions respectively
+  // Create mapping for materialized cohorts to bookmarks
   const bookmarkIdToCohortId = new Map<string, number>();
-  const atlasDefIdToCohortId = new Map<number, number>();
 
-  // Sort baseMaterializedCohorts so that the latest materialized cohort definition is matched with the corresponding atlas cohort definition
+  // Sort baseMaterializedCohorts so that the latest materialized cohort is matched with the corresponding bookmark
   baseMaterializedCohorts.sort((a, b) => a.id - b.id);
   for (const cohort of baseMaterializedCohorts) {
-    let syntax: { bookmarkId?: string; atlasCohortDefinitionId?: number };
+    let syntax: { bookmarkId?: string };
     try {
       syntax = JSON.parse(cohort.syntax);
     } catch (error) {
@@ -383,9 +309,6 @@ export const getCohortDefinitionList = async (
     if (syntax.bookmarkId !== undefined) {
       bookmarkIdToCohortId.set(syntax.bookmarkId, cohort.id);
     }
-    if (syntax.atlasCohortDefinitionId !== undefined) {
-      atlasDefIdToCohortId.set(syntax.atlasCohortDefinitionId, cohort.id);
-    }
   }
 
   // Add cohortDefinitionId to bookmarks if there is a respective materialized cohort
@@ -393,30 +316,18 @@ export const getCohortDefinitionList = async (
     ...bookmark,
     cohortDefinitionId: bookmarkIdToCohortId.get(bookmark.bmkId),
   }));
-  // Add cohortDefinitionId to atlas cohort definition if there is a respective materialized cohort
-  const cohortDefinitionsWithId = parsedAtlasCohortDefinitions.map(
-    (atlasCohortDefinition) => ({
-      ...atlasCohortDefinition,
-      cohortDefinitionId: atlasDefIdToCohortId.get(atlasCohortDefinition.id),
-    }),
-  );
 
   // Parse and filter materialized cohorts
   const formattedMaterializedCohorts = baseMaterializedCohorts.map((cohort) =>
-    _formatMaterializedCohort(cohort, !isAtlas),
+    _formatMaterializedCohort(cohort),
   );
-  // Filter out materialized cohorts which do not belong to a bookmark or atlas cohort definition
+  // Filter out materialized cohorts which do not belong to a bookmark
   const filteredMaterializedCohorts = _filterUntaggedMaterializedCohorts(
     bookmarksWithId,
-    cohortDefinitionsWithId,
     formattedMaterializedCohorts,
   );
 
-  return [
-    ...bookmarksWithId,
-    ...filteredMaterializedCohorts,
-    ...cohortDefinitionsWithId,
-  ];
+  return [...bookmarksWithId, ...filteredMaterializedCohorts];
 };
 
 export const getCohortDefinition = async (
@@ -519,38 +430,29 @@ export const checkV2 = async (
 
 const _formatMaterializedCohort = (
   cohortDefinition: IBaseMaterializedCohort,
-  includeSyntax: boolean = false,
 ): IMaterializedCohort => ({
   id: cohortDefinition.id,
   patientCount: cohortDefinition.patientCount,
   cohortDefinitionName: cohortDefinition.name,
   createdOn: cohortDefinition.creationTimestamp.toString(),
   description: cohortDefinition.description,
-  ...(includeSyntax && { syntax: cohortDefinition.syntax }),
+  syntax: cohortDefinition.syntax,
 });
 
 /*
-Function to filter out materialized cohorts which do not belong to a formatted bookmark or formatted atlas cohort definition
+Function to filter out materialized cohorts which do not belong to a formatted bookmark
 */
 const _filterUntaggedMaterializedCohorts = (
   bookmarks: IBookmark[],
-  AtlasCohortDefinitions: IAtlasCohortDefinition[],
   formattedMaterializedCohorts: IMaterializedCohort[],
 ): IMaterializedCohort[] => {
-  // Create a set of cohort definition ids which are tagged to either a bookmark or atlas cohort definition
+  // Create a set of cohort definition ids which are tagged to a bookmark
   const cohortDefinitionIds = new Set<number>();
 
   // Add cohort definition ids from bookmarks to cohortDefinitionIds set
   for (const bookmark of bookmarks) {
     if (bookmark.cohortDefinitionId) {
       cohortDefinitionIds.add(bookmark.cohortDefinitionId);
-    }
-  }
-
-  // Add cohort definition ids from AtlasCohortDefinitions to cohortDefinitionIds set
-  for (const atlasCohortDefinition of AtlasCohortDefinitions) {
-    if (atlasCohortDefinition.cohortDefinitionId) {
-      cohortDefinitionIds.add(atlasCohortDefinition.cohortDefinitionId);
     }
   }
 

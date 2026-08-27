@@ -41,17 +41,13 @@ export const cohortdefinition: FastifyPluginAsyncZod = async function (app) {
           },
         ],
         querystring: z.object({
+          // To be removed after moving to d2e atlas3 redesigned UI
           source: z.string().optional(),
         }),
       },
     },
     async (req, res) => {
-      const isAtlas = !req.query.source || req.query.source !== "pa";
-      const result = await getCohortDefinitionList(
-        req.token,
-        req.datasetId,
-        isAtlas,
-      );
+      const result = await getCohortDefinitionList(req.token, req.datasetId);
       res.send(result);
     },
   );
