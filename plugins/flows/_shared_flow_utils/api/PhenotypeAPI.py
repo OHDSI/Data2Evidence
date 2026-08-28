@@ -43,7 +43,6 @@ class PhenotypeAPI(BaseAPI):
         # Parse the JSON expression
         expression = json.loads(cohort_def['json'])
         name = f"{cohort_def['cohortId']}_{cohort_def['cohortName']}"
-        existing_id = name_index.get(name)
         payload = {
             "id": 0,
             "name": name,
@@ -58,6 +57,7 @@ class PhenotypeAPI(BaseAPI):
         }
         # datasetId travels in the header, not the body.
 
+        existing_id = name_index.get(name)
         verb = "Updating" if existing_id else "Creating"
         logger.info(f"{verb} cohort: {cohort_def['cohortName']} (ID: {cohort_def['cohortId']})")
 
@@ -68,6 +68,7 @@ class PhenotypeAPI(BaseAPI):
                 json=payload,
                 verify=self.get_verify_value()
             )
+
         else:
             response = requests.post(
                 self.cohort_definition_url,
@@ -75,7 +76,7 @@ class PhenotypeAPI(BaseAPI):
                 json=payload,
                 verify=self.get_verify_value()
             )
-
+        
         if response.status_code in [200, 201]:
             result = response.json()
             name_index[name] = result["id"]
@@ -84,10 +85,10 @@ class PhenotypeAPI(BaseAPI):
                 f"{result["id"]} for phenotype cohort {cohort_def['cohortId']}"
             )
             return result
-
-        error_msg = (
-            f"Failed to {'update' if existing_id else 'create'} cohort "
-            f"{cohort_def['cohortId']}: {response.status_code} - {response.text}"
-        )
-        logger.error(error_msg)
-        raise Exception(error_msg)
+        else:
+            error_msg = (
+                f"Failed to {'update' if existing_id else 'create'} cohort "
+                f"{cohort_def['cohortId']}: {response.status_code} - {response.text}"
+            )
+            logger.error(error_msg)
+            raise Exception(error_msg)
