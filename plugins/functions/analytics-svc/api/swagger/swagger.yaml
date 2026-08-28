@@ -643,6 +643,96 @@ paths:
           description: Error
           schema:
             $ref: "#/definitions/Error"
+  /cohort-cache/lookup:
+    x-swagger-router-controller: cohortCache
+    post:
+      description: Looks up cached per-bookmark materialized cohorts for a dataset. A bookmark id returned under entries is a cache hit, including when its materializedCohort is null; only ids with no cached row are returned under missing. Errors if the dataset's active PA config cannot be resolved, since there is then no key to look up.
+      operationId: lookupCohortCache
+      produces:
+        - application/json
+      consumes:
+        - application/json
+      parameters:
+        - in: body
+          name: cohortCacheLookup
+          required: true
+          schema:
+            type: object
+            required:
+              - datasetId
+              - bookmarkIds
+            properties:
+              datasetId:
+                type: string
+                description: Id of dataset
+              bookmarkIds:
+                type: array
+                description: Bookmark ids to look up
+                items:
+                  type: string
+      responses:
+        "200":
+          description: Success
+          schema:
+            type: object
+            required:
+              - entries
+              - missing
+            properties:
+              entries:
+                type: object
+                description: Cached value keyed by bookmark id. A present key is a hit, even when materializedCohort is null.
+                additionalProperties:
+                  $ref: "#/definitions/CohortCacheValue"
+              missing:
+                type: array
+                description: Bookmark ids with no cached row at all
+                items:
+                  type: string
+        default:
+          description: Error
+          schema:
+            $ref: "#/definitions/Error"
+  /cohort-cache:
+    x-swagger-router-controller: cohortCache
+    put:
+      description: Upserts cached per-bookmark materialized cohorts for a dataset. Intended for service-to-service use from d2e-webapi; this is NOT currently enforced, so any caller holding PA.svc can reach it (see PRD 7, phase-02 'Deferred'). Errors if the dataset's active PA config cannot be resolved, since there is then no key to write under.
+      operationId: upsertCohortCache
+      consumes:
+        - application/json
+      parameters:
+        - in: body
+          name: cohortCacheEntries
+          required: true
+          schema:
+            type: object
+            required:
+              - datasetId
+              - entries
+            properties:
+              datasetId:
+                type: string
+                description: Id of dataset
+              entries:
+                type: array
+                description: Entries to upsert, one per bookmark
+                items:
+                  type: object
+                  required:
+                    - bookmarkId
+                  properties:
+                    bookmarkId:
+                      type: string
+                      description: Id of bookmark
+                    materializedCohort:
+                      $ref: "#/definitions/CohortCacheMaterializedCohort"
+      responses:
+        "204":
+          description: Success
+        default:
+          description: Error
+          schema:
+            $ref: "#/definitions/Error"
   /cohort-definition:
     x-swagger-router-controller: cohort
     get:
@@ -1254,6 +1344,41 @@ definitions:
     description: Array of cohorts
     items:
       $ref: "#/definitions/CohortResponse"
+  CohortCacheMaterializedCohort:
+    type: object
+    description: Cached materialized cohort. Mirrors analytics-svc CohortType without patientIds, which is never cached.
+    properties:
+      id:
+        type: number
+        description: Cohort definition id
+      name:
+        type: string
+        description: Name of cohort
+      description:
+        type: string
+        description: Description of cohort
+      creationTimestamp:
+        type: string
+        description: Indicates when the cohort was created
+      definitionTypeConceptId:
+        type: string
+        description: Cohort Definition Type Concept Id
+      subjectConceptId:
+        type: number
+        description: Cohort Definition Subject Concept Id
+      syntax:
+        type: string
+        description: Cohort definition syntax, re-emitted to the frontend
+      patientCount:
+        type: number
+        description: Number of patients in the cohort
+  CohortCacheValue:
+    type: object
+    description: A cached entry. materializedCohort is null when the bookmark has no materialized cohort on this dataset; that negative entry is a cache hit.
+    required: [materializedCohort]
+    properties:
+      materializedCohort:
+        $ref: "#/definitions/CohortCacheMaterializedCohort"
   DataModels:
     type: object
     description: Response object of data models

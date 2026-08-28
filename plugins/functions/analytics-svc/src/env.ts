@@ -21,6 +21,14 @@ const Env = z
         IDP__ALP_SVC__CLIENT_SECRET: z.string(),
         USE_EXTENSION_FOR_COHORT_CREATION: z.string(),
 
+        PG__HOST: z.string().optional(),
+        PG__PORT: z.string().optional(),
+        PG__DB_NAME: z.string().optional(),
+        PG__SSL: z.string().optional(),
+        PG_USER: z.string().optional(),
+        PG_PASSWORD: z.string().optional(),
+        PG_SCHEMA: z.string().optional(),
+        PG_CA_ROOT_CERT: z.string().optional(),
         PG__IDLE_TIMEOUT_IN_MS: z
             .string()
             .refine((val) => !isNaN(parseInt(val)))

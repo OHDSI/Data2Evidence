@@ -43,6 +43,14 @@ const mriConfigConnection = new MriConfigConnection(
     env.SERVICE_ROUTES?.paConfig
 );
 const envVarUtils = new EnvVarUtils(Deno.env.toObject());
+
+// The cohort cache routes read and write only the portal Postgres `analytics`
+// schema; they never query the dataset's analytics database. They also sit on
+// the latency path the cache exists to shorten, so they must not pay for a
+// HANA/Trex connection (and its cleanup) on every call.
+const COHORT_CACHE_PATH_PREFIX = "/analytics-svc/api/services/cohort-cache";
+const isCohortCacheReq = (req: IMRIRequest): boolean =>
+    req.originalUrl.startsWith(COHORT_CACHE_PATH_PREFIX);
 /**
  * Declare Startup Functions
  */
@@ -118,6 +126,16 @@ const initRoutes = async (app: express.Application) => {
 
     app.use(async (req: IMRIRequest, res, next) => {
         try {
+            // Skip opening an analytics database connection for
+            // "/analytics-svc/api/services/cohort-cache*" requests, as these are
+            // served entirely from the portal Postgres cohort cache
+            if (isCohortCacheReq(req)) {
+                log.info(
+                    "Skipping analytics db connection for /cohort-cache* requests"
+                );
+                return next();
+            }
+
             if (!utils.isHealthProbesReq(req)) {
                 let userObj: User;
                 try {
@@ -208,6 +226,13 @@ const initRoutes = async (app: express.Application) => {
         // Skip getting cleanupMiddleware if request starts with "/analytics-svc/api/services/alpdb/", as these requests are all in dbsvc.ts and has a separate implementation for database connection cleanups
         if (req.originalUrl.startsWith("/analytics-svc/api/services/alpdb/")) {
             log.info("Skipping cleanupMiddleware for /alpdb/* requests");
+            return next();
+        }
+
+        // Skip getting cleanupMiddleware for "/analytics-svc/api/services/cohort-cache*"
+        // requests, as no analytics database connection was opened for them
+        if (isCohortCacheReq(req)) {
+            log.info("Skipping cleanupMiddleware for /cohort-cache* requests");
             return next();
         }
 
