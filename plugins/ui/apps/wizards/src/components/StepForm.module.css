@@ -16,11 +16,18 @@
   font-weight: 600;
 }
 
+.titleBar {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 8px;
+}
+
 .titleRow {
   display: flex;
   align-items: center;
   gap: 8px;
-  margin-bottom: 8px;
 }
 
 .titleRow h2 {
@@ -615,6 +622,10 @@
 }
 
 @media (max-width: 768px) {
+  .titleBar {
+    flex-wrap: wrap;
+  }
+
   .twoColumns,
   .threeColumns {
     grid-template-columns: minmax(0, 1fr);

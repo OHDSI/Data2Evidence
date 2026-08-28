@@ -1,7 +1,7 @@
 .shell {
   display: flex;
   flex-direction: column;
-  height: calc(100vh - 56px);
+  height: var(--wizard-shell-height, calc(100vh - 56px));
   overflow-y: auto;
   background-color: rgb(242, 240, 241);
   font-family: var(--wizard-font-family);
@@ -15,6 +15,23 @@
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
   display: flex;
   flex-direction: column;
+}
+
+/* Atlas already supplies the page background and card around analysis tabs. */
+.atlasShell {
+  background: transparent;
+}
+
+.atlasShell > .content {
+  margin: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+:global(.page-card:has(.v-window-item--active [data-atlas-wizard-step]) .page-header),
+:global(.page-card:has(.v-window-item--active [data-atlas-wizard-step]) .analysis-hub__tabs-rail) {
+  display: none;
 }
 
 .breadcrumb {
