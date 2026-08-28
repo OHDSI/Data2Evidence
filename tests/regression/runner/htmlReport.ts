@@ -39,7 +39,7 @@ export function writeHtmlReport(results: CompareResult[], runDate: string): void
     return `<tr class="${rowCls}">
       <td>${r.scenarioName}</td>
       <td class="baseline-col">${baseStr}</td>
-      <td>${r.currentP95Ms.toFixed(1)}ms</td>
+      <td>${r.currentP50Ms.toFixed(1)}ms</td>
       <td>${r.minMs.toFixed(1)}ms</td>
       <td>${r.maxMs.toFixed(1)}ms</td>
       <td class="${deltaCls}">${deltaStr}</td>
@@ -106,7 +106,7 @@ export function writeHtmlReport(results: CompareResult[], runDate: string): void
 </head>
 <body>
   <h1>D2E Regression — Performance Report</h1>
-  <p class="subtitle">${total} scenario(s) · p95 latency · ${runDate}</p>
+  <p class="subtitle">${total} scenario(s) · p50 latency vs baseline p95 · ${runDate}</p>
 
   ${alertHtml}
 
@@ -123,7 +123,7 @@ export function writeHtmlReport(results: CompareResult[], runDate: string): void
       <tr>
         <th>Scenario</th>
         <th class="baseline-col">Baseline p95</th>
-        <th>Current p95</th>
+        <th>Current p50</th>
         <th>Min</th>
         <th>Max</th>
         <th>Δ%</th>
@@ -144,7 +144,7 @@ export function writeHtmlReport(results: CompareResult[], runDate: string): void
     <div class="card"><div class="card-label">No Baseline</div><div class="card-value gray">${noBaseline.length}</div></div>
   </div>
 
-  <p class="footer">Baseline p95 values from <code>tests/regression/scenarios/*/baseline.json</code>. Δ% computed vs stored baseline p95. Thresholds: warn &gt;10%, fail &gt;20%.</p>
+  <p class="footer">Baseline p95 values from <code>tests/regression/scenarios/*/baseline.json</code>. Δ% compares this run's <strong>p50</strong> against the stored <strong>p95</strong> baseline. Thresholds: warn &gt;10%, fail &gt;20%.</p>
 </body>
 </html>`;
 

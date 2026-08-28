@@ -41,6 +41,23 @@
       "metadata": { "author": "OHDSI", "description": "Strategus Analysis Specification Builder" }
     },
     {
+      "id": "wizards",
+      "name": "Wizard",
+      "version": "1.0.0",
+      "entryPoint": "/resources/wizards/lifecycles.js",
+      "menuItems": [],
+      "mountPoints": [
+        {
+          "id": "wizards",
+          "surface": "analysis-tabs",
+          "name": "Wizard",
+          "icon": "mdi-auto-fix",
+          "insertBefore": "feature-analyses"
+        }
+      ],
+      "metadata": { "author": "D2E", "description": "Guided D2E analysis workflows" }
+    },
+    {
       "id": "notebook-plugin",
       "name": "Notebooks",
       "version": "0.1.0",
@@ -82,6 +99,7 @@
     "loadTimeout": 30000,
     "showLoadingIndicators": true,
     "theme": {
+      "enableDarkMode": false,
       "primaryColor": "#000080",
       "logoUrl": "/atlas/config/d2e2.svg",
       "logoNavigateTo": "/",
