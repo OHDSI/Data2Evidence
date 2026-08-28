@@ -1,19 +1,80 @@
-import { useState, useEffect } from "react";
+import { useCallback, useState, useEffect, useMemo } from "react";
 import { getWizardDefinitions, isWizardVisibleOnSurface } from "../config/wizardDefinitions";
 import { useWizardContext } from "../context/WizardContext";
 import type { WizardDefinition } from "../types/wizard";
+import { listAtlasSources, publishAtlasSourceSelection, resolveAtlasSourceKey } from "../api/atlasSourceApi";
+import type { AtlasSource } from "../api/atlasSourceApi";
+import { filterWizards } from "../utils/wizardSearch";
 import styles from "./StepSelection.module.css";
+
+type ViewMode = "tiles" | "list";
 
 /**
  * Wizard selection grid.
  */
 export function StepSelection() {
   const { selectWizard, portalProps } = useWizardContext();
+  const isAtlas = portalProps.isAtlas === true;
   const [wizards, setWizards] = useState<WizardDefinition[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [sources, setSources] = useState<AtlasSource[]>([]);
+  const [sourcesLoading, setSourcesLoading] = useState(portalProps.isAtlas === true);
+  const [sourcesError, setSourcesError] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [viewMode, setViewMode] = useState<ViewMode>("tiles");
+  const filteredWizards = useMemo(() => filterWizards(wizards, searchQuery), [searchQuery, wizards]);
+
+  const selectSource = useCallback(
+    (sourceKey: string) => {
+      if (!sourceKey || sourceKey === portalProps.datasetId) return;
+      publishAtlasSourceSelection(portalProps.appId, sourceKey);
+    },
+    [portalProps.appId, portalProps.datasetId],
+  );
+
+  useEffect(() => {
+    if (portalProps.isAtlas !== true) return;
+
+    let active = true;
+    setSourcesLoading(true);
+    setSourcesError(null);
+
+    listAtlasSources(portalProps.getToken)
+      .then((availableSources) => {
+        if (!active) return;
+        setSources(availableSources);
+      })
+      .catch((sourceError) => {
+        if (!active) return;
+        console.error("[Wizards] Failed to load Atlas data sources:", sourceError);
+        setSourcesError("Unable to load data sources");
+      })
+      .finally(() => {
+        if (active) setSourcesLoading(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [portalProps.getToken, portalProps.isAtlas]);
+
+  useEffect(() => {
+    if (portalProps.isAtlas !== true || sourcesLoading) return;
+
+    const sourceKey = resolveAtlasSourceKey(sources, portalProps.datasetId);
+    if (sourceKey && sourceKey !== portalProps.datasetId) {
+      selectSource(sourceKey);
+    }
+  }, [portalProps.datasetId, portalProps.isAtlas, selectSource, sources, sourcesLoading]);
 
   const loadWizards = async () => {
+    if (portalProps.isAtlas === true && !portalProps.datasetId) {
+      setLoading(false);
+      setWizards([]);
+      return;
+    }
+
     try {
       setLoading(true);
       setError(null);
@@ -74,12 +135,42 @@ export function StepSelection() {
     }
 
     if (wizards.length === 0) {
+      if (portalProps.isAtlas === true && !portalProps.datasetId) {
+        return <div className={styles.empty}>Select a data source to view wizards</div>;
+      }
       return <div className={styles.empty}>No wizards available</div>;
+    }
+
+    if (filteredWizards.length === 0) {
+      return <div className={styles.empty}>No wizards match your search</div>;
+    }
+
+    if (viewMode === "list") {
+      return (
+        <div className={styles.list}>
+          <div className={styles.listHeader} aria-hidden="true">
+            <span>Name</span>
+            <span>Descriptions</span>
+          </div>
+          {filteredWizards.map((wizard) => (
+            <button
+              key={wizard.id}
+              type="button"
+              className={styles.listRow}
+              onClick={() => handleWizardSelect(wizard.id)}
+              aria-label={`Select ${wizard.name} wizard`}
+            >
+              <span className={styles.listName}>{wizard.name}</span>
+              <span className={styles.listDescription}>{wizard.description}</span>
+            </button>
+          ))}
+        </div>
+      );
     }
 
     return (
       <div className={styles.grid}>
-        {wizards.map((wizard) => (
+        {filteredWizards.map((wizard) => (
           <div
             key={wizard.id}
             className={styles.card}
@@ -98,10 +189,98 @@ export function StepSelection() {
   };
 
   return (
-    <div className={styles.container}>
-      <div className={styles.header}>
-        <h2>Getting started</h2>
-        <p className={styles.subtitle}>We've built some pre-configured scenarios to get you started</p>
+    <div className={`${styles.container} ${isAtlas ? styles.atlasContainer : ""}`}>
+      {isAtlas ? (
+        <p className={styles.atlasIntro}>
+          We've prepared a set of pre-built scenarios to jumpstart your analysis.{" "}
+          <strong>Select an analysis type below to generate results, no coding needed.</strong>
+        </p>
+      ) : (
+        <div className={styles.header}>
+          <h2>Getting started</h2>
+          <p className={styles.subtitle}>We've built some pre-configured scenarios to get you started</p>
+        </div>
+      )}
+      <div className={styles.toolbar}>
+        <label className={styles.searchBox}>
+          <svg className={styles.searchIcon} viewBox="0 0 24 24" aria-hidden="true">
+            <circle cx="10.5" cy="10.5" r="6.5" />
+            <path d="m15.5 15.5 5 5" />
+          </svg>
+          <input
+            type="search"
+            value={searchQuery}
+            onChange={(event) => setSearchQuery(event.target.value)}
+            placeholder="Search"
+            aria-label="Search wizards"
+          />
+        </label>
+        <div className={styles.toolbarActions}>
+          <div className={styles.viewToggle} role="group" aria-label="Wizard view">
+            <button
+              type="button"
+              className={viewMode === "tiles" ? styles.viewButtonActive : styles.viewButton}
+              onClick={() => setViewMode("tiles")}
+              aria-label="Tile view"
+              aria-pressed={viewMode === "tiles"}
+            >
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <rect x="4" y="4" width="6" height="6" />
+                <rect x="14" y="4" width="6" height="6" />
+                <rect x="4" y="14" width="6" height="6" />
+                <rect x="14" y="14" width="6" height="6" />
+              </svg>
+            </button>
+            <button
+              type="button"
+              className={viewMode === "list" ? styles.viewButtonActive : styles.viewButton}
+              onClick={() => setViewMode("list")}
+              aria-label="List view"
+              aria-pressed={viewMode === "list"}
+            >
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <circle cx="5" cy="6" r="1" />
+                <circle cx="5" cy="12" r="1" />
+                <circle cx="5" cy="18" r="1" />
+                <path d="M9 6h11M9 12h11M9 18h11" />
+              </svg>
+            </button>
+          </div>
+          {portalProps.isAtlas === true ? (
+            <div className={styles.sourceField}>
+              <label className={styles.sourceSelector}>
+                <span className={styles.sourceLabel}>Data source</span>
+                <svg className={styles.sourceIcon} viewBox="0 0 24 24" aria-hidden="true">
+                  <ellipse cx="12" cy="5" rx="8" ry="3" />
+                  <path d="M4 5v5c0 1.7 3.6 3 8 3s8-1.3 8-3V5" />
+                  <path d="M4 10v5c0 1.7 3.6 3 8 3s8-1.3 8-3v-5" />
+                  <path d="M4 15v4c0 1.7 3.6 3 8 3s8-1.3 8-3v-4" />
+                </svg>
+                <select
+                  className={styles.sourceControl}
+                  value={portalProps.datasetId || ""}
+                  disabled={sourcesLoading || sources.length === 0}
+                  onChange={(event) => selectSource(event.target.value)}
+                  aria-label="Data source"
+                >
+                  <option value="" disabled>
+                    {sourcesLoading
+                      ? "Loading data sources..."
+                      : sources.length > 0
+                        ? "Select a data source"
+                        : "No data sources available"}
+                  </option>
+                  {sources.map((source) => (
+                    <option key={source.sourceKey} value={source.sourceKey}>
+                      {source.sourceName}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              {sourcesError ? <span className={styles.sourceError}>{sourcesError}</span> : null}
+            </div>
+          ) : null}
+        </div>
       </div>
       {renderContent()}
     </div>
