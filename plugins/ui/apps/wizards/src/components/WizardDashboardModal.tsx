@@ -4,8 +4,8 @@ import { ShinyDashboardIframe } from "./ShinyDashboardIframe";
 import styles from "./WizardDashboardModal.module.css";
 
 const stageMessages = {
-  "awaiting-cache": "Checking your previous Wizard analyses…",
-  "saving-bookmark": "Saving this Wizard analysis…",
+  "awaiting-cache": "Applying filters...",
+  "saving-bookmark": "Applying filters...",
   materializing: "Creating the cohort…",
   "opening-dashboard": "Opening the dashboard…",
 } as const;
