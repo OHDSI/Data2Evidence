@@ -77,7 +77,7 @@ describe("Wizard dashboard flow", () => {
       bmkId: "created-bookmark",
       bookmarkName: "wizards-1783670400000",
     });
-    expect(stages).toEqual(["awaiting-cache", "saving-bookmark", "materializing", "opening-dashboard"]);
+    expect(stages).toEqual(["applying-filters", "materializing", "opening-dashboard"]);
   });
 
   it("reuses a saved bookmark id on retry instead of saving again", async () => {
