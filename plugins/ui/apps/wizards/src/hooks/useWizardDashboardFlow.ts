@@ -28,8 +28,7 @@ export interface OpenWizardDashboardInput {
 type ActiveStage = Exclude<WizardDashboardState["status"], "idle" | "ready" | "error">;
 
 const stageErrorMessages: Record<ActiveStage, string> = {
-  "awaiting-cache": "We couldn't check your previous Wizard analyses. Please try again.",
-  "saving-bookmark": "We couldn't save this Wizard analysis. Please try again.",
+  "applying-filters": "We couldn't apply the filters. Please try again.",
   materializing: "We couldn't generate the cohort. Please try again.",
   "opening-dashboard": "We couldn't open the dashboard. Please try again.",
 };
@@ -55,7 +54,7 @@ export function useWizardDashboardFlow({
   const abortRef = useRef<AbortController | null>(null);
   const lastInputRef = useRef<RunWizardDashboardFlowInput | null>(null);
   const pendingBookmarkRef = useRef<PendingWizardBookmark | null>(null);
-  const activeStageRef = useRef<ActiveStage>("awaiting-cache");
+  const activeStageRef = useRef<ActiveStage>("applying-filters");
   const loadInputRef = useRef<(() => Promise<OpenWizardDashboardInput>) | null>(null);
 
   const execute = useCallback(
@@ -66,7 +65,7 @@ export function useWizardDashboardFlow({
       abortRef.current = controller;
       const flowInput = { ...input, signal: controller.signal };
       lastInputRef.current = flowInput;
-      activeStageRef.current = "awaiting-cache";
+      activeStageRef.current = "applying-filters";
       dispatch({
         type: "start",
         operationId,
@@ -122,7 +121,7 @@ export function useWizardDashboardFlow({
               type: "fail",
               operationId,
               message: "The active dataset configuration is incomplete. The Cohort Builder option is still available.",
-              stage: "awaiting-cache",
+              stage: "applying-filters",
             });
             return;
           }

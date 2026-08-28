@@ -70,7 +70,7 @@ export async function runWizardDashboardFlow(
   const stage = dependencies.onStage ?? (() => undefined);
 
   throwIfAborted(input.signal);
-  stage("awaiting-cache");
+  stage("applying-filters");
   let items = await dependencies.ensureCache();
   throwIfAborted(input.signal);
 
@@ -99,7 +99,6 @@ export async function runWizardDashboardFlow(
   if (!candidate) {
     if (!bookmarkId || !bookmarkName) {
       bookmarkName = createWizardBookmarkName((dependencies.now ?? Date.now)());
-      stage("saving-bookmark");
       const created = await createBookmark({
         datasetId: input.datasetId,
         bookmarkname: bookmarkName,
