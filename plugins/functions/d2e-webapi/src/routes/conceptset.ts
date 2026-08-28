@@ -223,7 +223,7 @@ export const conceptset: FastifyPluginAsyncZod = async function (app) {
     {
       schema: {
         description:
-          "Check if a concept set with the same name exists in the WebAPIdatabase. The name is checked against the selected concept set IDto ensure that only the selected concept set ID has the name specified.",
+          "Check whether a concept set with the same name exists in the legacy (terminology) store. This is the only store probed here; the WebAPI store enforces name uniqueness with the uq_cs_name constraint and reports a duplicate as HTTP 409. The selected concept set ID is excluded so that only that set may hold the name.",
         tags: ["conceptset"],
         params: z.object({ id: ConceptSetIdParamSchema }),
         querystring: z.object({ name: z.string() }),
