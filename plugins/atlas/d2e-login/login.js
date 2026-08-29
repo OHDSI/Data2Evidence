@@ -16,7 +16,7 @@
   var FALLBACK_RETURN = "/atlas/";
 
   var form = document.getElementById("form");
-  var emailEl = document.getElementById("email");
+  var identifierEl = document.getElementById("identifier");
   var passwordEl = document.getElementById("password");
   var submitEl = document.getElementById("submit");
   var errorEl = document.getElementById("error");
@@ -49,10 +49,18 @@
     event.preventDefault();
     errorEl.textContent = "";
 
-    var email = emailEl.value.trim();
+    var identifier = identifierEl.value.trim();
+    // trex authenticates by email. d2e identifies people by username, and the
+    // role migration already treats `admin` and `admin@<domain>` as the same
+    // person (matchTrexUser matches on the local part), so resolve a bare
+    // username the same way rather than making people type an address they
+    // never chose.
+    var email = identifier.indexOf("@") === -1
+      ? identifier + "@" + (window.D2E_LOGIN_DEFAULT_DOMAIN || "trex.local")
+      : identifier;
     var password = passwordEl.value;
-    if (!email || !password) {
-      showError("Enter your email and password.");
+    if (!identifier || !password) {
+      showError("Enter your username and password.");
       return;
     }
 
@@ -71,7 +79,7 @@
             // password: that difference tells an attacker which emails exist.
             throw new Error(
               res.status === 400 || res.status === 401
-                ? "Incorrect email or password."
+                ? "Incorrect username or password."
                 : body.error_description || body.error || "Sign-in failed. Please try again."
             );
           }
