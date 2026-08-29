@@ -2,18 +2,12 @@ services:
   trex:
     environment:
       TREX_DX_ENABLED: "false"
-      # TEMPORARY. CI's public FQDN is `localhost`, which inside this container is
-      # the container itself, so the token proxy and WebAPI cannot fetch the
-      # issuer's endpoints over it ("error sending request for url
-      # https://localhost/trex/oidc/token"). Moving the issuer to an address that
-      # resolves in here fixes both, at the cost of an internal-looking `iss`.
-      #
-      # trex #287 adds TREX_OIDC_INTERNAL_BASE, which redirects only the
-      # server-side fetches and leaves `iss` public. Once a base carrying it is
-      # pinned, replace these two lines with:
-      #   TREX_OIDC_INTERNAL_BASE: "http://${PROJECT_NAME:-d2e}-trex:33001"
-      TREX_OIDC_ISSUER: "http://${PROJECT_NAME:-d2e}-trex:33001"
-      SECURITY_AUTH_OIDC_URL: "http://${PROJECT_NAME:-d2e}-trex:33001/trex/oidc/.well-known/openid-configuration"
+      # CI's public FQDN is `localhost`, which inside this container is the
+      # container itself, so the token proxy and WebAPI cannot fetch the issuer's
+      # endpoints over it. This routes those server-side calls somewhere that
+      # resolves; `iss` stays the public issuer from docker-compose.yml, so tokens
+      # verify unchanged everywhere else.
+      TREX_OIDC_INTERNAL_BASE: "http://${PROJECT_NAME:-d2e}-trex:33001"
     volumes:
       - ./plugins/ui-built:/usr/src/plugins/d2e-ui-pr
       # Overlay the e2e-patched MRI/PA seed config onto the image-bundled

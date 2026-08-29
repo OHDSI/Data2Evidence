@@ -191,19 +191,25 @@ export class DemoService {
 
     // Ask for the cache before waiting on it. Nothing else in this flow starts
     // the job, so polling alone sat at activeJobStatus:null until the timeout
-    // below expired. Tolerate a failure here: if the cache is already building
-    // or present, the poll that follows is still the right thing to do.
+    // below expired.
+    let triggered = true;
     try {
       await portalAPI.refreshCache(dataset.id);
     } catch (e) {
-      this.logger.warn(
-        `Could not start the cache job for ${dataset.id}; polling anyway: ${
+      triggered = false;
+      this.logger.error(
+        `Could not start the cache job for ${dataset.id}: ${
           e instanceof Error ? e.message : String(e)
         }`,
       );
     }
 
-    const pollTimeoutMs = 15 * 60 * 1000;
+    // A failed trigger gets a short grace period, not the full budget. Something
+    // else may already have started the job, so it is worth a brief look — but
+    // waiting fifteen minutes for a job nobody started turns a clear failure
+    // into a silent stall, and with retries above it that is three quarters of
+    // an hour before anyone sees the real error.
+    const pollTimeoutMs = triggered ? 15 * 60 * 1000 : 60 * 1000;
     const pollIntervalMs = 5000;
     const deadline = Date.now() + pollTimeoutMs;
     let lastStatus;

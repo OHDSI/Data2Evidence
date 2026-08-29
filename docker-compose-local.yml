@@ -39,7 +39,7 @@ services:
         # Match the -devx image name above: without this a local build would use
         # Dockerfile.v2's default (the lean prod base) and quietly produce an
         # image with no devx tooling under a -devx tag.
-        TREXSQL_REF: ${TREXSQL_REF:-sha-0554d744aee9519332cb63b12d04259bdc811b11@sha256:3417da1a42c4f119bed2040e89803417e3aa98a0ebf71f431e19dcf689efadeb}
+        TREXSQL_REF: ${TREXSQL_REF:-sha-13aaec845e6df19a72d0ee529cb3c81926b0697f@sha256:8152fae8c4e3a98dc19d0dc3ebc6099d42ea89d1da80c9ad16931121ea511287}
         # Local builds pull published plugins from the feed; CI uses plugin-artifacts/.
         PLUGINS_FROM_REGISTRY: ${PLUGINS_FROM_REGISTRY:-@data2evidence/d2e-ui @data2evidence/d2e-functions @data2evidence/fhir @data2evidence/sibyl @data2evidence/d2e-flows @data2evidence/i2b2-flow @data2evidence/search-embedding-flow @data2evidence/data-management-flow @data2evidence/hades-flow @data2evidence/loyalty-score-flow @data2evidence/data-transformation-flow @ohdsi/pythia-agent@0.1.0-develop.18.g80bf4aa}
         # Keep in sync with the `docker build --build-arg WITH_R=true` used to
@@ -92,10 +92,8 @@ services:
       # SECURITY_AUTH_OIDC_EXTERNALURL and TREX_OIDC_LOGIN_URL, both absolute.
       D2E_IDP: "trex"
       # Same reasoning as docker-compose-ci.yml: the public FQDN does not route
-      # back to the gateway from inside this container. Swap both lines for
-      # TREX_OIDC_INTERNAL_BASE once a base carrying trex #287 is pinned.
-      TREX_OIDC_ISSUER: "http://${PROJECT_NAME:-d2e}-trex:33001"
-      SECURITY_AUTH_OIDC_URL: "http://${PROJECT_NAME:-d2e}-trex:33001/trex/oidc/.well-known/openid-configuration"
+      # back to the gateway from inside this container.
+      TREX_OIDC_INTERNAL_BASE: "http://${PROJECT_NAME:-d2e}-trex:33001"
       # Enable trex's native email/password IDP for local dev (off by default in
       # the engine). Production d2e authenticates via Logto and leaves it unset.
       TREX_IDP_ENABLED: "true"
