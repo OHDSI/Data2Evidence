@@ -80,11 +80,11 @@ export async function grantTrexRoles({ gateway, userId, roles, serviceRoleKey })
  * by writing its schema directly -- a test harness should not reach into
  * another service's tables.
  *
- * `idp_user_id` is deliberately not set here: usermgmt matches by username on
- * first login and stamps the subject itself, so passing it would duplicate a
- * linkage the service already owns.
+ * The trex subject is passed explicitly. usermgmt stamps it itself on an
+ * interactive first login, but nothing in this flow triggers that, so without it
+ * every lookup by IDP id misses and /me answers "IDP user ID ... not found".
  */
-export async function ensureUsermgmtUser({ gateway, token, username }) {
+export async function ensureUsermgmtUser({ gateway, token, username, idpUserId }) {
   const { randomUUID } = await import("node:crypto");
   const res = await fetch(`${gateway}/usermgmt/api/user`, {
     method: "POST",
@@ -92,7 +92,7 @@ export async function ensureUsermgmtUser({ gateway, token, username }) {
       "content-type": "application/json",
       Authorization: `Bearer ${token}`,
     },
-    body: JSON.stringify({ id: randomUUID(), username }),
+    body: JSON.stringify({ id: randomUUID(), username, idpUserId }),
     dispatcher: insecureAgent,
   });
   if (!res.ok) {
@@ -241,6 +241,6 @@ export async function trexSetupBearer({
   const token = await trexBearerToken({ gateway, email, password, clientId, clientSecret });
   // Needs a token, so it comes after login: usermgmt authorizes this call from
   // the roles granted above, which the token carries.
-  await ensureUsermgmtUser({ gateway, token, username: email });
+  await ensureUsermgmtUser({ gateway, token, username: email, idpUserId: userId });
   return token;
 }
