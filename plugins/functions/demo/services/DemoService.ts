@@ -214,7 +214,23 @@ export class DemoService {
     const deadline = Date.now() + pollTimeoutMs;
     let lastStatus;
     while (Date.now() < deadline) {
-      lastStatus = await portalAPI.getCacheStatus(dataset.id);
+      // A poll that comes back empty is a transient condition, not a fatal one:
+      // the endpoint answers 200 with no body while the dataset is still being
+      // registered. Reading `.ready` straight off it turned that into
+      // "Cannot read properties of undefined", which reported a cache problem
+      // when the truth was simply that nothing had answered yet.
+      lastStatus = await portalAPI.getCacheStatus(dataset.id).catch((e) => {
+        this.logger.warn(
+          `Cache status poll failed for ${dataset.id}: ${
+            e instanceof Error ? e.message : String(e)
+          }`,
+        );
+        return undefined;
+      });
+      if (!lastStatus) {
+        await new Promise((r) => setTimeout(r, pollIntervalMs));
+        continue;
+      }
       if (lastStatus.ready) {
         this.logger.info(
           `Cache ready for dataset ${dataset.id}: ${JSON.stringify(lastStatus)}`
