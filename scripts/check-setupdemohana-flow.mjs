@@ -2,7 +2,6 @@
 import dotenv from 'dotenv';
 import fs from "node:fs/promises";
 import { Agent, fetch } from "undici";
-import { selectedIdp, trexSetupBearer } from './lib/idp-login.mjs';
 import { execSync } from 'node:child_process';
 
 // Helper functions
@@ -53,6 +52,11 @@ function readServiceRoleKey() {
       `"select value #>> '{}' from trexdb.setting where key='auth.serviceRoleKey'"`,
   ).toString().trim();
 }
+
+// CommonJS on purpose: these scripts are transpiled to CJS and run on Node 18,
+// which refuses require() of an ES module -- and the transform turns every
+// import form, dynamic ones included, into require().
+const { selectedIdp, trexSetupBearer } = require('./lib/idp-login.cjs');
 
 let BEARER_TOKEN;
 

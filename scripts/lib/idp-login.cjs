@@ -11,12 +11,12 @@
 // tokens while the OIDC provider issues RS256 ones from the JWKS key, and WebAPI
 // validates against the JWKS — so the password-grant token alone is rejected
 // downstream even though it looks like a working login here.
-import { Agent } from "undici";
+const { Agent } = require("undici");
 
 const insecureAgent = new Agent({ connect: { rejectUnauthorized: false } });
 
 /** Which IdP the stack authenticates against. Mirrors trex's d2e-compat. */
-export function selectedIdp(env = process.env) {
+function selectedIdp(env = process.env) {
   const raw = (env.D2E_IDP ?? "").trim().toLowerCase();
   if (raw === "" || raw === "logto") return "logto";
   if (raw === "trex") return "trex";
@@ -31,7 +31,7 @@ export function selectedIdp(env = process.env) {
  * from the database rather than the environment because nothing publishes it
  * there — it is minted by trex on first boot.
  */
-export async function ensureTrexUser({ gateway, email, password, serviceRoleKey }) {
+async function ensureTrexUser({ gateway, email, password, serviceRoleKey }) {
   const res = await fetch(`${gateway}/trex/auth/v1/admin/users`, {
     method: "POST",
     headers: {
@@ -54,7 +54,7 @@ export async function ensureTrexUser({ gateway, email, password, serviceRoleKey 
  * needs the roles that authorize them. Roles are named exactly as
  * webapi.sec_role and d2e's role map expect; see canonicalRoleNames.
  */
-export async function grantTrexRoles({ gateway, userId, roles, serviceRoleKey }) {
+async function grantTrexRoles({ gateway, userId, roles, serviceRoleKey }) {
   for (const role of roles) {
     const res = await fetch(`${gateway}/trex/admin/roles/assign`, {
       method: "POST",
@@ -84,8 +84,8 @@ export async function grantTrexRoles({ gateway, userId, roles, serviceRoleKey })
  * interactive first login, but nothing in this flow triggers that, so without it
  * every lookup by IDP id misses and /me answers "IDP user ID ... not found".
  */
-export async function ensureUsermgmtUser({ gateway, token, username, idpUserId }) {
-  const { randomUUID } = await import("node:crypto");
+async function ensureUsermgmtUser({ gateway, token, username, idpUserId }) {
+  const { randomUUID } = require("node:crypto");
   const res = await fetch(`${gateway}/usermgmt/api/user`, {
     method: "POST",
     headers: {
@@ -109,7 +109,7 @@ export async function ensureUsermgmtUser({ gateway, token, username, idpUserId }
  * `sub` of a native login rather than looked up. That also proves the
  * credentials work before anything is granted to the account.
  */
-export async function trexUserId({ gateway, email, password }) {
+async function trexUserId({ gateway, email, password }) {
   const res = await fetch(`${gateway}/trex/auth/v1/token?grant_type=password`, {
     method: "POST",
     headers: { "content-type": "application/json" },
@@ -134,9 +134,9 @@ export async function trexUserId({ gateway, email, password }) {
  * local stack, and a stable value keeps the challenge reproducible when the flow
  * has to be debugged by hand.
  */
-export async function trexBearerToken({ gateway, email, password, clientId, clientSecret }) {
+async function trexBearerToken({ gateway, email, password, clientId, clientSecret }) {
   const verifier = "dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk";
-  const challenge = await pkceChallenge(verifier);
+  const challenge = pkceChallenge(verifier);
   const redirectUri = `${gateway}/d2e/portal/login-callback`;
 
   // 1. Native login — establishes the session the OIDC provider reads.
@@ -203,8 +203,8 @@ export async function trexBearerToken({ gateway, email, password, clientId, clie
   return token;
 }
 
-async function pkceChallenge(verifier) {
-  const { createHash } = await import("node:crypto");
+function pkceChallenge(verifier) {
+  const { createHash } = require("node:crypto");
   return createHash("sha256")
     .update(verifier)
     .digest("base64")
@@ -225,7 +225,7 @@ async function pkceChallenge(verifier) {
  * and cheap, and CI starts from an empty trex on every run, so "create if
  * missing" is the normal path, not an exception.
  */
-export async function trexSetupBearer({
+async function trexSetupBearer({
   gateway,
   email,
   password,
@@ -244,3 +244,5 @@ export async function trexSetupBearer({
   await ensureUsermgmtUser({ gateway, token, username: email, idpUserId: userId });
   return token;
 }
+
+module.exports = { ensureTrexUser, ensureUsermgmtUser, grantTrexRoles, selectedIdp, trexBearerToken, trexSetupBearer, trexUserId };

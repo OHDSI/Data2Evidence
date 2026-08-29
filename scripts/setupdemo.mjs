@@ -2,7 +2,6 @@
 import dotenv from 'dotenv';
 import fs from "node:fs/promises";
 import { Agent, fetch } from "undici";
-import { selectedIdp, trexSetupBearer } from './lib/idp-login.mjs';
 import { execSync } from 'node:child_process';
 
 
@@ -56,11 +55,16 @@ function readServiceRoleKey() {
   ).toString().trim();
 }
 
+// CommonJS on purpose: these scripts are transpiled to CJS and run on Node 18,
+// which refuses require() of an ES module -- and the transform turns every
+// import form, dynamic ones included, into require().
+const { selectedIdp, trexSetupBearer } = require('./lib/idp-login.cjs');
+
 let BEARER_TOKEN;
 
 if (selectedIdp() === 'trex') {
   // trex is the IdP: provision the setup account, then run the OIDC code flow.
-  // See scripts/lib/idp-login.mjs for why the code flow is required rather than
+  // See scripts/lib/idp-login.cjs for why the code flow is required rather than
   // the simpler password grant.
   BEARER_TOKEN = await trexSetupBearer({
     gateway: `https://${CADDY__D2E__PUBLIC_FQDN}`,

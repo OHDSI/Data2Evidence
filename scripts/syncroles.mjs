@@ -3,7 +3,6 @@ import dotenv from 'dotenv';
 import fs from "node:fs/promises";
 import readline from "node:readline";
 import { Agent, fetch } from "undici";
-import { selectedIdp, trexSetupBearer } from './lib/idp-login.mjs';
 import { execSync } from 'node:child_process';
 
 
@@ -113,6 +112,11 @@ if (!password) {
 }
 
 // Start OIDC auth flow
+// CommonJS on purpose: these scripts are transpiled to CJS and run on Node 18,
+// which refuses require() of an ES module -- and the transform turns every
+// import form, dynamic ones included, into require().
+const { selectedIdp, trexSetupBearer } = require('./lib/idp-login.cjs');
+
 let BEARER_TOKEN;
 
 if (selectedIdp() === 'trex') {
