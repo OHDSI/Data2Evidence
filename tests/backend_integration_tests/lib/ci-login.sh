@@ -58,6 +58,51 @@ if [ "$IDP" = "trex" ]; then
   CLIENT_ID="${TREX__OIDC__WEBAPI_CLIENT_ID:-d2e-webapi}"
   CLIENT_SECRET="${TREX__OIDC__WEBAPI_CLIENT_SECRET:-$(grep -E '^TREX__OIDC__WEBAPI_CLIENT_SECRET=' "$ENVFILE" | cut -d'=' -f2-)}"
 
+  # Provision the account before signing in as it. This step runs before any
+  # setup script, so on a fresh stack nothing has created it yet and the login
+  # simply 400s. trex mints the service-role key on first boot and publishes it
+  # only to its own settings table, hence reading it from the database.
+  SERVICE_ROLE_KEY=$(docker exec "${PROJECT_NAME:-alp}-minerva-postgres-1" \
+    psql -U postgres -d alp -tAc \
+    "select value #>> '{}' from trexdb.setting where key='auth.serviceRoleKey'" 2>/dev/null | tr -d '[:space:]')
+
+  if [ -n "$SERVICE_ROLE_KEY" ]; then
+    # 422 means the account is already there, which is the steady state on a
+    # re-run; anything else is reported but not fatal, because the login below
+    # is the real check.
+    create_code=$(curl -sk -o /dev/null -w '%{http_code}' --max-time 20 \
+      -X POST "$GATEWAY/trex/auth/v1/admin/users" \
+      -H "Authorization: Bearer $SERVICE_ROLE_KEY" \
+      -H 'content-type: application/json' \
+      -d "{\"email\":\"$SEED_EMAIL\",\"password\":\"$SEED_PASS\"}")
+    echo "Provisioning $SEED_EMAIL in trex: HTTP $create_code"
+
+    # The suites call admin-only endpoints, so the account needs the roles that
+    # authorize them. Named exactly as webapi.sec_role expects.
+    login_body=$(curl -sk --max-time 20 \
+      -X POST "$GATEWAY/trex/auth/v1/token?grant_type=password" \
+      -H 'content-type: application/json' \
+      -d "{\"email\":\"$SEED_EMAIL\",\"password\":\"$SEED_PASS\"}")
+    SEED_SUB=$(printf '%s' "$login_body" \
+      | python3 -c 'import json,sys,base64
+try:
+    t = json.load(sys.stdin)["access_token"].split(".")[1]
+    t += "=" * (-len(t) % 4)
+    print(json.loads(base64.urlsafe_b64decode(t)).get("sub", ""))
+except Exception:
+    print("")')
+    for role in role.systemadmin admin role.useradmin; do
+      curl -sk -o /dev/null --max-time 20 \
+        -X POST "$GATEWAY/trex/admin/roles/assign" \
+        -H "Authorization: Bearer $SERVICE_ROLE_KEY" \
+        -H 'content-type: application/json' \
+        -d "{\"userId\":\"$SEED_SUB\",\"role\":\"$role\"}"
+    done
+    echo "Granted application roles to $SEED_EMAIL ($SEED_SUB)."
+  else
+    echo "Could not read the trex service-role key; skipping provisioning." >&2
+  fi
+
   trex_login "$GATEWAY" "$SEED_EMAIL" "$SEED_PASS" "$CLIENT_ID" "$CLIENT_SECRET" || {
     echo "trex login failed for $SEED_EMAIL" >&2
     exit 1
