@@ -53,7 +53,7 @@ export class UserRouter {
     })
 
     this.router.post('/', async (req: IAppRequest, res: Response, next: NextFunction) => {
-      const { id, username } = req.body || {}
+      const { id, username, idpUserId } = req.body || {}
 
       if (!id) {
         this.logger.warn(`Param 'id' is required`)
@@ -68,8 +68,12 @@ export class UserRouter {
       this.logger.info(`Create user ${id} ${username}`)
 
       try {
-        await this.userService.createUser({ id, username })
-        return res.status(200).json({ id, username })
+        // idpUserId is optional: the interactive flows let the login middleware
+        // stamp it on first sign-in. A caller provisioning an account ahead of
+        // that -- a setup script, a migration -- has the subject already, and
+        // without it every lookup by IDP id misses and the user reads as absent.
+        await this.userService.createUser({ id, username, idp_user_id: idpUserId })
+        return res.status(200).json({ id, username, idpUserId })
       } catch (err) {
         this.logger.error(`Error when creating user ${id} ${username}: ${JSON.stringify(err)}`)
         return next(err)
