@@ -93,7 +93,7 @@ const ARGV_BLOCKS = { NOPROXY: NOPROXY_ARGV_BLOCK };
 // time with MODULE_NOT_FOUND.
 mkdirSync(join(distDir, "lib"), { recursive: true });
 for (const lib of readdirSync(join(__dirname, "lib"))) {
-  if (!lib.endsWith(".mjs")) continue;
+  if (!lib.endsWith(".mjs") && !lib.endsWith(".cjs")) continue;
   writeFileSync(join(distDir, "lib", lib), readFileSync(join(__dirname, "lib", lib), "utf8"));
   console.log(`Copied lib/${lib} to dist/lib/`);
 }

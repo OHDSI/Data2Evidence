@@ -319,6 +319,12 @@ services:
       # BEFORE this takes effect, or nobody can sign in: the accounts simply
       # do not exist in trex yet.
       D2E_IDP: ${D2E_IDP:-trex}
+      # trex authenticates users itself, so its native login surface has to be
+      # on. It is off by default in the engine for stacks fronted by an external
+      # IdP. Enabling it does not expose a default account: the seeded
+      # admin@trex.local has a user row but NO credential (trexdb.account is
+      # empty), so it cannot sign in until someone provisions one.
+      TREX_IDP_ENABLED: "true"
       TREX_OIDC_PROVIDER_ENABLED: "true"
       TREX_OIDC_ISSUER: "https://${CADDY__D2E__PUBLIC_FQDN:-${CADDY__ALP__PUBLIC_FQDN:-localhost}}:${CADDY_PORT:-${PORT:-443}}"
       # trex ships no login UI; an unauthenticated /authorize lands here.
