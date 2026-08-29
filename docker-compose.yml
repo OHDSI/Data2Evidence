@@ -312,6 +312,13 @@ services:
       # externally reachable origin, not an internal one: it is baked into every
       # token and re-checked by the relying party, so it has to be the URL a
       # browser sees. BASE_PATH is appended, giving /trex/oidc/*.
+      # trex is the identity provider for the whole stack, not just WebAPI.
+      # d2e-compat verifies portal bearers against it and the portal login
+      # flow points at it. Deployments that still hold their users in Logto
+      # must run `d2e migrate-idp-roles --apply --create-missing-users`
+      # BEFORE this takes effect, or nobody can sign in: the accounts simply
+      # do not exist in trex yet.
+      D2E_IDP: ${D2E_IDP:-trex}
       TREX_OIDC_PROVIDER_ENABLED: "true"
       TREX_OIDC_ISSUER: "https://${CADDY__D2E__PUBLIC_FQDN:-${CADDY__ALP__PUBLIC_FQDN:-localhost}}:${CADDY_PORT:-${PORT:-443}}"
       # trex ships no login UI; an unauthenticated /authorize lands here.

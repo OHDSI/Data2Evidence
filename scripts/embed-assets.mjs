@@ -87,6 +87,17 @@ const generatedPaths = [];
 
 const ARGV_BLOCKS = { NOPROXY: NOPROXY_ARGV_BLOCK };
 
+// Shared modules the scripts import at runtime. The transform below rewrites
+// each script into a function but leaves its imports alone, so anything it
+// imports has to exist next to the emitted file or the CLI fails at require
+// time with MODULE_NOT_FOUND.
+mkdirSync(join(distDir, "lib"), { recursive: true });
+for (const lib of readdirSync(join(__dirname, "lib"))) {
+  if (!lib.endsWith(".mjs")) continue;
+  writeFileSync(join(distDir, "lib", lib), readFileSync(join(__dirname, "lib", lib), "utf8"));
+  console.log(`Copied lib/${lib} to dist/lib/`);
+}
+
 for (const [filename, { fn, paramExpr, argvBlock: argvBlockKey, copy }] of Object.entries(SCRIPT_MAP)) {
   const src = readFileSync(join(__dirname, filename), "utf8");
 
