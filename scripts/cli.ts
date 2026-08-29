@@ -584,6 +584,28 @@ class D2ECli {
       }),
     );
   }
+  /** Polls WebAPI's own endpoint until it answers, or the budget runs out. */
+  wait_for_webapi(seconds = 300): boolean {
+    const trex = `${this.PROJECT_NAME}-trex`;
+    for (let i = 0; i < seconds / 5; i++) {
+      try {
+        const code = execSync(
+          `docker exec ${trex} curl -s -o /dev/null -w '%{http_code}' ` +
+            `--max-time 5 http://localhost:8080/WebAPI/info`,
+          { encoding: "utf-8", stdio: ["ignore", "pipe", "ignore"] },
+        ).trim();
+        if (code === "200") {
+          console.log(`WebAPI ready after ~${i * 5}s.`);
+          return true;
+        }
+      } catch {
+        // Container not up, or curl unavailable yet; keep waiting.
+      }
+      execSync("sleep 5");
+    }
+    return false;
+  }
+
   // Seed webapi.sec_external_role_map, which maps a token's role claims onto
   // WebAPI's own roles. See seed_webapi_role_map.sql for why d2e does this
   // rather than leaving it to trex's atlas-db-init.
@@ -599,6 +621,19 @@ class D2ECli {
       return;
     }
     const host = `${this.PROJECT_NAME}-minerva-postgres-1`;
+
+    // Wait for WebAPI to actually serve, not merely for trex to report healthy.
+    // trex starts WebAPI asynchronously — it has to, or the two deadlock over
+    // OIDC discovery — so the node answers its healthcheck while Tomcat is still
+    // coming up. Callers that race that window get "error sending request for
+    // url (http://localhost:8080/WebAPI/user/login/openidDirect)" on the first
+    // token exchange. Waiting here also guarantees Flyway has run, so the table
+    // the SQL below needs exists.
+    if (!this.wait_for_webapi()) {
+      console.warn("WebAPI did not become ready; skipping the role map seed.");
+      return;
+    }
+
     try {
       const sql = fs.readFileSync(sqlPath, "utf-8");
       execSync(`docker exec -i ${host} psql -U postgres -d alp -v ON_ERROR_STOP=1 -f -`, {
