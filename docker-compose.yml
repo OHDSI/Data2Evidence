@@ -240,7 +240,7 @@ services:
       # Configuration with the provided Issuer"), which takes WebAPI down with it.
       # An internal address is therefore not interchangeable here, even though it
       # reaches the same server.
-      SECURITY_AUTH_OIDC_URL: "http://${PROJECT_NAME:-d2e}-trex:33001/trex/oidc/.well-known/openid-configuration"
+      SECURITY_AUTH_OIDC_URL: "https://${CADDY__D2E__PUBLIC_FQDN:-${CADDY__ALP__PUBLIC_FQDN:-localhost}}:${CADDY_PORT:-${PORT:-443}}/trex/oidc/.well-known/openid-configuration"
       # External URL for browser redirects - used to rewrite internal OIDC URLs to external ones
       SECURITY_AUTH_OIDC_EXTERNALURL: "https://${CADDY__D2E__PUBLIC_FQDN:-${CADDY__ALP__PUBLIC_FQDN:-localhost}}:${CADDY_PORT:-${PORT:-443}}/trex/oidc"
       SECURITY_AUTH_OIDC_LOGOUTURL: "https://${CADDY__D2E__PUBLIC_FQDN:-${CADDY__ALP__PUBLIC_FQDN:-localhost}}:${CADDY_PORT:-${PORT:-443}}/trex/oidc/session/end"
@@ -326,11 +326,13 @@ services:
       # empty), so it cannot sign in until someone provisions one.
       TREX_IDP_ENABLED: "true"
       TREX_OIDC_PROVIDER_ENABLED: "true"
-      # Internal on purpose. The token proxy and WebAPI both fetch the issuer's
-      # endpoints from inside this container, where the public FQDN routes back
-      # here rather than to the gateway. Browser URLs are built from the public
-      # origin plus this issuer's path, so they stay external.
-      TREX_OIDC_ISSUER: "http://${PROJECT_NAME:-d2e}-trex:33001"
+      # The public origin: `iss` must name where the discovery document is
+      # served, and a deployment's FQDN resolves inside the network too. Where it
+      # does not -- local and CI, whose FQDN is `localhost` and therefore points
+      # back at this container -- docker-compose-local.yml sets
+      # TREX_OIDC_INTERNAL_BASE so server-side fetches take a reachable route
+      # while `iss` stays put.
+      TREX_OIDC_ISSUER: "https://${CADDY__D2E__PUBLIC_FQDN:-${CADDY__ALP__PUBLIC_FQDN:-localhost}}:${CADDY_PORT:-${PORT:-443}}"
       # trex ships no login UI; an unauthenticated /authorize lands here.
       TREX_OIDC_LOGIN_URL: "https://${CADDY__D2E__PUBLIC_FQDN:-${CADDY__ALP__PUBLIC_FQDN:-localhost}}:${CADDY_PORT:-${PORT:-443}}/d2e-login/"
       # WebAPI is the only relying party: Atlas reaches the IdP through it. The
