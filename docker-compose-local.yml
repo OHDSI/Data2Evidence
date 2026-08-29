@@ -90,15 +90,12 @@ services:
       TREX_DX_ENABLED: "true"
       # Browser-facing redirects are unaffected: they come from
       # SECURITY_AUTH_OIDC_EXTERNALURL and TREX_OIDC_LOGIN_URL, both absolute.
-      # WebAPI builds its OIDC client registration during Spring's context
-      # refresh using HttpURLConnection, whose read timeout comes from this JVM
-      # property. trex serves discovery on one event loop and is still doing boot
-      # work then, so a short default turns a slow answer into a dead bean.
-      JAVA_TOOL_OPTIONS: "-Dsun.net.client.defaultReadTimeout=120000 -Dsun.net.client.defaultConnectTimeout=30000"
-      # D2E_IDP and the OIDC issuer now come from docker-compose.yml, which
-      # already points at an address reachable from inside the container. Keeping
-      # a second definition here only let local and CI drift apart.
       D2E_IDP: "trex"
+      # Same reasoning as docker-compose-ci.yml: the public FQDN does not route
+      # back to the gateway from inside this container. Swap both lines for
+      # TREX_OIDC_INTERNAL_BASE once a base carrying trex #287 is pinned.
+      TREX_OIDC_ISSUER: "http://${PROJECT_NAME:-d2e}-trex:33001"
+      SECURITY_AUTH_OIDC_URL: "http://${PROJECT_NAME:-d2e}-trex:33001/trex/oidc/.well-known/openid-configuration"
       # Enable trex's native email/password IDP for local dev (off by default in
       # the engine). Production d2e authenticates via Logto and leaves it unset.
       TREX_IDP_ENABLED: "true"
