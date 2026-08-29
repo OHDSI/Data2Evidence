@@ -276,6 +276,11 @@ class D2ECli {
       // (d2e-compat) and by the setup scripts, which run on the host -- so it
       // lives in the env file rather than only in compose, or the two disagree.
       D2E_IDP: `trex`,
+      // The account the test suites and a first-run operator sign in as. Mirrors
+      // LOGTO__USER, which seeds the same person into Logto, and lives in the env
+      // file because the setup scripts run on the host where compose env is not
+      // visible.
+      D2E__SEED_USER: `{"username":"admin","initialPassword":"Updatepassword12345"}`,
       TREX__OIDC__WEBAPI_CLIENT_ID: `d2e-webapi`,
       TREX__OIDC__WEBAPI_CLIENT_SECRET: `${this.generate_random_password(
         this.DEFAULT_PASSWORD_LENGTH,

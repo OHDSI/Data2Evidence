@@ -56,7 +56,7 @@
     // username the same way rather than making people type an address they
     // never chose.
     var email = identifier.indexOf("@") === -1
-      ? identifier + "@" + (window.D2E_LOGIN_DEFAULT_DOMAIN || "trex.local")
+      ? identifier + "@" + (window.D2E_LOGIN_DEFAULT_DOMAIN || "d2e.local")
       : identifier;
     var password = passwordEl.value;
     if (!identifier || !password) {

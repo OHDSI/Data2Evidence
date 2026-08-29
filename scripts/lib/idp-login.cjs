@@ -238,11 +238,70 @@ async function trexSetupBearer({
   const userId = await trexUserId({ gateway, email, password });
   await grantTrexRoles({ gateway, userId, roles, serviceRoleKey });
 
+  // Seed the account the test suites sign in as. Logto gets it from
+  // alp-logto-post-init; under trex nothing else creates it, and e2e/HTTP runs
+  // authenticate as that user rather than as this script's own account.
+  const seeded = await ensureSeedUser({ gateway, serviceRoleKey });
+
   const token = await trexBearerToken({ gateway, email, password, clientId, clientSecret });
   // Needs a token, so it comes after login: usermgmt authorizes this call from
   // the roles granted above, which the token carries.
   await ensureUsermgmtUser({ gateway, token, username: email, idpUserId: userId });
+  if (seeded) {
+    // Same linkage for the seed account: roles alone leave usermgmt unable to
+    // resolve it, which surfaces later as a 400 from the job plugins.
+    await ensureUsermgmtUser({
+      gateway,
+      token,
+      username: seeded.email,
+      idpUserId: seeded.userId,
+    });
+  }
   return token;
 }
 
-module.exports = { ensureTrexUser, ensureUsermgmtUser, grantTrexRoles, selectedIdp, trexBearerToken, trexSetupBearer, trexUserId };
+/**
+ * Ensure the stack's seed account exists in trex.
+ *
+ * Logto gets this account from alp-logto-post-init via LOGTO__USER; the tests
+ * then sign in as it (e2e types `admin`, the HTTP suites pass the same
+ * credentials). Under trex nothing seeds it, so the suites have no account to
+ * authenticate with.
+ *
+ * The definition is read from that same LOGTO__USER rather than restated, so
+ * there is one source of truth for who the seed user is and what their password
+ * is. D2E__SEED_USER overrides it for stacks that have moved on from Logto.
+ *
+ * trex authenticates by email while d2e names this account `admin`, so a bare
+ * username is resolved the way the sign-in page and the role migration both do:
+ * local part plus a default domain.
+ */
+async function ensureSeedUser({ gateway, serviceRoleKey, env = process.env, roles }) {
+  const raw = env.D2E__SEED_USER || env.LOGTO__USER;
+  if (!raw) return null;
+
+  let spec;
+  try {
+    spec = JSON.parse(raw);
+  } catch (e) {
+    throw new Error(`Could not parse the seed user definition: ${e.message}`);
+  }
+  const username = spec.username;
+  const password = spec.initialPassword || spec.password;
+  if (!username || !password) return null;
+
+  const domain = env.D2E__SEED_USER_DOMAIN || "d2e.local";
+  const email = username.includes("@") ? username : `${username}@${domain}`;
+
+  await ensureTrexUser({ gateway, email, password, serviceRoleKey });
+  const userId = await trexUserId({ gateway, email, password });
+  await grantTrexRoles({
+    gateway,
+    userId,
+    roles: roles || ["role.systemadmin", "admin", "role.useradmin"],
+    serviceRoleKey,
+  });
+  return { email, password, userId };
+}
+
+module.exports = { ensureSeedUser, ensureTrexUser, ensureUsermgmtUser, grantTrexRoles, selectedIdp, trexBearerToken, trexSetupBearer, trexUserId };
