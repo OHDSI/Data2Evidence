@@ -272,6 +272,10 @@ class D2ECli {
       )}`,
       // Shared between WebAPI's OIDC client and the registration trex seeds for
       // it, so the two are generated together and cannot drift apart.
+      // Which IdP the stack authenticates against. Read by the container
+      // (d2e-compat) and by the setup scripts, which run on the host -- so it
+      // lives in the env file rather than only in compose, or the two disagree.
+      D2E_IDP: `trex`,
       TREX__OIDC__WEBAPI_CLIENT_ID: `d2e-webapi`,
       TREX__OIDC__WEBAPI_CLIENT_SECRET: `${this.generate_random_password(
         this.DEFAULT_PASSWORD_LENGTH,

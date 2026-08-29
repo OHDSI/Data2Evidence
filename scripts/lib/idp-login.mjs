@@ -72,6 +72,37 @@ export async function grantTrexRoles({ gateway, userId, roles, serviceRoleKey })
 }
 
 /**
+ * Ensure the setup account has a usermgmt row.
+ *
+ * Roles alone are not enough: without a row, usermgmt cannot resolve the user
+ * and falls back to looking it up in Logto, which 404s on a trex subject id and
+ * surfaces as a 500. The row is created through usermgmt's own API rather than
+ * by writing its schema directly -- a test harness should not reach into
+ * another service's tables.
+ *
+ * `idp_user_id` is deliberately not set here: usermgmt matches by username on
+ * first login and stamps the subject itself, so passing it would duplicate a
+ * linkage the service already owns.
+ */
+export async function ensureUsermgmtUser({ gateway, token, username }) {
+  const { randomUUID } = await import("node:crypto");
+  const res = await fetch(`${gateway}/usermgmt/api/user`, {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ id: randomUUID(), username }),
+    dispatcher: insecureAgent,
+  });
+  if (!res.ok) {
+    throw new Error(
+      `Could not create the usermgmt row for ${username}: ${res.status} ${await res.text()}`,
+    );
+  }
+}
+
+/**
  * The trex user id for an account, taken from its own login token.
  *
  * There is no admin *list* endpoint (only create), so the id is read from the
@@ -180,4 +211,36 @@ async function pkceChallenge(verifier) {
     .replace(/\+/g, "-")
     .replace(/\//g, "_")
     .replace(/=+$/, "");
+}
+
+/**
+ * The one call the setup scripts make: a bearer for an account that is ready to
+ * drive them, whichever IdP the stack uses.
+ *
+ * Only the trex branch lives here. The Logto flow stays inline in each script:
+ * it is a long interaction dance those scripts already own, and moving it would
+ * be a refactor with no behaviour change to justify the risk.
+ *
+ * Provisioning runs before every login rather than once. Each step is idempotent
+ * and cheap, and CI starts from an empty trex on every run, so "create if
+ * missing" is the normal path, not an exception.
+ */
+export async function trexSetupBearer({
+  gateway,
+  email,
+  password,
+  clientId,
+  clientSecret,
+  serviceRoleKey,
+  roles = ["role.systemadmin", "admin", "role.useradmin"],
+}) {
+  await ensureTrexUser({ gateway, email, password, serviceRoleKey });
+  const userId = await trexUserId({ gateway, email, password });
+  await grantTrexRoles({ gateway, userId, roles, serviceRoleKey });
+
+  const token = await trexBearerToken({ gateway, email, password, clientId, clientSecret });
+  // Needs a token, so it comes after login: usermgmt authorizes this call from
+  // the roles granted above, which the token carries.
+  await ensureUsermgmtUser({ gateway, token, username: email });
+  return token;
 }
