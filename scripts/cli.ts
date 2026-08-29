@@ -606,54 +606,13 @@ class D2ECli {
     return false;
   }
 
-  // Seed webapi.sec_external_role_map, which maps a token's role claims onto
-  // WebAPI's own roles. See seed_webapi_role_map.sql for why d2e does this
-  // rather than leaving it to trex's atlas-db-init.
-  seed_webapi_role_map(): void {
-    const sqlPath = path.join(
-      this.compose_dir,
-      "services",
-      "atlas-db-init",
-      "220_external_role_map.sql",
-    );
-    if (!fs.existsSync(sqlPath)) {
-      console.log("Role map SQL not present; skipping.");
-      return;
-    }
-    const host = `${this.PROJECT_NAME}-minerva-postgres-1`;
-
-    // Wait for WebAPI to actually serve, not merely for trex to report healthy.
-    // trex starts WebAPI asynchronously — it has to, or the two deadlock over
-    // OIDC discovery — so the node answers its healthcheck while Tomcat is still
-    // coming up. Callers that race that window get "error sending request for
-    // url (http://localhost:8080/WebAPI/user/login/openidDirect)" on the first
-    // token exchange. Waiting here also guarantees Flyway has run, so the table
-    // the SQL below needs exists.
-    if (!this.wait_for_webapi()) {
-      console.warn("WebAPI did not become ready; skipping the role map seed.");
-      return;
-    }
-
-    try {
-      const sql = fs.readFileSync(sqlPath, "utf-8");
-      execSync(`docker exec -i ${host} psql -U postgres -d alp -v ON_ERROR_STOP=1 -f -`, {
-        input: sql,
-        encoding: "utf-8",
-        stdio: ["pipe", "inherit", "inherit"],
-      });
-      console.log("Seeded WebAPI external role map.");
-    } catch (err: any) {
-      // Not fatal: the map may already be seeded, or WebAPI's tables may not
-      // exist yet on a stack that is still coming up. The caller that needs it
-      // will fail loudly enough on its own.
-      console.warn(
-        `Could not seed the WebAPI role map (continuing): ${err?.message ?? err}`,
-      );
-    }
-  }
-
   patch_demodb() {
     console.log("Patching demodb...");
+    // Everything after this talks to WebAPI, which trex starts asynchronously —
+    // so the stack can report healthy while Tomcat is still coming up, and a
+    // caller that races that window gets a connection error on its first token
+    // exchange rather than a useful message.
+    this.wait_for_webapi();
     const database_host = `${this.PROJECT_NAME}-demodb`;
     // Create cohort table if it doesn't exist
     const createCohortCmd = `docker exec ${database_host} psql -h localhost -U postgres -c "SET search_path TO demo_cdm; CREATE TABLE IF NOT EXISTS cohort (cohort_definition_id integer NOT NULL,subject_id integer NOT NULL,cohort_start_date DATE NOT NULL,cohort_end_date DATE NOT NULL)"`;
@@ -678,7 +637,6 @@ class D2ECli {
   async setupdemo(): Promise<void> {
     console.log("Setting up demo database...");
     this.patch_demodb();
-    this.seed_webapi_role_map();
     process.env.PORT = this.port;
     await setupDemo(this.ENVFILE).catch((e) => { console.error("setupDemo failed:", e); process.exit(1); });
     await checkSetupDemoFlow(this.ENVFILE).catch((e) => { console.error("checkSetupDemoFlow failed:", e); process.exit(1); });
@@ -687,7 +645,6 @@ class D2ECli {
   async setupHTTPTestEnv(): Promise<void> {
     console.log("Setting up http test database...");
     this.patch_demodb();
-    this.seed_webapi_role_map();
     process.env.PORT = this.port;
     await runSetupHTTPTestEnv(this.ENVFILE).catch(() => process.exit(1));
     await checkSetupDemoFlow(this.ENVFILE).catch(() => process.exit(1));
@@ -1075,8 +1032,6 @@ class D2ECli {
       .description("Patch demo database")
       .action(async () => {
         this.patch_demodb();
-        this.seed_webapi_role_map();
-    this.seed_webapi_role_map();
       });
     (patchdemodb_cmd as any)._hidden = true;
     const pull_cmd = this.program
