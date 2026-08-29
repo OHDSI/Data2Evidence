@@ -39,7 +39,7 @@ services:
         # Match the -devx image name above: without this a local build would use
         # Dockerfile.v2's default (the lean prod base) and quietly produce an
         # image with no devx tooling under a -devx tag.
-        TREXSQL_REF: ${TREXSQL_REF:-sha-a28571a91353ca0f17e613b1a01b57b15cc01d85@sha256:2a89e2a72227492bc70ac830ac8c4064afd955f4b9fc4f1d54f0c8919a67def2}
+        TREXSQL_REF: ${TREXSQL_REF:-sha-0554d744aee9519332cb63b12d04259bdc811b11@sha256:3417da1a42c4f119bed2040e89803417e3aa98a0ebf71f431e19dcf689efadeb}
         # Local builds pull published plugins from the feed; CI uses plugin-artifacts/.
         PLUGINS_FROM_REGISTRY: ${PLUGINS_FROM_REGISTRY:-@data2evidence/d2e-ui @data2evidence/d2e-functions @data2evidence/fhir @data2evidence/sibyl @data2evidence/d2e-flows @data2evidence/i2b2-flow @data2evidence/search-embedding-flow @data2evidence/data-management-flow @data2evidence/hades-flow @data2evidence/loyalty-score-flow @data2evidence/data-transformation-flow @ohdsi/pythia-agent@0.1.0-develop.18.g80bf4aa}
         # Keep in sync with the `docker build --build-arg WITH_R=true` used to
