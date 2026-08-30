@@ -480,7 +480,7 @@ export class DemoService {
 
     const userMgmtAPI = new UserMgmtAPI(token);
     const result = await userMgmtAPI.registerStudyRoles({
-      userIds: ["a6660e40-261e-4782-873e-f76b4328aecf"],
+      userIds: [await this.initialUserId(userMgmtAPI)],
       tenantId: "e0348e4d-2e17-43f2-a3c6-efd752d17c23",
       studyId: datasetId,
       roles: ["RESEARCHER"],
@@ -489,6 +489,30 @@ export class DemoService {
       `Researcher role added to admin: ${JSON.stringify(result)}`
     );
     return result;
+  }
+
+  // The account is looked up rather than named by a fixed id. That id used to be
+  // both the usermgmt primary key and the identity provider's subject, which
+  // only held while a single provider minted both; granting to a stale one
+  // succeeds against usermgmt and then propagates to nobody.
+  private async initialUserId(userMgmtAPI: UserMgmtAPI): Promise<string> {
+    const name = env.IDP__INITIAL_USER__NAME;
+    if (!name) {
+      throw new Error("IDP__INITIAL_USER__NAME is not set, so the demo grants have no subject");
+    }
+    const email = name.includes("@") ? name : `${name}@${env.IDP__INITIAL_USER__DOMAIN}`;
+    const users = await userMgmtAPI.getUsers();
+    const match = users.find((user) => user.username === email) ??
+      users.find((user) => user.username === name);
+    if (!match) {
+      throw new Error(`No user named ${email} to grant the demo dataset to`);
+    }
+    if (!match.idpUserId) {
+      // Without a subject the grant lands on a row no token maps to, which is
+      // the silent failure this lookup exists to avoid.
+      throw new Error(`${email} has no identity-provider subject recorded, so roles cannot be granted`);
+    }
+    return match.id;
   }
 
   private async encrypt(data: string, salt: string) {
