@@ -10,7 +10,20 @@
 set -uo pipefail
 
 GATEWAY="${CI_LOGIN_GATEWAY:-https://localhost:41100}"
-ENVFILE="${CI_LOGIN_ENVFILE:-.env.local}"
+# The CLI writes .env unless it is given --env-file, and the workflows are not
+# consistent about passing it. Looking only for .env.local meant a job that used
+# the default silently found no D2E_IDP and fell back to the wrong provider,
+# which fails at the login rather than at the missing file.
+ENVFILE="${CI_LOGIN_ENVFILE:-}"
+if [ -z "$ENVFILE" ]; then
+  for candidate in .env.local .env; do
+    if [ -f "$candidate" ]; then
+      ENVFILE="$candidate"
+      break
+    fi
+  done
+fi
+ENVFILE="${ENVFILE:-.env.local}"
 
 decode_jwt_sub() {
   printf '%s' "$1" | cut -d. -f2 | python3 -c '
