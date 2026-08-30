@@ -453,7 +453,24 @@ class D2ECli {
     this.libUtils.genTlsInternal(DOTENV_FILE);
   }
 
+  // Engines that enforce a password policy - HANA among them - require at least
+  // one uppercase letter, one lowercase letter and one digit. Drawing uniformly
+  // from the alphabet does not guarantee that: a sixteen-character password
+  // contains no digit roughly six percent of the time, which surfaced as an
+  // occasional HANA setup failure that looked like an infrastructure flake.
+  // Redrawing leaves every compliant password equally likely, which placing one
+  // character of each class at a fixed position would not.
   generate_random_password(length: number): string {
+    while (true) {
+      const password = this.draw_password(length);
+      // Too short to hold one of each; the caller asked for what it asked for.
+      if (length < 3 || (/[A-Z]/.test(password) && /[a-z]/.test(password) && /[0-9]/.test(password))) {
+        return password;
+      }
+    }
+  }
+
+  private draw_password(length: number): string {
     const chars =
       "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
     const charsLength = chars.length;
