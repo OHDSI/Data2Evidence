@@ -124,7 +124,18 @@ export class TrexIdpAPI {
       body: JSON.stringify({ email, password: currentPassword }),
     })
     if (!grant.ok) {
-      return { ok: false, status: 400, message: 'Current password is incorrect' }
+      // Only a rejected credential means the password was wrong. Anything else -
+      // rate limiting above all, since every sign-in spends the same budget -
+      // has to keep its own status, or a throttled user is told their password
+      // is wrong and changes it to something that was never the problem.
+      if (grant.status === 400 || grant.status === 401) {
+        return { ok: false, status: 400, message: 'Current password is incorrect' }
+      }
+      return {
+        ok: false,
+        status: grant.status,
+        message: `identity provider refused the credential check: ${grant.status} ${await grant.text()}`,
+      }
     }
     const token = (await grant.json())?.access_token
     if (typeof token !== 'string') {
