@@ -6,7 +6,8 @@ import { env } from '../env'
 import { IAppRequest } from '../types'
 import { createLogger } from '../Logger'
 import { permittedUserCheck } from '../middlewares/permitted-user-check'
-import { LogtoAPI } from '../api'
+import { LogtoAPI, TrexIdpAPI } from '../api'
+import { resolveRoleStore } from '../services/UserGroupService'
 
 @Service()
 export class UserRouter {
@@ -16,6 +17,7 @@ export class UserRouter {
   constructor(
     private readonly userService: UserService,
     private readonly logtoApi: LogtoAPI,
+    private readonly trexIdpAPI: TrexIdpAPI,
     private readonly groupService: B2cGroupService,
     private readonly userGroupService: UserGroupService
   ) {
@@ -135,7 +137,15 @@ export class UserRouter {
       this.logger.info(`Update password for user ${id}`)
 
       try {
-        await this.logtoApi.updatePassword(user.idpUserId, password)
+        if (resolveRoleStore(env.IDP_ROLE_STORE) === 'trex') {
+          const result = await this.trexIdpAPI.setPassword(user.idpUserId, password)
+          if (!result.ok) {
+            this.logger.warn(`Error when updating user password ${id}: ${result.message}`)
+            return res.status(result.status).send({ message: result.message })
+          }
+        } else {
+          await this.logtoApi.updatePassword(user.idpUserId, password)
+        }
         return res.sendStatus(204)
       } catch (err) {
         if (err?.response?.status >= 400 && err?.response?.status < 500) {
