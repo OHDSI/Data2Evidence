@@ -100,7 +100,11 @@ export class MemberService {
     try {
       await this.userService.deleteUser(userId, trx)
       if (user.idpUserId) {
-        await this.logtoApi.deleteUser(user.idpUserId)
+        if (resolveRoleStore(env.IDP_ROLE_STORE) === 'trex') {
+          await this.trexIdpAPI.deleteUser(user.idpUserId)
+        } else {
+          await this.logtoApi.deleteUser(user.idpUserId)
+        }
       }
       await trx.commit()
     } catch (err) {
