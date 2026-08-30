@@ -31,6 +31,16 @@ if (existsSync(d2eLoginSrc)) {
   rmSync(d2eLoginDest, { recursive: true, force: true });
   mkdirSync(d2eLoginDest, { recursive: true });
   cpSync(d2eLoginSrc, d2eLoginDest, { recursive: true });
+
+  // The page's logo travels with it. Referencing it inside the atlas3 dist made
+  // the sign-in page depend on a separate application's build output, so the
+  // logo was simply missing wherever that dist was absent.
+  const logoSrc = join(rootDir, 'd2e2.svg');
+  if (existsSync(logoSrc)) {
+    copyFileSync(logoSrc, join(d2eLoginDest, 'd2e2.svg'));
+  } else {
+    console.warn('[postinstall] d2e2.svg not found; the sign-in page will render without its logo');
+  }
   console.log('[postinstall] Copied D2E login page to resources/d2e-login');
 }
 
