@@ -3,6 +3,7 @@ import dotenv from 'dotenv';
 import fs from "node:fs/promises";
 import { Agent, fetch } from "undici";
 import { execSync } from 'node:child_process';
+import { resolveInitialUserId } from "./lib/seed-user.mjs";
 
 
 // Helper functions
@@ -315,7 +316,7 @@ if (progress_status == "completed") {
     }
     var url = `https://${CADDY__D2E__PUBLIC_FQDN}/d2e/usermgmt/api/user-group/register-study-roles`;
     var bodyObj = {
-        userIds: ["a6660e40-261e-4782-873e-f76b4328aecf"],
+        userIds: [await resolveInitialUserId({ gateway: CADDY__D2E__PUBLIC_FQDN, bearerToken: BEARER_TOKEN, dispatcher: insecureAgent })],
         tenantId: tenantId,
         studyId: studyId,
         roles: ["RESEARCHER"]
