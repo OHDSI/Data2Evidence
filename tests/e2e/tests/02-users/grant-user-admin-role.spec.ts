@@ -30,7 +30,7 @@ test(TEST_NAME, async ({ page }) => {
   await expect(page.getByTestId('dialog').getByText('User Admin')).toBeVisible()
   await page.getByTestId('dialog').getByText('User Admin').click()
   await expect(page.getByTestId('dialog').getByText('User Admin')).toBeChecked()
-  await page.getByRole('button', { name: 'Update' }).click()
+  await page.getByRole('button', { name: 'Save' }).click()
   await page.reload()
   await expect(page.getByRole('row', { name: 'researcher_1 Viewer User' }).locator('div').nth(2)).toBeVisible()
 
