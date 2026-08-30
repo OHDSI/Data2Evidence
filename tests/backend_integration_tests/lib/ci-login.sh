@@ -36,11 +36,29 @@ except Exception:
     print("")'
 }
 
+# usermgmt keys its own rows separately from the identity provider's subject, so
+# the callers that grant study roles need the row id rather than the subject.
+# This used to be scraped from a response variable left over from the inline
+# login the workflows once did; nothing sets it now, so it is asked for here,
+# where the token already exists.
+resolve_user_mgmt_id() {
+  curl -sk --max-time 20 "$GATEWAY/d2e/usermgmt/api/me" \
+    -H "Authorization: Bearer $BEARER_TOKEN" 2>/dev/null \
+    | grep -o '"id":"[^"]*"' | head -1 | cut -d'"' -f4
+}
+
 publish() {
+  USER_MGMT_ID=$(resolve_user_mgmt_id)
+  if [ -z "$USER_MGMT_ID" ]; then
+    # Not fatal on its own, but a caller that grants roles to an empty id gets a
+    # 500 that says nothing about the cause, so say it here.
+    echo "Warning: could not resolve the usermgmt id for $IDP_SUB" >&2
+  fi
   echo "BEARER_TOKEN=$BEARER_TOKEN" >>"${GITHUB_ENV:-/dev/null}"
   echo "REFRESH_TOKEN=${REFRESH_TOKEN:-}" >>"${GITHUB_ENV:-/dev/null}"
   echo "IDP_SUB=$IDP_SUB" >>"${GITHUB_ENV:-/dev/null}"
-  export BEARER_TOKEN REFRESH_TOKEN IDP_SUB
+  echo "USER_MGMT_ID=$USER_MGMT_ID" >>"${GITHUB_ENV:-/dev/null}"
+  export BEARER_TOKEN REFRESH_TOKEN IDP_SUB USER_MGMT_ID
 }
 
 # The workflows do not export D2E_IDP, so fall back to the env file the CLI
