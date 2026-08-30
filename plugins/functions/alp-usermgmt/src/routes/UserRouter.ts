@@ -171,7 +171,13 @@ export class UserRouter {
         this.logger.warn(`No ${ROLES.ALP_USER_ADMIN} group to grant ${username}`)
         return
       }
-      await this.userGroupService.registerUserToGroup(userId, group.id)
+      // The stamp exists to force a re-login when someone's authorization changes
+      // under them. Here the account is being created, so there is no session to
+      // invalidate - only the caller's freshly issued token, which provisioning
+      // still needs and which would be rejected as stale on its very next call.
+      await this.userGroupService.registerUserToGroup(userId, group.id, undefined, {
+        skipAuthzStamp: true,
+      })
       this.logger.info(`Granted ${ROLES.ALP_USER_ADMIN} to the setup account ${username}`)
     } catch (err) {
       this.logger.error(`Could not grant ${ROLES.ALP_USER_ADMIN} to ${username}: ${err}`)
