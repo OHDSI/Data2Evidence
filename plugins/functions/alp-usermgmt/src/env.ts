@@ -47,6 +47,12 @@ export const env = {
   AUTO_GRANT_RESEARCHER_BY_DATASET_CODES:
     _env.AUTO_GRANT_RESEARCHER_BY_DATASET_CODES || _env.AZ_AUTO_GRANT_RESEARCHER_BY_DATASET_CODES,
   USER_MGMT_ROLE_SOURCE: Deno.env.get("USER_MGMT__ROLE_SOURCE"),
+  // The account the setup scripts run as. It has to administer tenants to grant
+  // study roles, and unlike the initial user it does not exist when the seeds
+  // run - it is created on its first sign-in - so the privilege is attached
+  // where the row is created instead. Unset means no account is treated this
+  // way, so a deployment has to name it deliberately.
+  D2E_SETUP_USER: Deno.env.get("D2E__SETUP_USER"),
   USERMGMT_AUTO_PROVISION_ENABLED: Deno.env.get("USERMGMT__AUTO_PROVISION_ENABLED") === 'true',
   USERMGMT_AUTO_PROVISION_CONNECTORS: Deno.env.get("USERMGMT__AUTO_PROVISION_CONNECTORS") || '',
   USERMGMT_AUTO_PROVISION_DEFAULT_TENANT_ID: Deno.env.get("USERMGMT__AUTO_PROVISION_DEFAULT_TENANT_ID") || Deno.env.get("APP__TENANT_ID"),
