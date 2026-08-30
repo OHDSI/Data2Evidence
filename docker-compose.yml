@@ -234,13 +234,14 @@ services:
       # the portal code exchange goes to Logto carrying trex's secret and is
       # rejected with 401.
       LOGTO__CLIENT_SECRET: ${LOGTO__D2E_APP__CLIENT_SECRET:-${LOGTO__ALP_APP__CLIENT_SECRET}}
-      # Must be the discovery document of the issuer trex advertises, on the same
-      # origin: Spring derives the issuer from this URL and refuses to build its
-      # ClientRegistration when the document disagrees ("Unable to resolve
-      # Configuration with the provided Issuer"), which takes WebAPI down with it.
-      # An internal address is therefore not interchangeable here, even though it
-      # reaches the same server.
+      # The issuer trex advertises, which is also what its tokens carry. WebAPI
+      # runs alongside trex rather than behind the gateway, so this address does
+      # not resolve for it -- SECURITY_AUTH_OIDC_INTERNALURL below is where the
+      # metadata and signing keys are actually read from. Both are needed: the
+      # issuer cannot be swapped for the internal address without invalidating
+      # every token, and the internal address cannot be reached from a browser.
       SECURITY_AUTH_OIDC_URL: "https://${CADDY__D2E__PUBLIC_FQDN:-${CADDY__ALP__PUBLIC_FQDN:-localhost}}:${CADDY_PORT:-${PORT:-443}}/trex/oidc/.well-known/openid-configuration"
+      SECURITY_AUTH_OIDC_INTERNALURL: "http://${PROJECT_NAME:-d2e}-trex:33001/trex/oidc"
       # External URL for browser redirects - used to rewrite internal OIDC URLs to external ones
       SECURITY_AUTH_OIDC_EXTERNALURL: "https://${CADDY__D2E__PUBLIC_FQDN:-${CADDY__ALP__PUBLIC_FQDN:-localhost}}:${CADDY_PORT:-${PORT:-443}}/trex/oidc"
       SECURITY_AUTH_OIDC_LOGOUTURL: "https://${CADDY__D2E__PUBLIC_FQDN:-${CADDY__ALP__PUBLIC_FQDN:-localhost}}:${CADDY_PORT:-${PORT:-443}}/trex/oidc/session/end"
