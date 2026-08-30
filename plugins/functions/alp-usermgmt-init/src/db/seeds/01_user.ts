@@ -38,13 +38,15 @@ export const seed = async (knex: Knex): Promise<void> => {
   if (existing) {
     await knex(TABLE_NAME)
       .where({ id: existing.id })
-      .update({ username: account.email, idp_user_id: account.idpUserId })
+      .update({ idp_user_id: account.idpUserId })
     return
   }
 
   await knex(TABLE_NAME).insert({
     id: env.IDP__INITIAL_USER__UUID,
-    username: account.email,
+    // The configured name rather than the email the account is registered
+    // under: the subject links the two, and this is what the portal displays.
+    username: env.IDP__INITIAL_USER__NAME,
     idp_user_id: account.idpUserId,
   })
 }
