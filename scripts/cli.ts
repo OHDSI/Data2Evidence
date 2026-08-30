@@ -705,8 +705,20 @@ class D2ECli {
     console.log("Setting up http test database...");
     this.patch_demodb();
     process.env.PORT = this.port;
-    await runSetupHTTPTestEnv(this.ENVFILE).catch(() => process.exit(1));
-    await checkSetupDemoFlow(this.ENVFILE).catch(() => process.exit(1));
+    await runSetupHTTPTestEnv(this.ENVFILE).catch((error) => this.fail(error));
+    await checkSetupDemoFlow(this.ENVFILE).catch((error) => this.fail(error));
+  }
+
+  /**
+   * End the command, saying why.
+   *
+   * These failures used to be discarded and turned into a bare exit code, which
+   * in CI reads as a step that stopped two seconds in with no output and no
+   * indication of what it was doing.
+   */
+  private fail(error: unknown): never {
+    console.error(error instanceof Error ? (error.stack ?? error.message) : String(error));
+    process.exit(1);
   }
 
   getbearertoken(): void {
@@ -717,20 +729,20 @@ class D2ECli {
   async setupdemohana(): Promise<void> {
     console.log("Setting up demo database for hana...");
     process.env.PORT = this.port;
-    await setupDemoHana(this.ENVFILE).catch(() => process.exit(1));
-    await checkSetupDemoHanaFlow(this.ENVFILE).catch(() => process.exit(1));
+    await setupDemoHana(this.ENVFILE).catch((error) => this.fail(error));
+    await checkSetupDemoHanaFlow(this.ENVFILE).catch((error) => this.fail(error));
   }
 
   async checkflow(): Promise<void> {
     console.log("Checking flow...");
     process.env.PORT = this.port;
-    await checkSetupDemoFlow(this.ENVFILE).catch(() => process.exit(1));
+    await checkSetupDemoFlow(this.ENVFILE).catch((error) => this.fail(error));
   }
 
   async getnoproxy(): Promise<void> {
     process.env.PORT = this.port;
     process.env.DOTENV_FILE = this.ENVFILE;
-    await runGetNoProxy(this.compose_dir).catch(() => process.exit(1));
+    await runGetNoProxy(this.compose_dir).catch((error) => this.fail(error));
   }
 
   async syncRoles(): Promise<{ ok: boolean }> {
