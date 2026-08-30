@@ -45,6 +45,9 @@ export class MeRouter {
       /* fall through to Logto lookup */
     }
     try {
+      if (resolveRoleStore(env.IDP_ROLE_STORE) === 'trex') {
+        return (await this.trexIdpAPI.getUser(idpUserId))?.email
+      }
       const logtoUser = await this.logtoApi.getUser(idpUserId)
       return (logtoUser?.username ?? logtoUser?.primaryEmail) as string | undefined
     } catch (e) {

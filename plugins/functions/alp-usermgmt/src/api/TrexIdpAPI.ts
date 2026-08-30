@@ -214,6 +214,59 @@ export class TrexIdpAPI {
     }
   }
 
+  /**
+   * The account behind a subject, or undefined when there is none.
+   */
+  async getUser(idpUserId: string): Promise<{ id: string; email: string; banned: boolean } | undefined> {
+    if (!this.serviceRoleKey) {
+      throw new Error(MISSING_KEY_MESSAGE)
+    }
+    if (!env.TREX_AUTH_URL) {
+      throw new Error('TrexIdpAPI: TREX__AUTH_URL is not set, so accounts cannot be read')
+    }
+    const res = await this.fetchImpl(`${env.TREX_AUTH_URL}/admin/users/${idpUserId}`, {
+      headers: { Authorization: `Bearer ${this.serviceRoleKey}` },
+    })
+    if (res.status === 404) {
+      return undefined
+    }
+    if (!res.ok) {
+      throw new Error(`trex user lookup failed for ${idpUserId}: ${res.status} ${await res.text()}`)
+    }
+    const user = await res.json()
+    return { id: user.id, email: user.email, banned: user.banned === true }
+  }
+
+  /**
+   * Activate or deactivate an account.
+   *
+   * Deactivation is a ban rather than a deletion: the account keeps its history
+   * and can be turned back on, which is what the portal's activate toggle
+   * expects.
+   */
+  async setUserActive(idpUserId: string, active: boolean): Promise<void> {
+    if (!this.serviceRoleKey) {
+      throw new Error(MISSING_KEY_MESSAGE)
+    }
+    if (!env.TREX_AUTH_URL) {
+      throw new Error('TrexIdpAPI: TREX__AUTH_URL is not set, so accounts cannot be deactivated')
+    }
+    const res = await this.fetchImpl(`${env.TREX_AUTH_URL}/admin/users/${idpUserId}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${this.serviceRoleKey}`,
+      },
+      body: JSON.stringify({ banned: !active }),
+    })
+    if (!res.ok) {
+      throw new Error(
+        `trex user ${active ? 'activation' : 'deactivation'} failed for ${idpUserId}: ` +
+          `${res.status} ${await res.text()}`,
+      )
+    }
+  }
+
   async assignRolesToUser(idpUserId: string, roleNames: string[]): Promise<void> {
     for (const role of roleNames) {
       await this.post("/assign", { userId: idpUserId, role });
