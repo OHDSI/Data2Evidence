@@ -4,7 +4,6 @@ import fs from "node:fs/promises";
 import { Agent, fetch } from "undici";
 import * as crypto from 'crypto';
 import { execSync } from 'node:child_process';
-import { resolveInitialUserId } from "./lib/seed-user.mjs";
 
 // Helper functions
 function getCookie(setCookieHeaders, name) {
@@ -60,6 +59,7 @@ const HANA_SYSTEM_PASSWORD = process.env.HANA_SYSTEM_PASSWORD;
 // which refuses require() of an ES module -- and the transform turns every
 // import form, dynamic ones included, into require().
 const { selectedIdp, trexSetupBearer } = require('./lib/idp-login.cjs');
+const { resolveInitialUserId } = require('./lib/seed-user.cjs');
 
 let BEARER_TOKEN;
 

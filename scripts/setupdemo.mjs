@@ -3,7 +3,6 @@ import dotenv from 'dotenv';
 import fs from "node:fs/promises";
 import { Agent, fetch } from "undici";
 import { execSync } from 'node:child_process';
-import { resolveInitialUserId } from "./lib/seed-user.mjs";
 
 
 // Helper functions
@@ -60,6 +59,7 @@ function readServiceRoleKey() {
 // which refuses require() of an ES module -- and the transform turns every
 // import form, dynamic ones included, into require().
 const { selectedIdp, trexSetupBearer } = require('./lib/idp-login.cjs');
+const { resolveInitialUserId } = require('./lib/seed-user.cjs');
 
 let BEARER_TOKEN;
 
