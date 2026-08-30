@@ -188,17 +188,30 @@ export class UserGroupService {
       throw Error(`User ${userId} does not exist`)
     }
 
+    // An existing membership still gets synced. The row and the identity
+    // provider's roles are two stores that can disagree — a sync that failed
+    // once leaves the membership recorded and the role never granted — and
+    // returning here made that permanent, because every retry saw the row and
+    // skipped the only step that was actually missing.
     const userGroup = await this.getUserGroup(userId, groupId)
-    if (userGroup) {
-      this.logger.warn(`Skip registering user ${userId} to group ${groupId}. User group already exist`)
-      return
+    if (!userGroup) {
+      await this.addUserToGroup(userId, groupId, trx)
+      if (!opt.skipAuthzStamp) {
+        await this.userService.touchAuthzChangedAt(userId, trx)
+      }
+    } else {
+      this.logger.info(`User ${userId} already in group ${groupId}; reconciling roles only`)
     }
 
-    await this.addUserToGroup(userId, groupId, trx)
-    if (!opt.skipAuthzStamp) {
-      await this.userService.touchAuthzChangedAt(userId, trx)
+    const sync = await this.syncRoleToLogto(userId, groupId, 'assign')
+    if (sync.status === 'failed') {
+      // Reported rather than swallowed: a caller that is told the grant
+      // succeeded has no reason to look, and the account silently never gets
+      // the access it was granted.
+      throw new Error(
+        `Registered user ${userId} to group ${groupId} but the role did not reach the identity provider: ${sync.reason}`
+      )
     }
-    await this.syncRoleToLogto(userId, groupId, 'assign')
   }
 
   async addUserToGroup(userId: string, groupId: string, trx?: Knex) {

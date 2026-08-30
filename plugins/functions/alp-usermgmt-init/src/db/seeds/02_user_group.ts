@@ -1,11 +1,12 @@
 import type { Knex } from '../types'
 import { v4 as uuidv4 } from 'uuid'
 import { env} from "../../env.ts"
+import { initialUserRowId } from './01_user.ts'
 
 const TABLE_NAME = 'user_group'
 
 export const seed = async (knex: Knex): Promise<void> => {
-  const data = getSeeds()
+  const data = await getSeeds(knex)
   if (data.length === 0) {
     return
   }
@@ -23,11 +24,14 @@ export const seed = async (knex: Knex): Promise<void> => {
   }
 }
 
-const getSeeds = (): { [key: string]: any }[] => {
+const getSeeds = async (knex: Knex): Promise<{ [key: string]: any }[]> => {
   const localUserIds: string[] = []
 
-  if (env.IDP__INITIAL_USER__UUID && env.IDP__INITIAL_USER__NAME) {
-    localUserIds.push(env.IDP__INITIAL_USER__UUID)
+  // Resolved rather than taken from configuration, so the memberships follow
+  // the row the user seed settled on.
+  const initialUserId = await initialUserRowId(knex)
+  if (initialUserId) {
+    localUserIds.push(initialUserId)
   }
 
   let seeds: any[] = []

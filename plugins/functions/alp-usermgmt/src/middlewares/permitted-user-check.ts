@@ -29,7 +29,7 @@ export const permittedUserCheck =
     const opts = { ...DEFAULT_ROLE_CHECK_OPTIONS, ...options }
 
     try {
-      const { userId: ctxUserId } = req.user
+      const { userId: ctxUserId, idpUserId: ctxIdpUserId } = req.user
       const userGroupService = Container.get(UserGroupService)
 
       // Service / M2M tokens (e.g. WebAPI internal calls) are tagged with the
@@ -45,7 +45,11 @@ export const permittedUserCheck =
         return res.status(403).send()
       }
 
-      const ctxUserGroups = await getUserGroupsCached(req, userGroupService, ctxUserId)
+      // The caller's groups are keyed by identity-provider subject, not by the
+      // usermgmt row id. Those were the same string under an identity provider
+      // that minted both, so passing the row id worked; where they differ the
+      // lookup finds nobody and every tenant check fails.
+      const ctxUserGroups = await getUserGroupsCached(req, userGroupService, ctxIdpUserId)
       const url = `${req.baseUrl}${req.url}`
 
       if (ctxUserGroups.alp_role_user_admin) {
