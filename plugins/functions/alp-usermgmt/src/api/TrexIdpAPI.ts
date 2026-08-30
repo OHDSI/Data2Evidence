@@ -152,6 +152,44 @@ export class TrexIdpAPI {
     return { ok: false, status: res.status, message }
   }
 
+  /**
+   * Set a user's password administratively, without their current one.
+   *
+   * The counterpart to changePassword: an administrator resetting a password
+   * for someone who has lost it has no current password to exchange for a
+   * token, so this goes through the admin endpoint on the service role key.
+   */
+  async setPassword(
+    idpUserId: string,
+    password: string,
+  ): Promise<{ ok: true } | { ok: false; status: number; message: string }> {
+    if (!this.serviceRoleKey) {
+      throw new Error(MISSING_KEY_MESSAGE)
+    }
+    if (!env.TREX_AUTH_URL) {
+      throw new Error('TrexIdpAPI: TREX__AUTH_URL is not set, so passwords cannot be set')
+    }
+    const res = await this.fetchImpl(`${env.TREX_AUTH_URL}/admin/users/${idpUserId}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${this.serviceRoleKey}`,
+      },
+      body: JSON.stringify({ password }),
+    })
+    if (res.ok) {
+      return { ok: true }
+    }
+    const body = await res.text()
+    let message = body
+    try {
+      message = JSON.parse(body)?.error ?? body
+    } catch {
+      // Not JSON; the raw body is the best message available.
+    }
+    return { ok: false, status: res.status, message }
+  }
+
   async assignRolesToUser(idpUserId: string, roleNames: string[]): Promise<void> {
     for (const role of roleNames) {
       await this.post("/assign", { userId: idpUserId, role });
