@@ -331,6 +331,11 @@ services:
       # is per address rather than per user, so everyone behind one gateway -
       # or a whole test run - shares the count.
       TREX_AUTH_RATE_LIMIT_MAX: ${TREX__AUTH_RATE_LIMIT_MAX:-2000}
+      # Where cache database files live, shared with the flow containers by the
+      # trex volume below. Set here rather than left to the function manifest:
+      # a variable that never reaches the seed leaves flows resolving a null
+      # path much later, far from the cause.
+      DUCKDB__DATA_FOLDER: ${DUCKDB__DATA_FOLDER:-/app/duckdb_data/cache}
       # The public origin: `iss` must name where the discovery document is
       # served, and a deployment's FQDN resolves inside the network too. Where it
       # does not -- local and CI, whose FQDN is `localhost` and therefore points
