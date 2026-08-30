@@ -327,6 +327,10 @@ services:
       # empty), so it cannot sign in until someone provisions one.
       TREX_IDP_ENABLED: "true"
       TREX_OIDC_PROVIDER_ENABLED: "true"
+      # One sign-in spends a password grant and a code exchange, and the limit
+      # is per address rather than per user, so everyone behind one gateway -
+      # or a whole test run - shares the count.
+      TREX_AUTH_RATE_LIMIT_MAX: ${TREX__AUTH_RATE_LIMIT_MAX:-2000}
       # The public origin: `iss` must name where the discovery document is
       # served, and a deployment's FQDN resolves inside the network too. Where it
       # does not -- local and CI, whose FQDN is `localhost` and therefore points
