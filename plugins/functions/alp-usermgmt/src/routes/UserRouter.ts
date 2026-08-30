@@ -30,7 +30,14 @@ export class UserRouter {
 
       try {
         const users = await this.userService.getUsers()
-        return res.status(200).json(users)
+        // The setup account provisions the deployment and is not somebody an
+        // administrator manages: listing it puts a row in the users table that
+        // cannot be meaningfully edited or deleted. Filtered here rather than in
+        // the service because group synchronisation still has to see it.
+        const setupUser = env.D2E_SETUP_USER
+        return res
+          .status(200)
+          .json(setupUser ? users.filter((user) => user.username !== setupUser) : users)
       } catch (err) {
         this.logger.error(`Error when getting users: ${JSON.stringify(err)}`)
         return next(err)

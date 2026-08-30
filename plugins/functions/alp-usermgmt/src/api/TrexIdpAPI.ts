@@ -190,6 +190,30 @@ export class TrexIdpAPI {
     return { ok: false, status: res.status, message }
   }
 
+  /**
+   * Remove an account.
+   *
+   * Deleting the account is what frees its address for reuse: a deployment that
+   * removes a user and adds one back under the same name would otherwise
+   * collide with the account left behind.
+   */
+  async deleteUser(idpUserId: string): Promise<void> {
+    if (!this.serviceRoleKey) {
+      throw new Error(MISSING_KEY_MESSAGE)
+    }
+    if (!env.TREX_AUTH_URL) {
+      throw new Error('TrexIdpAPI: TREX__AUTH_URL is not set, so accounts cannot be deleted')
+    }
+    const res = await this.fetchImpl(`${env.TREX_AUTH_URL}/admin/users/${idpUserId}`, {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${this.serviceRoleKey}` },
+    })
+    // An account that is already gone is the state the caller asked for.
+    if (!res.ok && res.status !== 404) {
+      throw new Error(`trex user deletion failed for ${idpUserId}: ${res.status} ${await res.text()}`)
+    }
+  }
+
   async assignRolesToUser(idpUserId: string, roleNames: string[]): Promise<void> {
     for (const role of roleNames) {
       await this.post("/assign", { userId: idpUserId, role });
