@@ -566,6 +566,7 @@ services:
       # create the initial user in the IdP so usermgmt can record its subject.
       TREX__AUTH_URL: "http://${PROJECT_NAME:-d2e}-trex:33001/trex/auth/v1"
       D2E__SEED_USER: ${D2E__SEED_USER:-}
+      D2E__SETUP_USER: ${D2E__SETUP_USER:-d2e-setup@d2e.local}
       # Optional override only: usermgmt runs as a function worker inside the
       # trex container, and trex already injects this same credential as
       # SUPABASE_SERVICE_ROLE_KEY into every such worker's environment.
