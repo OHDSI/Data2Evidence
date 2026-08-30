@@ -6,6 +6,10 @@
 // row — and then propagates to nobody, so the account that actually signs in
 // sees no datasets and the failure looks like a missing dataset rather than a
 // missing grant.
+//
+// CommonJS on purpose, like idp-login.cjs beside it: the callers are built with
+// tsc, which downlevels their imports to require(), and Node refuses to
+// require() an ES module.
 
 const seedEmail = (username, domain) =>
   username.includes("@") ? username : `${username}@${domain}`;
@@ -15,7 +19,7 @@ const seedEmail = (username, domain) =>
  * @throws if it cannot be found, since granting to the wrong account is
  *   indistinguishable from granting to none.
  */
-export const resolveInitialUserId = async ({ gateway, bearerToken, dispatcher }) => {
+const resolveInitialUserId = async ({ gateway, bearerToken, dispatcher }) => {
   const username = process.env.IDP__INITIAL_USER__NAME || "admin";
   const domain = process.env.IDP__INITIAL_USER__DOMAIN || "d2e.local";
   const email = seedEmail(username, domain);
@@ -49,3 +53,5 @@ export const resolveInitialUserId = async ({ gateway, bearerToken, dispatcher })
   }
   return match.id;
 };
+
+module.exports = { resolveInitialUserId };
