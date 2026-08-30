@@ -63,7 +63,7 @@ export class TrexIdpAPI {
     if (!env.TREX_AUTH_URL) {
       throw new Error('TrexIdpAPI: TREX__AUTH_URL is not set, so accounts cannot be created')
     }
-    const email = username.includes('@') ? username : `${username}@${env.IDP_USER_DOMAIN}`
+    const email = this.accountEmail(username)
     const res = await this.fetchImpl(`${env.TREX_AUTH_URL}/admin/users`, {
       method: 'POST',
       headers: {
@@ -84,6 +84,74 @@ export class TrexIdpAPI {
 
   // Sequential, not parallel: a partial failure should stop rather than leave an
   // unknown subset applied, and these lists are a handful of names.
+  /**
+   * The address an account is registered under.
+   *
+   * Bare usernames are qualified with the configured domain, the same way the
+   * sign-in page does it, so a name and the account it authenticates as resolve
+   * to one identity.
+   */
+  private accountEmail(username: string): string {
+    return username.includes('@') ? username : `${username}@${env.IDP_USER_DOMAIN}`
+  }
+
+  /**
+   * Change a user's password, verified against their current one.
+   *
+   * Two calls, because the provider's password endpoint only accepts the
+   * session tokens it issues itself, and the token the portal holds is an OIDC
+   * one signed with a different key - forwarding it is rejected outright. The
+   * password grant both proves the current password and yields a token of the
+   * kind the endpoint accepts, so the check stays with the provider rather than
+   * being reimplemented here against an administrative credential.
+   *
+   * Returns the provider's status and message on rejection so a wrong current
+   * password stays a 400 the user can act on instead of becoming a 500.
+   */
+  async changePassword(
+    username: string,
+    currentPassword: string,
+    newPassword: string,
+  ): Promise<{ ok: true } | { ok: false; status: number; message: string }> {
+    if (!env.TREX_AUTH_URL) {
+      throw new Error('TrexIdpAPI: TREX__AUTH_URL is not set, so passwords cannot be changed')
+    }
+    const email = this.accountEmail(username)
+
+    const grant = await this.fetchImpl(`${env.TREX_AUTH_URL}/token?grant_type=password`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password: currentPassword }),
+    })
+    if (!grant.ok) {
+      return { ok: false, status: 400, message: 'Current password is incorrect' }
+    }
+    const token = (await grant.json())?.access_token
+    if (typeof token !== 'string') {
+      throw new Error(`trex accepted the credentials for ${email} but returned no access token`)
+    }
+
+    const res = await this.fetchImpl(`${env.TREX_AUTH_URL}/change-password`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ currentPassword, newPassword }),
+    })
+    if (res.ok) {
+      return { ok: true }
+    }
+    const body = await res.text()
+    let message = body
+    try {
+      message = JSON.parse(body)?.error ?? body
+    } catch {
+      // Not JSON; the raw body is the best message available.
+    }
+    return { ok: false, status: res.status, message }
+  }
+
   async assignRolesToUser(idpUserId: string, roleNames: string[]): Promise<void> {
     for (const role of roleNames) {
       await this.post("/assign", { userId: idpUserId, role });
