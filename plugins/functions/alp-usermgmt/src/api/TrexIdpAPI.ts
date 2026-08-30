@@ -49,6 +49,39 @@ export class TrexIdpAPI {
     }
   }
 
+  /**
+   * Create an account and return the subject the provider gave it.
+   *
+   * The provider identifies accounts by email, so a bare username is qualified
+   * with the configured domain - the same one the sign-in page appends, or the
+   * account created here could never be signed in to.
+   */
+  async createUser(username: string, password: string): Promise<{ id: string; email: string }> {
+    if (!this.serviceRoleKey) {
+      throw new Error(MISSING_KEY_MESSAGE)
+    }
+    if (!env.TREX_AUTH_URL) {
+      throw new Error('TrexIdpAPI: TREX__AUTH_URL is not set, so accounts cannot be created')
+    }
+    const email = username.includes('@') ? username : `${username}@${env.IDP_USER_DOMAIN}`
+    const res = await this.fetchImpl(`${env.TREX_AUTH_URL}/admin/users`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${this.serviceRoleKey}`,
+      },
+      body: JSON.stringify({ email, password }),
+    })
+    if (!res.ok) {
+      throw new Error(`trex user creation failed for ${email}: ${res.status} ${await res.text()}`)
+    }
+    const created = await res.json()
+    if (typeof created?.id !== 'string') {
+      throw new Error(`trex accepted ${email} but returned no id`)
+    }
+    return { id: created.id, email }
+  }
+
   // Sequential, not parallel: a partial failure should stop rather than leave an
   // unknown subset applied, and these lists are a handful of names.
   async assignRolesToUser(idpUserId: string, roleNames: string[]): Promise<void> {

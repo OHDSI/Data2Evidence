@@ -32,6 +32,11 @@ export const env = {
   IDP_ALP_ADMIN_CLIENT_SECRET: Deno.env.get("IDP__ALP_ADMIN__CLIENT_SECRET"),
   IDP_ALP_ADMIN_RESOURCE: Deno.env.get("IDP__ALP_ADMIN__RESOURCE"),
   TREX_ADMIN_URL: Deno.env.get("TREX__ADMIN_URL"),
+  // Account creation, as opposed to role assignment on TREX__ADMIN_URL.
+  TREX_AUTH_URL: Deno.env.get("TREX__AUTH_URL"),
+  // The identity provider identifies accounts by email; this turns a bare
+  // username into one, and has to match what the sign-in page appends.
+  IDP_USER_DOMAIN: Deno.env.get("IDP__INITIAL_USER__DOMAIN") ?? "d2e.local",
   TREX_SERVICE_ROLE_KEY: Deno.env.get("TREX__SERVICE_ROLE_KEY"),
   SUPABASE_SERVICE_ROLE_KEY: Deno.env.get("SUPABASE_SERVICE_ROLE_KEY"),
   IDP_ROLE_STORE: Deno.env.get("IDP__ROLE_STORE"),
