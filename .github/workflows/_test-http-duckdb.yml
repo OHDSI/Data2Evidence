@@ -222,8 +222,6 @@ jobs:
           # One script for both IdPs; see the script for why the flows differ.
           # Exports BEARER_TOKEN, REFRESH_TOKEN and IDP_SUB to $GITHUB_ENV.
           bash tests/backend_integration_tests/lib/ci-login.sh
-          USER_MGMT_ID=$(printf "%s\n" "$response" | grep -o '"userId":"[^"]*"' | awk -F':' '{print $2}' | tr -d '"')
-          echo "USER_MGMT_ID=$USER_MGMT_ID" >> $GITHUB_ENV
       - name: Check status of docker containers
         run: docker ps -a
 
