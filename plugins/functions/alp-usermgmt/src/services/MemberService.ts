@@ -145,7 +145,11 @@ export class MemberService {
 
       await this.userService.touchAuthzChangedAt(userId, trx)
 
-      await this.logtoApi.activateUser(user.idpUserId, active)
+      if (resolveRoleStore(env.IDP_ROLE_STORE) === 'trex') {
+        await this.trexIdpAPI.setUserActive(user.idpUserId, active)
+      } else {
+        await this.logtoApi.activateUser(user.idpUserId, active)
+      }
 
       await trx.commit()
     } catch (err) {
