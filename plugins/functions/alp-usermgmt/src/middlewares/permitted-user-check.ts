@@ -61,15 +61,26 @@ export const permittedUserCheck =
       // Generic permission check
       // Any specific permission check should be done at the route level
       let userId = _.get(req, opts.userIdPath || 'body.userId') as string
+      // The subject the identity provider knows a user by, needed for the group
+      // lookup below, which is keyed on it rather than on the row id.
+      let targetIdpUserId: string | undefined
       if (userId) {
         if (opts.isIdpUserId) {
           const userService = Container.get(UserService)
-          const user = await userService.getUserByIdpUserId(userId)
+          // Callers disagree about which identifier this is. They were the same
+          // string under an identity provider that minted both, so both spellings
+          // are in use; against one that mints its own they are not, and taking
+          // the parameter's name at its word rejects every caller holding a row
+          // id with "IDP user ID not found".
+          const user =
+            (await userService.getUserByIdpUserId(userId)) ??
+            (await userService.getUser(userId))
           if (!user) {
-            logger.error(`IDP user ID ${userId} not found`)
-            throw `IDP user ID ${userId} not found`
+            logger.error(`No user for ${userId}, by subject or by id`)
+            throw `No user for ${userId}, by subject or by id`
           }
-          userId = user.id
+          userId = user.id!
+          targetIdpUserId = user.idpUserId ?? undefined
         }
 
         if (userId === req.user.userId) {
@@ -80,7 +91,13 @@ export const permittedUserCheck =
         logger.info(`Permitted user check for ${req.user.userId} on ${userId}`)
 
         // UserID and UserGroups are referred to requested user
-        const userGroups = await getUserGroupsCached(req, userGroupService, userId)
+        // The subject, not the row id: this reads the same store as the caller's
+        // own lookup above, and a row id finds nobody there.
+        const userGroups = await getUserGroupsCached(
+          req,
+          userGroupService,
+          targetIdpUserId ?? userId
+        )
 
         if (ctxUserGroups.alp_role_tenant_admin.length > 0) {
           if (opts.userMustWithinTenant) {
