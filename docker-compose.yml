@@ -554,11 +554,18 @@ services:
       IS_SELF_MANAGED_ROLES: ${IS_SELF_MANAGED_ROLES:-false}
       AUTO_GRANT_RESEARCHER_BY_DATASET_CODES: ${AUTO_GRANT_RESEARCHER_BY_DATASET_CODES:-${AZ_AUTO_GRANT_RESEARCHER_BY_DATASET_CODES:-}}
       IDP__AUTO_PROVISION_USERS: ${IDP__AUTO_PROVISION_USERS:-false}
-      USER_MGMT__ROLE_SOURCE: ${USER_MGMT__ROLE_SOURCE:-logto}
+      # Follows D2E_IDP above. Left on logto, group memberships are written to
+      # an identity provider the tokens no longer come from, so study roles
+      # never reach the claim the portal reads and datasets stay invisible.
+      USER_MGMT__ROLE_SOURCE: ${USER_MGMT__ROLE_SOURCE:-trex}
       # Role assignments are written to trex, which is also the identity provider
       # issuing the tokens they travel in.
       IDP__ROLE_STORE: "trex"
       TREX__ADMIN_URL: "http://${PROJECT_NAME:-d2e}-trex:33001/trex/admin/roles"
+      # Account provisioning, as opposed to role assignment above. Used to
+      # create the initial user in the IdP so usermgmt can record its subject.
+      TREX__AUTH_URL: "http://${PROJECT_NAME:-d2e}-trex:33001/trex/auth/v1"
+      D2E__SEED_USER: ${D2E__SEED_USER:-}
       # Optional override only: usermgmt runs as a function worker inside the
       # trex container, and trex already injects this same credential as
       # SUPABASE_SERVICE_ROLE_KEY into every such worker's environment.

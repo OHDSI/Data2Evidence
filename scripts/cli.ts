@@ -266,7 +266,7 @@ class D2ECli {
       // "logto" selects the token-claims path: usermgmt reads the `roles` claim
       // out of the bearer token rather than any Logto API, so it holds for any
       // IdP that emits a compatible list - trex included.
-      USER_MGMT__ROLE_SOURCE: `logto`,
+      USER_MGMT__ROLE_SOURCE: `trex`,
       TREX__SQL__PASSWORD: `${this.generate_random_password(
         this.DEFAULT_PASSWORD_LENGTH,
       )}`,
@@ -606,6 +606,48 @@ class D2ECli {
     return false;
   }
 
+  /**
+   * Publish trex's service-role key into the environment file.
+   *
+   * usermgmt needs that credential to write role assignments into the identity
+   * provider, but trex mints it on first boot and keeps it in its own settings
+   * table, so nothing can supply it up front. Without it the role writes fail
+   * and users are granted access that never reaches a token.
+   *
+   * @returns whether the file changed, which means trex has to be recreated to
+   *   pick the value up.
+   */
+  sync_trex_service_role_key(): boolean {
+    const postgres = `${this.PROJECT_NAME}-minerva-postgres-1`;
+    let key = "";
+    try {
+      key = execSync(
+        `docker exec ${postgres} psql -U postgres -d alp -tAc ` +
+          `"select value #>> '{}' from trexdb.setting where key='auth.serviceRoleKey'"`,
+        { encoding: "utf-8", stdio: ["ignore", "pipe", "ignore"] },
+      ).trim();
+    } catch {
+      console.warn("Could not read the trex service-role key; role writes will fail until it is set.");
+      return false;
+    }
+    if (!key) {
+      console.warn("trex has not minted a service-role key yet; role writes will fail until it has.");
+      return false;
+    }
+
+    const env = fs.readFileSync(this.ENVFILE, "utf-8");
+    const line = `TREX__SERVICE_ROLE_KEY=${key}`;
+    if (env.includes(line)) {
+      return false;
+    }
+    const updated = /^TREX__SERVICE_ROLE_KEY=.*$/m.test(env)
+      ? env.replace(/^TREX__SERVICE_ROLE_KEY=.*$/m, line)
+      : `${env.replace(/\n*$/, "")}\n${line}\n`;
+    fs.writeFileSync(this.ENVFILE, updated);
+    console.log("Recorded the trex service-role key.");
+    return true;
+  }
+
   patch_demodb() {
     console.log("Patching demodb...");
     // Everything after this talks to WebAPI, which trex starts asynchronously —
@@ -759,6 +801,20 @@ class D2ECli {
           console.log("Process completed successfully.");
 
           if (!this.isFullStart(this.program.opts())) return;
+
+          // trex only mints its service-role key once it has started, so the
+          // first start always comes up without it. Recording it now and
+          // bringing the stack up again recreates just the service whose
+          // environment changed; without it, role writes fail and users are
+          // granted access that never reaches a token.
+          if (this.sync_trex_service_role_key()) {
+            console.log("Applying the trex service-role key...");
+            await new Promise<void>((resolve) => {
+              const again = spawn(cmd, { stdio: "inherit", shell: true, env });
+              again.on("close", () => resolve());
+            });
+          }
+
           if (!this.needsSyncRoles()) return;
 
           console.log(
