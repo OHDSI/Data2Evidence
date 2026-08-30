@@ -845,8 +845,9 @@ services:
   alp-dataflow-gen:
     container_name: &c2 ${PROJECT_NAME:-d2e}-dataflow-gen-1
     depends_on:
-      alp-logto-post-init:
-        condition: service_completed_successfully
+      # No edge to alp-logto-post-init: it sits behind the logto profile and
+      # compose cannot express a dependency that applies only when a profile is
+      # active, so waiting on it would break every default start.
       # Needs the alp_pg_* users, which trex's bootstrap creates.
       trex:
         condition: service_healthy
@@ -927,8 +928,7 @@ services:
     container_name: &c83 ${PROJECT_NAME:-d2e}-dataflow-gen-worker
     platform: linux/amd64
     depends_on:
-      alp-logto-post-init:
-        condition: service_completed_successfully
+      # See alp-dataflow-gen: no edge to the profiled logto services.
       alp-dataflow-gen:
         condition: service_healthy
     healthcheck:
@@ -1008,6 +1008,9 @@ services:
   #     - alp
 
   alp-logto-post-init:
+    # Opt-in with `--profile logto`. trex is the identity provider now, so this
+    # does not start by default.
+    profiles: [logto]
     container_name: ${PROJECT_NAME:-d2e}-logto-post-init-1
     depends_on:
       alp-logto:
@@ -1083,6 +1086,8 @@ services:
       CADDY__D2E__PUBLIC_FQDN: ${CADDY__D2E__PUBLIC_FQDN:-${CADDY__ALP__PUBLIC_FQDN:-localhost}}${PORT:+:${PORT:-443}}
 
   alp-logto:
+    # Opt-in with `--profile logto`; see alp-logto-post-init above.
+    profiles: [logto]
     container_name: &c8 ${PROJECT_NAME:-d2e}-logto-1
     depends_on:
       # Only Postgres: the wait for trex's bootstrap is the beacon poll in the
