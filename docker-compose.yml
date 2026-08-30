@@ -347,7 +347,14 @@ services:
       # /openid registration id) and the portal, whose callback d2e-compat builds
       # from the same clientId. A redirect URI that is not listed here is refused
       # at /authorize, so the portal cannot log in without its entry.
-      TREX_OIDC_CLIENT_REDIRECT_URIS: "https://${CADDY__D2E__PUBLIC_FQDN:-${CADDY__ALP__PUBLIC_FQDN:-localhost}}:${CADDY_PORT:-${PORT:-443}}/WebAPI/user/oauth/callback/openid,https://${CADDY__D2E__PUBLIC_FQDN:-${CADDY__ALP__PUBLIC_FQDN:-localhost}}:${CADDY_PORT:-${PORT:-443}}/d2e/portal/login-callback"
+      #
+      # WebAPI derives the redirect URI it asks for from the request it received,
+      # so reaching Atlas by any other name than the one below - another
+      # hostname, an address, a different port - produces a URI that is not on
+      # this list and the sign-in ends in "unregistered redirect_uri".
+      # TREX_OIDC__EXTRA_REDIRECT_URIS registers those additional origins; give
+      # it whole callback URLs, comma separated.
+      TREX_OIDC_CLIENT_REDIRECT_URIS: "https://${CADDY__D2E__PUBLIC_FQDN:-${CADDY__ALP__PUBLIC_FQDN:-localhost}}:${CADDY_PORT:-${PORT:-443}}/WebAPI/user/oauth/callback/openid,https://${CADDY__D2E__PUBLIC_FQDN:-${CADDY__ALP__PUBLIC_FQDN:-localhost}}:${CADDY_PORT:-${PORT:-443}}/d2e/portal/login-callback${TREX_OIDC__EXTRA_REDIRECT_URIS:+,${TREX_OIDC__EXTRA_REDIRECT_URIS}}"
       TREX_OIDC_CLIENT_POST_LOGOUT_URIS: "https://${CADDY__D2E__PUBLIC_FQDN:-${CADDY__ALP__PUBLIC_FQDN:-localhost}}:${CADDY_PORT:-${PORT:-443}}/atlas/,https://${CADDY__D2E__PUBLIC_FQDN:-${CADDY__ALP__PUBLIC_FQDN:-localhost}}:${CADDY_PORT:-${PORT:-443}}/d2e/portal"
       TREX_SQL_PASSWORD: ${TREX__SQL__PASSWORD:?TREX__SQL__PASSWORD must be set (run d2e init); refusing default pencil}
       TREX__SQL__PORT: ${TREX__SQL__PORT:-5433}
