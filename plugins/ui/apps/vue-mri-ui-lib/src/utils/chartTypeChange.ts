@@ -19,7 +19,8 @@ export type ChartTypeApplication = {
 }
 
 export type ChartTypeChangeState = {
-  colorAxisIndex: number | null
+  /** The chart type currently rendered, already resolved against the config flags. */
+  currentModeId: string
   showDistributionOverlay: boolean
 }
 
@@ -41,9 +42,9 @@ export function planChartTypeChange(
     resetOverlay: state.showDistributionOverlay && !target?.hasDistributionOverlay,
   }
 
-  // Switching away from the stacked bar chart clears the "Colour by" (color axis) selection,
-  // which is only supported on the stacked bar chart. Warn before discarding it.
-  if (selection.id !== STACKED_MODE_ID && state.colorAxisIndex !== null) {
+  // Leaving the stacked bar chart discards the "Colour by" (color axis) selection and
+  // retires the second X-axis; neither exists on the other chart types. Warn first.
+  if (state.currentModeId === STACKED_MODE_ID && selection.id !== STACKED_MODE_ID) {
     return { kind: 'warn', apply: application }
   }
 
