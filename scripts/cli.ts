@@ -657,6 +657,40 @@ class D2ECli {
     }
   }
 
+  /**
+   * Block until trex reports healthy, or give up and say so.
+   *
+   * Uses the container's own healthcheck rather than a guess at a URL, so it
+   * tracks whatever readiness trex itself defines.
+   */
+  async wait_for_trex(timeoutMs = 300_000): Promise<void> {
+    const trex = `${this.PROJECT_NAME}-trex`;
+    const started = Date.now();
+    while (Date.now() - started < timeoutMs) {
+      let status = "";
+      try {
+        status = execSync(
+          `docker inspect --format "{{.State.Health.Status}}" ${trex}`,
+          { encoding: "utf-8", stdio: ["ignore", "pipe", "ignore"] },
+        ).trim();
+      } catch {
+        // Container not up yet; keep waiting rather than failing outright.
+      }
+      if (status === "healthy") {
+        console.log("trex is ready.");
+        return;
+      }
+      if (status === "unhealthy") {
+        console.warn("trex reports unhealthy; continuing, but it may not serve yet.");
+        return;
+      }
+      await new Promise((r) => setTimeout(r, 5_000));
+    }
+    console.warn(
+      `trex was still not healthy after ${Math.round(timeoutMs / 1000)}s; continuing anyway.`,
+    );
+  }
+
   sync_trex_service_role_key(): boolean {
     const postgres = this.postgres_container();
     if (!postgres) {
@@ -869,6 +903,11 @@ class D2ECli {
               const again = spawn(cmd, { stdio: "inherit", shell: true, env });
               again.on("close", () => resolve());
             });
+            // Compose returns as soon as the container is started, not when the
+            // service inside it answers. Whatever runs next - a setup script, a
+            // test suite - would otherwise race a trex that is still loading
+            // plugins, and see a gateway that serves no sign-in page yet.
+            await this.wait_for_trex();
           }
 
           if (!this.needsSyncRoles()) return;
