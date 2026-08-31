@@ -634,8 +634,35 @@ class D2ECli {
    * @returns whether the file changed, which means trex has to be recreated to
    *   pick the value up.
    */
+  /**
+   * The running database container.
+   *
+   * Looked up rather than composed from the project name: the compose service
+   * is `alp-minerva-postgres`, so `<project>-minerva-postgres-1` only happens to
+   * be right where the project is itself called `alp`, and is wrong everywhere
+   * else - including CI, where it named a container that does not exist.
+   */
+  postgres_container(): string {
+    try {
+      const found = execSync(
+        `docker ps --filter name=minerva-postgres --format "{{.Names}}"`,
+        { encoding: "utf-8", stdio: ["ignore", "pipe", "ignore"] },
+      )
+        .split("\n")
+        .map((n) => n.trim())
+        .filter(Boolean);
+      return found[0] ?? "";
+    } catch {
+      return "";
+    }
+  }
+
   sync_trex_service_role_key(): boolean {
-    const postgres = `${this.PROJECT_NAME}-minerva-postgres-1`;
+    const postgres = this.postgres_container();
+    if (!postgres) {
+      console.warn("Could not find the database container; role writes will fail until the key is set.");
+      return false;
+    }
     let key = "";
     try {
       key = execSync(
