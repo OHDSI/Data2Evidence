@@ -34,7 +34,8 @@
           "function": "/alp-dataflow-gen-init",
           "imports": "/alp-dataflow-gen-init/deno.json",
           "env": "alp-dataflow-gen-init",
-          "waitforEnvVar": "PREFECT_HEALTH_CHECK"
+          "waitforEnvVar": "PREFECT_HEALTH_CHECK",
+          "eszip": "/alp-dataflow-gen-init/index.eszip"
         },
         {
           "function": "/files-manager-init",
