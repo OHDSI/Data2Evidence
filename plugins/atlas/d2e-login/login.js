@@ -75,8 +75,15 @@
       .then(function (res) {
         return res.json().then(function (body) {
           if (!res.ok) {
-            // Deliberately not distinguishing unknown account from wrong
-            // password: that difference tells an attacker which emails exist.
+            // A suspended account is told so: the person cannot fix it by
+            // retrying, and leaving them with "incorrect password" sends them
+            // to reset a password that was never wrong.
+            if (body.error === "user_banned") {
+              throw new Error("This account is suspended.");
+            }
+            // Otherwise deliberately not distinguishing unknown account from
+            // wrong password: that difference tells an attacker which emails
+            // exist.
             throw new Error(
               res.status === 400 || res.status === 401
                 ? "Incorrect username or password."
