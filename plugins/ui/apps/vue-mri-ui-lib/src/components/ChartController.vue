@@ -19,6 +19,7 @@
               v-if="getAllAxes[Constants.MRIChartDimensions.StackAttribute]?.props.active"
               :dimensionIndex="Constants.MRIChartDimensions.StackAttribute"
               :beforeSelect="getBeforeSelectHandler(Constants.MRIChartDimensions.StackAttribute)"
+              :iconComponent="stackAttributeIconComponent"
             ></axisMenuButton>
           </div>
           <cohortEntryExit v-if="displayShowCohortEntryExit"></cohortEntryExit>
@@ -119,6 +120,8 @@ import StackBarChart from './StackBarChart.vue'
 import CohortsAppMenu from './CohortsAppMenu.vue'
 import patientCount from './PatientCount.vue'
 import CohortDefinitionIcon from './icons/CohortDefinitionIcon.vue'
+import OverlappingHistogramIcon from './icons/OverlappingHistogramIcon.vue'
+import { getEffectiveBarChartMode } from './StackBarModes/modes'
 
 export default {
   name: 'chartController',
@@ -234,6 +237,12 @@ export default {
     },
     isColorButtonDisabled() {
       return this.getBarChartType !== 'stack'
+    },
+    stackAttributeIconComponent() {
+      // The stack attribute keeps its icon-font glyph on the stacked bar chart and switches to the
+      // overlapping histogram icon for every other chart type.
+      const effectiveMode = getEffectiveBarChartMode(this.getBarChartType, this.getMriFrontendConfig)
+      return effectiveMode === 'stack' ? null : OverlappingHistogramIcon
     },
     effectiveColorAxisIndex() {
       return this.isColorButtonDisabled ? null : this.colorAxisIndex
