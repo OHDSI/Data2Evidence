@@ -24,6 +24,14 @@
   vertical-align: baseline;
 }
 
+// SVG icons (e.g. the overlapping histogram) render as a component rather than an
+// icon-font glyph, so they need explicit box sizing to match the glyph metrics above.
+.chartButton .icon.iconSvg {
+  width: 18px;
+  height: 18px;
+  vertical-align: middle;
+}
+
 .chartButtonContainer .chartButton {
   outline: none;
   background: none;

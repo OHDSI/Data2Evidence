@@ -65,7 +65,7 @@ sap.ui.define([
                 icon: "sap-icon://MRI/km-chart"
             },
             stacked: {
-                name: Utils.getText("MRI_PA_TOOLTIP_CHARTTYPE_STACKED"),
+                name: Utils.getText("MRI_PA_TOOLTIP_CHARTTYPE_CHART"),
                 icon: "sap-icon://vertical-bar-chart"
             },
             boxplot: {
