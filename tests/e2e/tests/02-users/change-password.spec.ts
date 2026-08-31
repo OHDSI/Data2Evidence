@@ -1,10 +1,7 @@
 import { test, expect } from '../fixtures'
 
 const TEST_NAME = 'change-password'
-// An administrator resetting another user's password needs the identity
-// provider's admin endpoint, which the pinned image does not yet serve. Re-enable
-// once the base image carries it.
-const SHOULD_SKIP = true
+const SHOULD_SKIP = false
 test.fixme(SHOULD_SKIP, `${TEST_NAME} test is temporarily disabled.`)
 
 test(TEST_NAME, async ({ page }) => {

@@ -86,6 +86,26 @@ async function grantTrexRoles({ gateway, userId, roles, serviceRoleKey }) {
  */
 async function ensureUsermgmtUser({ gateway, token, username, idpUserId }) {
   const { randomUUID } = require("node:crypto");
+
+  // Look first: the account may already have a row, seeded at init or created
+  // by an earlier sign-in. Creating a second one for the same subject is what
+  // this function used to do, and it left the grants on one row while the
+  // session resolved to the other - an account holding every role and being
+  // told "Access denied".
+  const existing = await fetch(`${gateway}/usermgmt/api/user`, {
+    headers: { Authorization: `Bearer ${token}` },
+    dispatcher: insecureAgent,
+  });
+  if (existing.ok) {
+    const users = await existing.json();
+    if (
+      Array.isArray(users) &&
+      users.some((u) => (u.idpUserId ?? u.idp_user_id) === idpUserId)
+    ) {
+      return;
+    }
+  }
+
   const res = await fetch(`${gateway}/usermgmt/api/user`, {
     method: "POST",
     headers: {
@@ -96,8 +116,16 @@ async function ensureUsermgmtUser({ gateway, token, username, idpUserId }) {
     dispatcher: insecureAgent,
   });
   if (!res.ok) {
+    const body = await res.text();
+    // A row for this subject already exists - the list above cannot see every
+    // account, since service identities are kept out of it. The uniqueness the
+    // database enforces is the same thing this function wanted, so a collision
+    // means the work is done, not that it failed.
+    if (/user_idp_user_id_unique|duplicate key/i.test(body)) {
+      return;
+    }
     throw new Error(
-      `Could not create the usermgmt row for ${username}: ${res.status} ${await res.text()}`,
+      `Could not create the usermgmt row for ${username}: ${res.status} ${body}`,
     );
   }
 }
