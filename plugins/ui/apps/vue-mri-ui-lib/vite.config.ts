@@ -6,29 +6,36 @@ import vuetify, { transformAssetUrls } from 'vite-plugin-vuetify'
 import basicSsl from '@vitejs/plugin-basic-ssl'
 import cssInjectedByJsPlugin from 'vite-plugin-css-injected-by-js'
 import path from 'path'
-import fs from 'fs'
 import { createRequire } from 'module'
 
 /**
- * Absolute path to @vue/test-utils' ESM build, or undefined if it cannot be located.
+ * Absolute path to the Vue copy that Vitest's externalised Vue consumers load, or undefined if it
+ * cannot be determined.
  *
- * Its exports map lists "node" (CommonJS) ahead of "import", so under Vitest the library loads as
- * CommonJS and its bare `require('vue')` is resolved by Node from wherever the package was
- * installed — the `vue` alias below never sees it. This app pins vue while sibling apps float, so
- * the installer keeps two copies in the workspace and the mounting library ends up on the copy the
- * SFCs do not use. The copies share `globalThis.__VUE_INSTANCE_SETTERS__`, so setup() still sees
- * the instance, but its `refs` is the *other* copy's frozen EMPTY_OBJ and useTemplateRef() dies
- * with "Cannot define property <name>, object is not extensible".
+ * This app pins vue exactly while sibling apps float, so the workspace installer keeps two copies:
+ * one hoisted at plugins/ui/node_modules and a second nested under this app. Vitest externalises
+ * node_modules, so @vue/test-utils, pinia and vuex are loaded by Node from wherever they were
+ * installed — hoisted, in CI — and all bind the hoisted copy, while the `vue` alias below points the
+ * SFCs at the nested one. Nothing held in Vue's module scope is shared across the two:
+ *   - mounting a component that calls useTemplateRef() throws "object is not extensible", because
+ *     the instance's `refs` is the other copy's frozen EMPTY_OBJ;
+ *   - a component watcher never fires for a store mutation, because dependency tracking is
+ *     module-global, so the store's reactive proxy and the watcher live in different registries.
  *
- * Loading the ESM build instead routes its `vue` import through Vite, onto the aliased copy.
+ * Resolving `vue` from @vue/test-utils' own directory puts the SFCs on the same copy as every
+ * externalised Vue consumer, in whichever layout the installer produced (the app-local npm install
+ * keeps them together already, so this is a no-op there). Tests only — the production install has a
+ * single copy and no @vue/test-utils at all.
+ *
+ * This is a workaround. The real fix is to stop installing two copies.
  */
-const vueTestUtilsEsm = (() => {
+const vueForTests = (() => {
   try {
-    const pkg = createRequire(path.join(__dirname, 'vite.config.ts')).resolve('@vue/test-utils/package.json')
-    const esm = path.join(path.dirname(pkg), 'dist', 'vue-test-utils.esm-bundler.mjs')
-    return fs.existsSync(esm) ? esm : undefined
+    const appRequire = createRequire(path.join(__dirname, 'vite.config.ts'))
+    const testUtilsRequire = createRequire(appRequire.resolve('@vue/test-utils/package.json'))
+    return path.dirname(testUtilsRequire.resolve('vue/package.json'))
   } catch {
-    // Not installed (production install) — nothing to align.
+    // @vue/test-utils not installed (production install) — nothing to align.
     return undefined
   }
 })()
@@ -158,10 +165,9 @@ export default defineConfig(({ command, mode }) => {
     resolve: {
       alias: {
         '@': path.resolve(__dirname, './src'),
-        // Dedupe Vue to prevent multiple instances (matching webpack alias)
-        vue: path.resolve(__dirname, 'node_modules/vue'),
-        // See vueTestUtilsEsm above — tests must mount with the same Vue copy the SFCs import.
-        ...(isTest && vueTestUtilsEsm ? { '@vue/test-utils': vueTestUtilsEsm } : {}),
+        // Dedupe Vue to prevent multiple instances (matching webpack alias).
+        // Under Vitest, follow the copy the externalised Vue consumers got — see vueForTests above.
+        vue: isTest && vueForTests ? vueForTests : path.resolve(__dirname, 'node_modules/vue'),
         // D3 v3 wrapper - provides access to window.d3 (loaded from public/vendor)
         d3: path.resolve(__dirname, './src/lib/d3.ts'),
       },
@@ -268,8 +274,7 @@ export default defineConfig(({ command, mode }) => {
       include: ['src/**/__tests__/*.test.ts'],
       server: {
         deps: {
-          // @vue/test-utils must go through Vite so the `vue` alias above applies to it too.
-          inline: ['vuetify', '@vue/test-utils'],
+          inline: ['vuetify'],
         },
       },
       coverage: {
