@@ -6,12 +6,39 @@ import vuetify, { transformAssetUrls } from 'vite-plugin-vuetify'
 import basicSsl from '@vitejs/plugin-basic-ssl'
 import cssInjectedByJsPlugin from 'vite-plugin-css-injected-by-js'
 import path from 'path'
+import fs from 'fs'
+import { createRequire } from 'module'
+
+/**
+ * Absolute path to @vue/test-utils' ESM build, or undefined if it cannot be located.
+ *
+ * Its exports map lists "node" (CommonJS) ahead of "import", so under Vitest the library loads as
+ * CommonJS and its bare `require('vue')` is resolved by Node from wherever the package was
+ * installed — the `vue` alias below never sees it. This app pins vue while sibling apps float, so
+ * the installer keeps two copies in the workspace and the mounting library ends up on the copy the
+ * SFCs do not use. The copies share `globalThis.__VUE_INSTANCE_SETTERS__`, so setup() still sees
+ * the instance, but its `refs` is the *other* copy's frozen EMPTY_OBJ and useTemplateRef() dies
+ * with "Cannot define property <name>, object is not extensible".
+ *
+ * Loading the ESM build instead routes its `vue` import through Vite, onto the aliased copy.
+ */
+const vueTestUtilsEsm = (() => {
+  try {
+    const pkg = createRequire(path.join(__dirname, 'vite.config.ts')).resolve('@vue/test-utils/package.json')
+    const esm = path.join(path.dirname(pkg), 'dist', 'vue-test-utils.esm-bundler.mjs')
+    return fs.existsSync(esm) ? esm : undefined
+  } catch {
+    // Not installed (production install) — nothing to align.
+    return undefined
+  }
+})()
 
 // https://vitejs.dev/config/
 export default defineConfig(({ command, mode }) => {
   // Load env files with VITE_ prefix (Vite's default behavior)
   const env = loadEnv(mode, process.cwd(), '')
   const isProduction = mode === 'production'
+  const isTest = mode === 'test' || !!process.env.VITEST
   const isBuild = command === 'build'
   const isServe = command === 'serve'
   const isPreview = process.argv.includes('preview')
@@ -133,6 +160,8 @@ export default defineConfig(({ command, mode }) => {
         '@': path.resolve(__dirname, './src'),
         // Dedupe Vue to prevent multiple instances (matching webpack alias)
         vue: path.resolve(__dirname, 'node_modules/vue'),
+        // See vueTestUtilsEsm above — tests must mount with the same Vue copy the SFCs import.
+        ...(isTest && vueTestUtilsEsm ? { '@vue/test-utils': vueTestUtilsEsm } : {}),
         // D3 v3 wrapper - provides access to window.d3 (loaded from public/vendor)
         d3: path.resolve(__dirname, './src/lib/d3.ts'),
       },
@@ -146,7 +175,9 @@ export default defineConfig(({ command, mode }) => {
           {
             postcssPlugin: 'remove-color-adjust',
             Declaration: {
-              'color-adjust': (decl) => { decl.remove() },
+              'color-adjust': decl => {
+                decl.remove()
+              },
             },
           },
         ],
@@ -237,7 +268,8 @@ export default defineConfig(({ command, mode }) => {
       include: ['src/**/__tests__/*.test.ts'],
       server: {
         deps: {
-          inline: ['vuetify'],
+          // @vue/test-utils must go through Vite so the `vue` alias above applies to it too.
+          inline: ['vuetify', '@vue/test-utils'],
         },
       },
       coverage: {
