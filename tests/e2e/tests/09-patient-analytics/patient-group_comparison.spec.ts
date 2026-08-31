@@ -10,7 +10,7 @@ test('pa-compare-cohorts', async ({ page }) => {
   // AUTHENTICATION SECTION
   // ========================
   // Navigate to the D2E portal login page
-  await page.goto('/')
+  await page.goto('/d2e/portal')
 
   // Fill in admin credentials and sign in
   await page.locator('input[name="identifier"]').click()
