@@ -74,6 +74,12 @@ export const test = base.extend<{
       logs.push(logEntry)
     })
 
+    // Every test starts at the portal. The root route opens Atlas, so a spec
+    // that navigated to '/' and expected the portal used to land somewhere else
+    // entirely and fail on a missing control rather than on anything it meant
+    // to check. Specs that drive Atlas navigate there themselves.
+    await page.goto('/d2e/portal')
+
     await use(page)
 
     // Skip saving logs if test passed on first try

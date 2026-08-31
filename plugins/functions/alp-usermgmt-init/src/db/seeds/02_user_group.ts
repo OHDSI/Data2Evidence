@@ -71,6 +71,21 @@ const getSeeds = async (knex: Knex): Promise<{ [key: string]: any }[]> => {
           id: uuidv4(),
           user_id: userId,
           b2c_group_id: '72b00548-2cbf-48f6-aa68-bbf81864857b'
+        },
+        // Dashboard viewer and ETL mapping contributor. The identity provider
+        // used to hold these for the initial account, and the users table read
+        // its roles from there; reading them from these memberships instead
+        // silently dropped both, leaving the administrator without access the
+        // deployment had always given them.
+        {
+          id: uuidv4(),
+          user_id: userId,
+          b2c_group_id: '1792e31c-5dda-467a-9625-31f97cdfb4ec'
+        },
+        {
+          id: uuidv4(),
+          user_id: userId,
+          b2c_group_id: 'd1c8e5b7-9a0c-4c3b-9c8e-1f2a9e5d6f3a'
         }
       ])
     }
