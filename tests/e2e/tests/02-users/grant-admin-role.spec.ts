@@ -24,7 +24,7 @@ test('test', async ({ page }) => {
   await page.getByTestId('table-row').filter({ hasText: roleName }).getByRole('button', { name: 'Edit' }).click()
   await page.getByTestId('dialog').getByText('Admin', { exact: true }).click()
   await page.getByTestId('dialog').getByText('User Admin').click()
-  await page.getByRole('button', { name: 'Save' }).click()
+  await page.getByRole('button', { name: 'Update' }).click()
   await expect(page.locator('tbody')).toContainText('ViewerAdminUser Admin')
   await page.getByRole('link', { name: 'Account' }).click()
   await page.getByRole('button', { name: 'Logout' }).click()
