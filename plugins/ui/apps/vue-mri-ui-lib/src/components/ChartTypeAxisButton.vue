@@ -62,7 +62,6 @@ defineProps<{ parentContainer?: any }>()
 const store = useStore()
 const getBarChartType = computed(() => store?.getters?.getBarChartType)
 const getShowDistributionOverlay = computed(() => store?.getters?.getShowDistributionOverlay)
-const getColorAxisIndex = computed(() => store?.getters?.getColorAxisIndex)
 const getMriFrontendConfig = computed(() => store?.getters?.getMriFrontendConfig)
 const getText = (key: string) => store?.getters?.getText?.(key) || key
 
@@ -144,7 +143,7 @@ function closeMenu() {
 
 function handleClick(arg: any) {
   const plan = planChartTypeChange(arg, {
-    colorAxisIndex: getColorAxisIndex.value,
+    currentModeId: effectiveMode.value,
     showDistributionOverlay: getShowDistributionOverlay.value,
   })
   if (plan.kind === 'ignore') return
