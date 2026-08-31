@@ -183,7 +183,7 @@
 }
 
 .groupRequiredAsterisk {
-  margin-left: 4px;
+  margin-left: 2px;
   color: var(--color-feedback-error, #a3293d);
 }
 
@@ -408,7 +408,6 @@
 .requiredAsterisk {
   color: #c00;
   font-weight: bold;
-  margin-left: 4px;
 }
 
 .required {
