@@ -4,20 +4,18 @@ import { createPinia, setActivePinia } from 'pinia'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import ChartToolbar from '../ChartToolbar.vue'
 import ChartButton from '../ChartButton.vue'
-import OverlappingHistogramIcon from '../icons/OverlappingHistogramIcon.vue'
+import CohortDefinitionIcon from '../icons/CohortDefinitionIcon.vue'
 
 const noop = vi.fn()
 
-const buildStore = (barChartType: string, stackedChartOptions: Record<string, boolean> = {}) =>
+const buildStore = (barChartType: string) =>
   createStore({
     getters: {
       getActiveChart: () => 'stacked',
       getChartSelection: () => () => [],
       getHasAssignedConfig: () => false,
       getAllChartConfigs: () => ({ stacked: { visible: true }, list: { visible: true } }),
-      getMriFrontendConfig: () => ({
-        _internalConfig: { panelOptions: {}, chartOptions: { stacked: stackedChartOptions } },
-      }),
+      getMriFrontendConfig: () => ({ _internalConfig: { panelOptions: {} } }),
       getText: () => (key: string) => key,
       getSelectedDataset: () => ({ id: 'ds-1' }),
       getActiveCohortMaterializedId: () => null,
@@ -61,17 +59,11 @@ const buildStore = (barChartType: string, stackedChartOptions: Record<string, bo
     },
   })
 
-const allModesEnabled = {
-  overlappingHistogramEnabled: true,
-  overlappingBarChartEnabled: true,
-  kernelDensityPlotEnabled: true,
-}
-
-const mountComponent = (barChartType: string, stackedChartOptions = allModesEnabled) =>
+const mountComponent = (barChartType: string) =>
   shallowMount(ChartToolbar as any, {
     props: { showUnHideFilters: false },
     global: {
-      plugins: [buildStore(barChartType, stackedChartOptions)],
+      plugins: [buildStore(barChartType)],
       stubs: {
         teleport: true,
         // Render the popover's default slot so the chart buttons it wraps are mounted.
@@ -85,44 +77,26 @@ describe('ChartToolbar bar chart button icon', () => {
     setActivePinia(createPinia())
   })
 
-  it('keeps the icon-font glyph while the stacked bar chart mode is selected', () => {
-    const wrapper = mountComponent('stack')
-
-    expect((wrapper.vm as any).chartIconComponent({ name: 'stacked' })).toBeNull()
-  })
-
-  it.each(['overlay', 'partialOverlaySolid', 'distribution'])(
-    'uses the overlapping histogram icon for the %s chart type',
-    chartType => {
+  it.each(['stack', 'overlay', 'partialOverlaySolid', 'distribution'])(
+    'renders the cohort definition icon on the bar chart button in %s mode',
+    async chartType => {
       const wrapper = mountComponent(chartType)
+      // chartConfig is filled in mounted(), so the buttons only exist after a re-render.
+      await wrapper.vm.$nextTick()
 
-      expect((wrapper.vm as any).chartIconComponent({ name: 'stacked' })).toBe(OverlappingHistogramIcon)
+      const stacked = wrapper.findAllComponents(ChartButton).find(button => button.props('name') === 'stacked')
+
+      expect(stacked?.props('iconComponent')).toBe(CohortDefinitionIcon)
     }
   )
 
-  it('falls back to the icon-font glyph when the selected chart type is disabled by config', () => {
-    const wrapper = mountComponent('overlay', {})
-
-    expect((wrapper.vm as any).chartIconComponent({ name: 'stacked' })).toBeNull()
-  })
-
-  it('leaves every other chart button on its icon-font glyph', () => {
-    const wrapper = mountComponent('overlay')
-
-    expect((wrapper.vm as any).chartIconComponent({ name: 'list' })).toBeNull()
-  })
-
-  it('passes the icon component to the bar chart button only', async () => {
-    const wrapper = mountComponent('overlay')
-    // chartConfig is filled in mounted(), so the buttons only exist after a re-render.
+  it('leaves every other chart button on its icon-font glyph', async () => {
+    const wrapper = mountComponent('stack')
     await wrapper.vm.$nextTick()
 
-    const buttons = wrapper.findAllComponents(ChartButton)
-    const iconComponentByName = Object.fromEntries(
-      buttons.map(button => [button.props('name'), button.props('iconComponent')])
-    )
+    const others = wrapper.findAllComponents(ChartButton).filter(button => button.props('name') !== 'stacked')
 
-    expect(iconComponentByName.stacked).toBe(OverlappingHistogramIcon)
-    expect(iconComponentByName.list).toBeNull()
+    expect(others.length).toBeGreaterThan(0)
+    expect(others.every(button => !button.props('iconComponent'))).toBe(true)
   })
 })

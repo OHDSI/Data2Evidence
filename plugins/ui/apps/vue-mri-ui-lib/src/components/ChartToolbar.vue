@@ -44,7 +44,7 @@
               @clickEv="switchChart(chart)"
               :name="chart.name"
               :icon="chart.icon"
-              :iconComponent="chartIconComponent(chart)"
+              :iconComponent="chartIconComponents[chart.name] || null"
               :iconGroup="chart.iconGroup"
               :title="getText(chart.tooltip)"
               :activeChart="getActiveChart"
@@ -216,8 +216,7 @@ import DashboardSelectionModal from './ShinyViewer/DashboardSelectionModal.vue'
 import CompleteRequiredFiltersModal from './ShinyViewer/CompleteRequiredFiltersModal.vue'
 import ConfigureTable1Dialog from './ShinyViewer/ConfigureTable1Dialog.vue'
 import Button from './Button.vue'
-import OverlappingHistogramIcon from './icons/OverlappingHistogramIcon.vue'
-import { getEffectiveBarChartMode } from './StackBarModes/modes'
+import CohortDefinitionIcon from './icons/CohortDefinitionIcon.vue'
 import { useDashboardFlow } from '../composables/useDashboardFlow'
 import { usePortalContext } from '../composables/usePortalContext'
 
@@ -339,7 +338,6 @@ export default {
       'getConstraint',
       'getCanDatasetMaterializeCohorts',
       'getCurrentPatientCount',
-      'getBarChartType',
     ]),
     chartSelection() {
       return this.getChartSelection()
@@ -393,11 +391,9 @@ export default {
     minCohortSizeMessage() {
       return this.getText('MRI_PA_MIN_COHORT_SIZE_DISPLAY_MESSAGE', formatNumber(this.minCohortSize))
     },
-    // Kept in step with ChartController's stackAttributeIconComponent: the bar chart keeps its
-    // icon-font glyph in stacked mode and switches to the overlapping histogram icon otherwise.
-    stackedChartIconComponent() {
-      const effectiveMode = getEffectiveBarChartMode(this.getBarChartType, this.getMriFrontendConfig)
-      return effectiveMode === 'stack' ? null : OverlappingHistogramIcon
+    // Chart buttons that render an SVG icon component; every other button keeps its icon-font glyph.
+    chartIconComponents() {
+      return { stacked: CohortDefinitionIcon }
     },
   },
   methods: {
@@ -481,9 +477,6 @@ export default {
         return chartTypeData
       }
       return []
-    },
-    chartIconComponent(chart) {
-      return chart.name === 'stacked' ? this.stackedChartIconComponent : null
     },
     switchChart(button) {
       this.setActiveChart(button.name)
