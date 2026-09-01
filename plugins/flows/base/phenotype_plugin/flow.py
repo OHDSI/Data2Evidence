@@ -121,10 +121,7 @@ def atlas_cohort_definitions(
         try:
             status = cohort_def["status"]
             result = phenotype_api.create_single_cohort_definition(
-                cohort_def,
-                dataset_id,
-                user_name,
-                name_index,
+                cohort_def, dataset_id, user_name, name_index
             )
             created_cohorts.append(result)
             cohort_ids_by_status.setdefault(status, []).append(result["id"])
