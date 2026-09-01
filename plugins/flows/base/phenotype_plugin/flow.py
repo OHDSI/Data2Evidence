@@ -1,6 +1,5 @@
 import os, logging
 from rpy2.rinterface_lib.callbacks import logger as rpy2_logger
-from rpy2.robjects import pandas2ri, numpy2ri
 from rpy2 import robjects
 
 from prefect import flow, task
@@ -60,11 +59,9 @@ def get_cohort_definitions(cohorts_id: str, vocabschema_name: str, materialize: 
     Returns:
         list: List of cohort definitions with cohortId, cohortName, json, and sql.
     """
-    pandas2ri.activate()
-    numpy2ri.activate()
     r_script_path = os.path.join(os.path.dirname(__file__), 'get_cohort_definitions.R')
 
-    with robjects.conversion.localconverter(robjects.default_converter):
+    with robjects.default_converter.context():
         
         # Source the R script to load the function
         robjects.r(f'source("{r_script_path}")')
@@ -110,16 +107,18 @@ def atlas_cohort_definitions(
     logger = get_run_logger()
     phenotype_api = PhenotypeAPI()
     created_cohorts = []
+    name_index = phenotype_api.get_cohort_name_index(dataset_id)
+    logger.info(f"Indexed {len(name_index)} existing WebAPI cohort definitions")
 
     for cohort_def in cohort_definitions:
         try:
             result = phenotype_api.create_single_cohort_definition(
-                cohort_def, dataset_id, user_name
+                cohort_def, dataset_id, user_name, name_index
             )
             created_cohorts.append(result)
         except Exception as e:
             error_message = (
-                f"Failed to create cohort {cohort_def['cohortId']}: {str(e)}"
+                f"Failed to save cohort {cohort_def['cohortId']}: {str(e)}"
             )
             logger.error(error_message)
             raise Exception(error_message) from e
