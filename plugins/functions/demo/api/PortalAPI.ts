@@ -63,6 +63,9 @@ export class PortalAPI {
     ready: boolean;
     cacheExists: boolean;
     cacheAttached: boolean;
+    // When the cache file last changed. Readiness alone does not mean the copy
+    // has finished, so callers use this to tell a settled cache from a growing one.
+    lastModified?: number | null;
     activeJobStatus?: string | null;
     lastJobError?: string | null;
   }> {
