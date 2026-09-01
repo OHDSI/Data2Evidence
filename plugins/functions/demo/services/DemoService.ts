@@ -177,6 +177,58 @@ export class DemoService {
   // Poll cache status until bao reports COMPLETED. The dataset POST returns as
   // soon as the row is inserted, so DQD/DC would otherwise race against the
   // still-building TrexSQL cache and fail with cache-not-ready errors.
+  /**
+   * Wait until the cache file stops growing.
+   *
+   * For dialects that build the cache without a job row, readiness is reported
+   * as soon as the file exists and is attached - which happens long before the
+   * copy has finished. Setup then hands a half-populated cache to whatever runs
+   * next: patient counts answer from the tables that made it, while anything
+   * touching a table still being copied fails with a catalog error naming it.
+   * The file's own modification time is the only progress signal available
+   * here, so wait for it to hold still.
+   */
+  private async waitForCacheToSettle(
+    portalAPI: PortalAPI,
+    datasetId: string,
+    quietMs = 30_000,
+    timeoutMs = 600_000,
+  ): Promise<void> {
+    const pollMs = 5_000;
+    const deadline = Date.now() + timeoutMs;
+    let lastSeen: number | null = null;
+    let unchangedSince = Date.now();
+
+    while (Date.now() < deadline) {
+      await new Promise((r) => setTimeout(r, pollMs));
+      let modified: number | null = null;
+      try {
+        modified = (await portalAPI.getCacheStatus(datasetId)).lastModified ?? null;
+      } catch (e) {
+        // A failed poll says nothing about the copy; keep waiting.
+        this.logger.warn(
+          `Cache settle poll failed for ${datasetId}: ${e instanceof Error ? e.message : String(e)}`,
+        );
+        continue;
+      }
+
+      if (modified !== lastSeen) {
+        lastSeen = modified;
+        unchangedSince = Date.now();
+        continue;
+      }
+      if (Date.now() - unchangedSince >= quietMs) {
+        this.logger.info(
+          `Cache for dataset ${datasetId} settled (unchanged for ${Math.round(quietMs / 1000)}s)`,
+        );
+        return;
+      }
+    }
+    this.logger.warn(
+      `Cache for dataset ${datasetId} was still changing after ${Math.round(timeoutMs / 1000)}s; continuing anyway`,
+    );
+  }
+
   public async waitForCache(token: string, _input: any, progress?: IProgress) {
     this.logger.info("Waiting for cache");
 
@@ -233,8 +285,9 @@ export class DemoService {
       }
       if (lastStatus.ready) {
         this.logger.info(
-          `Cache ready for dataset ${dataset.id}: ${JSON.stringify(lastStatus)}`
+          `Cache reports ready for dataset ${dataset.id}: ${JSON.stringify(lastStatus)}`
         );
+        await this.waitForCacheToSettle(portalAPI, dataset.id);
         return lastStatus;
       }
       if (
