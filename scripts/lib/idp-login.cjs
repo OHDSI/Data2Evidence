@@ -332,4 +332,54 @@ async function ensureSeedUser({ gateway, serviceRoleKey, env = process.env, role
   return { email, password, userId };
 }
 
-module.exports = { ensureSeedUser, ensureTrexUser, ensureUsermgmtUser, grantTrexRoles, selectedIdp, trexBearerToken, trexSetupBearer, trexUserId };
+
+/**
+ * The trex service-role key, read from the settings table it is minted into.
+ *
+ * Resolves the database container rather than composing its name: the compose
+ * service is not named after the project, so the two only coincide in some
+ * deployments. Waits for the table as well as the row - a caller can run before
+ * trex has finished creating its own schema, and the key appears only once it
+ * has. Returns "" rather than throwing, so a caller that has the key from the
+ * environment is not stopped by a lookup it did not need.
+ */
+function readServiceRoleKey({ attempts = 12, waitMs = 5000 } = {}) {
+  const { execSync } = require("node:child_process");
+
+  let container = "";
+  try {
+    container = execSync('docker ps --filter name=minerva-postgres --format "{{.Names}}"', {
+      encoding: "utf-8",
+      stdio: ["ignore", "pipe", "ignore"],
+    })
+      .split("\n")
+      .map((n) => n.trim())
+      .filter(Boolean)[0] ?? "";
+  } catch {
+    container = "";
+  }
+  if (!container) {
+    console.warn("Could not find the database container; the trex service-role key is unavailable.");
+    return "";
+  }
+
+  for (let attempt = 1; attempt <= attempts; attempt++) {
+    try {
+      const key = execSync(
+        `docker exec ${container} psql -U postgres -d alp -tAc ` +
+          `"select value #>> '{}' from trexdb.setting where key='auth.serviceRoleKey'"`,
+        { encoding: "utf-8", stdio: ["ignore", "pipe", "ignore"] },
+      ).trim();
+      if (key) return key;
+    } catch {
+      // The settings table does not exist yet: trex is still starting.
+    }
+    if (attempt < attempts) {
+      execSync(`sleep ${Math.round(waitMs / 1000)}`);
+    }
+  }
+  console.warn("trex has not published a service-role key; continuing without it.");
+  return "";
+}
+
+module.exports = { readServiceRoleKey, ensureSeedUser, ensureTrexUser, ensureUsermgmtUser, grantTrexRoles, selectedIdp, trexBearerToken, trexSetupBearer, trexUserId };

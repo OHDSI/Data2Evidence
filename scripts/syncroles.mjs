@@ -92,15 +92,6 @@ let public_fqdn = process.env.CADDY__D2E__PUBLIC_FQDN || process.env.CADDY__ALP_
 let port = process.env.PORT ? `:${process.env.PORT}` : ":443";
 let CADDY__D2E__PUBLIC_FQDN = `${public_fqdn}${port}`;
 const insecureAgent = new Agent({ connect: { rejectUnauthorized: false } });
-// trex mints the service-role key on first boot and publishes it nowhere but its
-// own settings table, so it is read from the database rather than the env.
-function readServiceRoleKey() {
-  return execSync(
-    `docker exec ${process.env.PROJECT_NAME || 'alp'}-minerva-postgres-1 ` +
-      `psql -U postgres -d alp -tAc ` +
-      `"select value #>> '{}' from trexdb.setting where key='auth.serviceRoleKey'"`,
-  ).toString().trim();
-}
 
 console.log('\nSyncing usermgmt roles to Logto...\n');
 
@@ -115,7 +106,7 @@ if (!password) {
 // CommonJS on purpose: these scripts are transpiled to CJS and run on Node 18,
 // which refuses require() of an ES module -- and the transform turns every
 // import form, dynamic ones included, into require().
-const { selectedIdp, trexSetupBearer } = require('./lib/idp-login.cjs');
+const { selectedIdp, trexSetupBearer, readServiceRoleKey } = require('./lib/idp-login.cjs');
 
 let BEARER_TOKEN;
 
