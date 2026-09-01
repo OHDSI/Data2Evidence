@@ -111,10 +111,16 @@ const containerStyle = computed(() => ({
     }
   }
 
+  // Figma 2006:843: only the primary category fills on disabled. Secondary
+  // keeps its outline over a transparent surface, and no-stroke stays bare.
   &:disabled {
     color: var(--d2e-color-neutral-light);
-    background: var(--d2e-color-neutral-lighter);
+    background: transparent;
     opacity: 1;
+  }
+
+  &--primary:disabled {
+    background: var(--d2e-color-neutral-lighter);
   }
 }
 </style>

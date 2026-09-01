@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import D2eIconButton from "./D2eIconButton.vue";
+
+const categories = ["no-stroke", "secondary", "primary"] as const;
 </script>
 
 <template>
@@ -32,25 +34,58 @@ import D2eIconButton from "./D2eIconButton.vue";
       </div>
     </Variant>
 
-    <Variant title="states">
-      <div style="display: flex; gap: 12px; align-items: center">
-        <D2eIconButton
-          category="primary"
-          icon="mdi-plus"
-          aria-label="Enabled"
-        />
-        <D2eIconButton
-          category="primary"
-          icon="mdi-plus"
-          aria-label="Disabled"
-          disabled
-        />
-        <D2eIconButton
-          icon="mdi-delete"
-          aria-label="Disabled no stroke"
-          disabled
-        />
-      </div>
+    <Variant title="states (matches Figma 2006:843)">
+      <!-- Mirrors the ICON BUTTON sheet: category x state. Hover and pressed
+           are CSS states, so hover the row to see them. -->
+      <table class="state-grid">
+        <thead>
+          <tr>
+            <th></th>
+            <th>Enabled</th>
+            <th>Disabled</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="cat in categories" :key="cat">
+            <th scope="row">{{ cat }}</th>
+            <td>
+              <D2eIconButton
+                :category="cat"
+                size="lg"
+                icon="mdi-bell-outline"
+                :aria-label="`${cat} enabled`"
+              />
+            </td>
+            <td>
+              <D2eIconButton
+                :category="cat"
+                size="lg"
+                icon="mdi-bell-outline"
+                :aria-label="`${cat} disabled`"
+                disabled
+              />
+            </td>
+          </tr>
+        </tbody>
+      </table>
     </Variant>
   </Story>
 </template>
+
+<style scoped>
+.state-grid {
+  border-collapse: collapse;
+}
+.state-grid th,
+.state-grid td {
+  padding: 8px 16px;
+  text-align: left;
+  font:
+    400 12px/1.4 system-ui,
+    sans-serif;
+  color: #595757;
+}
+.state-grid tbody th {
+  font-weight: 600;
+}
+</style>
