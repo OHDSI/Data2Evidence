@@ -81,7 +81,7 @@ test(TEST_NAME, async ({ page }) => {
   //Check if the cohort is saved
   await test.step('Check if the cohort is saved', async () => {
     await page.locator('#pane-left').getByRole('link', { name: 'Cohorts' }).click()
-    await expect(page.getByText('Cohort Test0. Icons/')).toBeVisible()
+    await expect(page.getByText('Cohort TestCohort Definition Icon')).toBeVisible()
   })
   //Go to patient list
   await test.step('Go to patient list', async () => {
@@ -144,10 +144,10 @@ test(TEST_NAME, async ({ page }) => {
   await test.step('Delete cohort', async () => {
     // await page.getByRole('button', { name: '' }).click();
     await page.locator('#pane-left').getByRole('link', { name: 'Cohorts' }).click()
-    await expect(page.getByText('Cohort Test0. Icons/')).toBeVisible()
+    await expect(page.getByText('Cohort TestCohort Definition Icon')).toBeVisible()
     await page.locator('div:nth-child(5) > svg').first().click()
     // await page.getByRole('row', { name: 'Cohort Test' }).getByRole('button').nth(2).click();
     await page.getByRole('button', { name: 'Delete' }).click()
-    await expect(page.getByText('Cohort Test0. Icons/')).not.toBeVisible()
+    await expect(page.getByText('Cohort TestCohort Definition Icon')).not.toBeVisible()
   })
 })

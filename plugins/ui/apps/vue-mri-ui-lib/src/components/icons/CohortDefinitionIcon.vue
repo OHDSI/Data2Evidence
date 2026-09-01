@@ -7,6 +7,7 @@
     viewBox="0 0 24 24"
     version="1.1"
   >
+    <title>Cohort Definition Icon</title>
     <g id="Icons/-Logos/-Illustrations" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
       <g id="D-Icons/Logos/Illustrations" transform="translate(-344, -749)">
         <g id="0.-Icons/Play_Round-Copy-11" transform="translate(344, 749)">
