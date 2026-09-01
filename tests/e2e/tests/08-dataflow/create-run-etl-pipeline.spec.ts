@@ -1,0 +1,420 @@
+import { test, expect } from '@playwright/test';
+
+const TEST_NAME = 'create-run-etl-pipeline'
+const SHOULD_SKIP = false
+test.fixme(SHOULD_SKIP, `${TEST_NAME} test is temporarily disabled.`)
+
+
+test(TEST_NAME, async ({ page }) => {
+  const getNodeByLabel = (nodeLabel: string) =>
+    page
+      .locator('[data-testid^="rf__node-"]')
+      .filter({ hasText: nodeLabel })
+      .first();
+
+  const getNodeTestIdByLabel = async (nodeLabel: string) => {
+    const node = getNodeByLabel(nodeLabel);
+    await expect(node).toBeVisible();
+    const nodeTestId = await node.getAttribute('data-testid');
+    if (!nodeTestId) {
+      throw new Error(`Could not resolve data-testid for node '${nodeLabel}'`);
+    }
+    return nodeTestId;
+  };
+
+  const connectNodesByLabel = async (sourceLabel: string, targetLabel: string) => {
+    const sourceNode = getNodeByLabel(sourceLabel);
+    const targetNode = getNodeByLabel(targetLabel);
+
+    await expect(sourceNode).toBeVisible({ timeout: 5000 });
+    await expect(targetNode).toBeVisible({ timeout: 5000 });
+
+    await sourceNode.scrollIntoViewIfNeeded();
+    await targetNode.scrollIntoViewIfNeeded();
+    await page.waitForTimeout(200);
+
+    const sourceNodeTestId = await getNodeTestIdByLabel(sourceLabel);
+    const targetNodeTestId = await getNodeTestIdByLabel(targetLabel);
+    const sourceNodeId = sourceNodeTestId.replace('rf__node-', '');
+    const targetNodeId = targetNodeTestId.replace('rf__node-', '');
+
+    const sourceHandle = page
+      .locator(`.react-flow__handle[data-nodeid="${sourceNodeId}"][data-handlepos="right"]`)
+      .first();
+    const targetHandle = page
+      .locator(`.react-flow__handle[data-nodeid="${targetNodeId}"][data-handlepos="left"]`)
+      .first();
+
+    await expect(sourceHandle).toBeVisible({ timeout: 5000 });
+    await expect(targetHandle).toBeVisible({ timeout: 5000 });
+    await page.waitForTimeout(200);
+
+    let sourceBox = await sourceHandle.boundingBox();
+    let targetBox = await targetHandle.boundingBox();
+    
+    let retries = 3;
+    while ((!sourceBox || !targetBox) && retries > 0) {
+      await page.waitForTimeout(300);
+      sourceBox = await sourceHandle.boundingBox();
+      targetBox = await targetHandle.boundingBox();
+      retries--;
+    }
+
+    if (!sourceBox || !targetBox) {
+      throw new Error(`Could not resolve node handles for ${sourceLabel} -> ${targetLabel} after retries`);
+    }
+
+    const sourceCenterX = sourceBox.x + sourceBox.width / 2;
+    const sourceCenterY = sourceBox.y + sourceBox.height / 2;
+    const targetCenterX = targetBox.x + targetBox.width / 2;
+    const targetCenterY = targetBox.y + targetBox.height / 2;
+
+    // Hover over the source handle to ensure it's active before dragging
+    await page.mouse.move(sourceCenterX, sourceCenterY);
+    await page.waitForTimeout(300);
+    await page.mouse.down();
+    // Move in small steps away from source first to avoid accidentally picking up the node
+    await page.mouse.move(sourceCenterX + 10, sourceCenterY, { steps: 5 });
+    await page.mouse.move(targetCenterX, targetCenterY, { steps: 30 });
+    await page.mouse.up();
+    await page.waitForTimeout(200);
+  };
+
+  const moveNodeByLabel = async (nodeLabel: string, deltaX: number, deltaY: number) => {
+    const node = getNodeByLabel(nodeLabel);
+    await expect(node).toBeVisible();
+
+    const dragHandle = node.locator('.node__drag').first();
+    await expect(dragHandle).toBeVisible();
+    const dragBox = await dragHandle.boundingBox();
+
+    if (!dragBox) {
+      throw new Error(`Could not resolve draggable area for node '${nodeLabel}'`);
+    }
+
+    const startX = dragBox.x + dragBox.width / 2;
+    const startY = dragBox.y + dragBox.height / 2;
+
+    await page.mouse.move(startX, startY);
+    await page.mouse.down();
+    await page.mouse.move(startX + 8, startY + 8, { steps: 5 });
+    await page.mouse.move(startX + deltaX, startY + deltaY, { steps: 25 });
+    await page.mouse.up();
+  };
+
+  const fillMonacoEditor = async (content: string) => {
+    const monacoInput = page.locator('.monaco-editor textarea.inputarea').first();
+    await monacoInput.scrollIntoViewIfNeeded();
+    await monacoInput.click({ force: true });
+    await monacoInput.evaluate((element) => (element as HTMLTextAreaElement).focus());
+    await page.keyboard.press('Meta+A');
+    await page.keyboard.insertText(content);
+  };
+
+  await page.goto('/d2e/portal');
+  await page.locator('input[name="identifier"]').click();
+  await page.locator('input[name="identifier"]').fill('admin');
+  await page.locator('input[name="password"]').click();
+  await page.locator('input[name="password"]').fill('Updatepassword12345');
+  await page.getByRole('button', { name: 'Sign in' }).click();
+  await page.getByTestId('button').nth(1).click();
+  await page.getByRole('button', { name: 'Switch to Admin portal' }).click();
+
+  // Create dataflow
+  await page.getByRole('link', { name: 'ETL' }).click();
+  await page.waitForTimeout(1000); // Wait for 1 second to ensure the ETL page and elements are loaded
+
+  const createFirstDataflow = page.getByText('Create your first dataflow').first();
+  const hasCreateFirstDataflow = await createFirstDataflow
+    .isVisible({ timeout: 3000 })
+    .catch(() => false);
+  if (hasCreateFirstDataflow) {
+    await createFirstDataflow.click();
+  } else {
+    await page.getByLabel('Create new dataflow').getByRole('button').click();
+  }
+  await page.getByRole('textbox', { name: 'Name' }).click();
+  await page.getByRole('textbox', { name: 'Name' }).fill('ETL - Test Stable Nodes');
+  await page.getByRole('textbox', { name: 'Comment' }).click();
+  await page.getByRole('textbox', { name: 'Comment' }).fill('DE Testing');
+  await page.getByRole('button', { name: 'Create' }).click();
+
+  // Check if 'Output SQL query as table.' is not present, then click 'Add node' and the button with the same text
+  const dbReaderNodeText = 'Output SQL query as table.';
+  const dbReaderNodeCheck = page.getByText(dbReaderNodeText);
+  // Wait for the db reader node to be visible with a 5-second timeout
+  const isDbReaderNodeVisible = await dbReaderNodeCheck.isVisible({ timeout: 5000 }).catch(() => false);
+  // Wait for the timeout and then check if the db reader node is visible
+  await page.waitForTimeout(1000);
+  const isDbReaderNodeVisible2 = await dbReaderNodeCheck.isVisible();
+  if (!isDbReaderNodeVisible2) {
+    await page.getByRole('button', { name: 'Add node' }).click();
+    await page.getByText(dbReaderNodeText).click();
+  } else {
+    await page.getByText(dbReaderNodeText).click();
+  }
+
+  // Get db reader node reference
+  const dbReaderNode = getNodeByLabel('db_reader_node_0');
+  await expect(dbReaderNode).toBeVisible();
+
+  // Add python node
+  await page.getByRole('button', { name: 'Add node' }).click();
+  await page.getByText('Run python code.').click();
+
+  // Click the button to add variables
+  const variablesMainButton = page.getByLabel('Variables').getByRole('button');
+  await variablesMainButton.click();
+
+  // Enter 'import json' into the input box and press Enter
+  const inputBox = page.locator('input#autocomplete-flow-tags');
+  await inputBox.fill('import json');
+  await inputBox.press('Enter');
+
+  // Click the "Add Variable" button
+  await page.locator('button[title="Add Variable"]').click();
+
+  // Verify 'Key' and 'Value' fields are visible under 'Variables'
+  const variablesSection = page.locator('.flow-variables-drawer__variables');
+  await expect(variablesSection).toBeVisible();
+  await expect(variablesSection.locator('label:has-text("Key")')).toBeVisible();
+  await expect(variablesSection.locator('label:has-text("Value")')).toBeVisible();
+
+  // Fill the input field with placeholder 'Enter variable key'
+  await page.locator('input[placeholder="Enter variable key"]').fill('append_text');
+
+  // Fill the textarea with placeholder 'Enter variable value'
+  await page.locator('textarea[placeholder="Enter variable value"]').fill('test');
+  
+  //Apply changes
+  await page.getByRole('button', { name: 'Apply' }).click();
+
+  // Edit python node
+  const pythonNodeTestId = await getNodeTestIdByLabel('python_node_0');
+  const pythonNode = page.getByTestId(pythonNodeTestId);
+  await pythonNode.click();
+  await pythonNode.click();
+  await expect(pythonNode).toBeVisible();
+  await expect(pythonNode).toMatchAriaSnapshot(`
+    - img
+    - text: python_node_0
+    - img
+    - text: Describe the task of node python_node_0
+    `);
+  await page.getByText('python_node_0').first().hover();
+  await page.getByText('python_node_0').first().locator('..').locator('svg').nth(1).click();
+  await page.locator('d4l-input').filter({ hasText: 'Name' }).getByPlaceholder(' ').click();
+  await page.locator('d4l-input').filter({ hasText: 'Name' }).getByPlaceholder(' ').fill('test_python_node');
+  await page.locator('d4l-input').filter({ hasText: 'Description' }).getByPlaceholder(' ').click();
+  await page.locator('d4l-input').filter({ hasText: 'Description' }).getByPlaceholder(' ').fill('testing');
+  await page.getByText('def exec(myinput): return "').click();
+  await fillMonacoEditor('import json\n\ndef exec(myinput):\n data = {"name": "John", "age": 30}\njson_string = json.dumps(data)\nprint(json_string)\ndf = myinput.get("db_reader_node_0").result\ndf["source_description"] = df["source_description"].astype(str) + append_text\nreturn df');
+
+  // Ensure python node is edited
+  await page.getByRole('button', { name: 'Apply' }).click();
+  await expect(page.getByText('test_python_node')).toBeVisible();
+
+  await page.getByText('test_python_node').first().click();
+  await page.getByText('test_python_node').first().click();
+  await expect(page.locator('[id="single-spa-application\\:system-admin-plugin--flow-lifecycles-js"]')).toMatchAriaSnapshot(`- button "Add node"`);
+
+  //Add python 2 table node
+  await page.getByRole('button', { name: 'Add node' }).click();
+  await page.getByText('Transform python object to table').click();
+  const py2tableNodeTestId = await getNodeTestIdByLabel('py2table_node_0');
+  const py2tableNode = page.getByTestId(py2tableNodeTestId);
+  await py2tableNode.click();
+  await expect(py2tableNode).toMatchAriaSnapshot(`- text: Describe the task of node py2table_node_0`);
+
+  // Add SQL node
+  await page.getByRole('button', { name: 'Add node' }).click();
+  await page.getByText('Run SQL in a database').click();
+  const sqlNodeTestId = await getNodeTestIdByLabel('sql_node_0');
+  const sqlNode = page.getByTestId(sqlNodeTestId);
+  await expect(sqlNode).toMatchAriaSnapshot(`- text: Describe the task of node sql_node_0`);
+
+  // Add database writer node
+  await page.getByRole('button', { name: 'Add node' }).click();
+  await page.getByText('Database writer').click();
+  const dbWriterNodeTestId = await getNodeTestIdByLabel('db_writer_node_0');
+  const dbWriterNode = page.getByTestId(dbWriterNodeTestId);
+  await expect(dbWriterNode).toMatchAriaSnapshot(`- text: Describe the task of node db_writer_node_0`);
+
+  await page.keyboard.press('Escape');
+  await page.locator('.react-flow__pane').first().click({ position: { x: 30, y: 30 } });
+  await page.waitForTimeout(300);
+
+  await moveNodeByLabel('db_reader_node_0', -360, 20);
+  await moveNodeByLabel('test_python_node', -100, 20);
+  await moveNodeByLabel('py2table_node_0', 100, 20);
+  await moveNodeByLabel('sql_node_0', 360, 20);
+  await moveNodeByLabel('db_writer_node_0', 700, 20);
+
+  // Wait for the canvas to settle after all node moves before connecting
+  await page.waitForTimeout(1000);
+
+  await connectNodesByLabel('db_reader_node_0', 'test_python_node');
+  await connectNodesByLabel('test_python_node', 'py2table_node_0');
+  await connectNodesByLabel('py2table_node_0', 'sql_node_0');
+  await connectNodesByLabel('sql_node_0', 'db_writer_node_0');
+
+  // Edit nodes after they are moved and connected
+  // Edit db_reader_node
+  await dbReaderNode.hover();
+  await dbReaderNode.locator('.node__setting').first().click();
+  const dbReaderDropdown = page.getByRole('combobox').first();
+  await dbReaderDropdown.click();
+  await page.getByRole('option', { name: 'demo_database - postgres', exact: true }).click();
+  await fillMonacoEditor('select * from "demo_cdm"."cdm_source" limit 1');
+  await page.getByRole('button', { name: 'Apply' }).click();
+
+  // Edit py2table_node
+  await py2tableNode.hover();
+  await py2tableNode.locator('.node__setting').first().click();
+  const py2tableSourceCombobox = page.locator('[data-testid="select"]').first();
+  await py2tableSourceCombobox.click();
+  await page.getByRole('option', { name: 'test_python_node' }).click();
+  await page.getByRole('textbox', { name: 'JSON Path' }).fill('$');
+  await page.getByRole('button', { name: 'Apply' }).click();
+
+  // Edit nodes after they are moved and connected
+  // Edit sql_node_0
+  await sqlNode.hover();
+  await sqlNode.locator('.node__setting').first().click();
+  await fillMonacoEditor('select * from py2table_node_0');
+  await page.getByRole('button', { name: 'Apply' }).click();
+
+  // Edit db_writer_node
+  await dbWriterNode.hover();
+  await dbWriterNode.locator('.node__setting').first().click();
+  const dbWriterDataframeCombobox = page.getByTestId('select').first();
+  await dbWriterDataframeCombobox.click();
+  await page.getByRole('option', { name: 'sql_node_0' }).click();
+  const dbWriterDatabaseCombobox = page
+    .locator('.MuiFormControl-root')
+    .filter({ has: page.getByText('Database', { exact: true }) })
+    .getByRole('combobox')
+    .first();
+  await dbWriterDatabaseCombobox.click();
+  await page.getByRole('option', { name: 'demo_database - postgres', exact: true }).click();
+  await page.locator('d4l-input').filter({ hasText: 'Database table name' }).getByPlaceholder(' ').fill('cdm_source');
+  await page.locator('d4l-input').filter({ hasText: 'Schema name' }).getByPlaceholder(' ').fill('demo_cdm');
+  await page.getByRole('button', { name: 'Apply' }).click();
+
+  // Save dataflow
+  await page.getByRole('button', { name: 'Save' }).click();
+  await page.getByRole('button').filter({ hasText: /^$/ }).click();
+  await page.getByRole('textbox', { name: 'Name' }).click();
+  await page.getByRole('textbox', { name: 'Name' }).fill('ETL - Test Stable Nodes_DE');
+  await page.getByRole('textbox', { name: 'Describe your changes' }).click();
+  await page.getByRole('textbox', { name: 'Describe your changes' }).fill('ETL - Test Stable Nodes_DE for testing');
+  await page.getByRole('button', { name: 'Save' }).click();
+
+  // Run flow
+  await page.locator('button.run-flow-button').click();
+  let runningPanel = page.locator('div[aria-label="Running"]');
+  let runningButton = runningPanel.locator('button.run-flow-button.run-flow-button--running');
+  await expect(runningButton).toBeVisible();
+  await expect(runningButton).toBeDisabled();
+  await expect(runningPanel).toBeHidden({ timeout: 25000 });
+
+  // Verify "View Output" buttons for all nodes
+  const nodes = ['db_reader_node_0', 'test_python_node', 'py2table_node_0', 'db_writer_node_0'];
+  for (const nodeLabel of nodes) {
+    const node = getNodeByLabel(nodeLabel);
+    await expect(node).toBeVisible();
+    const viewOutputButton = node.locator('button', { hasText: 'View Output' });
+    await expect(viewOutputButton).toBeVisible();
+  }
+
+  // Verify "View Output" button output for db_writer_node_0
+  await dbWriterNode.locator('button', { hasText: 'View Output' }).click();
+  await page.waitForTimeout(1000); // Wait for 3 seconds for the panel to open
+
+  // Check if the content with 'data-mode-id="plaintext"' contains 'error: false'
+  const plainTextContent = page.locator('[data-mode-id="plaintext"]');
+  await expect(plainTextContent).toContainText('"error": false');
+  await page.getByRole('button', { name: 'close' }).click();
+
+  //Run flow again without making any changes to ensure stable nodes can be run multiple times
+  await page.locator('button.run-flow-button').click();
+  runningPanel = page.locator('div[aria-label="Running"]');
+  runningButton = runningPanel.locator('button.run-flow-button.run-flow-button--running');
+  await expect(runningButton).toBeVisible();
+  await expect(runningButton).toBeDisabled();
+
+  // Click on the only button inside the "Cancel run" div
+  const cancelButton = page.getByLabel('Cancel run').getByRole('button')
+  // Wait for 2 seconds to ensure the cancel run button is visible
+  await page.waitForTimeout(2000);
+  await cancelButton.click();
+
+  // Ensure runningPanel is hidden
+  await expect(runningPanel).toBeHidden({ timeout: 2000 });
+
+  // Ensure run flow button is visible
+  const runFlowButton = page.locator('button.run-flow-button');
+  await expect(runFlowButton).toBeVisible();
+
+  // Ensure viewOutput buttons for all nodes are not visible
+  for (const nodeLabel of nodes) {
+    const node = getNodeByLabel(nodeLabel);
+    const viewOutputButton = node.locator('button', { hasText: 'View Output' });
+    await expect(viewOutputButton).toBeHidden();
+  }
+
+  // Click the button to add variables
+  const variablesMainButton_append = page.getByLabel('Variables').getByRole('button');
+  await variablesMainButton_append.click();
+
+  // Verify 'Key' and 'Value' fields are visible under 'Variables'
+  const variablesSection_new = page.locator('.flow-variables-drawer__variables');
+  await expect(variablesSection_new).toBeVisible();
+  await expect(variablesSection_new.locator('label:has-text("Key")')).toBeVisible();
+  await expect(variablesSection_new.locator('label:has-text("Value")')).toBeVisible();
+
+  // Fill the textarea with placeholder 'Enter variable value'
+  await page.locator('textarea[placeholder="Enter variable value"]').fill('.');
+
+  //Apply changes
+  await page.getByRole('button', { name: 'Apply' }).click();
+
+  //Run flow before saving the changes
+  await page.locator('button.run-flow-button').click();
+  
+  // Save dataflow
+  await page.getByRole('textbox', { name: 'Describe your changes' }).click();
+  await page.getByRole('textbox', { name: 'Describe your changes' }).fill('Update variable value for testing');
+  await page.getByRole('button', { name: 'Save' }).click();
+
+  //Verify the flow is running with the updated variable value
+  runningPanel = page.locator('div[aria-label="Running"]');
+  runningButton = runningPanel.locator('button.run-flow-button.run-flow-button--running');
+  await expect(runningButton).toBeVisible();
+  await expect(runningButton).toBeDisabled();
+
+  // Verify "View Output" buttons for all nodes
+  const nodes_new = ['db_reader_node_0', 'test_python_node', 'py2table_node_0', 'db_writer_node_0'];
+  for (const nodeLabel of nodes_new) {
+    const node = getNodeByLabel(nodeLabel);
+    await expect(node).toBeVisible();
+    const viewOutputButton = node.locator('button', { hasText: 'View Output' });
+    await expect(viewOutputButton).toBeVisible();
+  }
+
+  //Click on view history button and verify the latest run has the comment 'Update variable value for testing'
+  await page.getByLabel('Show version history').getByRole('button').click()
+  await expect(page.getByRole('list')).toContainText('Version #3')
+  await expect(page.getByRole('list')).toContainText('Update variable value for testing')
+  await expect(page.getByRole('list')).toContainText('Version #2')
+  await expect(page.getByRole('list')).toContainText('ETL - Test Stable Nodes_DE for testing')
+  await expect(page.getByRole('list')).toContainText('Version #1')
+  await expect(page.getByRole('list')).toContainText('DE Testing')
+  await page.getByRole('button', { name: 'close' }).click()
+
+  //Clean up - delete flow
+  await page.getByLabel('Delete flow').getByRole('button').click()
+  await page.getByRole('textbox').click()
+  await page.getByRole('textbox').fill('ETL - Test Stable Nodes_DE')
+  await page.getByRole('button', { name: 'Delete' }).click()
+});
