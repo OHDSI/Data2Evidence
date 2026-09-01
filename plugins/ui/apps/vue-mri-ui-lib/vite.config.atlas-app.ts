@@ -4,6 +4,7 @@ import vue from '@vitejs/plugin-vue'
 import vuetify, { transformAssetUrls } from 'vite-plugin-vuetify'
 import path from 'path'
 import { copyFileSync, mkdirSync, readdirSync } from 'fs'
+import { vueDir, vuetifyDir } from './vite.resolve-deps'
 
 // The d4l web components use Stencil lazy loading: entry chunks are resolved at
 // runtime relative to the importing chunk's URL, invisible to Rollup's static
@@ -76,13 +77,13 @@ export default defineConfig({
       // library's own bare imports resolve during the isolated install.
       { find: '@d2e/ui/tokens.css', replacement: path.resolve(__dirname, '../../libs/d2e-ui/src/tokens/tokens.css') },
       { find: '@d2e/ui', replacement: path.resolve(__dirname, '../../libs/d2e-ui/src/index.ts') },
-      { find: 'vue', replacement: path.resolve(__dirname, 'node_modules/vue') },
-      { find: 'vuetify/styles', replacement: path.resolve(__dirname, 'node_modules/vuetify/lib/styles/main.css') },
+      { find: 'vue', replacement: vueDir },
+      { find: 'vuetify/styles', replacement: path.join(vuetifyDir, 'lib/styles/main.css') },
       {
         find: /^vuetify\/(components|directives)(\/(.+))?$/,
-        replacement: path.resolve(__dirname, 'node_modules/vuetify/lib/$1$2'),
+        replacement: path.join(vuetifyDir, 'lib/$1$2'),
       },
-      { find: /^vuetify$/, replacement: path.resolve(__dirname, 'node_modules/vuetify/lib/framework.js') },
+      { find: /^vuetify$/, replacement: path.join(vuetifyDir, 'lib/framework.js') },
       { find: 'd3', replacement: path.resolve(__dirname, './src/lib/d3.ts') },
       { find: '@', replacement: path.resolve(__dirname, './src') },
     ],

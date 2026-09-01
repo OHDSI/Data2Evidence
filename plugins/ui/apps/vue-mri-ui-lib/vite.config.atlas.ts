@@ -1,5 +1,6 @@
 import { defineConfig } from 'vite'
 import path from 'path'
+import { vueDir, vuetifyDir } from './vite.resolve-deps'
 
 // Atlas3-shell wrapper: a tiny dependency-free SystemJS single-spa parcel served
 // at /atlas/plugins/patient-analytics/index.system.js. It only creates an iframe
@@ -16,13 +17,13 @@ export default defineConfig({
       // library's own bare imports resolve during the isolated install.
       { find: '@d2e/ui/tokens.css', replacement: path.resolve(__dirname, '../../libs/d2e-ui/src/tokens/tokens.css') },
       { find: '@d2e/ui', replacement: path.resolve(__dirname, '../../libs/d2e-ui/src/index.ts') },
-      { find: 'vue', replacement: path.resolve(__dirname, 'node_modules/vue') },
-      { find: 'vuetify/styles', replacement: path.resolve(__dirname, 'node_modules/vuetify/lib/styles/main.css') },
+      { find: 'vue', replacement: vueDir },
+      { find: 'vuetify/styles', replacement: path.join(vuetifyDir, 'lib/styles/main.css') },
       {
         find: /^vuetify\/(components|directives)(\/(.+))?$/,
-        replacement: path.resolve(__dirname, 'node_modules/vuetify/lib/$1$2'),
+        replacement: path.join(vuetifyDir, 'lib/$1$2'),
       },
-      { find: /^vuetify$/, replacement: path.resolve(__dirname, 'node_modules/vuetify/lib/framework.js') },
+      { find: /^vuetify$/, replacement: path.join(vuetifyDir, 'lib/framework.js') },
     ],
   },
 
