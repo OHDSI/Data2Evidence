@@ -195,19 +195,39 @@ jobs:
 
       - name: Refresh bearer token to pick up researcher role
         run: |
-          response=$(curl -ik 'https://localhost:41100/d2e/oauth/token' \
+          # Renewing is what picks up the role just granted. Without a refresh
+          # token there is nothing to renew with, and blanking BEARER_TOKEN from
+          # an empty response would strip the working one the login produced and
+          # leave every later request unauthenticated.
+          if [ -z "$REFRESH_TOKEN" ]; then
+            echo "No refresh token available; keeping the token from login."
+            exit 0
+          fi
+
+          # The client that the login used, which is the only one the refresh
+          # token belongs to. It is confidential, so it presents its secret.
+          # The client credentials live in the generated .env, not in this
+          # workflow's environment.
+          client_id=$(grep -m1 '^TREX__OIDC__WEBAPI_CLIENT_ID=' .env | cut -d= -f2- | tr -d "'\"")
+          client_secret=$(grep -m1 '^TREX__OIDC__WEBAPI_CLIENT_SECRET=' .env | cut -d= -f2- | tr -d "'\"")
+
+          response=$(curl -sk 'https://localhost:41100/d2e/oauth/token' \
               --header 'accept: application/json, text/javascript, */*; q=0.01' \
               --header 'content-type: application/x-www-form-urlencoded' \
               --data-urlencode 'grant_type=refresh_token' \
-              --data-urlencode "client_id=$LOGTO__D2E_APP__CLIENT_ID" \
+              --data-urlencode "client_id=${client_id:-d2e-webapi}" \
+              --data-urlencode "client_secret=$client_secret" \
               --data-urlencode "refresh_token=$REFRESH_TOKEN")
-          printf "%s\n" "$response"
 
-          export BEARER_TOKEN=$(echo "$response" | grep -o '"access_token":"[^"]*"' | sed 's/"access_token":"\([^"]*\)"/\1/')
-          echo "BEARER_TOKEN=$BEARER_TOKEN" >> $GITHUB_ENV
+          refreshed=$(printf '%s' "$response" | grep -o '"access_token":"[^"]*"' | sed 's/"access_token":"\([^"]*\)"/\1/')
+          if [ -z "$refreshed" ]; then
+            echo "Refresh returned no token, keeping the existing one: $response"
+            exit 0
+          fi
+          echo "BEARER_TOKEN=$refreshed" >> $GITHUB_ENV
 
-          export REFRESH_TOKEN=$(echo "$response" | grep -o '"refresh_token":"[^"]*"' | sed 's/"refresh_token":"\([^"]*\)"/\1/')
-          echo "REFRESH_TOKEN=$REFRESH_TOKEN" >> $GITHUB_ENV
+          rotated=$(printf '%s' "$response" | grep -o '"refresh_token":"[^"]*"' | sed 's/"refresh_token":"\([^"]*\)"/\1/')
+          echo "REFRESH_TOKEN=${rotated:-$REFRESH_TOKEN}" >> $GITHUB_ENV
 
       - name: Install dependencies in backend integration tests
         run: |
@@ -234,29 +254,28 @@ jobs:
 
       - name: print logs for alp-dataflow-gen-1
         if: ${{ always() || cancelled() || failure() }}
-        run: docker logs alp-dataflow-gen-1 -t
+        run: docker logs alp-dataflow-gen-1 -t 2>&1 || echo "alp-dataflow-gen-1 is not running"
       - name: print logs for alp-dataflow-gen-worker
         if: ${{ always() || cancelled() || failure() }}
-        run: docker logs alp-dataflow-gen-worker -t
+        run: docker logs alp-dataflow-gen-worker -t 2>&1 || echo "alp-dataflow-gen-worker is not running"
       - name: print logs for alp-logto-1
         if: ${{ always() || cancelled() || failure() }}
-        run: docker logs alp-logto-1 -t
+        run: docker logs alp-logto-1 -t 2>&1 || echo "alp-logto-1 is not running"
       - name: print logs for alp-minerva-postgres-1
         if: ${{ always() || cancelled() || failure() }}
-        run: docker logs alp-minerva-postgres-1 -t
+        run: docker logs alp-minerva-postgres-1 -t 2>&1 || echo "alp-minerva-postgres-1 is not running"
       - name: print logs for alp-supabase-storage-1
         if: ${{ always() || cancelled() || failure() }}
-        run: docker logs alp-supabase-storage-1 -t
+        run: docker logs alp-supabase-storage-1 -t 2>&1 || echo "alp-supabase-storage-1 is not running"
       - name: print logs for trex
         if: ${{ always() || cancelled() || failure() }}
-        run: docker logs alp-trex -t
+        run: docker logs alp-trex -t 2>&1 || echo "alp-trex is not running"
       - name: print logs for alp-logto-post-init
         if: ${{ always() || cancelled() || failure() }}
-        run: docker logs alp-logto-post-init-1 -t
+        run: docker logs alp-logto-post-init-1 -t 2>&1 || echo "alp-logto-post-init-1 is not running"
       - name: print logs for hana
         if: ${{ always() || cancelled() || failure() }}
-        run: docker logs hana -t
-
+        run: docker logs hana -t 2>&1 || echo "hana is not running"
       - name: Remove Test DB
         if: ${{ always() || cancelled() || failure() }}
         run: yarn removetestdb-hana

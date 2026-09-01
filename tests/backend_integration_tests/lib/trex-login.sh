@@ -50,6 +50,9 @@ trex_login() {
   rm -f "$jar"
 
   BEARER_TOKEN=$(printf '%s' "$body" | python3 -c 'import json,sys; d=json.load(sys.stdin); print(d.get("id_token") or d.get("access_token",""))')
+  # Kept so a caller can renew rather than log in again. Empty against a
+  # provider that issues none, which callers already treat as "not available".
+  REFRESH_TOKEN=$(printf '%s' "$body" | python3 -c 'import json,sys; print(json.load(sys.stdin).get("refresh_token",""))')
   if [ -z "$BEARER_TOKEN" ]; then
     echo "trex token response carried no token: $body" >&2
     return 1
