@@ -287,3 +287,49 @@ export interface IBaseMaterializedCohort {
   syntax: string;
   patientCount: number;
 }
+
+/**
+ * The cached form of a materialized cohort, as analytics-svc stores it in
+ * `analytics.cohort_cache`: its `CohortType` minus `patientIds`, which is
+ * never cached (the overview always asks for `excludePatientIds=true`, and the
+ * cache must not hold subject identifiers).
+ */
+export interface ICachedMaterializedCohort {
+  id?: number;
+  name: string;
+  description: string;
+  creationTimestamp: string;
+  syntax?: string;
+  patientCount?: number;
+}
+
+/**
+ * One cohort cache entry as returned by the lookup endpoint.
+ *
+ * `materializedCohort: null` is a *negative* entry: analytics-svc knows this
+ * bookmark has no materialized cohort on this dataset. It is a cache HIT, not
+ * a miss.
+ */
+export interface ICohortCacheEntry {
+  materializedCohort: ICachedMaterializedCohort | null;
+}
+
+/**
+ * Response of `POST /analytics-svc/api/services/cohort-cache/lookup`.
+ *
+ * Every bookmark id appears in exactly one of the two: under `entries` (a hit,
+ * whatever `materializedCohort` holds) or in `missing` (no row at all).
+ */
+export interface ICohortCacheLookupResponse {
+  entries: Record<string, ICohortCacheEntry>;
+  missing: string[];
+}
+
+/**
+ * One entry of the `PUT /analytics-svc/api/services/cohort-cache` body.
+ * `materializedCohort: null` writes a negative entry.
+ */
+export interface ICohortCacheWriteEntry {
+  bookmarkId: string;
+  materializedCohort: ICachedMaterializedCohort | null;
+}

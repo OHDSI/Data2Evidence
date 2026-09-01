@@ -7,6 +7,8 @@ import {
   ICombinedCohortDefnitionListItem,
   IMaterializedCohort,
   IBaseMaterializedCohort,
+  ICohortCacheLookupResponse,
+  ICohortCacheWriteEntry,
 } from "../api/types.ts";
 import { AnalyticsSvcAPI } from "../api/AnalyticsAPI.ts";
 import { JobPluginsAPI } from "../api/JobPluginsAPI.ts";
@@ -228,7 +230,7 @@ export const getCohortDefinitionList = async (
   const analyticsSvcAPI = new AnalyticsSvcAPI(token);
   const materializedCohortFetchStartedAt = Date.now();
 
-  const [rawDataFromBookmarks, baseMaterializedCohorts] = await Promise.all([
+  const [rawDataFromBookmarks, canMaterializeCohort] = await Promise.all([
     bookmarksApi.getAllBookmarks(datasetId).catch((error) => {
       console.error(
         "Failed to fetch bookmarks, continuing with empty list:",
@@ -236,46 +238,21 @@ export const getCohortDefinitionList = async (
       );
       return { bookmarks: [] as IBookmark[], schemaName: "" };
     }),
-    (async (): Promise<IBaseMaterializedCohort[]> => {
-      const canMaterializeCohort = await withRetry(
-        () => analyticsSvcAPI.canMaterializeCohort(datasetId),
-        MATERIALIZED_COHORT_RETRY_DELAYS_MS,
-      ).catch((error) => {
-        console.error(
-          "Failed to check whether cohort can be materialized after retries:",
-          {
-            datasetId,
-            attempts: MATERIALIZED_COHORT_RETRY_ATTEMPTS,
-            elapsedMs: Date.now() - materializedCohortFetchStartedAt,
-            error: getErrorDetails(error),
-          },
-        );
-        throw error;
-      });
-
-      if (!canMaterializeCohort) {
-        return [];
-      }
-
-      const result = await withRetry(
-        () => analyticsSvcAPI.getFilteredCohorts(datasetId, { datasetId }),
-        MATERIALIZED_COHORT_RETRY_DELAYS_MS,
-      ).catch((error) => {
-        console.error("Failed to fetch materialized cohorts after retries:", {
+    withRetry(
+      () => analyticsSvcAPI.canMaterializeCohort(datasetId),
+      MATERIALIZED_COHORT_RETRY_DELAYS_MS,
+    ).catch((error) => {
+      console.error(
+        "Failed to check whether cohort can be materialized after retries:",
+        {
           datasetId,
           attempts: MATERIALIZED_COHORT_RETRY_ATTEMPTS,
           elapsedMs: Date.now() - materializedCohortFetchStartedAt,
           error: getErrorDetails(error),
-        });
-        throw error;
-      });
-
-      if (!Array.isArray(result)) {
-        throw new Error("Filtered cohorts response was not an array");
-      }
-
-      return result;
-    })(),
+        },
+      );
+      throw error;
+    }),
   ]);
 
   // Parse bookmarks
@@ -289,6 +266,51 @@ export const getCohortDefinitionList = async (
   const parsedbookmarks = bookmarksParse.success
     ? bookmarksParse.data.bookmarks
     : [];
+
+  // Return early if dataset cannot materialize cohorts
+  if (!canMaterializeCohort) {
+    return parsedbookmarks.map((bookmark) => ({
+      ...bookmark,
+      cohortDefinitionId: undefined as number | undefined,
+    }));
+  }
+
+  // If every bookmark is a cache hit there is nothing left that needs the source-database query.
+  const bookmarkIds = parsedbookmarks.map((bookmark) => bookmark.bmkId);
+
+  const cacheRead = await _readCohortCache(
+    analyticsSvcAPI,
+    datasetId,
+    bookmarkIds,
+  );
+
+  let baseMaterializedCohorts: IBaseMaterializedCohort[];
+  let shouldWriteCohortCache = false;
+
+  if (cacheRead.status === CohortCacheReadStatus.HIT) {
+    baseMaterializedCohorts = cacheRead.cohorts;
+  } else {
+    // Miss (or an unusable cache): recompute from the authoritative source, ignore whatever partial cache read returned.
+    const result = await withRetry(
+      () => analyticsSvcAPI.getFilteredCohorts(datasetId, { datasetId }),
+      MATERIALIZED_COHORT_RETRY_DELAYS_MS,
+    ).catch((error) => {
+      console.error("Failed to fetch materialized cohorts after retries:", {
+        datasetId,
+        attempts: MATERIALIZED_COHORT_RETRY_ATTEMPTS,
+        elapsedMs: Date.now() - materializedCohortFetchStartedAt,
+        error: getErrorDetails(error),
+      });
+      throw error;
+    });
+
+    if (!Array.isArray(result)) {
+      throw new Error("Filtered cohorts response was not an array");
+    }
+
+    baseMaterializedCohorts = result;
+    shouldWriteCohortCache = cacheRead.status === CohortCacheReadStatus.MISS;
+  }
 
   // Create mapping for materialized cohorts to bookmarks
   const bookmarkIdToCohortId = new Map<string, number>();
@@ -316,6 +338,17 @@ export const getCohortDefinitionList = async (
     ...bookmark,
     cohortDefinitionId: bookmarkIdToCohortId.get(bookmark.bmkId),
   }));
+
+  if (shouldWriteCohortCache) {
+    // Fire and forget: never awaited before the response. A write lost to a
+    // restart or a failing endpoint just means a miss on the next load.
+    _writeCohortCacheEntries(
+      analyticsSvcAPI,
+      datasetId,
+      bookmarksWithId,
+      baseMaterializedCohorts,
+    );
+  }
 
   // Parse and filter materialized cohorts
   const formattedMaterializedCohorts = baseMaterializedCohorts.map((cohort) =>
@@ -426,6 +459,157 @@ export const checkV2 = async (
   const warnings =
     await trexDao.validateCohortJsonExpression(cohortJsonExpression);
   return warnings;
+};
+
+/**
+ * Outcome of a cohort-cache read.
+ *
+ * `MISS` and `UNAVAILABLE` both fall through to the source query, but they are
+ * not interchangeable: only a `MISS` repopulates the cache afterwards. Writing
+ * back after an `UNAVAILABLE` would add a second failing call per request to an
+ * endpoint that just failed.
+ */
+enum CohortCacheReadStatus {
+  /** Every requested bookmark had an entry — including negative entries. */
+  HIT = "hit",
+  /** The cache answered, but at least one bookmark had no entry. */
+  MISS = "miss",
+  /** The cache did not answer at all: error, timeout, missing schema or table. */
+  UNAVAILABLE = "unavailable",
+}
+
+type CohortCacheReadResult =
+  | { status: CohortCacheReadStatus.HIT; cohorts: IBaseMaterializedCohort[] }
+  | { status: CohortCacheReadStatus.MISS }
+  | { status: CohortCacheReadStatus.UNAVAILABLE };
+
+/**
+ * Looks up every bookmark's cohort cache entry in a single call.
+ *
+ * Returns `hit` only when analytics-svc reported nothing missing *and* every
+ * requested id came back under `entries`; `miss` when anything has to be
+ * recomputed; `unavailable` when the cache itself could not answer.
+ *
+ * An entry whose `materializedCohort` is `null` is a
+ * cache **HIT**. This is the case where a bookmark has no materialized
+ * cohort yet
+ */
+const _readCohortCache = async (
+  analyticsSvcAPI: AnalyticsSvcAPI,
+  datasetId: string,
+  bookmarkIds: string[],
+): Promise<CohortCacheReadResult> => {
+  let lookup: ICohortCacheLookupResponse;
+  try {
+    lookup = await analyticsSvcAPI.cohortCacheLookup(datasetId, bookmarkIds);
+  } catch (error) {
+    console.error(
+      "Cohort cache lookup failed, falling back to the uncached path:",
+      {
+        datasetId,
+        bookmarkCount: bookmarkIds.length,
+        error: getErrorDetails(error),
+      },
+    );
+    return { status: CohortCacheReadStatus.UNAVAILABLE };
+  }
+
+  if (lookup.missing.length > 0) {
+    return { status: CohortCacheReadStatus.MISS };
+  }
+
+  const entries = lookup.entries;
+
+  // Keyed by cohort id so the response assembly below cannot see the same
+  // cohort twice, whatever the cache holds.
+  const cohortsById = new Map<number, IBaseMaterializedCohort>();
+
+  for (const bookmarkId of bookmarkIds) {
+    if (!Object.prototype.hasOwnProperty.call(entries, bookmarkId)) {
+      // `missing` claimed nothing was absent, yet an id has no entry at all.
+      // Recompute rather than serve a short answer.
+      console.error(
+        "Cohort cache lookup omitted a bookmark it did not report as missing, recomputing:",
+        { datasetId, bookmarkId },
+      );
+      return { status: CohortCacheReadStatus.MISS };
+    }
+
+    // Present-but-null is a negative entry, i.e. a hit: this bookmark simply
+    // contributes no materialized cohort to the response.
+    const cachedCohort = entries[bookmarkId]?.materializedCohort;
+    if (!cachedCohort || typeof cachedCohort.id !== "number") {
+      continue;
+    }
+
+    cohortsById.set(cachedCohort.id, {
+      id: cachedCohort.id,
+      name: cachedCohort.name,
+      description: cachedCohort.description,
+      creationTimestamp: cachedCohort.creationTimestamp,
+      syntax: cachedCohort.syntax,
+      patientCount: cachedCohort.patientCount,
+    });
+  }
+
+  return {
+    status: CohortCacheReadStatus.HIT,
+    cohorts: [...cohortsById.values()],
+  };
+};
+
+/**
+ * Writes one entry per bookmark: positive where a materialized cohort
+ * resolved, negative (`null`) where none did. The negative entries are what
+ * let the next load skip `getFilteredCohorts` entirely.
+ *
+ * Fire and forget by design (spec 4.4) — the returned promise is deliberately
+ * not awaited, only `.catch`ed, so a slow or failing cache write can never
+ * delay or fail the response.
+ */
+const _writeCohortCacheEntries = (
+  analyticsSvcAPI: AnalyticsSvcAPI,
+  datasetId: string,
+  bookmarks: IBookmark[],
+  baseMaterializedCohorts: IBaseMaterializedCohort[],
+): void => {
+  if (bookmarks.length === 0) {
+    return;
+  }
+
+  const cohortsById = new Map<number, IBaseMaterializedCohort>();
+  for (const cohort of baseMaterializedCohorts) {
+    cohortsById.set(cohort.id, cohort);
+  }
+
+  const entries: ICohortCacheWriteEntry[] = bookmarks.map((bookmark) => {
+    const cohort =
+      bookmark.cohortDefinitionId === undefined
+        ? undefined
+        : cohortsById.get(bookmark.cohortDefinitionId);
+
+    return {
+      bookmarkId: bookmark.bmkId,
+      materializedCohort: cohort
+        ? {
+            id: cohort.id,
+            name: cohort.name,
+            description: cohort.description,
+            creationTimestamp: cohort.creationTimestamp,
+            syntax: cohort.syntax,
+            patientCount: cohort.patientCount,
+          }
+        : null,
+    };
+  });
+
+  analyticsSvcAPI.cohortCacheWrite(datasetId, entries).catch((error) => {
+    console.error("Failed to write cohort cache entries:", {
+      datasetId,
+      entryCount: entries.length,
+      error: getErrorDetails(error),
+    });
+  });
 };
 
 const _formatMaterializedCohort = (

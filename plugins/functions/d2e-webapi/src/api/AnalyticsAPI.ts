@@ -4,6 +4,9 @@ import {
   IAnalyticsCohortDefinition,
   IFilterValue,
   IBaseMaterializedCohort,
+  ICohortCacheEntry,
+  ICohortCacheLookupResponse,
+  ICohortCacheWriteEntry,
 } from "./types.ts";
 
 const materializableCohortDatasetIds = new Set<string>();
@@ -179,6 +182,84 @@ export class AnalyticsSvcAPI {
       console.error(
         `Error while checking if cohort can be materialized: ${error}`,
       );
+      throw error;
+    }
+  }
+
+  /**
+   * `POST /analytics-svc/api/services/cohort-cache/lookup`
+   *
+   * Returns, for every requested bookmark id, either a cache entry or a place
+   * in `missing`. A bookmark id under `entries` is a HIT **including when its
+   * `materializedCohort` is `null`** — that negative entry means "this
+   * bookmark has no materialized cohort", which is the common case and the
+   * whole point of the cache. Only ids in `missing` are misses.
+   *
+   * `paConfigId` is resolved server-side; if analytics-svc cannot resolve it
+   * this call fails with a 500 rather than reporting a falsely cold cache.
+   * The caller is expected to log that and fall through to the uncached path.
+   *
+   * There is deliberately no per-call timeout override. `TrexHttpClient
+   * .request` ignores the `timeout` field of the request config entirely, and
+   * the effective ceiling is a hard, non-configurable 30s `tokio::time
+   * ::timeout` inside the Rust op, so a tighter budget for this fast-path call
+   * is not achievable from here.
+   */
+  async cohortCacheLookup(
+    datasetId: string,
+    bookmarkIds: string[],
+  ): Promise<ICohortCacheLookupResponse> {
+    try {
+      const url = `${this.baseURL}/cohort-cache/lookup`;
+      console.log(
+        `Calling ${url} to look up ${bookmarkIds.length} cohort cache entries`,
+      );
+      const options = this.getRequestConfig();
+      const result = await this.analyticsapi.post(
+        url,
+        { datasetId, bookmarkIds },
+        options,
+      );
+
+      const data = result?.data ?? {};
+      const entries =
+        typeof data.entries === "object" && data.entries !== null
+          ? (data.entries as Record<string, ICohortCacheEntry>)
+          : {};
+      const missing = Array.isArray(data.missing)
+        ? (data.missing as string[])
+        : [];
+
+      return { entries, missing };
+    } catch (error) {
+      console.error(`Error while looking up cohort cache: ${error}`);
+      throw error;
+    }
+  }
+
+  /**
+   * `PUT /analytics-svc/api/services/cohort-cache` → 204.
+   *
+   * Upserts one entry per bookmark. Pass `materializedCohort: null` to record
+   * a negative entry; those are read back as hits. `patientIds` is stripped
+   * server-side and is never stored.
+   *
+   * Same 30s ceiling caveat as `cohortCacheLookup`, and the same 500 on an
+   * unresolvable `paConfigId`. Callers treat this as fire-and-forget.
+   */
+  async cohortCacheWrite(
+    datasetId: string,
+    entries: ICohortCacheWriteEntry[],
+  ): Promise<void> {
+    try {
+      const url = `${this.baseURL}/cohort-cache`;
+      console.log(
+        `Calling ${url} to write ${entries.length} cohort cache entries`,
+      );
+      const options = this.getRequestConfig();
+      await this.analyticsapi.put(url, { datasetId, entries }, options);
+    } catch (error) {
+      console.error(`Error while writing cohort cache entries: ${error}`);
       throw error;
     }
   }
