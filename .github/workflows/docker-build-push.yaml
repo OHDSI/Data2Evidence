@@ -476,6 +476,28 @@ jobs:
           mkdir -p "$PA_DEST"
           cp -r "$PA_DIR/dist-atlas/." "$PA_DEST/"
           echo "Staged patient-analytics at /atlas/plugins/patient-analytics"
+      # Datasources is a third UI-monorepo Atlas3 sub-plugin, staged the same way as
+      # patient-analytics above. Mirrors the same steps in scripts/build-atlas.sh;
+      # keep the two in sync.
+      - name: Build Atlas sub-plugin (datasource)
+        if: ${{ matrix.ATLAS }}
+        env:
+          CI: "true"
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          DS_DIR=plugins/ui/apps/datasource
+          DS_OUT=plugins/ui/resources/datasource
+          ( cd "$DS_DIR" && npm install --workspaces=false --legacy-peer-deps && npm run build )
+          if [ ! -f "$DS_OUT/index.system.js" ]; then
+            echo "::error::datasource did not produce $DS_OUT/index.system.js"
+            exit 1
+          fi
+          DS_DEST=plugins/atlas/resources/atlas/plugins/datasource
+          rm -rf "$DS_DEST"
+          mkdir -p "$DS_DEST"
+          cp -r "$DS_OUT/." "$DS_DEST/"
+          echo "Staged datasource at /atlas/plugins/datasource"
       - name: Patch Package
         if: ${{ matrix.NPM }}
         working-directory: ${{ matrix.PKGPATH }}

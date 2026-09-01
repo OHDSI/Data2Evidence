@@ -104,7 +104,7 @@
       "mountPoints": [
         { "id": "datasource", "surface": "datasource-sidebar", "name": "Description", "icon": "mdi-file-document-outline", "group": "Overview", "order": 5, "insertBefore": "dashboard" }
       ],
-      "metadata": { "author": "D2E", "description": "Datasource plugin — local dev/testing entry, not for commit as-is" }
+      "metadata": { "author": "D2E", "description": "Data source catalog and description screens, replacing the researcher portal's dataset views" }
     }
   ],
   "settings": {
