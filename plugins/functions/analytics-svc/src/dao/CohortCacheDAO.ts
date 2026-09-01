@@ -2,7 +2,6 @@ import pg from "pg";
 import { Logger } from "@alp/alp-base-utils";
 import { env } from "../env.ts";
 import {
-    buildCohortCacheDatasetPrefix,
     CohortCacheValue,
     isCohortCacheValue,
 } from "../utils/cohortCacheKey.ts";
@@ -23,11 +22,6 @@ const toNumber = (value: unknown, fallback: number): number => {
     const parsed = Number(value);
     return Number.isFinite(parsed) ? parsed : fallback;
 };
-
-// `_` and `%` are LIKE wildcards and `encodeURIComponent` leaves `_` alone, so
-// escape them before the prefix reaches a LIKE pattern.
-const escapeLikePrefix = (prefix: string): string =>
-    prefix.replace(/[\\%_]/g, (character) => `\\${character}`);
 
 export class CohortCacheDAO {
     private getSchemaName = (): string => {
@@ -151,23 +145,6 @@ export class CohortCacheDAO {
             client.query(
                 `DELETE FROM ${this.getQualifiedTableName()} WHERE "key" = $1`,
                 [key]
-            )
-        );
-        return result.rowCount ?? 0;
-    };
-
-    /**
-     * Removes every entry for one dataset. Rides the primary key because
-     * `datasetId` is the first segment of the key.
-     */
-    public deleteByDatasetPrefix = async (
-        datasetId: string
-    ): Promise<number> => {
-        const prefix = buildCohortCacheDatasetPrefix(datasetId);
-        const result = await this.withClient<pg.QueryResult>((client) =>
-            client.query(
-                `DELETE FROM ${this.getQualifiedTableName()} WHERE "key" LIKE $1 ESCAPE '\\'`,
-                [`${escapeLikePrefix(prefix)}%`]
             )
         );
         return result.rowCount ?? 0;

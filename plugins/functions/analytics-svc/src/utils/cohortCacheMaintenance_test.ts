@@ -248,19 +248,20 @@ Deno.test("refresh swallows a query failure", async () => {
 
 // --- readCohortDefinitionSyntax ----------------------------------------------
 
-Deno.test("readCohortDefinitionSyntax accepts either column casing", async () => {
-    const lower = {
+Deno.test("readCohortDefinitionSyntax reads the aliased uppercase column", async () => {
+    // `CohortEndpoint.getCohortDefinition` aliases every column, so the name
+    // comes back uppercase regardless of dialect.
+    const endpoint = {
         getCohortDefinition: () =>
-            Promise.resolve({ data: [{ cohort_definition_syntax: bookmarkSyntax }] }),
+            Promise.resolve({
+                data: [{ COHORT_DEFINITION_SYNTAX: bookmarkSyntax }],
+            }),
         queryCohorts: () => Promise.resolve([]),
     };
-    const upper = {
-        getCohortDefinition: () =>
-            Promise.resolve({ data: [{ COHORT_DEFINITION_SYNTAX: bookmarkSyntax }] }),
-        queryCohorts: () => Promise.resolve([]),
-    };
-    assert.assertEquals(await readCohortDefinitionSyntax(lower, 42), bookmarkSyntax);
-    assert.assertEquals(await readCohortDefinitionSyntax(upper, 42), bookmarkSyntax);
+    assert.assertEquals(
+        await readCohortDefinitionSyntax(endpoint, 42),
+        bookmarkSyntax,
+    );
 });
 
 Deno.test("readCohortDefinitionSyntax returns null on a failed read", async () => {
@@ -273,55 +274,38 @@ Deno.test("readCohortDefinitionSyntax returns null on a failed read", async () =
 
 // --- ordering: evict must happen before the delete ---------------------------
 
-Deno.test("the bookmark id is still recoverable while the definition exists", async () => {
-    const dao = fakeDao();
+Deno.test("evict only reaches the entry while the definition row still exists", async () => {
+    // The definition row carries the only copy of the bookmark id, so the
+    // order deleteCohort uses -- read, evict, then delete -- is load-bearing.
+    // The reversed order produces no error, just a stale entry left behind.
+    const definitionRows = [{ COHORT_DEFINITION_SYNTAX: bookmarkSyntax }];
     let definitionDeleted = false;
     const cohortEndpoint = {
         getCohortDefinition: () =>
-            Promise.resolve({
-                data: definitionDeleted
-                    ? []
-                    : [{ cohort_definition_syntax: bookmarkSyntax }],
-            }),
+            Promise.resolve({ data: definitionDeleted ? [] : definitionRows }),
         queryCohorts: () => Promise.resolve([]),
     };
 
-    // deleteCohort's order: read, evict, then delete.
-    const syntax = await readCohortDefinitionSyntax(cohortEndpoint, 42);
+    const evictBeforeDelete = fakeDao();
+    const syntaxBefore = await readCohortDefinitionSyntax(cohortEndpoint, 42);
     await evictCohortCacheEntry(
-        { syntax, datasetId: DATASET, paConfigId: PA_CONFIG },
-        dao,
+        { syntax: syntaxBefore, datasetId: DATASET, paConfigId: PA_CONFIG },
+        evictBeforeDelete,
     );
     definitionDeleted = true;
 
-    assert.assertEquals(dao.deleted, [KEY]);
-});
+    assert.assertEquals(syntaxBefore, bookmarkSyntax);
+    assert.assertEquals(evictBeforeDelete.deleted, [KEY]);
 
-Deno.test("evicting after the delete would be a silent no-op", async () => {
-    const dao = fakeDao();
-    let definitionDeleted = false;
-    const cohortEndpoint = {
-        getCohortDefinition: () =>
-            Promise.resolve({
-                data: definitionDeleted
-                    ? []
-                    : [{ cohort_definition_syntax: bookmarkSyntax }],
-            }),
-        queryCohorts: () => Promise.resolve([]),
-    };
-
-    // The wrong order: delete first, then try to recover the bookmark id.
-    definitionDeleted = true;
-    const syntax = await readCohortDefinitionSyntax(cohortEndpoint, 42);
+    const evictAfterDelete = fakeDao();
+    const syntaxAfter = await readCohortDefinitionSyntax(cohortEndpoint, 42);
     await evictCohortCacheEntry(
-        { syntax, datasetId: DATASET, paConfigId: PA_CONFIG },
-        dao,
+        { syntax: syntaxAfter, datasetId: DATASET, paConfigId: PA_CONFIG },
+        evictAfterDelete,
     );
 
-    // This is why deleteCohort evicts up front: no error, just a stale entry
-    // left behind until the TTL expires it.
-    assert.assertEquals(syntax, null);
-    assert.assertEquals(dao.calls, []);
+    assert.assertEquals(syntaxAfter, null);
+    assert.assertEquals(evictAfterDelete.calls, []);
 });
 
 // --- updateCohortCacheEntryMetadata ------------------------------------------
@@ -432,3 +416,4 @@ Deno.test("metadata update swallows a DAO failure", async () => {
     );
     assert.assertEquals(updated, false);
 });
+

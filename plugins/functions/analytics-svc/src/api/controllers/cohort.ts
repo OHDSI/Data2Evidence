@@ -511,17 +511,17 @@ export async function updateCohortDefinition(req: IMRIRequest, res: Response) {
         // Create new cohort definition id object based on existing cohort definition and incoming parameters
         const newCohortDefinition: CohortDefinitionTableType = {
             id: cohortDefinitionId,
-            name: name ?? existingCohortDefinition.cohort_definition_name,
+            name: name ?? existingCohortDefinition.COHORT_DEFINITION_NAME,
             description:
                 description ??
-                existingCohortDefinition.cohort_definition_description,
-            creationTimestamp: existingCohortDefinition.cohort_initiation_date,
+                existingCohortDefinition.COHORT_DEFINITION_DESCRIPTION,
+            creationTimestamp: existingCohortDefinition.COHORT_INITIATION_DATE,
             definitionTypeConceptId:
                 definitionTypeConceptId ??
-                existingCohortDefinition.definition_type_concept_id,
+                existingCohortDefinition.DEFINITION_TYPE_CONCEPT_ID,
             subjectConceptId:
-                subjectConceptId ?? existingCohortDefinition.subject_concept_id,
-            syntax: syntax ?? existingCohortDefinition.cohort_definition_syntax,
+                subjectConceptId ?? existingCohortDefinition.SUBJECT_CONCEPT_ID,
+            syntax: syntax ?? existingCohortDefinition.COHORT_DEFINITION_SYNTAX,
         };
 
         await cohortEndpoint.updateCohortDefinitionToDb(newCohortDefinition);

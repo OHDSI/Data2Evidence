@@ -25,6 +25,7 @@ import { IWebAPICohortDefinition } from "../api/WebAPIAPI.ts";
 import { BookmarksSchema } from "../api/types.ts";
 import { ICohortExpression } from "../types.ts";
 import { TrexDAO } from "../dao/trex.dao.ts";
+import { CohortCacheShapeError } from "../errors/CohortCacheErrors.ts";
 
 const MATERIALIZED_COHORT_RETRY_ATTEMPTS = 5;
 const MATERIALIZED_COHORT_RETRY_DELAYS_MS = [500, 1000, 1500, 2000];
@@ -171,9 +172,9 @@ export const generateCohort = async (
     cohortJson: {
       id: cdmCohortDefinitionId,
       name,
-      createdDate: Date.parse(analyticsCohortDefinition.cohort_initiation_date),
+      createdDate: Date.parse(analyticsCohortDefinition.COHORT_INITIATION_DATE),
       modifiedDate: Date.parse(
-        analyticsCohortDefinition.cohort_initiation_date,
+        analyticsCohortDefinition.COHORT_INITIATION_DATE,
       ),
       hasWriteAccess: true, // Not used by flow
       tags: [],
@@ -197,11 +198,11 @@ export const generateCohort = async (
       name: "generateCohort",
     },
     jobParameters: {
-      jobName: `Generate Cohort ${analyticsCohortDefinition.cohort_definition_name}`,
+      jobName: `Generate Cohort ${analyticsCohortDefinition.COHORT_DEFINITION_NAME}`,
       generate_stats: "true",
       jobAuthor: "NA", // Not applicable
       sessionId: "NA", // Not applicable
-      cohort_definition_id: analyticsCohortDefinition.cohort_definition_id,
+      cohort_definition_id: analyticsCohortDefinition.COHORT_DEFINITION_ID,
       source_id: "-1", // Not applicable
       time: new Date().getTime(),
       target_database_schema: schemaName,
@@ -503,59 +504,38 @@ const _readCohortCache = async (
   try {
     lookup = await analyticsSvcAPI.cohortCacheLookup(datasetId, bookmarkIds);
   } catch (error) {
+    // A shape failure means the cache is reachable but holds something
+    // unusable, so recomputing will overwrite it: report MISS, which triggers
+    // the write-back. Anything else means the cache is unreachable, where a
+    // write would fail too: report UNAVAILABLE and leave it alone.
+    const isShapeError = error instanceof CohortCacheShapeError;
     console.error(
-      "Cohort cache lookup failed, falling back to the uncached path:",
+      isShapeError
+        ? "Cohort cache lookup returned an unusable body, recomputing and overwriting:"
+        : "Cohort cache lookup failed, falling back to the uncached path:",
       {
         datasetId,
         bookmarkCount: bookmarkIds.length,
         error: getErrorDetails(error),
       },
     );
-    return { status: CohortCacheReadStatus.UNAVAILABLE };
+    return {
+      status: isShapeError
+        ? CohortCacheReadStatus.MISS
+        : CohortCacheReadStatus.UNAVAILABLE,
+    };
   }
 
   if (lookup.missing.length > 0) {
     return { status: CohortCacheReadStatus.MISS };
   }
 
-  const entries = lookup.entries;
+  // Collect the cached cohorts; entries cached as null have no materialized cohort.
+  const cohorts = Object.values(lookup.entries)
+    .map((entry) => entry.materializedCohort)
+    .filter((cohort): cohort is IBaseMaterializedCohort => cohort !== null);
 
-  // Keyed by cohort id so the response assembly below cannot see the same
-  // cohort twice, whatever the cache holds.
-  const cohortsById = new Map<number, IBaseMaterializedCohort>();
-
-  for (const bookmarkId of bookmarkIds) {
-    if (!Object.prototype.hasOwnProperty.call(entries, bookmarkId)) {
-      // `missing` claimed nothing was absent, yet an id has no entry at all.
-      // Recompute rather than serve a short answer.
-      console.error(
-        "Cohort cache lookup omitted a bookmark it did not report as missing, recomputing:",
-        { datasetId, bookmarkId },
-      );
-      return { status: CohortCacheReadStatus.MISS };
-    }
-
-    // Present-but-null is a negative entry, i.e. a hit: this bookmark simply
-    // contributes no materialized cohort to the response.
-    const cachedCohort = entries[bookmarkId]?.materializedCohort;
-    if (!cachedCohort || typeof cachedCohort.id !== "number") {
-      continue;
-    }
-
-    cohortsById.set(cachedCohort.id, {
-      id: cachedCohort.id,
-      name: cachedCohort.name,
-      description: cachedCohort.description,
-      creationTimestamp: cachedCohort.creationTimestamp,
-      syntax: cachedCohort.syntax,
-      patientCount: cachedCohort.patientCount,
-    });
-  }
-
-  return {
-    status: CohortCacheReadStatus.HIT,
-    cohorts: [...cohortsById.values()],
-  };
+  return { status: CohortCacheReadStatus.HIT, cohorts };
 };
 
 /**

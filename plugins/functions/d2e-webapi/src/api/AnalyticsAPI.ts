@@ -1,10 +1,11 @@
 import { env } from "../env.ts";
+import { CohortCacheShapeError } from "../errors/CohortCacheErrors.ts";
 import {
   ICohortDefinition,
   IAnalyticsCohortDefinition,
   IFilterValue,
   IBaseMaterializedCohort,
-  ICohortCacheEntry,
+  CohortCacheLookupResponseSchema,
   ICohortCacheLookupResponse,
   ICohortCacheWriteEntry,
 } from "./types.ts";
@@ -221,16 +222,14 @@ export class AnalyticsSvcAPI {
         options,
       );
 
-      const data = result?.data ?? {};
-      const entries =
-        typeof data.entries === "object" && data.entries !== null
-          ? (data.entries as Record<string, ICohortCacheEntry>)
-          : {};
-      const missing = Array.isArray(data.missing)
-        ? (data.missing as string[])
-        : [];
 
-      return { entries, missing };
+      const parsed = CohortCacheLookupResponseSchema.safeParse(result?.data);
+      if (!parsed.success) {
+        throw new CohortCacheShapeError(
+          `Cohort cache lookup returned an unexpected response shape: ${parsed.error.message}`,
+        );
+      }
+      return parsed.data as ICohortCacheLookupResponse;
     } catch (error) {
       console.error(`Error while looking up cohort cache: ${error}`);
       throw error;

@@ -41,6 +41,11 @@ Deno.env.set(
 const { getCohortDefinitionList } = await import("./cohortdefinition.service.ts");
 const { AnalyticsSvcAPI } = await import("../api/AnalyticsAPI.ts");
 const { BookmarksAPI } = await import("../api/BookmarksAPI.ts");
+const { CohortCacheShapeError } = await import(
+  "../errors/CohortCacheErrors.ts"
+);
+const { CachedMaterializedCohortSchema, CohortCacheLookupResponseSchema } =
+  await import("../api/types.ts");
 
 type IBookmark = import("../api/types.ts").IBookmark;
 type IBaseMaterializedCohort = import(
@@ -510,8 +515,9 @@ Deno.test("a failing cohort cache lookup falls through to the uncached path", as
         cohortItems(result).map((cohort) => cohort.id),
         [12],
       );
-      // The cache could not answer, so this request behaves exactly as it did
-      // before the cache existed and does not attempt a write either.
+      // UNAVAILABLE, not MISS: the cache could not answer, so this request
+      // behaves exactly as it did before the cache existed, and writing back
+      // to an endpoint that just failed would only fail twice.
       assertEquals(calls.write.length, 0);
     },
   );
@@ -537,6 +543,75 @@ Deno.test("a dataset that cannot materialize cohorts never touches the cohort ca
         bookmarkItems(result).map((bookmark) => bookmark.bmkId),
         ["b1", "b2"],
       );
+    },
+  );
+});
+
+Deno.test("nullable description, syntax and creationTimestamp survive the schema", () => {
+  // All three are NULLable in the COHORT_DEFINITION DDL. The cache must not be
+  // stricter than the uncached path, or it rejects rows the page renders fine.
+  const parsed = CohortCacheLookupResponseSchema.safeParse({
+    entries: {
+      b1: {
+        materializedCohort: {
+          id: 11,
+          name: "cohort 11",
+          description: null,
+          creationTimestamp: null,
+          syntax: null,
+          patientCount: 7,
+        },
+      },
+    },
+    missing: [],
+  });
+  assertEquals(parsed.success, true);
+});
+
+Deno.test("a numeric creationTimestamp is accepted", () => {
+  const parsed = CachedMaterializedCohortSchema.safeParse({
+    id: 11,
+    name: "cohort 11",
+    description: "",
+    creationTimestamp: 1787824207000,
+    syntax: "{}",
+    patientCount: 7,
+  });
+  assertEquals(parsed.success, true);
+});
+
+Deno.test("a genuinely wrong type is still rejected", () => {
+  const parsed = CachedMaterializedCohortSchema.safeParse({
+    id: 11,
+    name: "cohort 11",
+    description: null,
+    creationTimestamp: null,
+    syntax: null,
+    patientCount: "7",
+  });
+  assertEquals(parsed.success, false);
+});
+
+Deno.test("an unusable cache body recomputes AND overwrites it", async () => {
+  await withStubs(
+    {
+      bookmarks: ["b1"].map(makeBookmark),
+      filteredCohorts: [makeCohort(11, "b1", 111)],
+      lookup: () =>
+        Promise.reject(
+          new CohortCacheShapeError("unexpected response shape"),
+        ),
+    },
+    async (calls) => {
+      const result = await getCohortDefinitionList("token", DATASET_ID);
+      assertEquals(calls.getFilteredCohorts, 1);
+      assertEquals(
+        (cohortItems(result)[0] as { patientCount: number }).patientCount,
+        111,
+      );
+      // MISS, not UNAVAILABLE: the bad row must be overwritten, because no TTL
+      // will ever clear it.
+      assertEquals(calls.write.length, 1);
     },
   );
 });

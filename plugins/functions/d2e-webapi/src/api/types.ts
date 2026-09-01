@@ -15,14 +15,19 @@ export interface ICohortDefinition {
   syntax: ICohortDefinitionSyntax;
 }
 
+/**
+ * A `COHORT_DEFINITION` row from `GET /analytics-svc/api/services/cohort-definition`.
+ * That query aliases every column, so the names are uppercase on both Postgres
+ * and HANA.
+ */
 export interface IAnalyticsCohortDefinition {
-  cohort_definition_id: number;
-  cohort_definition_name: string;
-  cohort_definition_description: string;
-  definition_type_concept_id: number;
-  cohort_definition_syntax: string;
-  subject_concept_id: number;
-  cohort_initiation_date: string;
+  COHORT_DEFINITION_ID: number;
+  COHORT_DEFINITION_NAME: string;
+  COHORT_DEFINITION_DESCRIPTION: string;
+  DEFINITION_TYPE_CONCEPT_ID: number;
+  COHORT_DEFINITION_SYNTAX: string;
+  SUBJECT_CONCEPT_ID: number;
+  COHORT_INITIATION_DATE: string;
 }
 
 export interface ICohortGeneratorFlowRun {
@@ -294,13 +299,30 @@ export interface IBaseMaterializedCohort {
  * never cached (the overview always asks for `excludePatientIds=true`, and the
  * cache must not hold subject identifiers).
  */
+/**
+ * Runtime shape of a cached cohort, used to parse the lookup response.
+ *
+ * The matching TS interface below is hand-written rather than `z.infer`d:
+ * this package compiles with `strict: false`, and without `strictNullChecks`
+ * zod infers every field as optional, which loses the guarantee the schema is
+ * there to provide.
+ */
+export const CachedMaterializedCohortSchema = z.object({
+  id: z.number(),
+  name: z.string(),
+  description: z.string().nullable(),
+  creationTimestamp: z.union([z.string(), z.number()]).nullable(),
+  syntax: z.string().nullable(),
+  patientCount: z.number(),
+});
+
 export interface ICachedMaterializedCohort {
-  id?: number;
+  id: number;
   name: string;
-  description: string;
-  creationTimestamp: string;
-  syntax?: string;
-  patientCount?: number;
+  description: string | null;
+  creationTimestamp: string | number | null;
+  syntax: string | null;
+  patientCount: number;
 }
 
 /**
@@ -310,6 +332,10 @@ export interface ICachedMaterializedCohort {
  * bookmark has no materialized cohort on this dataset. It is a cache HIT, not
  * a miss.
  */
+export const CohortCacheEntrySchema = z.object({
+  materializedCohort: CachedMaterializedCohortSchema.nullable(),
+});
+
 export interface ICohortCacheEntry {
   materializedCohort: ICachedMaterializedCohort | null;
 }
@@ -320,6 +346,11 @@ export interface ICohortCacheEntry {
  * Every bookmark id appears in exactly one of the two: under `entries` (a hit,
  * whatever `materializedCohort` holds) or in `missing` (no row at all).
  */
+export const CohortCacheLookupResponseSchema = z.object({
+  entries: z.record(z.string(), CohortCacheEntrySchema),
+  missing: z.array(z.string()),
+});
+
 export interface ICohortCacheLookupResponse {
   entries: Record<string, ICohortCacheEntry>;
   missing: string[];

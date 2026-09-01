@@ -6,10 +6,14 @@ import { CohortType } from "../types.ts";
  *
  *     <datasetId>|<paConfigId>|<bookmarkId>
  *
- * Every segment is URL-escaped, so no segment can inject the `|` delimiter.
- * `datasetId` comes first so the dataset-wide prefix delete rides the primary
- * key. `paConfigId` is always derived server-side from `req.paConfigId`, never
- * taken from the caller.
+ * Segments are joined raw. None of the three can contain the delimiter:
+ * `datasetId` and `paConfigId` are `uuid` columns (`portal.dataset.id` and
+ * `portal.dataset.pa_config_id`), and `createBookmarkId` strips every
+ * non-alphanumeric character out of the bookmark name before appending its
+ * random suffix. `paConfigId` is always derived server-side from
+ * `req.paConfigId`, never taken from the caller, and `StudyDbCredential`
+ * derives it from the same `datasetId` the caller sent, so the two cannot be
+ * mixed across datasets.
  *
  * There is no version segment. If the stored value shape ever changes
  * incompatibly, clear the table rather than relying on a key prefix to retire
@@ -41,11 +45,6 @@ export type CohortCacheValue = {
     materializedCohort: CachedMaterializedCohort | null;
 };
 
-const encodeSegment = (segment: string): string =>
-    encodeURIComponent(segment ?? "");
-
-const decodeSegment = (segment: string): string => decodeURIComponent(segment);
-
 const requireSegment = (name: string, value: string): string => {
     if (typeof value !== "string" || value.length === 0) {
         throw new Error(`Cohort cache key segment "${name}" is required`);
@@ -62,43 +61,10 @@ export const buildCohortCacheKey = ({
     bookmarkId,
 }: CohortCacheKeyParts): string =>
     [
-        encodeSegment(requireSegment("datasetId", datasetId)),
-        encodeSegment(requireSegment("paConfigId", paConfigId)),
-        encodeSegment(requireSegment("bookmarkId", bookmarkId)),
+        requireSegment("datasetId", datasetId),
+        requireSegment("paConfigId", paConfigId),
+        requireSegment("bookmarkId", bookmarkId),
     ].join(COHORT_CACHE_KEY_DELIMITER);
-
-/**
- * Inverse of `buildCohortCacheKey`. Returns `null` for anything that does not
- * have the expected shape.
- */
-export const parseCohortCacheKey = (key: string): CohortCacheKeyParts | null => {
-    if (typeof key !== "string") {
-        return null;
-    }
-    const segments = key.split(COHORT_CACHE_KEY_DELIMITER);
-    if (segments.length !== 3) {
-        return null;
-    }
-    try {
-        return {
-            datasetId: decodeSegment(segments[0]),
-            paConfigId: decodeSegment(segments[1]),
-            bookmarkId: decodeSegment(segments[2]),
-        };
-    } catch {
-        // Malformed percent-escapes: not a key this module wrote.
-        return null;
-    }
-};
-
-/**
- * `<datasetId>|` — the prefix every key for one dataset shares, used by the
- * dataset-wide invalidation delete.
- */
-export const buildCohortCacheDatasetPrefix = (datasetId: string): string =>
-    `${encodeSegment(
-        requireSegment("datasetId", datasetId)
-    )}${COHORT_CACHE_KEY_DELIMITER}`;
 
 /**
  * Normalises a cohort into the stored value shape, dropping `patientIds`.

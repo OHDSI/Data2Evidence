@@ -17,8 +17,9 @@ const logger = Logger.CreateLogger("analytics-log");
  * - a cohort is deleted       -> `evictCohortCacheEntry` drops it, called
  *                                *before* the delete: the definition row holds
  *                                the only copy of the bookmark id
- * - a cohort is renamed       -> `evictCohortCacheEntry` drops it; the next
- *                                read repopulates with the new name
+ * - a cohort is renamed       -> `updateCohortCacheEntryMetadata` rewrites the
+ *                                cached name and description in place, keeping
+ *                                the count a rename cannot have changed
  *
  * Nothing here throws. A cache write that fails leaves a stale entry, which the
  * TTL expires; it must never fail the cohort write it follows. Likewise a
@@ -110,12 +111,7 @@ export const readCohortDefinitionSyntax = async (
         if (!row) {
             return null;
         }
-        // The driver lower-cases column names on the Postgres path; accept the
-        // upper-cased form too rather than silently losing the bookmark.
-        return (
-            asNonEmptyString(row.cohort_definition_syntax) ??
-            asNonEmptyString(row.COHORT_DEFINITION_SYNTAX)
-        );
+        return asNonEmptyString(row.COHORT_DEFINITION_SYNTAX);
     } catch (err) {
         logger.warn(
             `Could not read cohort definition ${id} for the cohort cache: ${
@@ -127,8 +123,8 @@ export const readCohortDefinitionSyntax = async (
 };
 
 /**
- * Drops the entry for the bookmark named by `syntax`. Used after a delete and
- * after a rename. Returns true only if a delete was actually issued.
+ * Drops the entry for the bookmark named by `syntax`. Returns true only if a
+ * delete was actually issued.
  */
 export const evictCohortCacheEntry = async (
     {

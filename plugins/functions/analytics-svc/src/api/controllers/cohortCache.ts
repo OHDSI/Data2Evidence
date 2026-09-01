@@ -2,7 +2,10 @@ import { Response } from "express";
 import { Logger } from "@alp/alp-base-utils";
 import { IMRIRequest } from "../../types.ts";
 import MRIEndpointErrorHandler from "../../utils/MRIEndpointErrorHandler.ts";
-import { CohortCacheDAO } from "../../dao/CohortCacheDAO.ts";
+import {
+    CohortCacheDAO,
+    CohortCacheUpsertEntry,
+} from "../../dao/CohortCacheDAO.ts";
 import {
     buildCohortCacheKey,
     buildCohortCacheValue,
@@ -122,7 +125,7 @@ export async function upsertCohortCache(req: IMRIRequest, res: Response) {
             );
         }
 
-        const upsertEntries = [];
+        const upsertEntries: CohortCacheUpsertEntry[] = [];
         for (const entry of incomingEntries) {
             const bookmarkId = entry?.bookmarkId;
             if (typeof bookmarkId !== "string" || bookmarkId.length === 0) {
