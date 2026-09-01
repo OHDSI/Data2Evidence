@@ -1013,6 +1013,7 @@ services:
       TASK_API_ENFORCE_HTTPS: ${TASK_API_ENFORCE_HTTPS:-true}
       LOW_NUMBER_SUPPRESSION_THRESHOLD: ${LOW_NUMBER_SUPPRESSION_THRESHOLD:-10}
       ROUNDING_TARGET: ${ROUNDING_TARGET:-10}
+      D2E_BIGQUERY_JDBC_URL: ${D2E_BIGQUERY_JDBC_URL:-}
 
   # Needed only for future alterations of schema when version upgrades
   # alp-logto-db-post-alterations-init:

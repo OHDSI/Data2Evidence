@@ -214,18 +214,51 @@ export class App {
         "service_role"
       );
       if (!serviceRoleExists) {
-        await client.query(
-          `CREATE ROLE service_role NOLOGIN INHERIT BYPASSRLS;`
-        );
+        // No BYPASSRLS: setting that attribute requires superuser, which
+        // managed Postgres (Azure Flexible Server included) never grants --
+        // even to a role that holds BYPASSRLS itself. Requesting it made this
+        // statement fail with "must be superuser to change bypassrls
+        // attribute" on every greenfield install, and because the surrounding
+        // catch only logged, pg-mgmt-init still exited 0 while service_role
+        // was missing and the GRANTs below were skipped. The failure then
+        // surfaced in the next init container as the misleading
+        // `role "service_role" does not exist`.
+        //
+        // Reachability of storage.buckets is provided by the
+        // d2e_service_role_all policy in the d2e-core chart instead.
+        await client.query(`CREATE ROLE service_role NOLOGIN INHERIT;`);
         this.logger.info("Created service_role role successfully");
       } else {
         this.logger.info("service_role role already exists");
       }
 
+      // Create supabase_admin role
+      const supabaseAdminExists = await this.userDao.verifyIfUserExists(
+        client,
+        "supabase_admin"
+      );
+      if (!supabaseAdminExists) {
+        // trex's V1__initial_schema creates supabase_admin WITH ...
+        // REPLICATION, which is superuser-only on managed Postgres. That
+        // aborts V1, so trexdb is never created and trex dies on boot with
+        // "trexdb.kek_wrapped_dek not present". V1 is checksum-verified and
+        // already applied in existing deployments, so it cannot be edited --
+        // pre-creating the role here makes V1's own IF NOT EXISTS guard skip
+        // the failing statement.
+        //
+        // No REPLICATION: V5__drop_realtime_admin drops this role and the
+        // _realtime schema a few migrations later, because native realtime
+        // replaced the external container. Nothing ever replicates as it.
+        await client.query(`CREATE ROLE supabase_admin NOLOGIN;`);
+        this.logger.info("Created supabase_admin role successfully");
+      } else {
+        this.logger.info("supabase_admin role already exists");
+      }
+
       // Verify roles were created
       const result = await client.query(`
         SELECT rolname FROM pg_roles
-        WHERE rolname IN ('anon', 'authenticated', 'service_role')
+        WHERE rolname IN ('anon', 'authenticated', 'service_role', 'supabase_admin')
       `);
 
       const existingRoles = result.rows.map((row: any) => row.rolname);
@@ -241,6 +274,16 @@ export class App {
         this.logger.info(`Granted service_role to ${pgUsers.manager}`);
       }
 
+      if (existingRoles.includes("supabase_admin")) {
+        // V1 creates the _realtime schema AUTHORIZATION supabase_admin, which
+        // needs membership in the role rather than mere CREATEROLE. Postgres 15
+        // gives the creator no membership, so grant it to the manager and to
+        // this connection, which is the superuser that also runs V1.
+        await client.query(`GRANT supabase_admin TO "${pgUsers.manager}"`);
+        await client.query(`GRANT supabase_admin TO CURRENT_USER`);
+        this.logger.info(`Granted supabase_admin to ${pgUsers.manager}`);
+      }
+
       if (existingRoles.includes("anon")) {
         await client.query(`GRANT anon TO "${pgUsers.reader}"`);
         this.logger.info(`Granted anon to ${pgUsers.reader}`);
@@ -249,6 +292,49 @@ export class App {
       if (existingRoles.includes("authenticated")) {
         await client.query(`GRANT authenticated TO "${pgUsers.writer}"`);
         this.logger.info(`Granted authenticated to ${pgUsers.writer}`);
+      }
+
+      // Postgres 15 stopped granting CREATE on schema public to PUBLIC. logto's
+      // roles.sql creates public.check_role_type -- hardcoded to public, not to
+      // its own schema -- so on a fresh database logto-seed-init dies with
+      // "permission denied for schema public", and the storage post-init
+      // likewise creates public.objects.
+      //
+      // public is owned by the platform admin role (azure_pg_admin on Azure),
+      // so these grants only take effect when POSTGRES_SUPERUSER is a member of
+      // it. A non-member gets "WARNING: no privileges were granted for public"
+      // and Postgres still reports success, so verify afterwards -- the symptom
+      // otherwise surfaces several init containers later as an unrelated error.
+      const publicCreators = [pgUsers.manager, pgUsers.logtoManager].filter(
+        (u): u is string => !!u
+      );
+      const publicUsers = [
+        pgUsers.writer,
+        ...existingRoles.filter((r: string) => r !== "supabase_admin"),
+      ].filter((u): u is string => !!u);
+
+      for (const user of publicCreators) {
+        await client.query(`GRANT USAGE, CREATE ON SCHEMA public TO "${user}"`);
+      }
+      for (const user of publicUsers) {
+        await client.query(`GRANT USAGE ON SCHEMA public TO "${user}"`);
+      }
+
+      for (const user of publicCreators) {
+        const check = await client.query(
+          `SELECT has_schema_privilege($1, 'public', 'CREATE') AS granted`,
+          [user]
+        );
+        if (check.rows[0]?.granted) {
+          this.logger.info(`Granted CREATE on schema public to ${user}`);
+        } else {
+          this.logger.error(
+            `Could not grant CREATE on schema public to ${user}. Schema public ` +
+              `is owned by the platform admin role, so the connecting user must ` +
+              `be a member of it (on Azure: GRANT azure_pg_admin TO <superuser>). ` +
+              `Without this, logto seeding fails with "permission denied for schema public".`
+          );
+        }
       }
     } catch (error: any) {
       this.logger.error(`Error in Supabase role creation: ${error.message}`);

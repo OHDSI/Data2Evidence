@@ -343,7 +343,7 @@ const actions = {
   setAddNewCohort({ commit }, { addNewCohort }) {
     commit(types.SET_ADD_NEW_COHORT, { addNewCohort })
   },
-  fireBookmarkQuery({ commit, dispatch, rootGetters }, { method = 'post', params, bookmarkId, cancelToken }) {
+  fireBookmarkQuery({ commit, dispatch, rootGetters }, { method = 'post', params, bookmarkId, cancelToken, suppressToast }) {
     commit(types.SET_BOOKMARKS_LOADING, { loading: true })
     let url = ''
     if (params.cmd === 'loadAll') {
@@ -392,7 +392,7 @@ const actions = {
         } else if (params.cmd === 'insert') {
           toastMessage = rootGetters.getText('MRI_PA_SAVE_BMK_SUCCESS')
         }
-        if (toastMessage) {
+        if (toastMessage && !suppressToast) {
           useNotificationStore().setToastMessage({
             text: toastMessage,
           })
@@ -419,7 +419,8 @@ const actions = {
           useNotificationStore().setAlertMessage({
             message: errorMessage,
           })
-        } else {
+        }
+        if (params.cmd === 'delete' || !errorMessage) {
           throw error
         }
       })
