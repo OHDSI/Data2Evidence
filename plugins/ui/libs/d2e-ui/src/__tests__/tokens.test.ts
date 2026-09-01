@@ -18,7 +18,7 @@ describe("tokens.css generator", () => {
   it("kebab-cases camelCase token keys", () => {
     const css = generateTokensCss();
     expect(css).toContain("--d2e-color-primary-xtra-lightest: #E5E6F2;");
-    expect(css).toContain("--d2e-font-heading4-letter-spacing: -2px;");
+    expect(css).toContain("--d2e-font-heading4-letter-spacing: -0.02em;");
   });
 
   it("appends px to numeric spacing and radius values", () => {
@@ -47,5 +47,18 @@ describe("unitless CSS properties", () => {
     // `button` is the one line height defined as an explicit length.
     const ratios = css.match(/--d2e-[\w-]*line-height: [\d.]+px;/g) ?? [];
     expect(ratios).toEqual(["  --d2e-font-button-line-height: 16px;".trim()]);
+  });
+});
+
+describe("heading letter spacing", () => {
+  const css = generateTokensCss();
+
+  it("keeps heading tracking relative, not pixel", () => {
+    // Figma's -2 on Heading 1-4 is a percentage. The Heading 4 spec renders as
+    // tracking -0.48px at 24px, i.e. -2%. Emitting "-2px" was ~4x too tight.
+    for (const h of ["heading1", "heading2", "heading3", "heading4"]) {
+      expect(css).toContain(`--d2e-font-${h}-letter-spacing: -0.02em;`);
+    }
+    expect(css).not.toMatch(/--d2e-font-heading[1-4]-letter-spacing: -?\d+px;/);
   });
 });

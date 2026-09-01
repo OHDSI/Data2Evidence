@@ -18,7 +18,11 @@ export type {
   D2eIconButtonCategory,
 } from "./components/D2eIconButton.vue";
 export type { D2eMenuItem } from "./components/D2eMenu.vue";
-export type { D2eExplorationCardMetadataRow } from "./components/D2eExplorationCard.vue";
+export type {
+  D2eExplorationCardRow,
+  D2eExplorationCardStatus,
+} from "./components/D2eExplorationCard.vue";
+export { EXPLORATION_STATUS_MAP } from "./components/D2eExplorationCard.vue";
 export { tokens } from "./tokens/tokens";
 export type { D2eTokens } from "./tokens/tokens";
 export { buildD2eVuetifyOptions } from "./tokens/theme";

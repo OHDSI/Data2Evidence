@@ -4,6 +4,7 @@
     :class="[`d2e-icon-button--${category}`, `d2e-icon-button--${size}`]"
     :style="containerStyle"
     icon
+    variant="text"
     :ripple="false"
     :aria-label="ariaLabel"
     :disabled="disabled"
@@ -61,6 +62,9 @@ const containerStyle = computed(() => ({
   font-family: var(--d2e-font-family);
   color: var(--d2e-color-primary);
   background: transparent;
+  // v-btn defaults to the `elevated` variant, which paints a surface and a
+  // shadow. The design's icon buttons have neither.
+  box-shadow: none;
   border: 1px solid transparent;
   border-radius: 8px;
   text-transform: none;

@@ -49,12 +49,34 @@ export const tokens = {
   radius: { sm: 4, md: 8, lg: 16, l: 24, xl: 32 },
   borderWidth: { sm: 1, md: 2 },
   font: {
+    // Figma letter-spacing of -2 on the headings is a percentage, not pixels:
+    // the Heading 4 spec renders as tracking -0.48px at 24px, i.e. -2%.
     family:
       '"IBM Plex Sans Variable", "IBM Plex Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-    heading1: { size: 60, weight: 600, lineHeight: 1.2, letterSpacing: "-2px" },
-    heading2: { size: 48, weight: 600, lineHeight: 1.2, letterSpacing: "-2px" },
-    heading3: { size: 34, weight: 600, lineHeight: 1.2, letterSpacing: "-2px" },
-    heading4: { size: 24, weight: 600, lineHeight: 1.2, letterSpacing: "-2px" },
+    heading1: {
+      size: 60,
+      weight: 600,
+      lineHeight: 1.2,
+      letterSpacing: "-0.02em",
+    },
+    heading2: {
+      size: 48,
+      weight: 600,
+      lineHeight: 1.2,
+      letterSpacing: "-0.02em",
+    },
+    heading3: {
+      size: 34,
+      weight: 600,
+      lineHeight: 1.2,
+      letterSpacing: "-0.02em",
+    },
+    heading4: {
+      size: 24,
+      weight: 600,
+      lineHeight: 1.2,
+      letterSpacing: "-0.02em",
+    },
     heading5: { size: 18, weight: 600, lineHeight: 1.2, letterSpacing: "0" },
     subtitle1: { size: 16, weight: 600, lineHeight: 1.5, letterSpacing: "0" },
     subtitle2: { size: 14, weight: 600, lineHeight: 1.5, letterSpacing: "0" },
