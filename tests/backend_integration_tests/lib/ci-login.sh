@@ -138,9 +138,9 @@ except Exception:
     echo "trex login failed for $SEED_EMAIL" >&2
     exit 1
   }
-  # trex's provider issues no refresh token in this flow; the suites only use it
-  # where Logto supplied one, and treat an empty value as "not available".
-  REFRESH_TOKEN=""
+  # trex_login sets this from the token response. It stays empty against a
+  # provider that issues none, which callers treat as "not available".
+  REFRESH_TOKEN="${REFRESH_TOKEN:-}"
   IDP_SUB="${SUB:-$(decode_jwt_sub "$BEARER_TOKEN")}"
   publish
   echo "Logged in against trex as $SEED_EMAIL (sub $IDP_SUB)."
