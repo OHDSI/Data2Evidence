@@ -189,7 +189,14 @@ test(TEST_NAME, async ({ page }) => {
     await wizardRow.getByText('Select action').click()
     await page.getByRole('option', { name: 'Permissions' }).click()
     await ensureAdminDatasetPermission(page)
-    await page.getByTestId('dialog-close').click()
+    // Granting a permission to the signed-in account changes that account's own
+    // authorization, so the portal refreshes its token and re-renders the dialog
+    // underneath us: the close button is detached and replaced while being
+    // clicked. Re-resolve and retry rather than racing a single attempt.
+    await expect(async () => {
+      await page.getByTestId('dialog-close').click({ timeout: 5000 })
+      await expect(page.getByTestId('dialog')).toBeHidden({ timeout: 5000 })
+    }).toPass({ timeout: 60000 })
 
     // Check dashboard wizard is accessible and can be opened
     await page.getByRole('link', { name: 'Setup' }).click()
