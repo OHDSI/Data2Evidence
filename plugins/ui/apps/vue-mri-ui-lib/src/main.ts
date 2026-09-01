@@ -7,7 +7,7 @@ import { createPinia } from 'pinia'
 import { createStore } from './store'
 import { initializeApps } from './utils/AppRegistry'
 import { initializeComponents } from './utils/ComponentRegistry'
-import { applyAppTheme } from './bootstrap/themeBootstrap'
+import './styles/themes/_main.scss'
 import { createPortalContextStore } from './stores/portalContext'
 import { initGlobalsOnce, registerDirectivesAndComponents } from './bootstrap/registerGlobals'
 import type { PortalContextState } from './types/portal-props'
@@ -26,7 +26,6 @@ if (isAtlas) {
   initializeComponents()
 } else {
   app = createApp(App as unknown as Component)
-  applyAppTheme()
 }
 
 const pinia = createPinia()
