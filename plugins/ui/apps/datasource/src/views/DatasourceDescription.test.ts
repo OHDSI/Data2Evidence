@@ -34,7 +34,10 @@ function mountWith(overrides: { showRequestAccess?: boolean } = {}) {
 }
 
 describe('DatasourceDescription', () => {
-  beforeEach(() => vi.restoreAllMocks())
+  beforeEach(() => {
+    vi.restoreAllMocks()
+    vi.spyOn(systemPortal, 'getResources').mockResolvedValue([])
+  })
 
   it('shows no access badge and no Request Access button when approved (matches Figma: With access has no chip)', async () => {
     vi.spyOn(userMgmt, 'getUserGroupList').mockResolvedValue({ userId: 'u-1', alp_role_study_researcher: ['ds-1'] })
@@ -141,5 +144,81 @@ describe('DatasourceDescription', () => {
       expect(style).toContain('18px')
       expect(style).toContain('IBM Plex Sans')
     }
+  })
+
+  it('renders a Metadata table with a Dataset ID row, even with no attributes', async () => {
+    vi.spyOn(userMgmt, 'getUserGroupList').mockResolvedValue({ userId: 'u-1', alp_role_study_researcher: [] })
+    vi.spyOn(userMgmt, 'getMyStudyAccessRequests').mockResolvedValue([])
+
+    const wrapper = mountWith()
+    await flushPromises()
+
+    expect(wrapper.findAll('h2').find(h => h.text() === 'Metadata')).toBeTruthy()
+    expect(wrapper.text()).toContain('Dataset ID')
+    expect(wrapper.text()).toContain('ds-1')
+  })
+
+  it('lists dataset attributes with their configured name and a formatted (comma-grouped) value', async () => {
+    vi.spyOn(jwt, 'getIdpUserId').mockReturnValue('idp-1')
+    vi.spyOn(systemPortal, 'getDataset').mockResolvedValue({
+      id: 'ds-1',
+      studyDetail: { name: 'Demo Dataset', description: 'x', showRequestAccess: true },
+      attributes: [
+        { id: 1, attributeId: 'patient_count', value: '1223234', studyId: 'ds-1', attributeConfig: { name: 'Patient count', dataType: 'number', isDisplayed: 'true' } },
+        { id: 2, attributeId: 'version', value: 'omop5-2', studyId: 'ds-1', attributeConfig: { name: 'Version', dataType: 'string', isDisplayed: 'true' } },
+      ],
+    })
+    vi.spyOn(userMgmt, 'getUserGroupList').mockResolvedValue({ userId: 'u-1', alp_role_study_researcher: [] })
+    vi.spyOn(userMgmt, 'getMyStudyAccessRequests').mockResolvedValue([])
+
+    const wrapper = mount(DatasourceDescription, {
+      props: { sourceKey: 'ds-1', token: 'tok' },
+      global: { plugins: [vuetify] },
+    })
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('Patient count')
+    expect(wrapper.text()).toContain('1,223,234')
+    expect(wrapper.text()).toContain('Version')
+    expect(wrapper.text()).toContain('omop5-2')
+  })
+
+  it('renders no Files section when the dataset has no files', async () => {
+    vi.spyOn(userMgmt, 'getUserGroupList').mockResolvedValue({ userId: 'u-1', alp_role_study_researcher: [] })
+    vi.spyOn(userMgmt, 'getMyStudyAccessRequests').mockResolvedValue([])
+
+    const wrapper = mountWith()
+    await flushPromises()
+
+    expect(wrapper.findAll('h2').find(h => h.text() === 'Files')).toBeFalsy()
+  })
+
+  it('lists Files with filename and size, and downloads a file on click', async () => {
+    vi.spyOn(userMgmt, 'getUserGroupList').mockResolvedValue({ userId: 'u-1', alp_role_study_researcher: [] })
+    vi.spyOn(userMgmt, 'getMyStudyAccessRequests').mockResolvedValue([])
+    vi.spyOn(systemPortal, 'getResources').mockResolvedValue([
+      { name: 'cohort.csv', size: '12 KB', type: 'text/csv' },
+    ])
+    const downloadSpy = vi.spyOn(systemPortal, 'downloadResource').mockResolvedValue({ data: btoa('id,name'), contentType: 'text/csv' })
+    vi.stubGlobal('URL', { ...URL, createObjectURL: vi.fn().mockReturnValue('blob:mock') })
+    const clickSpy = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {})
+
+    const wrapper = mountWith()
+    await flushPromises()
+
+    expect(wrapper.findAll('h2').find(h => h.text() === 'Files')).toBeTruthy()
+    expect(wrapper.text()).toContain('cohort.csv')
+    expect(wrapper.text()).toContain('12 KB')
+
+    const downloadButton = wrapper.find('[data-testid="resource-download-cohort.csv"]')
+    expect(downloadButton.exists()).toBe(true)
+    await downloadButton.trigger('click')
+    await flushPromises()
+
+    expect(downloadSpy).toHaveBeenCalledWith('ds-1', 'cohort.csv', 'tok')
+    expect(clickSpy).toHaveBeenCalled()
+
+    clickSpy.mockRestore()
+    vi.unstubAllGlobals()
   })
 })

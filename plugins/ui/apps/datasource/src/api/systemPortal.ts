@@ -6,9 +6,24 @@ export interface StudyDetail {
   showRequestAccess: boolean
 }
 
+export interface StudyAttributeConfig {
+  name: string
+  dataType: string
+  isDisplayed: string
+}
+
+export interface StudyAttribute {
+  id: number
+  attributeId: string
+  value: string
+  studyId: string
+  attributeConfig: StudyAttributeConfig
+}
+
 export interface Dataset {
   id: string
   studyDetail?: StudyDetail
+  attributes?: StudyAttribute[]
 }
 
 export function getDataset(sourceKey: string, token: string | null): Promise<Dataset> {
@@ -70,4 +85,35 @@ export function getPublicHeaderImage(): Promise<PublicConfigValue> {
 
 export function getPublicOverviewDescription(): Promise<PublicConfigValue> {
   return apiFetch<PublicConfigValue>('/system-portal/config/public/overview-description', { token: null })
+}
+
+// --- Resources (files attached to a dataset) --------------------------------
+
+export interface DatasetResource {
+  name: string
+  size: string
+  type: string
+}
+
+export async function getResources(datasetId: string, token: string | null): Promise<DatasetResource[]> {
+  const response = await apiFetch<{ resources?: DatasetResource[] }>(
+    `/system-portal/dataset/resource/list?datasetId=${encodeURIComponent(datasetId)}`,
+    { token },
+  )
+  return response.resources ?? []
+}
+
+export interface ResourceDownload {
+  data: string
+  contentType: string
+}
+
+// The backend returns a JSON envelope (base64 data + contentType), not a raw
+// binary stream — see plugins/ui/apps/portal/src/utils/downloadResource.ts,
+// which this mirrors.
+export function downloadResource(datasetId: string, filename: string, token: string | null): Promise<ResourceDownload> {
+  return apiFetch<ResourceDownload>(
+    `/system-portal/dataset/resource/${encodeURIComponent(filename)}/download?datasetId=${encodeURIComponent(datasetId)}`,
+    { token },
+  )
 }

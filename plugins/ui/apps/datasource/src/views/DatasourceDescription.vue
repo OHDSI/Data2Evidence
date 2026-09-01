@@ -94,6 +94,82 @@
         class="markdown-body"
         v-html="descriptionHtml"
       />
+
+      <div style="display:flex; align-items:center; gap:8px; margin:24px 0 16px;">
+        <h2 style="margin:0; color:#000080; font-family:'IBM Plex Sans', sans-serif; font-weight:600; font-size:18px; line-height:120%; white-space:nowrap;">
+          Metadata
+        </h2>
+        <div style="flex:1; height:1px; background: rgba(var(--v-theme-on-surface), 0.12);" />
+      </div>
+      <table class="info-table">
+        <colgroup>
+          <col style="width:40%;">
+          <col>
+        </colgroup>
+        <thead>
+          <tr>
+            <th>Resource type</th>
+            <th>Dataset</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Dataset ID</td>
+            <td>{{ dataset.id }}</td>
+          </tr>
+          <tr
+            v-for="attribute in dataset.attributes"
+            :key="attribute.attributeId"
+          >
+            <td>{{ attribute.attributeConfig.name }}</td>
+            <td>{{ formatNumber(attribute.value) }}</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <template v-if="resources.length > 0">
+        <div style="display:flex; align-items:center; gap:8px; margin:24px 0 16px;">
+          <h2 style="margin:0; color:#000080; font-family:'IBM Plex Sans', sans-serif; font-weight:600; font-size:18px; line-height:120%; white-space:nowrap;">
+            Files
+          </h2>
+          <div style="flex:1; height:1px; background: rgba(var(--v-theme-on-surface), 0.12);" />
+        </div>
+        <table class="info-table">
+          <colgroup>
+            <col style="width:40%;">
+            <col>
+            <col style="width:200px;">
+          </colgroup>
+          <thead>
+            <tr>
+              <th>Filename</th>
+              <th>Size</th>
+              <th class="info-table__actions">Download file</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr
+              v-for="resource in resources"
+              :key="resource.name"
+            >
+              <td>{{ resource.name }}</td>
+              <td>{{ resource.size }}</td>
+              <td class="info-table__actions">
+                <div class="info-table__action-wrap">
+                  <AtlasButton
+                    :data-testid="`resource-download-${resource.name}`"
+                    variant="ghost"
+                    :loading="downloadingName === resource.name"
+                    @click="download(resource)"
+                  >
+                    Download
+                  </AtlasButton>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </template>
     </template>
   </div>
 </template>
@@ -103,10 +179,16 @@ import { computed } from 'vue'
 import MarkdownIt from 'markdown-it'
 import { AtlasChip, AtlasButton, AtlasTooltip, AtlasIcon } from '@ohdsi/atlas-ui'
 import { useDatasourceAccess } from '../composables/useDatasourceAccess'
+import { useDatasourceResources } from '../composables/useDatasourceResources'
+import { formatNumber } from '../utils/formatNumber'
 
 const props = defineProps<{ sourceKey: string; token: string | null }>()
 
 const { dataset, accessState, loading, requestingAccess, requestAccess } = useDatasourceAccess(
+  () => props.sourceKey,
+  () => props.token,
+)
+const { resources, downloadingName, download } = useDatasourceResources(
   () => props.sourceKey,
   () => props.token,
 )
@@ -116,6 +198,40 @@ const descriptionHtml = computed(() => md.render(dataset.value?.studyDetail?.des
 </script>
 
 <style scoped>
+/*
+ * Shared by the Metadata and Files tables so they line up consistently.
+ * Row heights (60px header / 40px body) and the #DEDCDA divider color come
+ * from the D2E Design System's "basic table" reference (Figma node 2445:8197).
+ */
+.info-table {
+  width: 100%;
+  max-width: 960px;
+  border-collapse: collapse;
+}
+.info-table th {
+  padding: 20px 12px;
+  text-align: left;
+  font-weight: 600;
+  color: #595757;
+  border-bottom: 1px solid #DEDCDA;
+}
+.info-table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid #DEDCDA;
+}
+.info-table th:first-child,
+.info-table td:first-child {
+  padding-left: 0;
+}
+.info-table th.info-table__actions,
+.info-table td.info-table__actions {
+  text-align: right;
+}
+.info-table__action-wrap {
+  display: flex;
+  justify-content: flex-end;
+}
+
 /*
  * Atlas3's global Vuetify reset (MD3-driven) strips list styling — ul { list-style:
  * none; padding-left:0; display:flex } — which turns markdown-it's <ul><li> output
