@@ -1015,7 +1015,7 @@ export const i18n = {
       'Selecting this option will clear your current stacking selection. Do you want to proceed?',
     MRI_PA_BUTTON_CONFIRM: 'Confirm',
     MRI_PA_CHANGE_CHART_TYPE_TITLE: 'Change chart type?',
-    MRI_PA_CHANGE_CHART_TYPE_MESSAGE: "{0} and {1} will be cleared as they're only supported on stacked bar chart.",
+    MRI_PA_CHANGE_CHART_TYPE_MESSAGE: "{0} and {1} will be cleared as they're only supported on the stacked bar chart.",
     MRI_PA_CHANGE_CHART_TYPE_CONFIRM: 'Change anyway',
     MRI_PA_COLOUR_BY: 'Colour by',
     MRI_PA_X_AXIS_2: 'X axis 2',

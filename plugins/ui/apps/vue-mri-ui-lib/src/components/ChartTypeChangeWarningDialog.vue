@@ -4,6 +4,7 @@
     class="ctw-dialog"
     max-width="540"
     width="calc(100vw - 48px)"
+    :aria-labelledby="titleId"
     @update:modelValue="onModelUpdate"
   >
     <!--
@@ -11,7 +12,7 @@
       Vuetify's global VCardTitle/VCardText/VBtn `defaults` inject inline styles
       (font-size, weight, padding) that would otherwise override scoped CSS.
     -->
-    <div class="ctw-card" role="dialog" aria-modal="true" :aria-labelledby="titleId">
+    <div class="ctw-card">
       <div class="ctw-header">
         <span :id="titleId" class="ctw-title">{{ getText('MRI_PA_CHANGE_CHART_TYPE_TITLE') }}</span>
         <button type="button" class="ctw-close" :aria-label="getText('MRI_PA_CLOSE_BUTTON')" @click="onCancel">

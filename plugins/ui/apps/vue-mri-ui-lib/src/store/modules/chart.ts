@@ -3,6 +3,7 @@ import axios from 'axios'
 import Constants from '../../utils/Constants'
 import * as types from '../mutation-types'
 import QueryString from '../../utils/QueryString'
+import { getEffectiveBarChartMode } from '@/components/StackBarModes/modes'
 
 const CancelToken = axios.CancelToken
 const csvEndpoints = {
@@ -379,14 +380,19 @@ const actions = {
     return dispatch('setIFRState', { ifr: initialIFR }).then(() => dispatch('setupChartDefaults'))
   },
   setBarChartType({ commit, dispatch, state, rootGetters }, modeId: string) {
-    const previousMode = state.barDisplayMode
+    // Resolve the stored mode against the config flags so the transition matches the chart that is
+    // actually rendered: a stored mode disabled by the config falls back to the stacked bar chart,
+    // and leaving it has to run the stacked-exit cleanup below.
+    const previousMode = getEffectiveBarChartMode(state.barDisplayMode, rootGetters.getMriFrontendConfig)
     const X1 = Constants.MRIChartDimensions.X1
     const X2 = Constants.MRIChartDimensions.X2
     let binsizeChanged = false
     let xAxisCleared = false
 
     // Resolve the active KDP x-axis slot: the non-disabled one when a slot is already
-    // disabled, otherwise predict it by mirroring the disable logic below.
+    // disabled, otherwise the slot whose binsize survives the stacked-exit relocation below.
+    // X1 is always the surviving slot there, so its binsize is the one that matters – except
+    // when X2's selection is relocated onto X1, in which case X2 carries the binsize across.
     const allAxesInit = rootGetters.getAllAxes
     const x1Init = allAxesInit?.[X1]
     const x2Init = allAxesInit?.[X2]
@@ -396,18 +402,15 @@ const actions = {
     if (x1DisabledInit !== x2DisabledInit) {
       activeXSlot = x1DisabledInit ? X2 : X1
     } else {
-      const x1HasSelection = !!(x1Init?.props?.filterCardId && x1Init?.props?.key)
-      const x2HasSelection = !!(x2Init?.props?.filterCardId && x2Init?.props?.key)
-      if (x1HasSelection && x2HasSelection) {
-        const mriFrontendConfig = rootGetters.getMriFrontendConfig
-        const x1Binnable = !!mriFrontendConfig?.getAttributeByPath(x1Init.props.attributeId)?.isBinnable?.()
-        const x2Binnable = !!mriFrontendConfig?.getAttributeByPath(x2Init.props.attributeId)?.isBinnable?.()
-        activeXSlot = x1Binnable && !x2Binnable ? X1 : X2
-      } else if (x2HasSelection && !x1HasSelection) {
-        activeXSlot = X2
-      } else {
-        activeXSlot = X1
-      }
+      const mriFrontendConfigInit = rootGetters.getMriFrontendConfig
+      const hasSelectionInit = (axis: any) => !!(axis?.props?.filterCardId && axis?.props?.key)
+      const isContinuousInit = (axis: any) =>
+        hasSelectionInit(axis) && !!mriFrontendConfigInit?.getAttributeByPath(axis.props.attributeId)?.isBinnable?.()
+      // Mirrors `relocateX2ToX1` in the stacked-exit block below.
+      const relocatesX2ToX1 =
+        hasSelectionInit(x2Init) &&
+        (!hasSelectionInit(x1Init) || (isContinuousInit(x2Init) && !isContinuousInit(x1Init)))
+      activeXSlot = relocatesX2ToX1 ? X2 : X1
     }
 
     if (modeId === 'distribution' && previousMode !== 'distribution') {
