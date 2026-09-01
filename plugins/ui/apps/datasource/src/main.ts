@@ -20,6 +20,7 @@ export interface PluginProps {
     request: <T>(type: string, payload: unknown) => Promise<T>
     subscribe: (type: string, callback: (data: unknown) => void) => () => void
   }
+  getToken?: () => Promise<string>
   hostContext?: {
     surface: string
     itemId: string
@@ -38,6 +39,7 @@ const vueLifecycles = singleSpaVue({
         authContext: (this as PluginProps).authContext,
         messageBus: (this as PluginProps).messageBus,
         hostContext: (this as PluginProps).hostContext,
+        getToken: (this as PluginProps).getToken,
       })
     },
   },

@@ -1,6 +1,7 @@
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import vuetify from 'vite-plugin-vuetify'
+import cssInjectedByJsPlugin from 'vite-plugin-css-injected-by-js'
 import path from 'path'
 
 // This plugin targets Atlas3 (not d2e's own portal), so unlike sibling apps
@@ -12,7 +13,7 @@ export default defineConfig(({ mode }) => {
   const isProduction = mode === 'production'
 
   return {
-    plugins: [vue(), vuetify({ autoImport: true })],
+    plugins: [vue(), vuetify({ autoImport: true }), cssInjectedByJsPlugin()],
     build: {
       outDir: isProduction ? path.resolve(__dirname, '../../resources/datasource') : path.resolve(__dirname, 'dist'),
       emptyOutDir: true,
@@ -25,10 +26,6 @@ export default defineConfig(({ mode }) => {
         external: [],
         output: {
           format: 'system',
-          // Atlas3's parcelLoader derives the CSS URL from the JS entry
-          // filename by replacing the .js suffix with `style.css` — see
-          // Atlas3/src/plugins/host/parcelLoader.ts::injectPluginStylesheet.
-          assetFileNames: 'style[extname]',
         },
       },
     },

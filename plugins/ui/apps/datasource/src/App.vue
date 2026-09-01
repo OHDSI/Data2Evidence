@@ -11,16 +11,17 @@
 
     <!-- Catalog / overview: mounted as a full page (no sourceKey). Clicking a
          card opens Atlas3's native Data Sources report view for that source,
-         where his Description renders in the sidebar. -->
+         straight to this same plugin's Description mount in the sidebar. -->
     <DatasourceCatalog
       v-else
-      :token="authContext?.token ?? null"
+      :token="catalogToken"
       :on-select="openSource"
     />
   </v-theme-provider>
 </template>
 
 <script setup lang="ts">
+import { ref, onMounted } from 'vue'
 import DatasourceDescription from './views/DatasourceDescription.vue'
 import DatasourceCatalog from './views/DatasourceCatalog.vue'
 
@@ -37,15 +38,20 @@ interface HostContext {
   sourceKey?: string
 }
 
-defineProps<{
+const props = defineProps<{
   name: string
   authContext: AuthContext
   hostContext?: HostContext
+  getToken?: () => Promise<string>
 }>()
 
-// Card click -> Atlas3's native Data Sources report view for the source.
-// Atlas3 route: /datasources/reports/:sourceKey?/:reportType?
+const catalogToken = ref<string | null>(props.authContext?.token ?? null)
+onMounted(async () => {
+  if (props.getToken) catalogToken.value = (await props.getToken()) || null
+})
+
+// Atlas3 route: /datasources/:sourceKey?/:reportType?
 function openSource(sourceKey: string): void {
-  window.location.hash = `#/datasources/reports/${encodeURIComponent(sourceKey)}`
+  window.location.hash = `#/datasources/${encodeURIComponent(sourceKey)}/plugin:datasources:datasource`
 }
 </script>
