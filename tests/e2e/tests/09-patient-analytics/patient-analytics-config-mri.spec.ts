@@ -87,7 +87,7 @@ test(TEST_NAME, async ({ page }) => {
   await expect(page.locator('#app')).toMatchAriaSnapshot(`- text: Filters saved.`)
   await page.locator('#pane-left').getByRole('link', { name: 'Cohorts' }).click()
   await expect(page.locator('#pane-left')).toContainText('Cohort Test')
-  await page.getByText('Cohort Test0. Icons/').click()
+  await page.getByText('Cohort TestCohort Definition Icon').click()
   await page.locator('.modal-wrapper').click()
   await page.locator('#pane-left').getByRole('link', { name: 'Cohorts' }).click()
   await page.locator('div:nth-child(5) > svg').first().click()
