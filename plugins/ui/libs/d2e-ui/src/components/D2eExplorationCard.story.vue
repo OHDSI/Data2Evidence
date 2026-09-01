@@ -47,11 +47,17 @@ const staleRows = [
       >
         <template #toolbar>
           <D2eIconButton
+            size="lg"
             icon="mdi-account-multiple-plus-outline"
             aria-label="Materialize"
           />
-          <D2eIconButton size="lg" icon="mdi-medal-outline" aria-label="Quality" />
           <D2eIconButton
+            size="lg"
+            icon="mdi-medal-outline"
+            aria-label="Quality"
+          />
+          <D2eIconButton
+            size="lg"
             icon="mdi-file-document-outline"
             aria-label="Details"
           />
@@ -80,11 +86,17 @@ const staleRows = [
         </template>
         <template #toolbar>
           <D2eIconButton
+            size="lg"
             icon="mdi-account-multiple-plus-outline"
             aria-label="Materialize"
           />
-          <D2eIconButton size="lg" icon="mdi-medal-outline" aria-label="Quality" />
           <D2eIconButton
+            size="lg"
+            icon="mdi-medal-outline"
+            aria-label="Quality"
+          />
+          <D2eIconButton
+            size="lg"
             icon="mdi-file-document-outline"
             aria-label="Details"
           />
@@ -105,11 +117,17 @@ const staleRows = [
       >
         <template #toolbar>
           <D2eIconButton
+            size="lg"
             icon="mdi-account-multiple-plus-outline"
             aria-label="Materialize"
           />
-          <D2eIconButton size="lg" icon="mdi-medal-outline" aria-label="Quality" />
           <D2eIconButton
+            size="lg"
+            icon="mdi-medal-outline"
+            aria-label="Quality"
+          />
+          <D2eIconButton
+            size="lg"
             icon="mdi-file-document-outline"
             aria-label="Details"
           />
@@ -137,6 +155,7 @@ const staleRows = [
       >
         <template #toolbar>
           <D2eIconButton
+            size="lg"
             icon="mdi-account-multiple-plus-outline"
             aria-label="Materialize"
           />
