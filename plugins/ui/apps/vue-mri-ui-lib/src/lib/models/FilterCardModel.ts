@@ -132,6 +132,7 @@ export default class FilterCardModel extends EntityBase {
             cardId: instanceId,
             domainFilter: attributeConfig.getDomainFilter(),
             standardConceptCodeFilter: attributeConfig.getStandardConceptCodeFilter(),
+            conceptIdentifierType: attributeConfig.getConceptIdentifierType(),
           },
           key
         )
@@ -271,6 +272,7 @@ export default class FilterCardModel extends EntityBase {
                 cardId: this.props.instanceId,
                 domainFilter: oneAttrConfig.getDomainFilter(),
                 standardConceptCodeFilter: oneAttrConfig.getStandardConceptCodeFilter(),
+                conceptIdentifierType: oneAttrConfig.getConceptIdentifierType(),
               },
               this.props.key
             ),

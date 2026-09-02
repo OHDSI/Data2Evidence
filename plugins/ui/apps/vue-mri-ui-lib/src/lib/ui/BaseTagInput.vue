@@ -94,6 +94,16 @@
         @mousedown.stop.prevent="handleConceptSetAction(null)"
       />
     </div>
+    <div v-else-if="canBrowseConcepts">
+      <d4l-button
+        class="unicode-icon"
+        text="+"
+        :title="texts.browseConcepts"
+        :disabled="conceptBrowserOpening"
+        style="--border-radius-button: 9999px; margin-left: 8px; margin-right: 0px"
+        @mousedown.stop.prevent="handleBrowseConcepts()"
+      />
+    </div>
   </div>
 </template>
 
@@ -127,6 +137,7 @@ export default {
         enterSearchTerm: 'Enter search term',
         clearAll: 'Clear All',
         createConceptSet: 'Create concept set',
+        browseConcepts: 'Search concepts',
         loadingSuggestions: 'Loading suggestions...',
         tooManyValues: 'Too many values',
         noSuggestions: 'No suggestions found',
@@ -147,6 +158,12 @@ export default {
     conceptSetConfig: {
       type: Object,
       default: () => ({}),
+    },
+    // True while any "+" on the page is resolving its current values into concepts. Only
+    // one terminology overlay can be open at a time, so all of them grey out together.
+    conceptBrowserOpening: {
+      type: Boolean,
+      default: false,
     },
     maxSelections: {
       type: Number,
@@ -243,6 +260,12 @@ export default {
     },
     isLoading() {
       return this.domainValues.isLoading
+    },
+    // A plain text attribute that stores an OMOP concept identifier can be filled
+    // from the terminology overlay as well, so the small suggestion dropdown is not
+    // the only way in. Gated on config so free-text attributes keep their plain input.
+    canBrowseConcepts() {
+      return this.componentType === 'text' && !!this.conceptSetConfig?.conceptIdentifierType
     },
   },
   methods: {
@@ -478,6 +501,18 @@ export default {
         values,
         config: this.conceptSetConfig,
         componentType: this.componentType, // Pass component type for mode determination
+      })
+    },
+    handleBrowseConcepts() {
+      // d4l-button is a web component, so a disabled one can still deliver mousedown.
+      if (this.conceptBrowserOpening) {
+        return
+      }
+      this.$emit('concept-set-action', {
+        values: null,
+        config: this.conceptSetConfig,
+        componentType: this.componentType,
+        action: 'browse',
       })
     },
     tagClickHandler(props) {

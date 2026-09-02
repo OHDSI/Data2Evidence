@@ -1,4 +1,4 @@
-import { test, expect } from '../fixtures'
+import { test, expect, filterCardAttribute } from '../fixtures'
 
 const TEST_NAME = 'patient_analytics_bookmark'
 const SHOULD_SKIP = false
@@ -276,7 +276,7 @@ test(TEST_NAME, async ({ page }) => {
         await page.getByText('Viral sinusitis').click()
         await expect(page.locator('.loading-animation-component')).not.toBeVisible()
       } catch (e) {
-        await page.getByRole('button', { name: '+' }).click()
+        await filterCardAttribute(page, 'Condition concept set').getByRole('button', { name: '+' }).click()
         await page.getByRole('textbox', { name: 'Concept set name' }).click()
         await page.getByRole('textbox', { name: 'Concept set name' }).fill('Viral sinusitis')
         await page.getByRole('textbox', { name: 'search terms' }).click()
