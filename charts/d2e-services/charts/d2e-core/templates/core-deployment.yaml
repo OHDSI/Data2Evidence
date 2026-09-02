@@ -30,6 +30,9 @@ spec:
                 values:
                 - d2e
       volumes:
+        - name: logto-seed-scripts
+          configMap:
+            name: "{{ .Release.Name }}-{{ .Chart.Name }}-logto-seed-scripts"
         # Logto terminates TLS on :3001/:3002 from this mounted pair (see
         # HTTPS_CERT_PATH on the logto container) and verifies its own outbound
         # calls against ca.pem via NODE_EXTRA_CA_CERTS. The key is 0400 because
@@ -454,7 +457,3 @@ spec:
               protocol: TCP
             - containerPort: 3002
               protocol: TCP
-      volumes:
-        - name: logto-seed-scripts
-          configMap:
-            name: "{{ .Release.Name }}-{{ .Chart.Name }}-logto-seed-scripts"
