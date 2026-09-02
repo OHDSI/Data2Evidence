@@ -1,20 +1,168 @@
 @use '../../../../../theme/variables.scss' as *;
 
 .save-flow-dialog {
+  .MuiBackdrop-root {
+    background: rgba(0, 0, 0, 0.4);
+  }
+
+  .alp-dialog__paper {
+    width: 600px;
+    height: 460px;
+    max-width: calc(100vw - 64px);
+    border-radius: 16px;
+    font-family: "IBM Plex Sans", sans-serif;
+  }
+
+  .alp-dialog__title {
+    margin: 0;
+    padding: 24px 24px 12px;
+
+    &-text {
+      color: $primary-color;
+      font-family: "IBM Plex Sans", sans-serif;
+      font-size: 18px;
+      font-weight: 600;
+      line-height: 1.2;
+    }
+  }
+
+  .alp-dialog__body {
+    display: flex;
+    min-height: 0;
+  }
+
+  &__form {
+    display: flex;
+    flex: 1;
+    min-height: 0;
+    flex-direction: column;
+  }
+
   &__content {
-    padding: 1.5em;
+    display: flex;
+    flex: 1;
+    min-height: 0;
+    flex-direction: column;
+    gap: 24px;
+    overflow-y: auto;
+    padding: 24px;
+    font-size: 16px;
+    line-height: 1.5;
+  }
+
+  .MuiInputBase-root,
+  .MuiSelect-select {
+    min-height: 48px;
+    box-sizing: border-box;
+    border: 1px solid $neutral-light-color;
+    border-radius: 8px;
+  }
+
+  &__mode {
+    display: flex;
+    gap: 24px;
+    margin: 0;
+    padding: 0;
+    border: 0;
+
+    legend {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+    }
+
+    label {
+      display: flex;
+      align-items: center;
+      min-height: 42px;
+      gap: 8px;
+      cursor: pointer;
+    }
+
+    input {
+      width: 24px;
+      height: 24px;
+      margin: 0;
+      accent-color: $primary-color;
+    }
+  }
+
+  &__file-input {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+  }
+
+  &__drop-zone {
+    display: flex;
+    min-height: 128px;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 24px;
+    border: 1px dashed $neutral-light-color;
+    border-radius: 8px;
+    color: $neutral-color;
+    text-align: center;
+    cursor: pointer;
+
+    svg {
+      color: $primary-color;
+      font-size: 32px;
+    }
+
+    button {
+      padding: 0;
+      border: 0;
+      background: none;
+      color: $primary-color;
+      font: inherit;
+      font-weight: 600;
+      text-decoration: underline;
+      cursor: pointer;
+    }
+
+    &--active {
+      border-color: $primary-color;
+      background: $primary-extra-lightest-color;
+    }
+
+    &--uploading {
+      cursor: progress;
+    }
+
+    &--success {
+      border-color: var(--color-feedback-success, #00855f);
+      color: var(--color-feedback-success, #00855f);
+
+      svg {
+        color: var(--color-feedback-success, #00855f);
+      }
+    }
+
+    &--error {
+      border-color: var(--color-feedback-error, var(--color-feedback-alarm, #d53939));
+      color: var(--color-feedback-error, var(--color-feedback-alarm, #d53939));
+
+      svg {
+        color: var(--color-feedback-error, var(--color-feedback-alarm, #d53939));
+      }
+    }
   }
 
   &__footer {
-    border-top: 1px solid $border-color;
-    padding: 1.5em;
+    flex: 0 0 auto;
+    border-top: 1px solid $neutral-lighter-color;
+    background: #fbfbfd;
+    padding: 16px 24px;
 
     &-actions {
-      justify-content: center;
-
-      button {
-        width: 150px;
-      }
+      justify-content: flex-end;
     }
   }
 
@@ -22,9 +170,7 @@
     position: initial;
 
     .snack-bar {
-      margin-bottom: 1.5em;
-      margin-left: -1.5em;
-      margin-right: -1.5em;
+      margin: 0;
     }
   }
 }

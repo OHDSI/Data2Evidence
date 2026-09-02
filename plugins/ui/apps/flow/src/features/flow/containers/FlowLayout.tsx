@@ -26,7 +26,6 @@ import { FlowPanel } from "./Flow/FlowPanel/FlowPanel";
 import { FlowRevisionsButton } from "./Flow/FlowRevisions/FlowRevisionsButton";
 import { ResultsPolling } from "./Flow/FlowRunResults/ResultsPolling";
 import { FlowSettingsButton } from "./Flow/FlowSettings/FlowSettingsButton";
-import { ImportFlowButton } from "./Flow/ImportFlow/ImportFlowButton";
 import { SaveFlowButton } from "./Flow/SaveFlow/SaveFlowButton";
 import { SaveNewFlowButton } from "./Flow/SaveFlow/SaveNewFlowButton";
 import { SyncFromRemoteButton } from "./Flow/SyncFromRemote/SyncFromRemoteButton";
@@ -98,7 +97,6 @@ export const FlowLayout: FC<FlowLayoutProps> = ({ isStandalone }) => {
             <FlowRevisionsButton />
             <DeleteFlowButton />
             <ExportFlowButton />
-            <ImportFlowButton />
             {isFetching && <IconButton loading />}
           </Box>
         </Box>
