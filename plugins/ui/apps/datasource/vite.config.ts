@@ -4,11 +4,8 @@ import vuetify from 'vite-plugin-vuetify'
 import cssInjectedByJsPlugin from 'vite-plugin-css-injected-by-js'
 import path from 'path'
 
-// This plugin targets Atlas3 (not d2e's own portal), so unlike sibling apps
-// under plugins/ui/apps it does not externalize import-map-overrides —
-// Atlas3's SystemJS host only shims vue/vue-router/vuetify/single-spa-vue
-// (see Atlas3/public/plugin-runtime.js), and this plugin bundles its own
-// copies of those, matching Atlas3/plugins-dev/hello-world-plugin.
+// vue is externalized (Atlas3's host shims it); CSS stays JS-injected rather
+// than split into style.css, which 404s on parcel mounts when absent.
 export default defineConfig(({ mode }) => {
   const isProduction = mode === 'production'
 
@@ -23,9 +20,10 @@ export default defineConfig(({ mode }) => {
         fileName: 'index',
       },
       rollupOptions: {
-        external: [],
+        external: ['vue'],
         output: {
           format: 'system',
+          globals: { vue: 'vue' },
         },
       },
     },
