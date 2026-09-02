@@ -36,6 +36,10 @@ const EXPECTED = [
   "D2eToolbar",
   "DIALOG_SIZE_MAP",
   "EXPLORATION_STATUS_MAP",
+  "ICON_BUTTON_SIZE_MAP",
+  "SIZE_MAP",
+  "STATUS_CHIP_VARIANT_MAP",
+  "VARIANT_MAP",
   "buildD2eVuetifyOptions",
   "tokens",
 ];

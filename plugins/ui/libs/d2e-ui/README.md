@@ -1,8 +1,8 @@
 # `@d2e/ui`
 
 Vue 3 and Vuetify components for D2E, with the design tokens from the D2E
-design system. The application uses the source directly. There is no build
-step.
+design system. The application reads the source directly through vite aliases.
+Every other consumer uses the built artifact — see below.
 
 ## Consuming the built package
 
