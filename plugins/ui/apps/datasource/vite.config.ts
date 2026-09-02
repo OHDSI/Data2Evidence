@@ -12,7 +12,7 @@ export default defineConfig(({ mode }) => {
   return {
     plugins: [vue(), vuetify({ autoImport: true }), cssInjectedByJsPlugin()],
     build: {
-      outDir: isProduction ? path.resolve(__dirname, '../../resources/datasource') : path.resolve(__dirname, 'dist'),
+      outDir: isProduction ? path.resolve(__dirname, 'dist-atlas') : path.resolve(__dirname, 'dist'),
       emptyOutDir: true,
       lib: {
         entry: path.resolve(__dirname, 'src/main.ts'),

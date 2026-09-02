@@ -80,13 +80,9 @@ mkdir -p "$PA_DEST"
 cp -r "$PA_DIR/dist-atlas/." "$PA_DEST/"
 echo "[build-atlas] Staged patient-analytics at /atlas/plugins/patient-analytics"
 
-# Datasources is a third UI-monorepo Atlas3 sub-plugin, staged the same way as
-# patient-analytics above and for the same reason (bun-workspace app, not an
-# npm file: dep of plugins/atlas). Its vite config already outputs straight to
-# plugins/ui/resources/datasource (not a dist-atlas/ subfolder), so no
-# separate atlas-targeted build script is needed.
+# Datasources is a third UI-monorepo Atlas3 sub-plugin.
 DS_DIR="plugins/ui/apps/datasource"
-DS_OUT="plugins/ui/resources/datasource"
+DS_OUT="$DS_DIR/dist-atlas"
 echo "[build-atlas] Building sub-plugin: datasource ($DS_DIR)"
 ( cd "$DS_DIR" && npm install --workspaces=false --legacy-peer-deps && npm run build )
 if [ ! -f "$DS_OUT/index.system.js" ]; then
