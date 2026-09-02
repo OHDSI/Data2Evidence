@@ -6,46 +6,12 @@ import vuetify, { transformAssetUrls } from 'vite-plugin-vuetify'
 import basicSsl from '@vitejs/plugin-basic-ssl'
 import cssInjectedByJsPlugin from 'vite-plugin-css-injected-by-js'
 import path from 'path'
-import { createRequire } from 'module'
-
-/**
- * Absolute path to the Vue copy that Vitest's externalised Vue consumers load, or undefined if it
- * cannot be determined.
- *
- * This app pins vue exactly while sibling apps float, so the workspace installer keeps two copies:
- * one hoisted at plugins/ui/node_modules and a second nested under this app. Vitest externalises
- * node_modules, so @vue/test-utils, pinia and vuex are loaded by Node from wherever they were
- * installed — hoisted, in CI — and all bind the hoisted copy, while the `vue` alias below points the
- * SFCs at the nested one. Nothing held in Vue's module scope is shared across the two:
- *   - mounting a component that calls useTemplateRef() throws "object is not extensible", because
- *     the instance's `refs` is the other copy's frozen EMPTY_OBJ;
- *   - a component watcher never fires for a store mutation, because dependency tracking is
- *     module-global, so the store's reactive proxy and the watcher live in different registries.
- *
- * Resolving `vue` from @vue/test-utils' own directory puts the SFCs on the same copy as every
- * externalised Vue consumer, in whichever layout the installer produced (the app-local npm install
- * keeps them together already, so this is a no-op there). Tests only — the production install has a
- * single copy and no @vue/test-utils at all.
- *
- * This is a workaround. The real fix is to stop installing two copies.
- */
-const vueForTests = (() => {
-  try {
-    const appRequire = createRequire(path.join(__dirname, 'vite.config.ts'))
-    const testUtilsRequire = createRequire(appRequire.resolve('@vue/test-utils/package.json'))
-    return path.dirname(testUtilsRequire.resolve('vue/package.json'))
-  } catch {
-    // @vue/test-utils not installed (production install) — nothing to align.
-    return undefined
-  }
-})()
 
 // https://vitejs.dev/config/
 export default defineConfig(({ command, mode }) => {
   // Load env files with VITE_ prefix (Vite's default behavior)
   const env = loadEnv(mode, process.cwd(), '')
   const isProduction = mode === 'production'
-  const isTest = mode === 'test' || !!process.env.VITEST
   const isBuild = command === 'build'
   const isServe = command === 'serve'
   const isPreview = process.argv.includes('preview')
@@ -165,9 +131,8 @@ export default defineConfig(({ command, mode }) => {
     resolve: {
       alias: {
         '@': path.resolve(__dirname, './src'),
-        // Dedupe Vue to prevent multiple instances (matching webpack alias).
-        // Under Vitest, follow the copy the externalised Vue consumers got — see vueForTests above.
-        vue: isTest && vueForTests ? vueForTests : path.resolve(__dirname, 'node_modules/vue'),
+        // Dedupe Vue to prevent multiple instances (matching webpack alias)
+        vue: path.resolve(__dirname, 'node_modules/vue'),
         // D3 v3 wrapper - provides access to window.d3 (loaded from public/vendor)
         d3: path.resolve(__dirname, './src/lib/d3.ts'),
       },
@@ -181,9 +146,7 @@ export default defineConfig(({ command, mode }) => {
           {
             postcssPlugin: 'remove-color-adjust',
             Declaration: {
-              'color-adjust': decl => {
-                decl.remove()
-              },
+              'color-adjust': (decl) => { decl.remove() },
             },
           },
         ],
