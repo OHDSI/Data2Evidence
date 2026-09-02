@@ -1,10 +1,13 @@
 import { describe, expect, it } from "vitest";
 import { buildD2eVuetifyOptions } from "../tokens/theme";
 
-// Exact snapshot of the previous hand-written `d2e` colors map in
-// apps/vue-mri-ui-lib/src/plugins/vuetify.ts. Keep in sync when the theme
-// changes deliberately; the assertion below guards against silent drops and
-// accidental value drift.
+// Snapshot of the `d2e` colors map. It started as an exact copy of the
+// hand-written map in apps/vue-mri-ui-lib/src/plugins/vuetify.ts; the four
+// `mri-*` keys were renamed to `brand*` on 2026-09-02 so the shared library
+// carries no application-specific naming. Values are unchanged.
+//
+// Keep in sync when the theme changes deliberately; the assertions below
+// guard against silent drops and accidental value drift.
 const EXPECTED_COLORS = {
   primary: "#000080",
   "primary-darken-1": "#000066",
@@ -28,10 +31,10 @@ const EXPECTED_COLORS = {
   "on-secondary": "#ffffff",
   "on-background": "#000080",
   "on-surface": "#000080",
-  "mri-brand": "#000080",
-  "mri-brand-hover": "#007eba",
-  "mri-info": "#007cc0",
-  "mri-contrast": "#000080",
+  brand: "#000080",
+  "brand-hover": "#007eba",
+  "brand-info": "#007cc0",
+  "brand-contrast": "#000080",
   "border-color": "#dee2e6",
   "border-light": "#dddddd",
   "border-medium": "#cccccc",
@@ -60,16 +63,16 @@ describe("buildD2eVuetifyOptions", () => {
     expect(options.theme.defaultTheme).toBe("d2e");
   });
 
-  it("exposes exactly the same color keys as the previous map", () => {
+  it("exposes exactly the expected color keys", () => {
     expect(Object.keys(colors).sort()).toEqual(
-      Object.keys(EXPECTED_COLORS).sort()
+      Object.keys(EXPECTED_COLORS).sort(),
     );
   });
 
-  it("keeps every color value identical to the previous map", () => {
+  it("keeps every color value identical to the snapshot", () => {
     for (const key of Object.keys(EXPECTED_COLORS)) {
       expect(normalizeHex(colors[key])).toBe(
-        normalizeHex(EXPECTED_COLORS[key])
+        normalizeHex(EXPECTED_COLORS[key]),
       );
     }
   });

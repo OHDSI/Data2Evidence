@@ -49,10 +49,10 @@ export function buildD2eVuetifyOptions(): Pick<VuetifyOptions, "theme"> {
             "on-background": tokens.color.primary,
             "on-surface": tokens.color.primary,
             // Additional custom colors
-            "mri-brand": tokens.color.primary,
-            "mri-brand-hover": "#007eba", // no design token yet
-            "mri-info": "#007cc0", // no design token yet
-            "mri-contrast": tokens.color.primary,
+            brand: tokens.color.primary,
+            "brand-hover": "#007eba", // no design token yet
+            "brand-info": "#007cc0", // no design token yet
+            "brand-contrast": tokens.color.primary,
             // Border colors (Bootstrap gray scale, not design tokens)
             "border-color": "#dee2e6",
             "border-light": "#dddddd",
