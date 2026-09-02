@@ -30,6 +30,7 @@
   width: 18px;
   height: 18px;
   vertical-align: middle;
+  pointer-events: none;
 
   // The shared icon components paint themselves in brand colours. Inside a toolbar button the
   // icon has to track the button's own colour instead, so it still reads on hover, while active
