@@ -13,7 +13,7 @@
   "dependencies": {
     "vue": "^3.5.0",
     "vuetify": "^3.5.0",
-    "@ohdsi/atlas-ui": "0.1.0-20260820162528-77a7c15",
+    "@ohdsi/atlas-ui": "0.1.0-20260721210553-c51900d",
     "jose": "^6.1.1",
     "markdown-it": "^14.1.0"
   },
