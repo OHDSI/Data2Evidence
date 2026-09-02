@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { STATUS_CHIP_VARIANT_MAP } from "../components/D2eStatusChip.vue";
+import { STATUS_CHIP_VARIANT_MAP } from "../components/statusChipVariants";
 
 describe("D2eStatusChip variant map", () => {
   it("maps every variant to the Figma background/text pair", () => {

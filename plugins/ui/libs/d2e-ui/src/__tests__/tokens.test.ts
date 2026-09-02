@@ -6,8 +6,8 @@ describe("tokens.css generator", () => {
     const css = generateTokensCss();
     expect(
       css.startsWith(
-        "/* GENERATED — DO NOT EDIT.\n * Source: src/tokens/tokens.ts."
-      )
+        "/* GENERATED — DO NOT EDIT.\n * Source: src/tokens/tokens.ts.",
+      ),
     ).toBe(true);
   });
 

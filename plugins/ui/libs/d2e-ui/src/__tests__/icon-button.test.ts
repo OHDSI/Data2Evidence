@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { ICON_BUTTON_SIZE_MAP } from "../components/D2eIconButton.vue";
+import { ICON_BUTTON_SIZE_MAP } from "../components/iconButtonSizes";
 
 describe("D2eIconButton size map", () => {
   it("maps sizes to container and icon dimensions", () => {

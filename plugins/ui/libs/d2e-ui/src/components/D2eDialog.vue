@@ -59,6 +59,13 @@
 </template>
 
 <script setup lang="ts">
+import {
+  VBtn,
+  VCard,
+  VDialog,
+  VDivider,
+  VProgressCircular,
+} from "vuetify/components";
 import { computed, nextTick, ref, useAttrs, watch } from "vue";
 import { DIALOG_SIZE_MAP, type D2eDialogSize } from "./dialogSizes";
 

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { SIZE_MAP, VARIANT_MAP } from "../components/D2eButton.vue";
+import { SIZE_MAP, VARIANT_MAP } from "../components/buttonVariants";
 
 describe("D2eButton lookup tables", () => {
   it("maps every variant to the Vuetify variant/color pair", () => {

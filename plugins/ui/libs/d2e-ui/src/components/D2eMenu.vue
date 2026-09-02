@@ -31,6 +31,7 @@
 </template>
 
 <script setup lang="ts">
+import { VIcon } from "vuetify/components";
 export interface D2eMenuItem {
   label: string;
   value: string;

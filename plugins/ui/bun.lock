@@ -550,6 +550,7 @@
         "vite": "^6.4.2",
         "vitest": "^4.0.18",
         "vue": "^3.5.17",
+        "vue-tsc": "^2.2.12",
         "vuetify": "3.12.0",
       },
       "peerDependencies": {

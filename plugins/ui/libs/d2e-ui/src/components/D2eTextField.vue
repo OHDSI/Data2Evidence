@@ -14,6 +14,7 @@
 </template>
 
 <script setup lang="ts">
+import { VTextField } from "vuetify/components";
 import { computed, useAttrs } from "vue";
 
 interface Props {

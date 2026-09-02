@@ -86,3 +86,6 @@ jobs:
         # fails if tokens.css has drifted from tokens.ts
         bun run tokens:check
         bun run test
+        # build the distributable and check its contract
+        bun run build
+        bun run verify:dist

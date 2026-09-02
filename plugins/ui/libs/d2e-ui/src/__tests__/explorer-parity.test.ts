@@ -19,7 +19,11 @@ const explorer = readManifest("explorer/package.json");
 const app = readManifest("../../apps/vue-mri-ui-lib/package.json");
 
 const minorOf = (range: string): string =>
-  range.replace(/^[^\d]*/, "").split(".").slice(0, 2).join(".");
+  range
+    .replace(/^[^\d]*/, "")
+    .split(".")
+    .slice(0, 2)
+    .join(".");
 
 describe("explorer stays outside the workspace", () => {
   it("keeps the workspace globs one level deep", () => {
@@ -46,7 +50,7 @@ describe("explorer matches the application", () => {
 
   it("uses the same vue minor version as the application", () => {
     expect(minorOf(explorer.devDependencies.vue)).toBe(
-      minorOf(app.dependencies.vue)
+      minorOf(app.dependencies.vue),
     );
   });
 

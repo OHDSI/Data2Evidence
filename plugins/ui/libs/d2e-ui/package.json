@@ -5,17 +5,25 @@
   "type": "module",
   "description": "D2E Vue 3 + Vuetify component library",
   "exports": {
-    ".": "./src/index.ts",
+    ".": {
+      "types": "./dist/types/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./style.css": "./dist/index.css",
     "./tokens.css": "./src/tokens/tokens.css"
   },
   "files": [
+    "dist",
     "src"
   ],
   "scripts": {
     "tokens:build": "tsx scripts/build-tokens.ts",
     "tokens:check": "tsx scripts/build-tokens.ts && git diff --exit-code src/tokens/tokens.css",
     "test": "vitest run",
-    "lint": "prettier --write ."
+    "lint": "prettier --write .",
+    "build": "vite build --config vite.config.lib.ts && bun run build:types",
+    "build:types": "vue-tsc --declaration --emitDeclarationOnly --outDir dist/types -p tsconfig.build.json",
+    "verify:dist": "node scripts/verify-dist.mjs"
   },
   "peerDependencies": {
     "vue": "^3.5.0",
@@ -28,6 +36,10 @@
     "vite": "^6.4.2",
     "vitest": "^4.0.18",
     "vue": "^3.5.17",
+    "vue-tsc": "^2.2.12",
     "vuetify": "3.12.0"
-  }
+  },
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/types/index.d.ts"
 }
