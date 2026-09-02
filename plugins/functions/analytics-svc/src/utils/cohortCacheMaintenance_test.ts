@@ -36,7 +36,9 @@ const fakeDao = (stored: Record<string, unknown> = {}) => {
             const found = new Map<string, unknown>();
             for (const k of keys) {
                 if (Object.prototype.hasOwnProperty.call(stored, k)) {
-                    found.set(k, stored[k]);
+                    // `stored` holds bare cache values; the DAO wraps each one
+                    // with the `written_at` the TTL is measured against.
+                    found.set(k, { value: stored[k], writtenAt: new Date() });
                 }
             }
             return found as Map<string, never>;

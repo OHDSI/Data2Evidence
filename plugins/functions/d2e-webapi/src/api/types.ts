@@ -345,15 +345,23 @@ export interface ICohortCacheEntry {
  *
  * Every bookmark id appears in exactly one of the two: under `entries` (a hit,
  * whatever `materializedCohort` holds) or in `missing` (no row at all).
+ *
+ * `stale` reports that at least one returned entry is past its TTL. Such an
+ * entry is still a hit and still worth rendering; it just means the caller
+ * should refresh it in the background. It defaults to `false` so that an
+ * analytics-svc predating the TTL is read as "everything is fresh" rather than
+ * failing the schema and forcing a full recompute on every load mid-rollout.
  */
 export const CohortCacheLookupResponseSchema = z.object({
   entries: z.record(z.string(), CohortCacheEntrySchema),
   missing: z.array(z.string()),
+  stale: z.boolean().default(false),
 });
 
 export interface ICohortCacheLookupResponse {
   entries: Record<string, ICohortCacheEntry>;
   missing: string[];
+  stale: boolean;
 }
 
 /**

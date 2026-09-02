@@ -11,6 +11,7 @@ import {
     buildCohortCacheValue,
     CohortCacheValue,
 } from "../../utils/cohortCacheKey.ts";
+import { isCohortCacheEntryStale } from "../../utils/cohortCacheTtl.ts";
 
 const logger = Logger.CreateLogger("analytics-log");
 const language = "en";
@@ -32,11 +33,18 @@ const toBookmarkIdList = (value: unknown): string[] => {
  * POST /analytics-svc/api/services/cohort-cache/lookup
  *
  * body:     { datasetId, bookmarkIds: [...] }
- * response: { entries: { <bookmarkId>: { materializedCohort } }, missing: [...] }
+ * response: { entries: { <bookmarkId>: { materializedCohort } }, missing: [...], stale }
  *
  * A bookmark id under `entries` is a HIT, including when its
  * `materializedCohort` is `null` — that negative entry is the whole point of
  * the cache. Only ids with no row at all go under `missing`.
+ *
+ * `stale` is true when at least one returned entry is past its TTL. Expired
+ * rows are still returned as hits rather than being reported missing, so the
+ * caller can render from them and revalidate in the background. One flag for
+ * the whole response rather than one per entry: revalidation refetches the
+ * dataset in a single query, so one expired entry and all of them cost the
+ * same to refresh.
  */
 export async function lookupCohortCache(req: IMRIRequest, res: Response) {
     try {
@@ -62,7 +70,9 @@ export async function lookupCohortCache(req: IMRIRequest, res: Response) {
         }
 
         if (bookmarkIds.length === 0) {
-            return res.status(200).json({ entries: {}, missing: [] });
+            return res
+                .status(200)
+                .json({ entries: {}, missing: [], stale: false });
         }
 
         const keyByBookmarkId = new Map<string, string>();
@@ -79,22 +89,26 @@ export async function lookupCohortCache(req: IMRIRequest, res: Response) {
 
         const entries: Record<string, CohortCacheValue> = {};
         const missing: string[] = [];
+        let stale = false;
+
         for (const [bookmarkId, key] of keyByBookmarkId) {
-            const value = rows.get(key);
-            if (value) {
-                // Present, whatever `materializedCohort` holds: a hit.
-                entries[bookmarkId] = value;
-            } else {
+            const row = rows.get(key);
+            if (!row) {
                 missing.push(bookmarkId);
+                continue;
+            }
+
+            // If any row value is stale, set stale to true to trigger stale-while-revalidate
+            entries[bookmarkId] = row.value;
+            if (isCohortCacheEntryStale(row.writtenAt)) {
+                stale = true;
             }
         }
 
-        return res.status(200).json({ entries, missing });
+        return res.status(200).json({ entries, missing, stale });
     } catch (err) {
         logger.error(err);
-        return res
-            .status(500)
-            .send(MRIEndpointErrorHandler({ err, language }));
+        return res.status(500).send(MRIEndpointErrorHandler({ err, language }));
     }
 }
 
@@ -148,8 +162,6 @@ export async function upsertCohortCache(req: IMRIRequest, res: Response) {
         return res.sendStatus(204);
     } catch (err) {
         logger.error(err);
-        return res
-            .status(500)
-            .send(MRIEndpointErrorHandler({ err, language }));
+        return res.status(500).send(MRIEndpointErrorHandler({ err, language }));
     }
 }

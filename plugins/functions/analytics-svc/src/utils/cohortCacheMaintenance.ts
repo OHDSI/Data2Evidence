@@ -1,6 +1,7 @@
 import { Logger } from "@alp/alp-base-utils";
 import { CohortType } from "../types.ts";
-import { CohortCacheDAO } from "../dao/CohortCacheDAO.ts";
+import { CohortCacheDAO, CohortCacheRow } from "../dao/CohortCacheDAO.ts";
+import type { CohortEndpoint } from "../mri/endpoint/CohortEndpoint.ts";
 import {
     buildCohortCacheKey,
     buildCohortCacheValue,
@@ -30,25 +31,25 @@ const logger = Logger.CreateLogger("analytics-log");
 
 /** Just the DAO surface this module uses, so tests can supply a fake. */
 export interface CohortCacheWriter {
-    lookup(keys: string[]): Promise<Map<string, CohortCacheValue>>;
+    lookup(keys: string[]): Promise<Map<string, CohortCacheRow>>;
     deleteKey(key: string): Promise<number>;
     upsert(
         entries: { key: string; value: CohortCacheValue }[]
     ): Promise<number>;
 }
 
-/** Just the CohortEndpoint surface this module uses. */
-export interface CohortDefinitionReader {
-    getCohortDefinition(
-        cohortDefinitionId: string
-    ): Promise<{ data?: unknown[] } | undefined>;
-    queryCohorts(
-        queryParams: Record<string, unknown>,
-        offset?: number,
-        limit?: number,
-        excludePatientIds?: boolean
-    ): Promise<CohortType[]>;
-}
+/**
+ * Just the `CohortEndpoint` surface this module uses. Picked from the class
+ * rather than redeclared, so editors resolve these calls to the real
+ * implementation and a signature change there fails here instead of drifting.
+ *
+ * `Pick` rather than `CohortEndpoint` itself: the class is structurally typed,
+ * so naming it outright would oblige every test double to implement all of it.
+ */
+export type CohortDefinitionReader = Pick<
+    CohortEndpoint,
+    "getCohortDefinition" | "queryCohorts"
+>;
 
 const asNonEmptyString = (value: unknown): string | null =>
     typeof value === "string" && value.length > 0 ? value : null;
@@ -258,7 +259,7 @@ export const updateCohortCacheEntryMetadata = async (
     }
     try {
         const existing = (await dao.lookup([key])).get(key);
-        const cached = existing?.materializedCohort;
+        const cached = existing?.value.materializedCohort;
         if (!cached) {
             // No entry, or a negative entry — a rename cannot turn one into a
             // positive. Leave it for the next read.

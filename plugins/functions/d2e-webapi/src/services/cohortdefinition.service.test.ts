@@ -169,7 +169,11 @@ const withStubs = async <T>(
       calls.lookup.push({ datasetId, bookmarkIds });
       return config.lookup
         ? config.lookup(datasetId, bookmarkIds)
-        : Promise.resolve({ entries: {}, missing: [...bookmarkIds] });
+        : Promise.resolve({
+          entries: {},
+          missing: [...bookmarkIds],
+          stale: false,
+        });
     };
 
     AnalyticsSvcAPI.prototype.cohortCacheWrite = (
@@ -220,6 +224,7 @@ Deno.test("all bookmarks hit the cohort cache: getFilteredCohorts is never calle
             b3: positiveEntry(cohortForB3),
           },
           missing: [],
+          stale: false,
         }),
     },
     async (calls) => {
@@ -283,7 +288,7 @@ Deno.test("negative cache entries are hits: an all-null dataset skips getFiltere
             missing.push(bookmarkId);
           }
         }
-        return Promise.resolve({ entries, missing });
+        return Promise.resolve({ entries, missing, stale: false });
       },
       write: (_datasetId, entries) => {
         for (const entry of entries) {
@@ -336,6 +341,7 @@ Deno.test("partial miss makes exactly one getFilteredCohorts call and answers fr
         Promise.resolve({
           entries: { b1: positiveEntry(staleCohortForB1) },
           missing: ["b2", "b3"],
+          stale: false,
         }),
     },
     async (calls) => {
@@ -612,6 +618,155 @@ Deno.test("an unusable cache body recomputes AND overwrites it", async () => {
       // MISS, not UNAVAILABLE: the bad row must be overwritten, because no TTL
       // will ever clear it.
       assertEquals(calls.write.length, 1);
+    },
+  );
+});
+
+// --- stale-while-revalidate ---------------------------------------------------
+
+/** Resolves once the background cache write has been issued. */
+const writeSignal = () => {
+  let fire!: () => void;
+  const fired = new Promise<void>((resolve) => {
+    fire = resolve;
+  });
+  return { fired, fire };
+};
+
+Deno.test("a stale hit is served from the cache without waiting for a refresh", async () => {
+  const staleCohort = makeCohort(11, "b1", 1);
+  const freshCohort = makeCohort(11, "b1", 111);
+  const events: string[] = [];
+  let refreshPromise: Promise<IBaseMaterializedCohort[]> = Promise.resolve([]);
+
+  await withStubs(
+    {
+      bookmarks: ["b1"].map(makeBookmark),
+      lookup: () =>
+        Promise.resolve({
+          entries: { b1: positiveEntry(staleCohort) },
+          missing: [],
+          stale: true,
+        }),
+      write: () => {
+        events.push("write-issued");
+        return Promise.resolve();
+      },
+    },
+    async (calls) => {
+      AnalyticsSvcAPI.prototype.getFilteredCohorts = () => {
+        calls.getFilteredCohorts += 1;
+        events.push("refresh-started");
+        // Resolved from a macrotask, so it can only settle after every
+        // microtask the response path still has to run.
+        refreshPromise = new Promise((resolve) => {
+          setTimeout(() => {
+            events.push("refresh-finished");
+            resolve([freshCohort]);
+          }, 0);
+        });
+        return refreshPromise;
+      };
+
+      const result = await getCohortDefinitionList(TOKEN, "stale-serve");
+      events.push("response-returned");
+
+      // Served from the stale entry: the source-database read did not stand
+      // between the request and the reply.
+      assertEquals(
+        (cohortItems(result)[0] as { patientCount: number }).patientCount,
+        1,
+      );
+      assertEquals(events, ["refresh-started", "response-returned"]);
+
+      await refreshPromise;
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      assertEquals(events, [
+        "refresh-started",
+        "response-returned",
+        "refresh-finished",
+        "write-issued",
+      ]);
+    },
+  );
+});
+
+Deno.test("revalidation writes the freshly read values, not the stale ones", async () => {
+  // The failure this guards against: writing back what was just served stamps
+  // a new written_at onto stale data, so the entry never refreshes again.
+  const staleCohort = makeCohort(11, "b1", 1);
+  const freshCohort = makeCohort(11, "b1", 111);
+  const written = writeSignal();
+
+  await withStubs(
+    {
+      bookmarks: ["b1", "b2"].map(makeBookmark),
+      filteredCohorts: [freshCohort],
+      lookup: () =>
+        Promise.resolve({
+          entries: { b1: positiveEntry(staleCohort), b2: negativeEntry() },
+          missing: [],
+          stale: true,
+        }),
+      write: () => {
+        written.fire();
+        return Promise.resolve();
+      },
+    },
+    async (calls) => {
+      await getCohortDefinitionList(TOKEN, "stale-write");
+      await written.fired;
+
+      assertEquals(calls.write.length, 1);
+      assertEquals(
+        calls.write[0].entries.map((entry) => [
+          entry.bookmarkId,
+          entry.materializedCohort?.patientCount ?? null,
+        ]),
+        [
+          ["b1", 111],
+          ["b2", null],
+        ],
+      );
+    },
+  );
+});
+
+Deno.test("a failed revalidation leaves the stale entry alone", async () => {
+  let refreshAttempted = false;
+
+  await withStubs(
+    {
+      bookmarks: ["b1"].map(makeBookmark),
+      lookup: () =>
+        Promise.resolve({
+          entries: { b1: positiveEntry(makeCohort(11, "b1", 1)) },
+          missing: [],
+          stale: true,
+        }),
+      write: () => Promise.reject(new Error("should not be reached")),
+    },
+    async (calls) => {
+      AnalyticsSvcAPI.prototype.getFilteredCohorts = () => {
+        refreshAttempted = true;
+        calls.getFilteredCohorts += 1;
+        return Promise.reject(new Error("source database unavailable"));
+      };
+
+      const result = await getCohortDefinitionList(TOKEN, "stale-refresh-fails");
+
+      // The user still gets the cached answer.
+      assertEquals(
+        (cohortItems(result)[0] as { patientCount: number }).patientCount,
+        1,
+      );
+
+      // Let the rejected background chain settle.
+      await new Promise((resolve) => setTimeout(resolve, 0));
+
+      assertEquals(refreshAttempted, true);
+      // No write, so the entry stays stale and the next load retries.
+      assertEquals(calls.write.length, 0);
     },
   );
 });

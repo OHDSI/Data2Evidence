@@ -18,6 +18,12 @@ export type CohortCacheUpsertEntry = {
     value: CohortCacheValue;
 };
 
+/** A stored row: the cached value plus the age the TTL is measured against. */
+export type CohortCacheRow = {
+    value: CohortCacheValue;
+    writtenAt: Date;
+};
+
 const toNumber = (value: unknown, fallback: number): number => {
     const parsed = Number(value);
     return Number.isFinite(parsed) ? parsed : fallback;
@@ -87,22 +93,21 @@ export class CohortCacheDAO {
      */
     public lookup = async (
         keys: string[]
-    ): Promise<Map<string, CohortCacheValue>> => {
-        const found = new Map<string, CohortCacheValue>();
+    ): Promise<Map<string, CohortCacheRow>> => {
+        const found = new Map<string, CohortCacheRow>();
         if (!keys || keys.length === 0) {
             return found;
         }
         const result = await this.withClient<pg.QueryResult>((client) =>
             client.query(
-                `SELECT "key", "value" FROM ${this.getQualifiedTableName()} WHERE "key" = ANY($1::text[])`,
+                `SELECT "key", "value", "written_at" FROM ${this.getQualifiedTableName()} WHERE "key" = ANY($1::text[])`,
                 [keys]
             )
         );
         for (const row of result.rows) {
-            // `jsonb` comes back already parsed by node-postgres.
             const value = row.value;
             if (isCohortCacheValue(value)) {
-                found.set(row.key, value);
+                found.set(row.key, { value, writtenAt: row.written_at });
             }
         }
         return found;

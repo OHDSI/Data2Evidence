@@ -287,9 +287,17 @@ export const getCohortDefinitionList = async (
 
   let baseMaterializedCohorts: IBaseMaterializedCohort[];
   let shouldWriteCohortCache = false;
+  let shouldRevalidateCohortCache = false; // Revalidate stale cache
 
-  if (cacheRead.status === CohortCacheReadStatus.HIT) {
+  if (
+    cacheRead.status === CohortCacheReadStatus.HIT ||
+    cacheRead.status === CohortCacheReadStatus.STALE
+  ) {
+    // Stale entries are served exactly like fresh ones. Blocking on a refresh
+    // would hand one user per TTL cycle the slow load this cache removes.
     baseMaterializedCohorts = cacheRead.cohorts;
+    shouldRevalidateCohortCache =
+      cacheRead.status === CohortCacheReadStatus.STALE;
   } else {
     // Miss (or an unusable cache): recompute from the authoritative source, ignore whatever partial cache read returned.
     const result = await withRetry(
@@ -313,32 +321,10 @@ export const getCohortDefinitionList = async (
     shouldWriteCohortCache = cacheRead.status === CohortCacheReadStatus.MISS;
   }
 
-  // Create mapping for materialized cohorts to bookmarks
-  const bookmarkIdToCohortId = new Map<string, number>();
-
-  // Sort baseMaterializedCohorts so that the latest materialized cohort is matched with the corresponding bookmark
-  baseMaterializedCohorts.sort((a, b) => a.id - b.id);
-  for (const cohort of baseMaterializedCohorts) {
-    let syntax: { bookmarkId?: string };
-    try {
-      syntax = JSON.parse(cohort.syntax);
-    } catch (error) {
-      console.error(
-        `Failed to parse syntax for materialized cohort ${cohort.id}, skipping:`,
-        error,
-      );
-      continue;
-    }
-    if (syntax.bookmarkId !== undefined) {
-      bookmarkIdToCohortId.set(syntax.bookmarkId, cohort.id);
-    }
-  }
-
-  // Add cohortDefinitionId to bookmarks if there is a respective materialized cohort
-  const bookmarksWithId = parsedbookmarks.map((bookmark) => ({
-    ...bookmark,
-    cohortDefinitionId: bookmarkIdToCohortId.get(bookmark.bmkId),
-  }));
+  const bookmarksWithId = _mapBookmarksToCohorts(
+    parsedbookmarks,
+    baseMaterializedCohorts,
+  );
 
   if (shouldWriteCohortCache) {
     // Fire and forget: never awaited before the response. A write lost to a
@@ -348,6 +334,12 @@ export const getCohortDefinitionList = async (
       datasetId,
       bookmarksWithId,
       baseMaterializedCohorts,
+    );
+  } else if (shouldRevalidateCohortCache) {
+    _revalidateCohortCacheInBackground(
+      analyticsSvcAPI,
+      datasetId,
+      parsedbookmarks,
     );
   }
 
@@ -473,6 +465,11 @@ export const checkV2 = async (
 enum CohortCacheReadStatus {
   /** Every requested bookmark had an entry — including negative entries. */
   HIT = "hit",
+  /**
+   * Every bookmark had an entry, but at least one is past its TTL. Served from
+   * the cache exactly like a hit, then refreshed in the background.
+   */
+  STALE = "stale",
   /** The cache answered, but at least one bookmark had no entry. */
   MISS = "miss",
   /** The cache did not answer at all: error, timeout, missing schema or table. */
@@ -481,6 +478,7 @@ enum CohortCacheReadStatus {
 
 type CohortCacheReadResult =
   | { status: CohortCacheReadStatus.HIT; cohorts: IBaseMaterializedCohort[] }
+  | { status: CohortCacheReadStatus.STALE; cohorts: IBaseMaterializedCohort[] }
   | { status: CohortCacheReadStatus.MISS }
   | { status: CohortCacheReadStatus.UNAVAILABLE };
 
@@ -535,34 +533,64 @@ const _readCohortCache = async (
     .map((entry) => entry.materializedCohort)
     .filter((cohort): cohort is IBaseMaterializedCohort => cohort !== null);
 
-  return { status: CohortCacheReadStatus.HIT, cohorts };
+  return {
+    status: lookup.stale
+      ? CohortCacheReadStatus.STALE
+      : CohortCacheReadStatus.HIT,
+    cohorts,
+  };
 };
 
 /**
- * Writes one entry per bookmark: positive where a materialized cohort
- * resolved, negative (`null`) where none did. The negative entries are what
- * let the next load skip `getFilteredCohorts` entirely.
- *
- * Fire and forget by design (spec 4.4) — the returned promise is deliberately
- * not awaited, only `.catch`ed, so a slow or failing cache write can never
- * delay or fail the response.
+ * Attaches each bookmark's materialized cohort id, matching on the
+ * `bookmarkId` carried in the cohort's syntax. Sorts in place so the latest
+ * materialized cohort wins for a bookmark that has several, and so the caller
+ * sees the cohorts in id order.
  */
-const _writeCohortCacheEntries = (
-  analyticsSvcAPI: AnalyticsSvcAPI,
-  datasetId: string,
+const _mapBookmarksToCohorts = (
   bookmarks: IBookmark[],
   baseMaterializedCohorts: IBaseMaterializedCohort[],
-): void => {
-  if (bookmarks.length === 0) {
-    return;
+): IBookmark[] => {
+  const bookmarkIdToCohortId = new Map<string, number>();
+
+  baseMaterializedCohorts.sort((a, b) => a.id - b.id);
+  for (const cohort of baseMaterializedCohorts) {
+    let syntax: { bookmarkId?: string };
+    try {
+      syntax = JSON.parse(cohort.syntax);
+    } catch (error) {
+      console.error(
+        `Failed to parse syntax for materialized cohort ${cohort.id}, skipping:`,
+        error,
+      );
+      continue;
+    }
+    if (syntax.bookmarkId !== undefined) {
+      bookmarkIdToCohortId.set(syntax.bookmarkId, cohort.id);
+    }
   }
 
+  return bookmarks.map((bookmark) => ({
+    ...bookmark,
+    cohortDefinitionId: bookmarkIdToCohortId.get(bookmark.bmkId),
+  }));
+};
+
+/**
+ * Builds one entry per bookmark: positive where a materialized cohort
+ * resolved, negative (`null`) where none did. The negative entries are what
+ * let the next load skip `getFilteredCohorts` entirely.
+ */
+const _buildCohortCacheWriteEntries = (
+  bookmarks: IBookmark[],
+  baseMaterializedCohorts: IBaseMaterializedCohort[],
+): ICohortCacheWriteEntry[] => {
   const cohortsById = new Map<number, IBaseMaterializedCohort>();
   for (const cohort of baseMaterializedCohorts) {
     cohortsById.set(cohort.id, cohort);
   }
 
-  const entries: ICohortCacheWriteEntry[] = bookmarks.map((bookmark) => {
+  return bookmarks.map((bookmark) => {
     const cohort =
       bookmark.cohortDefinitionId === undefined
         ? undefined
@@ -582,11 +610,75 @@ const _writeCohortCacheEntries = (
         : null,
     };
   });
+};
+
+/**
+ * Fire and forget by design the returned promise is deliberately
+ * not awaited, only `.catch`ed, so a slow or failing cache write can never
+ * delay or fail the response.
+ */
+const _writeCohortCacheEntries = (
+  analyticsSvcAPI: AnalyticsSvcAPI,
+  datasetId: string,
+  bookmarks: IBookmark[],
+  baseMaterializedCohorts: IBaseMaterializedCohort[],
+): void => {
+  if (bookmarks.length === 0) {
+    return;
+  }
+
+  const entries = _buildCohortCacheWriteEntries(
+    bookmarks,
+    baseMaterializedCohorts,
+  );
 
   analyticsSvcAPI.cohortCacheWrite(datasetId, entries).catch((error) => {
     console.error("Failed to write cohort cache entries:", {
       datasetId,
       entryCount: entries.length,
+      error: getErrorDetails(error),
+    });
+  });
+};
+
+/**
+ * Refreshes a stale dataset after the response has gone out.
+ *
+ * Recomputes the bookmark-to-cohort mapping from the freshly read cohorts
+ * rather than reusing the one just served: writing back the stale mapping is
+ * what would make an expired entry immortal, since the upsert stamps a new
+ * `written_at` on whatever value it is handed.
+ *
+ * Deliberately not retried. A failure leaves the entries stale and flagged, so
+ * the next load simply tries again.
+ */
+const _revalidateCohortCacheInBackground = (
+  analyticsSvcAPI: AnalyticsSvcAPI,
+  datasetId: string,
+  bookmarks: IBookmark[],
+): void => {
+  if (bookmarks.length === 0) {
+    return;
+  }
+
+  (async () => {
+    const cohorts = await analyticsSvcAPI.getFilteredCohorts(datasetId, {
+      datasetId,
+    });
+    if (!Array.isArray(cohorts)) {
+      throw new Error("Filtered cohorts response was not an array");
+    }
+    await analyticsSvcAPI.cohortCacheWrite(
+      datasetId,
+      _buildCohortCacheWriteEntries(
+        _mapBookmarksToCohorts(bookmarks, cohorts),
+        cohorts,
+      ),
+    );
+  })().catch((error) => {
+    console.error("Cohort cache revalidation failed, entries stay stale:", {
+      datasetId,
+      bookmarkCount: bookmarks.length,
       error: getErrorDetails(error),
     });
   });
