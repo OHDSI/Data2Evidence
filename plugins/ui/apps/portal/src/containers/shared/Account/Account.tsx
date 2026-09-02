@@ -46,7 +46,7 @@ export const Account: FC<AccountProps> = ({ portalType }) => {
       fetchUserGroups();
       setMyUser({
         id: idTokenClaims[subProp],
-        name: resolveIdTokenName(idTokenClaims),
+        name: resolveIdTokenName(idTokenClaims) ?? "",
       });
     }
   }, [idTokenClaims, fetchUserGroups]);
