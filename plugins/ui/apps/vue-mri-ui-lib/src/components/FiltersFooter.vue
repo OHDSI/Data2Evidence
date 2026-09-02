@@ -283,7 +283,7 @@ export default {
     },
   },
   methods: {
-    ...mapActions(['fireBookmarkQuery', 'loadbookmarkToState', 'resetChart', 'queryReset']),
+    ...mapActions(['fireBookmarkQuery', 'loadbookmarkToState', 'resetChart']),
     ...mapMutations([types.CONFIG_SET_HAS_ASSIGNED, types.SET_ACTIVE_BOOKMARK, types.SET_ACTIVE_BOOKMARK_BASELINE]),
     onAddFilterCardMenuItemSelected(configPath, isExclusion = false) {
       this.$emit('add', {
@@ -374,10 +374,12 @@ export default {
         }
       }
     },
-    reset() {
-      this.queryReset()
-      this.resetChart()
-      this.closeResetDialog()
+    async reset() {
+      try {
+        await this.resetChart()
+      } finally {
+        this.closeResetDialog()
+      }
     },
     getRefreshUnicodeCharacter() {
       const charSpan = document.createElement('textarea')
