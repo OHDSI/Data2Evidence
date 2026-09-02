@@ -51,11 +51,11 @@
         :size="16"
       />Published: {{ source.publishedDate }}</span>
       <span class="ds-meta"><Icon
-        name="database"
+        name="info"
         :size="16"
       />Data source type: {{ source.sourceType }}</span>
       <span class="ds-meta"><Icon
-        name="tag"
+        name="database"
         :size="16"
       />Version: {{ source.version }}</span>
     </div>
@@ -179,4 +179,7 @@ const accessClass = computed(() => CLASS[props.source.access])
   min-width: 0;
 }
 .ds-meta :deep(svg) { color: var(--ds-text, #595757); flex: none; }
+/* Chip icons (globe/check/lock/clock) must take the chip's own color — the
+   bundled Vuetify/atlas-ui reset can break plain currentColor inheritance. */
+.ds-chip :deep(svg) { color: inherit; fill: currentColor; flex: none; }
 </style>

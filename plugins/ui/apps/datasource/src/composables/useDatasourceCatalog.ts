@@ -1,5 +1,5 @@
 import { ref, computed, watch, type Ref } from 'vue'
-import { getDatasetList, getPublicDatasetList, getPublicHeaderImage, getPublicOverviewDescription, type DatasetListItem } from '../api/systemPortal'
+import { getDatasetList, getPublicDatasetList, getPublicDatasetIds, getPublicHeaderImage, getPublicOverviewDescription, type DatasetListItem } from '../api/systemPortal'
 import { getUserGroupList, getMyStudyAccessRequests, STUDY_RESEARCHER_ROLE } from '../api/userMgmt'
 import { getIdpUserId } from '../utils/jwt'
 import type { AccessState } from './useDatasourceAccess'
@@ -27,6 +27,9 @@ export interface BannerConfig {
 const DEFAULT_BANNER: BannerConfig = {
   title: 'Data2Evidence',
   description: 'Our vision is a world where health data is comprehensively, digitally, and securely available for research.',
+  // Default header image when the admin hasn't set one (served at /atlas/config
+  // in the d2e Atlas build) — mirrors the portal's researcher Overview default.
+  logoUrl: '/atlas/config/landing-page-illustration.svg',
 }
 
 const ACCESS_ORDER: Record<AccessState, number> = { approved: 0, pending: 1, 'no-access': 2, restricted: 3 }
@@ -46,7 +49,7 @@ export function resolveAccess(
   return d.studyDetail?.showRequestAccess ? 'no-access' : 'restricted'
 }
 
-export function toCardVM(d: DatasetListItem, access: AccessState): DatasourceCardVM {
+export function toCardVM(d: DatasetListItem, access: AccessState, isPublic?: boolean): DatasourceCardVM {
   const rawCount = attr(d, 'patient_count')
   const count = Number(rawCount)
   const created = attr(d, 'created_date')
@@ -61,7 +64,9 @@ export function toCardVM(d: DatasetListItem, access: AccessState): DatasourceCar
       : '',
     sourceType: d.dataModel ?? '',
     version: attr(d, 'version'),
-    isPublic: d.visibilityStatus === 'PUBLIC',
+    // `/dataset/list` doesn't return visibilityStatus, so callers pass isPublic
+    // derived from the public list; fall back to the field when present.
+    isPublic: isPublic ?? d.visibilityStatus === 'PUBLIC',
     access,
   }
 }
@@ -102,7 +107,7 @@ export function useDatasourceCatalog(getToken: () => string | null) {
       banner.value = {
         title: DEFAULT_BANNER.title,
         description: desc?.value || DEFAULT_BANNER.description,
-        logoUrl: img?.value || undefined,
+        logoUrl: img?.value || DEFAULT_BANNER.logoUrl,
       }
     } catch {
       banner.value = { ...DEFAULT_BANNER }
@@ -119,17 +124,22 @@ export function useDatasourceCatalog(getToken: () => string | null) {
     try {
       await loadBanner()
       if (idpUserId) {
-        const [datasets, groupList, pending] = await Promise.all([
+        const [datasets, groupList, pending, publicIds] = await Promise.all([
           getDatasetList(token),
           getUserGroupList(idpUserId, token),
           getMyStudyAccessRequests(token),
+          getPublicDatasetIds().catch(() => [] as string[]),
         ])
         const rSet = new Set(groupList.alp_role_study_researcher)
         const pSet = new Set(pending.filter(r => r.role === STUDY_RESEARCHER_ROLE).map(r => r.studyId))
-        sources.value = datasets.map(d => toCardVM(d, resolveAccess(d, rSet, pSet, true)))
+        // visibilityStatus isn't on the researcher list, so a dataset is public
+        // iff it also appears in the public list (by id).
+        const publicSet = new Set(publicIds)
+        sources.value = datasets.map(d => toCardVM(d, resolveAccess(d, rSet, pSet, true), publicSet.has(d.id)))
       } else {
         const datasets = await getPublicDatasetList()
-        sources.value = datasets.map(d => toCardVM(d, resolveAccess(d, new Set(), new Set(), false)))
+        // Everything from the public list is public by definition.
+        sources.value = datasets.map(d => toCardVM(d, resolveAccess(d, new Set(), new Set(), false), true))
       }
     } catch (e) {
       error.value = e instanceof Error ? e.message : 'Failed to load data sources'

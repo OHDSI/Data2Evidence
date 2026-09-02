@@ -97,6 +97,8 @@
         </div>
       </section>
     </div>
+
+    <DataSourceFooter />
   </div>
 </template>
 
@@ -106,6 +108,7 @@ import { useDatasourceCatalog, type SortMode } from '../composables/useDatasourc
 import Icon from '../components/Icon.vue'
 import DataSourceCard from '../components/DataSourceCard.vue'
 import DataSourceBanner from '../components/DataSourceBanner.vue'
+import DataSourceFooter from '../components/DataSourceFooter.vue'
 
 const props = defineProps<{ token: string | null; onSelect: (id: string) => void }>()
 const cat = useDatasourceCatalog(() => props.token)
@@ -165,9 +168,11 @@ onUnmounted(() => document.removeEventListener('click', onDocClick))
 }
 .ds-toolbar {
   display: flex;
+  flex-direction: row;
   align-items: center;
   justify-content: space-between;
-  gap: 16px;
+  gap: 10px;
+  min-height: 76px;
   padding: 24px 24px 8px;
 }
 .ds-search {

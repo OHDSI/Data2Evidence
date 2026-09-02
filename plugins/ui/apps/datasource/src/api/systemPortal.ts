@@ -56,7 +56,7 @@ export interface DatasetListItem {
 // The Data Sources overview shows only WebAPI ("webapi") and HANA
 // ("hana__omop" / "hana__non_omop") datasets — not source/fhir/study/etc.
 export function isOverviewDataset(d: DatasetListItem): boolean {
-  return d.type === 'webapi' || d.type.startsWith('hana')
+  return d.type === 'webapi' || (d.type?.startsWith('hana') ?? false)
 }
 
 function onlyOverviewDatasets(list: DatasetListItem[]): DatasetListItem[] {
@@ -69,6 +69,15 @@ export async function getDatasetList(token: string | null): Promise<DatasetListI
 
 export async function getPublicDatasetList(): Promise<DatasetListItem[]> {
   return onlyOverviewDatasets(await apiFetch<DatasetListItem[]>('/system-portal/dataset/public/list', { token: null }))
+}
+
+// Ids of all public datasets — used to flag which researcher-list datasets are
+// public (the researcher list omits visibilityStatus). Unlike the list above we
+// do NOT filter by type: the public endpoint doesn't return `type`, and we only
+// need the ids for cross-referencing.
+export async function getPublicDatasetIds(): Promise<string[]> {
+  const list = await apiFetch<DatasetListItem[]>('/system-portal/dataset/public/list', { token: null })
+  return Array.isArray(list) ? list.map(d => d.id) : []
 }
 
 export interface PublicConfigValue {
