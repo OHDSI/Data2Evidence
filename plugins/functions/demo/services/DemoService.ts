@@ -241,19 +241,33 @@ export class DemoService {
 
     const portalAPI = new PortalAPI(token);
 
-    // Ask for the cache before waiting on it. Nothing else in this flow starts
-    // the job, so polling alone sat at activeJobStatus:null until the timeout
-    // below expired.
+    // Ask for the cache before waiting on it: when nothing has started the job,
+    // polling alone sits at activeJobStatus:null until the timeout below expires.
+    // Registering the dataset can start one on its own, though, and asking again
+    // while that one is copying is refused with "session busy" - the build that
+    // is running still finishes, but the request that lost the race is the one
+    // that would have attached the result. An existing cache file is the signal
+    // that something already started, since a build that reports no job row
+    // creates the file before it copies into it.
     let triggered = true;
-    try {
-      await portalAPI.refreshCache(dataset.id);
-    } catch (e) {
-      triggered = false;
-      this.logger.error(
-        `Could not start the cache job for ${dataset.id}: ${
-          e instanceof Error ? e.message : String(e)
-        }`,
+    let asked = false;
+    const startingStatus = await portalAPI.getCacheStatus(dataset.id).catch(() => undefined);
+    if (startingStatus?.cacheExists) {
+      this.logger.info(
+        `A cache already exists for ${dataset.id}; waiting for it rather than asking for another.`,
       );
+    } else {
+      asked = true;
+      try {
+        await portalAPI.refreshCache(dataset.id);
+      } catch (e) {
+        triggered = false;
+        this.logger.error(
+          `Could not start the cache job for ${dataset.id}: ${
+            e instanceof Error ? e.message : String(e)
+          }`,
+        );
+      }
     }
 
     // A failed trigger gets a short grace period, not the full budget. Something
@@ -264,6 +278,7 @@ export class DemoService {
     const pollTimeoutMs = triggered ? 15 * 60 * 1000 : 60 * 1000;
     const pollIntervalMs = 5000;
     const deadline = Date.now() + pollTimeoutMs;
+    const graceDeadline = Date.now() + 60 * 1000;
     let lastStatus;
     while (Date.now() < deadline) {
       // A poll that comes back empty is a transient condition, not a fatal one:
@@ -301,6 +316,21 @@ export class DemoService {
       this.logger.info(
         `Cache not ready yet for dataset ${dataset.id}: ${JSON.stringify(lastStatus)}`
       );
+      // The cache file that made this skip the trigger belonged to a build that
+      // is evidently not running: nothing has reported a job and the cache has
+      // not come ready. Ask once, late enough that a build already in flight has
+      // finished rather than being interrupted by the request.
+      if (!asked && !lastStatus.activeJobStatus && Date.now() > graceDeadline) {
+        asked = true;
+        this.logger.info(`Nothing is building the cache for ${dataset.id}; asking for one.`);
+        await portalAPI.refreshCache(dataset.id).catch((e) => {
+          this.logger.error(
+            `Could not start the cache job for ${dataset.id}: ${
+              e instanceof Error ? e.message : String(e)
+            }`,
+          );
+        });
+      }
       await new Promise((resolve) => setTimeout(resolve, pollIntervalMs));
     }
     throw new Error(

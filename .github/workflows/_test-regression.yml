@@ -190,6 +190,26 @@ jobs:
           # One script for both IdPs; see the script for why the flows differ.
           # Exports BEARER_TOKEN, REFRESH_TOKEN and IDP_SUB to $GITHUB_ENV.
           bash tests/backend_integration_tests/lib/ci-login.sh
+
+      - name: Wait for the dataset cache to be attached
+        run: |
+          # The restart above drops every attached cache and re-attaches during
+          # boot, and the container reports healthy well before that finishes.
+          # Querying in that window resolves no cache catalog at all and fails
+          # with a catalog error naming the first table the scenario touches, so
+          # wait for the cache to answer for itself before the scenarios run.
+          for attempt in $(seq 1 60); do
+            status=$(curl -sk \
+              "https://localhost:41100/system-portal/dataset/$DATASET_ID/cache-status" \
+              --header "Authorization: Bearer $BEARER_TOKEN")
+            echo "cache-status: $status"
+            case "$status" in
+              *'"cacheAttached":true'*) echo "Cache attached after ~$((attempt * 5))s."; exit 0 ;;
+            esac
+            sleep 5
+          done
+          echo "Cache was still not attached after 300s; running anyway."
+
       - name: Use Node.js 20
         uses: actions/setup-node@v4
         with:
