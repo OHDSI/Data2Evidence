@@ -92,12 +92,28 @@
         { "id": "pa.main", "name": "Data Exploration", "route": "/plugins/patient-analytics/", "icon": "mdi-account-search-outline", "order": 45, "insertBefore": "cohorts" }
       ],
       "metadata": { "author": "D2E", "description": "Data Exploration (Patient Analytics/MRI) — visual cohort exploration against the selected data source" }
+    },
+    {
+      "id": "datasources",
+      "name": "Datasources",
+      "version": "0.0.1",
+      "entryPoint": "datasource/index.system.js",
+      "menuItems": [
+        { "id": "datasources", "name": "Data Sources", "route": "/plugins/datasources/", "icon": "mdi-database", "order": 5, "insertBefore": "concepts" }
+      ],
+      "mountPoints": [
+        { "id": "datasource", "surface": "datasource-sidebar", "name": "Description", "icon": "mdi-file-document-outline", "group": "Overview", "order": 5, "insertBefore": "dashboard" }
+      ],
+      "metadata": { "author": "D2E", "description": "Data source catalog and description screens, replacing the researcher portal's dataset views" }
     }
   ],
   "settings": {
     "enableHotReload": false,
     "loadTimeout": 30000,
     "showLoadingIndicators": true,
+    "navigation": {
+      "disabledCoreItems": ["datasources"]
+    },
     "theme": {
       "enableDarkMode": false,
       "primaryColor": "#000080",
