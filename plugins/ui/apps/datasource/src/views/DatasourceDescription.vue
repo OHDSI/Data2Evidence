@@ -43,7 +43,26 @@
             <!-- Figma's button (node 1773:348519) is 146x40px. AtlasButton's
                  discrete sizes map to Vuetify heights xs=20/sm=28/md=36/lg=44 —
                  default (md, 36px) is the closest match, off by only 4px. -->
+            <AtlasTooltip
+              v-if="accessLookupFailed"
+              text="Unable to check your access right now. Try again shortly."
+              location="bottom end"
+              max-width="220"
+            >
+              <template #activator="{ props: tooltipProps }">
+                <span v-bind="tooltipProps">
+                  <AtlasButton
+                    data-testid="request-access-button"
+                    variant="primary"
+                    disabled
+                  >
+                    Request access
+                  </AtlasButton>
+                </span>
+              </template>
+            </AtlasTooltip>
             <AtlasButton
+              v-else
               data-testid="request-access-button"
               variant="primary"
               :loading="requestingAccess"
@@ -184,7 +203,7 @@ import { formatNumber } from '../utils/formatNumber'
 
 const props = defineProps<{ sourceKey: string; token: string | null }>()
 
-const { dataset, accessState, loading, requestingAccess, requestAccess } = useDatasourceAccess(
+const { dataset, accessState, accessLookupFailed, loading, requestingAccess, requestAccess } = useDatasourceAccess(
   () => props.sourceKey,
   () => props.token,
 )

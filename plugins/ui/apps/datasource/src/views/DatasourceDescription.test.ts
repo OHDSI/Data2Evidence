@@ -98,6 +98,24 @@ describe('DatasourceDescription', () => {
     expect(wrapper.text()).toContain('Pending access')
   })
 
+  it('shows a disabled Request access button (not a nonfunctional enabled one) when the access lookup itself fails', async () => {
+    vi.spyOn(userMgmt, 'getUserGroupList').mockRejectedValue(new Error('500'))
+    vi.spyOn(userMgmt, 'getMyStudyAccessRequests').mockResolvedValue([])
+    const addSpy = vi.spyOn(userMgmt, 'addStudyAccessRequest')
+
+    const wrapper = mountWith({ showRequestAccess: true })
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('No access')
+    const button = wrapper.find('[data-testid="request-access-button"]')
+    expect(button.exists()).toBe(true)
+    expect(button.attributes('disabled')).toBeDefined()
+
+    await button.trigger('click')
+    await flushPromises()
+    expect(addSpy).not.toHaveBeenCalled()
+  })
+
   it('shows a Restricted chip with the same red-on-pink colors as No access (octagon-alert icon) and a separate info tooltip icon', async () => {
     vi.spyOn(userMgmt, 'getUserGroupList').mockResolvedValue({ userId: 'u-1', alp_role_study_researcher: [] })
     vi.spyOn(userMgmt, 'getMyStudyAccessRequests').mockResolvedValue([])

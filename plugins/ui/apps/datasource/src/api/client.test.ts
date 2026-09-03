@@ -21,12 +21,22 @@ describe('apiFetch', () => {
 
     expect(result).toEqual({ hello: 'world' })
     expect(fetchMock).toHaveBeenCalledWith(
-      '/system-portal/dataset',
+      '/d2e/system-portal/dataset',
       expect.objectContaining({
         method: 'GET',
         headers: expect.objectContaining({ Authorization: 'Bearer tok-123' }),
       }),
     )
+  })
+
+  it('prefixes the deployment API base URL — this plugin is served under /atlas, not /d2e, so root-relative paths would resolve against the wrong origin', async () => {
+    const fetchMock = fetch as unknown as ReturnType<typeof vi.fn>
+    fetchMock.mockResolvedValue({ ok: true, status: 200, json: () => Promise.resolve({}) })
+
+    await apiFetch('/usermgmt/api/user-group/list', { token: null })
+
+    const [url] = fetchMock.mock.calls[0]
+    expect(url).toBe('/d2e/usermgmt/api/user-group/list')
   })
 
   it('omits the Authorization header when token is null', async () => {
@@ -55,10 +65,12 @@ describe('apiFetch', () => {
     expect(init.headers['Content-Type']).toBe('application/json')
   })
 
-  it('throws on a non-ok response', async () => {
+  it('throws on a non-ok response, naming the actual (prefixed) URL requested', async () => {
     const fetchMock = fetch as unknown as ReturnType<typeof vi.fn>
     fetchMock.mockResolvedValue({ ok: false, status: 403, statusText: 'Forbidden', json: () => Promise.resolve({}) })
 
-    await expect(apiFetch('/system-portal/dataset', { token: null })).rejects.toThrow('403')
+    await expect(apiFetch('/system-portal/dataset', { token: null })).rejects.toThrow(
+      'Request to /d2e/system-portal/dataset failed: 403',
+    )
   })
 })
