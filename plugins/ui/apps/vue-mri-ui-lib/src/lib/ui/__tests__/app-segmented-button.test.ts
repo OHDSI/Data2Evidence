@@ -80,7 +80,8 @@ describe('app-segmented-button.vue', () => {
     await nextTick()
 
     const items = wrapper.findAll('.app-segmented-listItem')
-    expect(items[2].classes()).toEqual(['app-segmented-listItem'])
+    expect(items[2].classes()).toContain('app-segmented-listItemSelected')
+    expect(items[0].classes()).not.toContain('app-segmented-listItemSelected')
   })
 
   it('handles keyboard navigation - spacebar selects focused item', async () => {
