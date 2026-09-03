@@ -575,9 +575,6 @@ export default {
         this.isDeletingBookmark = false
       }
     },
-    onChangeShared({ target }: { target: HTMLInputElement }) {
-      console.log(target.checked)
-    },
     closeIncompatibleMessage() {
       this.showIncompatibleMessage = false
     },
