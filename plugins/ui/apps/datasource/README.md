@@ -56,11 +56,12 @@ requests `<entry-dir>/style.css` for parcel mounts and 404s harmlessly if
 absent, but a real separate CSS file would need its own delivery mechanism
 for the application (`menuItems`) mount, which gets no such auto-injection.
 
-Dev build (unminified, outputs to local `dist/` instead of `dist-atlas`):
+Dev build (outputs to local `dist/` instead of `dist-atlas`; still minified —
+this config doesn't tie minification to mode):
 
 ```bash
 bun run dev   # vite dev server, or:
-NODE_ENV=development bun run build
+bun run build -- --mode development
 ```
 
 ## Wiring into the real build
