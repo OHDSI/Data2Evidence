@@ -24,6 +24,26 @@
   vertical-align: baseline;
 }
 
+// SVG icons render as a component rather than an icon-font glyph, so they need explicit
+// box sizing to match the glyph metrics above.
+.chartButton .icon.iconSvg {
+  width: 18px;
+  height: 18px;
+  vertical-align: middle;
+  pointer-events: none;
+
+  // The shared icon components paint themselves in brand colours. Inside a toolbar button the
+  // icon has to track the button's own colour instead, so it still reads on hover, while active
+  // and when disabled. Bounding rects and other `none` fills are left alone.
+  [fill]:not([fill='none']) {
+    fill: currentColor;
+  }
+
+  [stroke]:not([stroke='none']) {
+    stroke: currentColor;
+  }
+}
+
 .chartButtonContainer .chartButton {
   outline: none;
   background: none;
