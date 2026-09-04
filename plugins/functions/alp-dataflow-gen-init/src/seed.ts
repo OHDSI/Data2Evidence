@@ -2,6 +2,7 @@ import { env } from "./env";
 import { BlockType, DBCredentials, PrefectVariable, PrefectSecret, transformDBCredentials } from "./types";
 import { PrefectAPI } from "./PrefectAPI";
 import { customDockerWorkpool, customProcessWorkpool } from "./customWorkpool";
+import { waitForDatabaseCredentials } from "./dbCredentials";
 
 export async function seed(): Promise<void> {
   let prefectApi = new PrefectAPI();
@@ -79,20 +80,6 @@ export async function seed(): Promise<void> {
     throw new Error(`Prefect seeding incomplete — failed to create ${parts.join("; ")}`);
   }
 
-  const dbm = Trex.databaseManager();
-  const dbCredentials: DBCredentials[] = await dbm.getDatabaseCredentials();
-  const transformedCredentials = transformDBCredentials(dbCredentials);
-
-  const dbCredBlockName = "database-credentials";
-  const dbCredentialsOptions: PrefectSecret = {
-    value: transformedCredentials,
-  };
-  const dbCredBlockId = await prefectApi.createBlockDocument(
-    dbCredBlockName,
-    dbCredentialsOptions,
-    BlockType.SECRET
-  );
-
   // create flow results block
   const flowResultsBlockOptions = {
     basepath: prefectVariables.flows_results_s3_dir_path,
@@ -116,5 +103,57 @@ export async function seed(): Promise<void> {
   const result = await prefectApi.updateWorkPool(
     env.WORKPOOL_NAME,
     env.WORKPOOL_TYPE === "process" ? customProcessWorkpool : customDockerWorkpool
+  );
+
+  // The database-credentials block goes LAST: unlike everything above it depends
+  // on trex's boot-time registry sync (see dbCredentials.ts), so waiting for that
+  // here must not hold up the variables/secrets/workpool seeding.
+  await seedDatabaseCredentials(prefectApi);
+}
+
+/**
+ * Seed Prefect's `database-credentials` secret block from the trex registry.
+ *
+ * Waits for the registry to be populated rather than reading it once, and — when
+ * it is still empty at the deadline — leaves the block ALONE instead of writing
+ * `[]`. An empty write is never useful: with no databases there is nothing for a
+ * flow to connect to anyway, while overwriting a good block breaks every flow run
+ * with ValueError("'DATABASE_CREDENTIALS' secret is empty") until someone edits a
+ * database in setup (which makes trex re-seed the block on the /trex/db write).
+ */
+async function seedDatabaseCredentials(prefectApi: PrefectAPI): Promise<void> {
+  const dbm = Trex.databaseManager();
+  const dbCredentials: DBCredentials[] = await waitForDatabaseCredentials<DBCredentials>(
+    () => dbm.getDatabaseCredentials(),
+    {
+      timeoutMs: env.DATABASE_CREDENTIALS_WAIT_TIMEOUT_MS,
+      intervalMs: env.DATABASE_CREDENTIALS_WAIT_INTERVAL_MS,
+      log: (message) => console.log(`[db-credentials] ${message}`),
+    }
+  );
+
+  if (dbCredentials.length === 0) {
+    console.warn(
+      "[db-credentials] trex reported no databases; leaving the Prefect " +
+        "'database-credentials' block untouched. It will be (re)seeded by trex on the " +
+        "next database create/update/delete."
+    );
+    return;
+  }
+
+  const transformedCredentials = transformDBCredentials(dbCredentials);
+
+  const dbCredBlockName = "database-credentials";
+  const dbCredentialsOptions: PrefectSecret = {
+    value: transformedCredentials,
+  };
+  const dbCredBlockId = await prefectApi.createBlockDocument(
+    dbCredBlockName,
+    dbCredentialsOptions,
+    BlockType.SECRET
+  );
+  console.log(
+    `[db-credentials] seeded ${transformedCredentials.length} database(s): ` +
+      `[${transformedCredentials.map((c) => c.databaseCode).join(", ")}]`
   );
 }
