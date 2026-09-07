@@ -5,6 +5,8 @@ import { DatasetDetail } from '../dataset/entity/dataset-detail.entity.ts'
 import { WebApiSourceApi } from './webapi-source.api.ts'
 import { IDbCredentials, IDaimonRequest, ISourceRequest } from './types.ts'
 import { findRoleByName, sourceUserRoleName } from './webapi-role.util.ts'
+import { JobPluginsApi } from './jobplugins.api.ts'
+import { sanitizeIdForCacheId } from '../dataset/entity/dataset.entity.ts'
 
 // Mirrors org.ohdsi.webapi.common.DBMSType. A source whose dialect is absent there throws from
 // DataSourceDTOParser during WebAPI's connection check, and that exception escapes
@@ -29,7 +31,10 @@ const WEBAPI_SUPPORTED_DIALECTS = new Set([
 export class WebApiSourceService {
   private readonly logger = createLogger(this.constructor.name)
 
-  constructor(private readonly webApiSourceApi: WebApiSourceApi) {}
+  constructor(
+    private readonly webApiSourceApi: WebApiSourceApi,
+    private readonly jobPluginsApi: JobPluginsApi,
+  ) {}
 
   async syncSourceForDataset(
     dataset: Dataset,
@@ -79,34 +84,34 @@ export class WebApiSourceService {
     )
   }
 
-  // Manual cache (re)build for a webapi dataset. Unlike the private
-  // triggerCacheCreation used during source sync, this returns the result so
-  // the HTTP caller can surface success/failure.
+  // Build the cache with the same Prefect flow every other dataset type uses.
+  // jobplugins resolves the dataset and derives the cache catalog itself, so the
+  // dataset id is all we send. bao's POST /trexsql/{key}/cache is no longer called
+  // from d2e; it remains in trex for standalone WebAPI.
   async refreshCache(
-    sourceKey: string,
-    schemaName: string,
+    datasetId: string,
+    _schemaName: string,
     authToken?: string
   ): Promise<{ success: boolean; databaseCode: string; error?: string }> {
-    return await this.webApiSourceApi.createCache(sourceKey, schemaName, authToken)
+    const databaseCode = sanitizeIdForCacheId(datasetId)
+    try {
+      await this.jobPluginsApi.createCacheFlowRun(datasetId, authToken)
+      return { success: true, databaseCode }
+    } catch (error) {
+      return { success: false, databaseCode, error: (error as Error).message }
+    }
   }
 
-  // Kick off the TrexSQL cache build. We deliberately do NOT await
-  // `waitForCacheReady` here: bao's COMPLETED transition can take minutes, and
-  // edge-function HTTP callers (e.g. the dataset gateway) time out well before
-  // that. Consumers that depend on a hot cache (DQD, DC, analytics-svc
-  // cdmversion) must wait for readiness explicitly via `waitForCacheReady`.
+  // Kick off the cache build without waiting for it. Consumers that need a hot
+  // cache (DQD, DC, analytics-svc cdmversion) call waitForCacheReady explicitly.
   private async triggerCacheCreation(
-    sourceKey: string,
+    datasetId: string,
     schemaName: string,
     authToken?: string
   ): Promise<void> {
-    try {
-      const result = await this.webApiSourceApi.createCache(sourceKey, schemaName, authToken)
-      if (!result.success) {
-        this.logger.warn(`TrexSQL cache creation failed for ${sourceKey}: ${result.error}`)
-      }
-    } catch (error) {
-      this.logger.error(`Failed to create TrexSQL cache for ${sourceKey}: ${error}`)
+    const result = await this.refreshCache(datasetId, schemaName, authToken)
+    if (!result.success) {
+      this.logger.warn(`Cache flow run failed to start for ${datasetId}: ${result.error}`)
     }
   }
 
