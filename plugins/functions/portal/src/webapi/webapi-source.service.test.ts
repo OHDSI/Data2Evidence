@@ -6,38 +6,6 @@ import type { Dataset } from '../dataset/entity/index.ts'
 import type { DatasetDetail } from '../dataset/entity/dataset-detail.entity.ts'
 import type { IDbCredentials } from './types.ts'
 
-function makeService(cacheStatus: unknown, createCacheResult?: unknown) {
-  const api = {
-    getCacheStatus: () => Promise.resolve(cacheStatus),
-    createCache: () => Promise.resolve(createCacheResult),
-  }
-  // deno-lint-ignore no-explicit-any
-  return new WebApiSourceService(api as any)
-}
-
-describe('WebApiSourceService.getCacheStatus', () => {
-  it('passes lastModified through and reports ready when built', async () => {
-    const svc = makeService({
-      cacheExists: true,
-      cacheAttached: true,
-      lastModified: 1782194854916,
-      activeJob: null,
-    })
-    const status = await svc.getCacheStatus('key')
-    assertEquals(status.ready, true)
-    assertEquals(status.lastModified, 1782194854916)
-    assertEquals(status.cacheExists, true)
-    assertEquals(status.cacheAttached, true)
-  })
-
-  it('reports not-ready and null lastModified when no cache exists', async () => {
-    const svc = makeService({ cacheExists: false, cacheAttached: false })
-    const status = await svc.getCacheStatus('key')
-    assertEquals(status.ready, false)
-    assertEquals(status.lastModified, null)
-  })
-})
-
 type Call = { method: string; args: unknown[] }
 
 function createApiStub(existingSource: unknown = null) {
@@ -232,5 +200,49 @@ describe('WebApiSourceService.deleteSourceForDataset', () => {
     await service.deleteSourceForDataset('ds-1')
 
     assertEquals(methods().includes('deleteSource'), true)
+  })
+})
+
+describe('WebApiSourceService.getCacheStatus via flow run', () => {
+  function svcWith(state: string, flowRunId = 'run-1') {
+    const jobPlugins = {
+      createCacheFlowRun: () => Promise.resolve({ flowRunId }),
+      getFlowRunState: () => Promise.resolve(state),
+    }
+    // deno-lint-ignore no-explicit-any
+    return new WebApiSourceService({} as any, jobPlugins as any)
+  }
+
+  it('reports ready once the flow run completes', async () => {
+    const svc = svcWith('COMPLETED')
+    await svc.refreshCache('a-b-c', 'cdm', 'tok')
+    const status = await svc.getCacheStatus('a-b-c', 'tok')
+    assertEquals(status.ready, true)
+    assertEquals(status.cacheExists, true)
+    assertEquals(status.cacheAttached, true)
+    assertEquals(status.activeJobStatus, 'COMPLETED')
+  })
+
+  it('reports not ready while the flow run is still going', async () => {
+    const svc = svcWith('RUNNING')
+    await svc.refreshCache('a-b-c', 'cdm', 'tok')
+    const status = await svc.getCacheStatus('a-b-c', 'tok')
+    assertEquals(status.ready, false)
+    assertEquals(status.cacheExists, false)
+  })
+
+  it('surfaces a failed flow run as FAILED', async () => {
+    const svc = svcWith('FAILED')
+    await svc.refreshCache('a-b-c', 'cdm', 'tok')
+    const status = await svc.getCacheStatus('a-b-c', 'tok')
+    assertEquals(status.ready, false)
+    assertEquals(status.activeJobStatus, 'FAILED')
+  })
+
+  it('reports not ready when no run has been started for the dataset', async () => {
+    const svc = svcWith('COMPLETED')
+    const status = await svc.getCacheStatus('never-built', 'tok')
+    assertEquals(status.ready, false)
+    assertEquals(status.activeJobStatus, null)
   })
 })
