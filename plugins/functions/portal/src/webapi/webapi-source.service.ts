@@ -48,10 +48,15 @@ export class WebApiSourceService {
     authToken?: string
   ): Promise<void> {
     const dialect = this.mapDialect(dataset.dialect)
+    const isHana = dialect === 'hana'
     if (!WEBAPI_SUPPORTED_DIALECTS.has(dialect)) {
       await this.warnUnsupportedDialect(dataset.id, dialect, authToken)
-      if (dataset.schemaName) {
+      if (dataset.schemaName && !isHana) {
         await this.triggerCacheCreation(dataset.id, dataset.schemaName, authToken)
+      } else if (isHana) {
+        this.logger.debug(
+          `Skipping cache build for dataset ${dataset.id}: HANA has no DuckDB cache on any dataset type`
+        )
       }
       return
     }
@@ -66,8 +71,12 @@ export class WebApiSourceService {
         await this.webApiSourceApi.createSource(sourceRequest, authToken)
       }
 
-      if (dataset.schemaName) {
+      if (dataset.schemaName && !isHana) {
         await this.triggerCacheCreation(dataset.id, dataset.schemaName, authToken)
+      } else if (isHana) {
+        this.logger.debug(
+          `Skipping cache build for dataset ${dataset.id}: HANA has no DuckDB cache on any dataset type`
+        )
       }
     } catch (error) {
       this.logger.error(`Failed to sync WebAPI source for dataset ${dataset.id}: ${error}`)
@@ -108,8 +117,9 @@ export class WebApiSourceService {
     }
   }
 
-  // Kick off the cache build without waiting for it. Consumers that need a hot
-  // cache (DQD, DC, analytics-svc cdmversion) call waitForCacheReady explicitly.
+  // Kick off the cache build without waiting for it. waitForCacheReady below
+  // exists for a consumer that needs a hot cache before proceeding, but has no
+  // callers yet.
   private async triggerCacheCreation(
     datasetId: string,
     schemaName: string,
@@ -121,8 +131,9 @@ export class WebApiSourceService {
     }
   }
 
-  // Block until the cache for the given dataset is built. Call this from consumers
-  // that explicitly need a hot cache (DQD/DC kickoff).
+  // Block until the cache for the given dataset is built. Currently unused — grep
+  // confirms no callers — but intended for a consumer that needs a hot cache before
+  // proceeding (e.g. before dispatching downstream work against the cache catalog).
   async waitForCacheReady(
     datasetId: string,
     authToken?: string,
@@ -146,8 +157,10 @@ export class WebApiSourceService {
   // it is safe to query the cache catalog.
   //
   // bao reported cacheExists/cacheAttached by stat-ing the file; the flow reports
-  // neither, so both are derived from the run reaching COMPLETED. lastModified has
-  // no equivalent and is always null.
+  // neither, so both are derived from the run reaching COMPLETED. lastModified comes
+  // from the flow run's end_time, and is only ever populated once the run has
+  // COMPLETED (getFlowRunState returns endTime for other terminal/in-flight states
+  // too when Prefect has one, but we deliberately only surface it on success).
   async getCacheStatus(datasetId: string, authToken?: string): Promise<{
     ready: boolean
     cacheExists: boolean
@@ -167,13 +180,13 @@ export class WebApiSourceService {
         lastJobError: null,
       }
     }
-    const state = await this.jobPluginsApi.getFlowRunState(flowRunId, authToken)
+    const { state, endTime } = await this.jobPluginsApi.getFlowRunState(flowRunId, authToken)
     const ready = state === 'COMPLETED'
     return {
       ready,
       cacheExists: ready,
       cacheAttached: ready,
-      lastModified: null,
+      lastModified: ready ? endTime : null,
       activeJobStatus: state,
       lastJobError: state === 'FAILED' ? `Cache flow run ${flowRunId} failed` : null,
     }

@@ -135,5 +135,4 @@ export class WebApiSourceApi {
       throw new Error(`Failed to delete WebAPI role: ${response.status} ${errorText}`)
     }
   }
-
 }

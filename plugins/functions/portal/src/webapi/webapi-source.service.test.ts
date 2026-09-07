@@ -149,15 +149,17 @@ describe('WebApiSourceService.syncSourceForDataset', () => {
     assertEquals(methods().includes('createSource'), false)
   })
 
-  it('still starts a cache flow run for a hana dataset despite skipping source registration', async () => {
-    const { api, jobPlugins, calls, methods } = createApiStub()
+  // HANA has no DuckDB cache on any dataset type (it is queried directly), so a build
+  // triggered here would start a real Prefect flow run writing to the live HANA
+  // connection's own alias. Previously bao's create-cache-handler 404'd on the missing
+  // WebAPI Source and swallowed the error; the Prefect flow has no such backstop.
+  it('does not start a cache flow run for a hana dataset', async () => {
+    const { api, jobPlugins, methods } = createApiStub()
     const service = new WebApiSourceService(api as never, jobPlugins as never)
 
     await service.syncSourceForDataset(datasetWithDialect('hana'), detail, credentials)
 
-    assertEquals(methods().includes('createCacheFlowRun'), true)
-    const cacheCall = calls.find((c) => c.method === 'createCacheFlowRun')!
-    assertEquals(cacheCall.args[0], 'ds-1')
+    assertEquals(methods().includes('createCacheFlowRun'), false)
     assertEquals(methods().includes('createSource'), false)
     assertEquals(methods().includes('updateSource'), false)
   })
@@ -204,10 +206,10 @@ describe('WebApiSourceService.deleteSourceForDataset', () => {
 })
 
 describe('WebApiSourceService.getCacheStatus via flow run', () => {
-  function svcWith(state: string, flowRunId = 'run-1') {
+  function svcWith(state: string, flowRunId = 'run-1', endTime: number | null = null) {
     const jobPlugins = {
       createCacheFlowRun: () => Promise.resolve({ flowRunId }),
-      getFlowRunState: () => Promise.resolve(state),
+      getFlowRunState: () => Promise.resolve({ state, endTime }),
     }
     // deno-lint-ignore no-explicit-any
     return new WebApiSourceService({} as any, jobPlugins as any)
@@ -223,12 +225,21 @@ describe('WebApiSourceService.getCacheStatus via flow run', () => {
     assertEquals(status.activeJobStatus, 'COMPLETED')
   })
 
+  it('surfaces the flow run end_time as lastModified once completed', async () => {
+    const endTime = Date.parse('2026-09-01T12:00:00.000Z')
+    const svc = svcWith('COMPLETED', 'run-1', endTime)
+    await svc.refreshCache('a-b-c', 'cdm', 'tok')
+    const status = await svc.getCacheStatus('a-b-c', 'tok')
+    assertEquals(status.lastModified, endTime)
+  })
+
   it('reports not ready while the flow run is still going', async () => {
     const svc = svcWith('RUNNING')
     await svc.refreshCache('a-b-c', 'cdm', 'tok')
     const status = await svc.getCacheStatus('a-b-c', 'tok')
     assertEquals(status.ready, false)
     assertEquals(status.cacheExists, false)
+    assertEquals(status.lastModified, null)
   })
 
   it('surfaces a failed flow run as FAILED', async () => {
@@ -237,6 +248,7 @@ describe('WebApiSourceService.getCacheStatus via flow run', () => {
     const status = await svc.getCacheStatus('a-b-c', 'tok')
     assertEquals(status.ready, false)
     assertEquals(status.activeJobStatus, 'FAILED')
+    assertEquals(status.lastModified, null)
   })
 
   it('reports not ready when no run has been started for the dataset', async () => {
