@@ -16,7 +16,7 @@
       data-testid="pa-dqd-snackbar"
     >
       <span class="dqd-snackbar-content">
-        <component :is="dqdSnackbarIcon" class="dqd-snackbar-icon" :class="dqdSnackbarIconClass" />
+        <v-icon :icon="dqdSnackbarIcon" size="22" class="dqd-snackbar-icon" :class="dqdSnackbarIconClass" />
         {{ dqdSnackbar.text }}
       </span>
     </VSnackbar>
@@ -247,8 +247,6 @@ import Button from './Button.vue'
 import UsersIcon from './icons/UsersIcon.vue'
 import LoadErrorIllustration from './icons/LoadErrorIllustration.vue'
 import RefreshIcon from './icons/RefreshIcon.vue'
-import CheckCircleIcon from './icons/CheckCircleIcon.vue'
-import WarningTriangleIcon from './icons/WarningTriangleIcon.vue'
 import VSnackbar from './vuetify/VSnackbar.vue'
 import Constants from '../utils/Constants'
 import { isFlowRunCompleted, isFlowRunInProgress } from '../utils/FlowRunState'
@@ -339,7 +337,14 @@ export default {
       }
     },
     dqdSnackbarIcon() {
-      return this.dqdSnackbar.type === 'success' ? 'CheckCircleIcon' : 'WarningTriangleIcon'
+      switch (this.dqdSnackbar.type) {
+        case 'warning':
+          return 'mdi-alert-outline'
+        case 'error':
+          return 'mdi-alert-circle-outline'
+        default:
+          return 'mdi-check-circle-outline'
+      }
     },
     dqdSnackbarIconClass() {
       return `dqd-snackbar-icon-${this.dqdSnackbar.type}`
@@ -845,8 +850,6 @@ export default {
     UsersIcon,
     LoadErrorIllustration,
     RefreshIcon,
-    CheckCircleIcon,
-    WarningTriangleIcon,
     VSnackbar,
   },
 }
