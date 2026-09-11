@@ -66,6 +66,25 @@ Deno.test("upload posts the buffer with an upsert header", async () => {
   }
 });
 
+Deno.test("upload raises a StorageError on a non-ok response", async () => {
+  const client = new SupabaseStorageClient();
+  const f = fetchStub(() => new Response("boom", { status: 500 }));
+  try {
+    const error = await assertRejects(
+      () =>
+        client.upload("bucket-a", "id-1/results.zip", {
+          fileName: "results.zip",
+          buffer: new Uint8Array([1, 2, 3]),
+          mimetype: "application/zip",
+        }),
+      StorageError,
+    );
+    assertEquals(error.statusCode, 502);
+  } finally {
+    f.restore();
+  }
+});
+
 Deno.test("download returns the response stream", async () => {
   const client = new SupabaseStorageClient();
   const f = fetchStub(() =>
@@ -108,6 +127,20 @@ Deno.test("delete tolerates an object that is already gone", async () => {
   const f = fetchStub(() => new Response("not found", { status: 404 }));
   try {
     await client.delete("bucket-a", "id-1/results.zip");
+  } finally {
+    f.restore();
+  }
+});
+
+Deno.test("delete raises a StorageError on a real failure", async () => {
+  const client = new SupabaseStorageClient();
+  const f = fetchStub(() => new Response("boom", { status: 500 }));
+  try {
+    const error = await assertRejects(
+      () => client.delete("bucket-a", "id-1/results.zip"),
+      StorageError,
+    );
+    assertEquals(error.statusCode, 502);
   } finally {
     f.restore();
   }
