@@ -18,6 +18,7 @@ import {
 } from "../utils/wizardSections";
 import type { ResolvedWizardFieldGroup } from "../utils/wizardSections";
 import { resolveWizardFormNote } from "../config/wizardDefinitions";
+import { validateNumericExpression } from "../utils/numericExpression";
 import styles from "./StepForm.module.css";
 import sourceStyles from "./StepSelection.module.css";
 
@@ -239,7 +240,7 @@ export function StepForm() {
         <div key={field.id} className={styles.fieldGroup}>
           <label htmlFor={field.id} className={styles.label}>
             {field.label}
-            {field.required && <span className={styles.requiredAsterisk}>*</span>}:
+            {field.required && <span className={styles.requiredAsterisk}> *</span>}:
           </label>
           <div className={styles.inputWithToggle}>
             <TypeaheadField
@@ -291,7 +292,7 @@ export function StepForm() {
         <div key={field.id} className={styles.fieldGroup}>
           <label className={styles.label}>
             {field.label}
-            {field.required && <span className={styles.requiredAsterisk}>*</span>}:
+            {field.required && <span className={styles.requiredAsterisk}> *</span>}:
           </label>
           <div className={styles.groupInputs}>
             <select
@@ -351,7 +352,7 @@ export function StepForm() {
             <div className={styles.fieldLabelRow}>
               <label htmlFor={field.id} className={styles.label}>
                 {field.label}
-                {field.required && <span className={styles.requiredAsterisk}>*</span>}:
+                {field.required && <span className={styles.requiredAsterisk}> *</span>}:
               </label>
               <span className={styles.infoTooltip}>
                 <button
@@ -369,7 +370,7 @@ export function StepForm() {
                     <li>&gt; or &lt; for greater/less than</li>
                     <li>&gt;= or &lt;= for greater than or equal to/less than or equal to</li>
                     <li>[x-y] or ]x-y[ for an interval including or excluding the endpoints</li>
-                    <li>(-x) for negative values</li>
+                    {field.allowNegative === true && <li>(-x) for negative values</li>}
                   </ul>
                   <span>E.g: &gt;=60, [50-80]</span>
                 </span>
@@ -391,12 +392,13 @@ export function StepForm() {
                 {...register(field.id, {
                   required: field.required ? `${field.label} is required` : false,
                   validate: (v) => {
-                    if (!v || v === "") return true;
-                    const s = String(v).trim();
-                    const isRange = /^[[\]]\s*-?\d+(\.\d+)?\s*-\s*-?\d+(\.\d+)?\s*[[\]]$/.test(s);
-                    const isOp = /^(>=|<=|>|<|=|!=)\s*-?\d+(\.\d+)?$/.test(s);
-                    const isNum = /^-?\d+(\.\d+)?$/.test(s);
-                    if (!isRange && !isOp && !isNum) {
+                    const validationStatus = validateNumericExpression(v, {
+                      allowNegative: field.allowNegative === true,
+                    });
+                    if (validationStatus === "negative-not-allowed") {
+                      return `Negative values are not allowed for ${field.label}`;
+                    }
+                    if (validationStatus === "invalid-format") {
                       return `Invalid expression. Examples: >=60, >50, [50-80], 60`;
                     }
                     return true;
@@ -427,7 +429,7 @@ export function StepForm() {
           <div key={field.id} className={styles.fieldGroup}>
             <label htmlFor={field.id} className={styles.label}>
               {field.label}
-              {field.required && <span className={styles.requiredAsterisk}>*</span>}:
+              {field.required && <span className={styles.requiredAsterisk}> *</span>}:
             </label>
             <input
               id={field.id}
@@ -453,7 +455,7 @@ export function StepForm() {
           <div key={field.id} className={styles.fieldGroup}>
             <label htmlFor={field.id} className={styles.label}>
               {field.label}
-              {field.required && <span className={styles.requiredAsterisk}>*</span>}:
+              {field.required && <span className={styles.requiredAsterisk}> *</span>}:
             </label>
             <input
               id={field.id}
@@ -478,7 +480,7 @@ export function StepForm() {
           <div key={field.id} className={styles.fieldGroup}>
             <label className={styles.label}>
               {field.label}
-              {field.required && <span className={styles.requiredAsterisk}>*</span>}:
+              {field.required && <span className={styles.requiredAsterisk}> *</span>}:
             </label>
             <div className={styles.unsupported}>Unsupported field type: {field.type}</div>
           </div>
@@ -524,6 +526,7 @@ export function StepForm() {
                 {group.label}
                 {isRequiredGroup && (
                   <span className={styles.groupRequiredAsterisk} aria-hidden="true">
+                    {" "}
                     *
                   </span>
                 )}
