@@ -1,11 +1,6 @@
 <template>
   <div class="chartController" v-bind:class="{ withoutAxis: withoutAxis, genomics: getActiveChart === 'vb' }">
     <div v-if="getChartCover" class="chartCover"></div>
-    <div v-if="isBelowMinCohortSize && !chartBusy" class="min-cohort-placeholder">
-      <CohortDefinitionIcon class="min-cohort-placeholder__icon" />
-      <div class="min-cohort-placeholder__title">{{ getText('MRI_PA_NOT_ENOUGH_DATA_TITLE') }}</div>
-      <div class="min-cohort-placeholder__message">{{ notEnoughDataMessage }}</div>
-    </div>
     <div class="chartControllerContent">
       <div class="axisContainer" ref="axisContainer">
         <!-- <div class="kaplanAxis-label" v-if="getActiveChart === 'vb'">{{ getText('MRI_PA_KAPLAN_AXIS_TITLE') }}</div> -->
@@ -61,6 +56,11 @@
         </div>
       </div>
       <div class="chartContainer">
+        <div v-if="showMinCohortPlaceholder" class="min-cohort-placeholder">
+          <CohortDefinitionIcon class="min-cohort-placeholder__icon" />
+          <div class="min-cohort-placeholder__title">{{ getText('MRI_PA_NOT_ENOUGH_DATA_TITLE') }}</div>
+          <div class="min-cohort-placeholder__message">{{ notEnoughDataMessage }}</div>
+        </div>
         <loadingAnimation v-if="showChartLoadingAnimation"></loadingAnimation>
         <stackBarChart
           v-if="getActiveChart === 'stacked'"
@@ -73,6 +73,7 @@
         <patientListContainer
           v-if="getActiveChart === 'list'"
           @busyEv="setChartBusy"
+          @requestError="setPatientListRequestError"
           :showLeftPane="showLeftPane"
         ></patientListContainer>
       </div>
@@ -135,6 +136,7 @@ export default {
       clearConfirmationMessage: '',
       pendingConfirmResolve: null as ((value: boolean) => void) | null,
       pendingCancelRevert: null as (() => void) | null,
+      patientListRequestError: false,
     }
   },
   created() {
@@ -167,6 +169,7 @@ export default {
       // Reset busy state when switching chart types so a destroyed chart
       // cannot leave the loading indicator stuck.
       this.$emit('setChartBusy', false)
+      this.patientListRequestError = false
     },
     getActiveBookmark(newVal, oldVal) {
       // Reset only when  switching to a different cohort.
@@ -218,6 +221,13 @@ export default {
       // Non-numeric count (e.g. '--' when cohort is too small to display) is treated as below minimum.
       const patientCount = Number(this.getCurrentPatientCount)
       return Number.isNaN(patientCount) || patientCount < Number(minCohortSize)
+    },
+    showMinCohortPlaceholder() {
+      return (
+        this.isBelowMinCohortSize &&
+        !this.chartBusy &&
+        !(this.getActiveChart === 'list' && this.patientListRequestError)
+      )
     },
     colorAxisIndex() {
       return this.getColorAxisIndex
@@ -283,9 +293,18 @@ export default {
     },
   },
   methods: {
-    ...mapActions(['setFireRequest', 'setKMDisplayInfo', 'clearAxisValue', 'setColorAxisIndex', 'setDefaultColorAxisIndex']),
+    ...mapActions([
+      'setFireRequest',
+      'setKMDisplayInfo',
+      'clearAxisValue',
+      'setColorAxisIndex',
+      'setDefaultColorAxisIndex',
+    ]),
     setChartBusy(status) {
       this.$emit('setChartBusy', status)
+    },
+    setPatientListRequestError(status) {
+      this.patientListRequestError = status
     },
     updateDisplay() {
       this.setKMDisplayInfo({
@@ -359,12 +378,19 @@ export default {
       this.pendingConfirmResolve = null
       this.pendingCancelRevert = null
     },
+    // Conditions that make an automatic default-selection admissible and that can change
+    // between the chart response and the deferred commit below.
+    canAutoDefaultColorAxis() {
+      // colorAxisIndex already set (restored from bookmark or chosen by the user) → don't override
+      if (this.getColorAxisIndex !== null) return false
+      if (this.stackAttributeHasSelection) return false
+      if (this.isColorButtonDisabled) return false
+      return true
+    },
     onChartDataReady(xAxisCategoryCounts: { axisIndex: number; count: number }[]) {
-      // If colorAxisIndex is already set (restored from bookmark or chosen by the user), don't override
-      if (this.getColorAxisIndex !== null) return
-      if (this.hasSetDefaultColorAxis || xAxisCategoryCounts.length === 0) return
-      if (this.stackAttributeHasSelection) return
-      if (this.isColorButtonDisabled) return
+      if (xAxisCategoryCounts.length === 0) return
+      if (this.hasSetDefaultColorAxis) return
+      if (!this.canAutoDefaultColorAxis()) return
       this.hasSetDefaultColorAxis = true
 
       // Find the axis with the smaller number of categories
@@ -374,7 +400,17 @@ export default {
       // Only set default if the smallest category count is <= 5
       if (smallest.count > 5) return
 
+      // StackBarChart resolves the color attribute from getAllAxes at render time, so the slot
+      // must still hold the attribute these counts were measured on — otherwise the bars would be
+      // colored by an attribute whose cardinality was never checked against the limit above.
+      const attributeId = this.getAllAxes?.[smallest.axisIndex]?.props?.attributeId
+      if (!attributeId) return
+
       this.$nextTick(() => {
+        // Re-check: the guards above were evaluated a tick ago and the axis configuration
+        // (or the color selection itself) may have changed since.
+        if (!this.canAutoDefaultColorAxis()) return
+        if (this.getAllAxes?.[smallest.axisIndex]?.props?.attributeId !== attributeId) return
         this.setDefaultColorAxisIndex(smallest.axisIndex)
       })
     },
