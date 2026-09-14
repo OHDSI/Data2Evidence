@@ -166,6 +166,7 @@ export class DqdService {
       vocabSchemaName,
       releaseId,
       cohortDefinitionId,
+      useSourceConnection,
     } = dataQualityFlowRunDto;
 
     const dataset = await portalServerApi.getDataset(datasetId);
@@ -200,6 +201,7 @@ export class DqdService {
         cohortDefinitionId,
         releaseId,
         releaseDate,
+        useSourceConnection: useSourceConnection ?? false,
       },
     };
 
