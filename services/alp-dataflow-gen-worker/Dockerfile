@@ -105,6 +105,7 @@ COPY \
     plugins/flows/hades/pyproject.toml \
     plugins/flows/hades/pixi.lock \
     plugins/flows/hades/renv.lock \
+    plugins/flows/hades/renv.aarch64.lock \
     plugins/flows/hades/setup_r.sh \
     plugins/flows/hades/rprofile_java.R \
     /staged/hades-flow/baked/
@@ -113,6 +114,7 @@ COPY \
     plugins/flows/data_transformation/pyproject.toml \
     plugins/flows/data_transformation/pixi.lock \
     plugins/flows/data_transformation/renv.lock \
+    plugins/flows/data_transformation/renv.aarch64.lock \
     plugins/flows/data_transformation/setup_assets.sh \
     plugins/flows/data_transformation/setup_r.sh \
     /staged/data-transformation-flow/baked/
@@ -121,6 +123,7 @@ COPY \
     plugins/flows/base/pyproject.toml \
     plugins/flows/base/pixi.lock \
     plugins/flows/base/renv.lock \
+    plugins/flows/base/renv.aarch64.lock \
     plugins/flows/base/setup_assets.sh \
     plugins/flows/base/setup_r.sh \
     /staged/d2e-flows/baked/
