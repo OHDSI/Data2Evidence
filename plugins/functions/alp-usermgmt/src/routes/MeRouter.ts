@@ -7,6 +7,7 @@ import { createLogger } from '../Logger'
 import { LogtoAPI, TrexIdpAPI, WebAPI } from '../api'
 import { resolveRoleStore } from '../services/UserGroupService'
 import { env } from '../env'
+import { mayRekeyExistingSubject, resolveIdpMode } from '@alp/idp/mode.ts'
 
 @Service()
 export class MeRouter {
@@ -83,11 +84,20 @@ export class MeRouter {
           if (username) {
             const byName = await this.userService.getUserByUsername(username)
             if (byName?.id) {
-              this.logger.info(
-                `Linking idp_user_id ${idpUserId} to existing user "${username}"`
-              )
-              await this.userService.updateUser({ id: byName.id, idp_user_id: idpUserId })
-              user = byName
+              if (mayRekeyExistingSubject(byName.idpUserId, resolveIdpMode(env.D2E_IDP_MODE))) {
+                this.logger.info(
+                  `Linking idp_user_id ${idpUserId} to existing user "${username}"`
+                )
+                await this.userService.updateUser({ id: byName.id, idp_user_id: idpUserId })
+                user = byName
+              } else {
+                // Federated mode: the IdP migration owns re-keying. Answering as
+                // this row on a name match could hand one person's memberships
+                // to another identity that happens to share the name.
+                this.logger.warn(
+                  `Not re-keying "${username}" from ${byName.idpUserId} to ${idpUserId}: the IdP migration has not linked this identity`
+                )
+              }
             }
           }
         }

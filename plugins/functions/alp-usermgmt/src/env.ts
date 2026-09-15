@@ -78,6 +78,8 @@ export const env = {
   // customizer. Operator-supplied JSON; see `getIdpGroupRoleMapping` for how a
   // malformed value is handled.
   IDP_GROUP_ROLE_MAPPING: Deno.env.get("IDP__GROUP_ROLE_MAPPING") ?? '{}',
+  // trex or logto-federated; see @alp/idp/mode.ts.
+  D2E_IDP_MODE: Deno.env.get("D2E_IDP_MODE"),
 }
 
 export const services = JSON.parse(env.SERVICE_ROUTES)

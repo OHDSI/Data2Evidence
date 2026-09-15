@@ -28,4 +28,6 @@ export const env = {
   TREX_SERVICE_ROLE_KEY: _env.TREX__SERVICE_ROLE_KEY || _env.SUPABASE_SERVICE_ROLE_KEY,
   ALP_SYSTEM_NAME: Deno.env.get("ALP__SYSTEM_NAME"),
   APP__TENANT_ID: _env.APP__TENANT_ID,
+  // trex or logto-federated; see @alp/idp/mode.ts.
+  D2E_IDP_MODE: Deno.env.get("D2E_IDP_MODE"),
 }

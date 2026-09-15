@@ -394,7 +394,8 @@
           "IDP__INITIAL_USER__DOMAIN": "${IDP__INITIAL_USER__DOMAIN:-d2e.local}",
           "SUPABASE_SERVICE_ROLE_KEY": "${SUPABASE_SERVICE_ROLE_KEY}",
           "TREX__ADMIN_URL": "${TREX__ADMIN_URL}",
-          "D2E__SETUP_USER": "${D2E__SETUP_USER}"
+          "D2E__SETUP_USER": "${D2E__SETUP_USER}",
+          "D2E_IDP_MODE": "${D2E_IDP_MODE:-trex}"
         },
         "white-rabbit": {
           "PG_ADMIN_PASSWORD": "${PG_ADMIN_PASSWORD}",
