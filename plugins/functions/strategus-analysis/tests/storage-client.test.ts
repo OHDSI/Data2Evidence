@@ -95,11 +95,10 @@ Deno.test("download returns the response stream", async () => {
   );
 
   try {
-    const { readStream, contentType } = await client.download(
+    const { readStream } = await client.download(
       "bucket-a",
       "id-1/results.zip",
     );
-    assertEquals(contentType, "application/zip");
     const chunks = [];
     for await (const chunk of readStream) chunks.push(...chunk);
     assertEquals(chunks, [9, 9]);

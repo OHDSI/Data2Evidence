@@ -24,7 +24,7 @@ interface UploadedFile {
 interface ValidatedUpload {
   authHeader: string;
   file: UploadedFile;
-  name?: string;
+  name: string;
   metadata?: Record<string, unknown>;
 }
 
@@ -76,8 +76,8 @@ export default class StrategusResultsRouter {
     try {
       const { limit, offset, name } = req.query;
       const results = await this.strategusResultsService.listResults({
-        limit: limit === undefined ? undefined : Number(limit),
-        offset: offset === undefined ? undefined : Number(offset),
+        limit: this.parseNonNegativeInt(limit),
+        offset: this.parseNonNegativeInt(offset),
         name: typeof name === "string" ? name : undefined,
       });
       return res.status(200).json(results);
@@ -189,6 +189,18 @@ export default class StrategusResultsRouter {
     // deno-lint-ignore no-control-regex
     if (/[\x00-\x1f\x7f]/.test(base)) return null;
     return base;
+  }
+
+  /**
+   * Parses a query value to a non-negative integer, falling back to
+   * `undefined` (so the service applies its own default) when the value is
+   * absent, non-numeric, or negative. The service's page-size cap remains the
+   * single source of truth for the maximum.
+   */
+  private parseNonNegativeInt(value: unknown): number | undefined {
+    if (typeof value !== "string" || !/^\d+$/.test(value)) return undefined;
+    const parsed = Number(value);
+    return Number.isSafeInteger(parsed) ? parsed : undefined;
   }
 
   private requireAuth(req: Request, res: Response) {

@@ -298,6 +298,48 @@ Deno.test("GET / passes limit, offset and name through to the service", async ()
   assertEquals(seen, { limit: 10, offset: 20, name: "run" });
 });
 
+Deno.test("GET / falls back to the service default when limit is non-numeric", async () => {
+  let seen: Record<string, unknown> = {};
+  const instance = routerWithService({
+    listResults: (options: Record<string, unknown>) => {
+      seen = options;
+      return Promise.resolve([]);
+    },
+  });
+  const handler = findHandler(instance.router, "get", "/");
+  const req = createMockRequest({
+    query: { limit: "abc" },
+    headers: { authorization: "Bearer test-token" },
+  });
+  const { res, captured } = createMockResponse();
+
+  await handler(req, res);
+
+  assertEquals(captured.statusCode, 200);
+  assertEquals(seen.limit, undefined);
+});
+
+Deno.test("GET / falls back to the service default when offset is negative", async () => {
+  let seen: Record<string, unknown> = {};
+  const instance = routerWithService({
+    listResults: (options: Record<string, unknown>) => {
+      seen = options;
+      return Promise.resolve([]);
+    },
+  });
+  const handler = findHandler(instance.router, "get", "/");
+  const req = createMockRequest({
+    query: { offset: "-5" },
+    headers: { authorization: "Bearer test-token" },
+  });
+  const { res, captured } = createMockResponse();
+
+  await handler(req, res);
+
+  assertEquals(captured.statusCode, 200);
+  assertEquals(seen.offset, undefined);
+});
+
 Deno.test("GET /:id returns 404 for an unknown id", async () => {
   const instance = routerWithService({
     getResult: () => Promise.resolve(null),

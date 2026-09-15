@@ -118,10 +118,7 @@ export class SupabaseStorageClient {
       throw new StorageError(`Empty response body for ${path}`, 502);
     }
 
-    return {
-      readStream: response.body,
-      contentType: response.headers.get("content-type") || "application/zip",
-    };
+    return { readStream: response.body };
   }
 
   async delete(bucket: string, path: string): Promise<void> {

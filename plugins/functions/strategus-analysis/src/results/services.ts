@@ -11,7 +11,7 @@ const DEFAULT_PAGE_SIZE = 50;
 const MAX_PAGE_SIZE = 200;
 
 export interface ResultUploadInput {
-  name?: string;
+  name: string;
   fileName: string;
   buffer: Uint8Array;
   mimetype: string;
