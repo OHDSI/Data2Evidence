@@ -165,17 +165,20 @@ Deno.test('withdrawUserFromGroup stamps the user inside the transaction', async 
   assertEquals(syncCalls, ['remove'])
 })
 
-Deno.test('registerUserToGroup does not stamp when the membership already exists', async () => {
+Deno.test('registerUserToGroup does not stamp when the membership already exists, but still reconciles the role', async () => {
   const { service, stamped, syncCalls } = makeUserGroupService({ existingUserGroup: true })
 
   await withCurrentUser(async () => {
     await service.registerUserToGroup(USER_ID, GROUP_ID, TRX)
   })
 
-  // Nothing changed, so nothing may be invalidated. Stamping on a no-op would
-  // force a renewal every time a role was re-asserted.
+  // The membership row is unchanged, so nothing may be invalidated: stamping on
+  // a no-op would force a renewal every time a role was re-asserted.
   assertEquals(stamped, [])
-  assertEquals(syncCalls, [])
+  // The role sync still runs. The row and the identity provider are two stores
+  // that can disagree - a sync that failed once leaves the membership recorded
+  // and the role never granted - so returning early here made that permanent.
+  assertEquals(syncCalls, ['assign'])
 })
 
 Deno.test('withdrawUserFromGroup does not stamp when the user was not a member', async () => {
