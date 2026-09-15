@@ -40,8 +40,25 @@ export class SupabaseStorageClient {
     return { Authorization: `Bearer ${this.authToken}`, ...extra };
   }
 
+  /**
+   * Percent-encodes a single path segment. Beyond encodeURIComponent's usual
+   * set, "." is also escaped so a segment of "." or ".." can never survive as
+   * a literal dot-segment for the URL parser to collapse away (fetch applies
+   * WHATWG dot-segment normalization to the raw path before this client ever
+   * sees the request, so a `%2E` here decodes back to "." on the server but
+   * cannot be normalized client-side).
+   */
+  private encodeSegment(segment: string) {
+    return encodeURIComponent(segment).replace(/\./g, "%2E");
+  }
+
   private objectUrl(bucket: string, path: string) {
-    return `${this.baseUrl}/object/${bucket}/${path}`;
+    const encodedPath = path.split("/").map((segment) =>
+      this.encodeSegment(segment)
+    ).join("/");
+    return `${this.baseUrl}/object/${
+      this.encodeSegment(bucket)
+    }/${encodedPath}`;
   }
 
   async createBucket(name: string, isPublic = false): Promise<void> {

@@ -164,6 +164,59 @@ Deno.test("POST / rejects an oversized upload", async () => {
   });
 });
 
+Deno.test("POST / rejects a path traversal attempt in the file name", async () => {
+  const instance = routerWithService({});
+  const handler = findHandler(instance.router, "post", "/");
+  const { res, captured } = createMockResponse();
+
+  await handler(
+    uploadRequest({ ...zipFile, originalname: "../../../" }, {
+      name: "Run A",
+    }),
+    res,
+  );
+
+  assertEquals(captured.statusCode, 400);
+  assertEquals(captured.body, { message: "Invalid file name" });
+});
+
+Deno.test("POST / rejects a file name that is a bare '..' segment", async () => {
+  const instance = routerWithService({});
+  const handler = findHandler(instance.router, "post", "/");
+  const { res, captured } = createMockResponse();
+
+  await handler(
+    uploadRequest({ ...zipFile, originalname: ".." }, { name: "Run A" }),
+    res,
+  );
+
+  assertEquals(captured.statusCode, 400);
+  assertEquals(captured.body, { message: "Invalid file name" });
+});
+
+Deno.test("POST / reduces a traversal-style file name to its safe basename", async () => {
+  let seenFileName = "";
+  const instance = routerWithService({
+    createResult: (_token: string, input: Record<string, unknown>) => {
+      seenFileName = input.fileName as string;
+      return Promise.resolve({ id: "r1", ...input });
+    },
+  });
+  const handler = findHandler(instance.router, "post", "/");
+  const { res, captured } = createMockResponse();
+
+  await handler(
+    uploadRequest(
+      { ...zipFile, originalname: "../../strategus-results/x.zip" },
+      { name: "Run A" },
+    ),
+    res,
+  );
+
+  assertEquals(captured.statusCode, 201);
+  assertEquals(seenFileName, "x.zip");
+});
+
 Deno.test("POST / requires a name", async () => {
   const instance = routerWithService({});
   const handler = findHandler(instance.router, "post", "/");

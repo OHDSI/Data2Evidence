@@ -57,7 +57,7 @@ Deno.test("upload posts the buffer with an upsert header", async () => {
     });
     assertEquals(
       seenUrl,
-      "http://supabase-storage.test/object/bucket-a/id-1/results.zip",
+      "http://supabase-storage.test/object/bucket-a/id-1/results%2Ezip",
     );
     assertEquals(seenUpsert, "true");
     assertEquals(result, { bucket: "bucket-a", path: "id-1/results.zip" });
@@ -141,6 +141,32 @@ Deno.test("delete raises a StorageError on a real failure", async () => {
       StorageError,
     );
     assertEquals(error.statusCode, 502);
+  } finally {
+    f.restore();
+  }
+});
+
+Deno.test("upload percent-encodes path segments so a dot-segment or reserved character can't change the request target", async () => {
+  const client = new SupabaseStorageClient();
+  let seenUrl = "";
+  const f = fetchStub((url) => {
+    seenUrl = url;
+    return new Response("{}", { status: 200 });
+  });
+
+  try {
+    // A path whose segments, if interpolated raw, would contain a dot-segment
+    // plus reserved URL characters (?, #, space) that could otherwise change
+    // the request target or collapse via dot-segment normalization.
+    await client.upload("bucket a", "id-1/../weird?#name .zip", {
+      fileName: "../weird?#name .zip",
+      buffer: new Uint8Array([1]),
+      mimetype: "application/zip",
+    });
+    assertEquals(
+      seenUrl,
+      "http://supabase-storage.test/object/bucket%20a/id-1/%2E%2E/weird%3F%23name%20%2Ezip",
+    );
   } finally {
     f.restore();
   }

@@ -6,7 +6,13 @@ import StrategusResultsService, {
 } from "./services.ts";
 import { StorageError } from "../storage/SupabaseStorageClient.ts";
 
-const upload = multer({ storage: multer.memoryStorage() });
+// Cuts off oversized bodies during parsing, before the whole thing is
+// buffered into memory; the post-hoc size check below stays as a defense in
+// depth (and preserves the exact 400 the caller sees for an oversized file).
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: MAX_FILE_SIZE_BYTES },
+});
 
 interface UploadedFile {
   originalname: string;
@@ -115,9 +121,13 @@ export default class StrategusResultsRouter {
 
       res.status(200);
       res.setHeader("Content-Type", "application/zip");
+      const safeFileName = streamed.result.fileName.replace(
+        /[\\"]/g,
+        "\\$&",
+      );
       res.setHeader(
         "Content-Disposition",
-        `attachment; filename="${streamed.result.fileName}"`,
+        `attachment; filename="${safeFileName}"`,
       );
       res.setHeader("Content-Length", String(streamed.result.fileSize));
 
@@ -167,6 +177,20 @@ export default class StrategusResultsRouter {
     }
   }
 
+  /**
+   * Reduces a client-controlled upload file name to a bare basename and
+   * rejects anything that still looks unsafe, so a name like
+   * "../../strategus-results/x.zip" can never be used to write outside the
+   * object's own `{id}/` prefix. Returns null when the name is unusable.
+   */
+  private sanitizeFileName(name: string): string | null {
+    const base = name.split(/[/\\]/).pop() ?? "";
+    if (!base || base === "." || base === "..") return null;
+    // deno-lint-ignore no-control-regex
+    if (/[\x00-\x1f\x7f]/.test(base)) return null;
+    return base;
+  }
+
   private requireAuth(req: Request, res: Response) {
     if (!req.headers["authorization"]) {
       res.status(401).json({ message: "Authorization header is required" });
@@ -194,6 +218,13 @@ export default class StrategusResultsRouter {
       res.status(400).json({ message: "No file provided" });
       return null;
     }
+
+    const sanitizedName = this.sanitizeFileName(file.originalname);
+    if (!sanitizedName) {
+      res.status(400).json({ message: "Invalid file name" });
+      return null;
+    }
+    file.originalname = sanitizedName;
 
     if (!file.originalname.endsWith(".zip")) {
       res.status(400).json({
