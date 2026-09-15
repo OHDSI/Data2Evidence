@@ -343,6 +343,11 @@ services:
       # TREX_OIDC_INTERNAL_BASE so server-side fetches take a reachable route
       # while `iss` stays put.
       TREX_OIDC_ISSUER: "https://${CADDY__D2E__PUBLIC_FQDN:-${CADDY__ALP__PUBLIC_FQDN:-localhost}}:${CADDY_PORT:-${PORT:-443}}"
+      # Passed through so an environment whose public FQDN does not resolve from
+      # inside this container can name a route that does, without needing the CI
+      # overlay (which also mounts a built UI that not every job produces). Empty
+      # is falsy in the resolver, so an unset value keeps the public issuer.
+      TREX_OIDC_INTERNAL_BASE: ${TREX_OIDC_INTERNAL_BASE:-}
       # trex ships no login UI; an unauthenticated /authorize lands here.
       TREX_OIDC_LOGIN_URL: "https://${CADDY__D2E__PUBLIC_FQDN:-${CADDY__ALP__PUBLIC_FQDN:-localhost}}:${CADDY_PORT:-${PORT:-443}}/d2e-login/"
       # WebAPI is the only relying party: Atlas reaches the IdP through it. The

@@ -128,6 +128,14 @@ jobs:
         run: docker network inspect alp > /dev/null || docker network create alp
 
       - name: Start system services
+        env:
+          # This job's public FQDN is localhost:41100, which inside the trex
+          # container is the container itself with nothing on that port, so the
+          # token proxy's server-side fetch of its own issuer fails and every
+          # login dies at the token exchange. Name the route that resolves; `iss`
+          # stays the public issuer from docker-compose.yml, so tokens verify
+          # unchanged. The duckdb job gets this from docker-compose-ci.yml.
+          TREX_OIDC_INTERNAL_BASE: http://alp-trex:33001
         run: |
           node ./scripts/dist/cli.js -v develop -e -n .env.local --hana -d ./plugins/functions -p 41100 start
           echo "Waiting 160 secs for services to start..."
