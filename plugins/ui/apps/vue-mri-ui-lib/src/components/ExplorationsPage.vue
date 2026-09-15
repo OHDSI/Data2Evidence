@@ -12,16 +12,20 @@
         <h1 class="explorations-page__title">{{ getText('MRI_PA_EXPLORATIONS_TITLE') }}</h1>
         <p class="explorations-page__description">{{ getText('MRI_PA_EXPLORATIONS_DESCRIPTION') }}</p>
       </div>
+      <!-- Switching is only possible in the Atlas mount. In the portal the
+           dataset arrives through customProps and there is no channel back, so
+           the select stays a read-only label until #2956 settles that. -->
       <D2eSelect
         class="explorations-page__dataset"
         size="sm"
-        disabled
+        :disabled="!canSwitchDataSource"
         :label="getText('MRI_PA_EXPLORATIONS_DATASOURCE')"
         :items="datasetItems"
-        :model-value="datasetName"
+        :model-value="datasetId"
         prepend-icon="mdi-database-outline"
         hide-details
         data-testid="explorations-datasource"
+        @update:model-value="onDataSourceSelect"
       />
     </header>
 
@@ -389,6 +393,7 @@ import { useStore } from 'vuex'
 import { D2eButton, D2eCheckbox, D2eDialog, D2eExplorationCard, D2eIconButton, D2eMenu, D2eSelect, D2eTextField } from '@d2e/ui'
 import { useExplorationsStore } from '../stores/explorations'
 import { useNotificationStore } from '../stores/notifications'
+import { useUnsavedChanges } from '@/composables/useUnsavedChanges'
 import { usePortalContext } from '../composables/usePortalContext'
 import { useDashboardFlow } from '../composables/useDashboardFlow'
 import * as types from '../store/mutation-types'
@@ -429,6 +434,8 @@ const emit = defineEmits<{
 
 const store = useStore()
 const portalContext = usePortalContext()
+// Singleton: module-level state, so this drives the same dialog App.vue renders.
+const unsavedChanges = useUnsavedChanges()
 const explorations = useExplorationsStore()
 const notifications = useNotificationStore()
 // Wrapped in `reactive()` so its nested refs unwrap the same way ChartToolbar's
@@ -494,10 +501,82 @@ const loadError = computed(() => store.getters.getBookmarksLoadError)
  * spinner — two loaders on screen at once, for as long as the deletes ran.
  * A refresh keeps the rows on screen instead and lets the dialog own the
  * feedback.
+ *
+ * A data source switch is excluded for the same reason. That flow commits
+ * `RESET_ALL_BOOKMARKS`, so `allCards` empties and this would fire — under the
+ * app-wide overlay `App.vue` already shows for the switch. Two loaders again,
+ * and the grid blanking underneath is what made a switch look like the whole
+ * application reloading.
  */
-const showInitialLoader = computed(() => loading.value && allCards.value.length === 0)
-const datasetName = computed(() => store.getters.getSelectedDataset?.id || portalContext.datasetId)
-const datasetItems = computed(() => [{ label: datasetName.value, value: datasetName.value }])
+const datasetReloading = computed<boolean>(() => Boolean(store.getters.getDatasetReloadInProgress))
+const showInitialLoader = computed(() => loading.value && allCards.value.length === 0 && !datasetReloading.value)
+/** The active source's id. Still the select's value: the id is what every call
+    downstream uses, and the label is only what the user reads. */
+const datasetId = computed(() => store.getters.getSelectedDataset?.id || portalContext.datasetId)
+/** `getSelectedDatasetName` resolves the id against the fetched source list and
+    falls back to the id, so this is never blank while that list is still
+    loading, or if it failed. */
+const datasetName = computed(() => store.getters.getSelectedDatasetName || datasetId.value)
+
+/**
+ * Switching the source is only possible in the native Atlas mount.
+ *
+ * In the portal the dataset arrives through customProps and nothing flows
+ * back, so changing it here would desynchronise the app from the shell that
+ * owns it. #2956 covers the portal's side. In Atlas the app can move itself:
+ * the dataset-change watcher reloads config and bookmarks off
+ * `portalContext.datasetId`, so setting that is the whole switch.
+ */
+const canSwitchDataSource = computed(
+  () => import.meta.env.VITE_ATLAS_NATIVE === 'true' && dataSourceItems.value.length > 1,
+)
+
+/** Every source the user can read, for the switcher. */
+const dataSourceItems = computed(() => {
+  const sources = (store.getters.getDataSources || []) as Array<{ sourceKey: string; sourceName?: string }>
+  return sources.map(source => ({ label: source.sourceName || source.sourceKey, value: source.sourceKey }))
+})
+
+/**
+ * The select's items. Falls back to the active source alone, which is what the
+ * portal always shows and what Atlas shows until the list arrives — a select
+ * with no item matching its model value renders blank.
+ */
+const datasetItems = computed(() =>
+  canSwitchDataSource.value ? dataSourceItems.value : [{ label: datasetName.value, value: datasetId.value }],
+)
+
+/**
+ * Move the app to another data source.
+ *
+ * Only `portalContext.datasetId` is set. `installDatasetChangeWatcher`
+ * subscribes to it and owns the rest — it clears the active bookmark, resets
+ * the bookmark list and the dataset cache, then re-requests the MRI config and
+ * reloads the bookmarks. Doing any of that here would duplicate it and race.
+ *
+ * **Through the unsaved-changes guard, not straight at the store.** That guard
+ * is installed on the `custom-props-changed` listener, so it only covers a
+ * switch the host initiates. This selector mutates the store from inside the
+ * app, which never reaches that listener — so without asking here, choosing a
+ * source while a bookmark had unedited changes discarded them instantly and
+ * silently, because the watcher's first act is to clear the active bookmark.
+ * `guard` runs the action immediately when nothing is dirty, so the common
+ * case is unaffected.
+ *
+ * The Atlas3 host is not told about the change. It has no handler for one, so
+ * its own idea of the selected source can drift from ours. The gaps document
+ * under `docs/projects/vue-mri-ui/atlas-native/` records what a host fix takes.
+ */
+const onDataSourceSelect = (nextDatasetId: string): void => {
+  if (!nextDatasetId || nextDatasetId === datasetId.value) return
+  unsavedChanges.guard(() => portalContext.applyProps({ datasetId: nextDatasetId }))
+}
+
+// One fetch per mount is enough: the response is every source this user can
+// read, not something scoped to the active dataset. Nothing awaits it — the
+// label falls back to the id until it lands, and the action swallows failure,
+// so a missing list costs a nicer name and nothing else.
+store.dispatch('fireGetDataSources')
 const canMaterialize = computed<boolean>(() => Boolean(store.getters.getCanDatasetMaterializeCohorts))
 
 // Matches ChartToolbar.vue's isWizardFeatureEnabled / canOpenDashboard.
@@ -1058,6 +1137,17 @@ const onMaterializeClose = (open: boolean): void => {
   }
 }
 
+/**
+ * The bookmark ids with a duplicate request in flight.
+ *
+ * Duplicate has no confirmation dialog, so the menu click is the side effect
+ * itself: without this a double click posts twice and the user gets two copies.
+ * Rename and Delete need no equivalent, because their click only opens a modal.
+ * Keyed by id rather than one boolean, so copying two different cards at once
+ * still works.
+ */
+const duplicatingIds = ref<Set<string>>(new Set())
+
 const moreItems = (card: { source: BookmarkDisplay }) => {
   // Do not offer an action the user cannot perform: the same ownership guard
   // BookmarkItems applies to rename and delete.
@@ -1074,13 +1164,20 @@ const moreItems = (card: { source: BookmarkDisplay }) => {
       icon: 'mdi-pencil-outline',
       disabled: renameDisabled,
     },
-    // #3123. The backend has no duplicate command yet, so the entry shows but
-    // cannot be chosen.
+    // #3123. Duplicate copies the bookmark's filters, so it needs a D2E
+    // bookmark to read: a materialized-only cohort has none, and an Atlas
+    // definition has its own /copy endpoint. Disable rather than fail.
+    //
+    // Also disabled while this card's own copy is in flight. The menu closes on
+    // select, so reopening it is the realistic way to fire a second request.
     {
       label: getText('MRI_PA_EXPLORATIONS_DUPLICATE'),
       value: 'duplicate',
       icon: 'mdi-content-copy',
-      disabled: true,
+      disabled:
+        disabled ||
+        !card.source.bookmark ||
+        duplicatingIds.value.has(card.source.bookmark.id),
     },
     {
       label: getText('MRI_PA_BUTTON_DELETE'),
@@ -1092,10 +1189,42 @@ const moreItems = (card: { source: BookmarkDisplay }) => {
   ]
 }
 
+/**
+ * Copy one exploration. #3123 asks for no confirmation dialog, so this runs on
+ * the menu click.
+ *
+ * The name goes through the locale string's own `{0}`, so a translation can put
+ * the marker where its language wants it. Duplicating twice deliberately gives
+ * two cards with the same name: the ticket says the user renames afterwards,
+ * and inventing "(Copy 2)" is scope it does not ask for.
+ */
+const duplicateExploration = async (record: BookmarkDisplay): Promise<void> => {
+  const bookmarkId = record.bookmark.id
+  if (duplicatingIds.value.has(bookmarkId)) return
+  duplicatingIds.value = new Set(duplicatingIds.value).add(bookmarkId)
+
+  const copyName = getText('MRI_PA_EXPLORATIONS_COPY_NAME', record.displayName)
+  try {
+    await store.dispatch('fireDuplicateBookmarkQuery', { bookmarkId, newName: copyName })
+    notifications.setToastMessage({ text: getText('MRI_PA_EXPLORATIONS_DUPLICATE_SUCCESS', copyName) })
+  } catch (error) {
+    console.error('[ExplorationsPage] Duplicate failed for', record.displayName, error)
+    notifications.setAlertMessage({
+      message: getText('MRI_PA_EXPLORATIONS_DUPLICATE_FAILED', record.displayName),
+      messageType: 'error',
+    })
+  } finally {
+    const next = new Set(duplicatingIds.value)
+    next.delete(bookmarkId)
+    duplicatingIds.value = next
+  }
+}
+
 const onMoreSelect = (card: { source: BookmarkDisplay }, value: string): void => {
   actionTarget.value = card.source
   if (value === 'rename') renameOpen.value = true
   if (value === 'delete') deleteOpen.value = true
+  if (value === 'duplicate') duplicateExploration(card.source)
 }
 </script>
 

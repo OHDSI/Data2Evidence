@@ -22,6 +22,7 @@ export const i18n = {
     MRI_PA_COLL_BUT_OK: 'OK',
     MRI_PA_COLL_BUT_CANCEL: 'Cancel',
     MRI_PA_COLL_BUT_RETRY: 'Retry',
+    MRI_PA_CHART_LOAD_ERROR: 'This chart could not be loaded. Reload the page and try again.',
     MRI_PA_COLL_BUT_SAVE: 'Save',
     MRI_PA_COHORT_SAVED: 'Cohort saved',
     MRI_PA_BOOKMARK_SAVED: 'Bookmark saved successfully',
@@ -473,6 +474,9 @@ export const i18n = {
     MRI_PA_EXPLORATIONS_FILTER_SUMMARY: 'Filter summary',
     MRI_PA_EXPLORATIONS_ANALYZE: 'Analyze',
     MRI_PA_EXPLORATIONS_DUPLICATE: 'Duplicate',
+    MRI_PA_EXPLORATIONS_COPY_NAME: '{0} (Copy)',
+    MRI_PA_EXPLORATIONS_DUPLICATE_SUCCESS: '{0} was created.',
+    MRI_PA_EXPLORATIONS_DUPLICATE_FAILED: '{0} could not be duplicated.',
     MRI_PA_EXPLORATIONS_FILTERS: 'Filters',
     MRI_PA_EXPLORATIONS_FILTERS_TITLE: 'Filters',
     MRI_PA_EXPLORATIONS_FILTERS_CLEAR: 'Clear all selections',
@@ -1584,6 +1588,12 @@ export const i18n = {
     MRI_PA_EXPLORATIONS_FILTER_SUMMARY: 'Filterübersicht',
     MRI_PA_EXPLORATIONS_ANALYZE: 'Analysieren',
     MRI_PA_EXPLORATIONS_DUPLICATE: 'Duplizieren',
+    // TODO(i18n): needs native review.
+    MRI_PA_EXPLORATIONS_COPY_NAME: '{0} (Kopie)',
+    // TODO(i18n): needs native review.
+    MRI_PA_EXPLORATIONS_DUPLICATE_SUCCESS: '{0} wurde erstellt.',
+    // TODO(i18n): needs native review.
+    MRI_PA_EXPLORATIONS_DUPLICATE_FAILED: '{0} konnte nicht dupliziert werden.',
     MRI_PA_EXPLORATIONS_FILTERS: 'Filter',
     MRI_PA_EXPLORATIONS_FILTERS_TITLE: 'Filter',
     MRI_PA_EXPLORATIONS_FILTERS_CLEAR: 'Alle Auswahlen aufheben',
@@ -2666,6 +2676,12 @@ export const i18n = {
     MRI_PA_EXPLORATIONS_FILTER_SUMMARY: '筛选摘要',
     MRI_PA_EXPLORATIONS_ANALYZE: '分析',
     MRI_PA_EXPLORATIONS_DUPLICATE: '复制',
+    // TODO(i18n): needs native review.
+    MRI_PA_EXPLORATIONS_COPY_NAME: '{0}（副本）',
+    // TODO(i18n): needs native review.
+    MRI_PA_EXPLORATIONS_DUPLICATE_SUCCESS: '已创建 {0}。',
+    // TODO(i18n): needs native review.
+    MRI_PA_EXPLORATIONS_DUPLICATE_FAILED: '无法复制 {0}。',
     MRI_PA_EXPLORATIONS_FILTERS: '筛选',
     MRI_PA_EXPLORATIONS_FILTERS_TITLE: '筛选',
     MRI_PA_EXPLORATIONS_FILTERS_CLEAR: '清除所有选择',
