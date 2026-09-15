@@ -57,7 +57,7 @@ Deno.test("upload posts the buffer with an upsert header", async () => {
     });
     assertEquals(
       seenUrl,
-      "http://supabase-storage.test/object/bucket-a/id-1/results%2Ezip",
+      "http://supabase-storage.test/object/bucket-a/id-1/results.zip",
     );
     assertEquals(seenUpsert, "true");
     assertEquals(result, { bucket: "bucket-a", path: "id-1/results.zip" });
@@ -145,7 +145,54 @@ Deno.test("delete raises a StorageError on a real failure", async () => {
   }
 });
 
-Deno.test("upload percent-encodes path segments so a dot-segment or reserved character can't change the request target", async () => {
+Deno.test("upload rejects a path containing a literal '..' segment", async () => {
+  const client = new SupabaseStorageClient();
+  const f = fetchStub(() => new Response("{}", { status: 200 }));
+
+  try {
+    const error = await assertRejects(
+      () =>
+        client.upload(
+          "strategus-results-store",
+          "uuid-1/../../strategus-results/x.zip",
+          {
+            fileName: "x.zip",
+            buffer: new Uint8Array([1]),
+            mimetype: "application/zip",
+          },
+        ),
+      StorageError,
+    );
+    assertEquals(error.statusCode, 404);
+  } finally {
+    f.restore();
+  }
+});
+
+Deno.test("upload rejects a path containing a percent-encoded '..' segment", async () => {
+  const client = new SupabaseStorageClient();
+  const f = fetchStub(() => new Response("{}", { status: 200 }));
+
+  try {
+    // %2e%2e decodes to "..": if this were merely percent-encoded rather than
+    // rejected outright, WHATWG dot-segment normalization would still collapse
+    // it once fetch parses the URL - proving the old encode-around approach
+    // never worked.
+    await assertRejects(
+      () =>
+        client.upload("strategus-results-store", "uuid-1/%2e%2e", {
+          fileName: "x.zip",
+          buffer: new Uint8Array([1]),
+          mimetype: "application/zip",
+        }),
+      StorageError,
+    );
+  } finally {
+    f.restore();
+  }
+});
+
+Deno.test("upload targets the real bucket/path even after URL parsing, for a benign name with reserved characters", async () => {
   const client = new SupabaseStorageClient();
   let seenUrl = "";
   const f = fetchStub((url) => {
@@ -154,17 +201,19 @@ Deno.test("upload percent-encodes path segments so a dot-segment or reserved cha
   });
 
   try {
-    // A path whose segments, if interpolated raw, would contain a dot-segment
-    // plus reserved URL characters (?, #, space) that could otherwise change
-    // the request target or collapse via dot-segment normalization.
-    await client.upload("bucket a", "id-1/../weird?#name .zip", {
-      fileName: "../weird?#name .zip",
+    // Reserved URL characters (?, #, space) in an otherwise benign filename
+    // must still be neutralized, and an ordinary "." must survive literally
+    // so the stored object keeps its real extension.
+    await client.upload("bucket a", "id-1/weird?#name .zip", {
+      fileName: "weird?#name .zip",
       buffer: new Uint8Array([1]),
       mimetype: "application/zip",
     });
+    // Assert on the parsed URL's pathname, not the raw string: parsing is
+    // exactly where the previous "encode the dots" approach silently failed.
     assertEquals(
-      seenUrl,
-      "http://supabase-storage.test/object/bucket%20a/id-1/%2E%2E/weird%3F%23name%20%2Ezip",
+      new URL(seenUrl).pathname,
+      "/object/bucket%20a/id-1/weird%3F%23name%20.zip",
     );
   } finally {
     f.restore();

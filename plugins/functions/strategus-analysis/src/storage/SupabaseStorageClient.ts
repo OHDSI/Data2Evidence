@@ -41,18 +41,69 @@ export class SupabaseStorageClient {
   }
 
   /**
-   * Percent-encodes a single path segment. Beyond encodeURIComponent's usual
-   * set, "." is also escaped so a segment of "." or ".." can never survive as
-   * a literal dot-segment for the URL parser to collapse away (fetch applies
-   * WHATWG dot-segment normalization to the raw path before this client ever
-   * sees the request, so a `%2E` here decodes back to "." on the server but
-   * cannot be normalized client-side).
+   * True when a raw (not-yet-encoded) path segment is a dot-segment in any
+   * form the WHATWG URL spec normalizes away: "." or ".." after
+   * percent-decoding, compared case-insensitively. This covers the literal
+   * forms as well as every partially/fully percent-encoded spelling (".",
+   * "..", "%2e", "%2E", ".%2e", "%2e.", "%2e%2e", ...). Percent-encoding a
+   * dot-segment does NOT protect against traversal — the URL parser (and
+   * fetch, which applies WHATWG dot-segment normalization to the raw path)
+   * still collapses it after decoding — so these segments must be rejected
+   * outright rather than encoded.
+   */
+  private isDotSegment(segment: string): boolean {
+    let decoded: string;
+    try {
+      decoded = decodeURIComponent(segment);
+    } catch {
+      // Malformed percent-encoding: not decodable, so it can't decode to a
+      // dot-segment either. Let normal encoding handle it.
+      return false;
+    }
+    const lower = decoded.toLowerCase();
+    return lower === "." || lower === "..";
+  }
+
+  /**
+   * Validates every "/"-separated segment of a storage path, rejecting empty
+   * segments and dot-segments (in any percent-encoded form) before a URL is
+   * ever built. This is the actual traversal guard for this client -
+   * encoding alone cannot stop the URL parser from normalizing an encoded
+   * dot-segment back into a literal one.
+   */
+  private assertSafePath(path: string): void {
+    const segments = path.split("/");
+    for (const segment of segments) {
+      if (segment.length === 0) {
+        throw new StorageError(
+          `Invalid storage path "${path}": empty path segment`,
+          404,
+        );
+      }
+      if (this.isDotSegment(segment)) {
+        throw new StorageError(
+          `Invalid storage path "${path}": dot-segment "${segment}" is not allowed`,
+          404,
+        );
+      }
+    }
+  }
+
+  /**
+   * Percent-encodes a single path segment with the ordinary rules
+   * (encodeURIComponent), so plain filenames keep their literal dots (e.g.
+   * "results.zip" stays "results.zip") while reserved characters such as
+   * "?", "#" and spaces are still neutralized. Callers must validate the
+   * segment with `isDotSegment`/`assertSafePath` first - this method does
+   * not defend against traversal on its own.
    */
   private encodeSegment(segment: string) {
-    return encodeURIComponent(segment).replace(/\./g, "%2E");
+    return encodeURIComponent(segment);
   }
 
   private objectUrl(bucket: string, path: string) {
+    this.assertSafePath(bucket);
+    this.assertSafePath(path);
     const encodedPath = path.split("/").map((segment) =>
       this.encodeSegment(segment)
     ).join("/");
