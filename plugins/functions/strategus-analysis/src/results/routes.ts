@@ -123,7 +123,19 @@ export default class StrategusResultsRouter {
 
       // Web ReadableStream to node stream, so the zip is piped to the client
       // rather than buffered in the function.
-      Readable.fromWeb(streamed.readStream as never).pipe(res);
+      const nodeStream = Readable.fromWeb(streamed.readStream as never);
+      // Headers are already sent by the time a mid-transfer error can occur,
+      // so it can't be reported as a JSON error body; pipe() also doesn't
+      // forward source errors to the destination. Log it and tear down the
+      // response instead of leaving the client hanging.
+      nodeStream.on("error", (error) => {
+        console.error(
+          `An error occurred while streaming the result ${id}:`,
+          error,
+        );
+        res.destroy(error);
+      });
+      nodeStream.pipe(res);
     } catch (error) {
       return this.handleError(
         res,

@@ -48,6 +48,8 @@ function createStreamingMockResponse() {
     body: undefined as unknown,
     headers: {} as Record<string, string>,
     chunks: [] as number[],
+    destroyed: false,
+    destroyError: undefined as unknown,
   };
   const finished = Promise.withResolvers<void>();
 
@@ -79,6 +81,14 @@ function createStreamingMockResponse() {
       return true;
     },
     end() {
+      finished.resolve();
+      return res;
+    },
+    // Extends the base double so a test can assert a mid-transfer stream
+    // error tears down the response instead of hanging or throwing.
+    destroy(error?: unknown) {
+      captured.destroyed = true;
+      captured.destroyError = error;
       finished.resolve();
       return res;
     },
@@ -295,6 +305,38 @@ Deno.test("GET /:id/download returns 404 for an unknown id", async () => {
 
   assertEquals(captured.statusCode, 404);
   assertEquals(captured.body, { message: "Result not found: missing" });
+});
+
+Deno.test("GET /:id/download handles a mid-transfer stream error instead of hanging or throwing", async () => {
+  const readStream = new ReadableStream({
+    start(controller) {
+      controller.enqueue(new Uint8Array([1, 2, 3, 4]));
+      controller.error(new Error("storage connection reset"));
+    },
+  });
+  const instance = routerWithService({
+    getResultStream: () =>
+      Promise.resolve({
+        result: { id: "r1", fileName: "results.zip", fileSize: 4 },
+        readStream,
+      }),
+  });
+  const handler = findHandler(instance.router, "get", "/:id/download");
+  const req = createMockRequest({
+    params: { id: "r1" },
+    headers: { authorization: "Bearer test-token" },
+  });
+  const { res, captured, finished } = createStreamingMockResponse();
+
+  await handler(req, res);
+  await finished;
+
+  assertEquals(captured.statusCode, 200);
+  assertEquals(captured.destroyed, true);
+  assertEquals(
+    (captured.destroyError as Error)?.message,
+    "storage connection reset",
+  );
 });
 
 Deno.test("DELETE /:id returns 404 for an unknown id", async () => {
