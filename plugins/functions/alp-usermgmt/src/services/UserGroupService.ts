@@ -18,6 +18,8 @@ import { IPortalDataset, ITokenUser, RoleMap, UserGroupMetadata } from '../types
 import { createLogger } from '../Logger'
 import { LogtoAPI, PortalAPI, TrexIdpAPI } from '../api'
 import { env, getAutoGrantDatasetCodes } from '../env'
+import { canonicalRoleNames } from '@alp/idp/roles.ts'
+export { canonicalRoleNames }
 
 export type SyncRoleResult =
   | { status: 'synced' }
@@ -31,48 +33,6 @@ export type SyncRoleResult =
  */
 export function resolveRoleStore(raw: string | undefined): 'trex' | 'logto' {
   return raw === 'logto' ? 'logto' : 'trex'
-}
-
-// LOGTO__ROLES_SCOPES (docker-compose.yml) paired these Logto roles with extra
-// scopes that are webapi.sec_role names in their own right, not Logto/trex
-// role names. That pairing lived only in Logto's configuration, so it has to
-// be reproduced here for those names to keep reaching WebAPI.
-const IMPLIED_CANONICAL_ROLES: Record<string, string[]> = {
-  'role.systemadmin': ['admin'],
-  'role.viewer': ['anonymous']
-}
-
-/**
- * The canonical names one group grants, from the Logto role and scope pair.
- *
- * Logto forbade spaces in scope names, so d2e stored `cohort-reader` and
- * `source-user-<id>` and had LOGTO__CUSTOM_JWT rewrite them into the token. trex
- * has no such limit, so the names webapi.sec_role actually holds are stored
- * directly and no rewriting stage is needed.
- *
- * The scope set is what carried authorization, so every scope becomes a name:
- * dropping any of them would quietly remove access.
- */
-export function canonicalRoleNames(role: string, scopes: string[]): string[] {
-  const sourceUser = /^source-user-(.+)$/
-  const kebab: Record<string, string> = {
-    'cohort-reader': 'cohort reader',
-    'cohort-creator': 'cohort creator',
-    'concept-set-creator': 'concept set creator'
-  }
-
-  const expand = (name: string): string => {
-    const match = sourceUser.exec(name)
-    if (match) return `Source user (${match[1]})`
-    // Unknown scopes pass through: a name nothing maps is recoverable, a
-    // dropped grant is not.
-    return kebab[name] ?? name
-  }
-
-  const input = [role, ...scopes]
-  const implied = input.flatMap(name => IMPLIED_CANONICAL_ROLES[name] ?? [])
-
-  return [...new Set([...input, ...implied].map(expand))]
 }
 
 /**
