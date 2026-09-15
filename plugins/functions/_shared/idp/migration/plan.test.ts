@@ -60,3 +60,48 @@ Deno.test('a Logto user with neither email nor username is skipped', () => {
   const plan = planLinks([um('u1', '', 'l1')], [logto({ id: 'l1' })], [], 'd2e.local')
   assertEquals(plan.skipped.map(s => s.reason), ['no_email'])
 })
+
+Deno.test('accountEmail falls back to the qualified username when the Logto email is whitespace only', () => {
+  assertEquals(accountEmail(logto({ id: 'l1', primaryEmail: '   ' }), 'a', 'd2e.local'), 'a@d2e.local')
+})
+
+Deno.test('a row re-keyed twice is traced back through the whole history chain', () => {
+  const plan = planLinks(
+    [um('u1', 'admin', 'trex-2')],
+    [logto({ id: 'l1', username: 'admin', name: 'Admin' })],
+    [
+      { userId: 'u1', oldSub: 'l1', newSub: 'trex-1' },
+      { userId: 'u1', oldSub: 'trex-1', newSub: 'trex-2' }
+    ],
+    'd2e.local'
+  )
+  assertEquals(plan.links.map(l => [l.logtoId, l.currentIdpUserId]), [['l1', 'trex-2']])
+  assertEquals(plan.skipped, [])
+  assertEquals(plan.notLogto, 0)
+})
+
+Deno.test('a history chain whose root is not a current Logto user is skipped, not miscounted as trex-native', () => {
+  const plan = planLinks(
+    [um('u1', 'x', 'trex-2')],
+    [],
+    [{ userId: 'u1', oldSub: 'ghost-id', newSub: 'trex-2' }],
+    'd2e.local'
+  )
+  assertEquals(plan.links, [])
+  assertEquals(plan.notLogto, 0)
+  assertEquals(plan.skipped, [{ usermgmtId: 'u1', username: 'x', logtoId: 'ghost-id', reason: 'logto_origin_missing' }])
+})
+
+Deno.test('a cyclic subject history does not hang the planner', () => {
+  const plan = planLinks(
+    [um('u1', 'x', 'trex-1')],
+    [],
+    [
+      { userId: 'u1', oldSub: 'trex-1', newSub: 'trex-2' },
+      { userId: 'u1', oldSub: 'trex-2', newSub: 'trex-1' }
+    ],
+    'd2e.local'
+  )
+  assertEquals(plan.links, [])
+  assertEquals(plan.notLogto + plan.skipped.length, 1)
+})

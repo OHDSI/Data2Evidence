@@ -10,11 +10,43 @@ export function accountEmail(logto: LogtoUserRow, username: string, domain: stri
 }
 
 /**
+ * Walks a user's subject-history chain from their current subject back to a
+ * Logto identity, one hop per prior re-key. `oldSubByNewSub` maps a user's
+ * `newSub` to the `oldSub` it replaced, so a subject re-keyed more than once
+ * (Logto -> trex -> trex again) is still traced to its Logto origin.
+ *
+ * A visited set guards against a cyclic or self-referential history: the walk
+ * stops instead of looping when it would revisit an id.
+ */
+function traceLogtoOrigin(
+  userId: string,
+  currentSub: string,
+  logtoById: Map<string, LogtoUserRow>,
+  oldSubByNewSub: Map<string, string>
+): { originId: string; found: boolean; walked: boolean } {
+  if (logtoById.has(currentSub)) return { originId: currentSub, found: true, walked: false }
+
+  const visited = new Set([currentSub])
+  let current = currentSub
+  let walked = false
+  while (true) {
+    const oldSub = oldSubByNewSub.get(`${userId}|${current}`)
+    if (oldSub === undefined || visited.has(oldSub)) break
+    visited.add(oldSub)
+    current = oldSub
+    walked = true
+    if (logtoById.has(current)) return { originId: current, found: true, walked: true }
+  }
+  return { originId: current, found: false, walked }
+}
+
+/**
  * Which usermgmt users to link to which Logto identities.
  *
  * Matching is by identifier only: a row's idp_user_id is a Logto user id, or
- * its subject history says it was one. Names and emails never decide a match;
- * they only name the trex account the identity is linked to.
+ * its subject history traces back to one, however many re-keys deep. Names
+ * and emails never decide a match; they only name the trex account the
+ * identity is linked to.
  */
 export function planLinks(
   usermgmt: UsermgmtUserRow[],
@@ -23,9 +55,9 @@ export function planLinks(
   domain: string
 ): LinkPlan {
   const logtoById = new Map(logto.map(l => [l.id, l]))
-  const originBySub = new Map<string, string>()
+  const oldSubByNewSub = new Map<string, string>()
   for (const h of history) {
-    if (h.oldSub && logtoById.has(h.oldSub)) originBySub.set(`${h.userId}|${h.newSub}`, h.oldSub)
+    if (h.oldSub) oldSubByNewSub.set(`${h.userId}|${h.newSub}`, h.oldSub)
   }
 
   const candidates: PlannedLink[] = []
@@ -37,13 +69,16 @@ export function planLinks(
       notLogto++
       continue
     }
-    const logtoId = logtoById.has(row.idpUserId)
-      ? row.idpUserId
-      : originBySub.get(`${row.id}|${row.idpUserId}`)
-    if (!logtoId) {
-      notLogto++
+    const { originId, found, walked } = traceLogtoOrigin(row.id, row.idpUserId, logtoById, oldSubByNewSub)
+    if (!found) {
+      if (walked) {
+        skipped.push({ usermgmtId: row.id, username: row.username, logtoId: originId, reason: 'logto_origin_missing' })
+      } else {
+        notLogto++
+      }
       continue
     }
+    const logtoId = originId
     const l = logtoById.get(logtoId)!
     const email = accountEmail(l, row.username, domain)
     if (!email) {
