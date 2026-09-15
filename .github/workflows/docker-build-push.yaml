@@ -1314,6 +1314,11 @@ jobs:
           max_attempts: 2
           retry_on: any
           command: |
+            # This job's public FQDN is not reachable from inside the trex
+            # container, so the token proxy cannot fetch its own issuer and every
+            # login dies at the token exchange. The dev jobs get this from
+            # docker-compose-ci.yml; the HANA path does not use that overlay.
+            export TREX_OIDC_INTERNAL_BASE="http://${PROJECT_NAME:-d2e}-trex:33001"
             DOTENV_FILE=.env ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }} -d ./plugins/functions --hana start
             DC_EXIT_CODE=$?
             DOCKER_STATUS_FILE=../docker-status-${GITHUB_RUN_ID:-ghRunId}-$(date '+%Y%m%dT%H%M%S').txt
