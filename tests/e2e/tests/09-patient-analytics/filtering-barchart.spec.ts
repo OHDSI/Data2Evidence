@@ -17,7 +17,7 @@ test(TEST_NAME, async ({ page }) => {
   // Select demo dataset, open cohorts
   await page.getByText('Demo datasetDemo datasetTotal').click()
   await page.getByRole('link', { name: 'Cohorts' }).click()
-  await page.getByRole('button', { name: 'D2E' }).click()
+  await page.getByTestId('explorations-new-btn').click()
   await expect(page.getByText('2,694 / 2,694')).toBeVisible()
   await expect(page.locator('.loading-animation-component')).not.toBeVisible()
   // Wait for chart animations to settle

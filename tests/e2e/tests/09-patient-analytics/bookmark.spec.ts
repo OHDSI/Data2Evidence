@@ -44,7 +44,7 @@ test(TEST_NAME, async ({ page }) => {
   await test.step('Navigate back to the researcher portal, click Cohort', async () => {
     await page.getByText('Demo dataset').first().click()
     await page.getByRole('link', { name: 'Cohorts' }).click()
-    await page.getByRole('button', { name: 'D2E' }).click()
+    await page.getByTestId('explorations-new-btn').click()
     await expect(page.getByText('2,694 / 2,694')).toBeVisible()
     await expect(page.locator('.loading-animation-component')).not.toBeVisible()
   })
@@ -197,7 +197,7 @@ test(TEST_NAME, async ({ page }) => {
   // Test for duplicate name validation
   await test.step('Test for duplicate name validation', async () => {
     await page.locator('#pane-left').getByRole('link', { name: 'Cohorts' }).click()
-    await page.getByRole('button', { name: 'D2E' }).click()
+    await page.getByTestId('explorations-new-btn').click()
     await page.getByRole('button', { name: 'Save' }).click()
     await page.getByRole('textbox', { name: 'Enter name' }).click()
     await page.getByRole('textbox', { name: 'Enter name' }).fill(NAME.savedFilters)
@@ -243,7 +243,7 @@ test(TEST_NAME, async ({ page }) => {
   })
   //Go back to Cohorts
   await test.step('Go back to Cohorts', async () => {
-    await page.getByRole('button', { name: 'D2E' }).click()
+    await page.getByTestId('explorations-new-btn').click()
     await expect(page.getByText('New cohort')).toBeVisible()
   })
   //Go to patient list

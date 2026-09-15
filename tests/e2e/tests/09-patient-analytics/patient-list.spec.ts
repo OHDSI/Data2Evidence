@@ -17,7 +17,7 @@ test(TEST_NAME, async ({ page }) => {
   await test.step('Navigate to Cohort page', async () => {
     await page.getByText('Demo dataset').first().click()
     await page.getByRole('link', { name: 'Cohorts' }).click()
-    await page.getByRole('button', { name: 'D2E' }).click()
+    await page.getByTestId('explorations-new-btn').click()
     await expect(page.getByText('2,694 / 2,694')).toBeVisible()
     await expect(page.locator('.loading-animation-component')).not.toBeVisible()
   })
