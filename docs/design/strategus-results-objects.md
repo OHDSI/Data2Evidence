@@ -43,8 +43,13 @@ result objects. They share nothing, so neither can break the other.
 A result is **not** coupled to a study. No `study_id`, no `dataset_id`, no
 foreign key, no upsert-on-study, no supersede-by-study. Each upload creates a
 new object with its own uuid, and that uuid drives both the primary key and the
-bucket path. Callers hold the id; a replacement is an explicit in-place `PUT`
-against that id.
+bucket path. Callers hold the id.
+
+There is no update or overwrite. A newer result is simply another upload: a new
+row, a new id, a new object. Earlier results are never mutated and their objects
+are never removed, so every historical result stays downloadable by its id. The
+newest result is the most recently created row — no column records supersession,
+and nothing in the data links two rows as versions of the same thing.
 
 This was chosen over a study-keyed model because results should be storable and
 shareable without the plugin needing to know what produced them.
@@ -102,9 +107,9 @@ modified_by   varchar NOT NULL DEFAULT 'system'
 ```
 
 Audit columns mirror `StrategusAnalysis`. There is no `status` column: rows are
-inserted only after a successful upload and replacement is in place, so the
-column would hold a single constant value. A `FAILED`/`DELETED` lifecycle can be
-added later if the semantics ever require one.
+inserted only after a successful upload and are never updated, so the column
+would hold a single constant value. A `FAILED`/`DELETED` lifecycle can be added
+later if the semantics ever require one.
 
 ## API
 
@@ -116,7 +121,6 @@ All routes mounted at `/strategus/results`.
 | `GET` | `/` | `?limit&offset&name=` | `200` array, `created_at DESC`, metadata only |
 | `GET` | `/:id` | — | `200` metadata |
 | `GET` | `/:id/download` | — | `200` `application/zip` |
-| `PUT` | `/:id` | same multipart shape; `name`/`metadata` optional | `200` updated metadata |
 | `DELETE` | `/:id` | — | `200` |
 
 ### Upload (`POST`)
@@ -138,16 +142,11 @@ directly to the Express response with `Content-Type: application/zip`,
 `Content-Disposition: attachment; filename="<file_name>"` and `Content-Length`.
 No base64, no full buffering.
 
-### Overwrite (`PUT /:id`)
+### No update endpoint
 
-In place: the row keeps its id, so a client's handle stays stable. The object is
-replaced and `file_size`, `checksum`, `updated_at`, `modified_by` are updated;
-`name` and `metadata` are updated when supplied.
-
-If the replacement file has a different name, the new object is written at
-`{id}/{newFileName}` and the old object is deleted, so `storage_path` stays
-truthful to `file_name`. Same filename means a plain `x-upsert` overwrite at the
-existing path.
+Results are append-only. Supplying a newer result means calling `POST /` again,
+which yields a new id and a new object; the previous result is untouched and
+stays downloadable. Rows are therefore written exactly once and never modified.
 
 ### Delete (`DELETE /:id`)
 
@@ -180,7 +179,7 @@ new entries in `plugins/functions/package.json` (`trex.functions.scopes`) and
 `scopes_paths.csv`.
 
 **Known gap, accepted for this cycle:** any authenticated caller can read,
-overwrite or delete any result object. There is no per-tenant or per-dataset
+or delete any result object. There is no per-tenant or per-dataset
 ownership check, because results are deliberately not tied to a study and no
 such check exists in this plugin today. This is recorded in the knowledge base
 as debt; closing it needs an ownership concept that this design does not
@@ -193,8 +192,8 @@ Test-first, mirroring `tests/analysis-service.test.ts` and
 live Supabase in unit tests.
 
 Service tests: happy-path upload; orphan-object compensation when the insert
-fails; checksum correctness; in-place overwrite with the same filename and with
-a changed filename (old object deleted); delete with a missing object.
+fails; checksum correctness; delete with a missing object; list paging and
+ordering.
 
 Route tests: each validation branch returns the right code; download sets the
 right headers; list applies `limit`/`offset`/`name`.
@@ -207,4 +206,8 @@ right headers; list applies `limit`/`offset`/`name`.
    all produce a zip; failure of the zip/upload step fails the flow run; the zip
    contains the results folder only.
 2. **Authorization** — close the ownership gap above.
-3. **Retention** — the bucket grows unbounded; no retention policy exists.
+3. **Retention** — results are append-only and objects are never deleted on
+   supersession, so the bucket grows unbounded. No retention policy exists.
+4. **Version lineage** — nothing records that two results are successive
+   versions of the same thing; "newest" is simply the most recent `created_at`.
+   Adding a `previous_id` or a group id would be an additive change.
