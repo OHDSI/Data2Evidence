@@ -132,7 +132,7 @@
       "name": "datasource",
       "version": "0.0.1",
       "dependencies": {
-        "@ohdsi/atlas-ui": "0.1.0-20260820162528-77a7c15",
+        "@ohdsi/atlas-ui": "0.1.0-20260721210553-c51900d",
         "jose": "^6.1.1",
         "markdown-it": "^14.1.0",
         "vue": "^3.5.0",
@@ -1471,7 +1471,7 @@
 
     "@nx/nx-win32-x64-msvc": ["@nx/nx-win32-x64-msvc@18.3.5", "", { "os": "win32", "cpu": "x64" }, "sha512-xFwKVTIXSgjdfxkpriqHv5NpmmFILTrWLEkUGSoimuRaAm1u15YWx/VmaUQ+UWuJnmgqvB/so4SMHSfNkq3ijA=="],
 
-    "@ohdsi/atlas-ui": ["@ohdsi/atlas-ui@0.1.0-20260820162528-77a7c15", "https://npm.pkg.github.com/download/@ohdsi/atlas-ui/0.1.0-20260820162528-77a7c15/660bd9e8b62b1f0015fd8f276cb6266f9215e5c9", { "peerDependencies": { "echarts": "^6.0.0", "vue": "^3.4.0", "vue-echarts": "^8.0.1", "vuetify": "^3.5.0" } }, "sha512-Ft+rLLw8itLHDxE5/WlbkI8SzsFnh+jiEHTjwE5v534QvwSiBGSYvPviJ6xQvtdaMrMT4Rlfk9hgl2ysna7H4Q=="],
+    "@ohdsi/atlas-ui": ["@ohdsi/atlas-ui@0.1.0-20260721210553-c51900d", "https://npm.pkg.github.com/download/@ohdsi/atlas-ui/0.1.0-20260721210553-c51900d/91279f77849af66350fb2be23f30b85c820d6601", { "peerDependencies": { "echarts": "^6.0.0", "vue": "^3.4.0", "vue-echarts": "^8.0.1", "vuetify": "^3.5.0" } }, "sha512-2T2yDRBcAeIc5LZN7MqbhL2CO4pR07cfbH2M2LaumXiOjM9ANRombdol1Q63GEqlJ7btHzoWrn5buarklOMhBA=="],
 
     "@one-ini/wasm": ["@one-ini/wasm@0.1.1", "", {}, "sha512-XuySG1E38YScSJoMlqovLru4KTUNSjgVTIjyh7qMX6aNN5HY5Ct5LhRJdxO79JtTzKfzV/bnWpz+zquYrISsvw=="],
 
