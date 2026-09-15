@@ -22,6 +22,7 @@ export const i18n = {
     MRI_PA_COLL_BUT_OK: 'OK',
     MRI_PA_COLL_BUT_CANCEL: 'Cancel',
     MRI_PA_COLL_BUT_RETRY: 'Retry',
+    MRI_PA_CHART_LOAD_ERROR: 'This chart could not be loaded. Reload the page and try again.',
     MRI_PA_COLL_BUT_SAVE: 'Save',
     MRI_PA_COHORT_SAVED: 'Cohort saved',
     MRI_PA_BOOKMARK_SAVED: 'Bookmark saved successfully',
@@ -439,6 +440,9 @@ export const i18n = {
     MRI_PA_EXPLORATIONS_DATASOURCE: 'Data source',
     MRI_PA_EXPLORATIONS_SEARCH: 'Search',
     MRI_PA_EXPLORATIONS_SELECT: 'Select exploration',
+    MRI_PA_EXPLORATIONS_SELECT_ALL: 'Select all',
+    MRI_PA_EXPLORATIONS_N_SELECTED: '{0} selected',
+    MRI_PA_EXPLORATIONS_BULK_DELETE_FAILED: 'These explorations were not deleted: {0}',
     MRI_PA_EXPLORATIONS_EMPTY: 'No explorations yet',
     MRI_PA_EXPLORATIONS_EMPTY_BODY: 'Your saved data exploration will appear here.',
     MRI_PA_EXPLORATIONS_EMPTY_SEARCH_TITLE: 'No matching explorations',
@@ -472,6 +476,9 @@ export const i18n = {
     MRI_PA_EXPLORATIONS_FILTER_SUMMARY: 'Filter summary',
     MRI_PA_EXPLORATIONS_ANALYZE: 'Analyze',
     MRI_PA_EXPLORATIONS_DUPLICATE: 'Duplicate',
+    MRI_PA_EXPLORATIONS_COPY_NAME: '{0} (Copy)',
+    MRI_PA_EXPLORATIONS_DUPLICATE_SUCCESS: '{0} was created.',
+    MRI_PA_EXPLORATIONS_DUPLICATE_FAILED: '{0} could not be duplicated.',
     MRI_PA_EXPLORATIONS_FILTERS: 'Filters',
     MRI_PA_EXPLORATIONS_FILTERS_TITLE: 'Filters',
     MRI_PA_EXPLORATIONS_FILTERS_CLEAR: 'Clear all selections',
@@ -1544,6 +1551,12 @@ export const i18n = {
     MRI_PA_EXPLORATIONS_DATASOURCE: 'Datenquelle',
     MRI_PA_EXPLORATIONS_SEARCH: 'Suchen',
     MRI_PA_EXPLORATIONS_SELECT: 'Exploration auswählen',
+    // TODO(i18n): needs native review.
+    MRI_PA_EXPLORATIONS_SELECT_ALL: 'Alle auswählen',
+    // TODO(i18n): needs native review.
+    MRI_PA_EXPLORATIONS_N_SELECTED: '{0} ausgewählt',
+    // TODO(i18n): needs native review.
+    MRI_PA_EXPLORATIONS_BULK_DELETE_FAILED: 'Diese Explorationen wurden nicht gelöscht: {0}',
     MRI_PA_EXPLORATIONS_EMPTY: 'Noch keine Explorationen',
     MRI_PA_EXPLORATIONS_LOAD_ERROR: 'Explorationen konnten nicht geladen werden.',
     MRI_PA_BUTTON_NEW_EXPLORATION: 'Neue Exploration starten',
@@ -1579,6 +1592,12 @@ export const i18n = {
     MRI_PA_EXPLORATIONS_FILTER_SUMMARY: 'Filterübersicht',
     MRI_PA_EXPLORATIONS_ANALYZE: 'Analysieren',
     MRI_PA_EXPLORATIONS_DUPLICATE: 'Duplizieren',
+    // TODO(i18n): needs native review.
+    MRI_PA_EXPLORATIONS_COPY_NAME: '{0} (Kopie)',
+    // TODO(i18n): needs native review.
+    MRI_PA_EXPLORATIONS_DUPLICATE_SUCCESS: '{0} wurde erstellt.',
+    // TODO(i18n): needs native review.
+    MRI_PA_EXPLORATIONS_DUPLICATE_FAILED: '{0} konnte nicht dupliziert werden.',
     MRI_PA_EXPLORATIONS_FILTERS: 'Filter',
     MRI_PA_EXPLORATIONS_FILTERS_TITLE: 'Filter',
     MRI_PA_EXPLORATIONS_FILTERS_CLEAR: 'Alle Auswahlen aufheben',
@@ -2623,6 +2642,12 @@ export const i18n = {
     MRI_PA_EXPLORATIONS_DATASOURCE: '数据源',
     MRI_PA_EXPLORATIONS_SEARCH: '搜索',
     MRI_PA_EXPLORATIONS_SELECT: '选择探索',
+    // TODO(i18n): needs native review.
+    MRI_PA_EXPLORATIONS_SELECT_ALL: '全选',
+    // TODO(i18n): needs native review.
+    MRI_PA_EXPLORATIONS_N_SELECTED: '已选择 {0} 项',
+    // TODO(i18n): needs native review.
+    MRI_PA_EXPLORATIONS_BULK_DELETE_FAILED: '以下探索未被删除：{0}',
     MRI_PA_EXPLORATIONS_EMPTY: '暂无探索',
     MRI_PA_EXPLORATIONS_LOAD_ERROR: '无法加载探索。',
     MRI_PA_BUTTON_NEW_EXPLORATION: '开始新探索',
@@ -2657,6 +2682,12 @@ export const i18n = {
     MRI_PA_EXPLORATIONS_FILTER_SUMMARY: '筛选摘要',
     MRI_PA_EXPLORATIONS_ANALYZE: '分析',
     MRI_PA_EXPLORATIONS_DUPLICATE: '复制',
+    // TODO(i18n): needs native review.
+    MRI_PA_EXPLORATIONS_COPY_NAME: '{0}（副本）',
+    // TODO(i18n): needs native review.
+    MRI_PA_EXPLORATIONS_DUPLICATE_SUCCESS: '已创建 {0}。',
+    // TODO(i18n): needs native review.
+    MRI_PA_EXPLORATIONS_DUPLICATE_FAILED: '无法复制 {0}。',
     MRI_PA_EXPLORATIONS_FILTERS: '筛选',
     MRI_PA_EXPLORATIONS_FILTERS_TITLE: '筛选',
     MRI_PA_EXPLORATIONS_FILTERS_CLEAR: '清除所有选择',
