@@ -12,20 +12,57 @@
         <h1 class="explorations-page__title">{{ getText('MRI_PA_EXPLORATIONS_TITLE') }}</h1>
         <p class="explorations-page__description">{{ getText('MRI_PA_EXPLORATIONS_DESCRIPTION') }}</p>
       </div>
+      <!-- Switching is only possible in the Atlas mount. In the portal the
+           dataset arrives through customProps and there is no channel back, so
+           the select stays a read-only label until #2956 settles that. -->
       <D2eSelect
         class="explorations-page__dataset"
         size="sm"
-        disabled
+        :disabled="!canSwitchDataSource"
         :label="getText('MRI_PA_EXPLORATIONS_DATASOURCE')"
         :items="datasetItems"
-        :model-value="datasetName"
+        :model-value="datasetId"
         prepend-icon="mdi-database-outline"
         hide-details
         data-testid="explorations-datasource"
+        @update:model-value="onDataSourceSelect"
       />
     </header>
 
-    <div class="explorations-page__toolbar">
+    <div v-if="explorations.hasSelection" class="explorations-page__bulk" data-testid="explorations-bulk-bar">
+      <D2eCheckbox
+        size="sm"
+        :model-value="allPageSelected"
+        :indeterminate="somePageSelected"
+        :aria-label="getText('MRI_PA_EXPLORATIONS_SELECT_ALL')"
+        data-testid="explorations-select-all"
+        @update:model-value="explorations.setPageSelection(pageIds, $event)"
+      />
+      <!-- The count changes as the user ticks cards, and nothing else on screen
+           announces it, so a screen reader needs it as a live region. -->
+      <span
+        class="explorations-page__bulk-count"
+        role="status"
+        aria-live="polite"
+        data-testid="explorations-bulk-count"
+      >
+        {{ selectedCountLabel }}
+      </span>
+      <div class="explorations-page__bulk-actions">
+        <D2eButton
+          variant="primary"
+          :disabled="!canCompare"
+          data-testid="explorations-bulk-compare"
+          @click="openCompare"
+        >
+          {{ getText('MRI_PA_COMPARE_D2E_COHORT_TEXT') }}
+        </D2eButton>
+        <D2eButton variant="danger" data-testid="explorations-bulk-delete" @click="openBulkDelete">
+          {{ getText('MRI_PA_BUTTON_DELETE') }}
+        </D2eButton>
+      </div>
+    </div>
+    <div v-else class="explorations-page__toolbar">
       <div class="explorations-page__toolbar-left">
         <D2eTextField
           v-model="searchQuery"
@@ -84,7 +121,7 @@
       </div>
     </div>
 
-    <div v-if="loading" class="explorations-page__status" data-testid="explorations-loading">
+    <div v-if="showInitialLoader" class="explorations-page__status" data-testid="explorations-loading">
       <v-progress-circular indeterminate color="primary" />
     </div>
 
@@ -95,8 +132,12 @@
       </D2eButton>
     </div>
 
-    <div v-else-if="cards.length === 0" class="explorations-page__status" data-testid="explorations-empty">
-      {{ getText('MRI_PA_EXPLORATIONS_EMPTY') }}
+    <div
+      v-else-if="matchedCards.length === 0"
+      class="explorations-page__status"
+      data-testid="explorations-empty"
+    >
+      <ExplorationEmptyState :title="emptyState.title" :body="emptyState.body" />
     </div>
 
     <div v-else class="explorations-page__grid" data-testid="explorations-grid">
@@ -245,6 +286,15 @@
       </D2eExplorationCard>
     </div>
 
+    <ExplorationPagination
+      v-if="!showInitialLoader && !loadError && matchedCards.length > 0"
+      :page="currentPage"
+      :page-size="pageSize"
+      :total="matchedCards.length"
+      @update:page="page = $event"
+      @update:page-size="pageSize = $event"
+    />
+
     </div>
 
     <!--
@@ -279,6 +329,47 @@
     <RenameExplorationDialog v-model="renameOpen" :bookmark-display="actionTarget" />
     <DeleteExplorationDialog v-model="deleteOpen" :bookmark-display="actionTarget" />
 
+    <!-- Mounted once, outside the grid, as Bookmarks.vue:153-158 does.
+         `compareOpen` is a trigger the dialog watches, not its own visibility
+         state, so it is reset only in `closeEv` (blueprint pr10/02 section 3b). -->
+    <CohortComparisonDialog
+      :bookmark-list="comparableBookmarks"
+      :open-compare-dialog="compareOpen"
+      @close-ev="compareOpen = false"
+    />
+
+    <!-- The bulk-delete confirmation. Same copy as the single-delete dialog,
+         built on the same D2eDialog primitive rather than reusing the
+         DeleteExplorationDialog.vue component instance — see the comment by
+         `confirmBulkDelete` and DECISIONS.md. -->
+    <D2eDialog
+      v-model="bulkDeleteOpen"
+      :busy="bulkDeleting"
+      :title="getText('MRI_PA_EXPLORATION_DELETE_DIALOG_TITLE')"
+      data-testid="explorations-bulk-delete-modal"
+      @close="closeBulkDelete"
+    >
+      <p>{{ getText('MRI_PA_EXPLORATION_DELETE_DIALOG_TEXT') }}</p>
+      <template #actions>
+        <D2eButton
+          variant="secondary"
+          :disabled="bulkDeleting"
+          data-testid="explorations-bulk-delete-cancel-btn"
+          @click="closeBulkDelete"
+        >
+          {{ getText('MRI_PA_BUTTON_CANCEL') }}
+        </D2eButton>
+        <D2eButton
+          variant="danger"
+          :disabled="bulkDeleting"
+          data-testid="explorations-bulk-delete-confirm-btn"
+          @click="confirmBulkDelete"
+        >
+          {{ getText('MRI_PA_BUTTON_YES_DELETE') }}
+        </D2eButton>
+      </template>
+    </D2eDialog>
+
     <Transition name="slide-in-right">
       <div
         v-if="filterSummaryOpen"
@@ -297,11 +388,12 @@
 </template>
 
 <script setup lang="ts">
-import { computed, reactive, ref, watch } from 'vue'
+import { computed, nextTick, reactive, ref, watch } from 'vue'
 import { useStore } from 'vuex'
-import { D2eButton, D2eExplorationCard, D2eIconButton, D2eMenu, D2eSelect, D2eTextField } from '@d2e/ui'
+import { D2eButton, D2eCheckbox, D2eDialog, D2eExplorationCard, D2eIconButton, D2eMenu, D2eSelect, D2eTextField } from '@d2e/ui'
 import { useExplorationsStore } from '../stores/explorations'
 import { useNotificationStore } from '../stores/notifications'
+import { useUnsavedChanges } from '@/composables/useUnsavedChanges'
 import { usePortalContext } from '../composables/usePortalContext'
 import { useDashboardFlow } from '../composables/useDashboardFlow'
 import * as types from '../store/mutation-types'
@@ -310,9 +402,13 @@ import {
   isDashboardFlowOpen,
   shouldResetDashboardFlow,
 } from './helpers/explorationAnalyze'
-import { filterAndSort, type ExplorationSortKey } from './helpers/explorationList'
-import { applyFilters, authorOptions, emptyFilters, type ExplorationFilters } from './helpers/explorationFilters'
+import { filterAndSort, toCardId, type ExplorationSortKey } from './helpers/explorationList'
+import { allSelected, someSelected } from './helpers/explorationSelection'
+import { applyFilters, authorOptions, emptyFilters, isEmpty, type ExplorationFilters } from './helpers/explorationFilters'
+import { PAGE_SIZES, clampPage, pageSlice } from './helpers/explorationPaging'
 import { chartQueryFor } from './helpers/explorationSqlQuery'
+import { deleteExploration, type DeleteExplorationDeps } from './helpers/deleteExploration'
+import { runBulkDelete } from './helpers/bulkDeleteExplorations'
 import { canModifyBookmark, getBookmarkType } from '../utils/BookmarkUtils'
 import ExplorationMaterializeIcon from './icons/ExplorationMaterializeIcon.vue'
 import ExplorationDataQualityIcon from './icons/ExplorationDataQualityIcon.vue'
@@ -327,6 +423,9 @@ import DeleteExplorationDialog from './DeleteExplorationDialog.vue'
 import ExplorationFiltersPanel from './ExplorationFiltersPanel.vue'
 import FilterCardSummary from './FilterCardSummary.vue'
 import DashboardFlowModals from './DashboardFlowModals.vue'
+import ExplorationPagination from './ExplorationPagination.vue'
+import ExplorationEmptyState from './ExplorationEmptyState.vue'
+import CohortComparisonDialog from './CohortComparisonDialog.vue'
 
 const emit = defineEmits<{
   (e: 'open-exploration', bmkId: string, chartType: string | null): void
@@ -335,6 +434,8 @@ const emit = defineEmits<{
 
 const store = useStore()
 const portalContext = usePortalContext()
+// Singleton: module-level state, so this drives the same dialog App.vue renders.
+const unsavedChanges = useUnsavedChanges()
 const explorations = useExplorationsStore()
 const notifications = useNotificationStore()
 // Wrapped in `reactive()` so its nested refs unwrap the same way ChartToolbar's
@@ -370,6 +471,8 @@ const searchQuery = ref('')
 const sortKey = ref<ExplorationSortKey>('lastUpdated')
 const filters = ref<ExplorationFilters>(emptyFilters())
 const filtersOpen = ref(false)
+const page = ref(1)
+const pageSize = ref<number>(PAGE_SIZES[0])
 const filterSummaryOpen = ref(false)
 /** True while the panel's SQL query is in flight; feeds its `chartBusy` prop. */
 const summaryBusy = ref(false)
@@ -388,8 +491,92 @@ const restoreTarget = ref<Record<string, unknown> | null>(null)
 
 const loading = computed(() => store.getters.getBookmarksLoading)
 const loadError = computed(() => store.getters.getBookmarksLoadError)
-const datasetName = computed(() => store.getters.getSelectedDataset?.id || portalContext.datasetId)
-const datasetItems = computed(() => [{ label: datasetName.value, value: datasetName.value }])
+/**
+ * The full-page spinner replaces the grid only while there is nothing to show.
+ *
+ * `fireBookmarkQuery` raises the same loading flag for every call, a delete
+ * included (`store/modules/bookmark.ts` SET_BOOKMARKS_LOADING), not just for
+ * `loadAll`. Keying the spinner on the raw flag therefore blanked the grid
+ * behind whichever delete dialog was open, and that dialog shows its own busy
+ * spinner — two loaders on screen at once, for as long as the deletes ran.
+ * A refresh keeps the rows on screen instead and lets the dialog own the
+ * feedback.
+ *
+ * A data source switch is excluded for the same reason. That flow commits
+ * `RESET_ALL_BOOKMARKS`, so `allCards` empties and this would fire — under the
+ * app-wide overlay `App.vue` already shows for the switch. Two loaders again,
+ * and the grid blanking underneath is what made a switch look like the whole
+ * application reloading.
+ */
+const datasetReloading = computed<boolean>(() => Boolean(store.getters.getDatasetReloadInProgress))
+const showInitialLoader = computed(() => loading.value && allCards.value.length === 0 && !datasetReloading.value)
+/** The active source's id. Still the select's value: the id is what every call
+    downstream uses, and the label is only what the user reads. */
+const datasetId = computed(() => store.getters.getSelectedDataset?.id || portalContext.datasetId)
+/** `getSelectedDatasetName` resolves the id against the fetched source list and
+    falls back to the id, so this is never blank while that list is still
+    loading, or if it failed. */
+const datasetName = computed(() => store.getters.getSelectedDatasetName || datasetId.value)
+
+/**
+ * Switching the source is only possible in the native Atlas mount.
+ *
+ * In the portal the dataset arrives through customProps and nothing flows
+ * back, so changing it here would desynchronise the app from the shell that
+ * owns it. #2956 covers the portal's side. In Atlas the app can move itself:
+ * the dataset-change watcher reloads config and bookmarks off
+ * `portalContext.datasetId`, so setting that is the whole switch.
+ */
+const canSwitchDataSource = computed(
+  () => import.meta.env.VITE_ATLAS_NATIVE === 'true' && dataSourceItems.value.length > 1,
+)
+
+/** Every source the user can read, for the switcher. */
+const dataSourceItems = computed(() => {
+  const sources = (store.getters.getDataSources || []) as Array<{ sourceKey: string; sourceName?: string }>
+  return sources.map(source => ({ label: source.sourceName || source.sourceKey, value: source.sourceKey }))
+})
+
+/**
+ * The select's items. Falls back to the active source alone, which is what the
+ * portal always shows and what Atlas shows until the list arrives — a select
+ * with no item matching its model value renders blank.
+ */
+const datasetItems = computed(() =>
+  canSwitchDataSource.value ? dataSourceItems.value : [{ label: datasetName.value, value: datasetId.value }],
+)
+
+/**
+ * Move the app to another data source.
+ *
+ * Only `portalContext.datasetId` is set. `installDatasetChangeWatcher`
+ * subscribes to it and owns the rest — it clears the active bookmark, resets
+ * the bookmark list and the dataset cache, then re-requests the MRI config and
+ * reloads the bookmarks. Doing any of that here would duplicate it and race.
+ *
+ * **Through the unsaved-changes guard, not straight at the store.** That guard
+ * is installed on the `custom-props-changed` listener, so it only covers a
+ * switch the host initiates. This selector mutates the store from inside the
+ * app, which never reaches that listener — so without asking here, choosing a
+ * source while a bookmark had unedited changes discarded them instantly and
+ * silently, because the watcher's first act is to clear the active bookmark.
+ * `guard` runs the action immediately when nothing is dirty, so the common
+ * case is unaffected.
+ *
+ * The Atlas3 host is not told about the change. It has no handler for one, so
+ * its own idea of the selected source can drift from ours. The gaps document
+ * under `docs/projects/vue-mri-ui/atlas-native/` records what a host fix takes.
+ */
+const onDataSourceSelect = (nextDatasetId: string): void => {
+  if (!nextDatasetId || nextDatasetId === datasetId.value) return
+  unsavedChanges.guard(() => portalContext.applyProps({ datasetId: nextDatasetId }))
+}
+
+// One fetch per mount is enough: the response is every source this user can
+// read, not something scoped to the active dataset. Nothing awaits it — the
+// label falls back to the id until it lands, and the action swallows failure,
+// so a missing list costs a nicer name and nothing else.
+store.dispatch('fireGetDataSources')
 const canMaterialize = computed<boolean>(() => Boolean(store.getters.getCanDatasetMaterializeCohorts))
 
 // Matches ChartToolbar.vue's isWizardFeatureEnabled / canOpenDashboard.
@@ -398,9 +585,9 @@ const isWizardEnabled = computed(
 )
 const canAnalyze = computed(() => Boolean(store.getters.getCanDatasetMaterializeCohorts) && isWizardEnabled.value)
 
-const getText = (key: string): string => {
+const getText = (key: string, param?: string | string[]): string => {
   const resolver = store.getters.getText
-  return typeof resolver === 'function' ? resolver(key) : key
+  return typeof resolver === 'function' ? resolver(key, param) : key
 }
 
 const load = (): void => {
@@ -430,24 +617,54 @@ const allCards = computed(() => store.getters.getDisplayBookmarks(false, portalC
     cannot be widened again. */
 const authorNames = computed<string[]>(() => authorOptions(allCards.value))
 
-const cards = computed(() => {
+/** After filter, search and sort, before paging. The pagination bar's count
+    and the empty-state choice are both taken from here, never from `cards`. */
+const matchedCards = computed(() => {
   // Filter, then search, then sort. Searching inside a filtered set is what
   // the user expects, and it is cheaper.
   const filtered = applyFilters(allCards.value, filters.value)
-  return filterAndSort(filtered, searchQuery.value, sortKey.value).map((card: BookmarkDisplay) => {
+  return filterAndSort(filtered, searchQuery.value, sortKey.value)
+})
+
+// Reset to page 1 whenever the result set changes underneath it. Without
+// this, filtering from 43 rows to 5 while on page 3 would show an empty grid
+// that looks like a bug.
+watch([searchQuery, filters, sortKey], () => {
+  page.value = 1
+})
+
+const emptyState = computed(() => {
+  if (allCards.value.length === 0) {
+    return { title: getText('MRI_PA_EXPLORATIONS_EMPTY'), body: getText('MRI_PA_EXPLORATIONS_EMPTY_BODY') }
+  }
+  // Filter takes precedence over search when both are active — it names the
+  // control furthest from the user's attention.
+  if (!isEmpty(filters.value)) {
+    return {
+      title: getText('MRI_PA_EXPLORATIONS_EMPTY_FILTER_TITLE'),
+      body: getText('MRI_PA_EXPLORATIONS_EMPTY_FILTER_BODY'),
+    }
+  }
+  return {
+    title: getText('MRI_PA_EXPLORATIONS_EMPTY_SEARCH_TITLE'),
+    body: getText('MRI_PA_EXPLORATIONS_EMPTY_SEARCH_BODY'),
+  }
+})
+
+// Clamped, not `page` itself: the reset-on-change watcher only sees
+// searchQuery/filters/sortKey, so a list that shrinks through any other path
+// (e.g. deleting the last card on a page) leaves `page` stale. Both the grid
+// and the pagination bar read this, or the bar would show a stranded page's
+// nonsensical range and backwards disabled state even though the grid itself
+// was showing the correctly-clamped page underneath it.
+const currentPage = computed(() => clampPage(page.value, matchedCards.value.length, pageSize.value))
+
+const cards = computed(() => {
+  return pageSlice(matchedCards.value, currentPage.value, pageSize.value).map((card: BookmarkDisplay) => {
     const bookmark = card.bookmark
     const cohortDefinition = card.cohortDefinition
     const atlas = card.atlasCohortDefinition
-    // Namespaced: a bookmark id and a cohort-definition id come from different
-    // tables and can collide, and two never-materialized records can share a
-    // displayName. Either collision makes one checkbox select two cards.
-    const id = bookmark?.id
-      ? `bookmark:${bookmark.id}`
-      : cohortDefinition?.id
-        ? `cohort:${cohortDefinition.id}`
-        : atlas?.id
-          ? `atlas:${atlas.id}`
-          : `name:${card.displayName}`
+    const id = toCardId(card)
     // An Atlas record is a cohort; a D2E bookmark is an exploration.
     const idLabel = ['A', 'A+M'].includes(getBookmarkType(card))
       ? getText('MRI_PA_EXPLORATIONS_COHORT_ID_LABEL')
@@ -497,6 +714,151 @@ const cards = computed(() => {
       ],
     }
   })
+})
+
+/* ---- bulk selection --------------------------------------------------- */
+
+/** The ids on the current page only. Select-all acts on these. */
+const pageIds = computed(() => cards.value.map(c => c.id))
+/** Every id in the filtered set, across every page. `retain` reads this, never
+    `pageIds` — a watcher on the page would drop the user's selection on every
+    page change. */
+const matchedIds = computed(() => matchedCards.value.map(toCardId))
+const allPageSelected = computed(() => allSelected(pageIds.value, explorations.selectedBookmarkIds))
+const somePageSelected = computed(() => someSelected(pageIds.value, explorations.selectedBookmarkIds))
+const selectedCountLabel = computed(() => getText('MRI_PA_EXPLORATIONS_N_SELECTED', String(explorations.selectedCount)))
+
+/** Every filtered record, keyed by its namespaced card id. Selection is
+    resolved against `matchedCards`, never `cards` — the selection spans
+    pages, and a record on another page must still be actionable. */
+const recordsById = computed(() => {
+  const map = new Map<string, BookmarkDisplay>()
+  for (const record of matchedCards.value) map.set(toCardId(record), record)
+  return map
+})
+
+/** The selected ids, mapped back to their records. `.filter(Boolean)` is load
+    bearing, not padding: `retain` runs on a watcher, so a selected id can
+    outlive its record for one tick after a filter/search/sort change. */
+const selectedRecords = computed(() =>
+  explorations.selectedBookmarkIds
+    .map(id => recordsById.value.get(id))
+    .filter((r): r is BookmarkDisplay => Boolean(r)),
+)
+
+/* ---- Compare ------------------------------------------------------------
+   Reuses CohortComparisonDialog whole; its own ten-item cap and warning are
+   untouched (blueprint pr10/02 section 3b). */
+
+/** Only a record with a `bookmark` can be compared — CohortComparisonDialog
+    forwards raw Bookmark objects to cohortComparisonContainer. */
+const comparableBookmarks = computed(() => selectedRecords.value.map(r => r.bookmark).filter(Boolean))
+/** More than one, not "any": two Atlas-only records must leave Compare
+    disabled rather than opening an empty comparison. */
+const canCompare = computed(() => comparableBookmarks.value.length > 1)
+/** A trigger CohortComparisonDialog watches, not a v-model. It emits `closeEv`
+    only when it actually opened. */
+const compareOpen = ref(false)
+/**
+ * Lower the trigger before raising it, so every click is a fresh false->true
+ * edge for the dialog's watcher.
+ *
+ * `CohortComparisonDialog.openCohortCompareDialog` refuses to open above its
+ * own ten-item cap: it raises a warning and never emits `closeEv`. Without the
+ * reset the flag would stay true after such an attempt, the watcher would see
+ * no change on the next click, and Compare would be dead for the life of the
+ * page. The page size is 12, so one select-all is already over the cap and
+ * reaches this.
+ */
+const openCompare = async (): Promise<void> => {
+  compareOpen.value = false
+  await nextTick()
+  compareOpen.value = true
+}
+
+/* ---- Bulk delete ----------------------------------------------------------
+   The confirmation reuses the same D2eDialog primitive and the same three
+   i18n strings as the single-delete dialog (unchanged copy, per
+   pr10/00-figma-spec.md section 7). It is not the DeleteExplorationDialog.vue
+   *component* instance: that component's confirm() is wired to one
+   `bookmarkDisplay` prop and has no seam to substitute the bulk loop below
+   without changing single-delete behaviour, which is out of scope here. See
+   DECISIONS.md. */
+
+const bulkDeleteOpen = ref(false)
+const bulkDeleting = ref(false)
+const openBulkDelete = (): void => {
+  bulkDeleteOpen.value = true
+}
+const closeBulkDelete = (): void => {
+  if (bulkDeleting.value) return
+  bulkDeleteOpen.value = false
+}
+
+const deleteDeps: DeleteExplorationDeps = {
+  fireBookmarkQuery: payload => store.dispatch('fireBookmarkQuery', payload),
+  fireDeleteMaterializedCohortQuery: id => store.dispatch('fireDeleteMaterializedCohortQuery', id),
+  fireDeleteAtlasCohortDefinitionQuery: id => store.dispatch('fireDeleteAtlasCohortDefinitionQuery', id),
+}
+
+/**
+ * Mirrors `DeleteExplorationDialog.confirm()`'s own active-bookmark check,
+ * for every successfully-deleted target rather than one. A record in `failed`
+ * was never actually deleted, so it cannot be the reason to clear the active
+ * bookmark.
+ *
+ * `failed` holds record objects. Matching on `displayName` would misread a
+ * deleted record as failed whenever two records share a name.
+ */
+const clearActiveBookmarkIfDeleted = async (
+  targets: BookmarkDisplay[],
+  failed: ReadonlySet<BookmarkDisplay>,
+): Promise<void> => {
+  const activeBookmark = store.getters.getActiveBookmark
+  if (!activeBookmark) return
+  const clearedTheActiveOne = targets.some(record => {
+    if (failed.has(record)) return false
+    if (getBookmarkType(record) === 'M') return false
+    return activeBookmark.bookmarkname === record.bookmark?.name
+  })
+  if (!clearedTheActiveOne) return
+  store.commit(types.SET_ACTIVE_BOOKMARK, null)
+  await store.dispatch('resetChart')
+}
+
+const notifyBulkDeleteFailure = (failedNames: string[]): void => {
+  notifications.setAlertMessage({
+    // The names go through the locale string's own {0}, so word order and any
+    // punctuation around the list stay translatable.
+    message: getText('MRI_PA_EXPLORATIONS_BULK_DELETE_FAILED', failedNames.join(', ')),
+    messageType: 'error',
+  })
+}
+
+const confirmBulkDelete = async (): Promise<void> => {
+  if (bulkDeleting.value) return
+  bulkDeleting.value = true
+  try {
+    await runBulkDelete(selectedRecords.value, {
+      deleteOne: record => deleteExploration(record, deleteDeps),
+      reload: () => store.dispatch('fireBookmarkQuery', { method: 'get', params: { cmd: 'loadAll' } }),
+      clearSelection: () => explorations.clear(),
+      clearActiveBookmarkIfDeleted,
+      notifyFailure: notifyBulkDeleteFailure,
+    })
+  } finally {
+    bulkDeleting.value = false
+    bulkDeleteOpen.value = false
+  }
+}
+
+// A change to the search, a filter or the sort can drop cards out of the
+// matched set; a selected card that leaves it must leave the selection too.
+// Watching `matchedIds` (not `pageIds`) is deliberate: `matchedIds` covers
+// every page, so turning the page — which changes `pageIds` but not
+// `matchedIds` — never fires this and never drops the user's selection.
+watch(matchedIds, ids => {
+  explorations.retain(ids)
 })
 
 /**
@@ -775,6 +1137,17 @@ const onMaterializeClose = (open: boolean): void => {
   }
 }
 
+/**
+ * The bookmark ids with a duplicate request in flight.
+ *
+ * Duplicate has no confirmation dialog, so the menu click is the side effect
+ * itself: without this a double click posts twice and the user gets two copies.
+ * Rename and Delete need no equivalent, because their click only opens a modal.
+ * Keyed by id rather than one boolean, so copying two different cards at once
+ * still works.
+ */
+const duplicatingIds = ref<Set<string>>(new Set())
+
 const moreItems = (card: { source: BookmarkDisplay }) => {
   // Do not offer an action the user cannot perform: the same ownership guard
   // BookmarkItems applies to rename and delete.
@@ -791,13 +1164,20 @@ const moreItems = (card: { source: BookmarkDisplay }) => {
       icon: 'mdi-pencil-outline',
       disabled: renameDisabled,
     },
-    // #3123. The backend has no duplicate command yet, so the entry shows but
-    // cannot be chosen.
+    // #3123. Duplicate copies the bookmark's filters, so it needs a D2E
+    // bookmark to read: a materialized-only cohort has none, and an Atlas
+    // definition has its own /copy endpoint. Disable rather than fail.
+    //
+    // Also disabled while this card's own copy is in flight. The menu closes on
+    // select, so reopening it is the realistic way to fire a second request.
     {
       label: getText('MRI_PA_EXPLORATIONS_DUPLICATE'),
       value: 'duplicate',
       icon: 'mdi-content-copy',
-      disabled: true,
+      disabled:
+        disabled ||
+        !card.source.bookmark ||
+        duplicatingIds.value.has(card.source.bookmark.id),
     },
     {
       label: getText('MRI_PA_BUTTON_DELETE'),
@@ -809,10 +1189,42 @@ const moreItems = (card: { source: BookmarkDisplay }) => {
   ]
 }
 
+/**
+ * Copy one exploration. #3123 asks for no confirmation dialog, so this runs on
+ * the menu click.
+ *
+ * The name goes through the locale string's own `{0}`, so a translation can put
+ * the marker where its language wants it. Duplicating twice deliberately gives
+ * two cards with the same name: the ticket says the user renames afterwards,
+ * and inventing "(Copy 2)" is scope it does not ask for.
+ */
+const duplicateExploration = async (record: BookmarkDisplay): Promise<void> => {
+  const bookmarkId = record.bookmark.id
+  if (duplicatingIds.value.has(bookmarkId)) return
+  duplicatingIds.value = new Set(duplicatingIds.value).add(bookmarkId)
+
+  const copyName = getText('MRI_PA_EXPLORATIONS_COPY_NAME', record.displayName)
+  try {
+    await store.dispatch('fireDuplicateBookmarkQuery', { bookmarkId, newName: copyName })
+    notifications.setToastMessage({ text: getText('MRI_PA_EXPLORATIONS_DUPLICATE_SUCCESS', copyName) })
+  } catch (error) {
+    console.error('[ExplorationsPage] Duplicate failed for', record.displayName, error)
+    notifications.setAlertMessage({
+      message: getText('MRI_PA_EXPLORATIONS_DUPLICATE_FAILED', record.displayName),
+      messageType: 'error',
+    })
+  } finally {
+    const next = new Set(duplicatingIds.value)
+    next.delete(bookmarkId)
+    duplicatingIds.value = next
+  }
+}
+
 const onMoreSelect = (card: { source: BookmarkDisplay }, value: string): void => {
   actionTarget.value = card.source
   if (value === 'rename') renameOpen.value = true
   if (value === 'delete') deleteOpen.value = true
+  if (value === 'duplicate') duplicateExploration(card.source)
 }
 </script>
 
@@ -822,14 +1234,14 @@ const onMoreSelect = (card: { source: BookmarkDisplay }, value: string): void =>
 .explorations-page {
   height: 100%;
   padding: 24px;
-  overflow-y: auto;
   background: var(--d2e-color-neutral-xtra-lightest);
   font-family: var(--d2e-font-family);
 
   &__card {
     display: flex;
     flex-direction: column;
-    min-height: 100%;
+    height: 100%;
+    overflow: hidden;
     background: var(--d2e-color-white);
     border-radius: var(--d2e-radius-lg);
   }
@@ -840,6 +1252,11 @@ const onMoreSelect = (card: { source: BookmarkDisplay }, value: string): void =>
     justify-content: space-between;
     gap: 24px;
     padding: 24px;
+    // Never shrink: the card is now clamped to viewport height, and only
+    // __status/__grid (both `min-height: 0`) are meant to absorb a shortfall
+    // by scrolling. Without this, a very short viewport would squeeze the
+    // header instead of the content that's actually built to give way.
+    flex-shrink: 0;
   }
 
   /* 10px Medium, 1px tracking, closed by a 24x2 secondary rule
@@ -921,6 +1338,7 @@ const onMoreSelect = (card: { source: BookmarkDisplay }, value: string): void =>
     align-items: center;
     justify-content: space-between;
     gap: 16px;
+    flex-shrink: 0;
     padding: 8px 24px;
   }
 
@@ -934,6 +1352,46 @@ const onMoreSelect = (card: { source: BookmarkDisplay }, value: string): void =>
     display: flex;
     align-items: center;
     gap: 8px;
+  }
+
+  /* Replaces the toolbar row while a selection is live (Figma 1821:433737,
+     "Frame 7"). Same 60px height as the row it replaces.
+
+     The frame nests the two buttons in their own group (`Frame 2147226911`),
+     so the row carries 16px between groups and the group carries 8px between
+     the buttons. Mirroring that nesting keeps both gaps declarative — a flat
+     row cannot express two gaps without per-child margins. */
+  &__bulk {
+    display: flex;
+    align-items: center;
+    gap: var(--d2e-spacing-s);
+    flex-shrink: 0;
+    height: 60px;
+    padding: var(--d2e-spacing-xs-s) var(--d2e-spacing-s);
+    background: var(--d2e-color-neutral-lightest);
+    border-top: var(--d2e-border-width-sm) solid var(--d2e-color-neutral-lighter);
+    border-bottom: var(--d2e-border-width-sm) solid var(--d2e-color-neutral-lighter);
+
+    // D2eButton has no height/padding/shadow prop; its own border-radius
+    // already defaults to --d2e-radius-md (8px), which matches the frame.
+    :deep(.d2e-button) {
+      height: 36px;
+      padding: var(--d2e-spacing-xs) 22px;
+      box-shadow: var(--d2e-elevation-e2);
+    }
+  }
+
+  &__bulk-actions {
+    display: flex;
+    align-items: center;
+    gap: var(--d2e-spacing-xs);
+  }
+
+  &__bulk-count {
+    font-size: var(--d2e-font-body2-size);
+    font-weight: var(--d2e-font-body2-weight);
+    line-height: var(--d2e-font-body2-line-height);
+    color: var(--d2e-color-primary);
   }
 
   /* Search is 466x44 with a 1px #ACABA8 border and a 4px radius
@@ -1009,14 +1467,23 @@ const onMoreSelect = (card: { source: BookmarkDisplay }, value: string): void =>
     }
   }
 
+  /* The scrolling region: everything above (header, toolbar) and below
+     (the pagination bar) stays fixed, and only this area — whichever of
+     status/grid is showing — scrolls internally, clamped to the viewport. */
   &__status {
     display: flex;
     flex-direction: column;
     align-items: center;
     gap: 12px;
     padding: 48px 24px;
-    flex: 1 0 auto;
-    justify-content: center;
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    // "safe": on a viewport too short for the content, fall back to
+    // flex-start instead of centering it — centered overflow in a scroll
+    // container clips symmetrically, and scrollTop can't go negative, so a
+    // plain `center` would leave the top permanently unreachable.
+    justify-content: safe center;
     color: var(--d2e-color-neutral);
   }
 
@@ -1028,10 +1495,14 @@ const onMoreSelect = (card: { source: BookmarkDisplay }, value: string): void =>
   &__grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, 324px);
+    grid-auto-rows: min-content;
     justify-content: start;
     column-gap: 16px;
     row-gap: 40px;
     padding: 24px;
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
   }
 
   &__summary-panel {
