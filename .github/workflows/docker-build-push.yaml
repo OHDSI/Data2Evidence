@@ -440,6 +440,16 @@ jobs:
             ( cd "$SUB/$p" && npm install \
               && npm run "$(node -e "process.stdout.write(require('./package.json').scripts['build:pkg'] ? 'build:pkg' : 'build')")" )
           done
+          # data-quality lives in this repo (plugins/atlas/subplugins), not the
+          # submodule, but is a file: dep of plugins/atlas — so unlike
+          # patient-analytics it must be built BEFORE the atlas install, whose
+          # postinstall stages its dist/. Mirrors scripts/build-atlas.sh.
+          DQ_DIR=plugins/atlas/subplugins/data-quality
+          ( cd "$DQ_DIR" && npm install && npm run build )
+          if [ ! -f "$DQ_DIR/dist/index.system.js" ]; then
+            echo "::error::data-quality did not produce dist/index.system.js"
+            exit 1
+          fi
       # Atlas plugin: postinstall bakes Atlas3 + the Pythia UI into resources/;
       # build the portal entry. Packs only resources/ (see package.json "files").
       - name: Build Atlas plugin
@@ -669,7 +679,7 @@ jobs:
             BUILD_TYPE=OSS
             PLUGINS_FEED=${{ needs.setup.outputs.is_release_push == 'true' && 'stable' || 'd2e' }}
             PLUGINS_FROM_REGISTRY=@ohdsi/pythia-agent@0.1.0-develop.18.g80bf4aa
-            TREXSQL_REF=sha-5ce42757279f969bca123f0128a5c967ff2e3bd4@sha256:bad73e8323fc07fdd2dba7a25e6f7f1c2b3d6e86410b039f5e8629c0d0214cc6
+            TREXSQL_REF=sha-48a466268dbfdd12f03d8018e2af81fe10cbdf69@sha256:923e62615ec94da06f4574e4ed80b51780746f9e8a30e8060caa9c4dd4ac754c
           secrets: |
             "PLUGINS_REGISTRY=${{ secrets.PLUGINS_REGISTRY }}"
             "github_token=${{ secrets.GITHUB_TOKEN }}"
@@ -977,7 +987,15 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: npm install
+        # --legacy-peer-deps: @trex/notebook (reached through the nested file:
+        # link chain atlas -> notebook-plugin -> notebook) pulls webr, which
+        # pulls react-data-grid@^7.0.0-beta.44. That floats to a beta whose
+        # peers moved to react@^19.2, conflicting with the react@^18.2.0 pinned
+        # here. Resolving that conflict across the link chain crashes npm 10.8.2
+        # with "Cannot read properties of null (reading 'edgesOut')". Skipping
+        # peer resolution avoids the code path entirely. Same flag, same reason
+        # as the patient-analytics install above.
+        run: npm install --legacy-peer-deps
 
       - name: Patch seed config for e2e tests
         run: node ./scripts/patch-seed-for-e2e.js
@@ -1256,7 +1274,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: npm install
+        run: npm install --legacy-peer-deps
 
       - name: Initialise d2e
         if: success() || failure()
