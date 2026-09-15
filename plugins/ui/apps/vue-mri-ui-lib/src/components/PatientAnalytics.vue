@@ -168,7 +168,7 @@ import appButton from '../lib/ui/app-button.vue'
 import appIcon from '../lib/ui/app-icon.vue'
 import appLink from '../lib/ui/app-link.vue'
 import ExplorationsPage from './ExplorationsPage.vue'
-import ChartController from './ChartController.vue'
+import { lazyComponent } from '../utils/lazyComponent'
 import ChartToolbar from './ChartToolbar.vue'
 import FilterCardSummary from './FilterCardSummary.vue'
 import filters from './Filters.vue'
@@ -185,6 +185,11 @@ import { useAtlasStore } from '../stores/atlas'
 import { useUnsavedChanges } from '../composables/useUnsavedChanges'
 import { usePortalContext } from '../composables/usePortalContext'
 import { useNotificationStore } from '../stores/notifications'
+import { useExplorationsStore } from '../stores/explorations'
+
+// Loaded on demand so plotly.js stays out of the single-spa entry's static
+// dependency graph. See docs: the chart chunk was blocking mount.
+const ChartController = lazyComponent('ChartController', () => import('./ChartController.vue'))
 
 const PANE_SIZE = {
   FULL: 100,
@@ -203,6 +208,7 @@ export default {
       unsavedChanges: useUnsavedChanges(),
       portalContext: usePortalContext(),
       notifications: useNotificationStore(),
+      explorations: useExplorationsStore(),
     }
   },
   data() {
@@ -240,6 +246,10 @@ export default {
       }
     },
     getActiveBookmark(newVal, oldVal) {
+      // The Analyze card action also sets the active bookmark (dashboardContext
+      // needs it), but it must not trigger this auto-switch: it would unmount
+      // ExplorationsPage, and the wizard modals mounted inside it, mid-click.
+      if (this.explorations.analyzeInProgress) return
       // Auto-switch to cohort view when a bookmark is loaded (e.g., from deep link)
       // Only trigger when going from no bookmark to having one
       if (newVal && !oldVal && this.displayCohorts) {
