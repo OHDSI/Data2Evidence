@@ -161,7 +161,7 @@
           "allowNegative": false,
           "label": "Resp Rate",
           "placeholder": "bpm",
-          "required": true,
+          "required": false,
           "configPath": "patient.interactions.measurement.attributes.numval",
           "filterCardPath": "patient.interactions.measurement",
           "fixedAttributes": [
@@ -178,7 +178,7 @@
           "allowNegative": false,
           "label": "Pulse Rate",
           "placeholder": "bpm",
-          "required": true,
+          "required": false,
           "configPath": "patient.interactions.measurement.attributes.numval",
           "filterCardPath": "patient.interactions.measurement",
           "fixedAttributes": [
@@ -195,7 +195,7 @@
           "allowNegative": false,
           "label": "Systolic Blood Pressure",
           "placeholder": "mmHg",
-          "required": true,
+          "required": false,
           "configPath": "patient.interactions.measurement.attributes.numval",
           "filterCardPath": "patient.interactions.measurement",
           "fixedAttributes": [
@@ -212,7 +212,7 @@
           "allowNegative": false,
           "label": "Diastolic Blood Pressure",
           "placeholder": "mmHg",
-          "required": true,
+          "required": false,
           "configPath": "patient.interactions.measurement.attributes.numval",
           "filterCardPath": "patient.interactions.measurement",
           "fixedAttributes": [
@@ -438,7 +438,7 @@
           "allowNegative": false,
           "label": "Resp Rate",
           "placeholder": "bpm",
-          "required": true,
+          "required": false,
           "configPath": "patient.interactions.measurement.attributes.numval",
           "filterCardPath": "patient.interactions.measurement",
           "fixedAttributes": [
@@ -455,7 +455,7 @@
           "allowNegative": false,
           "label": "Pulse Rate",
           "placeholder": "bpm",
-          "required": true,
+          "required": false,
           "configPath": "patient.interactions.measurement.attributes.numval",
           "filterCardPath": "patient.interactions.measurement",
           "fixedAttributes": [
@@ -472,7 +472,7 @@
           "allowNegative": false,
           "label": "Systolic Blood Pressure",
           "placeholder": "mmHg",
-          "required": true,
+          "required": false,
           "configPath": "patient.interactions.measurement.attributes.numval",
           "filterCardPath": "patient.interactions.measurement",
           "fixedAttributes": [
@@ -489,7 +489,7 @@
           "allowNegative": false,
           "label": "Diastolic Blood Pressure",
           "placeholder": "mmHg",
-          "required": true,
+          "required": false,
           "configPath": "patient.interactions.measurement.attributes.numval",
           "filterCardPath": "patient.interactions.measurement",
           "fixedAttributes": [
@@ -715,7 +715,7 @@
           "allowNegative": false,
           "label": "Resp Rate",
           "placeholder": "bpm",
-          "required": true,
+          "required": false,
           "configPath": "patient.interactions.measurement.attributes.numval",
           "filterCardPath": "patient.interactions.measurement",
           "fixedAttributes": [
@@ -732,7 +732,7 @@
           "allowNegative": false,
           "label": "Pulse Rate",
           "placeholder": "bpm",
-          "required": true,
+          "required": false,
           "configPath": "patient.interactions.measurement.attributes.numval",
           "filterCardPath": "patient.interactions.measurement",
           "fixedAttributes": [
@@ -749,7 +749,7 @@
           "allowNegative": false,
           "label": "Systolic Blood Pressure",
           "placeholder": "mmHg",
-          "required": true,
+          "required": false,
           "configPath": "patient.interactions.measurement.attributes.numval",
           "filterCardPath": "patient.interactions.measurement",
           "fixedAttributes": [
@@ -766,7 +766,7 @@
           "allowNegative": false,
           "label": "Diastolic Blood Pressure",
           "placeholder": "mmHg",
-          "required": true,
+          "required": false,
           "configPath": "patient.interactions.measurement.attributes.numval",
           "filterCardPath": "patient.interactions.measurement",
           "fixedAttributes": [
