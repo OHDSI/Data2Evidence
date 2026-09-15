@@ -911,7 +911,7 @@
           "type": "text",
           "label": "Disease/Condition",
           "required": true,
-          "configPath": "patient.interactions.conditionoccurrence.attributes.conditioncodejerome",
+          "configPath": "patient.interactions.conditionoccurrence.attributes.wizard_condition_concept_search",
           "isWizardField": true,
           "allowFreeText": true
         },
