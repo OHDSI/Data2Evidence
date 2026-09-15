@@ -116,10 +116,10 @@ test(TEST_NAME, async ({ page }) => {
 
   // Navigate to Cohorts
   await navigateToCohorts(page)
-  await expect(page.getByRole('button', { name: 'D2E' })).toBeVisible()
+  await expect(page.getByTestId('explorations-new-btn')).toBeVisible()
 
   // Create first cohort with MALE filter
-  await page.getByRole('button', { name: 'D2E' }).click()
+  await page.getByTestId('explorations-new-btn').click()
   await page.getByTitle('Basic Data - Gender').getByText('All').click()
   await page.getByRole('textbox', { name: 'multiselect-searchbox' }).fill('MALE')
   await page.getByText('MALE - MALE').click()
@@ -144,7 +144,7 @@ test(TEST_NAME, async ({ page }) => {
   await expect(page.locator('#pane-left')).toContainText(COHORT_1)
 
   // Create second cohort with FEMALE filter
-  await page.getByRole('button', { name: 'D2E' }).click()
+  await page.getByTestId('explorations-new-btn').click()
   await dismissUnsavedChangesDialog(page)
 
   await page.waitForTimeout(500)

@@ -56,7 +56,7 @@ test(TEST_NAME, async ({ page }) => {
     await page.getByRole('button', { name: 'Switch to Researcher portal' }).click()
     await page.getByText('Demo dataset').nth(1).click()
     await page.getByRole('link', { name: 'Cohorts' }).click()
-    await page.getByRole('button', { name: 'D2E' }).click()
+    await page.getByTestId('explorations-new-btn').click()
     await expect(page.getByText('2,694 / 2,694')).toBeVisible()
     await expect(page.locator('.loading-animation-component')).not.toBeVisible()
   })
