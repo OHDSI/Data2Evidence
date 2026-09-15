@@ -1,6 +1,7 @@
 import type { Knex } from '../types'
 import { env } from "../../env.ts"
 import { ensureSeedAccount, seedEmail } from "../../idp/seedAccount.ts"
+import { mayRekeyExistingSubject, resolveIdpMode } from "@alp/idp/mode.ts"
 
 const TABLE_NAME = 'user'
 
@@ -36,9 +37,13 @@ export const seed = async (knex: Knex): Promise<void> => {
     (await knex(TABLE_NAME).where({ username: env.IDP__INITIAL_USER__NAME }).first())
 
   if (existing) {
-    await knex(TABLE_NAME)
-      .where({ id: existing.id })
-      .update({ idp_user_id: account.idpUserId })
+    // On an installation migrating from Logto, the existing admin row carries
+    // its Logto subject, which the IdP migration still needs to link it.
+    if (mayRekeyExistingSubject(existing.idp_user_id, resolveIdpMode(env.D2E_IDP_MODE))) {
+      await knex(TABLE_NAME)
+        .where({ id: existing.id })
+        .update({ idp_user_id: account.idpUserId })
+    }
     return
   }
 
