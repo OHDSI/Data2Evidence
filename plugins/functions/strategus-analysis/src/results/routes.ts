@@ -36,12 +36,11 @@ export default class StrategusResultsRouter {
     // Registered before "/:id" so the more specific path wins.
     this.router.get("/:id/download", this.downloadResult.bind(this));
     this.router.get("/:id", this.getResult.bind(this));
-    this.router.put("/:id", upload.single("file"), this.replaceResult.bind(this));
     this.router.delete("/:id", this.deleteResult.bind(this));
   }
 
   private async createResult(req: Request, res: Response) {
-    const validated = this.validateUpload(req, res, true);
+    const validated = this.validateUpload(req, res);
     if (!validated) return;
 
     try {
@@ -134,36 +133,6 @@ export default class StrategusResultsRouter {
     }
   }
 
-  private async replaceResult(req: Request, res: Response) {
-    const validated = this.validateUpload(req, res, false);
-    if (!validated) return;
-
-    const { id } = req.params;
-    try {
-      const result = await this.strategusResultsService.replaceResult(
-        validated.authHeader,
-        id,
-        {
-          name: validated.name,
-          fileName: validated.file.originalname,
-          buffer: validated.file.buffer,
-          mimetype: validated.file.mimetype || "application/zip",
-          metadata: validated.metadata,
-        },
-      );
-      if (!result) {
-        return res.status(404).json({ message: `Result not found: ${id}` });
-      }
-      return res.status(200).json(result);
-    } catch (error) {
-      return this.handleError(
-        res,
-        error,
-        "An error occurred while replacing the result",
-      );
-    }
-  }
-
   private async deleteResult(req: Request, res: Response) {
     if (!this.requireAuth(req, res)) return;
 
@@ -201,7 +170,6 @@ export default class StrategusResultsRouter {
   private validateUpload(
     req: Request,
     res: Response,
-    requireName: boolean,
   ): ValidatedUpload | null {
     const authHeader = req.headers["authorization"] as string;
     if (!authHeader) {
@@ -230,7 +198,7 @@ export default class StrategusResultsRouter {
     }
 
     const name = req.body?.name;
-    if (requireName && !name) {
+    if (!name) {
       res.status(400).json({ message: "Missing required field: name" });
       return null;
     }

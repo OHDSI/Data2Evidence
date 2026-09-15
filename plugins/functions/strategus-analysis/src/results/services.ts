@@ -61,7 +61,7 @@ export default class StrategusResultsService {
         bucket: this.bucket,
         storagePath,
         metadata: input.metadata ?? null,
-        ...this.ownerInfo(token, true),
+        ...this.ownerInfo(token),
       };
       await this.strategusResultsRepository.save(row);
       return row;
@@ -108,49 +108,6 @@ export default class StrategusResultsService {
     return { result, readStream };
   }
 
-  async replaceResult(token: string, id: string, input: ResultUploadInput) {
-    const existing = await this.getResult(id);
-    if (!existing) return null;
-
-    const storagePath = `${id}/${input.fileName}`;
-    await this.storage.upload(this.bucket, storagePath, {
-      fileName: input.fileName,
-      buffer: input.buffer,
-      mimetype: input.mimetype,
-    });
-
-    // The path only moves when the replacement carries a different filename;
-    // the previous object would otherwise be orphaned under the same id prefix.
-    if (existing.storagePath !== storagePath) {
-      await this.storage.delete(existing.bucket, existing.storagePath).catch(
-        (cleanupError) => {
-          console.error(
-            `Failed to delete replaced object ${existing.storagePath}:`,
-            cleanupError,
-          );
-        },
-      );
-    }
-
-    const updated = {
-      ...existing,
-      name: input.name ?? existing.name,
-      fileName: input.fileName,
-      fileSize: input.buffer.byteLength,
-      checksum: this.checksum(input.buffer),
-      bucket: this.bucket,
-      storagePath,
-      metadata: input.metadata === undefined
-        ? existing.metadata
-        : input.metadata,
-      updatedAt: new Date(),
-      ...this.ownerInfo(token, false),
-    };
-
-    await this.strategusResultsRepository.save(updated);
-    return updated;
-  }
-
   async deleteResult(id: string) {
     const existing = await this.getResult(id);
     if (!existing) return null;
@@ -164,11 +121,9 @@ export default class StrategusResultsService {
     return createHash("sha256").update(buffer).digest("hex");
   }
 
-  private ownerInfo(token: string, isNew: boolean) {
+  private ownerInfo(token: string) {
     const subject = this.subjectFromToken(token);
-    return isNew
-      ? { createdBy: subject, modifiedBy: subject }
-      : { modifiedBy: subject };
+    return { createdBy: subject, modifiedBy: subject };
   }
 
   private subjectFromToken(token: string) {

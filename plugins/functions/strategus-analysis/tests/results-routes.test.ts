@@ -297,36 +297,6 @@ Deno.test("GET /:id/download returns 404 for an unknown id", async () => {
   assertEquals(captured.body, { message: "Result not found: missing" });
 });
 
-Deno.test("PUT /:id returns 404 for an unknown id", async () => {
-  const instance = routerWithService({
-    replaceResult: () => Promise.resolve(null),
-  });
-  const handler = findHandler(instance.router, "put", "/:id");
-  const { res, captured } = createMockResponse();
-
-  await handler(uploadRequest(zipFile, {}, { id: "missing" }), res);
-
-  assertEquals(captured.statusCode, 404);
-  assertEquals(captured.body, { message: "Result not found: missing" });
-});
-
-Deno.test("PUT /:id returns 200 with the updated result and no name required", async () => {
-  const instance = routerWithService({
-    replaceResult: (
-      _token: string,
-      id: string,
-      input: Record<string, unknown>,
-    ) => Promise.resolve({ id, ...input }),
-  });
-  const handler = findHandler(instance.router, "put", "/:id");
-  const { res, captured } = createMockResponse();
-
-  await handler(uploadRequest(zipFile, {}, { id: "r1" }), res);
-
-  assertEquals(captured.statusCode, 200);
-  assertEquals((captured.body as Record<string, unknown>).id, "r1");
-});
-
 Deno.test("DELETE /:id returns 404 for an unknown id", async () => {
   const instance = routerWithService({
     deleteResult: () => Promise.resolve(null),
