@@ -34,8 +34,10 @@
             'd2e-menu__item--danger': item.danger,
           }"
           role="menuitem"
+          :tabindex="index === tabbableIndex ? 0 : -1"
           :disabled="item.disabled"
           @click="onSelect(item)"
+          @focus="activeIndex = index"
         >
           <v-icon
             v-if="item.icon"
@@ -149,6 +151,29 @@ const wrapperProps = computed(() =>
 
 const itemEls = ref<(HTMLButtonElement | null)[]>([]);
 
+/**
+ * Roving tabindex (WAI-ARIA menu pattern): exactly one item sits in the Tab
+ * order at a time, and the arrow keys move it. Without this every item is
+ * tabbable, so Tab walks the whole menu instead of leaving it — which is the
+ * gap #3204's review raised.
+ *
+ * `activeIndex` is -1 until something takes focus. `tabbableIndex` then falls
+ * back to the selected item, or the first enabled one, so a menu that has
+ * never been focused is still reachable by Tab. A stale index pointing at an
+ * item that has since become disabled falls back the same way.
+ */
+const activeIndex = ref(-1);
+
+const tabbableIndex = computed(() => {
+  if (activeIndex.value >= 0 && !props.items[activeIndex.value]?.disabled) {
+    return activeIndex.value;
+  }
+  const selected = props.items.findIndex(
+    (item) => item.selected && !item.disabled,
+  );
+  return selected >= 0 ? selected : firstEnabledIndex(props.items);
+});
+
 function setItemRef(
   el: Element | ComponentPublicInstance | null,
   index: number,
@@ -158,6 +183,9 @@ function setItemRef(
 
 function focusIndex(index: number) {
   if (index < 0) return;
+  // Move the roving tabindex with the focus, so Tab leaves the menu from
+  // wherever the arrows last landed.
+  activeIndex.value = index;
   itemEls.value[index]?.focus();
 }
 

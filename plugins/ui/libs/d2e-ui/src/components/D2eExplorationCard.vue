@@ -20,7 +20,7 @@
           density="compact"
           hide-details
           :ripple="false"
-          :aria-label="checkboxLabel"
+          :aria-label="resolvedCheckboxLabel"
           @update:model-value="$emit('update:selected', $event)"
         />
       </div>
@@ -132,7 +132,7 @@ const props = withDefaults(defineProps<Props>(), {
   width: "336px",
   clickable: false,
   selected: false,
-  checkboxLabel: "Select exploration",
+  checkboxLabel: undefined,
   status: undefined,
   personCount: undefined,
   personLabel: "persons",
@@ -145,6 +145,10 @@ defineEmits<{ "update:selected": [value: boolean] }>();
 
 const resolvedStatus = computed(() =>
   props.status ? EXPLORATION_STATUS_MAP[props.status] : undefined,
+);
+
+const resolvedCheckboxLabel = computed(
+  () => props.checkboxLabel ?? `Select ${props.name}`,
 );
 </script>
 
