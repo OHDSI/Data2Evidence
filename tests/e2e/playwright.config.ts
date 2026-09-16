@@ -26,6 +26,6 @@ export default defineConfig({
     ['list'], // You can combine multiple reporters
     ['playwright-ctrf-json-reporter', {}]
   ],
-  workers: 1,
-  maxFailures: process.env.CI ? 1 : 0 // 0 = no cap; run all tests even if some fail
+  workers: 1
+  // maxFailures: process.env.CI ? 1 : 0 // 0 = no cap; run all tests even if some fail
 })

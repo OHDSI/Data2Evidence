@@ -5,7 +5,7 @@ sap.ui.define([], function () {
         stacked: {
             className: "sap.hc.mri.pa.ui.lib.StackedBarChart",
             icon: "sap-icon://vertical-bar-chart",
-            tooltip: "{i18n>MRI_PA_TOOLTIP_CHARTTYPE_STACKED}",
+            tooltip: "{i18n>MRI_PA_TOOLTIP_CHARTTYPE_CHART}",
             urlKey: "stacked",
             keyCode: 119 // F8
         },
