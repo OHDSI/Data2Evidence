@@ -15,9 +15,19 @@ import { KnexMigrationStore } from './src/store.ts'
 // doesn't set). A throw there must be caught like any other migration
 // failure, not escape as an unhandled module-load error.
 let k: Knex | undefined
+let logtoK: Knex | undefined
 try {
   const { default: config } = await import('../alp-usermgmt-init/src/db/knexfile-admin.ts')
   k = knex(config)
+  // The Logto read needs Logto's own database role to get past the row-level
+  // policy on logto.users (see KnexMigrationStore). That pool differs from the
+  // admin one in nothing but the credentials, so it is built by resolving the
+  // admin connection — host, port, database, TLS — and swapping those two in,
+  // rather than restating the same resolution a second time.
+  if (env.PG_LOGTO_USER && env.PG_LOGTO_PASSWORD) {
+    const connection = await (config.connection as () => Promise<Record<string, unknown>>)()
+    logtoK = knex({ ...config, connection: { ...connection, user: env.PG_LOGTO_USER, password: env.PG_LOGTO_PASSWORD } })
+  }
   await runIdpMigration(
     {
       mode: resolveIdpMode(env.D2E_IDP_MODE),
@@ -27,7 +37,7 @@ try {
       publicOrigin: env.PUBLIC_ORIGIN,
       userDomain: env.USER_DOMAIN
     },
-    new KnexMigrationStore(k),
+    new KnexMigrationStore(k, logtoK),
     new HttpFederationAdmin({
       federationUrl: env.TREX_FEDERATION_ADMIN_URL,
       rolesUrl: env.TREX_ROLES_ADMIN_URL,
@@ -39,4 +49,5 @@ try {
   console.error('[idp-migration] failed; will retry on the next start:', error)
 } finally {
   await k?.destroy()
+  await logtoK?.destroy()
 }

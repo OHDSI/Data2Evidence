@@ -71,3 +71,83 @@ Deno.test({
     }
   }
 })
+
+// The fixture above creates logto.users without row-level security, which is
+// exactly why the RLS failure reached a real installation unnoticed. This
+// test reproduces the production shape: logto.users owned by Logto's own role,
+// RLS enabled, and a RESTRICTIVE policy keyed on logto.tenants.db_user =
+// CURRENT_USER. Both roles are ordinary (non-superuser) logins, because a
+// superuser bypasses every policy and would prove nothing.
+const ROLE_PASSWORD = 'idp-migration-test'
+const LOGTO_OWNER = 'idp_test_logto_owner'
+const USERMGMT_ADMIN = 'idp_test_usermgmt_admin'
+
+Deno.test({
+  name: 'row-level security hides logto.users from the usermgmt admin role, and not from the Logto owner',
+  ignore: !url,
+  sanitizeResources: false,
+  sanitizeOps: false,
+  fn: async () => {
+    const asRole = (role: string) => {
+      const u = new URL(url!)
+      u.username = role
+      u.password = ROLE_PASSWORD
+      return u.href
+    }
+    const k = knex({ client: 'pg', connection: url })
+    let owner: ReturnType<typeof knex> | undefined
+    let admin: ReturnType<typeof knex> | undefined
+    try {
+      await k.raw(`drop schema if exists logto cascade`)
+      for (const role of [LOGTO_OWNER, USERMGMT_ADMIN]) {
+        await k.raw(`
+          do $$ begin
+            if exists (select 1 from pg_roles where rolname = '${role}') then
+              execute 'drop owned by ${role} cascade';
+              execute 'drop role ${role}';
+            end if;
+          end $$`)
+        await k.raw(`create role ${role} login password '${ROLE_PASSWORD}'`)
+      }
+
+      await k.raw(`create schema logto authorization ${LOGTO_OWNER}`)
+      await k.raw(`create table logto.tenants (id text primary key, db_user text)`)
+      await k.raw(`create table logto.users (tenant_id text, id text, username text, primary_email text, name text, is_suspended boolean)`)
+      await k.raw(`alter table logto.tenants owner to ${LOGTO_OWNER}`)
+      await k.raw(`alter table logto.users owner to ${LOGTO_OWNER}`)
+      await k.raw(`insert into logto.tenants values ('default', 'logto_tenant_alp_default'), ('admin', 'logto_tenant_alp_admin')`)
+      await k.raw(`insert into logto.users values ('default','l1','admin',null,'Admin',false)`)
+      await k.raw(`alter table logto.users enable row level security`)
+      await k.raw(`
+        create policy tenant_isolation on logto.users as restrictive
+        using (tenant_id = (select id from logto.tenants where db_user = current_user))`)
+      await k.raw(`grant usage on schema logto to ${USERMGMT_ADMIN}`)
+      await k.raw(`grant select on logto.users, logto.tenants to ${USERMGMT_ADMIN}`)
+
+      owner = knex({ client: 'pg', connection: asRole(LOGTO_OWNER) })
+      admin = knex({ client: 'pg', connection: asRole(USERMGMT_ADMIN) })
+
+      // The defect: the admin role satisfies no tenant row, so it reads the
+      // table as empty — with no error to give the problem away.
+      const withoutOwner = new KnexMigrationStore(admin, admin)
+      assertEquals(await withoutOwner.logtoAvailable(), true)
+      assertEquals(await withoutOwner.logtoUsers(), [])
+
+      // The fix: the table's owner bypasses the policy (relforcerowsecurity
+      // is false), so the same read on the Logto connection sees the row.
+      const withOwner = new KnexMigrationStore(admin, owner)
+      assertEquals(await withOwner.logtoUsers(), [
+        { id: 'l1', username: 'admin', primaryEmail: null, name: 'Admin', isSuspended: false }
+      ])
+    } finally {
+      await owner?.destroy()
+      await admin?.destroy()
+      await k.raw(`drop schema if exists logto cascade`).catch(() => {})
+      for (const role of [LOGTO_OWNER, USERMGMT_ADMIN]) {
+        await k.raw(`drop owned by ${role} cascade`).catch(() => {})
+        await k.raw(`drop role if exists ${role}`).catch(() => {})
+      }
+      await k.destroy()
+    }
+  }
+})

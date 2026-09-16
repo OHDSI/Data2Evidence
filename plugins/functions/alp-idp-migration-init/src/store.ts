@@ -5,10 +5,27 @@ import type {
 } from '@alp/idp/migration/types.ts'
 
 export class KnexMigrationStore implements MigrationStore {
-  constructor(private readonly knex: Knex) {}
+  private readonly logto: Knex
+
+  /**
+   * `knex` reaches usermgmt as the usermgmt admin role. `logto` reads the
+   * Logto schema and defaults to the same connection.
+   *
+   * They differ because logto.users carries a RESTRICTIVE row-level policy,
+   * `tenant_id = (select id from logto.tenants where db_user = current_user)`,
+   * and the usermgmt admin role is in none of those tenant rows: it reads
+   * zero rows, with no error. The table's owner — Logto's own database role —
+   * bypasses the policy, so the Logto read is given that connection when its
+   * credentials are configured. An install with no Logto at all has no such
+   * credentials and falls back to the admin connection, which then simply
+   * finds no logto schema.
+   */
+  constructor(private readonly knex: Knex, logto?: Knex) {
+    this.logto = logto ?? knex
+  }
 
   async logtoAvailable(): Promise<boolean> {
-    const { rows } = await this.knex.raw(`select to_regclass('logto.users') as t`)
+    const { rows } = await this.logto.raw(`select to_regclass('logto.users') as t`)
     return rows[0]?.t != null
   }
 
@@ -19,7 +36,7 @@ export class KnexMigrationStore implements MigrationStore {
 
   async logtoUsers(): Promise<LogtoUserRow[]> {
     // Logto keeps its own console users under tenant 'admin'; only 'default' holds d2e's.
-    const { rows } = await this.knex.raw(`
+    const { rows } = await this.logto.raw(`
       select id, username, primary_email as "primaryEmail", name, coalesce(is_suspended, false) as "isSuspended"
       from logto.users where tenant_id = 'default' order by id`)
     return rows
