@@ -1,5 +1,5 @@
-import { assertEquals } from "jsr:@std/assert";
-import { idpModeOf, upgradeEnvForIdpMode } from "../idp-mode-env.ts";
+import { assertEquals, assertThrows } from "jsr:@std/assert";
+import { idpModeOf, InvalidIdpModeError, upgradeEnvForIdpMode } from "../idp-mode-env.ts";
 
 const gen = { password: () => "PW", rootKey: () => "RK" };
 
@@ -55,4 +55,38 @@ Deno.test("an env that already names a mode is never changed", () => {
 
 Deno.test("an env with neither Logto nor trex markers is treated as trex", () => {
   assertEquals(upgradeEnvForIdpMode("A=1", gen).mode, "trex");
+});
+
+Deno.test("a quoted D2E_IDP_MODE is recognised and never re-stamped", () => {
+  const env = preTrex + "D2E_IDP_MODE='trex'\n";
+  assertEquals(upgradeEnvForIdpMode(env, gen), { mode: "trex", content: env, added: [] });
+});
+
+Deno.test("an inline comment after D2E_IDP_MODE is recognised and never re-stamped", () => {
+  const env = preTrex + "D2E_IDP_MODE=logto-federated # set by ops\n";
+  assertEquals(
+    upgradeEnvForIdpMode(env, gen),
+    { mode: "logto-federated", content: env, added: [] },
+  );
+});
+
+Deno.test("an empty D2E_IDP_MODE is rejected rather than silently re-stamped", () => {
+  assertThrows(
+    () => upgradeEnvForIdpMode("D2E_IDP_MODE=\n", gen),
+    InvalidIdpModeError,
+  );
+});
+
+Deno.test("an unrecognised D2E_IDP_MODE value is rejected rather than silently re-stamped", () => {
+  assertThrows(
+    () => upgradeEnvForIdpMode("D2E_IDP_MODE=logto\n", gen),
+    InvalidIdpModeError,
+  );
+});
+
+Deno.test("an empty trex secret is filled in rather than left duplicated", () => {
+  const out = upgradeEnvForIdpMode(preTrex + "TREX_ROOT_KEY=\n", gen);
+  assertEquals(out.content.includes("\nTREX_ROOT_KEY=RK\n"), true);
+  assertEquals(out.content.match(/^TREX_ROOT_KEY=/gm)?.length, 1);
+  assertEquals(out.added.includes("TREX_ROOT_KEY"), true);
 });

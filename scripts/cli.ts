@@ -21,7 +21,12 @@ import { syncRoles as runSyncRoles } from "./syncroles";
 import { setupDemoHana } from "./setupdemohana";
 import { checkSetupDemoHanaFlow } from "./check-setupdemohana-flow";
 import { getNoProxy as runGetNoProxy } from "./get-noproxy";
-import { idpModeOf, LOGTO_FEDERATION_COMPOSE_FILE, upgradeEnvForIdpMode } from "./idp-mode-env";
+import {
+  idpModeOf,
+  InvalidIdpModeError,
+  LOGTO_FEDERATION_COMPOSE_FILE,
+  upgradeEnvForIdpMode,
+} from "./idp-mode-env";
 
 interface CliOptions {
   functionPath?: string;
@@ -888,12 +893,28 @@ class D2ECli {
   upgrade_env_for_idp_mode(): void {
     if (!fs.existsSync(this.ENVFILE)) return;
     const before = fs.readFileSync(this.ENVFILE, "utf-8");
-    const out = upgradeEnvForIdpMode(before, {
-      password: () => this.generate_random_password(this.DEFAULT_PASSWORD_LENGTH),
-      rootKey: () => crypto.randomBytes(32).toString("base64"),
-    });
+    let out;
+    try {
+      out = upgradeEnvForIdpMode(before, {
+        password: () => this.generate_random_password(this.DEFAULT_PASSWORD_LENGTH),
+        rootKey: () => crypto.randomBytes(32).toString("base64"),
+      });
+    } catch (err) {
+      if (err instanceof InvalidIdpModeError) {
+        console.error(
+          `${this.ENVFILE}: ${err.message} Set D2E_IDP_MODE to "trex" or "logto-federated" in ${this.ENVFILE} and try again.`,
+        );
+        process.exit(1);
+      }
+      throw err;
+    }
     if (out.added.length === 0) return;
-    fs.writeFileSync(this.ENVFILE, out.content);
+    // Rewrite through a temp file and rename over the target: this file holds
+    // secrets that cannot be regenerated, so a crash or a second process
+    // racing this one must never leave it half-written.
+    const tmp = `${this.ENVFILE}.tmp-${process.pid}-${Date.now()}`;
+    fs.writeFileSync(tmp, out.content);
+    fs.renameSync(tmp, this.ENVFILE);
     if (out.mode === "logto-federated") {
       console.log(
         `This installation predates the trex identity provider. Recorded D2E_IDP_MODE=logto-federated in ${this.ENVFILE}: ` +
@@ -1355,22 +1376,55 @@ class D2ECli {
       .action(async (opts) => {
         dotenvConfig({ path: this.ENVFILE });
         this.load_env_variables();
+
+        // Bare `migrate-idp-roles` defaults to the same thing `--report` asks
+        // for explicitly: show the outcome of whatever migration has last
+        // run. Naming both here, rather than letting `--run` early-return and
+        // everything else fall through unconditionally, keeps `--report` a
+        // real, checked option rather than a documented no-op.
+        const showReport = Boolean(opts.report) || !opts.run;
+
         if (opts.run) {
-          execSync(`docker restart ${this.PROJECT_NAME}-trex`, { stdio: "inherit" });
-          console.log("trex restarted; the migration runs once it is listening. Check with --report.");
-          return;
+          const mode = fs.existsSync(this.ENVFILE)
+            ? idpModeOf(fs.readFileSync(this.ENVFILE, "utf-8"))
+            : undefined;
+          if (mode !== "logto-federated") {
+            console.log(
+              `D2E_IDP_MODE is not "logto-federated" in ${this.ENVFILE}; there is no Logto migration to run.`,
+            );
+            return;
+          }
+          console.log("Restarting trex so the migration runs now. This drops any active sessions.");
+          try {
+            execSync(`docker restart ${this.PROJECT_NAME}-trex`, { stdio: "inherit" });
+          } catch {
+            console.error("Could not restart trex. Is the stack running? Try `d2e start` first.");
+            process.exit(1);
+          }
+          await this.wait_for_trex();
+          console.log("trex is back up; the migration has run. Check its outcome with --report.");
         }
+
+        if (!showReport) return;
+
         const postgres = this.postgres_container();
         if (!postgres) {
-          console.error("Could not find the database container.");
+          console.error("Could not find the database container. Is the stack running? Try `d2e start` first.");
           process.exit(1);
         }
-        execSync(
-          `docker exec ${postgres} psql -U postgres -d alp -c ` +
-            `"select step, status, counts, updated_at from usermgmt.idp_migration order by updated_at" ` +
-            `-c "select jsonb_pretty(detail) as skipped from usermgmt.idp_migration where step = 'link'"`,
-          { stdio: "inherit" },
-        );
+        try {
+          execSync(
+            `docker exec ${postgres} psql -U postgres -d alp -c ` +
+              `"select step, status, counts, updated_at from usermgmt.idp_migration order by updated_at" ` +
+              `-c "select jsonb_pretty(detail) as skipped from usermgmt.idp_migration where step = 'link'"`,
+            { stdio: "inherit" },
+          );
+        } catch {
+          console.error(
+            "Could not read the migration report. The stack may not be running, or the migration has not run yet.",
+          );
+          process.exit(1);
+        }
       });
   }
 
