@@ -30,7 +30,9 @@ const d2eLoginDest = join(rootDir, 'resources', 'd2e-login');
 if (existsSync(d2eLoginSrc)) {
   rmSync(d2eLoginDest, { recursive: true, force: true });
   mkdirSync(d2eLoginDest, { recursive: true });
-  cpSync(d2eLoginSrc, d2eLoginDest, { recursive: true });
+  // Deno test files live alongside the page's source; they have no business
+  // being served at /d2e-login, so exclude them from the copy.
+  cpSync(d2eLoginSrc, d2eLoginDest, { recursive: true, filter: (src) => !src.endsWith('.test.mjs') });
 
   // The page's logo travels with it. Referencing it inside the atlas3 dist made
   // the sign-in page depend on a separate application's build output, so the
