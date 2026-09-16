@@ -46,5 +46,6 @@ effect; change it in D2E's user management.
 ## Leaving Logto
 
 Set `D2E_IDP_MODE=trex` in the env file and restart. Logto stops and the button
-disappears. Users without a trex password use password reset. Account links are
-kept, so setting the mode back restores Logto sign-in.
+disappears. For a user without a trex password, an administrator sets one in
+user management. Account links are kept, so setting the mode back restores
+Logto sign-in.
