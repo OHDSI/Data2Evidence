@@ -108,6 +108,17 @@
         text-align: center;
       }
 
+      .providers { display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px; }
+      .providers:empty { display: none; }
+      .provider {
+        display: block; text-align: center; padding: 10px 16px; font-size: 14px; font-weight: 600;
+        color: var(--d2e-navy); background: #fff; border: 1px solid var(--d2e-border); border-radius: 6px;
+        text-decoration: none;
+      }
+      .provider:hover { border-color: var(--d2e-navy); }
+      .divider { margin: 0 0 16px; text-align: center; font-size: 12px; color: var(--d2e-muted); }
+      .divider[hidden] { display: none; }
+
       @media (prefers-color-scheme: dark) {
         :root {
           --d2e-border: #2f3542;
@@ -128,6 +139,9 @@
       <h1>Sign in</h1>
       <p class="sub">Use your D2E account to continue</p>
 
+      <div class="providers" id="providers"></div>
+      <p class="divider" id="divider" hidden>or sign in with your D2E password</p>
+
       <form id="form" novalidate>
         <label for="identifier">Username or email</label>
         <input id="identifier" name="identifier" type="text" autocomplete="username" required autofocus />
@@ -139,6 +153,7 @@
         <p class="error" id="error" role="alert" aria-live="polite"></p>
       </form>
     </main>
+    <script src="./providers.js"></script>
     <script src="./login.js"></script>
   </body>
 </html>
