@@ -79,6 +79,20 @@ Deno.test('trex mode only disables the Logto provider', async () => {
   assertEquals(f.steps, [])
 })
 
+Deno.test('trex mode makes no admin call on a fresh install with no Logto data', async () => {
+  const f = fakes({ logtoAvailable: false })
+  await runIdpMigration({ ...cfg, mode: 'trex' }, f.store, f.admin, () => {})
+  assertEquals(f.enabled, [])
+  assertEquals(f.providers, [])
+  assertEquals(f.steps, [])
+})
+
+Deno.test('trex mode still disables the provider when there is Logto data to clean up', async () => {
+  const f = fakes({ logtoAvailable: true })
+  await runIdpMigration({ ...cfg, mode: 'trex' }, f.store, f.admin, () => {})
+  assertEquals(f.enabled, [['logto', false]])
+})
+
 Deno.test('without a Logto schema nothing is written and the reason is recorded', async () => {
   const f = fakes({ logtoAvailable: false })
   await runIdpMigration(cfg, f.store, f.admin, () => {})
@@ -196,7 +210,7 @@ Deno.test('an already-linked user resuming under a new trex id is still re-keyed
   assertEquals(summary.rekeyed, 1)
 })
 
-Deno.test('a plan-skips-only run reports the link step as skipped, not failed', async () => {
+Deno.test('a plan-skips-only run (nothing succeeded) reports the link step as skipped, not failed', async () => {
   const f = fakes({
     users: [{ id: 'u1', username: 'a', idpUserId: 'l1' }, { id: 'u2', username: 'a', idpUserId: 'l2' }],
     logto: [
@@ -207,6 +221,28 @@ Deno.test('a plan-skips-only run reports the link step as skipped, not failed', 
   const summary = await runIdpMigration(cfg, f.store, f.admin, () => {})
   assertEquals(summary.skipped.map(s => s.reason), ['duplicate_email', 'duplicate_email'])
   assertEquals(f.steps.find(s => s[0] === 'link')?.[1], 'skipped')
+})
+
+Deno.test('a run that links most users and skips a few (some succeeded) reports the link step as partial', async () => {
+  const f = fakes({
+    users: [
+      { id: 'u1', username: 'a', idpUserId: 'l1' },
+      { id: 'u2', username: 'b', idpUserId: 'l2' },
+      { id: 'u3', username: 'c', idpUserId: 'l3' },
+      { id: 'u4', username: 'c', idpUserId: 'l4' }
+    ],
+    logto: [
+      { id: 'l1', username: 'a', primaryEmail: null, name: null, isSuspended: false },
+      { id: 'l2', username: 'b', primaryEmail: null, name: null, isSuspended: false },
+      { id: 'l3', username: 'c', primaryEmail: null, name: null, isSuspended: false },
+      { id: 'l4', username: 'c', primaryEmail: null, name: null, isSuspended: false }
+    ]
+  })
+  const summary = await runIdpMigration(cfg, f.store, f.admin, () => {})
+  // u3/u4 collide on email and are planner-skipped; u1/u2 link successfully.
+  assertEquals(summary.skipped.map(s => s.reason), ['duplicate_email', 'duplicate_email'])
+  assertEquals(summary.created, 2)
+  assertEquals(f.steps.find(s => s[0] === 'link')?.[1], 'partial')
 })
 
 Deno.test('an unreachable trex during provider registration records the failure and stops', async () => {
