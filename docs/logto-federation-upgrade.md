@@ -33,6 +33,16 @@ lists each step and any user that was skipped with the reason:
 
 Fix the data, then run `d2e migrate-idp-roles --run` or restart.
 
+A `link` step marked **failed** with no users listed means the migration could
+not read any Logto users even though usermgmt still holds users with an IdP
+subject. `logto.users` is protected by row-level security that only Logto's own
+database role gets past, so the migration reads it as that role:
+`PG__LOGTO_MANAGER_USER` (default `logto_postgres`) and
+`PG__LOGTO_MANAGER_PASSWORD`, the same values the Logto container uses. Check
+that both are set in your env file. The link line in the trex log also says
+`nothing was linked` when no usermgmt user's subject points at a Logto
+identity; the report's `notLogto` count gives the number of those users.
+
 The migration only links users that already have a usermgmt record: it walks
 `usermgmt."user"`, not Logto's user list. A person created directly in Logto
 after the upgrade has no usermgmt row, so they are never linked and cannot

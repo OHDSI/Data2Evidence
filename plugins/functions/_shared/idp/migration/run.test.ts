@@ -288,3 +288,38 @@ Deno.test('a store that cannot persist a step record does not abort the run', as
   const summary = await runIdpMigration(cfg, f.store, f.admin, () => {})
   assertEquals(summary.rekeyed, 1)
 })
+
+Deno.test('a Logto schema that reads as empty while users still carry subjects fails the link step and stops', async () => {
+  const f = fakes({
+    users: [{ id: 'u1', username: 'a', idpUserId: 'l1' }, { id: 'u2', username: 'b', idpUserId: 'l2' }],
+    logto: []
+  })
+  const messages: string[] = []
+  const summary = await runIdpMigration(cfg, f.store, f.admin, m => messages.push(m))
+  assertEquals(f.steps.map(s => [s[0], s[1]]), [['provider', 'ok'], ['link', 'failed']])
+  assertEquals(f.steps.find(s => s[0] === 'link')?.[2], { usermgmtWithSubject: 2, logtoUsers: 0 })
+  const detail = f.steps.find(s => s[0] === 'link')?.[3] as { reason: string }
+  assertEquals(detail.reason.includes('row-level security'), true)
+  assertEquals(detail.reason.includes('PG__LOGTO_MANAGER_USER'), true)
+  assertEquals(messages.some(m => m.startsWith('[idp-migration] link: failed')), true)
+  assertEquals(f.rekeys, [])
+  assertEquals(f.roles, [])
+  assertEquals([summary.linked, summary.created, summary.rekeyed], [0, 0, 0])
+})
+
+Deno.test('an install whose users hold no IdP subject at all still reads as an empty, successful run', async () => {
+  const f = fakes({ users: [{ id: 'u1', username: 'a', idpUserId: null }], logto: [] })
+  await runIdpMigration(cfg, f.store, f.admin, () => {})
+  assertEquals(f.steps.map(s => [s[0], s[1]]), [['provider', 'ok'], ['link', 'ok'], ['roles', 'ok'], ['rekey', 'ok']])
+})
+
+Deno.test('a run that links nobody because no subject is a Logto identity says so', async () => {
+  const f = fakes({
+    users: [{ id: 'u1', username: 'a', idpUserId: 'not-a-logto-id' }],
+    logto: [{ id: 'l1', username: 'other', primaryEmail: null, name: null, isSuspended: false }]
+  })
+  const messages: string[] = []
+  await runIdpMigration(cfg, f.store, f.admin, m => messages.push(m))
+  assertEquals(f.steps.find(s => s[0] === 'link')?.[2].notLogto, 1)
+  assertEquals(messages.some(m => m.includes('nothing was linked')), true)
+})
