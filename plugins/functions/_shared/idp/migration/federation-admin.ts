@@ -89,7 +89,9 @@ export class HttpFederationAdmin implements FederationAdmin {
       return { conflict: true, userId: String(body.userId) }
     }
     if (!res.ok) throw new Error(`link ${req.accountId} failed: ${res.status} ${await res.text()}`)
-    return await res.json()
+    const body = await res.json()
+    if (typeof body?.userId !== 'string') throw new Error(`link ${req.accountId}: response missing userId`)
+    return body as LinkOutcome
   }
 
   async assignRole(userId: string, role: string): Promise<void> {
