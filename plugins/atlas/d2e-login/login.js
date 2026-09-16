@@ -57,6 +57,14 @@
     fetch(TREX_BASE + "/settings")
       .then(function (res) { return res.ok ? res.json() : null; })
       .then(function (settings) {
+        // externalProviders() tolerates any shape here by design (a missing
+        // or malformed `external` object just yields no buttons), so a
+        // contract change on trex's side would otherwise fail silently: the
+        // page would just render as a bare password form with nothing in
+        // the console to explain why. Warn without changing behaviour.
+        if (!settings || typeof settings.external !== "object" || settings.external === null) {
+          console.warn("[d2e-login] unexpected /trex/auth/v1/settings shape; no federated providers will show:", settings);
+        }
         var providers = P.externalProviders(settings);
         providers.forEach(function (p) {
           var a = document.createElement("a");
@@ -81,11 +89,11 @@
     errorEl.textContent = "";
 
     var identifier = identifierEl.value.trim();
-    // trex authenticates by email. d2e identifies people by username, and the
-    // role migration already treats `admin` and `admin@<domain>` as the same
-    // person (matchTrexUser matches on the local part), so resolve a bare
-    // username the same way rather than making people type an address they
-    // never chose.
+    // trex authenticates by email. d2e identifies people by username, and a
+    // trex account's email is the user's Logto email, or else their username
+    // qualified with the configured domain (see accountEmail in
+    // migration/plan.ts) — so resolve a bare username the same way rather
+    // than making people type an address they never chose.
     var email = identifier.indexOf("@") === -1
       ? identifier + "@" + (window.D2E_LOGIN_DEFAULT_DOMAIN || "d2e.local")
       : identifier;
