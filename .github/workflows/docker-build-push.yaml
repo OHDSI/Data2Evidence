@@ -679,7 +679,7 @@ jobs:
             BUILD_TYPE=OSS
             PLUGINS_FEED=${{ needs.setup.outputs.is_release_push == 'true' && 'stable' || 'd2e' }}
             PLUGINS_FROM_REGISTRY=@ohdsi/pythia-agent@0.1.0-develop.18.g80bf4aa
-            TREXSQL_REF=sha-a7a18aedea7f970808183cda5f8fabaeb47da525@sha256:f6bca1f70ea2251cb4ebfe664a5e38bebf1a2e9a7e97d6cebf4cc63c9e313bfc
+            TREXSQL_REF=sha-d987a180688f0e661c1d2eb56a07d0717b0ee1f5@sha256:3964240444450b82c335f5930b8f7f13a1f80005d1bdb8eb19a6c6aa39a8e581
           secrets: |
             "PLUGINS_REGISTRY=${{ secrets.PLUGINS_REGISTRY }}"
             "github_token=${{ secrets.GITHUB_TOKEN }}"
@@ -1232,7 +1232,8 @@ jobs:
 
   test_logto_federation:
     # Needs a trex engine with afterListen inits and /trex/admin/federation
-    # (OHDSI/trex#318), which both TREXSQL_REF pins now carry:
+    # (OHDSI/trex#318) and email-less federated sign-in (OHDSI/trex#319),
+    # which both TREXSQL_REF pins now carry:
     # services/trex/Dockerfile.v2 (ARG TREXSQL_REF) and this workflow's devx
     # build-args. Not in docker-success's needs yet — promote it once it has
     # passed on three consecutive runs.
