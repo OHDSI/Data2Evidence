@@ -249,3 +249,31 @@ def test_assemble_health_state_rejects_invalid_level():
     }
     with pytest.raises(ValueError):
         scoring.assemble_health_state(answers)
+
+
+def test_health_state_to_index_rejects_out_of_range_digit():
+    # A stata_simulation value_set (index_table lookup) already rejects this, since
+    # "00000"/"66666" aren't in the table - but the hand-authored
+    # main_effects_interaction path computes directly from the digits with no
+    # index_table to bound it, so it needs its own range check.
+    value_set = {
+        "method": "main_effects_interaction",
+        "intercept": 1.0,
+        "coefficients": {},
+        "interactions": [],
+    }
+    with pytest.raises(ValueError, match="1-5"):
+        scoring.health_state_to_index("00000", value_set)
+    with pytest.raises(ValueError, match="1-5"):
+        scoring.health_state_to_index("66666", value_set)
+
+
+def test_health_state_to_index_rejects_wrong_length():
+    value_set = {
+        "method": "main_effects_interaction",
+        "intercept": 1.0,
+        "coefficients": {},
+        "interactions": [],
+    }
+    with pytest.raises(ValueError, match="5 digits"):
+        scoring.health_state_to_index("1111", value_set)

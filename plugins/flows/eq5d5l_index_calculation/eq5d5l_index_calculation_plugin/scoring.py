@@ -521,8 +521,8 @@ def health_state_to_index(health_state: str, value_set: dict) -> float:
               - sum(main-effect coefficient for each dimension at its level, for level >= 2)
               - sum(interaction coefficient for each interaction whose trigger condition is met)
     """
-    if len(health_state) != 5 or not health_state.isdigit():
-        raise ValueError(f"health_state must be a 5-digit string, got '{health_state}'")
+    if len(health_state) != 5 or any(c not in "12345" for c in health_state):
+        raise ValueError(f"health_state must be 5 digits, each 1-5, got '{health_state}'")
 
     index_table = value_set.get("index_table")
     if index_table is not None:

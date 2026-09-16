@@ -1,6 +1,6 @@
 import datetime
 from pathlib import Path
-from unittest.mock import MagicMock
+from unittest.mock import ANY, MagicMock
 
 import pytest
 from prefect import flow as prefect_flow
@@ -8,6 +8,7 @@ from prefect.testing.utilities import prefect_test_harness
 
 from eq5d5l_index_calculation_plugin import flow, scoring
 from eq5d5l_index_calculation_plugin.types import Eq5d5lCalculateConfig
+from _shared_flow_utils.types import SupportedDatabaseDialects
 
 
 @pytest.fixture(autouse=True, scope="session")
@@ -229,17 +230,18 @@ class TestWriteFhirKeyMap:
         monkeypatch.setattr(flow, "DBDao", dbdao_factory)
         _run(
             flow.write_fhir_key_map.fn,
-            dbdao=MagicMock(), database_code="alpdev_pg", schema_name="cdmdefault",
-            rows=[], previous_measurement_rows=[],
+            dbdao=MagicMock(), database_code="alpdev_pg", omop_dataset_id="alpdev_pg",
+            schema_name="cdmdefault", rows=[], previous_measurement_rows=[],
         )
         dbdao_factory.assert_not_called()
 
     def test_upserts_when_mapping_table_already_exists(self, monkeypatch):
-        mapping_dao = MagicMock()
+        dbdao_factory = MagicMock()
+        mapping_dao = dbdao_factory.return_value
         mapping_dao.check_schema_exists.return_value = True
         mapping_dao.check_table_exists.return_value = True
         mapping_dao.get_indexes_for_table.return_value = _current_key_map_indexes()
-        monkeypatch.setattr(flow, "DBDao", MagicMock(return_value=mapping_dao))
+        monkeypatch.setattr(flow, "DBDao", dbdao_factory)
 
         dbdao = MagicMock()
         dbdao.select_rows_where_in.return_value = [
@@ -248,10 +250,17 @@ class TestWriteFhirKeyMap:
         rows = [{"measurement_source_value": "qr-1", "measurement_id": 555}]
         _run(
             flow.write_fhir_key_map.fn,
-            dbdao=dbdao, database_code="alpdev_pg", schema_name="cdmdefault",
-            rows=rows, previous_measurement_rows=[],
+            dbdao=dbdao, database_code="alpdev_pg", omop_dataset_id="a_snapshot_cache_id",
+            schema_name="cdmdefault", rows=rows, previous_measurement_rows=[],
         )
 
+        # The mapping schema lives in the same catalog as the OMOP dbdao's, which
+        # for a snapshot/cache dataset is omop_dataset_id, not database_code.
+        dbdao_factory.assert_called_once_with(
+            dialect=SupportedDatabaseDialects.TREX,
+            database_code="alpdev_pg",
+            cache_id="a_snapshot_cache_id",
+        )
         mapping_dao.check_schema_exists.assert_called_once_with("alpdev_pg_cdmdefault_fhir_mapping")
         mapping_dao.check_table_exists.assert_called_once_with(
             "alpdev_pg_cdmdefault_fhir_mapping", "fhir_omop_key_map"
@@ -264,6 +273,7 @@ class TestWriteFhirKeyMap:
             "fhir_omop_key_map",
             ["fhir_id", "fhir_resource_type", "omop_table_name", "omop_id"],
             [("qr-1", "QuestionnaireResponse", "measurement", "555")],
+            con=ANY,
             on_conflict="ON CONFLICT (fhir_id, fhir_resource_type, omop_table_name, omop_id) DO NOTHING",
         )
 
@@ -285,7 +295,7 @@ class TestWriteFhirKeyMap:
         ]
         _run(
             flow.write_fhir_key_map.fn,
-            dbdao=dbdao, database_code="alpdev_pg", schema_name="cdmdefault",
+            dbdao=dbdao, database_code="alpdev_pg", omop_dataset_id="alpdev_pg", schema_name="cdmdefault",
             rows=rows, previous_measurement_rows=[],
         )
 
@@ -309,7 +319,7 @@ class TestWriteFhirKeyMap:
         rows = [{"measurement_source_value": "qr-1", "measurement_id": 555}]
         _run(
             flow.write_fhir_key_map.fn,
-            dbdao=dbdao, database_code="alpdev_pg", schema_name="cdmdefault",
+            dbdao=dbdao, database_code="alpdev_pg", omop_dataset_id="alpdev_pg", schema_name="cdmdefault",
             rows=rows, previous_measurement_rows=[],
         )
 
@@ -333,7 +343,7 @@ class TestWriteFhirKeyMap:
         ]
         _run(
             flow.write_fhir_key_map.fn,
-            dbdao=dbdao, database_code="alpdev_pg", schema_name="cdmdefault",
+            dbdao=dbdao, database_code="alpdev_pg", omop_dataset_id="alpdev_pg", schema_name="cdmdefault",
             rows=rows, previous_measurement_rows=previous_measurement_rows,
         )
 
@@ -349,6 +359,32 @@ class TestWriteFhirKeyMap:
         assert "omop_id = '11' AND fhir_id = 'qr-old-2'" in delete_sql
         mapping_dao.batch_insert_values.assert_called_once()
 
+    def test_batches_stale_delete_for_large_previous_measurement_sets(self, monkeypatch):
+        # One DELETE per _STALE_KEY_MAP_DELETE_BATCH_SIZE pairs, not one statement
+        # whose size grows with the whole prior measurement set.
+        mapping_dao = MagicMock()
+        mapping_dao.check_schema_exists.return_value = True
+        mapping_dao.check_table_exists.return_value = True
+        mapping_dao.get_indexes_for_table.return_value = _current_key_map_indexes()
+        monkeypatch.setattr(flow, "DBDao", MagicMock(return_value=mapping_dao))
+
+        batch_size = flow._STALE_KEY_MAP_DELETE_BATCH_SIZE
+        previous_measurement_rows = [
+            {"measurement_id": i, "measurement_source_value": f"qr-old-{i}"}
+            for i in range(batch_size + 1)
+        ]
+        _run(
+            flow.write_fhir_key_map.fn,
+            dbdao=MagicMock(), database_code="alpdev_pg", omop_dataset_id="alpdev_pg",
+            schema_name="cdmdefault", rows=[], previous_measurement_rows=previous_measurement_rows,
+        )
+
+        assert mapping_dao.execute_sql.call_count == 2
+        first_sql = mapping_dao.execute_sql.call_args_list[0].args[0]
+        second_sql = mapping_dao.execute_sql.call_args_list[1].args[0]
+        assert first_sql.count(" OR ") == batch_size - 1
+        assert second_sql.count(" OR ") == 0
+
     def test_escapes_quotes_in_stale_qr_id(self, monkeypatch):
         mapping_dao = MagicMock()
         mapping_dao.check_schema_exists.return_value = True
@@ -358,7 +394,7 @@ class TestWriteFhirKeyMap:
 
         _run(
             flow.write_fhir_key_map.fn,
-            dbdao=MagicMock(), database_code="alpdev_pg", schema_name="cdmdefault",
+            dbdao=MagicMock(), database_code="alpdev_pg", omop_dataset_id="alpdev_pg", schema_name="cdmdefault",
             rows=[], previous_measurement_rows=[
                 {"measurement_id": 10, "measurement_source_value": "qr-o'brien"},
             ],
@@ -376,7 +412,7 @@ class TestWriteFhirKeyMap:
 
         _run(
             flow.write_fhir_key_map.fn,
-            dbdao=MagicMock(), database_code="alpdev_pg", schema_name="cdmdefault",
+            dbdao=MagicMock(), database_code="alpdev_pg", omop_dataset_id="alpdev_pg", schema_name="cdmdefault",
             rows=[], previous_measurement_rows=[{"measurement_id": 10, "measurement_source_value": "qr-old"}],
         )
 
@@ -392,7 +428,7 @@ class TestWriteFhirKeyMap:
         with pytest.raises(ValueError, match="does not exist"):
             _run(
                 flow.write_fhir_key_map.fn,
-                dbdao=MagicMock(), database_code="alpdev_pg", schema_name="cdmdefault",
+                dbdao=MagicMock(), database_code="alpdev_pg", omop_dataset_id="alpdev_pg", schema_name="cdmdefault",
                 rows=rows, previous_measurement_rows=[],
             )
 
@@ -408,7 +444,7 @@ class TestWriteFhirKeyMap:
         with pytest.raises(ValueError, match="does not exist"):
             _run(
                 flow.write_fhir_key_map.fn,
-                dbdao=MagicMock(), database_code="alpdev_pg", schema_name="cdmdefault",
+                dbdao=MagicMock(), database_code="alpdev_pg", omop_dataset_id="alpdev_pg", schema_name="cdmdefault",
                 rows=rows, previous_measurement_rows=[],
             )
 
@@ -434,7 +470,7 @@ class TestWriteFhirKeyMap:
         with pytest.raises(ValueError, match="unique index"):
             _run(
                 flow.write_fhir_key_map.fn,
-                dbdao=MagicMock(), database_code="alpdev_pg", schema_name="cdmdefault",
+                dbdao=MagicMock(), database_code="alpdev_pg", omop_dataset_id="alpdev_pg", schema_name="cdmdefault",
                 rows=rows, previous_measurement_rows=[],
             )
 
@@ -442,22 +478,8 @@ class TestWriteFhirKeyMap:
 
 
 class TestWriteAlgorithmMetadata:
-    # OMOP CDM 5.4 (Postgres) metadata shape - has both metadata_id and value_as_number.
-    _POSTGRES_METADATA_COLUMNS = [
-        "metadata_id", "metadata_concept_id", "metadata_type_concept_id", "name",
-        "value_as_string", "value_as_concept_id", "value_as_number", "metadata_date",
-        "metadata_datetime",
-    ]
-    # HANA's OMOP 5.3.1 metadata shape - neither column exists (see README's
-    # "Algorithm provenance" section).
-    _HANA_METADATA_COLUMNS = [
-        "metadata_concept_id", "metadata_type_concept_id", "name", "value_as_string",
-        "value_as_concept_id", "metadata_date", "metadata_datetime",
-    ]
-
     def test_overwrites_existing_row_and_inserts_the_new_one(self):
         dbdao = MagicMock()
-        dbdao.get_columns.return_value = self._POSTGRES_METADATA_COLUMNS
         dbdao.delete_and_insert_rows.return_value = [{"metadata_id": 7}]
         value_set = {
             "method": "stata_simulation",
@@ -491,7 +513,6 @@ class TestWriteAlgorithmMetadata:
 
     def test_truncates_long_source_to_fit_column(self):
         dbdao = MagicMock()
-        dbdao.get_columns.return_value = self._POSTGRES_METADATA_COLUMNS
         value_set = {"method": "stata_simulation", "source": "x" * 500}
 
         _run(
@@ -501,24 +522,6 @@ class TestWriteAlgorithmMetadata:
 
         [row] = dbdao.delete_and_insert_rows.call_args.kwargs["insert_rows"]
         assert len(row["value_as_string"]) == 250
-
-    def test_omits_metadata_id_and_value_as_number_for_hana_shaped_table(self):
-        # HANA's metadata table has neither column - sending them would fail
-        # against a table that was already reflected without them.
-        dbdao = MagicMock()
-        dbdao.get_columns.return_value = self._HANA_METADATA_COLUMNS
-        value_set = {"method": "stata_simulation", "source": "some citation"}
-
-        _run(
-            flow.write_algorithm_metadata.fn,
-            dbdao=dbdao, schema_name="cdmdefault", country_code="AU", value_set=value_set,
-        )
-
-        _, kwargs = dbdao.delete_and_insert_rows.call_args
-        assert kwargs["id_column"] is None
-        [row] = kwargs["insert_rows"]
-        assert "metadata_id" not in row
-        assert "value_as_number" not in row
 
 
 class TestCalculateEq5d5lIndexEndToEnd:
@@ -534,6 +537,7 @@ class TestCalculateEq5d5lIndexEndToEnd:
 
     def _patch_daos(self, monkeypatch, observation_rows):
         main_dao = MagicMock()
+        main_dao.dialect = SupportedDatabaseDialects.POSTGRES
         state = {"measurement_rows": []}
 
         def _select_rows_where_in(table, where_column=None, where_values=None, **_):
@@ -563,9 +567,6 @@ class TestCalculateEq5d5lIndexEndToEnd:
             return result
 
         main_dao.delete_and_insert_rows.side_effect = _delete_and_insert_rows
-        # Simulate a Postgres-shaped metadata table (has metadata_id/value_as_number)
-        # - see TestWriteAlgorithmMetadata for the HANA-shaped case.
-        main_dao.get_columns.return_value = TestWriteAlgorithmMetadata._POSTGRES_METADATA_COLUMNS
         mapping_dao = MagicMock()
         mapping_dao.check_schema_exists.return_value = True
         mapping_dao.check_table_exists.return_value = True
@@ -628,6 +629,21 @@ class TestCalculateEq5d5lIndexEndToEnd:
         # with nothing to link lineage/metadata to.
         main_dao.delete_and_insert_rows.assert_not_called()
 
+    def test_mapping_dao_uses_omop_dataset_id_as_cache_id(self, monkeypatch):
+        # The mapping schema lives in the same catalog as the OMOP dbdao's - for a
+        # snapshot/cache dataset that's omop_dataset_id, not database_code, at both
+        # the early prerequisite check and write_fhir_key_map()'s own TREX DAO.
+        self._patch_daos(monkeypatch, _full_health_group())
+        dbdao_factory_spy = MagicMock(side_effect=flow.DBDao)
+        monkeypatch.setattr(flow, "DBDao", dbdao_factory_spy)
+
+        _run(flow.calculate_eq5d5l_index, self._config(omop_dataset_id="a_snapshot_cache_id"))
+
+        trex_calls = [c for c in dbdao_factory_spy.call_args_list if c.kwargs.get("dialect") is not None]
+        assert len(trex_calls) == 2
+        for call in trex_calls:
+            assert call.kwargs["cache_id"] == "a_snapshot_cache_id"
+
     def test_raises_for_dialect_missing_required_dao_methods(self, monkeypatch):
         # e.g. TrexDao, which has neither select_rows_where_in() nor
         # delete_and_insert_rows() - this must fail fast and clearly rather than
@@ -637,6 +653,19 @@ class TestCalculateEq5d5lIndexEndToEnd:
         monkeypatch.setattr(flow, "DBDao", MagicMock(return_value=unsupported_dao))
 
         with pytest.raises(NotImplementedError, match="trex"):
+            _run(flow.calculate_eq5d5l_index, self._config())
+
+    def test_raises_for_unsupported_dialect_that_has_required_methods(self, monkeypatch):
+        # BigQuery/Snowflake/HANA also resolve to SqlAlchemyDao and so also expose
+        # select_rows_where_in()/delete_and_insert_rows() - a hasattr-only check
+        # would let them through, only to fail later inside delete_and_insert_rows()
+        # (whose id allocator has no locking strategy for them). The dialect itself
+        # must be checked explicitly.
+        unsupported_dao = MagicMock(spec=["dialect", "select_rows_where_in", "delete_and_insert_rows"])
+        unsupported_dao.dialect = "hana"
+        monkeypatch.setattr(flow, "DBDao", MagicMock(return_value=unsupported_dao))
+
+        with pytest.raises(NotImplementedError, match="hana"):
             _run(flow.calculate_eq5d5l_index, self._config())
 
     def test_rerun_with_different_country_overwrites_both_measurement_and_metadata(self, monkeypatch):

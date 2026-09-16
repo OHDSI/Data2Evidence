@@ -26,8 +26,14 @@ os.environ['plugin_name'] = 'eq5d5l_index_calculation_plugin'
 # otherwise fail deep inside the flow with a bare AttributeError.
 _REQUIRED_DAO_METHODS = ("select_rows_where_in", "delete_and_insert_rows")
 
+_SUPPORTED_DIALECTS = (SupportedDatabaseDialects.POSTGRES,)
+
 # fhir_omop_key_map's ON CONFLICT target - see _require_fhir_mapping_table().
 _KEY_MAP_UNIQUE_COLUMNS = ("fhir_id", "fhir_resource_type", "omop_table_name", "omop_id")
+
+# Pairs per stale-lineage DELETE statement - keeps the generated SQL bounded
+# instead of growing with the whole prior measurement set on a large rerun.
+_STALE_KEY_MAP_DELETE_BATCH_SIZE = 500
 
 
 @flow(log_prints=True)
@@ -46,11 +52,11 @@ def calculate_eq5d5l_index(config: Eq5d5lCalculateConfig):
 
     dbdao = DBDao(database_code=config.database_code, cache_id=config.omop_dataset_id)
     missing_dao_methods = [m for m in _REQUIRED_DAO_METHODS if not hasattr(dbdao, m)]
-    if missing_dao_methods:
+    if dbdao.dialect not in _SUPPORTED_DIALECTS or missing_dao_methods:
         raise NotImplementedError(
             f"eq5d5l_index_calculation_plugin does not support the '{dbdao.dialect}' "
             f"dialect ({type(dbdao).__name__} is missing {missing_dao_methods}); use a "
-            f"Postgres- or HANA-backed dataset instead."
+            f"Postgres-backed dataset instead."
         )
 
     dimension_concept_id_map = DIMENSION_CONCEPT_ID_MAP
@@ -83,7 +89,14 @@ def calculate_eq5d5l_index(config: Eq5d5lCalculateConfig):
         # be discovered only after the old measurement rows are already gone,
         # leaving them replaced with no FHIR lineage/metadata written for them.
         mapping_schema = f"{config.database_code}_{config.schema_name}_fhir_mapping"
-        mapping_dao = DBDao(dialect=SupportedDatabaseDialects.TREX, database_code=config.database_code)
+        # cache_id must match the OMOP dbdao's above: on a snapshot/cache dataset,
+        # omop_dataset_id (not database_code) is the catalog the mapping schema
+        # actually lives in.
+        mapping_dao = DBDao(
+            dialect=SupportedDatabaseDialects.TREX,
+            database_code=config.database_code,
+            cache_id=config.omop_dataset_id,
+        )
         _require_fhir_mapping_table(mapping_dao, mapping_schema)
 
     inserted_rows, previous_measurement_rows = write_measurements(
@@ -100,6 +113,7 @@ def calculate_eq5d5l_index(config: Eq5d5lCalculateConfig):
     write_fhir_key_map(
         dbdao=dbdao,
         database_code=config.database_code,
+        omop_dataset_id=config.omop_dataset_id,
         schema_name=config.schema_name,
         rows=inserted_rows,
         previous_measurement_rows=previous_measurement_rows,
@@ -319,7 +333,7 @@ def _require_fhir_mapping_table(mapping_dao, mapping_schema: str) -> None:
 
 
 def _delete_stale_measurement_key_map_rows(
-    mapping_dao, mapping_schema: str, previous_measurement_rows: list
+    mapping_dao, mapping_schema: str, previous_measurement_rows: list, con=None
 ) -> None:
     """
     Deletes fhir_omop_key_map rows for the exact (measurement_id,
@@ -327,29 +341,34 @@ def _delete_stale_measurement_key_map_rows(
     both columns, not omop_id alone - an id-allocator can reuse a deleted id for an
     unrelated row from a concurrent run on the same dataset, and matching by id
     alone would delete that other run's fresh mapping instead of the actually-stale
-    one.
+    one. Runs in _STALE_KEY_MAP_DELETE_BATCH_SIZE-sized batches (one DELETE
+    statement each) so a large rerun's generated SQL stays bounded rather than
+    growing with the whole prior measurement set.
     """
     mapping_escaped_schema = mapping_schema.replace('"', '""')
-    # omop_id/fhir_id are VARCHAR (see write_fhir_key_map's str(row["measurement_id"])
-    # below), so these must be quoted string literals, not bare numeric literals.
-    conditions = " OR ".join(
-        "(omop_id = '{omop_id}' AND fhir_id = '{fhir_id}')".format(
-            omop_id=int(row["measurement_id"]),
-            fhir_id=str(row["measurement_source_value"]).replace("'", "''"),
+    for batch_start in range(0, len(previous_measurement_rows), _STALE_KEY_MAP_DELETE_BATCH_SIZE):
+        batch = previous_measurement_rows[batch_start:batch_start + _STALE_KEY_MAP_DELETE_BATCH_SIZE]
+        # omop_id/fhir_id are VARCHAR (see write_fhir_key_map's str(row["measurement_id"])
+        # below), so these must be quoted string literals, not bare numeric literals.
+        conditions = " OR ".join(
+            "(omop_id = '{omop_id}' AND fhir_id = '{fhir_id}')".format(
+                omop_id=int(row["measurement_id"]),
+                fhir_id=str(row["measurement_source_value"]).replace("'", "''"),
+            )
+            for row in batch
         )
-        for row in previous_measurement_rows
-    )
-    mapping_dao.execute_sql(f"""
-        DELETE FROM "{mapping_escaped_schema}".fhir_omop_key_map
-        WHERE fhir_resource_type = 'QuestionnaireResponse' AND omop_table_name = 'measurement'
-        AND ({conditions})
-    """)
+        mapping_dao.execute_sql(f"""
+            DELETE FROM "{mapping_escaped_schema}".fhir_omop_key_map
+            WHERE fhir_resource_type = 'QuestionnaireResponse' AND omop_table_name = 'measurement'
+            AND ({conditions})
+        """, con=con)
 
 
 @task(log_prints=True)
 def write_fhir_key_map(
     dbdao,
     database_code: str,
+    omop_dataset_id: str,
     schema_name: str,
     rows: list,
     previous_measurement_rows: list,
@@ -362,50 +381,43 @@ def write_fhir_key_map(
         return
     logger = get_run_logger()
     mapping_schema = f"{database_code}_{schema_name}_fhir_mapping"
-    mapping_dao = DBDao(dialect=SupportedDatabaseDialects.TREX, database_code=database_code)
+    # cache_id must match the OMOP dbdao's: on a snapshot/cache dataset,
+    # omop_dataset_id (not database_code) is the catalog the mapping schema lives in.
+    mapping_dao = DBDao(
+        dialect=SupportedDatabaseDialects.TREX, database_code=database_code, cache_id=omop_dataset_id,
+    )
     _require_fhir_mapping_table(mapping_dao, mapping_schema)
 
-    if previous_measurement_rows:
-        _delete_stale_measurement_key_map_rows(mapping_dao, mapping_schema, previous_measurement_rows)
-        logger.info(
-            f"Removed stale fhir_omop_key_map row(s) for {len(previous_measurement_rows)} "
-            f"previous measurement row(s) in {mapping_schema}"
-        )
-
-    if not rows:
-        return
-
-    # write_measurements() and this task run as separate transactions, so a
-    # concurrent rerun of this same dataset could have replaced these measurement
-    # rows - and, since ids can be reused, even reassigned one of `rows`' own ids to
-    # an unrelated row - by the time we get here. Matching on (measurement_id,
-    # measurement_source_value) together, not id alone, tells an actually-current
-    # row apart from a same-id row a concurrent run just wrote for a different qrId.
-    current_rows = {
-        (row["measurement_id"], row["measurement_source_value"])
-        for row in dbdao.select_rows_where_in(
-            schema=schema_name,
-            table="measurement",
-            columns=["measurement_id", "measurement_source_value"],
-            where_column="measurement_id",
-            where_values=[row["measurement_id"] for row in rows],
-        )
-    }
-    stale_rows = [
-        row for row in rows
-        if (row["measurement_id"], row["measurement_source_value"]) not in current_rows
-    ]
-    if stale_rows:
-        logger.warning(
-            f"{len(stale_rows)} measurement row(s) were already replaced by another run "
-            f"before their fhir_omop_key_map lineage could be written - skipping them."
-        )
-    rows = [
-        row for row in rows
-        if (row["measurement_id"], row["measurement_source_value"]) in current_rows
-    ]
-    if not rows:
-        return
+    if rows:
+        # write_measurements() and this task run as separate transactions, so a
+        # concurrent rerun of this same dataset could have replaced these measurement
+        # rows - and, since ids can be reused, even reassigned one of `rows`' own ids to
+        # an unrelated row - by the time we get here. Matching on (measurement_id,
+        # measurement_source_value) together, not id alone, tells an actually-current
+        # row apart from a same-id row a concurrent run just wrote for a different qrId.
+        current_rows = {
+            (row["measurement_id"], row["measurement_source_value"])
+            for row in dbdao.select_rows_where_in(
+                schema=schema_name,
+                table="measurement",
+                columns=["measurement_id", "measurement_source_value"],
+                where_column="measurement_id",
+                where_values=[row["measurement_id"] for row in rows],
+            )
+        }
+        stale_rows = [
+            row for row in rows
+            if (row["measurement_id"], row["measurement_source_value"]) not in current_rows
+        ]
+        if stale_rows:
+            logger.warning(
+                f"{len(stale_rows)} measurement row(s) were already replaced by another run "
+                f"before their fhir_omop_key_map lineage could be written - skipping them."
+            )
+        rows = [
+            row for row in rows
+            if (row["measurement_id"], row["measurement_source_value"]) in current_rows
+        ]
 
     key_map_rows = [
         (
@@ -417,14 +429,30 @@ def write_fhir_key_map(
         for row in rows
     ]
 
-    mapping_dao.batch_insert_values(
-        mapping_schema,
-        "fhir_omop_key_map",
-        ["fhir_id", "fhir_resource_type", "omop_table_name", "omop_id"],
-        key_map_rows,
-        on_conflict="ON CONFLICT (fhir_id, fhir_resource_type, omop_table_name, omop_id) DO NOTHING",
-    )
-    logger.info(f"Upserted {len(key_map_rows)} fhir_omop_key_map row(s) in {mapping_schema}")
+    if not previous_measurement_rows and not key_map_rows:
+        return
+
+    # The reconciling delete(s) and the replacement insert run as one transaction
+    # (autocommit=False, committed on this block's successful exit) - otherwise a
+    # failure between them (e.g. the insert) would leave the dataset with its
+    # lineage cleared and nothing written to replace it.
+    with mapping_dao._get_connection(autocommit=False) as con:
+        if previous_measurement_rows:
+            _delete_stale_measurement_key_map_rows(mapping_dao, mapping_schema, previous_measurement_rows, con=con)
+            logger.info(
+                f"Removed stale fhir_omop_key_map row(s) for {len(previous_measurement_rows)} "
+                f"previous measurement row(s) in {mapping_schema}"
+            )
+        if key_map_rows:
+            mapping_dao.batch_insert_values(
+                mapping_schema,
+                "fhir_omop_key_map",
+                ["fhir_id", "fhir_resource_type", "omop_table_name", "omop_id"],
+                key_map_rows,
+                con=con,
+                on_conflict="ON CONFLICT (fhir_id, fhir_resource_type, omop_table_name, omop_id) DO NOTHING",
+            )
+            logger.info(f"Upserted {len(key_map_rows)} fhir_omop_key_map row(s) in {mapping_schema}")
 
 
 @task(log_prints=True)
@@ -447,9 +475,6 @@ def write_algorithm_metadata(dbdao, schema_name: str, country_code: str, value_s
     alongside the new one - or, worse, alongside measurement rows it no longer
     describes - rather than replacing it to stay in sync with write_measurements()'s
     own overwrite-on-rerun of the `measurement` rows it documents.
-
-    `metadata_id`/`value_as_number` are included only if the target `metadata` table
-    actually has them - see README's "Algorithm provenance" section for why.
     """
     logger = get_run_logger()
     value_as_string = (
@@ -458,26 +483,21 @@ def write_algorithm_metadata(dbdao, schema_name: str, country_code: str, value_s
     )[:250]
 
     now = datetime.datetime.now()
-    insert_row = {
-        "metadata_concept_id": 0,
-        "metadata_type_concept_id": 0,
-        "name": EQ5D5L_ALGORITHM_METADATA_NAME,
-        "value_as_string": value_as_string,
-        "value_as_concept_id": None,
-        "metadata_date": now.date(),
-        "metadata_datetime": now,
-    }
-    existing_columns = set(dbdao.get_columns(schema_name, "metadata"))
-    if "value_as_number" in existing_columns:
-        insert_row["value_as_number"] = None
-    id_column = "metadata_id" if "metadata_id" in existing_columns else None
-
     dbdao.delete_and_insert_rows(
         schema=schema_name,
         table="metadata",
         delete_column="name",
         delete_value=EQ5D5L_ALGORITHM_METADATA_NAME,
-        insert_rows=[insert_row],
-        id_column=id_column,
+        insert_rows=[{
+            "metadata_concept_id": 0,
+            "metadata_type_concept_id": 0,
+            "name": EQ5D5L_ALGORITHM_METADATA_NAME,
+            "value_as_string": value_as_string,
+            "value_as_concept_id": None,
+            "value_as_number": None,
+            "metadata_date": now.date(),
+            "metadata_datetime": now,
+        }],
+        id_column="metadata_id",
     )
     logger.info(f"Wrote EQ-5D-5L algorithm metadata row to {schema_name}.metadata: {value_as_string}")

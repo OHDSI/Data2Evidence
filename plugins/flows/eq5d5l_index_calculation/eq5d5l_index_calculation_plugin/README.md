@@ -292,10 +292,6 @@ Algorithm"` are deleted before the new one is inserted. So re-running the same
 this row along with the `measurement` rows it describes, instead of leaving a stale
 algorithm description - or an accumulating pile of one row per run - behind.
 
-HANA's `metadata` table (unlike Postgres's) has no `metadata_id` or
-`value_as_number` column - this plugin checks the table's actual columns each run
-and only sends the ones that exist, rather than assuming the Postgres shape.
-
 ### Parameters
 
 ```
@@ -312,7 +308,7 @@ and only sends the ones that exist, rather than assuming the Postgres shape.
 }
 ```
 
-Only Postgres- and HANA-backed datasets are supported today; a TREX-dialect
+Only Postgres-backed datasets are supported today; a HANA- or TREX-dialect
 `database_code` fails fast with a clear error rather than partway through the run.
 
 The "EQ-5D-5L index value" measurement concept id (`42537273`), its

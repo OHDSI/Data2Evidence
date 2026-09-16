@@ -1087,18 +1087,6 @@ class FhirMappingNode(Node):
             mapping_escaped_schema = mapping_schema.replace('"', '""')
             escaped_resource_type = self.fhir_resource_type.replace("'", "''")
             escaped_omop_table_name = self.omop_table_name.replace("'", "''")
-            mapping_dao.execute_sql(f"""
-                DELETE FROM "{mapping_escaped_schema}".data_source
-                WHERE omop_table_name = '{escaped_omop_table_name}' AND fhir_resource_type = '{escaped_resource_type}'
-            """)
-            if self.write_key_map:
-                mapping_dao.execute_sql(f"""
-                    DELETE FROM "{mapping_escaped_schema}".fhir_omop_key_map
-                    WHERE omop_table_name = '{escaped_omop_table_name}' AND fhir_resource_type = '{escaped_resource_type}'
-                """)
-
-            if not omop_rows:
-                return Result(False, {"inserted": 0, "updated": 0}, self, task_run_context)
 
             data_source_values = [
                 {
@@ -1121,38 +1109,59 @@ class FhirMappingNode(Node):
                 for fhir_id, omop_id in omop_rows
             ]
 
-            mapping_dao.batch_insert_values(
-                mapping_schema,
-                "data_source",
-                ["fhir_resource_type", "fhir_resource_id", "omop_table_name", "omop_id", "flow_run_id"],
-                [
-                    (
-                        row["fhir_resource_type"],
-                        row["fhir_resource_id"],
-                        row["omop_table_name"],
-                        row["omop_id"],
-                        row["flow_run_id"],
-                    )
-                    for row in data_source_values
-                ],
-            )
+            # The reconciling deletes and their replacement inserts run as one
+            # transaction (autocommit=False, committed on this block's successful
+            # exit) - otherwise a failure between the delete and the insert (e.g.
+            # the second batch_insert_values call) would leave the dataset with
+            # its lineage cleared and nothing written to replace it.
+            with mapping_dao._get_connection(autocommit=False) as con:
+                mapping_dao.execute_sql(f"""
+                    DELETE FROM "{mapping_escaped_schema}".data_source
+                    WHERE omop_table_name = '{escaped_omop_table_name}' AND fhir_resource_type = '{escaped_resource_type}'
+                """, con=con)
+                if self.write_key_map:
+                    mapping_dao.execute_sql(f"""
+                        DELETE FROM "{mapping_escaped_schema}".fhir_omop_key_map
+                        WHERE omop_table_name = '{escaped_omop_table_name}' AND fhir_resource_type = '{escaped_resource_type}'
+                    """, con=con)
 
-            if self.write_key_map:
+                if not omop_rows:
+                    return Result(False, {"inserted": 0, "updated": 0}, self, task_run_context)
+
                 mapping_dao.batch_insert_values(
                     mapping_schema,
-                    "fhir_omop_key_map",
-                    ["fhir_id", "fhir_resource_type", "omop_table_name", "omop_id"],
+                    "data_source",
+                    ["fhir_resource_type", "fhir_resource_id", "omop_table_name", "omop_id", "flow_run_id"],
                     [
                         (
-                            row["fhir_id"],
                             row["fhir_resource_type"],
+                            row["fhir_resource_id"],
                             row["omop_table_name"],
                             row["omop_id"],
+                            row["flow_run_id"],
                         )
-                        for row in key_map_values
+                        for row in data_source_values
                     ],
-                    on_conflict="ON CONFLICT (fhir_id, fhir_resource_type, omop_table_name, omop_id) DO NOTHING",
+                    con=con,
                 )
+
+                if self.write_key_map:
+                    mapping_dao.batch_insert_values(
+                        mapping_schema,
+                        "fhir_omop_key_map",
+                        ["fhir_id", "fhir_resource_type", "omop_table_name", "omop_id"],
+                        [
+                            (
+                                row["fhir_id"],
+                                row["fhir_resource_type"],
+                                row["omop_table_name"],
+                                row["omop_id"],
+                            )
+                            for row in key_map_values
+                        ],
+                        con=con,
+                        on_conflict="ON CONFLICT (fhir_id, fhir_resource_type, omop_table_name, omop_id) DO NOTHING",
+                    )
 
             return Result(False, {"inserted": len(omop_rows), "updated": len(omop_rows)}, self, task_run_context)
         except Exception as e:

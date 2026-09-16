@@ -76,8 +76,13 @@ class TrexDao(DaoBase):
                     cur.close()
 
     @contextmanager
-    def _get_connection(self):
-        """Get a PostgreSQL connection"""
+    def _get_connection(self, autocommit: bool = True):
+        """
+        Get a PostgreSQL connection. autocommit=False lets a caller run several
+        statements (e.g. execute_sql()/batch_insert_values() calls, passing this
+        same connection as `con`) as one transaction, committed on this context
+        manager's successful exit and rolled back on an exception.
+        """
         configs = self.tenant_configs
         con = None
         try:
@@ -88,7 +93,7 @@ class TrexDao(DaoBase):
                 password=configs.password.get_secret_value(),
                 dbname=self.cache_id,
             )
-            con.autocommit = True
+            con.autocommit = autocommit
             # Trex pgwire only auto-issues `USE <dbname>` when dbname matches
             # a credential id. When cache_id differs from database_code it's a
             # DuckDB ATTACH alias rather than a credential id, so we issue USE
@@ -121,9 +126,14 @@ class TrexDao(DaoBase):
         """
         return pg_sql.Identifier(*schema.split("."))
 
-    def execute_sql(self, sql: str, fetch: bool = False):
-        """Execute SQL using a context manager for connection and cursor."""
-        with self._get_connection() as con:
+    def execute_sql(self, sql: str, fetch: bool = False, con=None):
+        """
+        Execute SQL using a context manager for connection and cursor. Pass an
+        existing `con` (from _get_connection(autocommit=False)) to run this as
+        part of a caller-managed multi-statement transaction instead of opening
+        (and committing) its own connection.
+        """
+        def _execute(con):
             cur = None
             try:
                 cur = con.cursor()
@@ -131,14 +141,14 @@ class TrexDao(DaoBase):
                 cur.execute(composed_query)
                 if fetch:
                     return cur.fetchall()
-                if not con.autocommit:
-                    con.commit()
-            except Exception:
-                # Re-raise the original exception with preserved stack trace
-                raise
             finally:
                 if cur:
                     cur.close()
+
+        if con is not None:
+            return _execute(con)
+        with self._get_connection() as con:
+            return _execute(con)
 
     def clear_pg_cache(self) -> None:   
         try:
@@ -397,7 +407,8 @@ class TrexDao(DaoBase):
             table_name: Target table name
             columns: List of column names to insert into
             values: List of tuples, each tuple representing a row to insert
-            con: Optional existing connection to reuse (skips opening a new connection)
+            con: Optional existing connection to reuse (skips opening a new connection,
+                and leaves committing it to the caller - see _get_connection(autocommit=False))
             on_conflict: Optional ON CONFLICT clause, e.g. "ON CONFLICT DO NOTHING"
         """
         columns_sql = pg_sql.SQL(", ").join(pg_sql.Identifier(col) for col in columns)
@@ -413,11 +424,6 @@ class TrexDao(DaoBase):
             try:
                 cur = con.cursor()
                 execute_values(cur, sql, values, page_size=len(values))
-                if not con.autocommit:
-                    con.commit()
-            except Exception:
-                # Re-raise the original exception with preserved stack trace
-                raise
             finally:
                 if cur:
                     cur.close()

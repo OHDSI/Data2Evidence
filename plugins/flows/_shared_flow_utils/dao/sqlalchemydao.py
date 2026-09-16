@@ -213,11 +213,15 @@ class SqlAlchemyDao(DaoBase):
         Select `columns` from `table` where `where_column` is in `where_values`.
         Returns one dict per row, keyed by the requested column names.
         """
+        is_hana = self.dialect == SupportedDatabaseDialects.HANA
         with self.engine.connect() as connection:
-            metadata_obj = sql.MetaData(schema=schema)
-            table_obj = sql.Table(table, metadata_obj, autoload_with=connection)
-            select_cols = [table_obj.c[col] for col in columns]
-            stmt = sql.select(*select_cols).where(table_obj.c[where_column].in_(where_values))
+            metadata_obj = sql.MetaData(schema=schema.upper() if is_hana else schema)
+            table_obj = sql.Table(table.upper() if is_hana else table, metadata_obj, autoload_with=connection)
+            col = lambda name: table_obj.c[name.upper() if is_hana else name]
+            # .label(name) keeps the result keyed by the caller's original (lowercase)
+            # names regardless of HANA folding the actual reflected column uppercase.
+            select_cols = [col(name).label(name) for name in columns]
+            stmt = sql.select(*select_cols).where(col(where_column).in_(where_values))
             result = connection.execute(stmt).mappings().all()
         return [dict(row) for row in result]
 
@@ -262,20 +266,22 @@ class SqlAlchemyDao(DaoBase):
         sequential id continuing from the table's current max, and the returned
         rows carry that id.
         """
+        is_hana = self.dialect == SupportedDatabaseDialects.HANA
         with self.engine.begin() as connection:
-            metadata_obj = sql.MetaData(schema=schema)
-            table_obj = sql.Table(table, metadata_obj, autoload_with=connection)
+            metadata_obj = sql.MetaData(schema=schema.upper() if is_hana else schema)
+            table_obj = sql.Table(table.upper() if is_hana else table, metadata_obj, autoload_with=connection)
+            col = lambda name: table_obj.c[name.upper() if is_hana else name]
 
             if id_column:
                 self._lock_table_for_id_allocation(connection, table_obj)
 
             connection.execute(
-                table_obj.delete().where(table_obj.c[delete_column] == delete_value)
+                table_obj.delete().where(col(delete_column) == delete_value)
             )
 
             if id_column:
                 last_id = connection.execute(
-                    sql.select(sql.func.max(table_obj.c[id_column]))
+                    sql.select(sql.func.max(col(id_column)))
                 ).scalar()
                 next_id = (int(last_id) + 1) if last_id is not None else 1
                 insert_rows = [
@@ -283,7 +289,15 @@ class SqlAlchemyDao(DaoBase):
                 ]
 
             if insert_rows:
-                connection.execute(table_obj.insert(), insert_rows)
+                # Insert executemany() matches dict keys to column keys case-sensitively
+                # and silently drops (NULLs) anything that doesn't match - it does not
+                # raise - so a lowercase key against HANA's uppercase-folded reflected
+                # columns must be re-cased before this call, not left to fail loudly.
+                db_rows = (
+                    [{k.upper(): v for k, v in row.items()} for row in insert_rows]
+                    if is_hana else insert_rows
+                )
+                connection.execute(table_obj.insert(), db_rows)
 
         return insert_rows
 
