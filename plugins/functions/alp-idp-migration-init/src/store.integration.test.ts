@@ -7,7 +7,8 @@ const url = Deno.env.get('TEST_PG_URL')
 
 // usermgmt."user".id is uuid in the real schema, and idp_subject_history.user_id
 // (created by the migration under test) follows that type, so this scratch
-// user id has to be a valid uuid even though the column below is declared text.
+// user id has to be a valid uuid, and the column below is declared uuid too,
+// to exercise the same comparison/casting the store runs in production.
 const USER_ID = '11111111-1111-1111-1111-111111111111'
 
 Deno.test({
@@ -20,9 +21,9 @@ Deno.test({
     try {
       await k.raw(`drop schema if exists usermgmt cascade; drop schema if exists logto cascade; drop schema if exists portal cascade`)
       await k.raw(`create schema usermgmt; create schema logto; create schema portal`)
-      await k.raw(`create table usermgmt."user" (id text primary key, username text, idp_user_id text)`)
+      await k.raw(`create table usermgmt."user" (id uuid primary key, username text, idp_user_id text)`)
       await k.raw(`create table usermgmt.b2c_group (id text primary key, role text, study_id text)`)
-      await k.raw(`create table usermgmt.user_group (user_id text, b2c_group_id text)`)
+      await k.raw(`create table usermgmt.user_group (user_id uuid, b2c_group_id text)`)
       await k.raw(`create table portal.dataset (id text primary key, token_dataset_code text, type text)`)
       await k.raw(`create table logto.users (tenant_id text, id text, username text, primary_email text, name text, is_suspended boolean)`)
       const { up } = await import('../../alp-usermgmt-init/src/db/migrations/20260916120000_idp_migration_tables.ts')
@@ -40,10 +41,26 @@ Deno.test({
       assertEquals(await store.usermgmtUsers(), [{ id: USER_ID, username: 'admin', idpUserId: 'l1' }])
       assertEquals(await store.groups(), [{ userId: USER_ID, role: 'RESEARCHER', studyId: 'ds1', tokenDatasetCode: 'DEMO', datasetType: 'webapi' }])
 
+      // No portal schema/table (e.g. a bare-trex deployment without the portal
+      // plugin installed): groups() still resolves memberships, just without
+      // the dataset-derived columns.
+      await k.raw(`drop table portal.dataset`)
+      assertEquals(await store.groups(), [{ userId: USER_ID, role: 'RESEARCHER', studyId: 'ds1', tokenDatasetCode: null, datasetType: null }])
+
       await store.rekey(USER_ID, 'l1', 'trex-1')
       await store.rekey(USER_ID, 'l1', 'trex-1') // a repeat is a no-op, not a second history row
       assertEquals((await k.raw(`select idp_user_id from usermgmt."user" where id=?`, [USER_ID])).rows[0].idp_user_id, 'trex-1')
       assertEquals(await store.subjectHistory(), [{ userId: USER_ID, oldSub: 'l1', newSub: 'trex-1' }])
+
+      // The caller's `oldSub` is stale here ('WRONG-STALE-SUB'): the row
+      // actually holds 'trex-1'. rekey must record what the row held, not
+      // what it was told, since the next boot's origin trace depends on it.
+      await store.rekey(USER_ID, 'WRONG-STALE-SUB', 'trex-2')
+      assertEquals((await k.raw(`select idp_user_id from usermgmt."user" where id=?`, [USER_ID])).rows[0].idp_user_id, 'trex-2')
+      assertEquals(await store.subjectHistory(), [
+        { userId: USER_ID, oldSub: 'l1', newSub: 'trex-1' },
+        { userId: USER_ID, oldSub: 'trex-1', newSub: 'trex-2' }
+      ])
 
       await store.recordStep('link', 'ok', { linked: 1 }, {})
       await store.recordStep('link', 'partial', { linked: 0 }, { skipped: [] })

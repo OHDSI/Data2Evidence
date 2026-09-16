@@ -48,6 +48,14 @@ export class KnexMigrationStore implements MigrationStore {
 
   async rekey(usermgmtId: string, oldSub: string | null, newSub: string): Promise<void> {
     await this.knex.transaction(async trx => {
+      // Read the row's actual current subject inside the transaction (locked
+      // against concurrent writers) rather than trusting the caller's
+      // `oldSub`: the plan is built from a snapshot taken earlier in the run,
+      // so by the time this executes it can be stale. The history this writes
+      // is exactly what the next boot's traceLogtoOrigin walks back through,
+      // so it has to reflect what the row actually held.
+      const before = await trx.raw(`select idp_user_id from usermgmt."user" where id = ? for update`, [usermgmtId])
+      const observedOldSub = before.rows[0]?.idp_user_id ?? oldSub
       const { rowCount } = await trx.raw(
         `update usermgmt."user" set idp_user_id = ? where id = ? and idp_user_id is distinct from ?`,
         [newSub, usermgmtId, newSub]
@@ -55,7 +63,7 @@ export class KnexMigrationStore implements MigrationStore {
       if (rowCount > 0) {
         await trx.raw(
           `insert into usermgmt.idp_subject_history (user_id, old_sub, new_sub, idp) values (?, ?, ?, 'logto')`,
-          [usermgmtId, oldSub, newSub]
+          [usermgmtId, observedOldSub, newSub]
         )
       }
     })
