@@ -54,6 +54,11 @@ Deno.test('disabling an unknown provider is reported, not thrown', async () => {
   assertEquals(await admin(f.impl).setProviderEnabled('logto', false), 'unknown_provider')
 })
 
+Deno.test('a 200 response missing userId is rejected instead of flowing through as undefined', async () => {
+  const f = fakeFetch([new Response(JSON.stringify({ outcome: 'created' }), { status: 200 })])
+  await assertRejects(() => admin(f.impl).link({ providerId: 'logto', accountId: 'l1', email: 'a@x.test', name: null, banned: false }))
+})
+
 Deno.test('no service-role key fails before anything goes on the wire', async () => {
   const f = fakeFetch([])
   const a = new HttpFederationAdmin({ federationUrl: 'http://trex/fed', rolesUrl: 'http://trex/roles', serviceRoleKey: '', fetchImpl: f.impl })
