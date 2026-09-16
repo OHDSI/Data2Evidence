@@ -1,4 +1,5 @@
 import { test, expect } from '../fixtures'
+import { deleteExploration } from '../explorations'
 const TEST_NAME = 'patient-analytics-extended-query-logic'
 const SHOULD_SKIP = false
 test.fixme(SHOULD_SKIP, `${TEST_NAME} test is temporarily disabled.`)
@@ -111,17 +112,7 @@ test(TEST_NAME, async ({ page }) => {
 
   // Delete saved filter
   await page.locator('#pane-left').getByRole('link', { name: 'Cohorts' }).click()
-  await page
-    .getByText('Extended Logic Filter')
-    .locator('..')
-    .locator('..')
-    .locator('..')
-    .locator('..')
-    .locator('> .footer')
-    .locator('div:nth-child(5) > svg')
-    .first()
-    .click()
-  await page.getByRole('button', { name: 'Delete' }).click()
+  await deleteExploration(page, 'Extended Logic Filter')
   // Wait for delete dialog to disappear
   await expect(page.getByText('Delete Saved Filter')).not.toBeVisible()
   await expect(page.getByText('Extended Logic Filter')).not.toBeVisible()

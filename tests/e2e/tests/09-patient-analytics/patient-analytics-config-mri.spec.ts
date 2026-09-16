@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test'
+import { confirmExplorationDialog, explorationMenuAction } from '../explorations'
 
 const TEST_NAME = 'patient_analytics_mri'
 const SHOULD_SKIP = true
@@ -14,17 +15,17 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByRole('button', { name: 'Sign in' }).click()
   await page.getByText('Demo dataset').first().click()
   await page.getByRole('link', { name: 'Cohorts' }).click()
-  await expect(page.locator('#pane-left')).toMatchAriaSnapshot(`
-    - text: "Create Cohort:"
-    - button "D2E"
-    - button "Atlas"
-    - button "Import"
-    - button "Compare" [disabled]
-    - text: Shared
-    - checkbox
-    `)
+  // The old header - "Create Cohort:" with a D2E / Atlas / Import / Compare
+  // group and a Shared toggle - was replaced by the Data Exploration toolbar.
+  // Assert the controls by test id rather than re-snapshotting the aria tree:
+  // the snapshot pinned copy and ordering that this test does not care about,
+  // and it is what made a pure reskin fail here.
+  await expect(page.getByTestId('explorations-search')).toBeVisible()
+  await expect(page.getByTestId('explorations-filters-btn')).toBeVisible()
+  await expect(page.getByTestId('explorations-sort-btn')).toBeVisible()
+  await expect(page.getByTestId('explorations-new-btn')).toBeVisible()
   await page.getByTestId('explorations-new-btn').click()
-  await expect(page.locator('#pane-left')).toContainText('New cohort')
+  await expect(page.locator('#pane-left')).toContainText('New exploration')
   await page.getByTitle('Basic Data - Age').click()
   await page.getByRole('button', { name: '' }).click()
   await page.getByRole('menu').getByText('Age').click()
@@ -90,12 +91,12 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByText('Cohort Test0. Icons/').click()
   await page.locator('.modal-wrapper').click()
   await page.locator('#pane-left').getByRole('link', { name: 'Cohorts' }).click()
-  await page.locator('div:nth-child(5) > svg').first().click()
-  await expect(page.locator('#pane-left')).toContainText('Delete Saved Filter')
-  await expect(page.locator('#pane-left')).toMatchAriaSnapshot(
-    `- text: Deleting this saved filter will delete any access points that you generated for it. Are you sure you want to delete?`
+  await explorationMenuAction(page, 'Cohort Test', 'Delete')
+  await expect(page.locator('#pane-left')).toContainText('Delete filter?')
+  await expect(page.locator('#pane-left')).toContainText(
+    'Deleting this saved filter will delete any access point that you generated for it.'
   )
-  await page.getByRole('button', { name: 'Delete' }).click()
+  await confirmExplorationDialog(page)
   await expect(page.locator('#app')).toMatchAriaSnapshot(`- text: Saved filter deleted.`)
   await page.locator('#pane-left').getByRole('link', { name: 'Cohorts' }).click()
 })

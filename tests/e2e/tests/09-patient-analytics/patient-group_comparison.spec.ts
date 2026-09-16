@@ -1,4 +1,5 @@
 import { test, expect } from '../fixtures'
+import { confirmExplorationDialog } from '../explorations'
 
 test('pa-compare-cohorts', async ({ page }) => {
   test.slow()
@@ -115,16 +116,13 @@ test('pa-compare-cohorts', async ({ page }) => {
   // await page.locator('.footer > div:nth-child(5)').first().click()
   // await page.getByRole('button', { name: 'Delete' }).click()
 
-  // Delete all saved cohorts until none remain
-  while (
-    await page
-      .getByTitle('Delete Saved Filter')
-      .first()
-      .isVisible()
-      .catch(() => false)
-  ) {
-    await page.getByTitle('Delete Saved Filter').first().click()
-    await page.getByRole('button', { name: 'Delete' }).click()
+  // Delete all saved cohorts until none remain. The delete icon with its
+  // "Delete Saved Filter" title is gone; Delete is a More-menu item now, so
+  // drain the list card by card.
+  while (await page.locator('.d2e-exploration-card').first().isVisible().catch(() => false)) {
+    await page.locator('.d2e-exploration-card').first().getByRole('button', { name: 'More actions' }).click()
+    await page.getByRole('menuitem', { name: 'Delete' }).click()
+    await confirmExplorationDialog(page)
     await page.waitForTimeout(10000)
   }
 

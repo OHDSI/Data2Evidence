@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test'
+import { confirmExplorationDialog, explorationAction, explorationCard, explorationMenuAction } from '../explorations'
 
 const TEST_NAME = 'e2e PA and Cohorts'
 const SHOULD_SKIP = false
@@ -63,7 +64,7 @@ async function deleteUser(page, username) {
 
 async function navigateToCohorts(page) {
   await page.getByRole('link', { name: 'Cohorts' }).click()
-  await expect(page.getByText('Create Cohort:')).toBeVisible()
+  await expect(page.getByTestId('explorations-page')).toBeVisible()
 }
 
 async function dismissUnsavedChangesDialog(page) {
@@ -193,15 +194,16 @@ test(TEST_NAME, async ({ page }) => {
   await expect(page.locator('#pane-left')).toContainText(COHORT_2)
   await expect(page.locator('#pane-left')).toContainText(COHORT_1)
 
-  // Verify rename and delete are disabled on shared cohorts not owned by researcher_2
-  const cohort1Card = page.locator('div:nth-child(2) > .footer')
-  const renameButton = cohort1Card.locator('div:nth-child(2)')
-  const deleteButton = cohort1Card.locator('div:last-child')
-  await expect(renameButton).toHaveClass(/icon-button-disabled/)
-  await expect(deleteButton).toHaveClass(/icon-button-disabled/)
+  // Verify rename and delete are disabled on shared cohorts not owned by
+  // researcher_2. They are menu items now rather than footer icons, so the
+  // check is the item's own disabled state instead of a CSS class.
+  await explorationCard(page, COHORT_1).getByRole('button', { name: 'More actions' }).click()
+  await expect(page.getByRole('menuitem', { name: 'Rename' })).toBeDisabled()
+  await expect(page.getByRole('menuitem', { name: 'Delete' })).toBeDisabled()
+  await page.keyboard.press('Escape')
 
   // === TEST: Materialize cohort (add patients) ===
-  await page.locator('div:nth-child(2) > .footer > div:nth-child(3) > svg').click()
+  await explorationAction(page, COHORT_1, 'Materialize cohort')
   await expect(page.locator('#pane-left')).toContainText('Add Patients to Cohort')
   await page
     .locator('div')
@@ -224,21 +226,22 @@ test(TEST_NAME, async ({ page }) => {
   await expect(page.getByRole('status').filter({ hasText: 'Content is loading' })).not.toBeVisible({ timeout: 60000 })
 
   // Rename cohort
-  await page.locator('div:nth-child(2) > .footer > div:nth-child(2) > svg').click({ force: true })
-  await expect(page.locator('#pane-left')).toContainText('Rename Saved Filter')
-  await expect(page.locator('#pane-left')).toContainText('Specify a new name for bookmark')
-  await page.getByRole('textbox').fill(COHORT_1_RENAMED)
-  await page.getByRole('button', { name: 'Save' }).click()
+  await explorationMenuAction(page, COHORT_1, 'Rename')
+  // The reskinned dialog is titled "Rename exploration name" and its field is
+  // labelled "Exploration name"; the confirm button reads Rename, not Save.
+  await expect(page.locator('#pane-left')).toContainText('Rename exploration name')
+  await page.getByRole('textbox', { name: 'Exploration name' }).fill(COHORT_1_RENAMED)
+  await confirmExplorationDialog(page)
   await expect(page.locator('#pane-left')).toContainText(COHORT_1_RENAMED)
 
   // Navigate back to cohort list
   await navigateBackToCohortList(page)
 
   // Delete cohort
-  await page.locator('.footer > div:last-child > svg').first().click({ force: true })
-  await expect(page.locator('#pane-left')).toContainText('Delete Saved Filter')
-  await expect(page.locator('#pane-left')).toContainText('Are you sure you want to delete?')
-  await page.getByRole('button', { name: 'Delete' }).click()
+  await explorationMenuAction(page, COHORT_1_RENAMED, 'Delete')
+  // Reskinned: titled "Delete filter?", confirmed with "Yes, delete".
+  await expect(page.locator('#pane-left')).toContainText('Delete filter?')
+  await confirmExplorationDialog(page)
   await expect(page.locator('#app')).toContainText('Saved filter deleted')
 
   // Cleanup: delete users as admin
