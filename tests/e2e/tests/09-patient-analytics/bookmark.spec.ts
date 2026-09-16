@@ -465,7 +465,9 @@ test(TEST_NAME, async ({ page }) => {
       await deleteExploration(page, NAME.patientListFilters)
       await expect(page.getByText(NAME.patientListFilters)).not.toBeVisible()
     })
-    await expect(page.getByText('You have not yet saved any cohort definitions')).toBeVisible()
+    // The redesign's empty state reads "No explorations yet"; assert the state
+    // itself rather than its copy.
+    await expect(page.getByTestId('explorations-empty')).toBeVisible()
   })
 
   //Delete concept sets

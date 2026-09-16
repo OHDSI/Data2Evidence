@@ -126,7 +126,7 @@ test('pa-compare-cohorts', async ({ page }) => {
     await page.waitForTimeout(10000)
   }
 
-  await expect(page.getByText('You have not yet saved any')).toBeVisible()
+  await expect(page.getByTestId('explorations-empty')).toBeVisible()
 })
 
 async function createCohortWithOneConditionOccurrenceFilercard(page, cohortName) {
