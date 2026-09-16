@@ -1,4 +1,5 @@
 import { test, expect } from '../fixtures'
+import { deleteExploration } from '../explorations'
 
 const TEST_NAME = 'cohort-generation'
 const SHOULD_SKIP = true
@@ -117,9 +118,8 @@ test('cohort-generation', async ({ page }) => {
   // Navigate back to cohorts list and delete the specific test cohort
   await page.locator('#pane-left').getByRole('link', { name: 'Cohorts' }).click()
 
-  // Find and delete the specific cohort by name to avoid deleting wrong cohorts
-  // The delete button is the last img element in the action buttons container for each cohort
-  // Navigate from cohort title to its parent container, then to the action buttons container
-  await page.locator('.footer > div:nth-child(5)').first().click()
-  await page.getByRole('button', { name: 'Delete' }).click()
+  // Delete by name. The old selector took the fifth icon of the first card's
+  // footer, which was the delete action only by position - and only ever
+  // deleted the first card, despite the comment.
+  await deleteExploration(page, cohortName)
 })

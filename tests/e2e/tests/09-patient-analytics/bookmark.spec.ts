@@ -1,4 +1,5 @@
 import { test, expect } from '../fixtures'
+import { confirmExplorationDialog, deleteExploration, explorationMenuAction } from '../explorations'
 
 const TEST_NAME = 'patient_analytics_bookmark'
 const SHOULD_SKIP = false
@@ -208,7 +209,7 @@ test(TEST_NAME, async ({ page }) => {
   //Rename the saved filter
   await test.step('Rename the saved filter', async () => {
     await page.locator('#pane-left').getByRole('link', { name: 'Cohorts' }).click()
-    await page.locator('.footer > div:nth-child(2) > svg').first().click()
+    await explorationMenuAction(page, NAME.savedFilters, 'Rename')
     await page.getByRole('textbox').fill('')
     await page.locator('footer').getByRole('button', { name: 'Save' }).click()
     await expect(page.getByText('Please enter a name')).toBeVisible()
@@ -237,8 +238,8 @@ test(TEST_NAME, async ({ page }) => {
   await test.step('Delete the saved filter', async () => {
     await page.locator('#pane-left').getByRole('link', { name: 'Cohorts' }).click()
     await expect(page.getByText(`${NAME.renamedFilters}0. Icons/`)).toBeVisible()
-    await page.getByTitle('Delete Saved Filter').first().click()
-    await page.getByRole('button', { name: 'Delete' }).click()
+    await explorationMenuAction(page, NAME.renamedFilters, 'Delete')
+    await confirmExplorationDialog(page)
     await expect(page.getByText(`${NAME.renamedFilters}0. Icons/`)).not.toBeVisible()
   })
   //Go back to Cohorts
@@ -423,7 +424,7 @@ test(TEST_NAME, async ({ page }) => {
     //Rename the bookmark
     await page.getByText('Demo dataset').first().click()
     await page.getByRole('link', { name: 'Cohorts' }).click()
-    await page.locator('div:nth-child(2) > .footer > div:nth-child(2) > svg').click()
+    await explorationMenuAction(page, NAME.savedFilters, 'Rename')
     await page.getByRole('textbox').fill('')
     await page.getByRole('textbox').fill(NAME.sharedFilter)
     await page.getByRole('button', { name: 'Save' }).click()
@@ -455,21 +456,13 @@ test(TEST_NAME, async ({ page }) => {
     //Delete the Shared saved filter
     await test.step('Delete Shared saved filter', async () => {
       await expect(page.getByText(NAME.sharedFilter)).toBeVisible()
-      await page
-        .locator('.item-card', { hasText: 'D2E Cohort Definition' })
-        .locator('.footer .icon-button[title="Delete Saved Filter"]')
-        .click()
-      await page.getByRole('button', { name: 'Delete' }).click()
+      await deleteExploration(page, NAME.sharedFilter)
       await expect(page.getByText(NAME.sharedFilter)).not.toBeVisible()
     })
     //Delete the Atlas Cohort Definition
     await test.step('Delete Atlas Cohort Definition', async () => {
       await expect(page.getByText(NAME.patientListFilters)).toBeVisible()
-      await page
-        .locator('.item-card', { hasText: 'Atlas Cohort Definition' })
-        .locator('.footer .icon-button[title="Delete Saved Filter"]')
-        .click()
-      await page.getByRole('button', { name: 'Delete' }).click()
+      await deleteExploration(page, NAME.patientListFilters)
       await expect(page.getByText(NAME.patientListFilters)).not.toBeVisible()
     })
     await expect(page.getByText('You have not yet saved any cohort definitions')).toBeVisible()
