@@ -279,12 +279,30 @@ class TrexDao(DaoBase):
 
     def get_temp_table_names(self, schema):
         sql = pg_sql.SQL("""
-            SELECT table_name 
-            FROM duckdb_tables() 
+            SELECT table_name
+            FROM duckdb_tables()
             WHERE temporary = true;
         """)
         result = self.execute_sql(sql, fetch=True)
         return [row[0] for row in result]
+
+    def get_indexes_for_table(self, schema: str, table: str) -> list[dict]:
+        """
+        Returns [{"name", "unique", "definition"}, ...] for indexes on `table`.
+        `definition` is the index's own CREATE INDEX text, for callers that need to
+        check its indexed columns rather than just whether an index exists at all.
+        """
+        _, schema_only = self._split_catalog_schema(schema)
+        sql = pg_sql.SQL("""
+            SELECT index_name, is_unique, sql
+            FROM duckdb_indexes()
+            WHERE schema_name = {schema} AND table_name = {table};
+        """).format(schema=pg_sql.Literal(schema_only), table=pg_sql.Literal(table))
+        result = self.execute_sql(sql, fetch=True)
+        return [
+            {"name": name, "unique": bool(is_unique), "definition": definition or ""}
+            for name, is_unique, definition in result
+        ]
 
     def get_columns(self, schema: str, table: str) -> list[str]:
         catalog, schema_only = self._split_catalog_schema(schema)

@@ -21,6 +21,14 @@ from prefect.logging import get_run_logger
 
 os.environ['plugin_name'] = 'eq5d5l_index_calculation_plugin'
 
+# select_rows_where_in()/delete_and_insert_rows() only exist on SqlAlchemyDao (and
+# IbisDao, which subclasses it) - not on TrexDao. A TREX-dialect dataset would
+# otherwise fail deep inside the flow with a bare AttributeError.
+_REQUIRED_DAO_METHODS = ("select_rows_where_in", "delete_and_insert_rows")
+
+# fhir_omop_key_map's ON CONFLICT target - see _require_fhir_mapping_table().
+_KEY_MAP_UNIQUE_COLUMNS = ("fhir_id", "fhir_resource_type", "omop_table_name", "omop_id")
+
 
 @flow(log_prints=True)
 def eq5d5l_index_calculation_plugin(options: Eq5d5lPluginType):
@@ -37,6 +45,13 @@ def calculate_eq5d5l_index(config: Eq5d5lCalculateConfig):
     logger.info(f"Loaded EuroQol value set for country_code='{config.country_code}'")
 
     dbdao = DBDao(database_code=config.database_code, cache_id=config.omop_dataset_id)
+    missing_dao_methods = [m for m in _REQUIRED_DAO_METHODS if not hasattr(dbdao, m)]
+    if missing_dao_methods:
+        raise NotImplementedError(
+            f"eq5d5l_index_calculation_plugin does not support the '{dbdao.dialect}' "
+            f"dialect ({type(dbdao).__name__} is missing {missing_dao_methods}); use a "
+            f"Postgres- or HANA-backed dataset instead."
+        )
 
     dimension_concept_id_map = DIMENSION_CONCEPT_ID_MAP
 
@@ -62,6 +77,15 @@ def calculate_eq5d5l_index(config: Eq5d5lCalculateConfig):
     for row in rows:
         row["measurement_concept_id"] = measurement_concept_id
 
+    if rows:
+        # Checked before write_measurements()'s destructive delete-and-replace, not
+        # just inside write_fhir_key_map() - otherwise a missing prerequisite would
+        # be discovered only after the old measurement rows are already gone,
+        # leaving them replaced with no FHIR lineage/metadata written for them.
+        mapping_schema = f"{config.database_code}_{config.schema_name}_fhir_mapping"
+        mapping_dao = DBDao(dialect=SupportedDatabaseDialects.TREX, database_code=config.database_code)
+        _require_fhir_mapping_table(mapping_dao, mapping_schema)
+
     inserted_rows, previous_measurement_ids = write_measurements(
         dbdao=dbdao,
         schema_name=config.schema_name,
@@ -74,6 +98,7 @@ def calculate_eq5d5l_index(config: Eq5d5lCalculateConfig):
     )
 
     write_fhir_key_map(
+        dbdao=dbdao,
         database_code=config.database_code,
         schema_name=config.schema_name,
         rows=inserted_rows,
@@ -276,13 +301,32 @@ def _require_fhir_mapping_table(mapping_dao, mapping_schema: str) -> None:
             f"this dataset (creating the FHIR mapping schema/table) before this plugin runs."
         )
 
+    # A table created by an older FhirMappingNode can still carry its former
+    # (fhir_id, fhir_resource_type) unique index rather than the current 4-column
+    # one this plugin's ON CONFLICT target requires - existence alone isn't enough.
+    indexes = mapping_dao.get_indexes_for_table(mapping_schema, "fhir_omop_key_map")
+    has_current_unique_index = any(
+        index.get("unique") and all(col in index.get("definition", "") for col in _KEY_MAP_UNIQUE_COLUMNS)
+        for index in indexes
+    )
+    if not has_current_unique_index:
+        raise ValueError(
+            f"'{mapping_schema}.fhir_omop_key_map' exists but has no unique index over "
+            f"{_KEY_MAP_UNIQUE_COLUMNS}, which this plugin's ON CONFLICT target requires. "
+            f"Re-run the upstream EQ5D5L-to-OMOP-Observation FHIR->OMOP pipeline for this "
+            f"dataset to upgrade the mapping table's index before running this plugin again."
+        )
+
 
 def _delete_stale_measurement_key_map_rows(
     mapping_dao, mapping_schema: str, previous_measurement_ids: list
 ) -> None:
     """Deletes fhir_omop_key_map rows for the given previous measurement_ids."""
     mapping_escaped_schema = mapping_schema.replace('"', '""')
-    ids_sql = ", ".join(str(int(measurement_id)) for measurement_id in previous_measurement_ids)
+    # omop_id is VARCHAR (see write_fhir_key_map's str(row["measurement_id"]) below), so
+    # these must be quoted string literals - bare numeric literals fail with "operator
+    # does not exist: character varying = integer" instead of matching any rows.
+    ids_sql = ", ".join(f"'{int(measurement_id)}'" for measurement_id in previous_measurement_ids)
     mapping_dao.execute_sql(f"""
         DELETE FROM "{mapping_escaped_schema}".fhir_omop_key_map
         WHERE fhir_resource_type = 'QuestionnaireResponse' AND omop_table_name = 'measurement'
@@ -292,6 +336,7 @@ def _delete_stale_measurement_key_map_rows(
 
 @task(log_prints=True)
 def write_fhir_key_map(
+    dbdao,
     database_code: str,
     schema_name: str,
     rows: list,
@@ -315,6 +360,31 @@ def write_fhir_key_map(
             f"previous measurement_id(s) in {mapping_schema}"
         )
 
+    if not rows:
+        return
+
+    # write_measurements() and this task run as separate transactions, so a
+    # concurrent rerun of this same dataset could have already replaced these
+    # measurement rows by the time we get here. Re-check against the current
+    # measurement set rather than trusting `rows` unconditionally, so we don't
+    # write lineage for ids a concurrent run has already deleted out from under us.
+    current_ids = {
+        row["measurement_id"]
+        for row in dbdao.select_rows_where_in(
+            schema=schema_name,
+            table="measurement",
+            columns=["measurement_id"],
+            where_column="measurement_id",
+            where_values=[row["measurement_id"] for row in rows],
+        )
+    }
+    stale_rows = [row for row in rows if row["measurement_id"] not in current_ids]
+    if stale_rows:
+        logger.warning(
+            f"{len(stale_rows)} measurement row(s) were already replaced by another run "
+            f"before their fhir_omop_key_map lineage could be written - skipping them."
+        )
+    rows = [row for row in rows if row["measurement_id"] in current_ids]
     if not rows:
         return
 

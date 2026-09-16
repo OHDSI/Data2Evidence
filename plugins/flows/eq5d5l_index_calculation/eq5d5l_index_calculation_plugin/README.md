@@ -252,10 +252,13 @@ This plugin never creates `{database_code}_{schema_name}_fhir_mapping` or its
 `fhir_omop_key_map` table itself - it is a lineage *consumer*, appending to a mapping
 schema/table that only the upstream EQ5D5L-to-OMOP-Observation FHIR->OMOP pipeline
 (`FhirMappingNode`) is meant to create, by having already written that dataset's
-observation rows. If that schema/table doesn't exist yet, `write_fhir_key_map`
-raises `ValueError` immediately, naming the missing mapping table, rather than
-silently creating an empty one or failing later with an opaque
-"relation does not exist" / `ON CONFLICT` error.
+observation rows. If that schema/table doesn't exist yet - or exists but was created
+by an older `FhirMappingNode` that hasn't been upgraded to the current 4-column
+unique index - this plugin raises `ValueError` immediately, naming the problem,
+rather than silently creating an empty table or failing later with an opaque
+"relation does not exist" / `ON CONFLICT` error. This check runs before any
+measurement rows are written, so a missing or outdated prerequisite never leaves a
+dataset with new measurement rows and no matching lineage/metadata.
 
 On a rerun, lineage entries left over from measurements that no longer exist are
 removed before the current lineage is written, so entries never point at a stale or
@@ -297,6 +300,9 @@ algorithm description - or an accumulating pile of one row per run - behind.
   }
 }
 ```
+
+Only Postgres- and HANA-backed datasets are supported today; a TREX-dialect
+`database_code` fails fast with a clear error rather than partway through the run.
 
 The "EQ-5D-5L index value" measurement concept id (`42537273`), its
 measurement_type_concept_id (`32862`), and the answer-code-to-level mapping are all

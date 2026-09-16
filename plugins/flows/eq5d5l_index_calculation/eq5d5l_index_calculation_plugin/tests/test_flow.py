@@ -58,6 +58,19 @@ def _full_health_group(qr_id="qr-1", person_id=101, visit_occurrence_id=201):
     ]
 
 
+def _current_key_map_indexes():
+    # A get_indexes_for_table() result matching the 4-column unique index
+    # _require_fhir_mapping_table() requires.
+    return [{
+        "name": "fhir_omop_key_map_fhir_id_type_table_omop_id_idx",
+        "unique": True,
+        "definition": (
+            "CREATE UNIQUE INDEX fhir_omop_key_map_fhir_id_type_table_omop_id_idx ON "
+            "fhir_omop_key_map (fhir_id, fhir_resource_type, omop_table_name, omop_id)"
+        ),
+    }]
+
+
 class TestCalculateIndexRows:
     def test_groups_by_qr_id_and_scores_full_health(self):
         from eq5d5l_index_calculation_plugin.types import DIMENSION_CONCEPT_ID_MAP
@@ -210,7 +223,8 @@ class TestWriteFhirKeyMap:
         monkeypatch.setattr(flow, "DBDao", dbdao_factory)
         _run(
             flow.write_fhir_key_map.fn,
-            database_code="alpdev_pg", schema_name="cdmdefault", rows=[], previous_measurement_ids=[],
+            dbdao=MagicMock(), database_code="alpdev_pg", schema_name="cdmdefault",
+            rows=[], previous_measurement_ids=[],
         )
         dbdao_factory.assert_not_called()
 
@@ -218,12 +232,16 @@ class TestWriteFhirKeyMap:
         mapping_dao = MagicMock()
         mapping_dao.check_schema_exists.return_value = True
         mapping_dao.check_table_exists.return_value = True
+        mapping_dao.get_indexes_for_table.return_value = _current_key_map_indexes()
         monkeypatch.setattr(flow, "DBDao", MagicMock(return_value=mapping_dao))
 
+        dbdao = MagicMock()
+        dbdao.select_rows_where_in.return_value = [{"measurement_id": 555}]
         rows = [{"measurement_source_value": "qr-1", "measurement_id": 555}]
         _run(
             flow.write_fhir_key_map.fn,
-            database_code="alpdev_pg", schema_name="cdmdefault", rows=rows, previous_measurement_ids=[],
+            dbdao=dbdao, database_code="alpdev_pg", schema_name="cdmdefault",
+            rows=rows, previous_measurement_ids=[],
         )
 
         mapping_dao.check_schema_exists.assert_called_once_with("alpdev_pg_cdmdefault_fhir_mapping")
@@ -241,17 +259,44 @@ class TestWriteFhirKeyMap:
             on_conflict="ON CONFLICT (fhir_id, fhir_resource_type, omop_table_name, omop_id) DO NOTHING",
         )
 
+    def test_skips_rows_whose_measurement_was_already_replaced_by_another_run(self, monkeypatch):
+        # write_measurements() and this task are separate transactions - if a
+        # concurrent rerun already deleted/replaced `rows`' measurement_id by the
+        # time this task checks, that row must be dropped rather than linked.
+        mapping_dao = MagicMock()
+        mapping_dao.check_schema_exists.return_value = True
+        mapping_dao.check_table_exists.return_value = True
+        mapping_dao.get_indexes_for_table.return_value = _current_key_map_indexes()
+        monkeypatch.setattr(flow, "DBDao", MagicMock(return_value=mapping_dao))
+
+        dbdao = MagicMock()
+        dbdao.select_rows_where_in.return_value = []  # neither id exists any more
+        rows = [
+            {"measurement_source_value": "qr-1", "measurement_id": 555},
+            {"measurement_source_value": "qr-2", "measurement_id": 556},
+        ]
+        _run(
+            flow.write_fhir_key_map.fn,
+            dbdao=dbdao, database_code="alpdev_pg", schema_name="cdmdefault",
+            rows=rows, previous_measurement_ids=[],
+        )
+
+        mapping_dao.batch_insert_values.assert_not_called()
+
     def test_deletes_stale_mappings_for_previous_measurement_ids_before_upserting(self, monkeypatch):
         mapping_dao = MagicMock()
         mapping_dao.check_schema_exists.return_value = True
         mapping_dao.check_table_exists.return_value = True
+        mapping_dao.get_indexes_for_table.return_value = _current_key_map_indexes()
         monkeypatch.setattr(flow, "DBDao", MagicMock(return_value=mapping_dao))
 
+        dbdao = MagicMock()
+        dbdao.select_rows_where_in.return_value = [{"measurement_id": 555}]
         rows = [{"measurement_source_value": "qr-1", "measurement_id": 555}]
         _run(
             flow.write_fhir_key_map.fn,
-            database_code="alpdev_pg", schema_name="cdmdefault", rows=rows,
-            previous_measurement_ids=[10, 11],
+            dbdao=dbdao, database_code="alpdev_pg", schema_name="cdmdefault",
+            rows=rows, previous_measurement_ids=[10, 11],
         )
 
         mapping_dao.execute_sql.assert_called_once()
@@ -260,19 +305,20 @@ class TestWriteFhirKeyMap:
         assert "alpdev_pg_cdmdefault_fhir_mapping" in delete_sql
         assert "QuestionnaireResponse" in delete_sql
         assert "measurement" in delete_sql
-        assert "10, 11" in delete_sql
+        assert "'10', '11'" in delete_sql  # quoted: omop_id is VARCHAR
         mapping_dao.batch_insert_values.assert_called_once()
 
     def test_deletes_stale_mappings_even_when_no_current_rows(self, monkeypatch):
         mapping_dao = MagicMock()
         mapping_dao.check_schema_exists.return_value = True
         mapping_dao.check_table_exists.return_value = True
+        mapping_dao.get_indexes_for_table.return_value = _current_key_map_indexes()
         monkeypatch.setattr(flow, "DBDao", MagicMock(return_value=mapping_dao))
 
         _run(
             flow.write_fhir_key_map.fn,
-            database_code="alpdev_pg", schema_name="cdmdefault", rows=[],
-            previous_measurement_ids=[10],
+            dbdao=MagicMock(), database_code="alpdev_pg", schema_name="cdmdefault",
+            rows=[], previous_measurement_ids=[10],
         )
 
         mapping_dao.execute_sql.assert_called_once()
@@ -287,7 +333,8 @@ class TestWriteFhirKeyMap:
         with pytest.raises(ValueError, match="does not exist"):
             _run(
                 flow.write_fhir_key_map.fn,
-                database_code="alpdev_pg", schema_name="cdmdefault", rows=rows, previous_measurement_ids=[],
+                dbdao=MagicMock(), database_code="alpdev_pg", schema_name="cdmdefault",
+                rows=rows, previous_measurement_ids=[],
             )
 
         mapping_dao.batch_insert_values.assert_not_called()
@@ -302,7 +349,34 @@ class TestWriteFhirKeyMap:
         with pytest.raises(ValueError, match="does not exist"):
             _run(
                 flow.write_fhir_key_map.fn,
-                database_code="alpdev_pg", schema_name="cdmdefault", rows=rows, previous_measurement_ids=[],
+                dbdao=MagicMock(), database_code="alpdev_pg", schema_name="cdmdefault",
+                rows=rows, previous_measurement_ids=[],
+            )
+
+        mapping_dao.batch_insert_values.assert_not_called()
+
+    def test_fails_loudly_when_key_map_index_is_outdated(self, monkeypatch):
+        # A table created by an older FhirMappingNode can still carry its former
+        # 2-column (fhir_id, fhir_resource_type) unique index.
+        mapping_dao = MagicMock()
+        mapping_dao.check_schema_exists.return_value = True
+        mapping_dao.check_table_exists.return_value = True
+        mapping_dao.get_indexes_for_table.return_value = [{
+            "name": "fhir_omop_key_map_fhir_id_fhir_resource_type_idx",
+            "unique": True,
+            "definition": (
+                "CREATE UNIQUE INDEX fhir_omop_key_map_fhir_id_fhir_resource_type_idx ON "
+                "fhir_omop_key_map (fhir_id, fhir_resource_type)"
+            ),
+        }]
+        monkeypatch.setattr(flow, "DBDao", MagicMock(return_value=mapping_dao))
+
+        rows = [{"measurement_source_value": "qr-1", "measurement_id": 555}]
+        with pytest.raises(ValueError, match="unique index"):
+            _run(
+                flow.write_fhir_key_map.fn,
+                dbdao=MagicMock(), database_code="alpdev_pg", schema_name="cdmdefault",
+                rows=rows, previous_measurement_ids=[],
             )
 
         mapping_dao.batch_insert_values.assert_not_called()
@@ -367,11 +441,17 @@ class TestCalculateEq5d5lIndexEndToEnd:
 
     def _patch_daos(self, monkeypatch, observation_rows):
         main_dao = MagicMock()
-        # select_rows_where_in reads both observations and (inside write_measurements)
-        # previous measurement_ids - route by table, nothing pre-exists for the latter.
-        main_dao.select_rows_where_in.side_effect = (
-            lambda table, **_: observation_rows if table == "observation" else []
-        )
+
+        def _select_rows_where_in(table, where_column=None, where_values=None, **_):
+            if table == "observation":
+                return observation_rows
+            if table == "measurement" and where_column == "measurement_id":
+                # write_fhir_key_map()'s post-write existence re-check: assume no
+                # concurrent rerun, so whatever was just inserted is still there.
+                return [{"measurement_id": measurement_id} for measurement_id in where_values]
+            return []  # write_measurements()'s previous-ids read: nothing pre-exists yet
+
+        main_dao.select_rows_where_in.side_effect = _select_rows_where_in
         main_dao.delete_and_insert_rows.side_effect = (
             lambda insert_rows, id_column, **_: [
                 {**row, id_column: i + 1} for i, row in enumerate(insert_rows)
@@ -380,6 +460,7 @@ class TestCalculateEq5d5lIndexEndToEnd:
         mapping_dao = MagicMock()
         mapping_dao.check_schema_exists.return_value = True
         mapping_dao.check_table_exists.return_value = True
+        mapping_dao.get_indexes_for_table.return_value = _current_key_map_indexes()
 
         def _dao_factory(*args, **kwargs):
             return mapping_dao if kwargs.get("dialect") is not None else main_dao
@@ -432,11 +513,22 @@ class TestCalculateEq5d5lIndexEndToEnd:
         with pytest.raises(ValueError, match="does not exist"):
             _run(flow.calculate_eq5d5l_index, self._config())
 
-        # measurement rows were written before the missing-mapping-table error;
-        # metadata is written after the key-map, so it never got a chance to run.
-        assert main_dao.delete_and_insert_rows.call_count == 1
-        assert self._delete_and_insert_calls_for(main_dao, "measurement")
-        assert not self._delete_and_insert_calls_for(main_dao, "metadata")
+        # The mapping table prerequisite is checked before write_measurements()'s
+        # destructive delete-and-replace, so a missing prerequisite must leave the
+        # existing measurement/metadata rows untouched rather than replacing them
+        # with nothing to link lineage/metadata to.
+        main_dao.delete_and_insert_rows.assert_not_called()
+
+    def test_raises_for_dialect_missing_required_dao_methods(self, monkeypatch):
+        # e.g. TrexDao, which has neither select_rows_where_in() nor
+        # delete_and_insert_rows() - this must fail fast and clearly rather than
+        # with a bare AttributeError deep inside read_eq5d5l_observations().
+        unsupported_dao = MagicMock(spec=["dialect"])
+        unsupported_dao.dialect = "trex"
+        monkeypatch.setattr(flow, "DBDao", MagicMock(return_value=unsupported_dao))
+
+        with pytest.raises(NotImplementedError, match="trex"):
+            _run(flow.calculate_eq5d5l_index, self._config())
 
     def test_rerun_with_different_country_overwrites_both_measurement_and_metadata(self, monkeypatch):
         # Same dataset (schema_name/database_code), re-run with a different
