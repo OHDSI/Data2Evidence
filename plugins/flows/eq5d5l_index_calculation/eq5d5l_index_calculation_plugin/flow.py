@@ -447,6 +447,9 @@ def write_algorithm_metadata(dbdao, schema_name: str, country_code: str, value_s
     alongside the new one - or, worse, alongside measurement rows it no longer
     describes - rather than replacing it to stay in sync with write_measurements()'s
     own overwrite-on-rerun of the `measurement` rows it documents.
+
+    `metadata_id`/`value_as_number` are included only if the target `metadata` table
+    actually has them - see README's "Algorithm provenance" section for why.
     """
     logger = get_run_logger()
     value_as_string = (
@@ -455,21 +458,26 @@ def write_algorithm_metadata(dbdao, schema_name: str, country_code: str, value_s
     )[:250]
 
     now = datetime.datetime.now()
+    insert_row = {
+        "metadata_concept_id": 0,
+        "metadata_type_concept_id": 0,
+        "name": EQ5D5L_ALGORITHM_METADATA_NAME,
+        "value_as_string": value_as_string,
+        "value_as_concept_id": None,
+        "metadata_date": now.date(),
+        "metadata_datetime": now,
+    }
+    existing_columns = set(dbdao.get_columns(schema_name, "metadata"))
+    if "value_as_number" in existing_columns:
+        insert_row["value_as_number"] = None
+    id_column = "metadata_id" if "metadata_id" in existing_columns else None
+
     dbdao.delete_and_insert_rows(
         schema=schema_name,
         table="metadata",
         delete_column="name",
         delete_value=EQ5D5L_ALGORITHM_METADATA_NAME,
-        insert_rows=[{
-            "metadata_concept_id": 0,
-            "metadata_type_concept_id": 0,
-            "name": EQ5D5L_ALGORITHM_METADATA_NAME,
-            "value_as_string": value_as_string,
-            "value_as_concept_id": None,
-            "value_as_number": None,
-            "metadata_date": now.date(),
-            "metadata_datetime": now,
-        }],
-        id_column="metadata_id",
+        insert_rows=[insert_row],
+        id_column=id_column,
     )
     logger.info(f"Wrote EQ-5D-5L algorithm metadata row to {schema_name}.metadata: {value_as_string}")

@@ -24,6 +24,11 @@ dependencies = [
     "sqlalchemy==2.0.38",
 ]
 
+[project.optional-dependencies]
+hana = [
+    "sqlalchemy-hana==2.2.0",
+]
+
 [dependency-groups]
 dev = [
     "pytest==9.0.3",
@@ -36,7 +41,18 @@ channels = ["conda-forge"]
 platforms = ["linux-64"]
 
 [tool.pixi.dependencies]
+# runtime HANA driver installs (provision-envs.sh) need pip inside the env
+pip = "*"
+# conda pip pulls packaging 26.x, which the conda solve would pin over the
+# pypi requirements' bounds (ibis needs <25)
+packaging = "<25"
 python = "3.12.*"
 
 [tool.pixi.activation.env]
 PYTHONPATH = "$PIXI_PROJECT_ROOT"
+
+[tool.pixi.tasks]
+# The hana feature comes from [project.optional-dependencies]; the environment
+# is provisioned at runtime only (INSTALL_SQLALCHEMY_HANA) — never shipped.
+[tool.pixi.environments]
+default = { solve-group = "default" }

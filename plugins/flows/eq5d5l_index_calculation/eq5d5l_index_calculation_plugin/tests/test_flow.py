@@ -442,8 +442,22 @@ class TestWriteFhirKeyMap:
 
 
 class TestWriteAlgorithmMetadata:
+    # OMOP CDM 5.4 (Postgres) metadata shape - has both metadata_id and value_as_number.
+    _POSTGRES_METADATA_COLUMNS = [
+        "metadata_id", "metadata_concept_id", "metadata_type_concept_id", "name",
+        "value_as_string", "value_as_concept_id", "value_as_number", "metadata_date",
+        "metadata_datetime",
+    ]
+    # HANA's OMOP 5.3.1 metadata shape - neither column exists (see README's
+    # "Algorithm provenance" section).
+    _HANA_METADATA_COLUMNS = [
+        "metadata_concept_id", "metadata_type_concept_id", "name", "value_as_string",
+        "value_as_concept_id", "metadata_date", "metadata_datetime",
+    ]
+
     def test_overwrites_existing_row_and_inserts_the_new_one(self):
         dbdao = MagicMock()
+        dbdao.get_columns.return_value = self._POSTGRES_METADATA_COLUMNS
         dbdao.delete_and_insert_rows.return_value = [{"metadata_id": 7}]
         value_set = {
             "method": "stata_simulation",
@@ -470,12 +484,14 @@ class TestWriteAlgorithmMetadata:
         assert row["metadata_concept_id"] == 0
         assert row["metadata_type_concept_id"] == 0
         assert row["name"] == "EQ-5D-5L Index Calculation Algorithm"
+        assert row["value_as_number"] is None
         assert "country_code=AU" in row["value_as_string"]
         assert "method=stata_simulation" in row["value_as_string"]
         assert len(row["value_as_string"]) <= 250
 
     def test_truncates_long_source_to_fit_column(self):
         dbdao = MagicMock()
+        dbdao.get_columns.return_value = self._POSTGRES_METADATA_COLUMNS
         value_set = {"method": "stata_simulation", "source": "x" * 500}
 
         _run(
@@ -485,6 +501,24 @@ class TestWriteAlgorithmMetadata:
 
         [row] = dbdao.delete_and_insert_rows.call_args.kwargs["insert_rows"]
         assert len(row["value_as_string"]) == 250
+
+    def test_omits_metadata_id_and_value_as_number_for_hana_shaped_table(self):
+        # HANA's metadata table has neither column - sending them would fail
+        # against a table that was already reflected without them.
+        dbdao = MagicMock()
+        dbdao.get_columns.return_value = self._HANA_METADATA_COLUMNS
+        value_set = {"method": "stata_simulation", "source": "some citation"}
+
+        _run(
+            flow.write_algorithm_metadata.fn,
+            dbdao=dbdao, schema_name="cdmdefault", country_code="AU", value_set=value_set,
+        )
+
+        _, kwargs = dbdao.delete_and_insert_rows.call_args
+        assert kwargs["id_column"] is None
+        [row] = kwargs["insert_rows"]
+        assert "metadata_id" not in row
+        assert "value_as_number" not in row
 
 
 class TestCalculateEq5d5lIndexEndToEnd:
@@ -529,6 +563,9 @@ class TestCalculateEq5d5lIndexEndToEnd:
             return result
 
         main_dao.delete_and_insert_rows.side_effect = _delete_and_insert_rows
+        # Simulate a Postgres-shaped metadata table (has metadata_id/value_as_number)
+        # - see TestWriteAlgorithmMetadata for the HANA-shaped case.
+        main_dao.get_columns.return_value = TestWriteAlgorithmMetadata._POSTGRES_METADATA_COLUMNS
         mapping_dao = MagicMock()
         mapping_dao.check_schema_exists.return_value = True
         mapping_dao.check_table_exists.return_value = True
