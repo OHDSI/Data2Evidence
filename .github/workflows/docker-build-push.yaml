@@ -1241,11 +1241,22 @@ jobs:
     env:
       VERSION: develop
       COMPOSE_PROJECT_NAME: d2e
-      # Must stay a full 40-char sha: actions/checkout only treats a ref as a commit
-      # sha when it is full-length; a short sha makes it fetch `refs/heads/<ref>*`
-      # instead, i.e. look for a branch of that name, and fail.
-      LOGTO_ERA_REF: 8193fc6718ed996dcb8be0c23cc11a71aac21d72 # commit #3176 branched from (git merge-base origin/develop p-hoffmann/atlas-root-and-trex-idp)
-      LOGTO_ERA_TAG: develop-8193fc6     # image tag built from LOGTO_ERA_REF; verified present with `docker manifest inspect`
+      # The commit this job installs first, to produce the Logto-era database
+      # state the upgrade then migrates. Any develop commit before the trex IdP
+      # lands is Logto-era, so the binding constraint is not which commit it is
+      # but that develop-<short sha> was published for EVERY image the stack
+      # pulls. Images are built per changed path, so most commits have tags for
+      # only some of them: develop-8193fc6 existed for d2e-logto and d2e-trex
+      # but never for d2e-logto-post-init or d2e-dataflow-gen, and compose
+      # applies one DOCKER_TAG_NAME to all of them. The pre-flight step below
+      # checks this before the stack starts. Pinned rather than `develop` so
+      # that merging this PR does not put post-migration code in the era stack.
+      #
+      # LOGTO_ERA_REF must stay a full 40-char sha: actions/checkout only treats
+      # a ref as a commit sha when it is full-length; a short sha makes it fetch
+      # `refs/heads/<ref>*`, i.e. look for a branch of that name, and fail.
+      LOGTO_ERA_REF: 337d65f50d80d4d6b0c55e39e8c787bde55927e7
+      LOGTO_ERA_TAG: develop-337d65f     # the develop tag built from LOGTO_ERA_REF
     steps:
       - name: Free Disk Space (Ubuntu)
         uses: jlumbroso/free-disk-space@main
@@ -1320,6 +1331,23 @@ jobs:
           ref: ${{ env.LOGTO_ERA_REF }}
           path: legacy
           submodules: recursive
+
+      # Without this, a tag missing for one image surfaces three minutes later
+      # as `alp-logto-post-init Error manifest unknown` buried in compose's
+      # pull output, with every other service reported as "Interrupted".
+      - name: Check the Logto-era images were all published
+        run: |
+          missing=()
+          for image in d2e-trex d2e-logto d2e-logto-post-init d2e-dataflow-gen \
+                       d2e-dataflow-gen-worker d2e-supabase-storage; do
+            ref="ghcr.io/ohdsi/$image:$LOGTO_ERA_TAG"
+            docker manifest inspect "$ref" >/dev/null 2>&1 || missing+=("$ref")
+          done
+          if [ ${#missing[@]} -ne 0 ]; then
+            printf '::error title=Logto-era images missing::%s\n' "${missing[*]}"
+            echo "Pick a LOGTO_ERA_REF/LOGTO_ERA_TAG pair whose commit published every image above." >&2
+            exit 1
+          fi
 
       - name: Start a Logto-era installation and seed it
         working-directory: legacy
