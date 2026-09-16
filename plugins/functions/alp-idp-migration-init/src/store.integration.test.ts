@@ -27,7 +27,9 @@ Deno.test({
       await k.raw(`create table portal.dataset (id text primary key, token_dataset_code text, type text)`)
       await k.raw(`create table logto.users (tenant_id text, id text, username text, primary_email text, name text, is_suspended boolean)`)
       const { up } = await import('../../alp-usermgmt-init/src/db/migrations/20260916120000_idp_migration_tables.ts')
+      assertEquals(await new KnexMigrationStore(k).migrationTablesExist(), false)
       await up(k as any)
+      assertEquals(await new KnexMigrationStore(k).migrationTablesExist(), true)
 
       await k.raw(`insert into usermgmt."user" values (?, 'admin', 'l1')`, [USER_ID])
       await k.raw(`insert into usermgmt.b2c_group values ('g1','RESEARCHER','ds1')`)

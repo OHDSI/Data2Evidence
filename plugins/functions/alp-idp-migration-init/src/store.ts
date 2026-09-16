@@ -24,6 +24,13 @@ export class KnexMigrationStore implements MigrationStore {
     this.logto = logto ?? knex
   }
 
+  async migrationTablesExist(): Promise<boolean> {
+    const { rows } = await this.knex.raw(
+      `select to_regclass('usermgmt.idp_migration') as m, to_regclass('usermgmt.idp_subject_history') as h`
+    )
+    return rows[0]?.m != null && rows[0]?.h != null
+  }
+
   async logtoAvailable(): Promise<boolean> {
     const { rows } = await this.logto.raw(`select to_regclass('logto.users') as t`)
     return rows[0]?.t != null
