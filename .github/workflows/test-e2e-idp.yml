@@ -163,6 +163,7 @@ jobs:
           printf '\n' >> .env
           { printf 'LOGTO__CONNECTOR_CONFIG=%s\n' "$CFG"
             echo 'LOGTO__SOCIAL_SIGNIN_TARGETS=entra-external-id-alp'
+            echo 'IDP__AUTO_PROVISION_USERS=true'
           } >> .env
 
       - name: Pull docker compose images
@@ -194,6 +195,11 @@ jobs:
             echo "Waiting (${i}/60)..."; echo "$NOT_READY"; sleep 5
           done
           docker ps --format '{{.Names}},{{.Status}}' | sort
+          # Fail rather than run Playwright against a half-up stack.
+          if [ -n "$NOT_READY" ]; then
+            echo "::error::Services did not become healthy within 300 seconds"
+            exit 1
+          fi
 
       - name: Install e2e deps + Chromium
         if: steps.gate.outputs.run == 'true'

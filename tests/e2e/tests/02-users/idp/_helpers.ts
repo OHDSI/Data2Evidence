@@ -72,9 +72,11 @@ export async function loginViaConnector(
   opts: { target: string; connectorName: RegExp; creds: UpstreamCreds }
 ): Promise<void> {
   const { target, connectorName, creds } = opts
-  const portalOrigin = new URL(process.env.D2E_BASE_URL ?? 'https://localhost:41100').origin
 
   await page.goto('/d2e/portal')
+  // Origin from the page (not an env fallback) so it always matches the fixture's baseURL.
+  const portalOrigin = new URL(page.url()).origin
+
   // The connector button may render as a button or a link depending on the sign-in theme.
   const connectorButton = page.getByRole('button', { name: connectorName }).or(
     page.getByRole('link', { name: connectorName })
@@ -326,6 +328,12 @@ export function assertClaimContract(token: string, expected: ClaimContractExpect
     ).toBeTruthy()
   }
 
+  // Path-specific roles; arrayContaining([]) is a no-op when none are requested.
+  expect(
+    claims.roles,
+    `roles claim is missing ${JSON.stringify(expected.roles ?? [])}; got ${JSON.stringify(claims.roles)}`
+  ).toEqual(expect.arrayContaining(expected.roles ?? []))
+
   return claims
 }
 
@@ -476,7 +484,8 @@ export async function syncWebapiRoles(
   base: string,
   userToken: string
 ): Promise<void> {
-  await api.post(`${base}${USERMGMT}/me/sync-webapi-roles`, { headers: authHeaders(userToken, base) })
+  const res = await api.post(`${base}${USERMGMT}/me/sync-webapi-roles`, { headers: authHeaders(userToken, base) })
+  expect(res.ok(), `sync-webapi-roles failed: ${res.status()} ${await res.text()}`).toBeTruthy()
 }
 
 /** Read the caller's WebAPI numeric user id from /user/me. */
