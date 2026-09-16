@@ -566,6 +566,14 @@ class D2ECli {
     options: CliOptions,
     command: string,
   ): { cmd: string; env: NodeJS.ProcessEnv } {
+    // Every compose invocation interpolates docker-compose.yml, and the trex
+    // service guards TREX__OIDC__WEBAPI_CLIENT_SECRET with `${...:?}` - so an
+    // env file that has not been through upgrade_env_for_idp_mode() yet fails
+    // to interpolate before any of this runs. Stamping here rather than in the
+    // individual commands covers the ones that reach compose without going
+    // through `start`: a remote deploy runs `pull` first, and that pull died on
+    // exactly that guard. Idempotent, and it also decides the overlay below.
+    this.upgrade_env_for_idp_mode();
     const dockerbasecmd = ["docker"];
     dockerbasecmd.push("--log-level", this.DOCKER_LOG_LEVEL);
     dockerbasecmd.push("compose");
@@ -964,7 +972,6 @@ class D2ECli {
       )
       .action(async () => {
         console.log("Starting services...");
-        this.upgrade_env_for_idp_mode();
         const { cmd, env } = this.build_docker_command(
           this.program.opts(),
           "start",
@@ -1197,7 +1204,6 @@ class D2ECli {
       .command("config")
       .description("View configuration of d2e services")
       .action(async () => {
-        this.upgrade_env_for_idp_mode();
         const { cmd, env } = this.build_docker_command(
           this.program.opts(),
           "config",
