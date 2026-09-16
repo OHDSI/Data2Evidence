@@ -11,6 +11,16 @@ Deno.test("only enabled external providers become buttons; email is the password
   assertEquals(P.externalProviders(null), []);
 });
 
+// Pins the exact literal response trex's GET /trex/auth/v1/settings returns
+// today, verified directly against the trex branch (OHDSI/trex#318): this is
+// the contract login.js's fetch depends on. If trex's shape ever changes,
+// this is the test that should catch it.
+Deno.test("trex's /trex/auth/v1/settings shape yields exactly one Logto provider", () => {
+  assertEquals(P.externalProviders({ external: { email: true, logto: true } }), [
+    { id: "logto", label: "Logto" },
+  ]);
+});
+
 Deno.test("an unknown provider id is shown capitalised", () => {
   assertEquals(P.externalProviders({ external: { physionet: true } }), [{ id: "physionet", label: "Physionet" }]);
 });

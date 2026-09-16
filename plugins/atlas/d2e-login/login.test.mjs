@@ -50,3 +50,34 @@ Deno.test("the password form still wires up when providers.js has not loaded", a
   var form = doc.elements.get("form");
   assertEquals(typeof form.listeners.submit, "function");
 });
+
+Deno.test("an unexpected /settings shape is logged instead of swallowed silently", async () => {
+  var doc = stubDocument();
+  globalThis.document = doc;
+  globalThis.window = globalThis;
+  globalThis.location = { origin: "http://localhost", search: "", pathname: "/atlas/d2e-login/", hash: "" };
+  await import("./providers.js");
+
+  var warnings = [];
+  var originalWarn = console.warn;
+  var originalFetch = globalThis.fetch;
+  console.warn = function () { warnings.push(Array.prototype.slice.call(arguments)); };
+  // trex's real /settings response is { external: {...} }; this stands in
+  // for a contract change that drops or reshapes that key.
+  globalThis.fetch = function () {
+    return Promise.resolve({ ok: true, json: function () { return Promise.resolve({ unexpected: true }); } });
+  };
+
+  try {
+    await import("./login.js?unexpected-settings-shape");
+    // Flush the fetch().then().then() chain, which resolves over a couple of
+    // microtask turns.
+    await new Promise(function (r) { setTimeout(r, 0); });
+    await new Promise(function (r) { setTimeout(r, 0); });
+  } finally {
+    console.warn = originalWarn;
+    globalThis.fetch = originalFetch;
+  }
+
+  assertEquals(warnings.length > 0, true);
+});
