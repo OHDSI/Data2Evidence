@@ -257,15 +257,10 @@ class SqlAlchemyDao(DaoBase):
         id_column: str = None,
     ) -> list[dict]:
         """
-        Atomically (single transaction): delete every row where delete_column ==
-        delete_value, then insert insert_rows. If id_column is given, each inserted
-        row is assigned a sequential id continuing from the table's current max
-        (computed after the delete, in the same transaction) - the returned rows
-        carry that assigned id_column value. Use this instead of a separate
-        delete_records()/insert_values_into_table() pair when the delete and
-        insert must not be observable as two separate commits (e.g. an
-        overwrite-on-rerun that must never leave the table with the old rows
-        deleted and nothing inserted in their place).
+        Deletes rows where delete_column == delete_value, then inserts insert_rows,
+        in one transaction. If id_column is given, each inserted row is assigned a
+        sequential id continuing from the table's current max, and the returned
+        rows carry that id.
         """
         with self.engine.begin() as connection:
             metadata_obj = sql.MetaData(schema=schema)

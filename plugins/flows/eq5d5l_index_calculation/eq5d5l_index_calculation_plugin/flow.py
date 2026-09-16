@@ -120,11 +120,7 @@ def read_eq5d5l_observations(dbdao, schema_name: str, dimension_concept_id_map: 
 
 
 def _extract_level(code: Optional[str]) -> Optional[int]:
-    """
-    Returns None (unparseable, skips just this dimension) for a non-numeric code
-    or one outside the valid 1-5 range - otherwise an out-of-range level reaches
-    assemble_health_state(), which raises and aborts the whole flow.
-    """
+    """Parses a 1-5 EQ-5D-5L level from `code`; returns None if it isn't one."""
     if code is None:
         return None
     try:
@@ -225,14 +221,9 @@ def write_measurements(
     dbdao, schema_name: str, measurement_concept_id: int, rows: list
 ) -> tuple[list, list]:
     """
-    Overwrite-on-rerun: in a single transaction, delete all measurement rows for this
-    dataset tagged with measurement_concept_id, then insert the freshly computed set.
-    Scoped by measurement_concept_id (dedicated to EQ-5D-5L index values) since
-    schema_name already identifies the dataset 1:1 - no new unique constraint needed
-    on the shared OMOP measurement table. Returns (inserted_rows, previous_measurement_ids):
-    the inserted rows (with their assigned measurement_id), and the measurement_id
-    values this call deleted - a rerun can reassign different ids, so callers need
-    the old ones to reconcile fhir_omop_key_map rows that pointed at them.
+    Deletes and re-inserts this dataset's measurement rows for measurement_concept_id.
+    Returns (inserted_rows, previous_measurement_ids) - see README's "Re-run /
+    overwrite behavior" for the full contract.
     """
     logger = get_run_logger()
     if not rows:
@@ -289,11 +280,7 @@ def _require_fhir_mapping_table(mapping_dao, mapping_schema: str) -> None:
 def _delete_stale_measurement_key_map_rows(
     mapping_dao, mapping_schema: str, previous_measurement_ids: list
 ) -> None:
-    """
-    Scoped to `previous_measurement_ids` rather than a blanket delete on
-    (fhir_resource_type, omop_table_name), since other producers can write
-    QuestionnaireResponse -> measurement mappings this plugin didn't create.
-    """
+    """Deletes fhir_omop_key_map rows for the given previous measurement_ids."""
     mapping_escaped_schema = mapping_schema.replace('"', '""')
     ids_sql = ", ".join(str(int(measurement_id)) for measurement_id in previous_measurement_ids)
     mapping_dao.execute_sql(f"""
@@ -311,12 +298,8 @@ def write_fhir_key_map(
     previous_measurement_ids: list,
 ):
     """
-    Upsert FHIR QuestionnaireResponse -> OMOP measurement lineage into
-    fhir_omop_key_map, mirroring FhirMappingNode's key-map write so this plugin's
-    computed index rows are discoverable the same way the EQ5D5L-to-OMOP-Measurement
-    pipeline's own rows are. `previous_measurement_ids` (from write_measurements(),
-    which can reassign ids on a rerun) are reconciled first, so stale mappings never
-    point at now-nonexistent or newly-reused measurement_id values.
+    Reconciles `previous_measurement_ids` then upserts fhir_omop_key_map lineage
+    for `rows` - see README's "FHIR lineage" section for the full contract.
     """
     if not rows and not previous_measurement_ids:
         return

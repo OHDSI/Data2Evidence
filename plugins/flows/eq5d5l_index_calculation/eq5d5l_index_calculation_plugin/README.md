@@ -225,6 +225,10 @@ computed set is inserted. If a run computes zero valid rows (e.g. no responses
 matched), existing rows are left untouched rather than being wiped with nothing to
 replace them.
 
+A rerun's FHIR lineage entries (see "FHIR lineage" below) stay in sync with
+whichever measurement rows it actually computed, even if the response count
+changes between runs.
+
 ### FHIR lineage (fhir_omop_key_map)
 
 After writing to `measurement`, this plugin also upserts one `fhir_omop_key_map` row
@@ -252,6 +256,10 @@ observation rows. If that schema/table doesn't exist yet, `write_fhir_key_map`
 raises `ValueError` immediately, naming the missing mapping table, rather than
 silently creating an empty one or failing later with an opaque
 "relation does not exist" / `ON CONFLICT` error.
+
+On a rerun, lineage entries left over from measurements that no longer exist are
+removed before the current lineage is written, so entries never point at a stale or
+reused measurement.
 
 ### Algorithm provenance (metadata)
 
