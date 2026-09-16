@@ -1,5 +1,5 @@
 import { assertEquals } from '@std/assert'
-import { runIdpMigration, type MigrationConfig, type MigrationStore } from './run.ts'
+import { runIdpMigration, type MigrationConfig, type MigrationStore, type TablesWait } from './run.ts'
 import type { FederationAdmin, LinkOutcome } from './federation-admin.ts'
 import type { GroupRow, LogtoUserRow, UsermgmtUserRow } from './types.ts'
 
@@ -17,6 +17,8 @@ function fakes(opts: {
   groupsThrows?: Error
   upsertProviderThrows?: Error
   setProviderEnabledThrows?: Error
+  /** Called once per poll of the bookkeeping tables; may throw. */
+  migrationTablesExist?: () => boolean
 }) {
   const steps: Array<[string, string, Record<string, number>, unknown]> = []
   const rekeys: Array<[string, string | null, string]> = []
@@ -24,6 +26,13 @@ function fakes(opts: {
   const providers: Array<[string, unknown]> = []
   const enabled: Array<[string, boolean]> = []
   const store: MigrationStore = {
+    migrationTablesExist: () => {
+      try {
+        return Promise.resolve(opts.migrationTablesExist ? opts.migrationTablesExist() : true)
+      } catch (err) {
+        return Promise.reject(err)
+      }
+    },
     logtoAvailable: () => opts.logtoAvailableThrows ? Promise.reject(opts.logtoAvailableThrows) : Promise.resolve(opts.logtoAvailable ?? true),
     usermgmtUsers: () => Promise.resolve(opts.users ?? []),
     logtoUsers: () => Promise.resolve(opts.logto ?? []),
@@ -322,4 +331,51 @@ Deno.test('a run that links nobody because no subject is a Logto identity says s
   await runIdpMigration(cfg, f.store, f.admin, m => messages.push(m))
   assertEquals(f.steps.find(s => s[0] === 'link')?.[2].notLogto, 1)
   assertEquals(messages.some(m => m.includes('nothing was linked')), true)
+})
+
+// Five polls, no real waiting: `sleep` only records, so the budget is spent
+// in polls rather than elapsed time and the tests stay deterministic.
+const fastWait = (sleeps: number[]): TablesWait => ({
+  budgetMs: 10, intervalMs: 2, sleep: ms => { sleeps.push(ms); return Promise.resolve() }
+})
+
+Deno.test('the bookkeeping tables never appearing aborts the run before the first step', async () => {
+  const f = fakes({ migrationTablesExist: () => false })
+  const sleeps: number[] = []
+  const messages: string[] = []
+  await runIdpMigration(cfg, f.store, f.admin, m => messages.push(m), fastWait(sleeps))
+  assertEquals(f.steps, [])
+  assertEquals(f.providers, [])
+  assertEquals(sleeps, [2, 2, 2, 2]) // five polls, four waits between them
+  assertEquals(messages.some(m => m.includes('did not appear within 10ms')), true)
+})
+
+Deno.test('bookkeeping tables that appear on a later poll let the run proceed', async () => {
+  let polls = 0
+  const f = fakes({
+    users: [{ id: 'u1', username: 'admin', idpUserId: 'l1' }],
+    logto: [{ id: 'l1', username: 'admin', primaryEmail: null, name: null, isSuspended: false }],
+    migrationTablesExist: () => ++polls >= 3
+  })
+  const sleeps: number[] = []
+  await runIdpMigration(cfg, f.store, f.admin, () => {}, fastWait(sleeps))
+  assertEquals(polls, 3)
+  assertEquals(sleeps, [2, 2])
+  assertEquals(f.steps.map(s => [s[0], s[1]]), [['provider', 'ok'], ['link', 'ok'], ['roles', 'ok'], ['rekey', 'ok']])
+})
+
+Deno.test('a probe that keeps erroring aborts and reports the last error', async () => {
+  const f = fakes({ migrationTablesExist: () => { throw new Error('db unreachable') } })
+  const messages: string[] = []
+  await runIdpMigration(cfg, f.store, f.admin, m => messages.push(m), fastWait([]))
+  assertEquals(f.steps, [])
+  assertEquals(messages.some(m => m.includes('last error: Error: db unreachable')), true)
+})
+
+Deno.test('trex mode does not wait for bookkeeping tables it never writes', async () => {
+  let polls = 0
+  const f = fakes({ migrationTablesExist: () => { polls++; return false } })
+  await runIdpMigration({ ...cfg, mode: 'trex' }, f.store, f.admin, () => {}, fastWait([]))
+  assertEquals(polls, 0)
+  assertEquals(f.enabled, [['logto', false]])
 })

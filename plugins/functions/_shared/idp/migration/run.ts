@@ -9,6 +9,8 @@ import type {
 export const LOGTO_PROVIDER_ID = 'logto'
 
 export interface MigrationStore {
+  /** Whether usermgmt.idp_migration and usermgmt.idp_subject_history exist yet. */
+  migrationTablesExist(): Promise<boolean>
   logtoAvailable(): Promise<boolean>
   usermgmtUsers(): Promise<UsermgmtUserRow[]>
   logtoUsers(): Promise<LogtoUserRow[]>
@@ -16,6 +18,29 @@ export interface MigrationStore {
   groups(): Promise<GroupRow[]>
   rekey(usermgmtId: string, oldSub: string | null, newSub: string): Promise<void>
   recordStep(step: StepName, status: StepStatus, counts: Record<string, number>, detail: unknown): Promise<void>
+}
+
+/** How long to wait for alp-usermgmt-init to create the bookkeeping tables. */
+export interface TablesWait {
+  budgetMs: number
+  intervalMs: number
+  sleep: (ms: number) => Promise<void>
+}
+
+// This function is registered `afterListen`, but that only orders it against
+// trex's listen call — alp-usermgmt-init, which owns the DDL for
+// usermgmt.idp_migration and usermgmt.idp_subject_history, applies its knex
+// migrations concurrently and can lose the race. When it does, the provider
+// step cannot record its status and the link step dies on a missing relation.
+//
+// 60s comfortably covers a cold first boot applying the whole usermgmt
+// migration set, and still gives up visibly rather than hanging a start
+// forever. 2s between polls costs at most one wasted round trip per second of
+// waiting; anything tighter only adds log noise for no earlier start.
+const DEFAULT_TABLES_WAIT: TablesWait = {
+  budgetMs: 60_000,
+  intervalMs: 2_000,
+  sleep: ms => new Promise(resolve => setTimeout(resolve, ms))
 }
 
 export interface MigrationConfig {
@@ -64,11 +89,42 @@ async function safeRecordStep(
   }
 }
 
+/**
+ * Polls for the bookkeeping tables until they exist or the budget runs out.
+ *
+ * Counts polls rather than watching the clock, so the budget means the same
+ * thing when `sleep` is a test double as it does against a real timer. A
+ * failing probe is not fatal on its own — the database itself may still be
+ * coming up — so only the last error is reported, once, when giving up.
+ */
+async function waitForMigrationTables(
+  store: MigrationStore, wait: TablesWait, log: (msg: string) => void
+): Promise<boolean> {
+  const polls = Math.max(1, Math.ceil(wait.budgetMs / wait.intervalMs))
+  let lastError: unknown
+  for (let i = 0; i < polls; i++) {
+    try {
+      if (await store.migrationTablesExist()) return true
+      lastError = undefined
+    } catch (err) {
+      lastError = err
+    }
+    if (i < polls - 1) await wait.sleep(wait.intervalMs)
+  }
+  log(
+    `[idp-migration] usermgmt.idp_migration / usermgmt.idp_subject_history did not appear within ${wait.budgetMs}ms; ` +
+    'alp-usermgmt-init has not applied its migrations. Aborting; the next start retries' +
+    (lastError === undefined ? '' : ` (last error: ${lastError})`)
+  )
+  return false
+}
+
 export async function runIdpMigration(
   cfg: MigrationConfig,
   store: MigrationStore,
   admin: FederationAdmin,
-  log: (msg: string) => void = msg => console.log(msg)
+  log: (msg: string) => void = msg => console.log(msg),
+  wait: TablesWait = DEFAULT_TABLES_WAIT
 ): Promise<MigrationSummary> {
   const summary: MigrationSummary = {
     mode: cfg.mode, linked: 0, created: 0, alreadyLinked: 0, skipped: [], rolesAssigned: 0, rekeyed: 0
@@ -104,6 +160,13 @@ export async function runIdpMigration(
     }
     return summary
   }
+
+  // Every step below records its outcome in usermgmt.idp_migration, and the
+  // re-keys write usermgmt.idp_subject_history. Running without them loses
+  // the record of what the migration did — and the history a later boot
+  // walks back through — so wait for them before touching anything. trex
+  // mode returns above without needing either.
+  if (!await waitForMigrationTables(store, wait, log)) return summary
 
   // 1. provider
   let logtoAvailable: boolean
