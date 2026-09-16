@@ -40,13 +40,16 @@ export interface MigrationSummary {
 
 // `failed` counts attempts that actually errored (a real problem trex or the
 // store reported); `skipped` counts entries that were never attempted because
-// the plan excluded them for data reasons (no_email, duplicate_email, ...).
+// the plan excluded them for data reasons (no_email, duplicate_email, ...);
+// `total` counts only what was attempted (skipped entries are never in it).
 // Those are different situations: an install with only data-quality skips and
-// zero real failures must not read as permanently 'failed'.
+// zero real failures must not read as permanently 'failed', and a run that
+// linked hundreds of users with a handful of data-quality skips must not
+// read as 'skipped' just because `failed` happens to be zero.
 const statusOf = (failed: number, skipped: number, total: number): StepStatus => {
-  if (failed === 0 && skipped === 0) return 'ok'
-  if (failed === 0) return 'skipped'
-  return failed < total ? 'partial' : 'failed'
+  if (failed > 0) return failed < total ? 'partial' : 'failed'
+  if (skipped === 0) return 'ok'
+  return total > 0 ? 'partial' : 'skipped'
 }
 
 // Records a step's outcome. Best-effort: if the store itself can't persist
@@ -72,13 +75,30 @@ export async function runIdpMigration(
   }
 
   if (cfg.mode === 'trex') {
+    // A fresh trex-only install (and every trex-mode CI/local run) has no
+    // `logto` schema at all, so there is nothing to clean up: check that
+    // before making any admin call. This matters independently of whether
+    // trex is even listening yet — skipping the call here means a fresh
+    // install never pays the admin client's retry budget for a call that
+    // would have nothing to do anyway.
+    let logtoAvailable: boolean
+    try {
+      logtoAvailable = await store.logtoAvailable()
+    } catch (err) {
+      log(`[idp-migration] trex mode: failed to check for Logto data: ${err}`)
+      return summary
+    }
+    if (!logtoAvailable) return summary
+
     // Leaving federated mode: take the button away. Links and history stay, so
     // switching back works. There is no step row in this mode, so a failure
-    // here is only logged.
+    // here is only logged. Short retry budget: unlike the migration itself,
+    // this call has a real fallback (log and retry on the next boot), so it
+    // should not hold up a trex-mode start for the migration-sized budget.
     try {
-      const result = await admin.setProviderEnabled(LOGTO_PROVIDER_ID, false)
+      const result = await admin.setProviderEnabled(LOGTO_PROVIDER_ID, false, { attempts: 2 })
       if (result === 'ok') log('[idp-migration] trex mode: Logto provider disabled')
-      else log('[idp-migration] trex mode: Logto provider is unknown to trex (check TREX__FEDERATION_ADMIN_URL)')
+      else log('[idp-migration] trex mode: Logto provider is unknown to trex')
     } catch (err) {
       log(`[idp-migration] trex mode: failed to disable the Logto provider: ${err}`)
     }
@@ -140,6 +160,11 @@ export async function runIdpMigration(
   const trexIdByUsermgmt = new Map<string, string>()
   const linkByUsermgmt = new Map(plan.links.map(l => [l.usermgmtId, l]))
   let linkFailures = 0
+  // Verified against trex (OHDSI/trex#318): PUT .../links never rewrites an
+  // existing link's email, and applies `banned` only when true. So in
+  // federated mode Logto stays the source of truth for suspension: an admin
+  // who unbans someone in trex has that reverted on the next restart unless
+  // they also un-suspend the person in Logto.
   for (const link of plan.links) {
     try {
       const out = await admin.link({
