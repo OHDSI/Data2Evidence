@@ -116,6 +116,11 @@
         text-decoration: none;
       }
       .provider:hover { border-color: var(--d2e-navy); }
+      .provider:focus-visible {
+        outline: none;
+        border-color: var(--d2e-navy);
+        box-shadow: 0 0 0 3px rgba(0, 0, 128, 0.12);
+      }
       .divider { margin: 0 0 16px; text-align: center; font-size: 12px; color: var(--d2e-muted); }
       .divider[hidden] { display: none; }
 
