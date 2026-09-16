@@ -341,7 +341,7 @@ services:
       # The public origin: `iss` must name where the discovery document is
       # served, and a deployment's FQDN resolves inside the network too. Where it
       # does not -- local and CI, whose FQDN is `localhost` and therefore points
-      # back at this container -- docker-compose-local.yml sets
+      # back at this container -- docker-compose-ci.yml sets
       # TREX_OIDC_INTERNAL_BASE so server-side fetches take a reachable route
       # while `iss` stays put.
       TREX_OIDC_ISSUER: "https://${CADDY__D2E__PUBLIC_FQDN:-${CADDY__ALP__PUBLIC_FQDN:-localhost}}:${CADDY_PORT:-${PORT:-443}}"

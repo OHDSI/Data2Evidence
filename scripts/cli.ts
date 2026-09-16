@@ -307,15 +307,11 @@ class D2ECli {
       SUPABASE_STORAGE_JWT_SECRET: `${this.SUPABASE_STORAGE_JWT_SECRET}`,
       SUPABASE_STORAGE_JWT_TOKEN: `${this.SUPABASE_STORAGE_JWT_TOKEN}`,
       PROJECT_NAME: `${this.PROJECT_NAME}`,
-      // "logto" selects the token-claims path: usermgmt reads the `roles` claim
-      // out of the bearer token rather than any Logto API, so it holds for any
-      // IdP that emits a compatible list - trex included.
+      // Where usermgmt reads group memberships from: its own tables (trex).
       USER_MGMT__ROLE_SOURCE: `trex`,
       TREX__SQL__PASSWORD: `${this.generate_random_password(
         this.DEFAULT_PASSWORD_LENGTH,
       )}`,
-      // Shared between WebAPI's OIDC client and the registration trex seeds for
-      // it, so the two are generated together and cannot drift apart.
       // Which IdP the stack authenticates against. Read by the container
       // (d2e-compat) and by the setup scripts, which run on the host -- so it
       // lives in the env file rather than only in compose, or the two disagree.
@@ -327,6 +323,8 @@ class D2ECli {
       // file because the setup scripts run on the host where compose env is not
       // visible.
       D2E__SEED_USER: `{"username":"admin","initialPassword":"Updatepassword12345"}`,
+      // Shared between WebAPI's OIDC client and the registration trex seeds for
+      // it, so the two are generated together and cannot drift apart.
       TREX__OIDC__WEBAPI_CLIENT_ID: `d2e-webapi`,
       TREX__OIDC__WEBAPI_CLIENT_SECRET: `${this.generate_random_password(
         this.DEFAULT_PASSWORD_LENGTH,
