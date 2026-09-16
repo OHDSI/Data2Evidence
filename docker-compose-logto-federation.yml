@@ -23,7 +23,7 @@ services:
       # logto.users has row-level security that only Logto's own database role
       # (its owner) gets past; any other role reads it as empty. The migration
       # reads Logto users with the same credentials the alp-logto service uses.
-      PG__LOGTO_MANAGER_USER: ${PG__LOGTO_MANAGER_USER:-logto_postgres}
+      PG__LOGTO_MANAGER_USER: ${PG_LOGTO_MANAGER:-${PG__LOGTO_MANAGER_USER:-logto_postgres}}
       PG__LOGTO_MANAGER_PASSWORD: ${PG__LOGTO_MANAGER_PASSWORD}
       # Roles live in trex after the migration; Logto-side group mapping must not
       # reconcile them away.
