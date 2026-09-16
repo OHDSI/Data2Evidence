@@ -79,8 +79,14 @@ test('pa-compare-cohorts', async ({ page }) => {
   await page.getByTitle('Enter Fullscreen').click()
   await expect(page.locator('#pane-left')).toContainText(cohortB)
 
-  await page.locator('div:nth-child(1) > .footer > div > svg').first().click()
-  await page.locator('div:nth-child(2) > .footer > div > svg').first().click()
+  // Selection moved from an icon in each card's footer to a checkbox on the
+  // card, and Compare moved from the page header into the bulk-actions bar
+  // that appears once something is selected. The bar's button keeps the
+  // 'Compare' label, so only the selection changes here.
+  // Naming the cohorts beats positional selectors: the list sorts by last
+  // updated, so nth-child(1) and (2) were never guaranteed to be these two.
+  await page.getByRole('checkbox', { name: `Select exploration ${cohortA}` }).check()
+  await page.getByRole('checkbox', { name: `Select exploration ${cohortB}` }).check()
   await expect(page.getByRole('button', { name: 'Compare' })).toBeEnabled()
 
   await page.getByRole('button', { name: 'Compare' }).click()
@@ -130,7 +136,7 @@ async function createCohortWithOneConditionOccurrenceFilercard(page, cohortName)
   // COHORT CREATION SECTION
   // ========================
   // Start creating a new cohort using D2E cohort builder
-  await page.getByRole('button', { name: 'D2E' }).click()
+  await page.getByTestId('explorations-new-btn').click()
   await expect(page.locator('#pane-left')).toContainText('New cohort')
 
   // Configure cohort sharing settings. The allow-sharing checkbox now lives in the
