@@ -1,8 +1,7 @@
 # Existing installations: keep Logto as an upstream sign-in option of the trex
 # identity provider, so users who were created in Logto keep signing in.
 # Applied by the CLI whenever the env file has D2E_IDP_MODE=logto-federated.
-# trex still issues every token; see
-# docs/superpowers/specs/2026-09-16-logto-federation-migration-design.md.
+# trex still issues every token; see docs/logto-federation-upgrade.md.
 services:
   alp-logto:
     profiles: !reset []

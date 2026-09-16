@@ -301,8 +301,8 @@ async function trexSetupBearer({
  * is. D2E__SEED_USER overrides it for stacks that have moved on from Logto.
  *
  * trex authenticates by email while d2e names this account `admin`, so a bare
- * username is resolved the way the sign-in page and the role migration both do:
- * local part plus a default domain.
+ * username is resolved the way the sign-in page does: local part plus a
+ * default domain.
  */
 async function ensureSeedUser({ gateway, serviceRoleKey, env = process.env, roles }) {
   const raw = env.D2E__SEED_USER || env.LOGTO__USER;
