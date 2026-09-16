@@ -46,7 +46,7 @@ Each path has a `.env.<path>.example` template. Copy it to `.env.<path>` (gitign
 the `E2E_*` login, and run its script — the script sets `E2E_ENV_FILE` so that file is loaded:
 
 ```bash
-cp .env.logto-native.example .env.logto-native   && npm run test:idp:logto
+npm run test:idp:logto
 cp .env.entra-external-id.example .env.entra-external-id && npm run test:idp:entra-external-id
 cp .env.entra.example .env.entra                 && npm run test:idp:entra
 cp .env.physionet.example .env.physionet         && npm run test:idp:physionet
