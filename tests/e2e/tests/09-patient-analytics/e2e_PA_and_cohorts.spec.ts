@@ -116,10 +116,10 @@ test(TEST_NAME, async ({ page }) => {
 
   // Navigate to Cohorts
   await navigateToCohorts(page)
-  await expect(page.getByRole('button', { name: 'D2E' })).toBeVisible()
+  await expect(page.getByTestId('explorations-new-btn')).toBeVisible()
 
   // Create first cohort with MALE filter
-  await page.getByRole('button', { name: 'D2E' }).click()
+  await page.getByTestId('explorations-new-btn').click()
   await page.getByTitle('Basic Data - Gender').getByText('All').click()
   await page.getByRole('textbox', { name: 'multiselect-searchbox' }).fill('MALE')
   await page.getByText('MALE - MALE').click()
@@ -144,7 +144,7 @@ test(TEST_NAME, async ({ page }) => {
   await expect(page.locator('#pane-left')).toContainText(COHORT_1)
 
   // Create second cohort with FEMALE filter
-  await page.getByRole('button', { name: 'D2E' }).click()
+  await page.getByTestId('explorations-new-btn').click()
   await dismissUnsavedChangesDialog(page)
 
   await page.waitForTimeout(500)
@@ -168,9 +168,13 @@ test(TEST_NAME, async ({ page }) => {
   await navigateBackToCohortList(page)
   await expect(page.locator('#pane-left')).toContainText(COHORT_2)
 
-  // Select both cohorts and verify Compare
-  await page.getByTestId(`pa-cohort-card-${COHORT_1}`).getByTestId('pa-cohort-select-btn').click()
-  await page.getByTestId(`pa-cohort-card-${COHORT_2}`).getByTestId('pa-cohort-select-btn').click()
+  // Select both cohorts and verify Compare.
+  // `pa-cohort-card-*` and `pa-cohort-select-btn` came from BookmarkItems.vue,
+  // which the Data Exploration redesign stopped mounting - the ids are not even
+  // in the built bundle any more. Selection is a checkbox on the card now, and
+  // Compare moved into the bulk-actions bar, keeping its 'Compare' label.
+  await page.getByRole('checkbox', { name: `Select exploration ${COHORT_1}` }).check()
+  await page.getByRole('checkbox', { name: `Select exploration ${COHORT_2}` }).check()
 
   await expect(page.getByRole('button', { name: 'Compare' })).toBeEnabled()
   await page.getByRole('button', { name: 'Compare' }).click()
