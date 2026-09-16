@@ -1,0 +1,26 @@
+# Existing installations: keep Logto as an upstream sign-in option of the trex
+# identity provider, so users who were created in Logto keep signing in.
+# Applied by the CLI whenever the env file has D2E_IDP_MODE=logto-federated.
+# trex still issues every token; see
+# docs/superpowers/specs/2026-09-16-logto-federation-migration-design.md.
+services:
+  alp-logto:
+    profiles: !reset []
+  alp-logto-post-init:
+    profiles: !reset []
+    environment:
+      # Registered on the upstream app next to its existing redirect URIs.
+      TREX_FEDERATION_REDIRECT_URI: "https://${CADDY__D2E__PUBLIC_FQDN:-${CADDY__ALP__PUBLIC_FQDN:-localhost}}${PORT:+:${PORT:-443}}/trex/auth/v1/callback"
+      D2E__LOGTO_UPSTREAM__CLIENT_ID: ${LOGTO__D2E_APP__CLIENT_ID:-${LOGTO__ALP_APP__CLIENT_ID}}
+  trex:
+    environment:
+      D2E_IDP_MODE: logto-federated
+      TREX_FEDERATION_ENABLED: "true"
+      # Must equal the URI registered above byte for byte, or Logto rejects the code.
+      TREX_FEDERATION_REDIRECT_URI: "https://${CADDY__D2E__PUBLIC_FQDN:-${CADDY__ALP__PUBLIC_FQDN:-localhost}}${PORT:+:${PORT:-443}}/trex/auth/v1/callback"
+      # The existing D2E app in Logto is the upstream client.
+      D2E__LOGTO_UPSTREAM__CLIENT_ID: ${LOGTO__D2E_APP__CLIENT_ID:-${LOGTO__ALP_APP__CLIENT_ID}}
+      D2E__LOGTO_UPSTREAM__CLIENT_SECRET: ${LOGTO__D2E_APP__CLIENT_SECRET:-${LOGTO__ALP_APP__CLIENT_SECRET}}
+      # Roles live in trex after the migration; Logto-side group mapping must not
+      # reconcile them away.
+      IDP__AUTO_PROVISION_USERS: "false"
