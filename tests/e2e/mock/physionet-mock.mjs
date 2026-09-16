@@ -201,8 +201,10 @@ export function startMock({ port = 8000 } = {}) {
       res.writeHead(404, { 'content-type': 'application/json' })
       res.end(JSON.stringify({ error: 'not_found', path }))
     } catch (err) {
+      // Log server-side; don't leak error details to the client (CodeQL: stack-trace exposure).
+      console.error('[mock] request error:', err)
       res.writeHead(500, { 'content-type': 'application/json' })
-      res.end(JSON.stringify({ error: String(err && err.message ? err.message : err) }))
+      res.end(JSON.stringify({ error: 'internal_error' }))
     }
   })
 
