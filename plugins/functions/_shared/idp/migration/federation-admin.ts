@@ -2,6 +2,17 @@
 // are retried (trex may still be settling right after it starts listening);
 // HTTP errors are answers and are not.
 
+// Error bodies can come back from a validation layer that echoes the request,
+// and upsertProvider's request body carries clientSecret. Never let a raw
+// response body reach an Error message: it ends up in usermgmt.idp_migration
+// and in stdout. Redact anything secret/password-shaped, then cap the length.
+function safeErrorDetail(text: string): string {
+  const redacted = text
+    .replace(/("?[\w-]*secret[\w-]*"?\s*[:=]\s*)"[^"]*"/gi, '$1"[redacted]"')
+    .replace(/("?[\w-]*password[\w-]*"?\s*[:=]\s*)"[^"]*"/gi, '$1"[redacted]"')
+  return redacted.length > 200 ? `${redacted.slice(0, 200)}…` : redacted
+}
+
 export interface ProviderBody {
   displayName: string
   clientId: string
@@ -20,7 +31,7 @@ export type LinkOutcome =
 
 export interface FederationAdmin {
   upsertProvider(id: string, body: ProviderBody): Promise<void>
-  setProviderEnabled(id: string, enabled: boolean): Promise<'ok' | 'unknown_provider'>
+  setProviderEnabled(id: string, enabled: boolean, opts?: { attempts?: number }): Promise<'ok' | 'unknown_provider'>
   link(req: { providerId: string; accountId: string; email: string; name: string | null; banned: boolean }): Promise<LinkOutcome>
   assignRole(userId: string, role: string): Promise<void>
 }
@@ -43,12 +54,13 @@ export class HttpFederationAdmin implements FederationAdmin {
     this.delayMs = opts.delayMs ?? 3000
   }
 
-  private async send(method: string, url: string, body: unknown): Promise<Response> {
+  private async send(method: string, url: string, body: unknown, attempts?: number): Promise<Response> {
     if (!this.opts.serviceRoleKey) {
       throw new Error('no trex service-role key (SUPABASE_SERVICE_ROLE_KEY / TREX__SERVICE_ROLE_KEY)')
     }
+    const maxAttempts = attempts ?? this.attempts
     let lastError: unknown
-    for (let i = 0; i < this.attempts; i++) {
+    for (let i = 0; i < maxAttempts; i++) {
       try {
         return await this.fetchImpl(url, {
           method,
@@ -57,14 +69,14 @@ export class HttpFederationAdmin implements FederationAdmin {
         })
       } catch (err) {
         lastError = err
-        if (i < this.attempts - 1) await new Promise(r => setTimeout(r, this.delayMs))
+        if (i < maxAttempts - 1) await new Promise(r => setTimeout(r, this.delayMs))
       }
     }
     throw new Error(`trex unreachable at ${url}: ${lastError}`)
   }
 
   private async expectOk(res: Response, what: string): Promise<void> {
-    if (!res.ok) throw new Error(`${what} failed: ${res.status} ${await res.text()}`)
+    if (!res.ok) throw new Error(`${what} failed: ${res.status} ${safeErrorDetail(await res.text())}`)
     await res.body?.cancel()
   }
 
@@ -72,8 +84,8 @@ export class HttpFederationAdmin implements FederationAdmin {
     await this.expectOk(await this.send('PUT', `${this.opts.federationUrl}/providers/${id}`, body), `provider ${id} upsert`)
   }
 
-  async setProviderEnabled(id: string, enabled: boolean): Promise<'ok' | 'unknown_provider'> {
-    const res = await this.send('PATCH', `${this.opts.federationUrl}/providers/${id}`, { enabled })
+  async setProviderEnabled(id: string, enabled: boolean, opts?: { attempts?: number }): Promise<'ok' | 'unknown_provider'> {
+    const res = await this.send('PATCH', `${this.opts.federationUrl}/providers/${id}`, { enabled }, opts?.attempts)
     if (res.status === 404) {
       await res.body?.cancel()
       return 'unknown_provider'
@@ -86,9 +98,10 @@ export class HttpFederationAdmin implements FederationAdmin {
     const res = await this.send('PUT', `${this.opts.federationUrl}/links`, req)
     if (res.status === 409) {
       const body = await res.json()
-      return { conflict: true, userId: String(body.userId) }
+      if (typeof body?.userId !== 'string') throw new Error(`link ${req.accountId}: 409 response missing userId`)
+      return { conflict: true, userId: body.userId }
     }
-    if (!res.ok) throw new Error(`link ${req.accountId} failed: ${res.status} ${await res.text()}`)
+    if (!res.ok) throw new Error(`link ${req.accountId} failed: ${res.status} ${safeErrorDetail(await res.text())}`)
     const body = await res.json()
     if (typeof body?.userId !== 'string') throw new Error(`link ${req.accountId}: response missing userId`)
     return body as LinkOutcome
