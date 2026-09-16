@@ -1414,7 +1414,7 @@ class D2ECli {
           execSync(
             `docker exec ${postgres} psql -U postgres -d alp -c ` +
               `"select step, status, counts, updated_at from usermgmt.idp_migration order by updated_at" ` +
-              `-c "select jsonb_pretty(detail) as skipped from usermgmt.idp_migration where step = 'link'"`,
+              `-c "select step, jsonb_pretty(detail) as skipped from usermgmt.idp_migration where detail ? 'skipped' order by updated_at"`,
             { stdio: "inherit" },
           );
         } catch {
