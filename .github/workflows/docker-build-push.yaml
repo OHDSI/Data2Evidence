@@ -679,7 +679,7 @@ jobs:
             BUILD_TYPE=OSS
             PLUGINS_FEED=${{ needs.setup.outputs.is_release_push == 'true' && 'stable' || 'd2e' }}
             PLUGINS_FROM_REGISTRY=@ohdsi/pythia-agent@0.1.0-develop.18.g80bf4aa
-            TREXSQL_REF=sha-48a466268dbfdd12f03d8018e2af81fe10cbdf69@sha256:923e62615ec94da06f4574e4ed80b51780746f9e8a30e8060caa9c4dd4ac754c
+            TREXSQL_REF=sha-a7a18aedea7f970808183cda5f8fabaeb47da525@sha256:f6bca1f70ea2251cb4ebfe664a5e38bebf1a2e9a7e97d6cebf4cc63c9e313bfc
           secrets: |
             "PLUGINS_REGISTRY=${{ secrets.PLUGINS_REGISTRY }}"
             "github_token=${{ secrets.GITHUB_TOKEN }}"
@@ -1231,14 +1231,11 @@ jobs:
         run: docker system prune -af
 
   test_logto_federation:
-    # Disabled until OHDSI/trex#318 merges and TREXSQL_REF is bumped in BOTH
-    # services/trex/Dockerfile.v2:20 (ARG TREXSQL_REF) and this workflow's
-    # devx build-args above (TREXSQL_REF=... in the "Build and Push trex devx
-    # image" step). The pinned engine has no afterListen inits and no
-    # /trex/admin/federation, so this job's trexdb.account assertions and its
-    # Playwright sign-in through /trex/auth/v1/authorize cannot pass. Remove
-    # this `if` once both pins are bumped.
-    if: false
+    # Needs a trex engine with afterListen inits and /trex/admin/federation
+    # (OHDSI/trex#318), which both TREXSQL_REF pins now carry:
+    # services/trex/Dockerfile.v2 (ARG TREXSQL_REF) and this workflow's devx
+    # build-args. Not in docker-success's needs yet — promote it once it has
+    # passed on three consecutive runs.
     needs: [setup, build_images, build_trex_image, build_plugins, build_e2e_image]
     runs-on: ubuntu-24.04
     env:
