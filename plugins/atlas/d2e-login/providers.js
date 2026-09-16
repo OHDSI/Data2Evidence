@@ -22,6 +22,16 @@
       });
   }
 
+  /**
+   * Whether trex accepts native password sign-in, which it reports as
+   * `external.email` (TREX_NATIVE_PASSWORD_LOGIN_ENABLED). Only an explicit
+   * `false` hides the form: a missing or malformed answer must not take a
+   * trex-only installation's one way in away.
+   */
+  function passwordLoginEnabled(settings) {
+    return !(settings && settings.external && settings.external.email === false);
+  }
+
   function authorizeHref(id, returnTo) {
     return TREX_BASE + "/authorize?provider=" + encodeURIComponent(id) +
       "&redirect_to=" + encodeURIComponent(returnTo);
@@ -34,6 +44,7 @@
 
   root.D2ELoginProviders = {
     externalProviders: externalProviders,
+    passwordLoginEnabled: passwordLoginEnabled,
     authorizeHref: authorizeHref,
     errorMessage: errorMessage,
   };

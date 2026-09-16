@@ -10,7 +10,13 @@ alone. An installation that already has users in Logto keeps them.
 the stack starts with `docker-compose-logto-federation.yml`:
 
 - Logto keeps running, as an upstream sign-in option of trex.
-- The sign-in page shows **Sign in with Logto** next to the password form.
+- The sign-in page shows only **Sign in with Logto**. Users carried over from
+  Logto have no trex password, so trex's own password sign-in is switched off
+  (`TREX_NATIVE_PASSWORD_LOGIN_ENABLED=false`): the form is hidden and trex
+  refuses the password grant. Set it to `true` in your env file to bring the
+  form back, for example to let a trex-native admin in while Logto is down.
+- Accounts without an email address sign in too: Logto users that have only a
+  username are linked by their Logto identity, which needs no address.
 - On every start, trex migrates Logto users: each usermgmt user gets a trex
   account linked to their Logto identity, their D2E roles are copied to trex,
   and their usermgmt record is re-keyed to the trex account.

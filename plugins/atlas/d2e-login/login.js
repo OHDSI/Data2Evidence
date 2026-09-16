@@ -73,7 +73,15 @@
           a.textContent = "Sign in with " + p.label;
           providersEl.appendChild(a);
         });
-        dividerEl.hidden = providers.length === 0;
+        // A federated installation turns native sign-in off: its users have
+        // no trex password, so the form could only ever fail for them. trex
+        // refuses the grant too; hiding the form removes the dead end.
+        var passwordEnabled = P.passwordLoginEnabled(settings);
+        form.hidden = !passwordEnabled;
+        dividerEl.hidden = providers.length === 0 || !passwordEnabled;
+        if (!passwordEnabled && providers.length === 0) {
+          errorEl.textContent = "No sign-in method is available. Ask your administrator.";
+        }
       })
       .catch(function () { /* the password form still works */ });
   }

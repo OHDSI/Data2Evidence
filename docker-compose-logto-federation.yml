@@ -25,6 +25,11 @@ services:
       # reads Logto users with the same credentials the alp-logto service uses.
       PG__LOGTO_MANAGER_USER: ${PG_LOGTO_MANAGER:-${PG__LOGTO_MANAGER_USER:-logto_postgres}}
       PG__LOGTO_MANAGER_PASSWORD: ${PG__LOGTO_MANAGER_PASSWORD}
+      # Users carried over from Logto have no trex password, so the sign-in page
+      # offers only the Logto button and trex refuses the password grant. Set
+      # to true to bring the password form back, e.g. to let a trex-native
+      # admin in while Logto is unavailable.
+      TREX_NATIVE_PASSWORD_LOGIN_ENABLED: ${TREX_NATIVE_PASSWORD_LOGIN_ENABLED:-false}
       # Roles live in trex after the migration; Logto-side group mapping must not
       # reconcile them away.
       IDP__AUTO_PROVISION_USERS: "false"
