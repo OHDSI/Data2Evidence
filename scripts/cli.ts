@@ -12,6 +12,7 @@ import {
   dockerComposeContent,
   atlasDbInitScripts,
   notebookSchemaFiles,
+  logtoFederationComposeContent,
 } from "./docker-compose-embed";
 import { setupDemo } from "./setupdemo";
 import { checkSetupDemoFlow } from "./check-setupdemo-flow";
@@ -20,6 +21,7 @@ import { syncRoles as runSyncRoles } from "./syncroles";
 import { setupDemoHana } from "./setupdemohana";
 import { checkSetupDemoHanaFlow } from "./check-setupdemohana-flow";
 import { getNoProxy as runGetNoProxy } from "./get-noproxy";
+import { idpModeOf, LOGTO_FEDERATION_COMPOSE_FILE, upgradeEnvForIdpMode } from "./idp-mode-env";
 
 interface CliOptions {
   functionPath?: string;
@@ -83,6 +85,10 @@ class D2ECli {
   extract_compose_file(): void {
     const dest = path.join(this.compose_dir, "docker-compose.yml");
     this.write_embedded_file(dest, dockerComposeContent);
+    this.write_embedded_file(
+      path.join(this.compose_dir, LOGTO_FEDERATION_COMPOSE_FILE),
+      logtoFederationComposeContent,
+    );
     // Stage the atlas-db-init SQL scripts next to the compose file so trex's
     // `./services/atlas-db-init:/usr/src/atlas-db-init` bind mount resolves.
     // These live at repo root but aren't present where the distributed CLI
@@ -309,6 +315,8 @@ class D2ECli {
       // (d2e-compat) and by the setup scripts, which run on the host -- so it
       // lives in the env file rather than only in compose, or the two disagree.
       D2E_IDP: `trex`,
+      // A fresh installation has no Logto users to carry over.
+      D2E_IDP_MODE: `trex`,
       // The account the test suites and a first-run operator sign in as. Mirrors
       // LOGTO__USER, which seeds the same person into Logto, and lives in the env
       // file because the setup scripts run on the host where compose env is not
@@ -568,6 +576,12 @@ class D2ECli {
     if (options.functionPath) {
       const dev = `--file ${this.compose_dir}/docker-compose-local.yml`;
       dockerbasecmd.push(dev);
+    }
+    if (
+      fs.existsSync(this.ENVFILE) &&
+      idpModeOf(fs.readFileSync(this.ENVFILE, "utf-8")) === "logto-federated"
+    ) {
+      dockerbasecmd.push("--file", `${this.compose_dir}/${LOGTO_FEDERATION_COMPOSE_FILE}`);
     }
     dockerbasecmd.push("--env-file", this.ENVFILE);
     if (options.composeFile) dockerbasecmd.push("--file", options.composeFile);
@@ -865,6 +879,31 @@ class D2ECli {
     return !/^USER_MGMT__ROLE_SOURCE=/m.test(env);
   }
 
+  /**
+   * Record which identity setup this installation runs, once. An env written
+   * before the trex identity provider has its users in Logto: it becomes
+   * logto-federated, so those users keep signing in (through trex) and are
+   * migrated on boot. Everything else becomes trex.
+   */
+  upgrade_env_for_idp_mode(): void {
+    if (!fs.existsSync(this.ENVFILE)) return;
+    const before = fs.readFileSync(this.ENVFILE, "utf-8");
+    const out = upgradeEnvForIdpMode(before, {
+      password: () => this.generate_random_password(this.DEFAULT_PASSWORD_LENGTH),
+      rootKey: () => crypto.randomBytes(32).toString("base64"),
+    });
+    if (out.added.length === 0) return;
+    fs.writeFileSync(this.ENVFILE, out.content);
+    if (out.mode === "logto-federated") {
+      console.log(
+        `This installation predates the trex identity provider. Recorded D2E_IDP_MODE=logto-federated in ${this.ENVFILE}: ` +
+          `Logto stays available as a sign-in option and its users are migrated to trex on start. Added: ${out.added.join(", ")}.`,
+      );
+    } else {
+      console.log(`Recorded D2E_IDP_MODE=trex in ${this.ENVFILE}.`);
+    }
+  }
+
   isFullStart(opts: CliOptions): boolean {
     return !opts.services || opts.services.length === 0;
   }
@@ -906,6 +945,7 @@ class D2ECli {
       )
       .action(async () => {
         console.log("Starting services...");
+        this.upgrade_env_for_idp_mode();
         const { cmd, env } = this.build_docker_command(
           this.program.opts(),
           "start",
@@ -1138,6 +1178,7 @@ class D2ECli {
       .command("config")
       .description("View configuration of d2e services")
       .action(async () => {
+        this.upgrade_env_for_idp_mode();
         const { cmd, env } = this.build_docker_command(
           this.program.opts(),
           "config",
@@ -1307,28 +1348,29 @@ class D2ECli {
     this.program
       .command("migrate-idp-roles")
       .description(
-        "Move role assignments from Logto to the trex identity provider (one-time migration)",
+        "Logto to trex migration (D2E_IDP_MODE=logto-federated): show its report, or run it now",
       )
-      .option(
-        "--apply",
-        "Perform the changes; without this the plan is only printed",
-      )
-      .option(
-        "--create-missing-users",
-        "Also create trex accounts for usermgmt users that have none. Off by " +
-          "default: this grants access to a system those users could not reach " +
-          "before, which a role migration should not do silently.",
-      )
+      .option("--report", "Print the outcome of the last migration run")
+      .option("--run", "Restart trex so the migration runs now")
       .action(async (opts) => {
         dotenvConfig({ path: this.ENVFILE });
         this.load_env_variables();
-        const { runMigration } = await import(
-          path.join(__dirname, "migrate-idp-roles.mjs")
+        if (opts.run) {
+          execSync(`docker restart ${this.PROJECT_NAME}-trex`, { stdio: "inherit" });
+          console.log("trex restarted; the migration runs once it is listening. Check with --report.");
+          return;
+        }
+        const postgres = this.postgres_container();
+        if (!postgres) {
+          console.error("Could not find the database container.");
+          process.exit(1);
+        }
+        execSync(
+          `docker exec ${postgres} psql -U postgres -d alp -c ` +
+            `"select step, status, counts, updated_at from usermgmt.idp_migration order by updated_at" ` +
+            `-c "select jsonb_pretty(detail) as skipped from usermgmt.idp_migration where step = 'link'"`,
+          { stdio: "inherit" },
         );
-        await runMigration({
-          apply: Boolean(opts.apply),
-          createMissing: Boolean(opts.createMissingUsers),
-        });
       });
   }
 
