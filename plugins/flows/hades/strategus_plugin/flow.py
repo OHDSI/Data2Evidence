@@ -11,7 +11,7 @@ from prefect.artifacts import create_markdown_artifact
 
 from .hooks import generate_nodes_flow_hook, execute_nodes_flow_hook, node_task_execution_hook
 from .flowutils import get_node_list, get_incoming_edges, install_r_packages_from_lockfile, validate_token_study_code
-from .nodes import generate_nodes_flow, execute_r_strategus, upload_strategus_results, drop_strategus_results_schema, get_strategus_node, getRCdmExecutionSettings, upload_results_from_storage
+from .nodes import generate_nodes_flow, execute_r_strategus, upload_strategus_results, drop_strategus_results_schema, get_strategus_node, getRCdmExecutionSettings, upload_results_from_storage, upload_results_to_api
 from _shared_flow_utils.logger.logger import Logger
 from _shared_flow_utils.api.StrategusAnalysisAPI import StrategusAnalysisAPI
 
@@ -108,6 +108,22 @@ def strategus_plugin(json_graph, options):
                 "token_study_code": tokenStudyCode
             }
             upload_strategus_results(study_analysis_result.data, f'/tmp/{flow_run_id}/results', result_db_settings)
+
+        try:
+            result_name = f"{studyName} [{databaseCode}]" if studyName else f"{tokenStudyCode} [{databaseCode}]"
+            upload_results_to_api(
+                f'/tmp/{flow_run_id}/results',
+                result_name,
+                {
+                    "flowRunId": flow_run_id,
+                    "tokenStudyCode": tokenStudyCode,
+                    "databaseCode": databaseCode,
+                    "datasetId": datasetId,
+                },
+                flow_run_id=flow_run_id,
+            )
+        except Exception:
+            logger.warning(f"Failed to upload results to API (non-fatal): {tb.format_exc()}")
 
     except Exception as e:
         logger.error(f"Error executing Strategus analysis: {tb.format_exc()}")
