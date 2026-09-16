@@ -150,6 +150,24 @@ export async function runIdpMigration(
   let plan: LinkPlan
   try {
     const [usermgmt, logto, history] = await Promise.all([store.usermgmtUsers(), store.logtoUsers(), store.subjectHistory()])
+    // The Logto schema is there (step 1 proved it) and usermgmt still holds
+    // users carrying an IdP subject, yet the read came back with nothing.
+    // That is not an empty installation: logto.users has a RESTRICTIVE
+    // row-level policy keyed on logto.tenants.db_user = CURRENT_USER, so a
+    // role other than Logto's own reads zero rows and no error. Left alone,
+    // every one of those users falls into `notLogto` and the run reports a
+    // clean no-op while nobody can sign in. Fail here instead.
+    const withSubject = usermgmt.filter(u => u.idpUserId).length
+    if (logto.length === 0 && withSubject > 0) {
+      const reason =
+        `logto.users is present but returned no rows while ${withSubject} usermgmt users still carry an IdP subject. ` +
+        'The migration is almost certainly reading Logto with a database role that its row-level security blocks: ' +
+        "set PG__LOGTO_MANAGER_USER / PG__LOGTO_MANAGER_PASSWORD to Logto's own role (the owner of logto.users), " +
+        'or check that this function points at the database holding the Logto schema.'
+      await safeRecordStep(store, 'link', 'failed', { usermgmtWithSubject: withSubject, logtoUsers: 0 }, { reason }, log)
+      log(`[idp-migration] link: failed, ${reason}`)
+      return summary
+    }
     plan = planLinks(usermgmt, logto, history, cfg.userDomain)
   } catch (err) {
     await safeRecordStep(store, 'link', 'failed', {}, { reason: String(err) }, log)
@@ -188,7 +206,13 @@ export async function runIdpMigration(
     linked: summary.linked, created: summary.created, alreadyLinked: summary.alreadyLinked,
     skipped: summary.skipped.length, notLogto: plan.notLogto
   }, { skipped: [...summary.skipped] }, log)
-  log(`[idp-migration] link: linked ${summary.linked}, created ${summary.created}, already ${summary.alreadyLinked}, skipped ${summary.skipped.length} (see d2e migrate-idp-roles --report)`)
+  // `notLogto` used to be silent, so "linked 0, created 0, already 0,
+  // skipped 0" read as a clean run on an installation where nothing had been
+  // linked at all. Name it whenever it is the only thing that happened.
+  const linkLine = `[idp-migration] link: linked ${summary.linked}, created ${summary.created}, already ${summary.alreadyLinked}, skipped ${summary.skipped.length}`
+  log(plan.links.length === 0 && plan.notLogto > 0
+    ? `${linkLine}: nothing was linked — ${plan.notLogto} usermgmt users hold a subject that is not a Logto identity and has no history leading back to one (see d2e migrate-idp-roles --report)`
+    : `${linkLine} (see d2e migrate-idp-roles --report)`)
 
   // 3. roles
   let groups: GroupRow[] = []
