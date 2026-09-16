@@ -1,6 +1,8 @@
 {
   "workspace": [],
   "nodeModulesDir": "auto",
+  // The integration tests need TEST_PG_URL and skip themselves without it.
+  "tasks": { "test": "deno test --allow-env --allow-read --allow-net --no-check" },
   "compilerOptions": { "lib": ["deno.window"], "strict": false },
   "imports": {
     "knex": "npm:knex@3.1.0",
