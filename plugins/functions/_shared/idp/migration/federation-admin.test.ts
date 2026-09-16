@@ -65,3 +65,31 @@ Deno.test('no service-role key fails before anything goes on the wire', async ()
   await assertRejects(() => a.assignRole('t1', 'x'))
   assertEquals(f.calls.length, 0)
 })
+
+Deno.test('a 409 response missing userId is rejected instead of returning "undefined"', async () => {
+  const f = fakeFetch([new Response(JSON.stringify({ error: 'conflict' }), { status: 409 })])
+  await assertRejects(() => admin(f.impl).link({ providerId: 'logto', accountId: 'l1', email: 'a@x.test', name: null, banned: false }))
+})
+
+Deno.test('a validation error body is never echoed into the thrown message', async () => {
+  const secretBody = JSON.stringify({ error: 'invalid', clientSecret: 'super-secret-value-12345' })
+  const f = fakeFetch([new Response(secretBody, { status: 400 })])
+  const err = await assertRejects(() => admin(f.impl).upsertProvider('logto', {
+    displayName: 'Logto', clientId: 'cid', clientSecret: 'super-secret-value-12345', issuer: 'iss',
+    authorizationEndpoint: 'ep', scopes: 'openid', groupsSource: 'none', autoProvision: false, enabled: true
+  }))
+  assertEquals((err as Error).message.includes('super-secret-value-12345'), false)
+})
+
+Deno.test('a long error body is capped rather than growing the error message unbounded', async () => {
+  const f = fakeFetch([new Response('x'.repeat(5000), { status: 500 })])
+  const err = await assertRejects(() => admin(f.impl).assignRole('t1', 'x'))
+  assertEquals((err as Error).message.length < 300, true)
+})
+
+Deno.test('setProviderEnabled accepts a per-call attempts budget shorter than the client default', async () => {
+  const f = fakeFetch([new TypeError('fetch failed'), new TypeError('fetch failed'), new Response(null, { status: 204 })])
+  const a = new HttpFederationAdmin({ federationUrl: 'http://trex/fed', rolesUrl: 'http://trex/roles', serviceRoleKey: 'k', fetchImpl: f.impl, attempts: 10, delayMs: 0 })
+  await assertRejects(() => a.setProviderEnabled('logto', false, { attempts: 2 }))
+  assertEquals(f.calls.length, 2)
+})
