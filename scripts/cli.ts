@@ -1414,7 +1414,12 @@ class D2ECli {
           execSync(
             `docker exec ${postgres} psql -U postgres -d alp -c ` +
               `"select step, status, counts, updated_at from usermgmt.idp_migration order by updated_at" ` +
-              `-c "select step, jsonb_pretty(detail) as skipped from usermgmt.idp_migration where detail ? 'skipped' order by updated_at"`,
+              // A hard failure (store unreachable, incomplete upstream config, a
+              // provider/planner/groups read failing outright) records its reason
+              // as { reason: ... }, not { skipped: [...] }. Filtering on `? 'skipped'`
+              // hid that detail entirely, so a failed run gave no clue why. Any
+              // non-empty detail is worth printing.
+              `-c "select step, jsonb_pretty(detail) as detail from usermgmt.idp_migration where detail <> '{}'::jsonb order by updated_at"`,
             { stdio: "inherit" },
           );
         } catch {
