@@ -33,8 +33,12 @@ lists each step and any user that was skipped with the reason:
 
 Fix the data, then run `d2e migrate-idp-roles --run` or restart.
 
-A user added in Logto after the upgrade can sign in after the next start, or
-straight away after `d2e migrate-idp-roles --run`. Note that `--run` restarts
+The migration only links users that already have a usermgmt record: it walks
+`usermgmt."user"`, not Logto's user list. A person created directly in Logto
+after the upgrade has no usermgmt row, so they are never linked and cannot
+sign in, on any start. Create new users in D2E user management instead — that
+creates the usermgmt row and, from there, a trex account is linked to them (or
+created for them) the same way as everyone else. Note that `--run` restarts
 trex, so anyone signed in at the time is signed out; only `--run` in federated
 mode does this, `--report` never restarts anything.
 
@@ -42,6 +46,15 @@ mode does this, `--report` never restarts anything.
 
 After the upgrade D2E manages roles in trex. Changing a role in Logto has no
 effect; change it in D2E's user management.
+
+## Suspending a user
+
+Logto stays the source of truth for suspension while federated: trex's link
+never rewrites an existing link's email, and only ever applies `banned: true`,
+never `false` (verified against trex, OHDSI/trex#318). So if you unban someone
+in trex, the next restart reapplies the suspension as long as they are still
+suspended in Logto. To actually let them back in, un-suspend them in Logto,
+not only in trex.
 
 ## Leaving Logto
 
