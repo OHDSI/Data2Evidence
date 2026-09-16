@@ -23,7 +23,7 @@ test(TEST_NAME, async ({ page }) => {
     - text: Shared
     - checkbox
     `)
-  await page.getByRole('button', { name: 'D2E' }).click()
+  await page.getByTestId('explorations-new-btn').click()
   await expect(page.locator('#pane-left')).toContainText('New cohort')
   await page.getByTitle('Basic Data - Age').click()
   await page.getByRole('button', { name: '' }).click()
