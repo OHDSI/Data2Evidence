@@ -1230,6 +1230,151 @@ jobs:
         if: always()
         run: docker system prune -af
 
+  test_logto_federation:
+    needs: [setup, build_images, build_trex_image, build_plugins, build_e2e_image]
+    runs-on: ubuntu-24.04
+    env:
+      VERSION: develop
+      COMPOSE_PROJECT_NAME: d2e
+      LOGTO_ERA_REF: 8193fc6718ed        # commit #3176 branched from (git merge-base origin/develop p-hoffmann/atlas-root-and-trex-idp)
+      LOGTO_ERA_TAG: develop-8193fc6     # image tag built from LOGTO_ERA_REF; verified present with `docker manifest inspect`
+    steps:
+      - name: Free Disk Space (Ubuntu)
+        uses: jlumbroso/free-disk-space@main
+        with:
+          tool-cache: true
+          android: true
+          dotnet: true
+          haskell: true
+          large-packages: true
+          docker-images: true
+          swap-storage: true
+
+      - name: Increase swapfile to 15G
+        run: |
+          sudo swapoff -a
+          sudo fallocate -l 15G /swapfile
+          sudo chmod 600 /swapfile
+          sudo mkswap /swapfile
+          sudo swapon /swapfile
+          sudo swapon --show
+
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: npm install
+        if: success() || failure()
+        run: npm install
+
+      - name: Install Atlas plugin resources
+        if: success() || failure()
+        working-directory: ./plugins/atlas
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        # --legacy-peer-deps: @trex/notebook (reached through the nested file:
+        # link chain atlas -> notebook-plugin -> notebook) pulls webr, which
+        # pulls react-data-grid@^7.0.0-beta.44. That floats to a beta whose
+        # peers moved to react@^19.2, conflicting with the react@^18.2.0 pinned
+        # here. Resolving that conflict across the link chain crashes npm 10.8.2
+        # with "Cannot read properties of null (reading 'edgesOut')". Skipping
+        # peer resolution avoids the code path entirely. Same flag, same reason
+        # as the patient-analytics install above.
+        run: npm install --legacy-peer-deps
+
+      - name: Patch seed config for e2e tests
+        run: node ./scripts/patch-seed-for-e2e.js
+
+      - name: Download UI package tarball
+        uses: actions/download-artifact@v4
+        with:
+          name: ui-tgz
+          path: ./plugins/ui
+
+      - name: Extract UI package
+        run: |
+          TGZ=$(ls ./plugins/ui/data2evidence-d2e-ui-*.tgz | head -1)
+          rm -rf ./plugins/ui-built
+          mkdir -p ./plugins/ui-built
+          tar -xzf "$TGZ" -C ./plugins/ui-built --strip-components=1
+
+      - name: Check out the last Logto-era release
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.LOGTO_ERA_REF }}
+          path: legacy
+          submodules: recursive
+
+      - name: Start a Logto-era installation and seed it
+        working-directory: legacy
+        env:
+          DOCKER_TAG_NAME: ${{ env.LOGTO_ERA_TAG }}
+          PLUGINS_IMAGE_TAG: ${{ env.LOGTO_ERA_TAG }}
+        run: |
+          # LOGTO_ERA_REF already builds its CLI the same way test_demosetup_dev
+          # does: `npm install` runs the "prepare" script (build:ts). There is no
+          # yarn.lock at this commit, so `yarn install --frozen-lockfile` would
+          # simply fail here.
+          npm install
+          init_choice=y ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v develop init
+          ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v develop -c ./docker-compose-ci.yml start
+          ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v develop setupdemo
+          ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v develop -c ./docker-compose-ci.yml stop
+
+      - name: Upgrade it to this build
+        env:
+          DOCKER_TAG_NAME: ${{ needs.setup.outputs.run_tag }}
+          PLUGINS_IMAGE_TAG: ${{ needs.setup.outputs.run_tag }}
+        run: |
+          cp legacy/.env ./.env
+          ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v develop -c ./docker-compose-ci.yml start | tee start.log
+          grep -q "D2E_IDP_MODE=logto-federated" .env
+          grep -q "docker-compose-logto-federation.yml" start.log
+
+      - name: Wait for the migration to link the admin
+        run: |
+          for i in $(seq 1 60); do
+            out=$(docker exec d2e-minerva-postgres-1 psql -U postgres -d alp -tAc \
+              "select status || ' ' || counts::text from usermgmt.idp_migration where step='link'" 2>/dev/null || true)
+            echo "[$i] link step: ${out:-pending}"
+            case "$out" in ok*|partial*) break ;; esac
+            sleep 10
+          done
+          docker exec d2e-minerva-postgres-1 psql -U postgres -d alp -c "select * from usermgmt.idp_migration"
+          docker exec d2e-minerva-postgres-1 psql -U postgres -d alp -tAc \
+            "select count(*) from trexdb.account where \"providerId\"='logto'" | grep -qv '^0$'
+
+      - name: Pull e2e Docker image
+        env:
+          DOCKER_TAG_NAME: ${{ needs.setup.outputs.run_tag }}
+        run: |
+          docker pull ${REG_URL}/d2e-e2e:${DOCKER_TAG_NAME}
+          docker tag ${REG_URL}/d2e-e2e:${DOCKER_TAG_NAME} d2e-e2e
+
+      - name: Disable IPv6 to prevent ERR_NETWORK_CHANGED
+        run: sudo sysctl -w net.ipv6.conf.all.disable_ipv6=1
+
+      - name: Sign in through Logto
+        run: |
+          cd ./tests/e2e
+          docker run --rm --network=host --ipc=host \
+            -v "$(pwd)/test-results:/work/test-results" \
+            -e D2E_BASE_URL=https://localhost:443 -e CI=true -e GITHUB_ACTIONS=true \
+            -e D2E_LOGTO_FEDERATION=1 \
+            d2e-e2e npx playwright test tests/99-federation
+
+      - name: Logs
+        if: always()
+        run: ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v develop logs
+
   test_demosetup_hana:
     needs: [setup, build_images, build_trex_image, build_plugins]
     runs-on: ${{ needs.setup.outputs.random_runner }}
