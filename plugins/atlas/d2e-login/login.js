@@ -39,6 +39,31 @@
 
   var returnTo = safeReturnTo(new URLSearchParams(location.search).get("return_to"));
 
+  var providersEl = document.getElementById("providers");
+  var dividerEl = document.getElementById("divider");
+  var P = window.D2ELoginProviders;
+
+  // A refused federated sign-in comes back here with its reason.
+  var refusal = P.errorMessage(new URLSearchParams(location.search).get("error"));
+  if (refusal) errorEl.textContent = refusal;
+
+  // One button per upstream identity provider trex federates to. None on a
+  // trex-only installation, so the page is then exactly the password form.
+  fetch(TREX_BASE + "/settings")
+    .then(function (res) { return res.ok ? res.json() : null; })
+    .then(function (settings) {
+      var providers = P.externalProviders(settings);
+      providers.forEach(function (p) {
+        var a = document.createElement("a");
+        a.className = "provider";
+        a.href = P.authorizeHref(p.id, returnTo);
+        a.textContent = "Sign in with " + p.label;
+        providersEl.appendChild(a);
+      });
+      dividerEl.hidden = providers.length === 0;
+    })
+    .catch(function () { /* the password form still works */ });
+
   function showError(message) {
     errorEl.textContent = message;
     submitEl.disabled = false;
