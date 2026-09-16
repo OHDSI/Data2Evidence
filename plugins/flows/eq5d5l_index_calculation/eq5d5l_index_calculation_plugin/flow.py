@@ -86,7 +86,7 @@ def calculate_eq5d5l_index(config: Eq5d5lCalculateConfig):
         mapping_dao = DBDao(dialect=SupportedDatabaseDialects.TREX, database_code=config.database_code)
         _require_fhir_mapping_table(mapping_dao, mapping_schema)
 
-    inserted_rows, previous_measurement_ids = write_measurements(
+    inserted_rows, previous_measurement_rows = write_measurements(
         dbdao=dbdao,
         schema_name=config.schema_name,
         measurement_concept_id=measurement_concept_id,
@@ -102,7 +102,7 @@ def calculate_eq5d5l_index(config: Eq5d5lCalculateConfig):
         database_code=config.database_code,
         schema_name=config.schema_name,
         rows=inserted_rows,
-        previous_measurement_ids=previous_measurement_ids,
+        previous_measurement_rows=previous_measurement_rows,
     )
 
     if inserted_rows:
@@ -247,8 +247,11 @@ def write_measurements(
 ) -> tuple[list, list]:
     """
     Deletes and re-inserts this dataset's measurement rows for measurement_concept_id.
-    Returns (inserted_rows, previous_measurement_ids) - see README's "Re-run /
-    overwrite behavior" for the full contract.
+    Returns (inserted_rows, previous_measurement_rows) - see README's "Re-run /
+    overwrite behavior" for the full contract. previous_measurement_rows carries
+    both measurement_id and measurement_source_value (not just the id) so callers
+    can identify the exact rows being replaced, not just their id - an id alone
+    isn't a safe identity check once ids can be reused by a later run.
     """
     logger = get_run_logger()
     if not rows:
@@ -259,16 +262,13 @@ def write_measurements(
         )
         return [], []
 
-    previous_measurement_ids = [
-        row["measurement_id"]
-        for row in dbdao.select_rows_where_in(
-            schema=schema_name,
-            table="measurement",
-            columns=["measurement_id"],
-            where_column="measurement_concept_id",
-            where_values=[measurement_concept_id],
-        )
-    ]
+    previous_measurement_rows = dbdao.select_rows_where_in(
+        schema=schema_name,
+        table="measurement",
+        columns=["measurement_id", "measurement_source_value"],
+        where_column="measurement_concept_id",
+        where_values=[measurement_concept_id],
+    )
 
     inserted_rows = dbdao.delete_and_insert_rows(
         schema=schema_name,
@@ -278,7 +278,7 @@ def write_measurements(
         insert_rows=rows,
         id_column="measurement_id",
     )
-    return inserted_rows, previous_measurement_ids
+    return inserted_rows, previous_measurement_rows
 
 
 def _require_fhir_mapping_table(mapping_dao, mapping_schema: str) -> None:
@@ -319,18 +319,30 @@ def _require_fhir_mapping_table(mapping_dao, mapping_schema: str) -> None:
 
 
 def _delete_stale_measurement_key_map_rows(
-    mapping_dao, mapping_schema: str, previous_measurement_ids: list
+    mapping_dao, mapping_schema: str, previous_measurement_rows: list
 ) -> None:
-    """Deletes fhir_omop_key_map rows for the given previous measurement_ids."""
+    """
+    Deletes fhir_omop_key_map rows for the exact (measurement_id,
+    measurement_source_value) pairs write_measurements() just replaced. Matched on
+    both columns, not omop_id alone - an id-allocator can reuse a deleted id for an
+    unrelated row from a concurrent run on the same dataset, and matching by id
+    alone would delete that other run's fresh mapping instead of the actually-stale
+    one.
+    """
     mapping_escaped_schema = mapping_schema.replace('"', '""')
-    # omop_id is VARCHAR (see write_fhir_key_map's str(row["measurement_id"]) below), so
-    # these must be quoted string literals - bare numeric literals fail with "operator
-    # does not exist: character varying = integer" instead of matching any rows.
-    ids_sql = ", ".join(f"'{int(measurement_id)}'" for measurement_id in previous_measurement_ids)
+    # omop_id/fhir_id are VARCHAR (see write_fhir_key_map's str(row["measurement_id"])
+    # below), so these must be quoted string literals, not bare numeric literals.
+    conditions = " OR ".join(
+        "(omop_id = '{omop_id}' AND fhir_id = '{fhir_id}')".format(
+            omop_id=int(row["measurement_id"]),
+            fhir_id=str(row["measurement_source_value"]).replace("'", "''"),
+        )
+        for row in previous_measurement_rows
+    )
     mapping_dao.execute_sql(f"""
         DELETE FROM "{mapping_escaped_schema}".fhir_omop_key_map
         WHERE fhir_resource_type = 'QuestionnaireResponse' AND omop_table_name = 'measurement'
-        AND omop_id IN ({ids_sql})
+        AND ({conditions})
     """)
 
 
@@ -340,51 +352,58 @@ def write_fhir_key_map(
     database_code: str,
     schema_name: str,
     rows: list,
-    previous_measurement_ids: list,
+    previous_measurement_rows: list,
 ):
     """
-    Reconciles `previous_measurement_ids` then upserts fhir_omop_key_map lineage
+    Reconciles `previous_measurement_rows` then upserts fhir_omop_key_map lineage
     for `rows` - see README's "FHIR lineage" section for the full contract.
     """
-    if not rows and not previous_measurement_ids:
+    if not rows and not previous_measurement_rows:
         return
     logger = get_run_logger()
     mapping_schema = f"{database_code}_{schema_name}_fhir_mapping"
     mapping_dao = DBDao(dialect=SupportedDatabaseDialects.TREX, database_code=database_code)
     _require_fhir_mapping_table(mapping_dao, mapping_schema)
 
-    if previous_measurement_ids:
-        _delete_stale_measurement_key_map_rows(mapping_dao, mapping_schema, previous_measurement_ids)
+    if previous_measurement_rows:
+        _delete_stale_measurement_key_map_rows(mapping_dao, mapping_schema, previous_measurement_rows)
         logger.info(
-            f"Removed stale fhir_omop_key_map row(s) for {len(previous_measurement_ids)} "
-            f"previous measurement_id(s) in {mapping_schema}"
+            f"Removed stale fhir_omop_key_map row(s) for {len(previous_measurement_rows)} "
+            f"previous measurement row(s) in {mapping_schema}"
         )
 
     if not rows:
         return
 
     # write_measurements() and this task run as separate transactions, so a
-    # concurrent rerun of this same dataset could have already replaced these
-    # measurement rows by the time we get here. Re-check against the current
-    # measurement set rather than trusting `rows` unconditionally, so we don't
-    # write lineage for ids a concurrent run has already deleted out from under us.
-    current_ids = {
-        row["measurement_id"]
+    # concurrent rerun of this same dataset could have replaced these measurement
+    # rows - and, since ids can be reused, even reassigned one of `rows`' own ids to
+    # an unrelated row - by the time we get here. Matching on (measurement_id,
+    # measurement_source_value) together, not id alone, tells an actually-current
+    # row apart from a same-id row a concurrent run just wrote for a different qrId.
+    current_rows = {
+        (row["measurement_id"], row["measurement_source_value"])
         for row in dbdao.select_rows_where_in(
             schema=schema_name,
             table="measurement",
-            columns=["measurement_id"],
+            columns=["measurement_id", "measurement_source_value"],
             where_column="measurement_id",
             where_values=[row["measurement_id"] for row in rows],
         )
     }
-    stale_rows = [row for row in rows if row["measurement_id"] not in current_ids]
+    stale_rows = [
+        row for row in rows
+        if (row["measurement_id"], row["measurement_source_value"]) not in current_rows
+    ]
     if stale_rows:
         logger.warning(
             f"{len(stale_rows)} measurement row(s) were already replaced by another run "
             f"before their fhir_omop_key_map lineage could be written - skipping them."
         )
-    rows = [row for row in rows if row["measurement_id"] in current_ids]
+    rows = [
+        row for row in rows
+        if (row["measurement_id"], row["measurement_source_value"]) in current_rows
+    ]
     if not rows:
         return
 

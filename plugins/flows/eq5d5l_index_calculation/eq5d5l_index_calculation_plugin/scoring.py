@@ -7,6 +7,7 @@ notes.
 """
 import itertools
 import json
+import math
 import operator
 import os
 import re
@@ -98,6 +99,11 @@ def _stata_tokenize(expr: str) -> list:
     return tokens
 
 
+def _stata_round_half_away_from_zero(value: float) -> int:
+    """Rounds ties away from zero, matching Stata's round() - see README."""
+    return math.floor(value + 0.5) if value >= 0 else math.ceil(value - 0.5)
+
+
 def _stata_call(name: str, arg_fns: list):
     name = name.lower()
     if name == "missing":
@@ -111,7 +117,7 @@ def _stata_call(name: str, arg_fns: list):
         x_fn, y_fn = arg_fns
         def _round(env):
             x, y = x_fn(env), y_fn(env)
-            return round(x / y) * y
+            return _stata_round_half_away_from_zero(x / y) * y
         return _round
     raise ValueError(f"Unsupported STATA function '{name}()' - only missing()/round() are understood")
 

@@ -191,19 +191,25 @@ class TestWriteMeasurements:
 
     def test_delegates_to_delete_and_insert_rows(self):
         dbdao = MagicMock()
-        dbdao.select_rows_where_in.return_value = [{"measurement_id": 10}, {"measurement_id": 11}]
+        dbdao.select_rows_where_in.return_value = [
+            {"measurement_id": 10, "measurement_source_value": "qr-old-1"},
+            {"measurement_id": 11, "measurement_source_value": "qr-old-2"},
+        ]
         dbdao.delete_and_insert_rows.return_value = [{"measurement_id": 1}]
         rows = [{"person_id": 101}]
-        inserted_rows, previous_measurement_ids = _run(
+        inserted_rows, previous_measurement_rows = _run(
             flow.write_measurements.fn,
             dbdao=dbdao, schema_name="cdmdefault", measurement_concept_id=42537273, rows=rows,
         )
         assert inserted_rows == [{"measurement_id": 1}]
-        assert previous_measurement_ids == [10, 11]
+        assert previous_measurement_rows == [
+            {"measurement_id": 10, "measurement_source_value": "qr-old-1"},
+            {"measurement_id": 11, "measurement_source_value": "qr-old-2"},
+        ]
         dbdao.select_rows_where_in.assert_called_once_with(
             schema="cdmdefault",
             table="measurement",
-            columns=["measurement_id"],
+            columns=["measurement_id", "measurement_source_value"],
             where_column="measurement_concept_id",
             where_values=[42537273],
         )
@@ -218,13 +224,13 @@ class TestWriteMeasurements:
 
 
 class TestWriteFhirKeyMap:
-    def test_noop_when_no_rows_and_no_previous_ids(self, monkeypatch):
+    def test_noop_when_no_rows_and_no_previous_rows(self, monkeypatch):
         dbdao_factory = MagicMock()
         monkeypatch.setattr(flow, "DBDao", dbdao_factory)
         _run(
             flow.write_fhir_key_map.fn,
             dbdao=MagicMock(), database_code="alpdev_pg", schema_name="cdmdefault",
-            rows=[], previous_measurement_ids=[],
+            rows=[], previous_measurement_rows=[],
         )
         dbdao_factory.assert_not_called()
 
@@ -236,12 +242,14 @@ class TestWriteFhirKeyMap:
         monkeypatch.setattr(flow, "DBDao", MagicMock(return_value=mapping_dao))
 
         dbdao = MagicMock()
-        dbdao.select_rows_where_in.return_value = [{"measurement_id": 555}]
+        dbdao.select_rows_where_in.return_value = [
+            {"measurement_id": 555, "measurement_source_value": "qr-1"}
+        ]
         rows = [{"measurement_source_value": "qr-1", "measurement_id": 555}]
         _run(
             flow.write_fhir_key_map.fn,
             dbdao=dbdao, database_code="alpdev_pg", schema_name="cdmdefault",
-            rows=rows, previous_measurement_ids=[],
+            rows=rows, previous_measurement_rows=[],
         )
 
         mapping_dao.check_schema_exists.assert_called_once_with("alpdev_pg_cdmdefault_fhir_mapping")
@@ -278,12 +286,15 @@ class TestWriteFhirKeyMap:
         _run(
             flow.write_fhir_key_map.fn,
             dbdao=dbdao, database_code="alpdev_pg", schema_name="cdmdefault",
-            rows=rows, previous_measurement_ids=[],
+            rows=rows, previous_measurement_rows=[],
         )
 
         mapping_dao.batch_insert_values.assert_not_called()
 
-    def test_deletes_stale_mappings_for_previous_measurement_ids_before_upserting(self, monkeypatch):
+    def test_skips_row_whose_id_was_reused_by_a_different_qr_id(self, monkeypatch):
+        # The id allocator can reuse a deleted id for an unrelated row from a
+        # concurrent run - the id alone existing isn't proof it's still *this*
+        # row's measurement, so the source_value must match too.
         mapping_dao = MagicMock()
         mapping_dao.check_schema_exists.return_value = True
         mapping_dao.check_table_exists.return_value = True
@@ -291,12 +302,39 @@ class TestWriteFhirKeyMap:
         monkeypatch.setattr(flow, "DBDao", MagicMock(return_value=mapping_dao))
 
         dbdao = MagicMock()
-        dbdao.select_rows_where_in.return_value = [{"measurement_id": 555}]
+        # id 555 exists, but now belongs to a different qrId than `rows` expects.
+        dbdao.select_rows_where_in.return_value = [
+            {"measurement_id": 555, "measurement_source_value": "qr-from-another-run"}
+        ]
         rows = [{"measurement_source_value": "qr-1", "measurement_id": 555}]
         _run(
             flow.write_fhir_key_map.fn,
             dbdao=dbdao, database_code="alpdev_pg", schema_name="cdmdefault",
-            rows=rows, previous_measurement_ids=[10, 11],
+            rows=rows, previous_measurement_rows=[],
+        )
+
+        mapping_dao.batch_insert_values.assert_not_called()
+
+    def test_deletes_stale_mappings_for_previous_measurement_rows_before_upserting(self, monkeypatch):
+        mapping_dao = MagicMock()
+        mapping_dao.check_schema_exists.return_value = True
+        mapping_dao.check_table_exists.return_value = True
+        mapping_dao.get_indexes_for_table.return_value = _current_key_map_indexes()
+        monkeypatch.setattr(flow, "DBDao", MagicMock(return_value=mapping_dao))
+
+        dbdao = MagicMock()
+        dbdao.select_rows_where_in.return_value = [
+            {"measurement_id": 555, "measurement_source_value": "qr-1"}
+        ]
+        rows = [{"measurement_source_value": "qr-1", "measurement_id": 555}]
+        previous_measurement_rows = [
+            {"measurement_id": 10, "measurement_source_value": "qr-old-1"},
+            {"measurement_id": 11, "measurement_source_value": "qr-old-2"},
+        ]
+        _run(
+            flow.write_fhir_key_map.fn,
+            dbdao=dbdao, database_code="alpdev_pg", schema_name="cdmdefault",
+            rows=rows, previous_measurement_rows=previous_measurement_rows,
         )
 
         mapping_dao.execute_sql.assert_called_once()
@@ -305,8 +343,29 @@ class TestWriteFhirKeyMap:
         assert "alpdev_pg_cdmdefault_fhir_mapping" in delete_sql
         assert "QuestionnaireResponse" in delete_sql
         assert "measurement" in delete_sql
-        assert "'10', '11'" in delete_sql  # quoted: omop_id is VARCHAR
+        # Matched by (omop_id, fhir_id) pair, not omop_id alone - and quoted, since
+        # both columns are VARCHAR.
+        assert "omop_id = '10' AND fhir_id = 'qr-old-1'" in delete_sql
+        assert "omop_id = '11' AND fhir_id = 'qr-old-2'" in delete_sql
         mapping_dao.batch_insert_values.assert_called_once()
+
+    def test_escapes_quotes_in_stale_qr_id(self, monkeypatch):
+        mapping_dao = MagicMock()
+        mapping_dao.check_schema_exists.return_value = True
+        mapping_dao.check_table_exists.return_value = True
+        mapping_dao.get_indexes_for_table.return_value = _current_key_map_indexes()
+        monkeypatch.setattr(flow, "DBDao", MagicMock(return_value=mapping_dao))
+
+        _run(
+            flow.write_fhir_key_map.fn,
+            dbdao=MagicMock(), database_code="alpdev_pg", schema_name="cdmdefault",
+            rows=[], previous_measurement_rows=[
+                {"measurement_id": 10, "measurement_source_value": "qr-o'brien"},
+            ],
+        )
+
+        [delete_sql] = mapping_dao.execute_sql.call_args.args
+        assert "fhir_id = 'qr-o''brien'" in delete_sql
 
     def test_deletes_stale_mappings_even_when_no_current_rows(self, monkeypatch):
         mapping_dao = MagicMock()
@@ -318,7 +377,7 @@ class TestWriteFhirKeyMap:
         _run(
             flow.write_fhir_key_map.fn,
             dbdao=MagicMock(), database_code="alpdev_pg", schema_name="cdmdefault",
-            rows=[], previous_measurement_ids=[10],
+            rows=[], previous_measurement_rows=[{"measurement_id": 10, "measurement_source_value": "qr-old"}],
         )
 
         mapping_dao.execute_sql.assert_called_once()
@@ -334,7 +393,7 @@ class TestWriteFhirKeyMap:
             _run(
                 flow.write_fhir_key_map.fn,
                 dbdao=MagicMock(), database_code="alpdev_pg", schema_name="cdmdefault",
-                rows=rows, previous_measurement_ids=[],
+                rows=rows, previous_measurement_rows=[],
             )
 
         mapping_dao.batch_insert_values.assert_not_called()
@@ -350,7 +409,7 @@ class TestWriteFhirKeyMap:
             _run(
                 flow.write_fhir_key_map.fn,
                 dbdao=MagicMock(), database_code="alpdev_pg", schema_name="cdmdefault",
-                rows=rows, previous_measurement_ids=[],
+                rows=rows, previous_measurement_rows=[],
             )
 
         mapping_dao.batch_insert_values.assert_not_called()
@@ -376,7 +435,7 @@ class TestWriteFhirKeyMap:
             _run(
                 flow.write_fhir_key_map.fn,
                 dbdao=MagicMock(), database_code="alpdev_pg", schema_name="cdmdefault",
-                rows=rows, previous_measurement_ids=[],
+                rows=rows, previous_measurement_rows=[],
             )
 
         mapping_dao.batch_insert_values.assert_not_called()
@@ -441,22 +500,35 @@ class TestCalculateEq5d5lIndexEndToEnd:
 
     def _patch_daos(self, monkeypatch, observation_rows):
         main_dao = MagicMock()
+        state = {"measurement_rows": []}
 
         def _select_rows_where_in(table, where_column=None, where_values=None, **_):
             if table == "observation":
                 return observation_rows
             if table == "measurement" and where_column == "measurement_id":
                 # write_fhir_key_map()'s post-write existence re-check: assume no
-                # concurrent rerun, so whatever was just inserted is still there.
-                return [{"measurement_id": measurement_id} for measurement_id in where_values]
-            return []  # write_measurements()'s previous-ids read: nothing pre-exists yet
+                # concurrent rerun, so whatever write_measurements() last inserted
+                # (by id and source_value together) is still there.
+                current = {row["measurement_id"]: row for row in state["measurement_rows"]}
+                return [
+                    {
+                        "measurement_id": measurement_id,
+                        "measurement_source_value": current[measurement_id]["measurement_source_value"],
+                    }
+                    for measurement_id in where_values
+                    if measurement_id in current
+                ]
+            return []  # write_measurements()'s previous-rows read: nothing pre-exists yet
 
         main_dao.select_rows_where_in.side_effect = _select_rows_where_in
-        main_dao.delete_and_insert_rows.side_effect = (
-            lambda insert_rows, id_column, **_: [
-                {**row, id_column: i + 1} for i, row in enumerate(insert_rows)
-            ]
-        )
+
+        def _delete_and_insert_rows(insert_rows, id_column, table, **_):
+            result = [{**row, id_column: i + 1} for i, row in enumerate(insert_rows)]
+            if table == "measurement":
+                state["measurement_rows"] = result
+            return result
+
+        main_dao.delete_and_insert_rows.side_effect = _delete_and_insert_rows
         mapping_dao = MagicMock()
         mapping_dao.check_schema_exists.return_value = True
         mapping_dao.check_table_exists.return_value = True

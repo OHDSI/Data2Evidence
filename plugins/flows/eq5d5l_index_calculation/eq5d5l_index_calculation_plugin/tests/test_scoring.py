@@ -68,6 +68,19 @@ def test_ca_quadratic_num45_correction():
     )
 
 
+def test_ca_round_breaks_ties_away_from_zero_not_to_even():
+    # Health state 11121 lands on exactly 904.5 before Canada's syntax rounds it to
+    # 3dp - Python's builtin round() would bankers-round that to 904 (0.904); Stata's
+    # round() rounds ties away from zero, giving 905 (0.905).
+    value_set = scoring.load_value_set("CA")
+    assert scoring.health_state_to_index("11121", value_set) == 0.905
+
+
+def test_stata_round_breaks_negative_ties_away_from_zero():
+    assert scoring._stata_round_half_away_from_zero(2.5) == 3
+    assert scoring._stata_round_half_away_from_zero(-2.5) == -3
+
+
 def test_stata_syntax_accepts_eqindex_without_underscore():
     # Real EuroQol syntax isn't 100% consistent on "EQ_index" - Trinidad and
     # Tobago's bundled download spells the result variable "EQindex" (no

@@ -155,6 +155,13 @@ per-dimension interactions, counts, quadratic terms, additive vs. subtractive
 constants - is handled correctly as long as it stays within that subset, with no
 `scoring.py` changes needed per country.
 
+`round()` matches Stata's own tie-breaking rather than Python's: an exact `.5`
+rounds away from zero (`round(904.5, 1) -> 905`), not to even like Python's builtin
+`round()` would (`-> 904`). The bundled Canada syntax hits this exactly - health
+state `11121` lands on `904.5` before its final `round(EQ_index, .001)` - so
+Python's own rounding would silently corrupt that one entry in the generated index
+table.
+
 One piece of domain knowledge it does still rely on: EuroQol's own STATA templates
 consistently accumulate each dimension's disutility into a `disut_mo`/`disut_sc`/
 `disut_ua`/`disut_pd`/`disut_ad` variable (mobility/self-care/usual-activities/
