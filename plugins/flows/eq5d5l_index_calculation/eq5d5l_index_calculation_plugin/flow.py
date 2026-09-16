@@ -89,14 +89,10 @@ def calculate_eq5d5l_index(config: Eq5d5lCalculateConfig):
         # be discovered only after the old measurement rows are already gone,
         # leaving them replaced with no FHIR lineage/metadata written for them.
         mapping_schema = f"{config.database_code}_{config.schema_name}_fhir_mapping"
-        # cache_id must match the OMOP dbdao's above: on a snapshot/cache dataset,
-        # omop_dataset_id (not database_code) is the catalog the mapping schema
-        # actually lives in.
-        mapping_dao = DBDao(
-            dialect=SupportedDatabaseDialects.TREX,
-            database_code=config.database_code,
-            cache_id=config.omop_dataset_id,
-        )
+        # database_code, not omop_dataset_id: matches the upstream FhirMappingNode
+        # (dataflow_ui_plugin/nodes.py), which always builds its own mapping DAO
+        # from database_code alone - the guard above guarantees they're equal.
+        mapping_dao = DBDao(dialect=SupportedDatabaseDialects.TREX, database_code=config.database_code)
         _require_fhir_mapping_table(mapping_dao, mapping_schema)
 
     inserted_rows, previous_measurement_rows = write_measurements(
@@ -113,7 +109,6 @@ def calculate_eq5d5l_index(config: Eq5d5lCalculateConfig):
     write_fhir_key_map(
         dbdao=dbdao,
         database_code=config.database_code,
-        omop_dataset_id=config.omop_dataset_id,
         schema_name=config.schema_name,
         rows=inserted_rows,
         previous_measurement_rows=previous_measurement_rows,
@@ -368,7 +363,6 @@ def _delete_stale_measurement_key_map_rows(
 def write_fhir_key_map(
     dbdao,
     database_code: str,
-    omop_dataset_id: str,
     schema_name: str,
     rows: list,
     previous_measurement_rows: list,
@@ -381,11 +375,10 @@ def write_fhir_key_map(
         return
     logger = get_run_logger()
     mapping_schema = f"{database_code}_{schema_name}_fhir_mapping"
-    # cache_id must match the OMOP dbdao's: on a snapshot/cache dataset,
-    # omop_dataset_id (not database_code) is the catalog the mapping schema lives in.
-    mapping_dao = DBDao(
-        dialect=SupportedDatabaseDialects.TREX, database_code=database_code, cache_id=omop_dataset_id,
-    )
+    # database_code, not omop_dataset_id: matches the upstream FhirMappingNode
+    # (dataflow_ui_plugin/nodes.py) and calculate_eq5d5l_index()'s own prerequisite
+    # check, which its caller-side guard has already confirmed are equal.
+    mapping_dao = DBDao(dialect=SupportedDatabaseDialects.TREX, database_code=database_code)
     _require_fhir_mapping_table(mapping_dao, mapping_schema)
 
     if rows:

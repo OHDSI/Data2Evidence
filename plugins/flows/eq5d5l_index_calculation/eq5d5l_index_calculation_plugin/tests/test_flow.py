@@ -230,7 +230,7 @@ class TestWriteFhirKeyMap:
         monkeypatch.setattr(flow, "DBDao", dbdao_factory)
         _run(
             flow.write_fhir_key_map.fn,
-            dbdao=MagicMock(), database_code="alpdev_pg", omop_dataset_id="alpdev_pg",
+            dbdao=MagicMock(), database_code="alpdev_pg",
             schema_name="cdmdefault", rows=[], previous_measurement_rows=[],
         )
         dbdao_factory.assert_not_called()
@@ -250,16 +250,15 @@ class TestWriteFhirKeyMap:
         rows = [{"measurement_source_value": "qr-1", "measurement_id": 555}]
         _run(
             flow.write_fhir_key_map.fn,
-            dbdao=dbdao, database_code="alpdev_pg", omop_dataset_id="a_snapshot_cache_id",
-            schema_name="cdmdefault", rows=rows, previous_measurement_rows=[],
+            dbdao=dbdao, database_code="alpdev_pg", schema_name="cdmdefault",
+            rows=rows, previous_measurement_rows=[],
         )
 
-        # The mapping schema lives in the same catalog as the OMOP dbdao's, which
-        # for a snapshot/cache dataset is omop_dataset_id, not database_code.
+        # Matches the upstream FhirMappingNode's own mapping DAO construction
+        # (database_code alone, no cache_id).
         dbdao_factory.assert_called_once_with(
             dialect=SupportedDatabaseDialects.TREX,
             database_code="alpdev_pg",
-            cache_id="a_snapshot_cache_id",
         )
         mapping_dao.check_schema_exists.assert_called_once_with("alpdev_pg_cdmdefault_fhir_mapping")
         mapping_dao.check_table_exists.assert_called_once_with(
@@ -295,7 +294,7 @@ class TestWriteFhirKeyMap:
         ]
         _run(
             flow.write_fhir_key_map.fn,
-            dbdao=dbdao, database_code="alpdev_pg", omop_dataset_id="alpdev_pg", schema_name="cdmdefault",
+            dbdao=dbdao, database_code="alpdev_pg", schema_name="cdmdefault",
             rows=rows, previous_measurement_rows=[],
         )
 
@@ -319,7 +318,7 @@ class TestWriteFhirKeyMap:
         rows = [{"measurement_source_value": "qr-1", "measurement_id": 555}]
         _run(
             flow.write_fhir_key_map.fn,
-            dbdao=dbdao, database_code="alpdev_pg", omop_dataset_id="alpdev_pg", schema_name="cdmdefault",
+            dbdao=dbdao, database_code="alpdev_pg", schema_name="cdmdefault",
             rows=rows, previous_measurement_rows=[],
         )
 
@@ -343,7 +342,7 @@ class TestWriteFhirKeyMap:
         ]
         _run(
             flow.write_fhir_key_map.fn,
-            dbdao=dbdao, database_code="alpdev_pg", omop_dataset_id="alpdev_pg", schema_name="cdmdefault",
+            dbdao=dbdao, database_code="alpdev_pg", schema_name="cdmdefault",
             rows=rows, previous_measurement_rows=previous_measurement_rows,
         )
 
@@ -375,7 +374,7 @@ class TestWriteFhirKeyMap:
         ]
         _run(
             flow.write_fhir_key_map.fn,
-            dbdao=MagicMock(), database_code="alpdev_pg", omop_dataset_id="alpdev_pg",
+            dbdao=MagicMock(), database_code="alpdev_pg",
             schema_name="cdmdefault", rows=[], previous_measurement_rows=previous_measurement_rows,
         )
 
@@ -394,7 +393,7 @@ class TestWriteFhirKeyMap:
 
         _run(
             flow.write_fhir_key_map.fn,
-            dbdao=MagicMock(), database_code="alpdev_pg", omop_dataset_id="alpdev_pg", schema_name="cdmdefault",
+            dbdao=MagicMock(), database_code="alpdev_pg", schema_name="cdmdefault",
             rows=[], previous_measurement_rows=[
                 {"measurement_id": 10, "measurement_source_value": "qr-o'brien"},
             ],
@@ -412,7 +411,7 @@ class TestWriteFhirKeyMap:
 
         _run(
             flow.write_fhir_key_map.fn,
-            dbdao=MagicMock(), database_code="alpdev_pg", omop_dataset_id="alpdev_pg", schema_name="cdmdefault",
+            dbdao=MagicMock(), database_code="alpdev_pg", schema_name="cdmdefault",
             rows=[], previous_measurement_rows=[{"measurement_id": 10, "measurement_source_value": "qr-old"}],
         )
 
@@ -428,7 +427,7 @@ class TestWriteFhirKeyMap:
         with pytest.raises(ValueError, match="does not exist"):
             _run(
                 flow.write_fhir_key_map.fn,
-                dbdao=MagicMock(), database_code="alpdev_pg", omop_dataset_id="alpdev_pg", schema_name="cdmdefault",
+                dbdao=MagicMock(), database_code="alpdev_pg", schema_name="cdmdefault",
                 rows=rows, previous_measurement_rows=[],
             )
 
@@ -444,7 +443,7 @@ class TestWriteFhirKeyMap:
         with pytest.raises(ValueError, match="does not exist"):
             _run(
                 flow.write_fhir_key_map.fn,
-                dbdao=MagicMock(), database_code="alpdev_pg", omop_dataset_id="alpdev_pg", schema_name="cdmdefault",
+                dbdao=MagicMock(), database_code="alpdev_pg", schema_name="cdmdefault",
                 rows=rows, previous_measurement_rows=[],
             )
 
@@ -470,7 +469,7 @@ class TestWriteFhirKeyMap:
         with pytest.raises(ValueError, match="unique index"):
             _run(
                 flow.write_fhir_key_map.fn,
-                dbdao=MagicMock(), database_code="alpdev_pg", omop_dataset_id="alpdev_pg", schema_name="cdmdefault",
+                dbdao=MagicMock(), database_code="alpdev_pg", schema_name="cdmdefault",
                 rows=rows, previous_measurement_rows=[],
             )
 
@@ -529,7 +528,10 @@ class TestCalculateEq5d5lIndexEndToEnd:
         defaults = dict(
             schema_name="cdmdefault",
             database_code="alpdev_pg",
-            omop_dataset_id="alpdev_pg",
+            # A real cache/snapshot dataset's id is a sanitized UUID, unrelated in
+            # value to database_code (see README's "Parameters" section) - default
+            # to one here so tests don't imply the two are normally the same string.
+            omop_dataset_id="3f2504e0_4f89_11d3_9a0c_0305e82c3301",
             country_code="AU",
         )
         defaults.update(overrides)
@@ -629,20 +631,32 @@ class TestCalculateEq5d5lIndexEndToEnd:
         # with nothing to link lineage/metadata to.
         main_dao.delete_and_insert_rows.assert_not_called()
 
-    def test_mapping_dao_uses_omop_dataset_id_as_cache_id(self, monkeypatch):
-        # The mapping schema lives in the same catalog as the OMOP dbdao's - for a
-        # snapshot/cache dataset that's omop_dataset_id, not database_code, at both
-        # the early prerequisite check and write_fhir_key_map()'s own TREX DAO.
+    def test_mapping_dao_uses_database_code_not_cache_id(self, monkeypatch):
+        # Must match the upstream FhirMappingNode's own mapping DAO construction
+        # (dataflow_ui_plugin/nodes.py), which always uses database_code alone -
+        # and DBDao(cache_id=...) is a no-op for the Postgres/IbisDao path anyway.
         self._patch_daos(monkeypatch, _full_health_group())
         dbdao_factory_spy = MagicMock(side_effect=flow.DBDao)
         monkeypatch.setattr(flow, "DBDao", dbdao_factory_spy)
 
-        _run(flow.calculate_eq5d5l_index, self._config(omop_dataset_id="a_snapshot_cache_id"))
+        _run(flow.calculate_eq5d5l_index, self._config())
 
         trex_calls = [c for c in dbdao_factory_spy.call_args_list if c.kwargs.get("dialect") is not None]
         assert len(trex_calls) == 2
         for call in trex_calls:
-            assert call.kwargs["cache_id"] == "a_snapshot_cache_id"
+            assert "cache_id" not in call.kwargs
+
+    def test_omop_dataset_id_differing_from_database_code_does_not_raise(self, monkeypatch):
+        # omop_dataset_id is informational for Postgres (passed through to DBDao as
+        # cache_id, which the shared DAO layer's connection lookup doesn't consult
+        # for this dialect) - the same convention other Postgres-backed flows use
+        # (e.g. loyalty_score_plugin). It isn't required to match database_code.
+        main_dao, mapping_dao = self._patch_daos(monkeypatch, _full_health_group())
+
+        rows = _run(flow.calculate_eq5d5l_index, self._config(omop_dataset_id="a_different_dataset_id"))
+
+        assert len(rows) == 1
+        mapping_dao.batch_insert_values.assert_called_once()
 
     def test_raises_for_dialect_missing_required_dao_methods(self, monkeypatch):
         # e.g. TrexDao, which has neither select_rows_where_in() nor
