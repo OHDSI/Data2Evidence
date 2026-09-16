@@ -43,6 +43,20 @@ Deno.test("an existing trex secret is kept", () => {
   assertEquals(out.content.includes("TREX_ROOT_KEY=RK"), false);
 });
 
+// The oldest installations - the ones with the most Logto users to keep -
+// predate the ALP -> D2E rename and name only LOGTO__ALP_APP__*. Reading just
+// the new name would call them fresh installs and cut those users off.
+Deno.test("a pre-rename env naming only LOGTO__ALP_APP__* is federated too", () => {
+  const legacy = preTrex
+    .replace("LOGTO__D2E_APP__CLIENT_ID=", "LOGTO__ALP_APP__CLIENT_ID=")
+    .replace("LOGTO__D2E_APP__CLIENT_SECRET=", "LOGTO__ALP_APP__CLIENT_SECRET=");
+  assertEquals(legacy.includes("LOGTO__D2E_APP__"), false);
+  const out = upgradeEnvForIdpMode(legacy, gen);
+  assertEquals(out.mode, "logto-federated");
+  assertEquals(out.content.includes("\nD2E_IDP_MODE=logto-federated\n"), true);
+  assertEquals(out.content.includes("USER_MGMT__ROLE_SOURCE=logto"), false);
+});
+
 Deno.test("an env written on trex is stamped trex and otherwise untouched", () => {
   const env = "LOGTO__D2E_APP__CLIENT_SECRET=x\nD2E_IDP=trex\n";
   assertEquals(upgradeEnvForIdpMode(env, gen), { mode: "trex", content: env + "D2E_IDP_MODE=trex\n", added: ["D2E_IDP_MODE"] });
