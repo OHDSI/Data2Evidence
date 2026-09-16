@@ -81,3 +81,43 @@ Deno.test("an unexpected /settings shape is logged instead of swallowed silently
 
   assertEquals(warnings.length > 0, true);
 });
+
+async function loadWithSettings(tag, settings) {
+  var doc = stubDocument();
+  globalThis.document = doc;
+  globalThis.window = globalThis;
+  globalThis.location = { origin: "http://localhost", search: "", pathname: "/atlas/d2e-login/", hash: "" };
+  await import("./providers.js?" + tag);
+  var originalFetch = globalThis.fetch;
+  globalThis.fetch = function () {
+    return Promise.resolve({ ok: true, json: function () { return Promise.resolve(settings); } });
+  };
+  try {
+    await import("./login.js?" + tag);
+    await new Promise(function (r) { setTimeout(r, 0); });
+    await new Promise(function (r) { setTimeout(r, 0); });
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+  return doc.elements;
+}
+
+// The logto-federated compose overlay's default: only the Logto button.
+Deno.test("native sign-in off hides the password form and the divider", async () => {
+  var el = await loadWithSettings("native-off", { external: { email: false, logto: true } });
+  assertEquals(el.get("form").hidden, true);
+  assertEquals(el.get("divider").hidden, true);
+  assertEquals(el.get("error").textContent, "");
+});
+
+Deno.test("native sign-in on keeps the form, with the divider under the Logto button", async () => {
+  var el = await loadWithSettings("native-on", { external: { email: true, logto: true } });
+  assertEquals(el.get("form").hidden, false);
+  assertEquals(el.get("divider").hidden, false);
+});
+
+Deno.test("no provider and native sign-in off says so instead of rendering an empty page", async () => {
+  var el = await loadWithSettings("nothing", { external: { email: false } });
+  assertEquals(el.get("form").hidden, true);
+  assertEquals(el.get("error").textContent, "No sign-in method is available. Ask your administrator.");
+});

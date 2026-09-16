@@ -3,6 +3,15 @@ import "./providers.js";
 
 const P = globalThis.D2ELoginProviders;
 
+Deno.test("the password form is hidden only when trex explicitly turns native sign-in off", () => {
+  assertEquals(P.passwordLoginEnabled({ external: { email: false, logto: true } }), false);
+  assertEquals(P.passwordLoginEnabled({ external: { email: true, logto: true } }), true);
+  // Anything short of an explicit false keeps a trex-only installation's only way in.
+  assertEquals(P.passwordLoginEnabled({ external: {} }), true);
+  assertEquals(P.passwordLoginEnabled({}), true);
+  assertEquals(P.passwordLoginEnabled(null), true);
+});
+
 Deno.test("only enabled external providers become buttons; email is the password form", () => {
   assertEquals(P.externalProviders({ external: { email: true, logto: true, entra: false } }), [
     { id: "logto", label: "Logto" },
