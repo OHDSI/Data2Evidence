@@ -2,6 +2,11 @@ import { defineConfig } from '@playwright/test'
 import dotenv from 'dotenv'
 import { MINUTE_1, MINUTE_3, SECOND_20, SECOND_30 } from './tests/const'
 
+// Load an optional per-provider env file (E2E_ENV_FILE) first; dotenv won't override
+// already-set vars, so the plain .env below fills in the rest.
+if (process.env.E2E_ENV_FILE) {
+  dotenv.config({ path: process.env.E2E_ENV_FILE, quiet: true })
+}
 dotenv.config({ quiet: true })
 
 export default defineConfig({
