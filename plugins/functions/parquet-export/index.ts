@@ -155,7 +155,9 @@ function substituteTemplateParams(
       additionalParams[conceptCodeKey] !== ""
     ) {
       if (!isValidConceptCode(additionalParams[conceptCodeKey])) {
-        throw new Error(`Invalid ${conceptCodeKey}`);
+        throw new Error(
+          `Concept code for Condition ${i} is invalid: ${additionalParams[conceptCodeKey]}`,
+        );
       }
     }
     if (
