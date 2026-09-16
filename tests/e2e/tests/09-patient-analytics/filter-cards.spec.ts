@@ -24,7 +24,7 @@ test(TEST_NAME, async ({ browser }) => {
   await page.getByRole('button', { name: 'Sign in' }).click()
   await page.getByText('Demo dataset').first().click()
   await page.getByRole('link', { name: 'Cohorts' }).click()
-  await page.getByRole('button', { name: 'D2E' }).click()
+  await page.getByTestId('explorations-new-btn').click()
 
   // Step 2 - Add conditional occurrence filter card
   await page.getByTitle('Add Filter Card').getByRole('button').click()
