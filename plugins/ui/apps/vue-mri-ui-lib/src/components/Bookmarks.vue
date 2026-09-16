@@ -250,10 +250,16 @@ import RefreshIcon from './icons/RefreshIcon.vue'
 import VSnackbar from './vuetify/VSnackbar.vue'
 import Constants from '../utils/Constants'
 import { isFlowRunCompleted, isFlowRunInProgress } from '../utils/FlowRunState'
+import { createInFlightGuard } from '../utils/InFlightGuard'
 import ImportAtlasCohortDefinitionDialog from './ImportAtlasCohortDefinitionDialog.vue'
 import { useAtlasStore } from '../stores/atlas'
 import { usePortalContext } from '../composables/usePortalContext'
 import { useUnsavedChanges } from '../composables/useUnsavedChanges'
+
+// Module scope, so one cohort cannot have two data quality jobs in flight at
+// once no matter which bookmark list the click came from.
+const runDqdExclusive = createInFlightGuard()
+
 export default {
   name: 'bookmark',
   props: ['unloadBookmarkEv', 'initBookmarkId'],
@@ -717,7 +723,13 @@ export default {
       window.dispatchEvent(event)
     },
     async openDataQualityDialog(cohortDefinition) {
-      if (cohortDefinition?.id) {
+      if (!cohortDefinition?.id) {
+        return
+      }
+      // Reading the latest flow run and creating one are two round trips. A
+      // second click landing in between reads "nothing running" again and
+      // starts a duplicate job, so ignore it until this one settles.
+      await runDqdExclusive(String(cohortDefinition.id), async () => {
         const flowRun = await this.fetchDataQualityFlowRun({ cohortDefinitionId: cohortDefinition.id })
         if (isFlowRunCompleted(flowRun)) {
           this.openDataQualityResultsDialog(flowRun)
@@ -740,7 +752,7 @@ export default {
               return err
             })
         }
-      }
+      })
     },
     openAtlasLink() {
       if (this.useAtlasLite) {
