@@ -12,6 +12,11 @@ export function resolveIdpMode(raw: string | undefined): IdpMode {
  * signing-in identity. A row with no subject is simply being linked. A row that
  * has one is left alone in federated mode: the migration owns that re-key, and
  * a name match is not proof two identities are the same person.
+ *
+ * alp-usermgmt-init's `src/db/seeds/01_user.ts` keeps an inline copy of this
+ * rule rather than importing it: knex seeds are dynamically loaded from disk
+ * at runtime and only that function's own directory is staged, so a bare
+ * `@alp/...` import there cannot resolve.
  */
 export function mayRekeyExistingSubject(currentIdpUserId: string | null | undefined, mode: IdpMode): boolean {
   if (!currentIdpUserId) return true
