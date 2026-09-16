@@ -271,6 +271,9 @@ class SqlAlchemyDao(DaoBase):
             metadata_obj = sql.MetaData(schema=schema)
             table_obj = sql.Table(table, metadata_obj, autoload_with=connection)
 
+            if id_column:
+                self._lock_table_for_id_allocation(connection, schema, table)
+
             connection.execute(
                 table_obj.delete().where(table_obj.c[delete_column] == delete_value)
             )
@@ -288,6 +291,22 @@ class SqlAlchemyDao(DaoBase):
                 connection.execute(table_obj.insert(), insert_rows)
 
         return insert_rows
+
+    def _lock_table_for_id_allocation(self, connection, schema: str, table: str) -> None:
+        """
+        Acquires a transaction-scoped exclusive table lock so MAX(id)+1 allocation
+        in delete_and_insert_rows serializes across concurrent writers instead of
+        racing on the read. Released automatically on commit/rollback of `connection`.
+        """
+        match self.dialect:
+            case SupportedDatabaseDialects.POSTGRES | SupportedDatabaseDialects.HANA:
+                connection.execute(sql.text(f"LOCK TABLE {schema}.{table} IN EXCLUSIVE MODE"))
+            case _:
+                raise NotImplementedError(
+                    f"delete_and_insert_rows(id_column=...) has no concurrency-safe id "
+                    f"allocation strategy for dialect '{self.dialect}'. Add a table-lock "
+                    f"(or identity/sequence) strategy for it before using this path."
+                )
 
     def update_data_ingestion_date(self, schema: str):
         with self.engine.connect() as connection:

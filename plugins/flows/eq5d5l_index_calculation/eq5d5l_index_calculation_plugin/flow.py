@@ -62,7 +62,7 @@ def calculate_eq5d5l_index(config: Eq5d5lCalculateConfig):
     for row in rows:
         row["measurement_concept_id"] = measurement_concept_id
 
-    inserted_rows = write_measurements(
+    inserted_rows, previous_measurement_ids = write_measurements(
         dbdao=dbdao,
         schema_name=config.schema_name,
         measurement_concept_id=measurement_concept_id,
@@ -77,6 +77,7 @@ def calculate_eq5d5l_index(config: Eq5d5lCalculateConfig):
         database_code=config.database_code,
         schema_name=config.schema_name,
         rows=inserted_rows,
+        previous_measurement_ids=previous_measurement_ids,
     )
 
     if inserted_rows:
@@ -119,12 +120,18 @@ def read_eq5d5l_observations(dbdao, schema_name: str, dimension_concept_id_map: 
 
 
 def _extract_level(code: Optional[str]) -> Optional[int]:
+    """
+    Returns None (unparseable, skips just this dimension) for a non-numeric code
+    or one outside the valid 1-5 range - otherwise an out-of-range level reaches
+    assemble_health_state(), which raises and aborts the whole flow.
+    """
     if code is None:
         return None
     try:
-        return int(code)
+        level = int(code)
     except (TypeError, ValueError):
         return None
+    return level if level in (1, 2, 3, 4, 5) else None
 
 
 @task(log_prints=True)
@@ -214,14 +221,18 @@ def calculate_index_rows(
 
 
 @task(log_prints=True)
-def write_measurements(dbdao, schema_name: str, measurement_concept_id: int, rows: list) -> list:
+def write_measurements(
+    dbdao, schema_name: str, measurement_concept_id: int, rows: list
+) -> tuple[list, list]:
     """
     Overwrite-on-rerun: in a single transaction, delete all measurement rows for this
     dataset tagged with measurement_concept_id, then insert the freshly computed set.
     Scoped by measurement_concept_id (dedicated to EQ-5D-5L index values) since
     schema_name already identifies the dataset 1:1 - no new unique constraint needed
-    on the shared OMOP measurement table. Returns the inserted rows (with their
-    assigned measurement_id) so callers can build fhir_omop_key_map entries from them.
+    on the shared OMOP measurement table. Returns (inserted_rows, previous_measurement_ids):
+    the inserted rows (with their assigned measurement_id), and the measurement_id
+    values this call deleted - a rerun can reassign different ids, so callers need
+    the old ones to reconcile fhir_omop_key_map rows that pointed at them.
     """
     logger = get_run_logger()
     if not rows:
@@ -230,9 +241,20 @@ def write_measurements(dbdao, schema_name: str, measurement_concept_id: int, row
             f"{schema_name}.measurement rows (measurement_concept_id={measurement_concept_id}) "
             "untouched rather than deleting them with nothing to replace them."
         )
-        return []
+        return [], []
 
-    return dbdao.delete_and_insert_rows(
+    previous_measurement_ids = [
+        row["measurement_id"]
+        for row in dbdao.select_rows_where_in(
+            schema=schema_name,
+            table="measurement",
+            columns=["measurement_id"],
+            where_column="measurement_concept_id",
+            where_values=[measurement_concept_id],
+        )
+    ]
+
+    inserted_rows = dbdao.delete_and_insert_rows(
         schema=schema_name,
         table="measurement",
         delete_column="measurement_concept_id",
@@ -240,6 +262,7 @@ def write_measurements(dbdao, schema_name: str, measurement_concept_id: int, row
         insert_rows=rows,
         id_column="measurement_id",
     )
+    return inserted_rows, previous_measurement_ids
 
 
 def _require_fhir_mapping_table(mapping_dao, mapping_schema: str) -> None:
@@ -263,20 +286,54 @@ def _require_fhir_mapping_table(mapping_dao, mapping_schema: str) -> None:
         )
 
 
+def _delete_stale_measurement_key_map_rows(
+    mapping_dao, mapping_schema: str, previous_measurement_ids: list
+) -> None:
+    """
+    Scoped to `previous_measurement_ids` rather than a blanket delete on
+    (fhir_resource_type, omop_table_name), since other producers can write
+    QuestionnaireResponse -> measurement mappings this plugin didn't create.
+    """
+    mapping_escaped_schema = mapping_schema.replace('"', '""')
+    ids_sql = ", ".join(str(int(measurement_id)) for measurement_id in previous_measurement_ids)
+    mapping_dao.execute_sql(f"""
+        DELETE FROM "{mapping_escaped_schema}".fhir_omop_key_map
+        WHERE fhir_resource_type = 'QuestionnaireResponse' AND omop_table_name = 'measurement'
+        AND omop_id IN ({ids_sql})
+    """)
+
+
 @task(log_prints=True)
-def write_fhir_key_map(database_code: str, schema_name: str, rows: list):
+def write_fhir_key_map(
+    database_code: str,
+    schema_name: str,
+    rows: list,
+    previous_measurement_ids: list,
+):
     """
     Upsert FHIR QuestionnaireResponse -> OMOP measurement lineage into
     fhir_omop_key_map, mirroring FhirMappingNode's key-map write so this plugin's
     computed index rows are discoverable the same way the EQ5D5L-to-OMOP-Measurement
-    pipeline's own rows are.
+    pipeline's own rows are. `previous_measurement_ids` (from write_measurements(),
+    which can reassign ids on a rerun) are reconciled first, so stale mappings never
+    point at now-nonexistent or newly-reused measurement_id values.
     """
-    if not rows:
+    if not rows and not previous_measurement_ids:
         return
     logger = get_run_logger()
     mapping_schema = f"{database_code}_{schema_name}_fhir_mapping"
     mapping_dao = DBDao(dialect=SupportedDatabaseDialects.TREX, database_code=database_code)
     _require_fhir_mapping_table(mapping_dao, mapping_schema)
+
+    if previous_measurement_ids:
+        _delete_stale_measurement_key_map_rows(mapping_dao, mapping_schema, previous_measurement_ids)
+        logger.info(
+            f"Removed stale fhir_omop_key_map row(s) for {len(previous_measurement_ids)} "
+            f"previous measurement_id(s) in {mapping_schema}"
+        )
+
+    if not rows:
+        return
 
     key_map_rows = [
         (

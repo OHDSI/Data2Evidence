@@ -111,7 +111,7 @@ COPY --from=staging /staged/data-management-flow /var/lib/d2e-flows/data-managem
 COPY --from=staging /staged/search-embedding-flow /var/lib/d2e-flows/search-embedding-flow
 RUN --mount=type=cache,target=/opt/pixi/cache,sharing=locked \
     set -e; \
-    for group in loyalty-score-flow eq5d5l-index-calculation-flow i2b2-flow \
+    for group in cohort-discovery-flow loyalty-score-flow eq5d5l-index-calculation-flow i2b2-flow \
                  data-management-flow search-embedding-flow; do \
       MAKEFLAGS="-j$(nproc)" /app/provision-envs.sh --dir "/var/lib/d2e-flows/$group/baked"; \
     done; \
