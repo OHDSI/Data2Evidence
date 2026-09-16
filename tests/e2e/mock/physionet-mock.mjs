@@ -58,9 +58,14 @@ function readBody(req) {
   })
 }
 
+function escapeHtml(s) {
+  return s.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]))
+}
+
 function loginPage(query) {
   // Field names/button label match loginViaConnector's generic-OIDC selectors.
-  const q = query.toString()
+  // Escape the reflected query before embedding it in the form action (CodeQL: reflected XSS).
+  const q = escapeHtml(query.toString())
   return `<!doctype html><html><head><meta charset="utf-8"><title>Mock PhysioNet</title></head>
 <body style="font-family:sans-serif;max-width:420px;margin:64px auto">
   <h1>Mock PhysioNet (DataShare)</h1>
