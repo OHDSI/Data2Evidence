@@ -54,6 +54,13 @@ export function idpModeOf(content: string): IdpMode | undefined {
  * - Has D2E_IDP: written by an init that already targeted trex, so trex.
  * - Has Logto app credentials but no D2E_IDP: an installation from before trex,
  *   whose users are in Logto, so logto-federated, plus the settings trex needs.
+ *   Either spelling of the app secret counts. Installations predating the
+ *   ALP -> D2E rename carry only LOGTO__ALP_APP__CLIENT_SECRET, and those are
+ *   the oldest installations of all - exactly the ones this mode exists for.
+ *   docker-compose.yml resolves the pair the same way
+ *   (${LOGTO__D2E_APP__CLIENT_SECRET:-${LOGTO__ALP_APP__CLIENT_SECRET}}), so
+ *   reading only the new name here would call a live Logto installation a
+ *   fresh one and cut its users off from their accounts.
  *   D2E__SEED_USER is deliberately not added: it would create admin@<domain>
  *   with a well-known password on an installation that already has an admin.
  * - Anything else: trex.
@@ -72,7 +79,8 @@ export function upgradeEnvForIdpMode(
 
   const base = content.replace(/\n*$/, "\n");
   const isPreTrex = lineValue(content, "D2E_IDP") === undefined &&
-    lineValue(content, "LOGTO__D2E_APP__CLIENT_SECRET") !== undefined;
+    (lineValue(content, "LOGTO__D2E_APP__CLIENT_SECRET") !== undefined ||
+      lineValue(content, "LOGTO__ALP_APP__CLIENT_SECRET") !== undefined);
 
   if (!isPreTrex) {
     return { mode: "trex", content: `${base}D2E_IDP_MODE=trex\n`, added: ["D2E_IDP_MODE"] };
