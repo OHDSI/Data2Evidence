@@ -1,6 +1,12 @@
 import { AuthMode, DatabaseDialect, TransformedDBCredentials } from "./types";
 const _env = Deno.env.toObject();
 
+/** Parse a positive-integer env var, falling back on missing/garbage values. */
+function positiveInt(raw: string | undefined, fallback: number): number {
+  const parsed = Number(raw);
+  return Number.isFinite(parsed) && parsed > 0 ? Math.floor(parsed) : fallback;
+}
+
 // Value error, Variable name must only contain lowercase letters, numbers, and underscores
 export const env = {
   TEST_VALUE: _env.TEST_VALUE,
@@ -84,6 +90,17 @@ export const env = {
   // runtime, which run in the base group's environment.
   DEFAULT_FLOW_COMMAND:
     _env.DEFAULT_FLOW_COMMAND || "/app/run-flow.sh d2e-flows",
+  // How long to wait for trex's boot-time database-registry sync before giving up
+  // on seeding the `database-credentials` block (see src/dbCredentials.ts). Keep
+  // the total worker runtime under trex's init workerTimeoutMs (3 min).
+  DATABASE_CREDENTIALS_WAIT_TIMEOUT_MS: positiveInt(
+    _env.DATABASE_CREDENTIALS__WAIT_TIMEOUT_MS,
+    60_000
+  ),
+  DATABASE_CREDENTIALS_WAIT_INTERVAL_MS: positiveInt(
+    _env.DATABASE_CREDENTIALS__WAIT_INTERVAL_MS,
+    2_000
+  ),
 };
 
 export const D2E_MEMORY_LIMIT = env.D2E_MEMORY_LIMIT;
