@@ -23,6 +23,14 @@ on:
         type: string
   schedule:
     - cron: "17 2 * * *"
+  # TEMPORARY (remove before merge): run on PRs that touch the harness so this workflow can be
+  # validated before it lands on develop — workflow_dispatch / the "Run workflow" button only work
+  # once the file is on the default branch.
+  pull_request:
+    branches: [develop]
+    paths:
+      - '.github/workflows/test-e2e-idp.yml'
+      - 'tests/e2e/**'
 
 permissions:
   contents: read
