@@ -319,7 +319,8 @@ const actions = {
     commit(types.ZIP_DOWNLOAD_ERROR, { zipDownloadError })
   },
   setInitialAxisSelection({ getters, dispatch, rootGetters }) {
-    const initialAxis = rootGetters.getMriFrontendConfig.getInitialAxisSelection()
+    const mriFrontendConfig = rootGetters.getMriFrontendConfig
+    const initialAxis = mriFrontendConfig.getInitialAxisSelection()
     for (let i = 0; i < Constants.MRIChartDimensions.Count; i += 1) {
       let filterCardId = ''
       let key = ''
@@ -328,6 +329,7 @@ const actions = {
         key = axisValue.pop()
         axisValue.pop()
         filterCardId = axisValue.join('.')
+        const defaultBinSize = mriFrontendConfig.getAttributeByPath(initialAxis[i])?.getDefaultBinSize?.()
 
         dispatch('setAxisValue', {
           id: i,
@@ -335,12 +337,13 @@ const actions = {
             key,
             filterCardId,
             attributeId: initialAxis[i],
+            binsize: defaultBinSize ?? '',
           },
         })
       } else {
         dispatch('setAxisValue', {
           id: i,
-          props: { key: '', filterCardId: '' },
+          props: { key: '', filterCardId: '', attributeId: '', binsize: '' },
         })
       }
     }
@@ -350,11 +353,23 @@ const actions = {
     dispatch('setActiveChart', getters.getAllChartConfigs.initialChart)
     dispatch('setInitialAxisSelection')
   },
-  setFireRequest({ commit, state }) {
+  setFireRequest({ commit, state, dispatch, rootGetters }) {
     // Only trigger if fire is not being held (prevents intermediate requests during batch updates)
-    if (!state.fireRequestHeld) {
-      commit(types.CHART_SET_FIRE_REQUEST)
+    if (state.fireRequestHeld) {
+      return
     }
+    // Flag the previous cohort's count as stale before the new query goes out. The
+    // count and chart are only rewritten when a chart component's request resolves
+    // and nothing else marks the gap, so a reader landing mid-flight would otherwise
+    // see the OLD cohort's number with no way to know it is not the answer.
+    //
+    // Deliberately a side-channel flag rather than a sentinel written INTO the count.
+    // Skipped when there is nothing to query: the chart components bail out in that
+    // case too, so no response would ever come back to clear the flag.
+    if (Object.keys(rootGetters.getBookmarksData ?? {}).length > 0) {
+      dispatch('invalidateCurrentPatientCount')
+    }
+    commit(types.CHART_SET_FIRE_REQUEST)
   },
   setRightPaneMounted({ commit }, value: boolean) {
     commit(types.SET_RIGHT_PANE_MOUNTED, value)
@@ -373,10 +388,18 @@ const actions = {
   releaseFireRequest({ commit }) {
     commit(types.CHART_RELEASE_FIRE_REQUEST)
   },
-  resetChart({ dispatch, getters }) {
-    dispatch('resetChartProperties')
-    const initialIFR = getters.getMriFrontendConfig.getInitialIFR()
-    return dispatch('setIFRState', { ifr: initialIFR }).then(() => dispatch('setupChartDefaults'))
+  async resetChart({ dispatch, getters }) {
+    await dispatch('holdFireRequest')
+    try {
+      await dispatch('queryReset')
+      await dispatch('resetChartProperties')
+      const initialIFR = getters.getMriFrontendConfig.getInitialIFR()
+      await dispatch('setIFRState', { ifr: initialIFR })
+      await dispatch('setupChartDefaults')
+    } finally {
+      await dispatch('releaseFireRequest')
+    }
+    await dispatch('setFireRequest')
   },
   setBarChartType({ commit, dispatch, state, rootGetters }, modeId: string) {
     const previousMode = state.barDisplayMode

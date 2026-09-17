@@ -50,6 +50,7 @@ describe('bootstrap/datasetPropagation', () => {
       expect(calls).toEqual([
         `commit:${SET_DATASET_RELOAD_IN_PROGRESS}`,
         'commit:SET_ACTIVE_BOOKMARK',
+        'commit:RESET_ALL_BOOKMARKS',
         'dispatch:setDataset',
         'dispatch:setDatasetReleaseId',
         'commit:RESET_DATASET_CACHE',

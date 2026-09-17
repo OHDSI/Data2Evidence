@@ -317,7 +317,7 @@
           "ALP_GATEWAY_OAUTH__URL": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-d2e.local}:33001/oauth/token",
           "ALP__SYSTEM_ID": "${ALP__SYSTEM_ID:-alp-research}",
           "ANALYTICS_SVC__PORT": 41102,
-          "SQL_RETURN_ON": "${SQL_RETURN_ON:-false}",
+          "SQL_RETURN_ON": "true",
           "LOCAL_DEBUG": "false",
           "USE_EXTENSION_FOR_COHORT_CREATION": "false",
           "isTestEnv": "${isTestEnv}",
@@ -338,7 +338,7 @@
           "PG_USER": "${PG_WRITE_USER:-alp_pg_write_user}"
         },
         "query-gen-svc": {
-          "SQL_RETURN_ON": "${SQL_RETURN_ON:-false}",
+          "SQL_RETURN_ON": "true",
           "isTestEnv": "${isTestEnv}",
           "TESTSCHEMA": "${TESTSCHEMA}",
           "NOT_EQ_CHECK_FILTERCARDS": "${NOT_EQ_CHECK_FILTERCARDS:-true}",
@@ -375,6 +375,7 @@
           "USERMGMT__ENTITLEMENTS_PHYSIONET_CLIENT_SECRET": "${USERMGMT__ENTITLEMENTS_PHYSIONET_CLIENT_SECRET:-}",
           "USERMGMT__ENTITLEMENTS_PHYSIONET_TOKEN_PATH": "${USERMGMT__ENTITLEMENTS_PHYSIONET_TOKEN_PATH:-/oauth/token/}",
           "USERMGMT__ENTITLEMENTS_DATASET_MAPPING": "${USERMGMT__ENTITLEMENTS_DATASET_MAPPING:-}",
+          "IDP__GROUP_ROLE_MAPPING": "${IDP__GROUP_ROLE_MAPPING:-}",
           "NIFI_MGMT__BASE_URL": "http://${PROJECT_NAME:-d2e}-minerva-nifi-mgmt-svc-1:4444/alp-nifi-api/",
           "PG__USER_MGMT__ADMIN_PASSWORD": "${PG_ADMIN_PASSWORD}",
           "PG__USER_MGMT__ADMIN_USER": "${PG_ADMIN_USER:-alp_pg_admin_user}",
@@ -556,6 +557,8 @@
           "IDP__ALP_DATA_CLIENT_ID": "${LOGTO__D2E_DATA__CLIENT_ID}",
           "IDP__ALP_DATA__CLIENT_SECRET": "${LOGTO__D2E_DATA__CLIENT_SECRET}",
           "DATABASE_CREDENTIALS": "{}",
+          "DATABASE_CREDENTIALS__WAIT_TIMEOUT_MS": "${DATABASE_CREDENTIALS__WAIT_TIMEOUT_MS:-60000}",
+          "DATABASE_CREDENTIALS__WAIT_INTERVAL_MS": "${DATABASE_CREDENTIALS__WAIT_INTERVAL_MS:-2000}",
           "D2E_MEMORY_LIMIT": "${D2E_MEMORY_LIMIT:-16G}",
           "D2E_SWAP_LIMIT": "${D2E_SWAP_LIMIT:-64G}",
           "WORKPOOL_NAME": "${PREFECT_POOL:-process-pool}",
@@ -803,6 +806,7 @@
           "portal.filterScope.read",
           "portal.dataset.release.list.read",
           "portal.config.read",
+          "portal.audit.log",
           "codesuggestion.tenantview.read",
           "mcpchat.tenantview.read",
           "d2e.webapi.public",
@@ -1397,6 +1401,15 @@
           "httpMethods": [
             "POST",
             "GET"
+          ]
+        },
+        {
+          "path": "^/system-portal/audit/log$",
+          "scopes": [
+            "portal.audit.log"
+          ],
+          "httpMethods": [
+            "POST"
           ]
         },
         {

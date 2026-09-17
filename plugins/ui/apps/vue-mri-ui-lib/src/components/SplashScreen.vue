@@ -41,5 +41,6 @@ export default {
 .splash-container--overlay {
   position: absolute;
   inset: 0;
+  opacity: 1 !important;
 }
 </style>

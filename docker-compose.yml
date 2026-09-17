@@ -470,7 +470,6 @@ services:
       USE_PUBLIC_WEBAPI_PROXY: ${USE_PUBLIC_WEBAPI_PROXY:-false}
       PUBLIC_WEBAPI_PROXY_URL: ${PUBLIC_WEBAPI_PROXY_URL:-http://localhost:3001}
       PUBLIC_WEBAPI_DATASOURCE: ${PUBLIC_WEBAPI_DATASOURCE:-SYNPUF1K}
-      SQL_RETURN_ON: ${SQL_RETURN_ON:-false}
       AZURE_OPENAI_API_KEY: ${AZURE_OPENAI_API_KEY:-}
       AZURE_OPENAI_API_ENDPOINT: ${AZURE_OPENAI_API_ENDPOINT:-}
       AZURE_OPENAI_API_DEPLOYMENT_NAME: ${AZURE_OPENAI_API_DEPLOYMENT_NAME:-}
@@ -514,6 +513,9 @@ services:
       USERMGMT__ENTITLEMENTS_PHYSIONET_CLIENT_SECRET: ${USERMGMT__ENTITLEMENTS_PHYSIONET_CLIENT_SECRET:-}
       USERMGMT__ENTITLEMENTS_PHYSIONET_TOKEN_PATH: ${USERMGMT__ENTITLEMENTS_PHYSIONET_TOKEN_PATH:-/oauth/token/}
       USERMGMT__ENTITLEMENTS_DATASET_MAPPING: ${USERMGMT__ENTITLEMENTS_DATASET_MAPPING:-}
+      # Upstream idp group id -> d2e scope, keyed by idp_provider (JSON). Read by
+      # the alp-usermgmt function; empty means no federated group maps to a role.
+      IDP__GROUP_ROLE_MAPPING: ${IDP__GROUP_ROLE_MAPPING:-}
       # network-api function (plugins/functions/package.json) stays inactive
       # until these are non-empty.
       NETWORK_COGNITO_DOMAIN: ${NETWORK_COGNITO_DOMAIN:-}
@@ -917,6 +919,7 @@ services:
       TASK_API_ENFORCE_HTTPS: ${TASK_API_ENFORCE_HTTPS:-true}
       LOW_NUMBER_SUPPRESSION_THRESHOLD: ${LOW_NUMBER_SUPPRESSION_THRESHOLD:-10}
       ROUNDING_TARGET: ${ROUNDING_TARGET:-10}
+      D2E_BIGQUERY_JDBC_URL: ${D2E_BIGQUERY_JDBC_URL:-}
 
   # Needed only for future alterations of schema when version upgrades
   # alp-logto-db-post-alterations-init:
