@@ -27,5 +27,12 @@ export default defineConfig({
     ['playwright-ctrf-json-reporter', {}]
   ],
   workers: 1,
-  maxFailures: process.env.CI ? 1 : 0 // 0 = no cap; run all tests even if some fail
+  // TEMPORARY - revert to `process.env.CI ? 1 : 0` before this merges.
+  //
+  // With a cap of 1 the first failure ends the run, so a branch that broke
+  // several tests surfaces them one per CI cycle, at roughly forty minutes
+  // each. This branch is rewriting the suite for the Data Exploration
+  // redesign and has spent six cycles finding six separate causes. Lifting
+  // the cap for a few runs lists them all at once.
+  maxFailures: 0 // 0 = no cap; run all tests even if some fail
 })
