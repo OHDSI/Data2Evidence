@@ -64,6 +64,17 @@ Deno.test({
         { userId: USER_ID, oldSub: 'trex-1', newSub: 'trex-2' }
       ])
 
+      // Moving a row an earlier build re-keyed back to its Logto id is an
+      // ordinary re-key: one hop recorded, and a repeat writes nothing.
+      await store.rekey(USER_ID, 'trex-2', 'l1')
+      await store.rekey(USER_ID, 'l1', 'l1')
+      assertEquals((await k.raw(`select idp_user_id from usermgmt."user" where id=?`, [USER_ID])).rows[0].idp_user_id, 'l1')
+      assertEquals(await store.subjectHistory(), [
+        { userId: USER_ID, oldSub: 'l1', newSub: 'trex-1' },
+        { userId: USER_ID, oldSub: 'trex-1', newSub: 'trex-2' },
+        { userId: USER_ID, oldSub: 'trex-2', newSub: 'l1' }
+      ])
+
       await store.recordStep('link', 'ok', { linked: 1 }, {})
       await store.recordStep('link', 'partial', { linked: 0 }, { skipped: [] })
       const steps = (await k.raw(`select step, status, counts from usermgmt.idp_migration`)).rows
