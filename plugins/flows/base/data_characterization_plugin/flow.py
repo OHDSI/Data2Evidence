@@ -4,7 +4,6 @@ import traceback
 
 from string import Template
 from functools import partial
-from sqlalchemy import text
 
 from rpy2 import robjects
 from rpy2.rinterface_lib.embedded import RRuntimeError
@@ -348,29 +347,20 @@ def execute_sql_script(sql_script: str, dbdao):
             logger.error(f"Failing script (first 1000 chars): {sql_script.strip()[:1000]}")
             raise
     else:
-        with dbdao.engine.begin() as conn:
-            try:
-                for statement in sql_script.strip().split(";"):
-                    if statement.strip():
-                        try:
-                            conn.execute(text(statement))
-                        except Exception as stmt_e:
-                            if (
-                                dbdao.dialect == SupportedDatabaseDialects.HANA
-                                and "index already exists" in str(stmt_e).lower()
-                            ):
-                                logger.debug(
-                                    "Ignoring 'index already exists' for statement: "
-                                    f"{statement.strip()[:200]}"
-                                )
-                                continue
-                            logger.error(
-                                f"SQL statement failed ({dbdao.dialect}): {stmt_e}"
-                            )
-                            logger.error(f"Failing statement: {statement.strip()[:500]}")
-                            raise
-            finally:
-                conn.close()
+        def is_ignorable_error(e: Exception) -> bool:
+            if (
+                dbdao.dialect == SupportedDatabaseDialects.HANA
+                and "index already exists" in str(e).lower()
+            ):
+                logger.debug(f"Ignoring 'index already exists': {e}")
+                return True
+            return False
+
+        try:
+            run_sql_statements(dbdao.engine, sql_script, is_ignorable_error)
+        except Exception as e:
+            logger.error(f"SQL statement failed ({dbdao.dialect}): {e}")
+            raise
 
 
 @task(log_prints=True)
