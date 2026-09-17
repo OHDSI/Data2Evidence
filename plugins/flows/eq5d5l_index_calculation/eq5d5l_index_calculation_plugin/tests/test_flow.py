@@ -575,14 +575,12 @@ class TestCalculateEq5d5lIndexEndToEnd:
         mapping_dao.get_indexes_for_table.return_value = _current_key_map_indexes()
 
         def _dao_factory(*args, **kwargs):
+            # No dialect kwarg: calculate_eq5d5l_index()'s direct-Postgres dbdao
+            # (observation/measurement). dialect=TREX explicitly requested: the
+            # FHIR mapping dao.
             if kwargs.get("dialect") is None:
-                # calculate_eq5d5l_index()'s underlying-tenant-dialect probe.
-                probe = MagicMock()
-                probe.dialect = SupportedDatabaseDialects.POSTGRES
-                return probe
-            # dialect=TREX explicitly requested: the OMOP-side dbdao (carries
-            # cache_id) vs. the FHIR mapping dao (database_code alone, no cache_id).
-            return main_dao if "cache_id" in kwargs else mapping_dao
+                return main_dao
+            return mapping_dao
 
         monkeypatch.setattr(flow, "DBDao", _dao_factory)
         return main_dao, mapping_dao
@@ -638,34 +636,35 @@ class TestCalculateEq5d5lIndexEndToEnd:
         # with nothing to link lineage/metadata to.
         main_dao.delete_and_insert_rows.assert_not_called()
 
-    def test_dbdao_and_mapping_dao_route_through_trex_with_correct_cache_ids(self, monkeypatch):
-        # Both the OMOP data (observation/measurement) and the FHIR lineage are
-        # reached through TrexDao, but keyed differently: the OMOP side by
-        # omop_dataset_id (this specific dataset's own cache), the FHIR mapping
-        # side by database_code alone (tenant-wide, matching the upstream
-        # FhirMappingNode in dataflow_ui_plugin/nodes.py, which never passes
-        # cache_id either).
+    def test_dbdao_connects_directly_while_mapping_dao_routes_through_trex(self, monkeypatch):
+        # dbdao (observation/measurement) connects directly via database_code, no
+        # dialect/cache_id override - confirmed against a real local deployment
+        # that the Trex catalog keyed by omop_dataset_id is a disconnected
+        # snapshot (a standalone DuckDB file), not a live view of the tenant's
+        # Postgres: it returned zero rows for observations that exist right now
+        # in the live table. mapping_dao (FHIR lineage) still routes through
+        # TrexDao, keyed by database_code alone - matches the upstream
+        # FhirMappingNode in dataflow_ui_plugin/nodes.py.
         self._patch_daos(monkeypatch, _full_health_group())
         dbdao_factory_spy = MagicMock(side_effect=flow.DBDao)
         monkeypatch.setattr(flow, "DBDao", dbdao_factory_spy)
 
-        _run(flow.calculate_eq5d5l_index, self._config(omop_dataset_id="a_snapshot_cache_id"))
+        _run(flow.calculate_eq5d5l_index, self._config())
 
-        # Three dialect=TREX calls total: calculate_eq5d5l_index()'s own OMOP dbdao
-        # and its prerequisite-check mapping_dao, plus write_fhir_key_map()'s own
-        # mapping_dao construction.
+        direct_calls = [c for c in dbdao_factory_spy.call_args_list if c.kwargs.get("dialect") is None]
         trex_calls = [c for c in dbdao_factory_spy.call_args_list if c.kwargs.get("dialect") is not None]
-        assert len(trex_calls) == 3
-        omop_calls = [c for c in trex_calls if "cache_id" in c.kwargs]
-        mapping_calls = [c for c in trex_calls if "cache_id" not in c.kwargs]
-        assert len(omop_calls) == 1
-        assert omop_calls[0].kwargs["cache_id"] == "a_snapshot_cache_id"
-        assert len(mapping_calls) == 2
+        assert len(direct_calls) == 1
+        assert direct_calls[0].kwargs == {"database_code": "alpdev_pg"}
+        # Two TREX calls: calculate_eq5d5l_index()'s own prerequisite-check
+        # mapping_dao, plus write_fhir_key_map()'s own mapping_dao construction.
+        assert len(trex_calls) == 2
+        assert all("cache_id" not in c.kwargs for c in trex_calls)
 
     def test_omop_dataset_id_differing_from_database_code_does_not_raise(self, monkeypatch):
         # omop_dataset_id (the dataset's own id, e.g. a snapshot UUID) is expected
         # to differ from database_code (the tenant credentials key) in the normal
-        # case - this is what selects the correct per-dataset Trex cache.
+        # case - it isn't used for connection routing here (see README), so a
+        # mismatch must be a no-op, not a validation error.
         main_dao, mapping_dao = self._patch_daos(monkeypatch, _full_health_group())
 
         rows = _run(flow.calculate_eq5d5l_index, self._config(omop_dataset_id="a_different_dataset_id"))
@@ -673,14 +672,14 @@ class TestCalculateEq5d5lIndexEndToEnd:
         assert len(rows) == 1
         mapping_dao.batch_insert_values.assert_called_once()
 
-    def test_raises_for_non_postgres_underlying_dialect(self, monkeypatch):
-        # The underlying tenant dialect is checked via a separate probe DBDao(...)
-        # call (no dialect/cache_id kwarg) before the TrexDao-routed dbdao is ever
-        # built, since TrexDao's own .dialect always reports 'trex' regardless of
-        # the underlying source and so can't be used for this check.
-        probe = MagicMock()
-        probe.dialect = "hana"
-        dbdao_factory = MagicMock(return_value=probe)
+    def test_raises_for_non_postgres_dialect(self, monkeypatch):
+        # dbdao's own dialect is checked directly - it's a plain
+        # DBDao(database_code=...) connection (IbisDao/SqlAlchemyDao) now, not a
+        # TrexDao whose .dialect always reports 'trex' regardless of the
+        # underlying source.
+        non_postgres_dbdao = MagicMock()
+        non_postgres_dbdao.dialect = "hana"
+        dbdao_factory = MagicMock(return_value=non_postgres_dbdao)
         monkeypatch.setattr(flow, "DBDao", dbdao_factory)
 
         with pytest.raises(NotImplementedError, match="hana"):
@@ -688,19 +687,15 @@ class TestCalculateEq5d5lIndexEndToEnd:
 
         dbdao_factory.assert_called_once_with(database_code="alpdev_pg")
 
-    def test_raises_when_trex_dao_missing_required_methods(self, monkeypatch):
-        # Defensive check: TrexDao implements select_rows_where_in()/
-        # delete_and_insert_rows() today, but if a future refactor of the shared
-        # DAO layer dropped one, this must fail fast and clearly rather than with
-        # a bare AttributeError deep inside read_eq5d5l_observations().
-        probe = MagicMock()
-        probe.dialect = SupportedDatabaseDialects.POSTGRES
-        incomplete_trex_dao = MagicMock(spec=["dialect"])
-
-        def _dao_factory(*args, **kwargs):
-            return probe if kwargs.get("dialect") is None else incomplete_trex_dao
-
-        monkeypatch.setattr(flow, "DBDao", _dao_factory)
+    def test_raises_when_dbdao_missing_required_methods(self, monkeypatch):
+        # Defensive check: IbisDao inherits select_rows_where_in()/
+        # delete_and_insert_rows() from SqlAlchemyDao today, but if a future
+        # refactor of the shared DAO layer dropped one, this must fail fast and
+        # clearly rather than with a bare AttributeError deep inside
+        # read_eq5d5l_observations().
+        incomplete_dbdao = MagicMock(spec=["dialect"])
+        incomplete_dbdao.dialect = SupportedDatabaseDialects.POSTGRES
+        monkeypatch.setattr(flow, "DBDao", MagicMock(return_value=incomplete_dbdao))
 
         with pytest.raises(NotImplementedError, match="select_rows_where_in"):
             _run(flow.calculate_eq5d5l_index, self._config())

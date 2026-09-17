@@ -21,9 +21,10 @@ from prefect.logging import get_run_logger
 
 os.environ['plugin_name'] = 'eq5d5l_index_calculation_plugin'
 
-# Defensive check only: TrexDao implements both, but a future refactor of the
-# shared DAO layer could drop one - fail clearly here rather than deep inside
-# read_eq5d5l_observations()/write_measurements() with a bare AttributeError.
+# Defensive check only: IbisDao inherits both from SqlAlchemyDao, but a future
+# refactor of the shared DAO layer could drop one - fail clearly here rather
+# than deep inside read_eq5d5l_observations()/write_measurements() with a bare
+# AttributeError.
 _REQUIRED_DAO_METHODS = ("select_rows_where_in", "delete_and_insert_rows")
 
 # fhir_omop_key_map's ON CONFLICT target - see _require_fhir_mapping_table().
@@ -48,26 +49,24 @@ def calculate_eq5d5l_index(config: Eq5d5lCalculateConfig):
     value_set = load_value_set(config.country_code)
     logger.info(f"Loaded EuroQol value set for country_code='{config.country_code}'")
 
-    # Only Postgres-backed tenants are supported - checked against the tenant's own
-    # registered dialect (a credentials lookup, not a live connection) before ever
-    # building the TrexDao below, whose own .dialect always reports 'trex' regardless
-    # of the underlying source and so can't be used for this check.
-    underlying_dialect = DBDao(database_code=config.database_code).dialect
-    if underlying_dialect != SupportedDatabaseDialects.POSTGRES:
+    # dbdao connects directly to the tenant's Postgres database (no dialect/cache_id
+    # override, so DBDao infers the dialect from database_code's own credentials and
+    # returns IbisDao) rather than through the Trex cache. The Trex catalog keyed by
+    # omop_dataset_id is a separate, disconnected snapshot (a standalone DuckDB file,
+    # not a live view of the tenant's Postgres) - confirmed against a real local
+    # deployment, where it returned zero rows for observations that exist right now in
+    # the live table. Routing through it would silently miss fresh questionnaire
+    # responses on read, and any measurement rows written would never reach the
+    # tenant's real OMOP schema. Matches every other flow that reads/writes live CDM
+    # tables directly (phenotype_plugin, cohort_generator_plugin, loyalty_score_plugin,
+    # i2b2_plugin) - none of them route by cache_id either; see README's Parameters
+    # section for why omop_dataset_id isn't used for connection routing here.
+    dbdao = DBDao(database_code=config.database_code)
+    if dbdao.dialect != SupportedDatabaseDialects.POSTGRES:
         raise NotImplementedError(
             f"eq5d5l_index_calculation_plugin only supports Postgres-backed datasets; "
-            f"'{config.database_code}' is '{underlying_dialect}'."
+            f"'{config.database_code}' is '{dbdao.dialect}'."
         )
-
-    # Connects through the Trex cache (not directly to the tenant's Postgres database)
-    # so this dataset's own observation/measurement data (addressed by omop_dataset_id)
-    # and its FHIR lineage (addressed by database_code, see mapping_dao below) are both
-    # reached the same way, through the same cache_id-based routing.
-    dbdao = DBDao(
-        dialect=SupportedDatabaseDialects.TREX,
-        database_code=config.database_code,
-        cache_id=config.omop_dataset_id,
-    )
     missing_dao_methods = [m for m in _REQUIRED_DAO_METHODS if not hasattr(dbdao, m)]
     if missing_dao_methods:
         raise NotImplementedError(
@@ -105,9 +104,10 @@ def calculate_eq5d5l_index(config: Eq5d5lCalculateConfig):
         # be discovered only after the old measurement rows are already gone,
         # leaving them replaced with no FHIR lineage/metadata written for them.
         mapping_schema = f"{config.database_code}_{config.schema_name}_fhir_mapping"
-        # database_code, not omop_dataset_id: FHIR lineage is tenant-wide (matches the
-        # upstream FhirMappingNode in dataflow_ui_plugin/nodes.py, which builds its own
-        # mapping DAO from database_code alone), while the OMOP data above is per-dataset.
+        # FHIR lineage lives in the Trex cache (matches the upstream FhirMappingNode in
+        # dataflow_ui_plugin/nodes.py, which builds its own mapping DAO the same way) -
+        # unlike dbdao above, this table isn't part of the tenant's live OMOP schema, so
+        # there's no live-vs-cache mismatch to worry about here.
         mapping_dao = DBDao(dialect=SupportedDatabaseDialects.TREX, database_code=config.database_code)
         _require_fhir_mapping_table(mapping_dao, mapping_schema)
 
