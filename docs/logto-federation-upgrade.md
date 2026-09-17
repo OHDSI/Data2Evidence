@@ -15,6 +15,11 @@ the stack starts with `docker-compose-logto-federation.yml`:
   (`TREX_NATIVE_PASSWORD_LOGIN_ENABLED=false`): the form is hidden and trex
   refuses the password grant. Set it to `true` in your env file to bring the
   form back, for example to let a trex-native admin in while Logto is down.
+- With Logto as the only way in, the sign-in page does not wait for a click: it
+  sends the browser straight to Logto. It stays up when trex has just refused a
+  sign-in (so the reason is shown), when the browser came back within a few
+  seconds of the last redirect (so a misconfiguration cannot loop), and when the
+  address carries `manual` (`/d2e-login/?manual&return_to=…`).
 - Accounts without an email address sign in too: Logto users that have only a
   username are linked by their Logto identity, which needs no address.
 - On every start, trex migrates Logto users: each usermgmt user gets a trex

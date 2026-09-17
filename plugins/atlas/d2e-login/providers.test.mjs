@@ -34,6 +34,23 @@ Deno.test("an unknown provider id is shown capitalised", () => {
   assertEquals(P.externalProviders({ external: { physionet: true } }), [{ id: "physionet", label: "Physionet" }]);
 });
 
+Deno.test("auto-redirect only when a single provider is the only way in", () => {
+  const federated = { external: { email: false, logto: true } };
+  assertEquals(P.autoRedirectProvider(federated, {}), "logto");
+  assertEquals(P.autoRedirectProvider(federated), "logto");
+  // A password form is a second way in.
+  assertEquals(P.autoRedirectProvider({ external: { email: true, logto: true } }, {}), null);
+  // Two providers need a choice.
+  assertEquals(P.autoRedirectProvider({ external: { email: false, logto: true, entra: true } }, {}), null);
+  // Nothing to redirect to.
+  assertEquals(P.autoRedirectProvider({ external: { email: false } }, {}), null);
+  // A refusal must be read, and `manual` keeps the page.
+  assertEquals(P.autoRedirectProvider(federated, { error: "no_account" }), null);
+  assertEquals(P.autoRedirectProvider(federated, { manual: true }), null);
+  // An unreadable settings answer keeps the password form, so no redirect.
+  assertEquals(P.autoRedirectProvider(null, {}), null);
+});
+
 Deno.test("the authorize link carries the provider and the return path", () => {
   assertEquals(
     P.authorizeHref("logto", "/trex/oidc/authorize?client_id=x&state=y"),
