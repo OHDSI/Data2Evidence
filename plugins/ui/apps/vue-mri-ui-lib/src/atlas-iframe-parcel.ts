@@ -9,6 +9,11 @@
  * periodically because tokens expire while the plugin stays mounted.
  */
 
+import {
+  publishClientToolProxy,
+  type ClientToolRegistry,
+} from './ai/clientToolProxy'
+
 type AtlasPluginProps = {
   domElement?: HTMLElement
   getToken?: () => Promise<string>
@@ -39,6 +44,7 @@ let iframe: HTMLIFrameElement | null = null
 let tokenTimer: ReturnType<typeof setInterval> | null = null
 let readyListener: ((event: MessageEvent) => void) | null = null
 let propsListener: ((event: Event) => void) | null = null
+let unpublishClientTools: (() => void) | null = null
 
 const resolveAppUrl = (): string => {
   // import.meta.url is the SystemJS module URL of index.system.js, i.e.
@@ -102,6 +108,13 @@ export const mount = async (props: AtlasPluginProps) => {
   iframe.style.height = '100%'
   iframe.style.border = '0'
   iframe.style.display = 'block'
+
+  // Pythia runs in the Atlas parent window while PA owns its tools inside this
+  // same-origin iframe. Publish a live proxy; never cache the child registry,
+  // because PA creates and removes it with the Vue application lifecycle.
+  unpublishClientTools = publishClientToolProxy(
+    () => (iframe?.contentWindow as (Window & { __d2ePaTools?: ClientToolRegistry }) | null)?.__d2ePaTools,
+  )
 
   const postContext = async () => {
     let token = ''
@@ -185,6 +198,8 @@ export const mount = async (props: AtlasPluginProps) => {
 }
 
 export const unmount = async () => {
+  unpublishClientTools?.()
+  unpublishClientTools = null
   if (tokenTimer !== null) {
     clearInterval(tokenTimer)
     tokenTimer = null
