@@ -1454,6 +1454,18 @@ jobs:
       prepull_flow_images: ""
     secrets: inherit
 
+  # IDP auth e2e (logto-native / physionet-mock / entra-external-id). Runs only on develop
+  # merges — reuses this run's freshly-built run_tag images (incl. the -devx trex) + ui-tgz.
+  test_e2e_idp:
+    needs: [setup, build_images, build_trex_image, build_plugins]
+    if: needs.setup.outputs.is_develop_push == 'true' || github.event_name == 'workflow_dispatch'
+    uses: ./.github/workflows/test-e2e-idp.yml
+    with:
+      runner: ${{ needs.setup.outputs.random_runner }}
+      run_tag: ${{ needs.setup.outputs.run_tag }}
+      reg_url: ghcr.io/ohdsi
+    secrets: inherit
+
   test_http_hana:
     needs: [setup, build_images, build_trex_image, build_plugins]
     if: |
