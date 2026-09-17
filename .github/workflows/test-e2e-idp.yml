@@ -122,7 +122,10 @@ jobs:
         if: steps.gate.outputs.run == 'true'
         working-directory: plugins/ui
         env:
+          # @data2evidence → Azure feed (via setup-node); @ohdsi → GitHub Packages
+          # (plugins/ui/.npmrc uses ${GITHUB_TOKEN}).
           NODE_AUTH_TOKEN: ${{ secrets.NPM_PROJECT_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           # Build the UI from source rather than downloading the build's ui-tgz artifact — the
           # cross-run download tripped CodeQL's artifact-poisoning rule. `bun pm pack` runs the
