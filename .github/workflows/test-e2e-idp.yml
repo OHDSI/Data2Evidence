@@ -207,7 +207,7 @@ jobs:
           retry_on: any
           command: |
             ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config \
-              node ./scripts/dist/cli.js -e -v ${VERSION} setupdemo
+              node ./scripts/dist/cli.js -e -v ${VERSION} -p 41100 setupdemo
 
       # WebAPI enumerates its sources at boot, so restart to pick up the onboarded demo source before
       # the specs assert the researcher's WebAPI roles.
