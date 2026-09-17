@@ -18,10 +18,28 @@ the stack starts with `docker-compose-logto-federation.yml`:
 - Accounts without an email address sign in too: Logto users that have only a
   username are linked by their Logto identity, which needs no address.
 - On every start, trex migrates Logto users: each usermgmt user gets a trex
-  account linked to their Logto identity, their D2E roles are copied to trex,
-  and their usermgmt record is re-keyed to the trex account.
+  account linked to their Logto identity, and their D2E roles are copied to
+  trex.
 
 Users sign in exactly as before, through Logto. Nothing needs resetting.
+
+### Users keep their subject
+
+A migrated user's trex account has the same id as their Logto user, so the
+tokens trex issues carry the same `sub` as the ones Logto issued. Everything
+D2E keys by that subject carries over unchanged: WebAPI users with their
+cohorts and other ownership, portal artifacts, flows, analyses and concept
+mappings. usermgmt keeps the Logto id too.
+
+This needs a trex that supports linking with an explicit user id. A trex
+without it gives each account a new id instead; the migration refuses those
+links, reports the users as `subject_would_change` and marks the `link` step
+failed (or partial), and copies no roles to them, so nobody silently loses
+their work. Upgrade trex and restart.
+
+If an earlier build of the migration already moved usermgmt users to new trex
+ids, the `rekey` step moves them back to their Logto id on the next start,
+provided trex links them under that id.
 
 ## Checking the migration
 
@@ -30,12 +48,13 @@ Users sign in exactly as before, through Logto. Nothing needs resetting.
 lists each step and any user that was skipped with the reason:
 
 - `duplicate_email`: two users resolve to the same account email.
-- `email_linked_elsewhere`: the email already belongs to a trex account linked to another Logto user.
+- `email_linked_elsewhere`: trex refused the link because the Logto identity is already linked to, or its email already belongs to, a different trex user (the detail names that user).
 - `no_email`: the Logto user has neither an email nor a username.
 - `logto_origin_missing`: the user's subject-history chain ends at a Logto id that no longer exists in `logto.users`.
-- `link_failed`: trex could not link the Logto identity to the new account.
+- `link_failed`: trex could not link the Logto identity to the account.
+- `subject_would_change`: trex linked the identity under a different user id (the detail names it) instead of the Logto id, so the user would sign in under a new subject. The link is not counted and no roles are copied. This means trex does not support explicit-id linking; upgrade it.
 - `role_failed`: the user's D2E roles could not be copied to trex.
-- `rekey_failed`: the usermgmt record could not be re-keyed to the trex account.
+- `rekey_failed`: the usermgmt record could not be aligned with the trex user id (only happens for a record an earlier build moved to a new id).
 
 Fix the data, then run `d2e migrate-idp-roles --run` or restart.
 
