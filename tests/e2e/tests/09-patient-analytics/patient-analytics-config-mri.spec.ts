@@ -84,7 +84,7 @@ test(TEST_NAME, async ({ page }) => {
     `)
   await page.getByRole('textbox', { name: 'Enter name' }).click()
   await page.getByRole('textbox', { name: 'Enter name' }).fill('Cohort Test')
-  await page.locator('footer').getByRole('button', { name: 'Save' }).click()
+  await page.getByTestId('pa-save-dialog-save-btn').click()
   await expect(page.locator('#app')).toMatchAriaSnapshot(`- text: Filters saved.`)
   await page.locator('#pane-left').getByRole('link', { name: 'Cohorts' }).click()
   await expect(page.locator('#pane-left')).toContainText('Cohort Test')
