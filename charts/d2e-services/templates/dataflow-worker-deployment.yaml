@@ -42,7 +42,7 @@ spec:
             [
               "sh",
               "-c",
-              "until curl -sf --cacert /etc/d2e/tls/ca.pem https://trex.{{ .Release.Namespace }}.svc.cluster.local:443/trex/_internal/health >/dev/null && curl -sf --cacert /etc/d2e/tls/ca.pem https://dataflow-gen.{{ .Release.Namespace }}.svc.cluster.local:443/d2e/api/health >/dev/null; do echo 'waiting for trex and dataflow-gen ...'; sleep {{ .Values.dataflowWorker.readinessSleep }}; done",
+              "[ -s /etc/d2e/tls/ca.pem ] || { echo 'FATAL: /etc/d2e/tls/ca.pem is missing or empty -- the d2e-tls volume is not mounted, or global.secrets.TLS__INTERNAL__CA_CRT is empty. Refusing to poll dependencies without the internal trust anchor.' >&2; exit 1; }; grep -q '^-----BEGIN CERTIFICATE-----$' /etc/d2e/tls/ca.pem || { echo 'FATAL: /etc/d2e/tls/ca.pem is not a PEM certificate. Refusing to poll dependencies with an untrusted CA.' >&2; exit 1; }; openssl x509 -in /etc/d2e/tls/ca.pem -noout -checkend 0 || { echo 'FATAL: /etc/d2e/tls/ca.pem is not a valid or is an expired certificate. Refusing to poll dependencies with it.' >&2; exit 1; }; until curl -sf --cacert /etc/d2e/tls/ca.pem https://trex.{{ .Release.Namespace }}.svc.cluster.local:443/trex/_internal/health >/dev/null && curl -sf --cacert /etc/d2e/tls/ca.pem https://dataflow-gen.{{ .Release.Namespace }}.svc.cluster.local:443/d2e/api/health >/dev/null; do echo 'waiting for trex and dataflow-gen ...'; sleep {{ .Values.dataflowWorker.readinessSleep }}; done",
             ]
           volumeMounts:
             - mountPath: /etc/d2e/tls
