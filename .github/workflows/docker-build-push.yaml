@@ -1243,22 +1243,24 @@ jobs:
     env:
       VERSION: develop
       COMPOSE_PROJECT_NAME: d2e
-      # The commit this job installs first, to produce the Logto-era database
-      # state the upgrade then migrates. Any develop commit before the trex IdP
-      # lands is Logto-era, so the binding constraint is not which commit it is
-      # but that develop-<short sha> was published for EVERY image the stack
-      # pulls. Images are built per changed path, so most commits have tags for
-      # only some of them: develop-8193fc6 existed for d2e-logto and d2e-trex
-      # but never for d2e-logto-post-init or d2e-dataflow-gen, and compose
-      # applies one DOCKER_TAG_NAME to all of them. The pre-flight step below
-      # checks this before the stack starts. Pinned rather than `develop` so
-      # that merging this PR does not put post-migration code in the era stack.
+      # The installation this job starts from, to produce the Logto-era
+      # database state the upgrade then migrates: a published release, which
+      # is what a real installation upgrades from. Two things rule out a
+      # develop commit. Images are built per changed path, so most develop
+      # commits have a develop-<short sha> tag for only some of the images
+      # (compose applies one DOCKER_TAG_NAME to all of them), and those tags are
+      # pruned: every develop-337d65f image this job used to pass with was gone
+      # a day later. Release tags are neither. The pre-flight step below still
+      # checks that every image is there before the stack starts. Pinned rather
+      # than `develop` so that merging this PR does not put post-migration code
+      # in the era stack.
       #
-      # LOGTO_ERA_REF must stay a full 40-char sha: actions/checkout only treats
-      # a ref as a commit sha when it is full-length; a short sha makes it fetch
-      # `refs/heads/<ref>*`, i.e. look for a branch of that name, and fail.
-      LOGTO_ERA_REF: 337d65f50d80d4d6b0c55e39e8c787bde55927e7
-      LOGTO_ERA_TAG: develop-337d65f     # the develop tag built from LOGTO_ERA_REF
+      # LOGTO_ERA_REF is the commit the release was built from (the "update
+      # version to 0.18.12" commit on release/v0.18.0-beta). It must stay a
+      # full 40-char sha: actions/checkout only treats a ref as a commit sha
+      # when it is full-length; a short sha makes it look for a branch.
+      LOGTO_ERA_REF: c0f9004c3bcd0cb565df76f68ab66c8c201365ea
+      LOGTO_ERA_TAG: "0.18.12"
     steps:
       - name: Free Disk Space (Ubuntu)
         uses: jlumbroso/free-disk-space@main
