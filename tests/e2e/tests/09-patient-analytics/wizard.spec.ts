@@ -129,7 +129,7 @@ async function ensureAdminDatasetPermission(page: Page) {
 
   await page.getByRole('button', { name: 'Add existing users' }).click()
   await page.getByRole('menuitem', { name: 'admin' }).click()
-  await expect(page.getByTestId('alert-message')).toContainText('User admin has been granted permission.')
+  await expect(page.getByTestId('alert-message')).toContainText('User admin has been granted permission')
 }
 
 test(TEST_NAME, async ({ page }) => {
