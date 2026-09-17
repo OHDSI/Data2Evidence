@@ -15,6 +15,10 @@ import {
 } from "../types.ts";
 import { DataQualityOverviewParser } from "../utils/DataQualityOverviewParser.ts";
 import { parseCdmVersionForOhdsi } from "../utils/OhdsiParser.ts";
+import {
+  DC_DIRECT_DIALECTS_USE_TREX_VARIABLE,
+  isTruthyVariable,
+} from "./dcTarget.ts";
 
 export class DqdService {
   private dataQualityOverviewParser = new DataQualityOverviewParser();
@@ -166,6 +170,7 @@ export class DqdService {
       vocabSchemaName,
       releaseId,
       cohortDefinitionId,
+      useSourceConnection,
     } = dataQualityFlowRunDto;
 
     const dataset = await portalServerApi.getDataset(datasetId);
@@ -176,6 +181,14 @@ export class DqdService {
       resultsSchemaName: resultsSchema,
     } = dataset;
     const cacheId = dataset.cacheId ?? databaseCode;
+    // Same rule as data characterization: HANA cannot be reached through the
+    // trex pgwire passthrough, so it runs on the source unless the caller says
+    // otherwise or the Prefect switch sends it back through trex.
+    const directDialectsUseTrex = isTruthyVariable(
+      await prefectApi.getVariableValue(DC_DIRECT_DIALECTS_USE_TREX_VARIABLE),
+    );
+    const resolvedUseSourceConnection = useSourceConnection ??
+      (dataset.dialect?.toLowerCase() === "hana" && !directDialectsUseTrex);
     const releaseDate = (
       await this.getReleaseDate(releaseId, portalServerApi)
     ).split("T")[0];
@@ -200,6 +213,7 @@ export class DqdService {
         cohortDefinitionId,
         releaseId,
         releaseDate,
+        useSourceConnection: resolvedUseSourceConnection,
       },
     };
 
