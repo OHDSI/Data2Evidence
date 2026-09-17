@@ -51,7 +51,7 @@ test('cohort-generation', async ({ page }) => {
   // Name the cohort with unique timestamp-based name and save
   await page.getByRole('textbox', { name: 'Enter name' }).click()
   await page.getByRole('textbox', { name: 'Enter name' }).fill(cohortName)
-  await page.locator('footer').getByRole('button', { name: 'Save' }).click()
+  await page.getByTestId('pa-save-dialog-save-btn').click()
   await expect(page.locator('#pane-left')).toContainText(cohortName)
 
   // ========================

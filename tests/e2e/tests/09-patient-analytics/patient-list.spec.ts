@@ -74,7 +74,7 @@ test(TEST_NAME, async ({ page }) => {
     await page.getByRole('button', { name: 'Save' }).click()
     await page.getByRole('textbox', { name: 'Enter name' }).fill('Cohort Test')
     await page.getByRole('textbox', { name: 'Enter name' }).click()
-    await page.locator('footer').getByRole('button', { name: 'Save' }).click()
+    await page.getByTestId('pa-save-dialog-save-btn').click()
     // await page.getByRole('button', { name: 'Cancel' }).click();
     await expect(page.locator('.loading-animation-component')).not.toBeVisible()
   })
