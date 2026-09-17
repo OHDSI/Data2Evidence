@@ -1,6 +1,10 @@
+import pytest
+import sqlalchemy as sa
+
 from data_characterization_plugin.utils import (
     RESULTS_SCHEMA_TABLES,
     cdmresults_clear_cache_path,
+    run_sql_statements,
     tables_to_drop,
     webapi_cache_source_key,
 )
@@ -60,3 +64,55 @@ def test_a_run_without_a_dataset_id_has_no_webapi_source_to_clear():
 
 def test_clear_cache_path_is_the_cdmresults_endpoint_for_the_source():
     assert cdmresults_clear_cache_path("ds-1") == "cdmresults/ds-1/clearCache"
+
+# run_sql_statements
+
+
+def _row_count(engine, table: str) -> int:
+    with engine.connect() as conn:
+        return conn.execute(sa.text(f"SELECT count(*) FROM {table}")).scalar()
+
+
+def test_script_statements_are_committed(tmp_path):
+    engine = sa.create_engine(f"sqlite:///{tmp_path / 'results.db'}")
+    with engine.begin() as conn:
+        conn.execute(sa.text("CREATE TABLE concept_hierarchy (concept_id INT)"))
+
+    run_sql_statements(
+        engine,
+        "INSERT INTO concept_hierarchy VALUES (1);\n"
+        "INSERT INTO concept_hierarchy VALUES (2);",
+    )
+
+    assert _row_count(engine, "concept_hierarchy") == 2
+
+
+def test_a_failing_statement_rolls_back_the_whole_script(tmp_path):
+    engine = sa.create_engine(f"sqlite:///{tmp_path / 'results.db'}")
+    with engine.begin() as conn:
+        conn.execute(sa.text("CREATE TABLE concept_hierarchy (concept_id INT)"))
+
+    with pytest.raises(sa.exc.OperationalError):
+        run_sql_statements(
+            engine,
+            "INSERT INTO concept_hierarchy VALUES (1);\n"
+            "INSERT INTO missing_table VALUES (2);",
+        )
+
+    assert _row_count(engine, "concept_hierarchy") == 0
+
+
+def test_an_ignorable_error_skips_the_statement_and_keeps_the_rest(tmp_path):
+    engine = sa.create_engine(f"sqlite:///{tmp_path / 'results.db'}")
+    with engine.begin() as conn:
+        conn.execute(sa.text("CREATE TABLE concept_hierarchy (concept_id INT)"))
+        conn.execute(sa.text("CREATE INDEX idx_ch ON concept_hierarchy (concept_id)"))
+
+    run_sql_statements(
+        engine,
+        "CREATE INDEX idx_ch ON concept_hierarchy (concept_id);\n"
+        "INSERT INTO concept_hierarchy VALUES (1);",
+        is_ignorable_error=lambda e: "already exists" in str(e),
+    )
+
+    assert _row_count(engine, "concept_hierarchy") == 1
