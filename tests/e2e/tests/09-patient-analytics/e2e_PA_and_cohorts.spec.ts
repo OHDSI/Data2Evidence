@@ -133,7 +133,6 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByTestId('pa-save-cohort-btn').click()
   await page.getByRole('textbox', { name: 'Enter name' }).fill(COHORT_1)
   await expect(page.getByRole('dialog')).toContainText('Save Current Filters')
-  await expect(page.getByRole('dialog')).toContainText('Enter a new name')
   await expect(page.getByTestId('pa-save-dialog-save-btn')).toBeVisible()
   await page.getByTestId('pa-save-dialog-save-btn').click()
 

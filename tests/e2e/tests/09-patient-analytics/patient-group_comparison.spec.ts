@@ -52,7 +52,9 @@ test('pa-compare-cohorts', async ({ page }) => {
 
   // Navigate back to the cohorts list
   await page.locator('#pane-left').getByRole('link', { name: 'Cohorts' }).click()
-  await page.getByTitle('Enter Fullscreen').click()
+  // The fullscreen toggle expanded the old bookmark list inside the builder's
+  // pane. The exploration list replaces that pane, so there is nothing to
+  // expand and no such control.
   await expect(page.locator('#pane-left')).toContainText(cohortA)
 
   // Cohort B creation: with Condition Occurrence A filtercard
@@ -77,7 +79,9 @@ test('pa-compare-cohorts', async ({ page }) => {
 
   // Navigate back to the cohorts list
   await page.locator('#pane-left').getByRole('link', { name: 'Cohorts' }).click()
-  await page.getByTitle('Enter Fullscreen').click()
+  // The fullscreen toggle expanded the old bookmark list inside the builder's
+  // pane. The exploration list replaces that pane, so there is nothing to
+  // expand and no such control.
   await expect(page.locator('#pane-left')).toContainText(cohortB)
 
   // Selection moved from an icon in each card's footer to a checkbox on the

@@ -247,7 +247,7 @@ test(TEST_NAME, async ({ page }) => {
   //Go back to Cohorts
   await test.step('Go back to Cohorts', async () => {
     await page.getByTestId('explorations-new-btn').click()
-    await expect(page.getByText('New cohort')).toBeVisible()
+    await expect(page.getByText('New exploration')).toBeVisible()
   })
   //Go to patient list
   await test.step('Go to patient list', async () => {

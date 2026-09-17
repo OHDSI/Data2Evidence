@@ -78,10 +78,10 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByTestId('pa-share-cohort-checkbox').click()
   await page.getByTestId('pa-save-cohort-btn').click()
   await expect(page.getByRole('dialog')).toContainText('Save Current Filters')
-  await expect(page.locator('#pane-left')).toMatchAriaSnapshot(`
-    - text: Enter a new name if you would like to overwrite the current name (New cohort).
-    - textbox "Enter name"
-    `)
+  // The reskinned save dialog dropped the explanatory sentence and keeps only
+  // a title and the field, so the old aria snapshot cannot be rewritten. The
+  // title is asserted above; assert the field is there and move on.
+  await expect(page.getByRole('textbox', { name: 'Enter name' })).toBeVisible()
   await page.getByRole('textbox', { name: 'Enter name' }).click()
   await page.getByRole('textbox', { name: 'Enter name' }).fill('Cohort Test')
   await page.getByTestId('pa-save-dialog-save-btn').click()
