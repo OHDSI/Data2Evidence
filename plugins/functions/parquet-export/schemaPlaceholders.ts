@@ -11,7 +11,7 @@ export function sourceCatalogForDataset(dataset: {
   databaseCode: string;
 }): string | undefined {
   // Trex attaches Postgres sources using the database code, not the cache ID.
-  return dataset.type === "webapi" && dataset.dialect === "postgres"
+  return dataset.type === "webapi"
     ? `${dataset.databaseCode}__srcdb`
     : undefined;
 }
