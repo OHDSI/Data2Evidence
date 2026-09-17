@@ -1382,12 +1382,27 @@ jobs:
             out=$(docker exec d2e-minerva-postgres-1 psql -U postgres -d alp -tAc \
               "select status || ' ' || counts::text from usermgmt.idp_migration where step='link'" 2>/dev/null || true)
             echo "[$i] link step: ${out:-pending}"
-            case "$out" in ok*|partial*|skipped*) break ;; esac
+            case "$out" in ok*|partial*|skipped*|failed*) break ;; esac
             sleep 10
           done
+          q() { docker exec d2e-minerva-postgres-1 psql -U postgres -d alp -tAc "$1"; }
           docker exec d2e-minerva-postgres-1 psql -U postgres -d alp -c "select * from usermgmt.idp_migration"
-          docker exec d2e-minerva-postgres-1 psql -U postgres -d alp -tAc \
-            "select count(*) from trexdb.account where \"providerId\"='logto'" | grep -qv '^0$'
+          status=$(q "select status from usermgmt.idp_migration where step='link'")
+          if [ "$status" != ok ]; then
+            echo "::error title=IdP migration::link step is '${status:-missing}', expected ok"; exit 1
+          fi
+          linked=$(q "select count(*) from trexdb.account where \"providerId\"='logto'")
+          if [ "$linked" = 0 ]; then
+            echo "::error title=IdP migration::no Logto identity was linked"; exit 1
+          fi
+          # A migrated user must keep their Logto id as their trex id (the
+          # token sub): WebAPI users, artifacts and flows are keyed by it. A
+          # trex that ignores the requested id still creates the links, so
+          # counting them alone would pass while every subject had changed.
+          moved=$(q "select count(*) from trexdb.account where \"providerId\"='logto' and \"userId\" <> \"accountId\"")
+          if [ "$moved" != 0 ]; then
+            echo "::error title=IdP migration::$moved linked users got a trex id other than their Logto id"; exit 1
+          fi
 
       - name: Pull e2e Docker image
         env:
