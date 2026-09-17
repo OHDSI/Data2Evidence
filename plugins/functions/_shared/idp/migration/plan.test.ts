@@ -33,6 +33,20 @@ Deno.test('a row already re-keyed is still planned, via its subject history', ()
   assertEquals(plan.links.map(l => [l.logtoId, l.currentIdpUserId]), [['l1', 'trex-1']])
 })
 
+// The shape a row has after this build moves an earlier build's UUID re-key
+// back: its history runs l1 -> uuid -> l1. It must plan under l1 again, and
+// as a no-op for the rekey step (currentIdpUserId already equals logtoId).
+Deno.test('a row moved back to its Logto id is planned under that id', () => {
+  const plan = planLinks(
+    [um('u1', 'admin', 'l1')],
+    [logto({ id: 'l1' })],
+    [{ userId: 'u1', oldSub: 'l1', newSub: 'uuid-1' }, { userId: 'u1', oldSub: 'uuid-1', newSub: 'l1' }],
+    'd2e.local'
+  )
+  assertEquals(plan.links.map(l => [l.logtoId, l.currentIdpUserId]), [['l1', 'l1']])
+  assertEquals(plan.skipped, [])
+})
+
 Deno.test('rows that are not Logto identities are counted, not linked or reported', () => {
   const plan = planLinks([um('u1', 'x', 'trex-native'), um('u2', 'y', null)], [logto({ id: 'l1' })], [], 'd2e.local')
   assertEquals(plan.links, [])
