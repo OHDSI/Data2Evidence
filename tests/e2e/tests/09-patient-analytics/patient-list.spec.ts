@@ -1,4 +1,5 @@
 import { test, expect } from '../fixtures'
+import { deleteExploration } from '../explorations'
 
 const TEST_NAME = 'patient-analytics-patient-list'
 const SHOULD_SKIP = true
@@ -145,9 +146,10 @@ test(TEST_NAME, async ({ page }) => {
     // await page.getByRole('button', { name: '' }).click();
     await page.locator('#pane-left').getByRole('link', { name: 'Cohorts' }).click()
     await expect(page.getByText('Cohort Test0. Icons/')).toBeVisible()
-    await page.locator('div:nth-child(5) > svg').first().click()
-    // await page.getByRole('row', { name: 'Cohort Test' }).getByRole('button').nth(2).click();
-    await page.getByRole('button', { name: 'Delete' }).click()
+    // Was the fifth icon of the old card footer, then a confirm button labelled
+    // "Delete". The card has a More menu now and the dialog confirms with
+    // "Yes, delete", so both halves moved.
+    await deleteExploration(page, 'Cohort Test')
     await expect(page.getByText('Cohort Test0. Icons/')).not.toBeVisible()
   })
 })
