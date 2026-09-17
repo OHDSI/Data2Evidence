@@ -4,6 +4,20 @@ import { ensureSeedAccount, seedEmail } from "../../idp/seedAccount.ts"
 
 const TABLE_NAME = 'user'
 
+// Knex seeds are dynamically `import()`ed from disk at runtime (see
+// SeedSource.ts), not bundled with the rest of the function, and only this
+// function's own directory is staged onto disk at runtime — so a seed may
+// only import from inside `alp-usermgmt-init`, never a bare `@alp/...`
+// specifier. That means this can't reuse `mayRekeyExistingSubject` /
+// `resolveIdpMode` from plugins/functions/_shared/idp/mode.ts and keeps an
+// inline copy of their rule instead. Keep the two in sync:
+// resolveIdpMode's rule is `raw === 'logto-federated' ? 'logto-federated' : 'trex'`,
+// so a plain equality check against D2E_IDP_MODE is equivalent.
+const mayRekeyExistingSubject = (currentIdpUserId: string | null | undefined): boolean => {
+  if (!currentIdpUserId) return true
+  return env.D2E_IDP_MODE !== 'logto-federated'
+}
+
 export const seed = async (knex: Knex): Promise<void> => {
   if (!env.IDP__INITIAL_USER__UUID || !env.IDP__INITIAL_USER__NAME) {
     return
@@ -36,9 +50,13 @@ export const seed = async (knex: Knex): Promise<void> => {
     (await knex(TABLE_NAME).where({ username: env.IDP__INITIAL_USER__NAME }).first())
 
   if (existing) {
-    await knex(TABLE_NAME)
-      .where({ id: existing.id })
-      .update({ idp_user_id: account.idpUserId })
+    // On an installation migrating from Logto, the existing admin row carries
+    // its Logto subject, which the IdP migration still needs to link it.
+    if (mayRekeyExistingSubject(existing.idp_user_id)) {
+      await knex(TABLE_NAME)
+        .where({ id: existing.id })
+        .update({ idp_user_id: account.idpUserId })
+    }
     return
   }
 

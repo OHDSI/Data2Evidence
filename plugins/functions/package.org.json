@@ -57,6 +57,12 @@
           "env": "alp-usermgmt"
         },
         {
+          "env": "alp-usermgmt",
+          "function": "/alp-idp-migration-init",
+          "imports": "/alp-idp-migration-init/deno.json",
+          "afterListen": true
+        },
+        {
           "function": "/portal-init",
           "imports": "/portal-init/deno.json",
           "env": "portal"
@@ -379,7 +385,15 @@
           "IDP__INITIAL_USER__DOMAIN": "${IDP__INITIAL_USER__DOMAIN:-d2e.local}",
           "SUPABASE_SERVICE_ROLE_KEY": "${SUPABASE_SERVICE_ROLE_KEY}",
           "TREX__ADMIN_URL": "${TREX__ADMIN_URL}",
-          "D2E__SETUP_USER": "${D2E__SETUP_USER}"
+          "D2E__SETUP_USER": "${D2E__SETUP_USER}",
+          "D2E_IDP_MODE": "${D2E_IDP_MODE:-trex}",
+          "LOGTO__ISSUER": "${LOGTO__ISSUER:-}",
+          "D2E__LOGTO_UPSTREAM__CLIENT_ID": "${D2E__LOGTO_UPSTREAM__CLIENT_ID:-}",
+          "D2E__LOGTO_UPSTREAM__CLIENT_SECRET": "${D2E__LOGTO_UPSTREAM__CLIENT_SECRET:-}",
+          "TREX_OIDC_ISSUER": "${TREX_OIDC_ISSUER:-}",
+          "TREX__FEDERATION_ADMIN_URL": "${TREX__FEDERATION_ADMIN_URL:-}",
+          "PG__LOGTO_MANAGER_USER": "${PG__LOGTO_MANAGER_USER:-logto_postgres}",
+          "PG__LOGTO_MANAGER_PASSWORD": "${PG__LOGTO_MANAGER_PASSWORD:-}"
         },
         "white-rabbit": {
           "PG_ADMIN_PASSWORD": "${PG_ADMIN_PASSWORD}",

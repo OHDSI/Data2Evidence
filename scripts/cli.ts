@@ -12,6 +12,7 @@ import {
   dockerComposeContent,
   atlasDbInitScripts,
   notebookSchemaFiles,
+  logtoFederationComposeContent,
 } from "./docker-compose-embed";
 import { setupDemo } from "./setupdemo";
 import { checkSetupDemoFlow } from "./check-setupdemo-flow";
@@ -20,6 +21,12 @@ import { syncRoles as runSyncRoles } from "./syncroles";
 import { setupDemoHana } from "./setupdemohana";
 import { checkSetupDemoHanaFlow } from "./check-setupdemohana-flow";
 import { getNoProxy as runGetNoProxy } from "./get-noproxy";
+import {
+  idpModeOf,
+  InvalidIdpModeError,
+  LOGTO_FEDERATION_COMPOSE_FILE,
+  upgradeEnvForIdpMode,
+} from "./idp-mode-env";
 
 interface CliOptions {
   functionPath?: string;
@@ -83,6 +90,10 @@ class D2ECli {
   extract_compose_file(): void {
     const dest = path.join(this.compose_dir, "docker-compose.yml");
     this.write_embedded_file(dest, dockerComposeContent);
+    this.write_embedded_file(
+      path.join(this.compose_dir, LOGTO_FEDERATION_COMPOSE_FILE),
+      logtoFederationComposeContent,
+    );
     // Stage the atlas-db-init SQL scripts next to the compose file so trex's
     // `./services/atlas-db-init:/usr/src/atlas-db-init` bind mount resolves.
     // These live at repo root but aren't present where the distributed CLI
@@ -296,24 +307,24 @@ class D2ECli {
       SUPABASE_STORAGE_JWT_SECRET: `${this.SUPABASE_STORAGE_JWT_SECRET}`,
       SUPABASE_STORAGE_JWT_TOKEN: `${this.SUPABASE_STORAGE_JWT_TOKEN}`,
       PROJECT_NAME: `${this.PROJECT_NAME}`,
-      // "logto" selects the token-claims path: usermgmt reads the `roles` claim
-      // out of the bearer token rather than any Logto API, so it holds for any
-      // IdP that emits a compatible list - trex included.
+      // Where usermgmt reads group memberships from: its own tables (trex).
       USER_MGMT__ROLE_SOURCE: `trex`,
       TREX__SQL__PASSWORD: `${this.generate_random_password(
         this.DEFAULT_PASSWORD_LENGTH,
       )}`,
-      // Shared between WebAPI's OIDC client and the registration trex seeds for
-      // it, so the two are generated together and cannot drift apart.
       // Which IdP the stack authenticates against. Read by the container
       // (d2e-compat) and by the setup scripts, which run on the host -- so it
       // lives in the env file rather than only in compose, or the two disagree.
       D2E_IDP: `trex`,
+      // A fresh installation has no Logto users to carry over.
+      D2E_IDP_MODE: `trex`,
       // The account the test suites and a first-run operator sign in as. Mirrors
       // LOGTO__USER, which seeds the same person into Logto, and lives in the env
       // file because the setup scripts run on the host where compose env is not
       // visible.
       D2E__SEED_USER: `{"username":"admin","initialPassword":"Updatepassword12345"}`,
+      // Shared between WebAPI's OIDC client and the registration trex seeds for
+      // it, so the two are generated together and cannot drift apart.
       TREX__OIDC__WEBAPI_CLIENT_ID: `d2e-webapi`,
       TREX__OIDC__WEBAPI_CLIENT_SECRET: `${this.generate_random_password(
         this.DEFAULT_PASSWORD_LENGTH,
@@ -555,6 +566,14 @@ class D2ECli {
     options: CliOptions,
     command: string,
   ): { cmd: string; env: NodeJS.ProcessEnv } {
+    // Every compose invocation interpolates docker-compose.yml, and the trex
+    // service guards TREX__OIDC__WEBAPI_CLIENT_SECRET with `${...:?}` - so an
+    // env file that has not been through upgrade_env_for_idp_mode() yet fails
+    // to interpolate before any of this runs. Stamping here rather than in the
+    // individual commands covers the ones that reach compose without going
+    // through `start`: a remote deploy runs `pull` first, and that pull died on
+    // exactly that guard. Idempotent, and it also decides the overlay below.
+    this.upgrade_env_for_idp_mode();
     const dockerbasecmd = ["docker"];
     dockerbasecmd.push("--log-level", this.DOCKER_LOG_LEVEL);
     dockerbasecmd.push("compose");
@@ -568,6 +587,12 @@ class D2ECli {
     if (options.functionPath) {
       const dev = `--file ${this.compose_dir}/docker-compose-local.yml`;
       dockerbasecmd.push(dev);
+    }
+    if (
+      fs.existsSync(this.ENVFILE) &&
+      idpModeOf(fs.readFileSync(this.ENVFILE, "utf-8")) === "logto-federated"
+    ) {
+      dockerbasecmd.push("--file", `${this.compose_dir}/${LOGTO_FEDERATION_COMPOSE_FILE}`);
     }
     dockerbasecmd.push("--env-file", this.ENVFILE);
     if (options.composeFile) dockerbasecmd.push("--file", options.composeFile);
@@ -863,6 +888,47 @@ class D2ECli {
     if (!fs.existsSync(this.ENVFILE)) return false;
     const env = fs.readFileSync(this.ENVFILE, "utf-8");
     return !/^USER_MGMT__ROLE_SOURCE=/m.test(env);
+  }
+
+  /**
+   * Record which identity setup this installation runs, once. An env written
+   * before the trex identity provider has its users in Logto: it becomes
+   * logto-federated, so those users keep signing in (through trex) and are
+   * migrated on boot. Everything else becomes trex.
+   */
+  upgrade_env_for_idp_mode(): void {
+    if (!fs.existsSync(this.ENVFILE)) return;
+    const before = fs.readFileSync(this.ENVFILE, "utf-8");
+    let out;
+    try {
+      out = upgradeEnvForIdpMode(before, {
+        password: () => this.generate_random_password(this.DEFAULT_PASSWORD_LENGTH),
+        rootKey: () => crypto.randomBytes(32).toString("base64"),
+      });
+    } catch (err) {
+      if (err instanceof InvalidIdpModeError) {
+        console.error(
+          `${this.ENVFILE}: ${err.message} Set D2E_IDP_MODE to "trex" or "logto-federated" in ${this.ENVFILE} and try again.`,
+        );
+        process.exit(1);
+      }
+      throw err;
+    }
+    if (out.added.length === 0) return;
+    // Rewrite through a temp file and rename over the target: this file holds
+    // secrets that cannot be regenerated, so a crash or a second process
+    // racing this one must never leave it half-written.
+    const tmp = `${this.ENVFILE}.tmp-${process.pid}-${Date.now()}`;
+    fs.writeFileSync(tmp, out.content);
+    fs.renameSync(tmp, this.ENVFILE);
+    if (out.mode === "logto-federated") {
+      console.log(
+        `This installation predates the trex identity provider. Recorded D2E_IDP_MODE=logto-federated in ${this.ENVFILE}: ` +
+          `Logto stays available as a sign-in option and its users are migrated to trex on start. Added: ${out.added.join(", ")}.`,
+      );
+    } else {
+      console.log(`Recorded D2E_IDP_MODE=trex in ${this.ENVFILE}.`);
+    }
   }
 
   isFullStart(opts: CliOptions): boolean {
@@ -1307,28 +1373,67 @@ class D2ECli {
     this.program
       .command("migrate-idp-roles")
       .description(
-        "Move role assignments from Logto to the trex identity provider (one-time migration)",
+        "Logto to trex migration (D2E_IDP_MODE=logto-federated): show its report, or run it now",
       )
-      .option(
-        "--apply",
-        "Perform the changes; without this the plan is only printed",
-      )
-      .option(
-        "--create-missing-users",
-        "Also create trex accounts for usermgmt users that have none. Off by " +
-          "default: this grants access to a system those users could not reach " +
-          "before, which a role migration should not do silently.",
-      )
+      .option("--report", "Print the outcome of the last migration run")
+      .option("--run", "Restart trex so the migration runs now")
       .action(async (opts) => {
         dotenvConfig({ path: this.ENVFILE });
         this.load_env_variables();
-        const { runMigration } = await import(
-          path.join(__dirname, "migrate-idp-roles.mjs")
-        );
-        await runMigration({
-          apply: Boolean(opts.apply),
-          createMissing: Boolean(opts.createMissingUsers),
-        });
+
+        // Bare `migrate-idp-roles` defaults to the same thing `--report` asks
+        // for explicitly: show the outcome of whatever migration has last
+        // run. Naming both here, rather than letting `--run` early-return and
+        // everything else fall through unconditionally, keeps `--report` a
+        // real, checked option rather than a documented no-op.
+        const showReport = Boolean(opts.report) || !opts.run;
+
+        if (opts.run) {
+          const mode = fs.existsSync(this.ENVFILE)
+            ? idpModeOf(fs.readFileSync(this.ENVFILE, "utf-8"))
+            : undefined;
+          if (mode !== "logto-federated") {
+            console.log(
+              `D2E_IDP_MODE is not "logto-federated" in ${this.ENVFILE}; there is no Logto migration to run.`,
+            );
+            return;
+          }
+          console.log("Restarting trex so the migration runs now. This drops any active sessions.");
+          try {
+            execSync(`docker restart ${this.PROJECT_NAME}-trex`, { stdio: "inherit" });
+          } catch {
+            console.error("Could not restart trex. Is the stack running? Try `d2e start` first.");
+            process.exit(1);
+          }
+          await this.wait_for_trex();
+          console.log("trex is back up; the migration has run. Check its outcome with --report.");
+        }
+
+        if (!showReport) return;
+
+        const postgres = this.postgres_container();
+        if (!postgres) {
+          console.error("Could not find the database container. Is the stack running? Try `d2e start` first.");
+          process.exit(1);
+        }
+        try {
+          execSync(
+            `docker exec ${postgres} psql -U postgres -d alp -c ` +
+              `"select step, status, counts, updated_at from usermgmt.idp_migration order by updated_at" ` +
+              // A hard failure (store unreachable, incomplete upstream config, a
+              // provider/planner/groups read failing outright) records its reason
+              // as { reason: ... }, not { skipped: [...] }. Filtering on `? 'skipped'`
+              // hid that detail entirely, so a failed run gave no clue why. Any
+              // non-empty detail is worth printing.
+              `-c "select step, jsonb_pretty(detail) as detail from usermgmt.idp_migration where detail <> '{}'::jsonb order by updated_at"`,
+            { stdio: "inherit" },
+          );
+        } catch {
+          console.error(
+            "Could not read the migration report. The stack may not be running, or the migration has not run yet.",
+          );
+          process.exit(1);
+        }
       });
   }
 

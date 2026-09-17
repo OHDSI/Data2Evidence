@@ -89,7 +89,7 @@ services:
     environment:
       TREX_DX_ENABLED: "true"
       # Enable trex's native email/password IDP for local dev (off by default in
-      # the engine). Production d2e authenticates via Logto and leaves it unset.
+      # the engine). trex is the identity provider in every mode; this stays on.
       TREX_IDP_ENABLED: "true"
       IS_SANDBOX: "1"
       BETTER_AUTH_URL: "https://localhost:${CADDY_PORT:-${PORT:-443}}/trex"

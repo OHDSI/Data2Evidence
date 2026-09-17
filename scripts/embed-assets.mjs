@@ -5,6 +5,7 @@ import { execFileSync } from "child_process";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const content = readFileSync(join(__dirname, "../docker-compose.yml"), "utf8");
+const logtoFederationContent = readFileSync(join(__dirname, "../docker-compose-logto-federation.yml"), "utf8");
 
 // Bundle the atlas-db-init SQL scripts so the distributed CLI can stage them
 // next to the embedded compose file. trex bind-mounts ./services/atlas-db-init
@@ -41,7 +42,8 @@ writeFileSync(
     )};\n` +
     `export const notebookSchemaFiles: Record<string, string> = ${JSON.stringify(
       notebookSchemaFiles
-    )};\n`
+    )};\n` +
+    `export const logtoFederationComposeContent = ${JSON.stringify(logtoFederationContent)};\n`
 );
 
 const SCRIPT_MAP = {
@@ -52,12 +54,6 @@ const SCRIPT_MAP = {
   "check-setupdemohana-flow.mjs": { fn: "checkSetupDemoHanaFlow" },
   "syncroles.mjs":                { fn: "syncRoles" },
   "get-noproxy.mjs":              { fn: "getNoProxy", paramExpr: "nodeModulesPath", argvBlock: "NOPROXY" },
-  // Unlike the scripts above, this one is already a real ES module with named
-  // exports (planMigration, canonicalRoleNames, runMigration) — those are unit
-  // tested directly, which the wrap-into-a-function transform below would
-  // break. cli.ts dynamic-imports it by path, so it only needs to sit next to
-  // dist/cli.js, not be rewritten.
-  "migrate-idp-roles.mjs":        { copy: true },
 };
 
 const ARGV_BLOCK =

@@ -206,3 +206,43 @@ TREX__SERVICE_ROLE_KEY:
   comment: Optional override for the trex admin API credential; defaults to trex's own injected SUPABASE_SERVICE_ROLE_KEY
   publish: false
   type: string
+D2E_IDP_MODE:
+  comment: trex (default) or logto-federated. logto-federated keeps Logto as an upstream sign-in option of the trex identity provider and migrates existing Logto users to trex on every start. Written once by `d2e init` / `d2e start`; see docs/logto-federation-upgrade.md.
+  publish: true
+  type: string
+D2E__LOGTO_UPSTREAM__CLIENT_ID:
+  comment: Logto application trex signs users in through (federated mode). Set from LOGTO__D2E_APP__CLIENT_ID by docker-compose-logto-federation.yml.
+  publish: true
+  type: string
+D2E__LOGTO_UPSTREAM__CLIENT_SECRET:
+  comment: Secret of D2E__LOGTO_UPSTREAM__CLIENT_ID.
+  publish: true
+  type: password
+TREX_FEDERATION_ENABLED:
+  comment: Enables trex's federated sign-in endpoints (/trex/auth/v1/authorize, /callback). Set by the federation overlay.
+  publish: true
+  type: bool
+TREX_FEDERATION_REDIRECT_URI:
+  comment: Callback URI trex sends to upstream providers; must match the URI registered at the provider exactly.
+  publish: true
+  type: url
+TREX__FEDERATION_ADMIN_URL:
+  comment: trex federation admin API, used by the IdP migration to register providers and link identities.
+  publish: true
+  type: url
+D2E_IDP:
+  comment: Identity provider d2e-compat and the setup scripts authenticate against. trex.
+  publish: true
+  type: string
+TREX__AUTH_URL:
+  comment: trex native auth API (/trex/auth/v1), used by usermgmt to create accounts.
+  publish: true
+  type: url
+D2E__SEED_USER:
+  comment: "JSON {username, initialPassword} of the initial account created in trex on a new installation. Not added to installations upgraded from Logto."
+  publish: true
+  type: json
+TREX_OIDC_INTERNAL_BASE:
+  comment: Origin server-side OIDC calls use when the public FQDN does not resolve inside the container (local, CI).
+  publish: true
+  type: url

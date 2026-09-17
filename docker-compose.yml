@@ -315,11 +315,13 @@ services:
       # browser sees. BASE_PATH is appended, giving /trex/oidc/*.
       # trex is the identity provider for the whole stack, not just WebAPI.
       # d2e-compat verifies portal bearers against it and the portal login
-      # flow points at it. Deployments that still hold their users in Logto
-      # must run `d2e migrate-idp-roles --apply --create-missing-users`
-      # BEFORE this takes effect, or nobody can sign in: the accounts simply
-      # do not exist in trex yet.
+      # flow points at it. Installations that still hold their users in Logto
+      # run with D2E_IDP_MODE=logto-federated, which keeps Logto as an upstream
+      # sign-in option and migrates those users on boot (alp-idp-migration-init).
       D2E_IDP: ${D2E_IDP:-trex}
+      # trex or logto-federated. Stamped into the env file by `d2e init` / `d2e start`;
+      # logto-federated is applied with docker-compose-logto-federation.yml.
+      D2E_IDP_MODE: ${D2E_IDP_MODE:-trex}
       # trex authenticates users itself, so its native login surface has to be
       # on. It is off by default in the engine for stacks fronted by an external
       # IdP. Enabling it does not expose a default account: the seeded
@@ -339,7 +341,7 @@ services:
       # The public origin: `iss` must name where the discovery document is
       # served, and a deployment's FQDN resolves inside the network too. Where it
       # does not -- local and CI, whose FQDN is `localhost` and therefore points
-      # back at this container -- docker-compose-local.yml sets
+      # back at this container -- docker-compose-ci.yml sets
       # TREX_OIDC_INTERNAL_BASE so server-side fetches take a reachable route
       # while `iss` stays put.
       TREX_OIDC_ISSUER: "https://${CADDY__D2E__PUBLIC_FQDN:-${CADDY__ALP__PUBLIC_FQDN:-localhost}}:${CADDY_PORT:-${PORT:-443}}"
@@ -582,6 +584,8 @@ services:
       # issuing the tokens they travel in.
       IDP__ROLE_STORE: "trex"
       TREX__ADMIN_URL: "http://${PROJECT_NAME:-d2e}-trex:33001/trex/admin/roles"
+      # Upstream provider registration and identity pre-linking (IdP migration).
+      TREX__FEDERATION_ADMIN_URL: "http://${PROJECT_NAME:-d2e}-trex:33001/trex/admin/federation"
       # Account provisioning, as opposed to role assignment above. Used to
       # create the initial user in the IdP so usermgmt can record its subject.
       TREX__AUTH_URL: "http://${PROJECT_NAME:-d2e}-trex:33001/trex/auth/v1"
