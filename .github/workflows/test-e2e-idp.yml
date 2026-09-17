@@ -1,16 +1,12 @@
 name: test-e2e-idp
 
-# Reusable e2e for the IDP auth paths, one matrix job per provider:
-#   logto-native      - baseline: native username/password, no connector/secrets.
-#   physionet-mock     - PhysioNet OIDC against an inline mock upstream (no secrets).
-#   entra-external-id  - LIVE Entra External ID (CIAM) via Actions secrets; self-skips if absent.
-# Called by docker-build-push.yaml after its build jobs, so it reuses that run's freshly-built
-# images (run_tag, incl. the -devx trex) and its ui-tgz artifact. Jobs run in parallel.
+# Reusable e2e for the IDP auth paths (logto-native / physionet-mock / entra-external-id),
+# called by docker-build-push.yaml after its build jobs — reuses that run's run_tag images
+# (incl. the -devx trex) and its ui-tgz artifact.
 #
-# Required repository secrets (entra-external-id only; the others need none):
-#   E2E_ENTRA_EXTID_CONNECTOR_CONFIG     - full LOGTO__CONNECTOR_CONFIG JSON.
-#   E2E_ENTRA_EXTID_USERNAME / _PASSWORD - a CIAM test account with no MFA, admin-consent pre-granted,
-#                                          no forced password change — else the headless login stalls.
+# Required repository secrets (entra-external-id only):
+#   E2E_ENTRA_EXTID_CONNECTOR_CONFIG       full LOGTO__CONNECTOR_CONFIG JSON.
+#   E2E_ENTRA_EXTID_USERNAME / _PASSWORD   a CIAM test account (no MFA, admin-consent pre-granted).
 
 on:
   workflow_call:
@@ -48,19 +44,15 @@ jobs:
     env:
       VERSION: develop
       REG_URL: ${{ inputs.reg_url }}
-      # run_tag images this pipeline just built (incl. d2e-trex:<run_tag>-devx)
       DOCKER_TAG_NAME: ${{ inputs.run_tag }}
       PLUGINS_IMAGE_TAG: ${{ inputs.run_tag }}
       D2E_BASE_URL: https://localhost:41100
-      # Seeded platform admin (provisions the throwaway user / reads back roles).
       E2E_ADMIN_USERNAME: admin
       E2E_ADMIN_PASSWORD: Updatepassword12345
-      # PhysioNet mock identity — non-secret (the mock accepts any username, always grants demowave).
       PHYSIONET_UPSTREAM: mock
       E2E_PHYSIONET_USERNAME: ci_e2e_test_user
       E2E_PHYSIONET_PASSWORD: mock-not-validated
       E2E_PHYSIONET_EXPECTED_ROLE: role.researcher.demo
-      # CIAM live account (secrets; empty for the other two providers).
       E2E_ENTRA_EXTID_USERNAME: ${{ secrets.E2E_ENTRA_EXTID_USERNAME }}
       E2E_ENTRA_EXTID_PASSWORD: ${{ secrets.E2E_ENTRA_EXTID_PASSWORD }}
     steps:
@@ -101,8 +93,7 @@ jobs:
         if: steps.gate.outputs.run == 'true'
         run: npm install
 
-      # Same-run artifact from build_plugins — no cross-run fetch (avoids the CodeQL
-      # artifact-poisoning pattern) and no from-source UI build.
+      # Same-run artifact — no cross-run fetch (avoids the CodeQL artifact-poisoning pattern).
       - name: Download UI tarball
         if: steps.gate.outputs.run == 'true'
         uses: actions/download-artifact@v4
