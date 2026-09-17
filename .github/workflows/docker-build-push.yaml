@@ -672,7 +672,12 @@ jobs:
           file: ./services/trex/Dockerfile.v2
           platforms: linux/amd64,linux/arm64
           push: true
-          tags: ${{ env.REG_URL }}/d2e-trex:${{ env.RUN_TAG }}
+          # Also publish a rolling :develop tag on develop pushes so a stack pointed at
+          # DOCKER_TAG_NAME=develop (e.g. the nightly test-e2e-idp workflow) can pull trex,
+          # aligning it with the other d2e images that already publish :develop.
+          tags: |
+            ${{ env.REG_URL }}/d2e-trex:${{ env.RUN_TAG }}
+            ${{ needs.setup.outputs.is_develop_push == 'true' && format('{0}/d2e-trex:develop', env.REG_URL) || '' }}
           provenance: false
           sbom: false
           build-args: |
