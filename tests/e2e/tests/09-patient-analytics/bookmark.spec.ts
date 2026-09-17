@@ -210,10 +210,10 @@ test(TEST_NAME, async ({ page }) => {
   await test.step('Rename the saved filter', async () => {
     await page.locator('#pane-left').getByRole('link', { name: 'Cohorts' }).click()
     await explorationMenuAction(page, NAME.savedFilters, 'Rename')
-    await page.getByRole('textbox').fill('')
+    await page.getByRole('textbox', { name: 'Exploration name' }).fill('')
     await page.getByTestId('pa-save-dialog-save-btn').click()
     await expect(page.getByText('Please enter a name')).toBeVisible()
-    await page.getByRole('textbox').fill(NAME.renamedFilters)
+    await page.getByRole('textbox', { name: 'Exploration name' }).fill(NAME.renamedFilters)
     await page.getByTestId('pa-save-dialog-save-btn').click()
     await expect(page.getByText(`${NAME.renamedFilters}0. Icons/`)).toBeVisible()
     await page
@@ -425,8 +425,8 @@ test(TEST_NAME, async ({ page }) => {
     await page.getByText('Demo dataset').first().click()
     await page.getByRole('link', { name: 'Cohorts' }).click()
     await explorationMenuAction(page, NAME.savedFilters, 'Rename')
-    await page.getByRole('textbox').fill('')
-    await page.getByRole('textbox').fill(NAME.sharedFilter)
+    await page.getByRole('textbox', { name: 'Exploration name' }).fill('')
+    await page.getByRole('textbox', { name: 'Exploration name' }).fill(NAME.sharedFilter)
     await page.getByTestId('pa-save-dialog-save-btn').click()
     //Logout as admin
     await page.getByRole('link', { name: 'Account' }).click()
