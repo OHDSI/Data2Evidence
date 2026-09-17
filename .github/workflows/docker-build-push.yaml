@@ -694,7 +694,13 @@ jobs:
           file: ./services/trex/Dockerfile.v2
           platforms: linux/amd64,linux/arm64
           push: true
-          tags: ${{ env.REG_URL }}/d2e-trex:${{ env.RUN_TAG }}-devx
+          # Also publish a rolling :develop-devx tag on develop pushes. The e2e/local stack
+          # (docker-compose-local.yml) runs the -devx trex variant, but the canonical re-tag
+          # only covers the main image — so a stack on DOCKER_TAG_NAME=develop (the nightly
+          # test-e2e-idp workflow) otherwise can't pull d2e-trex:develop-devx (manifest unknown).
+          tags: |
+            ${{ env.REG_URL }}/d2e-trex:${{ env.RUN_TAG }}-devx
+            ${{ needs.setup.outputs.is_develop_push == 'true' && format('{0}/d2e-trex:develop-devx', env.REG_URL) || '' }}
           provenance: false
           sbom: false
           build-args: |
