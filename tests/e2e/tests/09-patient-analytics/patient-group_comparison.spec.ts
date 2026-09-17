@@ -47,7 +47,7 @@ test('pa-compare-cohorts', async ({ page }) => {
   // Re-saving an already-saved cohort owned by the current user no longer opens the
   // naming dialog - FiltersFooter.openSaveBookmark() only does that when
   // needsSaveDialog (isNewCohort || isNotUserSharedBookmark) is true.
-  await page.getByRole('button', { name: 'Save' }).click()
+  await page.getByTestId('pa-save-cohort-btn').click()
   await expect(page.locator('#app')).toContainText('Saved filter updated.')
 
   // Navigate back to the cohorts list
@@ -72,7 +72,7 @@ test('pa-compare-cohorts', async ({ page }) => {
   // Re-saving an already-saved cohort owned by the current user no longer opens the
   // naming dialog - FiltersFooter.openSaveBookmark() only does that when
   // needsSaveDialog (isNewCohort || isNotUserSharedBookmark) is true.
-  await page.getByRole('button', { name: 'Save' }).click()
+  await page.getByTestId('pa-save-cohort-btn').click()
   await expect(page.locator('#app')).toContainText('Saved filter updated.')
 
   // Navigate back to the cohorts list
@@ -143,7 +143,7 @@ async function createCohortWithOneConditionOccurrenceFilercard(page, cohortName)
   await page.getByTestId('pa-share-cohort-checkbox').click()
 
   // Save the initial cohort configuration
-  await page.getByRole('button', { name: 'Save' }).click()
+  await page.getByTestId('pa-save-cohort-btn').click()
   await page.waitForTimeout(5000)
 
   // Name the cohort with unique timestamp-based name and save

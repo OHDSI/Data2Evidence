@@ -76,7 +76,7 @@ test(TEST_NAME, async ({ page }) => {
   // footer (and from appCheckbox to a v-checkbox), so set it before opening the
   // dialog and drop it from the dialog's aria snapshot.
   await page.getByTestId('pa-share-cohort-checkbox').click()
-  await page.getByRole('button', { name: 'Save' }).click()
+  await page.getByTestId('pa-save-cohort-btn').click()
   await expect(page.locator('#pane-left')).toContainText('Save Current Filters')
   await expect(page.locator('#pane-left')).toMatchAriaSnapshot(`
     - text: Enter a new name if you would like to overwrite the current name (New cohort).
