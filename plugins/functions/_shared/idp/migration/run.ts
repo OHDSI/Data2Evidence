@@ -241,19 +241,38 @@ export async function runIdpMigration(
   const trexIdByUsermgmt = new Map<string, string>()
   const linkByUsermgmt = new Map(plan.links.map(l => [l.usermgmtId, l]))
   let linkFailures = 0
+  let subjectWouldChange = 0
   // Verified against trex (OHDSI/trex#318): PUT .../links never rewrites an
   // existing link's email, and applies `banned` only when true. So in
   // federated mode Logto stays the source of truth for suspension: an admin
   // who unbans someone in trex has that reverted on the next restart unless
   // they also un-suspend the person in Logto.
+  //
+  // Every link asks trex to keep the user under their Logto id. WebAPI's
+  // sec_user, portal artifacts, jobplugins flows and the rest are keyed by
+  // the token `sub` directly, not through usermgmt, so a user whose `sub`
+  // changes signs in to find none of their own work.
   for (const link of plan.links) {
     try {
       const out = await admin.link({
-        providerId: LOGTO_PROVIDER_ID, accountId: link.logtoId, email: link.email, name: link.name, banned: link.banned
+        providerId: LOGTO_PROVIDER_ID, accountId: link.logtoId, userId: link.logtoId,
+        email: link.email, name: link.name, banned: link.banned
       })
       if ('conflict' in out) {
         linkFailures++
         summary.skipped.push({ usermgmtId: link.usermgmtId, username: link.username, logtoId: link.logtoId, reason: 'email_linked_elsewhere', detail: out.userId })
+        continue
+      }
+      // A trex that predates explicit-id linking ignores `userId` and answers
+      // with a fresh UUID; one that has the account linked to another user
+      // answers with that user. Either way the user would sign in under a
+      // different `sub`, so the link does not count: no roles are copied to
+      // that trex user and usermgmt is not moved onto it. trex may already
+      // have created the account; it stays unused until this is resolved.
+      if (out.userId !== link.logtoId) {
+        linkFailures++
+        subjectWouldChange++
+        summary.skipped.push({ usermgmtId: link.usermgmtId, username: link.username, logtoId: link.logtoId, reason: 'subject_would_change', detail: out.userId })
         continue
       }
       trexIdByUsermgmt.set(link.usermgmtId, out.userId)
@@ -267,15 +286,20 @@ export async function runIdpMigration(
   }
   await safeRecordStep(store, 'link', statusOf(linkFailures, plan.skipped.length, plan.links.length), {
     linked: summary.linked, created: summary.created, alreadyLinked: summary.alreadyLinked,
-    skipped: summary.skipped.length, notLogto: plan.notLogto
+    skipped: summary.skipped.length, subjectWouldChange, notLogto: plan.notLogto
   }, { skipped: [...summary.skipped] }, log)
   // `notLogto` used to be silent, so "linked 0, created 0, already 0,
   // skipped 0" read as a clean run on an installation where nothing had been
   // linked at all. Name it whenever it is the only thing that happened.
   const linkLine = `[idp-migration] link: linked ${summary.linked}, created ${summary.created}, already ${summary.alreadyLinked}, skipped ${summary.skipped.length}`
+  // A subject mismatch is almost always the trex build, not the data: say so
+  // in the line itself, since the run otherwise looks like a handful of skips.
+  const subjectNote = subjectWouldChange > 0
+    ? `; ${subjectWouldChange} would change subject and were not linked (subject_would_change) — this trex does not honour explicit-id linking, upgrade it`
+    : ''
   log(plan.links.length === 0 && plan.notLogto > 0
     ? `${linkLine}: nothing was linked — ${plan.notLogto} usermgmt users hold a subject that is not a Logto identity and has no history leading back to one (see d2e migrate-idp-roles --report)`
-    : `${linkLine} (see d2e migrate-idp-roles --report)`)
+    : `${linkLine}${subjectNote} (see d2e migrate-idp-roles --report)`)
 
   // 3. roles
   let groups: GroupRow[] = []
@@ -322,7 +346,16 @@ export async function runIdpMigration(
     log(`[idp-migration] roles: assigned ${summary.rolesAssigned}, failed ${roleFailures}`)
   }
 
-  // 4. rekey
+  // 4. rekey: align usermgmt with the trex user id.
+  //
+  // The link step only counts a user trex keeps under their Logto id, so the
+  // target here is that Logto id and, on an installation migrated by this
+  // build, every row already holds it: nothing is written and no
+  // idp_subject_history row appears. The step does real work only for a row
+  // an earlier build moved to a trex UUID: planLinks traced it back to its
+  // Logto origin through the history, and this moves it back, recording the
+  // hop so the history stays walkable. The step keeps its name so existing
+  // usermgmt.idp_migration rows and `d2e migrate-idp-roles --report` still read.
   let rekeyFailures = 0
   let rekeyAttempts = 0
   const rekeySkips: SkippedUser[] = []
@@ -343,7 +376,10 @@ export async function runIdpMigration(
   await safeRecordStep(store, 'rekey', statusOf(rekeyFailures, 0, rekeyAttempts), {
     rekeyed: summary.rekeyed, failed: rekeyFailures
   }, { skipped: rekeySkips }, log)
-  log(`[idp-migration] rekey: re-keyed ${summary.rekeyed}, failed ${rekeyFailures}`)
+  log(
+    `[idp-migration] rekey: aligned ${summary.rekeyed} usermgmt users with their trex user id ` +
+    `(${trexIdByUsermgmt.size - rekeyAttempts} already matched), failed ${rekeyFailures}`
+  )
 
   return summary
 }
