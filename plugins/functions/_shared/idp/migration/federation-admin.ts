@@ -25,6 +25,22 @@ export interface ProviderBody {
   enabled: true
 }
 
+export interface LinkRequest {
+  providerId: string
+  accountId: string
+  /**
+   * The trex user id the account must end up under. The migration passes the
+   * Logto user id, so a migrated user keeps the `sub` every other D2E store
+   * (WebAPI, portal artifacts, flows) is keyed by. trex answers 409 when that
+   * id cannot be honoured; a trex predating explicit-id linking ignores the
+   * field and answers with a fresh id, which the caller must reject.
+   */
+  userId: string
+  email: string
+  name: string | null
+  banned: boolean
+}
+
 export type LinkOutcome =
   | { userId: string; outcome: 'linked' | 'created' | 'already_linked' }
   | { conflict: true; userId: string }
@@ -32,7 +48,7 @@ export type LinkOutcome =
 export interface FederationAdmin {
   upsertProvider(id: string, body: ProviderBody): Promise<void>
   setProviderEnabled(id: string, enabled: boolean, opts?: { attempts?: number }): Promise<'ok' | 'unknown_provider'>
-  link(req: { providerId: string; accountId: string; email: string; name: string | null; banned: boolean }): Promise<LinkOutcome>
+  link(req: LinkRequest): Promise<LinkOutcome>
   assignRole(userId: string, role: string): Promise<void>
 }
 
@@ -94,8 +110,11 @@ export class HttpFederationAdmin implements FederationAdmin {
     return 'ok'
   }
 
-  async link(req: { providerId: string; accountId: string; email: string; name: string | null; banned: boolean }): Promise<LinkOutcome> {
-    const res = await this.send('PUT', `${this.opts.federationUrl}/links`, req)
+  async link(req: LinkRequest): Promise<LinkOutcome> {
+    // Spelled out rather than forwarding `req`, so the wire body is exactly
+    // the contract and nothing a caller adds to the object leaks into it.
+    const { providerId, accountId, userId, email, name, banned } = req
+    const res = await this.send('PUT', `${this.opts.federationUrl}/links`, { providerId, accountId, userId, email, name, banned })
     if (res.status === 409) {
       const body = await res.json()
       if (typeof body?.userId !== 'string') throw new Error(`link ${req.accountId}: 409 response missing userId`)

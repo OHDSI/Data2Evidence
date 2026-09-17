@@ -23,18 +23,24 @@ const admin = (impl: typeof fetch) =>
   new HttpFederationAdmin({ federationUrl: 'http://trex/fed', rolesUrl: 'http://trex/roles', serviceRoleKey: 'k', fetchImpl: impl, attempts: 3, delayMs: 0 })
 
 Deno.test('link sends the identity and returns the outcome', async () => {
-  const f = fakeFetch([new Response(JSON.stringify({ userId: 't1', outcome: 'created' }), { status: 200 })])
-  const out = await admin(f.impl).link({ providerId: 'logto', accountId: 'l1', email: 'a@x.test', name: null, banned: false })
-  assertEquals(out, { userId: 't1', outcome: 'created' })
+  const f = fakeFetch([new Response(JSON.stringify({ userId: 'l1', outcome: 'created' }), { status: 200 })])
+  const out = await admin(f.impl).link({ providerId: 'logto', accountId: 'l1', userId: 'l1', email: 'a@x.test', name: null, banned: false })
+  assertEquals(out, { userId: 'l1', outcome: 'created' })
   assertEquals(f.calls[0].method, 'PUT')
   assertEquals(f.calls[0].url, 'http://trex/fed/links')
   assertEquals(f.calls[0].auth, 'Bearer k')
 })
 
+Deno.test('link asks trex for the user id the account must end up under', async () => {
+  const f = fakeFetch([new Response(JSON.stringify({ userId: 'l1', outcome: 'created' }), { status: 200 })])
+  await admin(f.impl).link({ providerId: 'logto', accountId: 'l1', userId: 'l1', email: 'a@x.test', name: 'A', banned: true })
+  assertEquals(f.calls[0].body, { providerId: 'logto', accountId: 'l1', userId: 'l1', email: 'a@x.test', name: 'A', banned: true })
+})
+
 Deno.test('link reports a conflict instead of throwing', async () => {
   const f = fakeFetch([new Response(JSON.stringify({ error: 'conflict', userId: 't9' }), { status: 409 })])
   assertEquals(
-    await admin(f.impl).link({ providerId: 'logto', accountId: 'l1', email: 'a@x.test', name: null, banned: false }),
+    await admin(f.impl).link({ providerId: 'logto', accountId: 'l1', userId: 'l1', email: 'a@x.test', name: null, banned: false }),
     { conflict: true, userId: 't9' }
   )
 })
@@ -56,7 +62,7 @@ Deno.test('disabling an unknown provider is reported, not thrown', async () => {
 
 Deno.test('a 200 response missing userId is rejected instead of flowing through as undefined', async () => {
   const f = fakeFetch([new Response(JSON.stringify({ outcome: 'created' }), { status: 200 })])
-  await assertRejects(() => admin(f.impl).link({ providerId: 'logto', accountId: 'l1', email: 'a@x.test', name: null, banned: false }))
+  await assertRejects(() => admin(f.impl).link({ providerId: 'logto', accountId: 'l1', userId: 'l1', email: 'a@x.test', name: null, banned: false }))
 })
 
 Deno.test('no service-role key fails before anything goes on the wire', async () => {
@@ -68,7 +74,7 @@ Deno.test('no service-role key fails before anything goes on the wire', async ()
 
 Deno.test('a 409 response missing userId is rejected instead of returning "undefined"', async () => {
   const f = fakeFetch([new Response(JSON.stringify({ error: 'conflict' }), { status: 409 })])
-  await assertRejects(() => admin(f.impl).link({ providerId: 'logto', accountId: 'l1', email: 'a@x.test', name: null, banned: false }))
+  await assertRejects(() => admin(f.impl).link({ providerId: 'logto', accountId: 'l1', userId: 'l1', email: 'a@x.test', name: null, banned: false }))
 })
 
 Deno.test('a validation error body is never echoed into the thrown message', async () => {
