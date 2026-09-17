@@ -197,7 +197,9 @@ test(TEST_NAME, async ({ page }) => {
   })
   // Test for duplicate name validation
   await test.step('Test for duplicate name validation', async () => {
-    await page.locator('#pane-left').getByRole('link', { name: 'Cohorts' }).click()
+    // Already on the Cohorts list from the step above. The 'Cohorts' link is
+    // part of the builder's left pane, and the exploration list replaces that
+    // pane, so there is nothing to click once the list is showing.
     await page.getByTestId('explorations-new-btn').click()
     await page.getByTestId('pa-save-cohort-btn').click()
     await page.getByRole('textbox', { name: 'Enter name' }).click()

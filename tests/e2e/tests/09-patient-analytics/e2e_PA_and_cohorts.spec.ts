@@ -132,8 +132,8 @@ test(TEST_NAME, async ({ page }) => {
   await expect(page.getByTestId('pa-save-cohort-btn')).toBeVisible()
   await page.getByTestId('pa-save-cohort-btn').click()
   await page.getByRole('textbox', { name: 'Enter name' }).fill(COHORT_1)
-  await expect(page.locator('#pane-left')).toContainText('Save Current Filters')
-  await expect(page.locator('#pane-left')).toContainText('Enter a new name')
+  await expect(page.getByRole('dialog')).toContainText('Save Current Filters')
+  await expect(page.getByRole('dialog')).toContainText('Enter a new name')
   await expect(page.getByTestId('pa-save-dialog-save-btn')).toBeVisible()
   await page.getByTestId('pa-save-dialog-save-btn').click()
 
@@ -159,7 +159,7 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByTestId('pa-share-cohort-checkbox').click()
   await page.getByTestId('pa-save-cohort-btn').click()
   await page.getByRole('textbox', { name: 'Enter name' }).fill(COHORT_2)
-  await expect(page.locator('#pane-left')).toContainText('Save Current Filters')
+  await expect(page.getByRole('dialog')).toContainText('Save Current Filters')
   await page.getByTestId('pa-save-dialog-save-btn').click()
 
   await page.keyboard.press('Escape')
@@ -204,7 +204,7 @@ test(TEST_NAME, async ({ page }) => {
 
   // === TEST: Materialize cohort (add patients) ===
   await explorationAction(page, COHORT_1, 'Materialize cohort')
-  await expect(page.locator('#pane-left')).toContainText('Add Patients to Cohort')
+  await expect(page.getByRole('dialog')).toContainText('Add Patients to Cohort')
   await page
     .locator('div')
     .filter({ hasText: /^Cohort Description:$/ })
@@ -229,7 +229,7 @@ test(TEST_NAME, async ({ page }) => {
   await explorationMenuAction(page, COHORT_1, 'Rename')
   // The reskinned dialog is titled "Rename exploration name" and its field is
   // labelled "Exploration name"; the confirm button reads Rename, not Save.
-  await expect(page.locator('#pane-left')).toContainText('Rename exploration name')
+  await expect(page.getByRole('dialog')).toContainText('Rename exploration name')
   await page.getByRole('textbox', { name: 'Exploration name' }).fill(COHORT_1_RENAMED)
   await confirmExplorationDialog(page)
   await expect(page.locator('#pane-left')).toContainText(COHORT_1_RENAMED)
@@ -240,7 +240,7 @@ test(TEST_NAME, async ({ page }) => {
   // Delete cohort
   await explorationMenuAction(page, COHORT_1_RENAMED, 'Delete')
   // Reskinned: titled "Delete filter?", confirmed with "Yes, delete".
-  await expect(page.locator('#pane-left')).toContainText('Delete filter?')
+  await expect(page.getByRole('dialog')).toContainText('Delete filter?')
   await confirmExplorationDialog(page)
   await expect(page.locator('#app')).toContainText('Saved filter deleted')
 

@@ -77,7 +77,7 @@ test(TEST_NAME, async ({ page }) => {
   // dialog and drop it from the dialog's aria snapshot.
   await page.getByTestId('pa-share-cohort-checkbox').click()
   await page.getByTestId('pa-save-cohort-btn').click()
-  await expect(page.locator('#pane-left')).toContainText('Save Current Filters')
+  await expect(page.getByRole('dialog')).toContainText('Save Current Filters')
   await expect(page.locator('#pane-left')).toMatchAriaSnapshot(`
     - text: Enter a new name if you would like to overwrite the current name (New cohort).
     - textbox "Enter name"
@@ -92,8 +92,8 @@ test(TEST_NAME, async ({ page }) => {
   await page.locator('.modal-wrapper').click()
   await page.locator('#pane-left').getByRole('link', { name: 'Cohorts' }).click()
   await explorationMenuAction(page, 'Cohort Test', 'Delete')
-  await expect(page.locator('#pane-left')).toContainText('Delete filter?')
-  await expect(page.locator('#pane-left')).toContainText(
+  await expect(page.getByRole('dialog')).toContainText('Delete filter?')
+  await expect(page.getByRole('dialog')).toContainText(
     'Deleting this saved filter will delete any access point that you generated for it.'
   )
   await confirmExplorationDialog(page)
