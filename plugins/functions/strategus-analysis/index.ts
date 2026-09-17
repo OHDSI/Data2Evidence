@@ -3,6 +3,7 @@ import http from "http";
 import dataSource from "./src/db/datasource.ts";
 import StrategusAnalysisRouter from "./src/analysis/routes.ts";
 import StrategusViewerTemplateRouter from "./src/templates/routes.ts";
+import StrategusResultsRouter from "./src/results/routes.ts";
 
 export class App {
   private app: Application;
@@ -21,6 +22,18 @@ export class App {
       new StrategusViewerTemplateRouter().router
     );
     this.app.use("/strategus/analysis", new StrategusAnalysisRouter().router);
+
+    const resultsRouter = new StrategusResultsRouter();
+    try {
+      // Idempotent: a 409 from storage means the bucket already exists.
+      await resultsRouter.strategusResultsService.ensureBucket();
+    } catch (error) {
+      // The bucket is not required for the service to boot; uploads will
+      // surface the failure with a 502 instead of taking the plugin down.
+      this.logger.error("Failed to ensure strategus results bucket:", error);
+    }
+    this.app.use("/strategus/results", resultsRouter.router);
+
     this.server.listen(10000);
     this.logger.info("Strategus Results service is running on port 10000");
   }

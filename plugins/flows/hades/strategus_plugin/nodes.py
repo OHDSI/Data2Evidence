@@ -36,6 +36,7 @@ from _shared_flow_utils.dao.DBDao import DBDao
 from _shared_flow_utils.logger.logger import Logger
 from _shared_flow_utils.api.WebAPI import WebAPI
 from _shared_flow_utils.api.StrategusResultsStorageAPI import StrategusResultsStorageAPI
+from _shared_flow_utils.api.StrategusResultsAPI import StrategusResultsAPI
 from _shared_flow_utils.types import SupportedDatabaseDialects
 from _shared_flow_utils.rutils import set_trex_env_var
 
@@ -1517,6 +1518,18 @@ def extract_zip(zip_path: str, extract_to: str) -> str:
     
     print(f"Extracted zip to: {extract_to}")
     return extract_to
+
+
+def upload_results_to_api(results_path: str, name: str, metadata: dict, flow_run_id: str = None):
+    zip_path = f"{results_path}.zip"
+    zip_directory(results_path, zip_path)
+    try:
+        api = StrategusResultsAPI()
+        api.upload_result(zip_path, name, metadata, flow_run_id)
+        logger.info(f"Successfully uploaded results to API: {name}")
+    finally:
+        if os.path.exists(zip_path):
+            os.remove(zip_path)
 
 
 # ============================================================================
