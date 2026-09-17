@@ -294,6 +294,22 @@ def runStrategus(json_graph, options):
         }
         upload_strategus_results(analysisSpec, path_to_results, result_db_settings)
 
+    try:
+        result_name = options.get('notebookName') or f"{token_study_code} [{database_code}]"
+        upload_results_to_api(
+            path_to_results,
+            result_name,
+            {
+                "flowRunId": flow_run_id,
+                "tokenStudyCode": token_study_code,
+                "databaseCode": database_code,
+                "datasetId": datasetId,
+            },
+            flow_run_id=flow_run_id,
+        )
+    except Exception:
+        logger.warning(f"Failed to upload results to API (non-fatal): {tb.format_exc()}")
+
 
 def drop_strategus_results(options):
     """
