@@ -81,6 +81,19 @@ def test_stata_round_breaks_negative_ties_away_from_zero():
     assert scoring._stata_round_half_away_from_zero(-2.5) == -3
 
 
+def test_stata_not_equal_operator_variants():
+    # Stata's docs (and this module's own) list <> as a not-equal spelling
+    # alongside !=; both must tokenize as one operator and evaluate the same,
+    # not fall through to two single-char tokens (<, then >) that then fail to
+    # parse as trailing content.
+    for op in ("!=", "<>"):
+        tokens = scoring._stata_tokenize(f"x {op} 1")
+        assert tokens == [("IDENT", "x"), ("OP", op), ("NUMBER", "1")]
+        fn = scoring._StataExprParser(tokens, f"x {op} 1").parse_cmp()
+        assert fn({"x": 2}) == 1.0
+        assert fn({"x": 1}) == 0.0
+
+
 def test_stata_syntax_accepts_eqindex_without_underscore():
     # Real EuroQol syntax isn't 100% consistent on "EQ_index" - Trinidad and
     # Tobago's bundled download spells the result variable "EQindex" (no

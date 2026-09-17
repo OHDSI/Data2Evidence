@@ -70,7 +70,7 @@ def _stata_truthy(value) -> bool:
 
 
 _STATA_COMPARATORS = {
-    "==": operator.eq, "!=": operator.ne,
+    "==": operator.eq, "!=": operator.ne, "<>": operator.ne,
     ">=": operator.ge, "<=": operator.le,
     "<": operator.lt, ">": operator.gt,
 }
@@ -80,7 +80,7 @@ _STATA_TOKEN_RE = re.compile(r"""
         (?P<NUMBER>\d+\.\d+|\.\d+|\d+)
       | (?P<MISSING>\.)
       | (?P<IDENT>[A-Za-z_]\w*)
-      | (?P<OP>==|!=|>=|<=|[()+\-*/^,&|<>])
+      | (?P<OP>==|!=|<>|>=|<=|[()+\-*/^,&|<>])
     )
 """, re.VERBOSE)
 
@@ -538,7 +538,13 @@ def health_state_to_index(health_state: str, value_set: dict) -> float:
     for dim, level in zip(DIMENSION_ORDER, levels):
         if level >= 2:
             key = f"{DIMENSION_CODES[dim]}{level}"
-            index -= coefficients.get(key, 0.0)
+            if key not in coefficients:
+                raise ValueError(
+                    f"value set's coefficients is missing '{key}' (dimension '{dim}' at "
+                    f"level {level}) - every level 2-5 main-effect coefficient must be "
+                    f"present explicitly, even as 0.0, rather than silently defaulted."
+                )
+            index -= coefficients[key]
 
     for interaction in value_set.get("interactions", []):
         if _interaction_applies(interaction, levels):

@@ -617,7 +617,12 @@ class DbWriter(Node):
                 return Result(True, f"No input data: upstream node '{self.dataframe}' did not run", self, task_run_context)
             if upstream.error:
                 return Result(True, f"No input data: upstream node '{self.dataframe}' failed, fix that node first", self, task_run_context)
-            if upstream.result is not None and not isinstance(upstream.result, pd.DataFrame):
+            if upstream.result is None:
+                # Distinct from an upstream that ran and produced a genuinely empty
+                # DataFrame (a valid full-refresh-to-empty signal, handled below) -
+                # this is no result at all, and must not reach _truncate_table().
+                return Result(True, f"No input data: no result received from '{self.dataframe}'", self, task_run_context)
+            if not isinstance(upstream.result, pd.DataFrame):
                 return Result(True, f"No input data: result from '{self.dataframe}' is not a dataframe", self, task_run_context)
 
             dbutils = DBDao(database_code=self.database)
@@ -633,7 +638,7 @@ class DbWriter(Node):
                 self._truncate_table(dbconn, dbutils.dialect)
 
             df_to_write = upstream.result
-            if df_to_write is None or len(df_to_write) == 0:
+            if len(df_to_write) == 0:
                 note = "Table truncated; " if self.truncate else ""
                 return Result(False, f"{note}no rows to write: the incoming dataframe from '{self.dataframe}' is empty", self, task_run_context)
 
@@ -1028,14 +1033,18 @@ class FhirMappingNode(Node):
             )
         """)
 
-        dao.execute_sql(f"""
-            DROP INDEX IF EXISTS "{escaped_schema}".fhir_omop_key_map_fhir_id_fhir_resource_type_idx
-        """)
+        # One transaction: if the new index fails to create (e.g. an existing table
+        # has duplicates under the wider key), the drop of the old one rolls back
+        # too, instead of leaving fhir_omop_key_map with no unique index at all.
+        with dao._get_connection(autocommit=False) as con:
+            dao.execute_sql(f"""
+                DROP INDEX IF EXISTS "{escaped_schema}".fhir_omop_key_map_fhir_id_fhir_resource_type_idx
+            """, con=con)
 
-        dao.execute_sql(f"""
-            CREATE UNIQUE INDEX IF NOT EXISTS fhir_omop_key_map_fhir_id_type_table_omop_id_idx
-            ON "{escaped_schema}".fhir_omop_key_map (fhir_id, fhir_resource_type, omop_table_name, omop_id)
-        """)
+            dao.execute_sql(f"""
+                CREATE UNIQUE INDEX IF NOT EXISTS fhir_omop_key_map_fhir_id_type_table_omop_id_idx
+                ON "{escaped_schema}".fhir_omop_key_map (fhir_id, fhir_resource_type, omop_table_name, omop_id)
+            """, con=con)
 
     def task(self, _input: dict[str, Result], task_run_context) -> Result:
         try:

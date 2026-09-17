@@ -106,6 +106,12 @@ class TrexDao(DaoBase):
                         cur.execute(pg_sql.SQL("USE {}").format(pg_sql.Identifier(self.cache_id)))
                     except Exception as e:
                         # Caller may still query qualified catalogs; don't break the connection.
+                        # In transactional (autocommit=False) mode, though, the failed
+                        # statement leaves Postgres in an aborted-transaction state -
+                        # every later statement on this connection would fail with
+                        # "current transaction is aborted" until rolled back.
+                        if not autocommit:
+                            con.rollback()
                         print(f"[TrexDao] USE {self.cache_id} skipped: {e}")
             yield con
         except Exception:
@@ -375,6 +381,34 @@ class TrexDao(DaoBase):
         result = self.execute_sql(sql, fetch=True)
         return result[0][0]
 
+    def select_rows_where_in(
+        self, schema: str, table: str, columns: list[str], where_column: str, where_values: list
+    ) -> list[dict]:
+        """
+        Select `columns` from `table` where `where_column` is in `where_values`.
+        Returns one dict per row, keyed by the requested column names.
+        """
+        if not where_values:
+            return []
+        query = pg_sql.SQL("SELECT {columns} FROM {schema}.{table} WHERE {where_column} IN ({where_values})").format(
+            columns=pg_sql.SQL(", ").join(pg_sql.Identifier(c) for c in columns),
+            schema=self._schema_ident(schema),
+            table=pg_sql.Identifier(table),
+            where_column=pg_sql.Identifier(where_column),
+            where_values=pg_sql.SQL(", ").join(pg_sql.Literal(v) for v in where_values),
+        )
+        with self._get_connection() as con:
+            cur = None
+            try:
+                cur = con.cursor()
+                cur.execute(query.as_string(cur))
+                result_columns = [desc[0] for desc in cur.description] if cur.description else []
+                rows = cur.fetchall()
+            finally:
+                if cur:
+                    cur.close()
+        return [dict(zip(result_columns, row)) for row in rows]
+
     def get_next_record_id(self, schema: str, table: str, id_column: int) -> int:
         pass
 
@@ -434,6 +468,68 @@ class TrexDao(DaoBase):
             with self._get_connection() as con:
                 _execute(con)
 
+    def delete_and_insert_rows(
+        self,
+        schema: str,
+        table: str,
+        delete_column: str,
+        delete_value,
+        insert_rows: list[dict],
+        id_column: str = None,
+    ) -> list[dict]:
+        """
+        Deletes rows where delete_column == delete_value, then inserts insert_rows,
+        in one transaction. If id_column is given, each inserted row is assigned a
+        sequential id continuing from the table's current max, and the returned
+        rows carry that id. Mirrors SqlAlchemyDao.delete_and_insert_rows()'s contract
+        for the Postgres/HANA path - see that method for the concurrency rationale.
+        """
+        with self._get_connection(autocommit=False) as con:
+            cur = None
+            try:
+                cur = con.cursor()
+
+                if id_column:
+                    lock_stmt = pg_sql.SQL("LOCK TABLE {schema}.{table} IN EXCLUSIVE MODE").format(
+                        schema=self._schema_ident(schema), table=pg_sql.Identifier(table),
+                    )
+                    cur.execute(lock_stmt.as_string(cur))
+
+                delete_stmt = pg_sql.SQL("DELETE FROM {schema}.{table} WHERE {delete_column} = {delete_value}").format(
+                    schema=self._schema_ident(schema),
+                    table=pg_sql.Identifier(table),
+                    delete_column=pg_sql.Identifier(delete_column),
+                    delete_value=pg_sql.Literal(delete_value),
+                )
+                cur.execute(delete_stmt.as_string(cur))
+
+                if id_column:
+                    max_stmt = pg_sql.SQL("SELECT MAX({id_column}) FROM {schema}.{table}").format(
+                        id_column=pg_sql.Identifier(id_column),
+                        schema=self._schema_ident(schema),
+                        table=pg_sql.Identifier(table),
+                    )
+                    cur.execute(max_stmt.as_string(cur))
+                    last_id = cur.fetchone()[0]
+                    next_id = (int(last_id) + 1) if last_id is not None else 1
+                    insert_rows = [
+                        {**row, id_column: next_id + i} for i, row in enumerate(insert_rows)
+                    ]
+
+                if insert_rows:
+                    columns = list(insert_rows[0].keys())
+                    insert_stmt = pg_sql.SQL("INSERT INTO {schema}.{table} ({columns}) VALUES %s").format(
+                        schema=self._schema_ident(schema),
+                        table=pg_sql.Identifier(table),
+                        columns=pg_sql.SQL(", ").join(pg_sql.Identifier(c) for c in columns),
+                    )
+                    values = [tuple(row[c] for c in columns) for row in insert_rows]
+                    execute_values(cur, insert_stmt, values, page_size=len(values))
+            finally:
+                if cur:
+                    cur.close()
+
+        return insert_rows
 
     # --- Delete methods ---
     def drop_schema(self, schema: str, cascade: bool = False):

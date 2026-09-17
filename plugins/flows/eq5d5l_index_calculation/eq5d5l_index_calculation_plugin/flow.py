@@ -21,12 +21,10 @@ from prefect.logging import get_run_logger
 
 os.environ['plugin_name'] = 'eq5d5l_index_calculation_plugin'
 
-# select_rows_where_in()/delete_and_insert_rows() only exist on SqlAlchemyDao (and
-# IbisDao, which subclasses it) - not on TrexDao. A TREX-dialect dataset would
-# otherwise fail deep inside the flow with a bare AttributeError.
+# Defensive check only: TrexDao implements both, but a future refactor of the
+# shared DAO layer could drop one - fail clearly here rather than deep inside
+# read_eq5d5l_observations()/write_measurements() with a bare AttributeError.
 _REQUIRED_DAO_METHODS = ("select_rows_where_in", "delete_and_insert_rows")
-
-_SUPPORTED_DIALECTS = (SupportedDatabaseDialects.POSTGRES,)
 
 # fhir_omop_key_map's ON CONFLICT target - see _require_fhir_mapping_table().
 _KEY_MAP_UNIQUE_COLUMNS = ("fhir_id", "fhir_resource_type", "omop_table_name", "omop_id")
@@ -50,13 +48,31 @@ def calculate_eq5d5l_index(config: Eq5d5lCalculateConfig):
     value_set = load_value_set(config.country_code)
     logger.info(f"Loaded EuroQol value set for country_code='{config.country_code}'")
 
-    dbdao = DBDao(database_code=config.database_code, cache_id=config.omop_dataset_id)
-    missing_dao_methods = [m for m in _REQUIRED_DAO_METHODS if not hasattr(dbdao, m)]
-    if dbdao.dialect not in _SUPPORTED_DIALECTS or missing_dao_methods:
+    # Only Postgres-backed tenants are supported - checked against the tenant's own
+    # registered dialect (a credentials lookup, not a live connection) before ever
+    # building the TrexDao below, whose own .dialect always reports 'trex' regardless
+    # of the underlying source and so can't be used for this check.
+    underlying_dialect = DBDao(database_code=config.database_code).dialect
+    if underlying_dialect != SupportedDatabaseDialects.POSTGRES:
         raise NotImplementedError(
-            f"eq5d5l_index_calculation_plugin does not support the '{dbdao.dialect}' "
-            f"dialect ({type(dbdao).__name__} is missing {missing_dao_methods}); use a "
-            f"Postgres-backed dataset instead."
+            f"eq5d5l_index_calculation_plugin only supports Postgres-backed datasets; "
+            f"'{config.database_code}' is '{underlying_dialect}'."
+        )
+
+    # Connects through the Trex cache (not directly to the tenant's Postgres database)
+    # so this dataset's own observation/measurement data (addressed by omop_dataset_id)
+    # and its FHIR lineage (addressed by database_code, see mapping_dao below) are both
+    # reached the same way, through the same cache_id-based routing.
+    dbdao = DBDao(
+        dialect=SupportedDatabaseDialects.TREX,
+        database_code=config.database_code,
+        cache_id=config.omop_dataset_id,
+    )
+    missing_dao_methods = [m for m in _REQUIRED_DAO_METHODS if not hasattr(dbdao, m)]
+    if missing_dao_methods:
+        raise NotImplementedError(
+            f"eq5d5l_index_calculation_plugin requires {type(dbdao).__name__} to "
+            f"implement {missing_dao_methods}."
         )
 
     dimension_concept_id_map = DIMENSION_CONCEPT_ID_MAP
@@ -89,9 +105,9 @@ def calculate_eq5d5l_index(config: Eq5d5lCalculateConfig):
         # be discovered only after the old measurement rows are already gone,
         # leaving them replaced with no FHIR lineage/metadata written for them.
         mapping_schema = f"{config.database_code}_{config.schema_name}_fhir_mapping"
-        # database_code, not omop_dataset_id: matches the upstream FhirMappingNode
-        # (dataflow_ui_plugin/nodes.py), which always builds its own mapping DAO
-        # from database_code alone - the guard above guarantees they're equal.
+        # database_code, not omop_dataset_id: FHIR lineage is tenant-wide (matches the
+        # upstream FhirMappingNode in dataflow_ui_plugin/nodes.py, which builds its own
+        # mapping DAO from database_code alone), while the OMOP data above is per-dataset.
         mapping_dao = DBDao(dialect=SupportedDatabaseDialects.TREX, database_code=config.database_code)
         _require_fhir_mapping_table(mapping_dao, mapping_schema)
 
@@ -375,9 +391,6 @@ def write_fhir_key_map(
         return
     logger = get_run_logger()
     mapping_schema = f"{database_code}_{schema_name}_fhir_mapping"
-    # database_code, not omop_dataset_id: matches the upstream FhirMappingNode
-    # (dataflow_ui_plugin/nodes.py) and calculate_eq5d5l_index()'s own prerequisite
-    # check, which its caller-side guard has already confirmed are equal.
     mapping_dao = DBDao(dialect=SupportedDatabaseDialects.TREX, database_code=database_code)
     _require_fhir_mapping_table(mapping_dao, mapping_schema)
 
