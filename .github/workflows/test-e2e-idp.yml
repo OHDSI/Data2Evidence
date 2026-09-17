@@ -1,28 +1,30 @@
-name: test-e2e-idp (nightly)
+name: test-e2e-idp
 
-# Nightly / manual e2e for the IDP auth paths, one matrix job per provider:
+# Reusable e2e for the IDP auth paths, one matrix job per provider:
 #   logto-native      - baseline: native username/password, no connector/secrets.
 #   physionet-mock     - PhysioNet OIDC against an inline mock upstream (no secrets).
 #   entra-external-id  - LIVE Entra External ID (CIAM) via Actions secrets; self-skips if absent.
-# Each job pulls the published develop images, builds the portal UI from source, applies its
-# connector, and runs its spec. Jobs run in parallel on separate runners.
+# Called by docker-build-push.yaml after its build jobs, so it reuses that run's freshly-built
+# images (run_tag, incl. the -devx trex) and its ui-tgz artifact. Jobs run in parallel.
 #
-# Required repository secrets:
-#   NPM_PROJECT_TOKEN                    - @data2evidence Azure npm feed token (all jobs, for the UI build).
-#   E2E_ENTRA_EXTID_CONNECTOR_CONFIG     - full LOGTO__CONNECTOR_CONFIG JSON (entra-external-id only).
+# Required repository secrets (entra-external-id only; the others need none):
+#   E2E_ENTRA_EXTID_CONNECTOR_CONFIG     - full LOGTO__CONNECTOR_CONFIG JSON.
 #   E2E_ENTRA_EXTID_USERNAME / _PASSWORD - a CIAM test account with no MFA, admin-consent pre-granted,
 #                                          no forced password change — else the headless login stalls.
 
 on:
-  workflow_dispatch:
+  workflow_call:
     inputs:
-      image_tag:
-        description: Published image tag to boot (defaults to develop).
-        required: false
-        default: develop
+      runner:
+        required: true
         type: string
-  schedule:
-    - cron: "17 2 * * *"
+      run_tag:
+        required: true
+        type: string
+      reg_url:
+        required: false
+        default: ghcr.io/ohdsi
+        type: string
 
 permissions:
   contents: read
@@ -41,13 +43,14 @@ jobs:
           - provider: entra-external-id
             spec: tests/02-users/idp/entra-external-id.spec.ts
     name: ${{ matrix.provider }}
-    runs-on: ubuntu-24.04
+    runs-on: ${{ inputs.runner }}
     timeout-minutes: 60
     env:
       VERSION: develop
-      REG_URL: ghcr.io/ohdsi
-      DOCKER_TAG_NAME: ${{ inputs.image_tag || 'develop' }}
-      PLUGINS_IMAGE_TAG: ${{ inputs.image_tag || 'develop' }}
+      REG_URL: ${{ inputs.reg_url }}
+      # run_tag images this pipeline just built (incl. d2e-trex:<run_tag>-devx)
+      DOCKER_TAG_NAME: ${{ inputs.run_tag }}
+      PLUGINS_IMAGE_TAG: ${{ inputs.run_tag }}
       D2E_BASE_URL: https://localhost:41100
       # Seeded platform admin (provisions the throwaway user / reads back roles).
       E2E_ADMIN_USERNAME: admin
@@ -98,37 +101,22 @@ jobs:
         if: steps.gate.outputs.run == 'true'
         run: npm install
 
-      - name: Set up Bun
+      # Same-run artifact from build_plugins — no cross-run fetch (avoids the CodeQL
+      # artifact-poisoning pattern) and no from-source UI build.
+      - name: Download UI tarball
         if: steps.gate.outputs.run == 'true'
-        uses: oven-sh/setup-bun@v2
-
-      - name: Set up Node (@data2evidence Azure registry)
-        if: steps.gate.outputs.run == 'true'
-        uses: actions/setup-node@v4
+        uses: actions/download-artifact@v4
         with:
-          node-version: '20.x'
-          registry-url: 'https://pkgs.dev.azure.com/data2evidence/d2e/_packaging/d2e/npm/registry/'
-          scope: '@data2evidence'
+          name: ui-tgz
+          path: ./plugins/ui
 
-      - name: Build the portal UI
+      - name: Extract UI package
         if: steps.gate.outputs.run == 'true'
-        working-directory: plugins/ui
-        env:
-          # @data2evidence → Azure feed (via setup-node); @ohdsi → GitHub Packages
-          # (plugins/ui/.npmrc uses ${GITHUB_TOKEN}).
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_PROJECT_TOKEN }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          # Build the UI from source rather than downloading the build's ui-tgz artifact — the
-          # cross-run download tripped CodeQL's artifact-poisoning rule. `bun pm pack` runs the
-          # package's prepack (`bun build-all`); the result is extracted into plugins/ui-built,
-          # which docker-compose-ci.yml bind-mounts into the portal.
-          bun install
-          bun pm pack
-          TGZ=$(find . -maxdepth 1 -name 'data2evidence-d2e-ui-*.tgz' | head -1)
-          if [ -z "$TGZ" ]; then echo "::error::UI pack produced no tarball"; exit 1; fi
-          rm -rf ../ui-built && mkdir -p ../ui-built
-          tar -xzf "$TGZ" -C ../ui-built --strip-components=1
+          TGZ=$(find ./plugins/ui -maxdepth 1 -name 'data2evidence-d2e-ui-*.tgz' | head -1)
+          if [ -z "$TGZ" ]; then echo "::error::ui-tgz artifact missing"; exit 1; fi
+          rm -rf ./plugins/ui-built && mkdir -p ./plugins/ui-built
+          tar -xzf "$TGZ" -C ./plugins/ui-built --strip-components=1
 
       - name: Initialise d2e
         if: steps.gate.outputs.run == 'true'
