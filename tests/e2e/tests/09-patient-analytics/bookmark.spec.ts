@@ -132,14 +132,14 @@ test(TEST_NAME, async ({ page }) => {
   })
   //Save the filter card
   await test.step('Save the filter card', async () => {
-    await page.getByRole('button', { name: 'Save' }).click()
+    await page.getByTestId('pa-save-cohort-btn').click()
     await page.getByRole('textbox', { name: 'Enter name' }).fill('Test Cohort 2')
     await page.getByRole('textbox', { name: 'Enter name' }).click()
     //Cancel the save
     await page.getByTestId('pa-save-dialog-cancel-btn').click()
     await expect(page.locator('.loading-animation-component')).not.toBeVisible()
     //Click Save again
-    await page.getByRole('button', { name: 'Save' }).click()
+    await page.getByTestId('pa-save-cohort-btn').click()
     //Previous filter name should be visible
     await expect(page.getByRole('textbox', { name: 'Enter name' })).toHaveValue('Test Cohort 2')
     await page.getByRole('textbox', { name: 'Enter name' }).fill('')
@@ -183,7 +183,7 @@ test(TEST_NAME, async ({ page }) => {
   await test.step('Save the filter card', async () => {
     // Confirm that the 'Enter name' textbox is not visible before proceeding
     await expect(page.getByRole('textbox', { name: 'Enter name' })).not.toBeVisible()
-    await page.getByRole('button', { name: 'Save' }).click()
+    await page.getByTestId('pa-save-cohort-btn').click()
     // Re-saving an already-saved cohort owned by the current user no longer opens the
     // naming dialog - FiltersFooter.openSaveBookmark() only does that when
     // needsSaveDialog (isNewCohort || isNotUserSharedBookmark) is true.
@@ -199,12 +199,12 @@ test(TEST_NAME, async ({ page }) => {
   await test.step('Test for duplicate name validation', async () => {
     await page.locator('#pane-left').getByRole('link', { name: 'Cohorts' }).click()
     await page.getByTestId('explorations-new-btn').click()
-    await page.getByRole('button', { name: 'Save' }).click()
+    await page.getByTestId('pa-save-cohort-btn').click()
     await page.getByRole('textbox', { name: 'Enter name' }).click()
     await page.getByRole('textbox', { name: 'Enter name' }).fill(NAME.savedFilters)
     await page.getByTestId('pa-save-dialog-save-btn').click()
     await expect(page.getByText('Cohort name already exists. Please enter another name.')).toBeVisible()
-    await page.getByRole('button', { name: 'Cancel' }).click()
+    await page.getByTestId('pa-save-dialog-cancel-btn').click()
   })
   //Rename the saved filter
   await test.step('Rename the saved filter', async () => {
@@ -214,7 +214,7 @@ test(TEST_NAME, async ({ page }) => {
     await page.getByTestId('pa-save-dialog-save-btn').click()
     await expect(page.getByText('Please enter a name')).toBeVisible()
     await page.getByRole('textbox').fill(NAME.renamedFilters)
-    await page.getByRole('button', { name: 'Save' }).click()
+    await page.getByTestId('pa-save-dialog-save-btn').click()
     await expect(page.getByText(`${NAME.renamedFilters}0. Icons/`)).toBeVisible()
     await page
       .locator('div')
@@ -311,7 +311,7 @@ test(TEST_NAME, async ({ page }) => {
     //Save filter - the allow-sharing checkbox now lives in the filter card footer
     //rather than the save dialog, so it has to be set before the dialog opens.
     await page.getByTestId('pa-share-cohort-checkbox').click()
-    await page.getByRole('button', { name: 'Save' }).click()
+    await page.getByTestId('pa-save-cohort-btn').click()
     await page.getByRole('textbox', { name: 'Enter name' }).fill(NAME.patientListFilters)
     await page.getByTestId('pa-save-dialog-save-btn').click()
     //Verify Cohort is saved
@@ -427,7 +427,7 @@ test(TEST_NAME, async ({ page }) => {
     await explorationMenuAction(page, NAME.savedFilters, 'Rename')
     await page.getByRole('textbox').fill('')
     await page.getByRole('textbox').fill(NAME.sharedFilter)
-    await page.getByRole('button', { name: 'Save' }).click()
+    await page.getByTestId('pa-save-dialog-save-btn').click()
     //Logout as admin
     await page.getByRole('link', { name: 'Account' }).click()
     await page.getByRole('button', { name: 'Logout' }).click()

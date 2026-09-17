@@ -129,8 +129,8 @@ test(TEST_NAME, async ({ page }) => {
   // Save cohort 1 - the allow-sharing checkbox now lives in the filter card footer
   // rather than the save dialog, so it has to be set before the dialog opens.
   await page.getByTestId('pa-share-cohort-checkbox').click()
-  await expect(page.getByRole('button', { name: 'Save' })).toBeVisible()
-  await page.getByRole('button', { name: 'Save' }).click()
+  await expect(page.getByTestId('pa-save-cohort-btn')).toBeVisible()
+  await page.getByTestId('pa-save-cohort-btn').click()
   await page.getByRole('textbox', { name: 'Enter name' }).fill(COHORT_1)
   await expect(page.locator('#pane-left')).toContainText('Save Current Filters')
   await expect(page.locator('#pane-left')).toContainText('Enter a new name')
@@ -157,7 +157,7 @@ test(TEST_NAME, async ({ page }) => {
   // Save cohort 2 - allow-sharing now lives in the filter card footer, so it has to
   // be set before the save dialog opens.
   await page.getByTestId('pa-share-cohort-checkbox').click()
-  await page.getByRole('button', { name: 'Save' }).click()
+  await page.getByTestId('pa-save-cohort-btn').click()
   await page.getByRole('textbox', { name: 'Enter name' }).fill(COHORT_2)
   await expect(page.locator('#pane-left')).toContainText('Save Current Filters')
   await page.getByTestId('pa-save-dialog-save-btn').click()

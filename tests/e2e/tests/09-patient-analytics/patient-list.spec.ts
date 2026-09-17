@@ -71,7 +71,7 @@ test(TEST_NAME, async ({ page }) => {
     // The allow-sharing checkbox now lives in the filter card footer rather than the
     // save dialog, so it has to be set before the dialog opens.
     await page.getByTestId('pa-share-cohort-checkbox').click()
-    await page.getByRole('button', { name: 'Save' }).click()
+    await page.getByTestId('pa-save-cohort-btn').click()
     await page.getByRole('textbox', { name: 'Enter name' }).fill('Cohort Test')
     await page.getByRole('textbox', { name: 'Enter name' }).click()
     await page.getByTestId('pa-save-dialog-save-btn').click()
