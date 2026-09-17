@@ -1,11 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { publishPaTools, PA_TOOLS_CHANGED_EVENT } from '../paToolBridge'
 import { createPaTools } from '../webmcpServer'
-import {
-  D2E_CLIENT_TOOLS_CHANGED_EVENT,
-  publishClientToolProxy,
-  type ClientToolRegistry,
-} from '../clientToolProxy'
 
 // Same minimal Vuex stand-in as webmcpServer.test.ts, plus getSelectedDataset —
 // the bridge surfaces the loaded dataset so the drawer can refuse to edit a
@@ -28,13 +23,12 @@ const registry = () => {
   return reg
 }
 
-afterEach(() => {
-  delete window.__d2ePaTools
-  delete window.__d2eClientTools
-  vi.restoreAllMocks()
-})
-
 describe('publishPaTools', () => {
+  afterEach(() => {
+    delete window.__d2ePaTools
+    vi.restoreAllMocks()
+  })
+
   it('publishes a descriptor for every createPaTools tool', () => {
     const store: any = makeStore()
 
@@ -126,47 +120,5 @@ describe('publishPaTools', () => {
 
     expect(window.__d2ePaTools).toBeDefined()
     expect(registry().datasetId).toBe('ds-2')
-  })
-})
-
-describe('parent-window PA tool proxy', () => {
-  it('resolves the live child registry for each list and call', async () => {
-    let child: ClientToolRegistry | undefined
-    const teardown = publishClientToolProxy(() => child)
-
-    expect(window.__d2eClientTools?.list()).toEqual([])
-    await expect(window.__d2eClientTools?.call('pa_get_current_cohort')).rejects.toThrow(
-      'D2E client tools are unavailable',
-    )
-
-    const call = vi.fn().mockResolvedValue({ content: [{ type: 'text', text: 'current cohort' }] })
-    child = {
-      version: 1,
-      list: () => [{ name: 'pa_get_current_cohort', description: 'Get it', inputSchema: { type: 'object' } }],
-      call,
-    }
-
-    expect(window.__d2eClientTools?.list().map(tool => tool.name)).toEqual(['pa_get_current_cohort'])
-    await expect(window.__d2eClientTools?.call('pa_get_current_cohort')).resolves.toEqual({
-      content: [{ type: 'text', text: 'current cohort' }],
-    })
-    expect(call).toHaveBeenCalledWith('pa_get_current_cohort', undefined)
-    teardown()
-  })
-
-  it('announces lifecycle changes without stale teardown deleting a newer proxy', () => {
-    const events: boolean[] = []
-    const listener = (event: Event) => events.push((event as CustomEvent).detail.available)
-    window.addEventListener(D2E_CLIENT_TOOLS_CHANGED_EVENT, listener)
-
-    const teardownOld = publishClientToolProxy(() => undefined)
-    const old = window.__d2eClientTools
-    const teardownNew = publishClientToolProxy(() => undefined)
-    teardownOld()
-    expect(window.__d2eClientTools).not.toBe(old)
-    teardownNew()
-
-    expect(events).toEqual([true, true, false])
-    window.removeEventListener(D2E_CLIENT_TOOLS_CHANGED_EVENT, listener)
   })
 })
