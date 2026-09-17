@@ -49,4 +49,7 @@ jobs:
         run: deno test --allow-env --no-check idp-mode-env.test.mjs
       - name: d2e-login tests
         working-directory: plugins/atlas/d2e-login
-        run: deno test --no-check
+        # login.test.mjs re-imports the page's scripts under a per-test query
+        # string so each test runs them fresh; Deno only lets a computed
+        # import through with read access. Scoped to this directory.
+        run: deno test --no-check --allow-read=.
