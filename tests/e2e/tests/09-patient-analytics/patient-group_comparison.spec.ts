@@ -135,7 +135,7 @@ async function createCohortWithOneConditionOccurrenceFilercard(page, cohortName)
   // ========================
   // Start creating a new cohort using D2E cohort builder
   await page.getByTestId('explorations-new-btn').click()
-  await expect(page.locator('#pane-left')).toContainText('New cohort')
+  await expect(page.locator('#pane-left')).toContainText('New exploration')
 
   // Configure cohort sharing settings. The allow-sharing checkbox now lives in the
   // filter card footer instead of the save dialog, so it has to be set before the
