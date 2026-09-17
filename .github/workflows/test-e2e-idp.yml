@@ -183,6 +183,56 @@ jobs:
             exit 1
           fi
 
+      # The IDP specs assert against the demo dataset (its portal.dataset row, WebAPI source and the
+      # researcher-role -> WebAPI-role mapping). init+start don't seed it, so onboard it here the same
+      # way test_demosetup_dev does. demodb sits behind the demodb profile and is otherwise pulled
+      # lazily inside setupdemo, where a transient registry timeout aborts the whole setup — pre-pull it.
+      - name: Pre-pull demo db image
+        if: steps.gate.outputs.run == 'true'
+        uses: nick-fields/retry@v3
+        with:
+          timeout_seconds: 600
+          retry_wait_seconds: 30
+          max_attempts: 5
+          retry_on: any
+          command: docker pull postgres:16-alpine
+
+      - name: Setup demo dataset
+        if: steps.gate.outputs.run == 'true'
+        uses: nick-fields/retry@v3
+        with:
+          timeout_seconds: 1800
+          retry_wait_seconds: 100
+          max_attempts: 3
+          retry_on: any
+          command: |
+            ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config \
+              node ./scripts/dist/cli.js -e -v ${VERSION} setupdemo
+
+      # WebAPI enumerates its sources at boot, so restart to pick up the onboarded demo source before
+      # the specs assert the researcher's WebAPI roles.
+      - name: Restart services after demo setup
+        if: steps.gate.outputs.run == 'true'
+        run: |
+          ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config \
+            node ./scripts/dist/cli.js -e -v ${VERSION} -c ./docker-compose-ci.yml -p 41100 stop
+          ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config \
+            node ./scripts/dist/cli.js -e -v ${VERSION} -c ./docker-compose-ci.yml -p 41100 start
+
+      - name: Wait for services to be healthy (post demo setup)
+        if: steps.gate.outputs.run == 'true'
+        run: |
+          for i in $(seq 1 60); do
+            NOT_READY=$(docker ps --format '{{.Names}},{{.Status}}' | grep -E 'health: starting|unhealthy' || true)
+            if [ -z "$NOT_READY" ]; then echo "All services healthy after ${i} checks"; break; fi
+            echo "Waiting (${i}/60)..."; echo "$NOT_READY"; sleep 5
+          done
+          docker ps --format '{{.Names}},{{.Status}}' | sort
+          if [ -n "$NOT_READY" ]; then
+            echo "::error::Services did not become healthy after demo setup"
+            exit 1
+          fi
+
       - name: Install e2e deps + Chromium
         if: steps.gate.outputs.run == 'true'
         working-directory: tests/e2e
