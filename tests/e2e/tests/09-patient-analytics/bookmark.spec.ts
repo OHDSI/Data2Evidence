@@ -1,5 +1,5 @@
 import { test, expect } from '../fixtures'
-import { confirmExplorationDialog, deleteExploration, explorationMenuAction } from '../explorations'
+import { confirmExplorationDialog, deleteExploration, explorationCard, explorationMenuAction } from '../explorations'
 
 const TEST_NAME = 'patient_analytics_bookmark'
 const SHOULD_SKIP = false
@@ -193,7 +193,7 @@ test(TEST_NAME, async ({ page }) => {
   //Verify the saved filter
   await test.step('Verify the saved filter', async () => {
     await page.locator('#pane-left').getByRole('link', { name: 'Cohorts' }).click()
-    await expect(page.getByText(`${NAME.savedFilters}0. Icons/`)).toBeVisible()
+    await expect(explorationCard(page, NAME.savedFilters)).toBeVisible()
   })
   // Test for duplicate name validation
   await test.step('Test for duplicate name validation', async () => {
@@ -215,7 +215,7 @@ test(TEST_NAME, async ({ page }) => {
     await expect(page.getByText('Please enter a name')).toBeVisible()
     await page.getByRole('textbox', { name: 'Exploration name' }).fill(NAME.renamedFilters)
     await page.getByTestId('pa-save-dialog-save-btn').click()
-    await expect(page.getByText(`${NAME.renamedFilters}0. Icons/`)).toBeVisible()
+    await expect(explorationCard(page, NAME.renamedFilters)).toBeVisible()
     await page
       .locator('div')
       .filter({ hasText: new RegExp(`^${NAME.renamedFilters}$`) })
@@ -237,10 +237,10 @@ test(TEST_NAME, async ({ page }) => {
   //Delete the saved filter
   await test.step('Delete the saved filter', async () => {
     await page.locator('#pane-left').getByRole('link', { name: 'Cohorts' }).click()
-    await expect(page.getByText(`${NAME.renamedFilters}0. Icons/`)).toBeVisible()
+    await expect(explorationCard(page, NAME.renamedFilters)).toBeVisible()
     await explorationMenuAction(page, NAME.renamedFilters, 'Delete')
     await confirmExplorationDialog(page)
-    await expect(page.getByText(`${NAME.renamedFilters}0. Icons/`)).not.toBeVisible()
+    await expect(explorationCard(page, NAME.renamedFilters)).not.toBeVisible()
   })
   //Go back to Cohorts
   await test.step('Go back to Cohorts', async () => {
@@ -316,7 +316,7 @@ test(TEST_NAME, async ({ page }) => {
     await page.getByTestId('pa-save-dialog-save-btn').click()
     //Verify Cohort is saved
     await page.locator('#pane-left').getByRole('link', { name: 'Cohorts' }).click()
-    await expect(page.getByText(`${NAME.patientListFilters}0. Icons/`)).toBeVisible()
+    await expect(explorationCard(page, NAME.patientListFilters)).toBeVisible()
     //Click on the saved cohort
     await page.locator('#pane-left').getByRole('link', { name: 'Cohorts' }).click()
     await page.getByText(NAME.patientListFilters).nth(1).click()

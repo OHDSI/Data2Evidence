@@ -1,5 +1,5 @@
 import { test, expect } from '../fixtures'
-import { deleteExploration } from '../explorations'
+import { deleteExploration, explorationCard } from '../explorations'
 
 const TEST_NAME = 'patient-analytics-patient-list'
 const SHOULD_SKIP = true
@@ -82,7 +82,7 @@ test(TEST_NAME, async ({ page }) => {
   //Check if the cohort is saved
   await test.step('Check if the cohort is saved', async () => {
     await page.locator('#pane-left').getByRole('link', { name: 'Cohorts' }).click()
-    await expect(page.getByText('Cohort Test0. Icons/')).toBeVisible()
+    await expect(explorationCard(page, 'Cohort Test')).toBeVisible()
   })
   //Go to patient list
   await test.step('Go to patient list', async () => {
@@ -145,11 +145,11 @@ test(TEST_NAME, async ({ page }) => {
   await test.step('Delete cohort', async () => {
     // await page.getByRole('button', { name: '' }).click();
     await page.locator('#pane-left').getByRole('link', { name: 'Cohorts' }).click()
-    await expect(page.getByText('Cohort Test0. Icons/')).toBeVisible()
+    await expect(explorationCard(page, 'Cohort Test')).toBeVisible()
     // Was the fifth icon of the old card footer, then a confirm button labelled
     // "Delete". The card has a More menu now and the dialog confirms with
     // "Yes, delete", so both halves moved.
     await deleteExploration(page, 'Cohort Test')
-    await expect(page.getByText('Cohort Test0. Icons/')).not.toBeVisible()
+    await expect(explorationCard(page, 'Cohort Test')).not.toBeVisible()
   })
 })
