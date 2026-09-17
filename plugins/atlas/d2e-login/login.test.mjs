@@ -82,11 +82,30 @@ Deno.test("an unexpected /settings shape is logged instead of swallowed silently
   assertEquals(warnings.length > 0, true);
 });
 
-async function loadWithSettings(tag, settings) {
+function memoryStorage(initial) {
+  var data = Object.assign({}, initial);
+  return {
+    getItem: function (k) { return Object.prototype.hasOwnProperty.call(data, k) ? data[k] : null; },
+    setItem: function (k, v) { data[k] = String(v); },
+    data: data,
+  };
+}
+
+async function loadWithSettings(tag, settings, opts) {
+  var o = opts || {};
   var doc = stubDocument();
+  var replaced = [];
   globalThis.document = doc;
   globalThis.window = globalThis;
-  globalThis.location = { origin: "http://localhost", search: "", pathname: "/atlas/d2e-login/", hash: "" };
+  globalThis.sessionStorage = o.storage || memoryStorage();
+  globalThis.location = {
+    origin: "http://localhost",
+    search: o.search || "",
+    pathname: "/atlas/d2e-login/",
+    hash: "",
+    replace: function (url) { replaced.push(url); },
+  };
+  doc.replaced = replaced;
   await import("./providers.js?" + tag);
   var originalFetch = globalThis.fetch;
   globalThis.fetch = function () {
@@ -99,15 +118,49 @@ async function loadWithSettings(tag, settings) {
   } finally {
     globalThis.fetch = originalFetch;
   }
+  doc.elements.replaced = replaced;
   return doc.elements;
 }
 
-// The logto-federated compose overlay's default: only the Logto button.
+const FEDERATED = { external: { email: false, logto: true } };
+const LOGTO_AUTHORIZE = "/trex/auth/v1/authorize?provider=logto&redirect_to=%2Fatlas%2F";
+
+// The logto-federated compose overlay's default, shown on request: only the Logto button.
 Deno.test("native sign-in off hides the password form and the divider", async () => {
-  var el = await loadWithSettings("native-off", { external: { email: false, logto: true } });
+  var el = await loadWithSettings("native-off", FEDERATED, { search: "?manual" });
+  assertEquals(el.replaced, []);
   assertEquals(el.get("form").hidden, true);
   assertEquals(el.get("divider").hidden, true);
   assertEquals(el.get("error").textContent, "");
+});
+
+Deno.test("with Logto as the only way in, the page sends the browser straight there", async () => {
+  var el = await loadWithSettings("auto-redirect", FEDERATED);
+  assertEquals(el.replaced, [LOGTO_AUTHORIZE]);
+});
+
+Deno.test("a refused sign-in is shown, not redirected again", async () => {
+  var el = await loadWithSettings("auto-refused", FEDERATED, { search: "?error=no_account" });
+  assertEquals(el.replaced, []);
+  assertEquals(el.get("error").textContent, "No D2E account is linked to this sign-in. Ask your administrator.");
+});
+
+Deno.test("a second arrival within the guard window shows the page instead of looping", async () => {
+  var storage = memoryStorage({ d2e_login_auto_redirect_ts: String(Date.now()) });
+  var el = await loadWithSettings("auto-loop", FEDERATED, { storage: storage });
+  assertEquals(el.replaced, []);
+  assertEquals(el.get("form").hidden, true);
+});
+
+Deno.test("without usable sessionStorage there is no loop guard, so the page is shown", async () => {
+  var broken = { getItem: function () { throw new Error("blocked"); }, setItem: function () { throw new Error("blocked"); } };
+  var el = await loadWithSettings("auto-nostorage", FEDERATED, { storage: broken });
+  assertEquals(el.replaced, []);
+});
+
+Deno.test("password sign-in on means no automatic redirect, even with one provider", async () => {
+  var el = await loadWithSettings("auto-native-on", { external: { email: true, logto: true } });
+  assertEquals(el.replaced, []);
 });
 
 Deno.test("native sign-in on keeps the form, with the divider under the Logto button", async () => {

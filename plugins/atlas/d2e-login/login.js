@@ -65,6 +65,21 @@
         if (!settings || typeof settings.external !== "object" || settings.external === null) {
           console.warn("[d2e-login] unexpected /trex/auth/v1/settings shape; no federated providers will show:", settings);
         }
+        // With one way in and nothing to type, the page is only a click in
+        // the way: go straight to the provider. The loop guard stops a
+        // provider that keeps sending the browser back here without an error
+        // from turning into an endless redirect; the page then shows as usual.
+        var params = new URLSearchParams(location.search);
+        var autoId = P.autoRedirectProvider(settings, {
+          error: params.get("error"),
+          manual: params.has("manual"),
+        });
+        if (autoId && !recentlyRedirected()) {
+          markRedirected();
+          errorEl.textContent = "Redirecting to sign-in…";
+          location.replace(P.authorizeHref(autoId, returnTo));
+          return;
+        }
         var providers = P.externalProviders(settings);
         providers.forEach(function (p) {
           var a = document.createElement("a");
@@ -84,6 +99,24 @@
         }
       })
       .catch(function () { /* the password form still works */ });
+  }
+
+  var REDIRECT_TS_KEY = "d2e_login_auto_redirect_ts";
+  var REDIRECT_GUARD_MS = 10000;
+
+  // sessionStorage can be missing or throw (private modes, blocked storage).
+  // Without it there is no loop guard, so fail towards showing the page.
+  function recentlyRedirected() {
+    try {
+      var last = parseInt(sessionStorage.getItem(REDIRECT_TS_KEY) || "0", 10);
+      return Date.now() - last < REDIRECT_GUARD_MS;
+    } catch (e) {
+      return true;
+    }
+  }
+
+  function markRedirected() {
+    try { sessionStorage.setItem(REDIRECT_TS_KEY, String(Date.now())); } catch (e) { /* see above */ }
   }
 
   function showError(message) {
