@@ -1,6 +1,7 @@
 import pandas as pd
 from re import match, sub
 from pathlib import Path
+from sqlalchemy import text
 
 
 def get_failed_analysis_ids(output_folder: str) -> list[int] | None:
@@ -21,6 +22,26 @@ def failed_analysis_ids_to_str(failed_ids: list[int]) -> str:
     """
     failed_ids_str = ",".join(map(str, failed_ids))
     return failed_ids_str
+
+
+def run_sql_statements(engine, sql_script: str, is_ignorable_error=lambda e: False) -> None:
+    """
+    Run a `;`-separated script in one transaction and commit it.
+
+    `engine.begin()` commits on exit and rolls back if a statement raises. Closing
+    the connection inside the block instead rolls the whole script back while the
+    caller still sees success, which is how DC lost concept_hierarchy.
+    """
+    with engine.begin() as conn:
+        for statement in sql_script.strip().split(";"):
+            if not statement.strip():
+                continue
+            try:
+                conn.execute(text(statement))
+            except Exception as e:
+                if is_ignorable_error(e):
+                    continue
+                raise
 
 
 def is_safe_schema_name(schema: str) -> bool:
