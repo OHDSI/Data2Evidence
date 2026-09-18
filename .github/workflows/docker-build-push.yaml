@@ -1208,6 +1208,7 @@ jobs:
             -e D2E_BASE_URL=https://localhost:443 \
             -e CI=true \
             -e GITHUB_ACTIONS=true \
+            -e SKIP_IDP_SPECS=1 \
             d2e-e2e npm test
 
       - name: Mark e2e attempt success
@@ -1452,6 +1453,22 @@ jobs:
       changes_ui: ${{ needs.setup.outputs.changes_ui }}
       reg_url: ghcr.io/ohdsi
       prepull_flow_images: ""
+    secrets: inherit
+
+  # IDP auth e2e (logto-native / physionet-mock / entra-external-id). Reuses this run's
+  # freshly-built run_tag images (incl. the -devx trex) + ui-tgz. Runs on develop merges,
+  # manual dispatch, and PRs that touch the e2e harness (changes_e2e) — never on unrelated PRs.
+  test_e2e_idp:
+    needs: [setup, build_images, build_trex_image, build_plugins]
+    if: |
+      needs.setup.outputs.is_develop_push == 'true' ||
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'pull_request' && needs.setup.outputs.changes_e2e == 'true')
+    uses: ./.github/workflows/test-e2e-idp.yml
+    with:
+      runner: ${{ needs.setup.outputs.random_runner }}
+      run_tag: ${{ needs.setup.outputs.run_tag }}
+      reg_url: ghcr.io/ohdsi
     secrets: inherit
 
   test_http_hana:

@@ -1,3 +1,7 @@
 test-results/
 ctrf/
 !.env.example
+# Per-provider IDP harness templates (the real .env.<provider> files stay ignored).
+!.env.entra.example
+!.env.entra-external-id.example
+!.env.physionet.example

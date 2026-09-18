@@ -1,0 +1,265 @@
+name: test-e2e-idp
+
+# Reusable e2e for the IDP auth paths (logto-native / physionet-mock / entra-external-id),
+# called by docker-build-push.yaml after its build jobs — reuses that run's run_tag images
+# (incl. the -devx trex) and its ui-tgz artifact.
+#
+# Required repository secrets (entra-external-id only):
+#   E2E_ENTRA_EXTID_CONNECTOR_CONFIG       full LOGTO__CONNECTOR_CONFIG JSON.
+#   E2E_ENTRA_EXTID_USERNAME / _PASSWORD   a CIAM test account (no MFA, admin-consent pre-granted).
+
+on:
+  workflow_call:
+    inputs:
+      runner:
+        required: true
+        type: string
+      run_tag:
+        required: true
+        type: string
+      reg_url:
+        required: false
+        default: ghcr.io/ohdsi
+        type: string
+
+permissions:
+  contents: read
+  packages: read
+
+jobs:
+  idp:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - provider: logto-native
+            spec: tests/02-users/idp/logto-native.spec.ts
+          - provider: physionet-mock
+            spec: tests/02-users/idp/physionet.spec.ts
+          - provider: entra-external-id
+            spec: tests/02-users/idp/entra-external-id.spec.ts
+    name: ${{ matrix.provider }}
+    runs-on: ${{ inputs.runner }}
+    timeout-minutes: 60
+    env:
+      VERSION: develop
+      REG_URL: ${{ inputs.reg_url }}
+      DOCKER_TAG_NAME: ${{ inputs.run_tag }}
+      PLUGINS_IMAGE_TAG: ${{ inputs.run_tag }}
+      D2E_BASE_URL: https://localhost:41100
+      E2E_ADMIN_USERNAME: admin
+      E2E_ADMIN_PASSWORD: Updatepassword12345
+      PHYSIONET_UPSTREAM: mock
+      E2E_PHYSIONET_USERNAME: ci_e2e_test_user
+      E2E_PHYSIONET_PASSWORD: mock-not-validated
+      E2E_PHYSIONET_EXPECTED_ROLE: role.researcher.demo
+      E2E_ENTRA_EXTID_USERNAME: ${{ secrets.E2E_ENTRA_EXTID_USERNAME }}
+      E2E_ENTRA_EXTID_PASSWORD: ${{ secrets.E2E_ENTRA_EXTID_PASSWORD }}
+    steps:
+      - name: Gate (entra-external-id needs secrets; others always run)
+        id: gate
+        env:
+          PROVIDER: ${{ matrix.provider }}
+          CFG: ${{ secrets.E2E_ENTRA_EXTID_CONNECTOR_CONFIG }}
+        run: |
+          if [ "$PROVIDER" = "entra-external-id" ] \
+             && { [ -z "$CFG" ] || [ -z "$E2E_ENTRA_EXTID_USERNAME" ] || [ -z "$E2E_ENTRA_EXTID_PASSWORD" ]; }; then
+            echo "run=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::entra-external-id secrets not configured — skipping this provider"
+          else
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Free Disk Space (Ubuntu)
+        if: steps.gate.outputs.run == 'true'
+        uses: jlumbroso/free-disk-space@main
+        with:
+          tool-cache: true
+
+      - uses: actions/checkout@v4
+        if: steps.gate.outputs.run == 'true'
+        with:
+          submodules: recursive
+
+      - name: Login to GitHub Container Registry
+        if: steps.gate.outputs.run == 'true'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: npm install (root — builds the d2e CLI)
+        if: steps.gate.outputs.run == 'true'
+        run: npm install
+
+      # Same-run artifact — no cross-run fetch (avoids the CodeQL artifact-poisoning pattern).
+      - name: Download UI tarball
+        if: steps.gate.outputs.run == 'true'
+        uses: actions/download-artifact@v4
+        with:
+          name: ui-tgz
+          path: ./plugins/ui
+
+      - name: Extract UI package
+        if: steps.gate.outputs.run == 'true'
+        run: |
+          TGZ=$(find ./plugins/ui -maxdepth 1 -name 'data2evidence-d2e-ui-*.tgz' | head -1)
+          if [ -z "$TGZ" ]; then echo "::error::ui-tgz artifact missing"; exit 1; fi
+          rm -rf ./plugins/ui-built && mkdir -p ./plugins/ui-built
+          tar -xzf "$TGZ" -C ./plugins/ui-built --strip-components=1
+
+      - name: Initialise d2e
+        if: steps.gate.outputs.run == 'true'
+        run: |
+          init_choice=y ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config \
+            node ./scripts/dist/cli.js -e -v develop init
+
+      # Connectors are applied by appending to .env (dotenv-parsed by compose, JSON-safe, last wins)
+      # after init — no CLI flag. logto-native needs no connector, so neither step runs for it.
+      - name: Apply PhysioNet connector overlay
+        if: steps.gate.outputs.run == 'true' && matrix.provider == 'physionet-mock'
+        run: |
+          # Inline mock connector (no secrets). Container endpoints use the physionet-host:host-gateway
+          # alias to reach the host mock; browser authorize + issuer stay on localhost.
+          {
+            printf '\n'
+            printf '%s\n' 'LOGTO__CONNECTOR_CONFIG={"id":"physionet","connectorId":"physionet-oidc","config":{"clientId":"ci-mock-physionet-client","clientSecret":"ci-mock-physionet-secret","authorizationEndpoint":"http://localhost:8000/oauth/authorize/","tokenEndpoint":"http://physionet-host:8000/oauth/token/","userInfoEndpoint":"http://physionet-host:8000/oauth/oidc/userinfo","jwksEndpoint":"http://physionet-host:8000/oauth/jwks/","idTokenVerificationConfig":{"jwksUri":"http://physionet-host:8000/oauth/jwks/","issuer":"http://localhost:8000"},"issuer":"http://localhost:8000","scope":"openid profile email credentialing:read","responseType":"code","tokenEndpointAuthMethod":"client_secret_post","customConfig":{"code_challenge":"TRhgJzxIslzMtwvq-SBSP4UB1NsKKfr7g5WEfIXH9M0","code_challenge_method":"S256","code_verifier":"X944m5z27MaTE_NL4lGgqHoN-Gsw0IWGzpyNvjy8xT0"}},"syncProfile":true}'
+            printf '%s\n' 'LOGTO__ENABLE_REGISTRATION=true'
+            printf '%s\n' 'LOGTO__SOCIAL_SIGNIN_TARGETS=physionet'
+            printf '%s\n' 'USERMGMT__AUTO_PROVISION_ENABLED=true'
+            printf '%s\n' 'USERMGMT__AUTO_PROVISION_CONNECTORS=physionet'
+            printf '%s\n' 'USERMGMT__ENTITLEMENTS_SYNC_ENABLED=true'
+            printf '%s\n' 'USERMGMT__ENTITLEMENTS_PHYSIONET_BASE_URL=http://physionet-host:8000'
+            printf '%s\n' 'USERMGMT__ENTITLEMENTS_DATASET_MAPPING={"demo":"demowave/1.0.0"}'
+            printf '%s\n' 'USERMGMT__ENTITLEMENTS_PHYSIONET_CLIENT_ID=ci-mock-physionet-client'
+            printf '%s\n' 'USERMGMT__ENTITLEMENTS_PHYSIONET_CLIENT_SECRET=ci-mock-physionet-secret'
+          } >> .env
+
+      - name: Apply CIAM connector overlay (from secret)
+        if: steps.gate.outputs.run == 'true' && matrix.provider == 'entra-external-id'
+        env:
+          CFG: ${{ secrets.E2E_ENTRA_EXTID_CONNECTOR_CONFIG }}
+        run: |
+          # GitHub masks the secret; we never echo it.
+          printf '\n' >> .env
+          { printf 'LOGTO__CONNECTOR_CONFIG=%s\n' "$CFG"
+            echo 'LOGTO__SOCIAL_SIGNIN_TARGETS=entra-external-id-alp'
+            echo 'IDP__AUTO_PROVISION_USERS=true'
+          } >> .env
+
+      - name: Pull docker compose images
+        if: steps.gate.outputs.run == 'true'
+        run: |
+          ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config \
+            node ./scripts/dist/cli.js -e -v develop pull
+
+      - name: Start services
+        if: steps.gate.outputs.run == 'true'
+        uses: nick-fields/retry@v3
+        with:
+          timeout_seconds: 1800
+          retry_wait_seconds: 100
+          max_attempts: 2
+          retry_on: any
+          command: |
+            ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config \
+              node ./scripts/dist/cli.js -e -v ${VERSION} \
+              -c ./docker-compose-ci.yml -p 41100 start
+            docker ps --format '{{.Names}},{{.Status}}' | sort | tee -a "$GITHUB_STEP_SUMMARY"
+
+      - name: Wait for services to be healthy
+        if: steps.gate.outputs.run == 'true'
+        run: |
+          for i in $(seq 1 60); do
+            NOT_READY=$(docker ps --format '{{.Names}},{{.Status}}' | grep -E 'health: starting|unhealthy' || true)
+            if [ -z "$NOT_READY" ]; then echo "All services healthy after ${i} checks"; break; fi
+            echo "Waiting (${i}/60)..."; echo "$NOT_READY"; sleep 5
+          done
+          docker ps --format '{{.Names}},{{.Status}}' | sort
+          # Fail rather than run Playwright against a half-up stack.
+          if [ -n "$NOT_READY" ]; then
+            echo "::error::Services did not become healthy within 300 seconds"
+            exit 1
+          fi
+
+      # The IDP specs assert against the demo dataset (its portal.dataset row, WebAPI source and the
+      # researcher-role -> WebAPI-role mapping). init+start don't seed it, so onboard it here the same
+      # way test_demosetup_dev does. demodb sits behind the demodb profile and is otherwise pulled
+      # lazily inside setupdemo, where a transient registry timeout aborts the whole setup — pre-pull it.
+      - name: Pre-pull demo db image
+        if: steps.gate.outputs.run == 'true'
+        uses: nick-fields/retry@v3
+        with:
+          timeout_seconds: 600
+          retry_wait_seconds: 30
+          max_attempts: 5
+          retry_on: any
+          command: docker pull postgres:16-alpine
+
+      - name: Setup demo dataset
+        if: steps.gate.outputs.run == 'true'
+        uses: nick-fields/retry@v3
+        with:
+          timeout_seconds: 1800
+          retry_wait_seconds: 100
+          max_attempts: 3
+          retry_on: any
+          command: |
+            ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config \
+              node ./scripts/dist/cli.js -e -v ${VERSION} -p 41100 setupdemo
+
+      # WebAPI enumerates its sources at boot, so restart to pick up the onboarded demo source before
+      # the specs assert the researcher's WebAPI roles.
+      - name: Restart services after demo setup
+        if: steps.gate.outputs.run == 'true'
+        run: |
+          ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config \
+            node ./scripts/dist/cli.js -e -v ${VERSION} -c ./docker-compose-ci.yml -p 41100 stop
+          ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config \
+            node ./scripts/dist/cli.js -e -v ${VERSION} -c ./docker-compose-ci.yml -p 41100 start
+
+      - name: Wait for services to be healthy (post demo setup)
+        if: steps.gate.outputs.run == 'true'
+        run: |
+          for i in $(seq 1 60); do
+            NOT_READY=$(docker ps --format '{{.Names}},{{.Status}}' | grep -E 'health: starting|unhealthy' || true)
+            if [ -z "$NOT_READY" ]; then echo "All services healthy after ${i} checks"; break; fi
+            echo "Waiting (${i}/60)..."; echo "$NOT_READY"; sleep 5
+          done
+          docker ps --format '{{.Names}},{{.Status}}' | sort
+          if [ -n "$NOT_READY" ]; then
+            echo "::error::Services did not become healthy after demo setup"
+            exit 1
+          fi
+
+      - name: Install e2e deps + Chromium
+        if: steps.gate.outputs.run == 'true'
+        working-directory: tests/e2e
+        run: |
+          npm ci
+          npm run init
+
+      - name: Run e2e spec
+        if: steps.gate.outputs.run == 'true'
+        working-directory: tests/e2e
+        env:
+          SPEC: ${{ matrix.spec }}
+        run: npx playwright test "$SPEC"
+
+      - name: d2e service logs (on failure)
+        if: failure() && steps.gate.outputs.run == 'true'
+        run: |
+          ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config \
+            node ./scripts/dist/cli.js -e -v ${VERSION} logs || true
+
+      - name: Upload Playwright report
+        if: always() && steps.gate.outputs.run == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.provider }}-playwright-report
+          path: |
+            tests/e2e/playwright-report/
+            tests/e2e/test-results/
+          retention-days: 7
+          if-no-files-found: ignore
