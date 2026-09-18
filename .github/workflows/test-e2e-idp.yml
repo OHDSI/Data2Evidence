@@ -152,7 +152,7 @@ jobs:
         if: steps.gate.outputs.run == 'true'
         run: |
           ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config \
-            node ./scripts/dist/cli.js -e -v develop -d ./plugins/functions pull
+            node ./scripts/dist/cli.js -e -v develop pull
 
       - name: Start services
         if: steps.gate.outputs.run == 'true'
@@ -164,7 +164,7 @@ jobs:
           retry_on: any
           command: |
             ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config \
-              node ./scripts/dist/cli.js -e -v ${VERSION} -d ./plugins/functions \
+              node ./scripts/dist/cli.js -e -v ${VERSION} \
               -c ./docker-compose-ci.yml -p 41100 start
             docker ps --format '{{.Names}},{{.Status}}' | sort | tee -a "$GITHUB_STEP_SUMMARY"
 
@@ -251,7 +251,7 @@ jobs:
         if: failure() && steps.gate.outputs.run == 'true'
         run: |
           ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config \
-            node ./scripts/dist/cli.js -e -v ${VERSION} -d ./plugins/functions logs || true
+            node ./scripts/dist/cli.js -e -v ${VERSION} logs || true
 
       - name: Upload Playwright report
         if: always() && steps.gate.outputs.run == 'true'
