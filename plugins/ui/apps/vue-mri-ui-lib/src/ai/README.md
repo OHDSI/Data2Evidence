@@ -15,7 +15,8 @@ read the computed result, and save.
 | File | Role |
 |---|---|
 | [`webmcpServer.ts`](./webmcpServer.ts) | The tool definitions. `createPaTools(store, hooks)` builds the array; `registerPaTools` adapts it to the browser's `modelContext`. |
-| [`paToolBridge.ts`](./paToolBridge.ts) | `publishPaTools(store, hooks)` — publishes the same tools on `window.__d2ePaTools` for the portal's in-app assistant drawer. It also contains `publishPaClientToolProxy(frame)`, which exposes an Atlas-hosted PA iframe's tools to Pythia through parent-window `window.__pythiaClientTools`. |
+| [`paToolBridge.ts`](./paToolBridge.ts) | `publishPaTools(store, hooks)` — publishes the same tools on `window.__d2ePaTools` for the portal's in-app assistant drawer. |
+| [`../atlas-parcel/clientToolProxy.ts`](../atlas-parcel/clientToolProxy.ts) | Dependency-free Atlas wrapper bridge that exposes an Atlas-hosted PA iframe's tools to Pythia through parent-window `window.__pythiaClientTools`. |
 | [`cohortPatch.ts`](./cohortPatch.ts) | `applyCohortPatch` (the typed-patch applier) and `describeCardGroups` (the AND/OR grouping readout). |
 | [`valueResolution.ts`](./valueResolution.ts) | Query → stored-token matching for `pa_search_attribute_values`: `rankValues`, `alternateQueries`, `expandQuery`. Browser-side twin of the backend's `cohortValueResolver.ts`. |
 | [`__tests__/`](./__tests__/) | Vitest suites, one per module. |

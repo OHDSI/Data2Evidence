@@ -9,7 +9,8 @@
  * periodically because tokens expire while the plugin stays mounted.
  */
 
-import { publishPaClientToolProxy } from './ai/paToolBridge'
+// Keep this module's entire import graph browser-native and runtime-dependency-free.
+import { publishPaClientToolProxy } from './atlas-parcel/clientToolProxy'
 
 type AtlasPluginProps = {
   domElement?: HTMLElement
