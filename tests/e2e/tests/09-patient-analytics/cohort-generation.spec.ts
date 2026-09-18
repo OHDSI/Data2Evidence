@@ -1,4 +1,5 @@
 import { test, expect } from '../fixtures'
+import { deleteExploration } from '../explorations'
 
 const TEST_NAME = 'cohort-generation'
 const SHOULD_SKIP = true
@@ -36,8 +37,8 @@ test('cohort-generation', async ({ page }) => {
   // COHORT CREATION SECTION
   // ========================
   // Start creating a new cohort using D2E cohort builder
-  await page.getByRole('button', { name: 'D2E' }).click()
-  await expect(page.locator('#pane-left')).toContainText('New cohort')
+  await page.getByTestId('explorations-new-btn').click()
+  await expect(page.locator('#pane-left')).toContainText('New exploration')
 
   // Configure cohort sharing settings. The allow-sharing checkbox now lives in the
   // filter card footer instead of the save dialog, so it has to be set before the
@@ -45,12 +46,12 @@ test('cohort-generation', async ({ page }) => {
   await page.getByTestId('pa-share-cohort-checkbox').click()
 
   // Save the initial cohort configuration
-  await page.getByRole('button', { name: 'Save' }).click()
+  await page.getByTestId('pa-save-cohort-btn').click()
 
   // Name the cohort with unique timestamp-based name and save
   await page.getByRole('textbox', { name: 'Enter name' }).click()
   await page.getByRole('textbox', { name: 'Enter name' }).fill(cohortName)
-  await page.locator('footer').getByRole('button', { name: 'Save' }).click()
+  await page.getByTestId('pa-save-dialog-save-btn').click()
   await expect(page.locator('#pane-left')).toContainText(cohortName)
 
   // ========================
@@ -108,7 +109,7 @@ test('cohort-generation', async ({ page }) => {
   // Re-saving an already-saved cohort owned by the current user no longer opens the
   // naming dialog - FiltersFooter.openSaveBookmark() only does that when
   // needsSaveDialog (isNewCohort || isNotUserSharedBookmark) is true.
-  await page.getByRole('button', { name: 'Save' }).click()
+  await page.getByTestId('pa-save-cohort-btn').click()
   await expect(page.locator('#app')).toContainText('Saved filter updated.')
 
   // ========================
@@ -117,9 +118,8 @@ test('cohort-generation', async ({ page }) => {
   // Navigate back to cohorts list and delete the specific test cohort
   await page.locator('#pane-left').getByRole('link', { name: 'Cohorts' }).click()
 
-  // Find and delete the specific cohort by name to avoid deleting wrong cohorts
-  // The delete button is the last img element in the action buttons container for each cohort
-  // Navigate from cohort title to its parent container, then to the action buttons container
-  await page.locator('.footer > div:nth-child(5)').first().click()
-  await page.getByRole('button', { name: 'Delete' }).click()
+  // Delete by name. The old selector took the fifth icon of the first card's
+  // footer, which was the delete action only by position - and only ever
+  // deleted the first card, despite the comment.
+  await deleteExploration(page, cohortName)
 })
