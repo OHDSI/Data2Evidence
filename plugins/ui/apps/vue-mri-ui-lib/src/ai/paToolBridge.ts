@@ -51,7 +51,7 @@ export interface ClientToolRegistry {
 declare global {
   interface Window {
     __d2ePaTools?: PaToolRegistry
-    __d2eClientTools?: ClientToolRegistry
+    __pythiaClientTools?: ClientToolRegistry
   }
 }
 
@@ -117,9 +117,9 @@ export function publishPaClientToolProxy(frame: HTMLIFrameElement): () => void {
     },
   }
 
-  window.__d2eClientTools = proxy
+  window.__pythiaClientTools = proxy
 
   return () => {
-    if (window.__d2eClientTools === proxy) delete window.__d2eClientTools
+    if (window.__pythiaClientTools === proxy) delete window.__pythiaClientTools
   }
 }
