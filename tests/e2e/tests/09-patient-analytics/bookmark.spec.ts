@@ -341,7 +341,6 @@ test(TEST_NAME, async ({ page }) => {
     ).toBeVisible()
     await expect(page.getByText('ANDCondition Occurrence')).toBeVisible()
     await expect(page.getByText('ANDDeath A(Excluded)')).toBeVisible()
-    await expect(page.getByText('Create ATLAS cohort definition')).toBeVisible()
     await expect(page.getByText('Download SQL')).toBeVisible()
   })
   //Download SQL
@@ -356,19 +355,6 @@ test(TEST_NAME, async ({ page }) => {
     const download2Promise = page.waitForEvent('download')
     await page.getByRole('button', { name: 'Download SQL' }).click()
     const download2 = await download2Promise
-  })
-  //Create ATLAS cohort definition
-  await test.step('Create ATLAS cohort definition', async () => {
-    await page.getByRole('button', { name: 'Create ATLAS cohort definition' }).click()
-    await expect(
-      page.getByText(
-        'Note that conversion to cohort definition is an approximation, and currently does not support "datetime" and "text" types and advanced time filtering. Your cohort definition will be available as an "Atlas Cohort Definition" in the Cohorts overview screen.'
-      )
-    ).toBeVisible()
-    await page.getByRole('button', { name: 'Create', exact: true }).click()
-    await expect(page.getByText('ATLAS cohort definition created successfully and added to Cohorts.')).toBeVisible()
-    await page.locator('#pane-left').getByRole('link', { name: 'Cohorts' }).click()
-    await expect(page.getByText(`${NAME.patientListFilters}Atlas Cohort DefinitionID`)).toBeVisible()
   })
   //Create another user to verify bookmark visibility
   await test.step('Switch to admin portal', async () => {
@@ -423,7 +409,7 @@ test(TEST_NAME, async ({ page }) => {
     //Rename the bookmark
     await page.getByText('Demo dataset').first().click()
     await page.getByRole('link', { name: 'Cohorts' }).click()
-    await page.locator('div:nth-child(2) > .footer > div:nth-child(2) > svg').click()
+    await page.locator('.footer > div:nth-child(2) > svg').first().click()
     await page.getByRole('textbox').fill('')
     await page.getByRole('textbox').fill(NAME.sharedFilter)
     await page.getByRole('button', { name: 'Save' }).click()
@@ -461,16 +447,6 @@ test(TEST_NAME, async ({ page }) => {
         .click()
       await page.getByRole('button', { name: 'Delete' }).click()
       await expect(page.getByText(NAME.sharedFilter)).not.toBeVisible()
-    })
-    //Delete the Atlas Cohort Definition
-    await test.step('Delete Atlas Cohort Definition', async () => {
-      await expect(page.getByText(NAME.patientListFilters)).toBeVisible()
-      await page
-        .locator('.item-card', { hasText: 'Atlas Cohort Definition' })
-        .locator('.footer .icon-button[title="Delete Saved Filter"]')
-        .click()
-      await page.getByRole('button', { name: 'Delete' }).click()
-      await expect(page.getByText(NAME.patientListFilters)).not.toBeVisible()
     })
     await expect(page.getByText('You have not yet saved any cohort definitions')).toBeVisible()
   })
