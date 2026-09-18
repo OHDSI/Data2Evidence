@@ -11,7 +11,7 @@
 # once the base image publishes amd64 and arm64 together.
 FROM --platform=linux/amd64 ghcr.io/data2evidence/logto-with-logto-schema@sha256:b15f139b08744afa7e68bbaa11cd5d33644fcb18cb50cc55ec7175e7c41cbdff AS base-amd64
 
-FROM --platform=linux/arm64 ghcr.io/data2evidence/logto-with-logto-schema@sha256:e1a726ba62aec804d33e20da06ac60baf2ef9a7ca95f7219a71614b1879c3892 AS base-arm64
+FROM --platform=linux/arm64 ghcr.io/data2evidence/logto-with-logto-schema@sha256:ff2d20ad16d27539b05a692cdca63194399831d9501ef8e7ef5485bf290d4ccd AS base-arm64
 
 # TARGETARCH (amd64 | arm64) is set by buildx per leg; only the selected stage
 # is pulled and built.
