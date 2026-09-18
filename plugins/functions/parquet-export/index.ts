@@ -1,6 +1,7 @@
 import express, { Request, Response, Router } from "express";
 import { getUser } from "@alp/alp-base-utils";
 import { env } from "./env.ts";
+import { expandSchemaPlaceholders, sourceCatalogForDataset } from "./schemaPlaceholders.ts";
 
 const logger = console;
 
@@ -17,6 +18,9 @@ interface SqlQueryTemplate {
 interface DatasetMetadata {
   id: string;
   databaseCode: string;
+  cacheId?: string | null;
+  type?: string;
+  dialect?: string;
   schemaName: string;
   vocabSchemaName: string;
   resultsSchemaName: string;
@@ -47,14 +51,6 @@ function validateSqlTemplate(sql: string): boolean {
   const forbidden =
     /;\s*(DROP|DELETE|TRUNCATE|ALTER|CREATE|INSERT|UPDATE|GRANT|REVOKE)/i;
   return !forbidden.test(sql);
-}
-
-function isValidSqlIdentifier(str: unknown): str is string {
-  return (
-    typeof str === "string" &&
-    /^[a-zA-Z_][a-zA-Z0-9_]*$/.test(str) &&
-    str.length <= 128
-  );
 }
 
 function isValidParamValue(str: unknown): str is string {
@@ -125,6 +121,7 @@ function substituteTemplateParams(
     schema: string;
     vocabSchema: string;
     resultsSchema: string;
+    sourceCatalog?: string;
   },
   additionalParams: Record<string, string>,
   conceptIds?: number[],
@@ -132,15 +129,7 @@ function substituteTemplateParams(
   if (params.cohortId !== undefined && !isValidCohortId(params.cohortId)) {
     throw new Error("Invalid cohortId");
   }
-  if (!isValidSqlIdentifier(params.schema)) {
-    throw new Error("Invalid schema name");
-  }
-  if (params.vocabSchema && !isValidSqlIdentifier(params.vocabSchema)) {
-    throw new Error("Invalid vocab schema name");
-  }
-  if (params.resultsSchema && !isValidSqlIdentifier(params.resultsSchema)) {
-    throw new Error("Invalid results schema name");
-  }
+  const schemaSql = expandSchemaPlaceholders(sqlTemplate, params);
   if (additionalParams.STARTYEAR && !isValidYear(additionalParams.STARTYEAR)) {
     throw new Error("Invalid STARTYEAR");
   }
@@ -169,6 +158,7 @@ function substituteTemplateParams(
       }
     }
   }
+
 
   let result = sqlTemplate
     .replace(
@@ -608,6 +598,7 @@ router.post("/", async (req: Request, res: Response) => {
           schema: dataset.schemaName,
           vocabSchema: dataset.vocabSchemaName,
           resultsSchema: dataset.resultsSchemaName,
+          sourceCatalog: sourceCatalogForDataset(dataset),
         },
         additionalParams,
         conceptIds,
