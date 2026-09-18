@@ -704,20 +704,32 @@ class TestCalculateEq5d5lIndexEndToEnd:
         assert len(rows) == 1
         mapping_dao.batch_insert_values.assert_called_once()
 
-    def test_raises_for_non_postgres_dialect(self, monkeypatch):
+    def test_raises_for_unsupported_dialect(self, monkeypatch):
         # dbdao's own dialect is checked directly - it's a plain
         # DBDao(database_code=...) connection (IbisDao/SqlAlchemyDao) now, not a
         # TrexDao whose .dialect always reports 'trex' regardless of the
         # underlying source.
-        non_postgres_dbdao = MagicMock()
-        non_postgres_dbdao.dialect = "hana"
-        dbdao_factory = MagicMock(return_value=non_postgres_dbdao)
+        non_supported_dbdao = MagicMock()
+        non_supported_dbdao.dialect = "hana"
+        dbdao_factory = MagicMock(return_value=non_supported_dbdao)
         monkeypatch.setattr(flow, "DBDao", dbdao_factory)
 
         with pytest.raises(NotImplementedError, match="hana"):
             _run(flow.calculate_eq5d5l_index, self._config())
 
         dbdao_factory.assert_called_once_with(database_code="alpdev_pg")
+
+    def test_accepts_bigquery_dialect(self, monkeypatch):
+        # BigQuery is supported alongside Postgres - dbdao resolves to a plain
+        # SqlAlchemyDao there (see DBDao's dialect registry), with an accepted
+        # concurrency race for id_column allocation instead of Postgres/HANA's
+        # table lock (see SqlAlchemyDao._lock_table_for_id_allocation).
+        main_dao, mapping_dao = self._patch_daos(monkeypatch, _full_health_group())
+        main_dao.dialect = SupportedDatabaseDialects.BIGQUERY
+
+        rows = _run(flow.calculate_eq5d5l_index, self._config())
+
+        assert len(rows) == 1
 
     def test_raises_when_dbdao_missing_required_methods(self, monkeypatch):
         # Defensive check: IbisDao inherits select_rows_where_in()/

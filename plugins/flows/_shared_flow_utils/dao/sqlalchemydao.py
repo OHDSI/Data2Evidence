@@ -315,6 +315,8 @@ class SqlAlchemyDao(DaoBase):
                 # identifier is interpolated into the SQL unquoted.
                 qualified_name = connection.dialect.identifier_preparer.format_table(table_obj)
                 connection.execute(sql.text(f"LOCK TABLE {qualified_name} IN EXCLUSIVE MODE"))
+            case SupportedDatabaseDialects.BIGQUERY:
+                pass
             case _:
                 raise NotImplementedError(
                     f"delete_and_insert_rows(id_column=...) has no concurrency-safe id "

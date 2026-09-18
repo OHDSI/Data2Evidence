@@ -21,7 +21,9 @@ from prefect.logging import get_run_logger
 
 os.environ['plugin_name'] = 'eq5d5l_index_calculation_plugin'
 
-# Defensive check only: IbisDao inherits both from SqlAlchemyDao, but a future
+_SUPPORTED_DIALECTS = (SupportedDatabaseDialects.POSTGRES, SupportedDatabaseDialects.BIGQUERY)
+
+# Defensive check only: IbisDao/SqlAlchemyDao implement both, but a future
 # refactor of the shared DAO layer could drop one - fail clearly here rather
 # than deep inside read_eq5d5l_observations()/write_measurements() with a bare
 # AttributeError.
@@ -49,23 +51,23 @@ def calculate_eq5d5l_index(config: Eq5d5lCalculateConfig):
     value_set = load_value_set(config.country_code)
     logger.info(f"Loaded EuroQol value set for country_code='{config.country_code}'")
 
-    # dbdao connects directly to the tenant's Postgres database (no dialect/cache_id
-    # override, so DBDao infers the dialect from database_code's own credentials and
-    # returns IbisDao) rather than through the Trex cache. The Trex catalog keyed by
-    # omop_dataset_id is a separate, disconnected snapshot (a standalone DuckDB file,
-    # not a live view of the tenant's Postgres) - confirmed against a real local
-    # deployment, where it returned zero rows for observations that exist right now in
-    # the live table. Routing through it would silently miss fresh questionnaire
-    # responses on read, and any measurement rows written would never reach the
-    # tenant's real OMOP schema. Matches every other flow that reads/writes live CDM
-    # tables directly (phenotype_plugin, cohort_generator_plugin, loyalty_score_plugin,
-    # i2b2_plugin) - none of them route by cache_id either; see README's Parameters
-    # section for why omop_dataset_id isn't used for connection routing here.
+    # dbdao connects directly to the tenant's database (no dialect/cache_id override,
+    # so DBDao infers the dialect from database_code's own credentials) rather than
+    # through the Trex cache. The Trex catalog keyed by omop_dataset_id is a separate,
+    # disconnected snapshot (a standalone DuckDB file, not a live view of the tenant's
+    # database) - confirmed against a real local deployment, where it returned zero
+    # rows for observations that exist right now in the live table. Routing through it
+    # would silently miss fresh questionnaire responses on read, and any measurement
+    # rows written would never reach the tenant's real OMOP schema. Matches every other
+    # flow that reads/writes live CDM tables directly (phenotype_plugin,
+    # cohort_generator_plugin, loyalty_score_plugin, i2b2_plugin) - none of them route
+    # by cache_id either; see README's Parameters section for why omop_dataset_id
+    # isn't used for connection routing here.
     dbdao = DBDao(database_code=config.database_code)
-    if dbdao.dialect != SupportedDatabaseDialects.POSTGRES:
+    if dbdao.dialect not in _SUPPORTED_DIALECTS:
         raise NotImplementedError(
-            f"eq5d5l_index_calculation_plugin only supports Postgres-backed datasets; "
-            f"'{config.database_code}' is '{dbdao.dialect}'."
+            f"eq5d5l_index_calculation_plugin only supports {_SUPPORTED_DIALECTS}-backed "
+            f"datasets; '{config.database_code}' is '{dbdao.dialect}'."
         )
     missing_dao_methods = [m for m in _REQUIRED_DAO_METHODS if not hasattr(dbdao, m)]
     if missing_dao_methods:

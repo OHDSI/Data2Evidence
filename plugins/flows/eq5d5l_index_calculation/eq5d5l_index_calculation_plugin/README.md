@@ -147,15 +147,24 @@ writes no metadata row, consistent with `measurement` being left untouched.
       "dry_run": false,                                           # Optional: compute but don't write to measurement/metadata
       "database_code": "alpdev_pg",                                # Required: CDM tenant credentials key
       "schema_name": "cdmdefault",                                 # Required: OMOP CDM schema of the dataset being scored
-      "omop_dataset_id": "3f2504e0_4f89_11d3_9a0c_0305e82c3301",   # Required: the dataset's own id, passed through to DBDao as cache_id
+      "omop_dataset_id": "3f2504e0_4f89_11d3_9a0c_0305e82c3301",   # Required: the dataset's own id (not used for connection routing - see below)
       "country_code": "AU"                                         # Required: selects the EuroQol value set; single country per run
     }
   }
 }
 ```
 
-Only Postgres-backed datasets are supported today; a HANA- or TREX-dialect
-`database_code` fails fast with a clear error.
+Postgres- and BigQuery-backed datasets are supported; a HANA-, TREX-, or
+Snowflake-dialect `database_code` fails fast with a clear error.
+
+**BigQuery concurrency caveat:** measurement/metadata id allocation
+(`delete_and_insert_rows(id_column=...)`) serializes concurrent writers via a
+table lock on Postgres/HANA, but BigQuery has no table-lock statement to use
+instead - this is an accepted, documented race for BigQuery specifically: two
+concurrent runs against the *same* dataset could read the same current max id
+and allocate colliding ones. If that's not acceptable for a given deployment,
+serialize runs per dataset at the orchestration layer (e.g. a Prefect
+concurrency limit), since the DAO layer doesn't guarantee it there.
 
 `database_code` and `omop_dataset_id` identify different things and aren't
 expected to match - `database_code` is the tenant's connection credentials key,

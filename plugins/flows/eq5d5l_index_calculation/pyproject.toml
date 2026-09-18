@@ -5,6 +5,8 @@ description = "Calculates EQ-5D-5L utility index values from FHIR QuestionnaireR
 readme = "README.md"
 requires-python = "==3.12.*"
 dependencies = [
+    "google-cloud-bigquery==3.6.0",
+    "google-cloud-bigquery-storage==2.25.0",
     "httpx==0.27.2",
     "ibis-framework[duckdb,postgres]==10.0.0",
     # Undeclared prefect 3.6.x dependency: prefect/workers/base.py imports the
@@ -22,6 +24,7 @@ dependencies = [
     "pyjwt==2.13.0",
     "python-dotenv==1.2.2",
     "sqlalchemy==2.0.38",
+    "sqlalchemy-bigquery==1.14.1",
 ]
 
 [dependency-groups]
