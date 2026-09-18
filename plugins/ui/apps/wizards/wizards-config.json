@@ -9,7 +9,18 @@
         {
           "id": "person",
           "title": "Person",
-          "groups": [{ "id": "person-details", "fieldIds": ["age", "gender", "ethnicity", "race"], "columns": 2 }]
+          "groups": [
+            {
+              "id": "person-details",
+              "fieldIds": [
+                "age",
+                "gender",
+                "ethnicity",
+                "race"
+              ],
+              "columns": 2
+            }
+          ]
         },
         {
           "id": "measurement",
@@ -18,18 +29,27 @@
             {
               "id": "body-measurement",
               "label": "Body measurement",
-              "fieldIds": ["height", "weight", "bmi"],
+              "fieldIds": [
+                "height",
+                "weight",
+                "bmi"
+              ],
               "columns": 3,
               "validation": {
-                "minAnswered": 1,
+                "minAnswered": 0,
                 "maxAnswered": 2,
-                "message": "Enter 1 or 2 of Height, Weight, and BMI."
+                "message": "Enter up to 2 of Height, Weight, and BMI."
               }
             },
             {
               "id": "vitals",
               "label": "Vitals",
-              "fieldIds": ["systolicBp", "diastolicBp", "pulseRate", "respRate"],
+              "fieldIds": [
+                "systolicBp",
+                "diastolicBp",
+                "pulseRate",
+                "respRate"
+              ],
               "columns": 2
             }
           ]
@@ -40,7 +60,15 @@
           "groups": [
             {
               "id": "condition-details",
-              "fieldIds": ["year", "condition1", "condition2", "condition3", "condition4", "condition5", "condition6"],
+              "fieldIds": [
+                "year",
+                "condition1",
+                "condition2",
+                "condition3",
+                "condition4",
+                "condition5",
+                "condition6"
+              ],
               "columns": 1
             }
           ]
@@ -59,21 +87,21 @@
           "id": "gender",
           "type": "text",
           "label": "Gender",
-          "required": true,
+          "required": false,
           "configPath": "patient.attributes.Gender_concept_name"
         },
         {
           "id": "ethnicity",
           "type": "text",
           "label": "Ethnicity",
-          "required": true,
+          "required": false,
           "configPath": "patient.attributes.ethnicityName"
         },
         {
           "id": "race",
           "type": "text",
           "label": "Race",
-          "required": true,
+          "required": false,
           "configPath": "patient.attributes.raceName"
         },
         {
@@ -133,7 +161,7 @@
           "allowNegative": false,
           "label": "Resp Rate",
           "placeholder": "bpm",
-          "required": true,
+          "required": false,
           "configPath": "patient.interactions.measurement.attributes.numval",
           "filterCardPath": "patient.interactions.measurement",
           "fixedAttributes": [
@@ -150,7 +178,7 @@
           "allowNegative": false,
           "label": "Pulse Rate",
           "placeholder": "bpm",
-          "required": true,
+          "required": false,
           "configPath": "patient.interactions.measurement.attributes.numval",
           "filterCardPath": "patient.interactions.measurement",
           "fixedAttributes": [
@@ -167,7 +195,7 @@
           "allowNegative": false,
           "label": "Systolic Blood Pressure",
           "placeholder": "mmHg",
-          "required": true,
+          "required": false,
           "configPath": "patient.interactions.measurement.attributes.numval",
           "filterCardPath": "patient.interactions.measurement",
           "fixedAttributes": [
@@ -184,7 +212,7 @@
           "allowNegative": false,
           "label": "Diastolic Blood Pressure",
           "placeholder": "mmHg",
-          "required": true,
+          "required": false,
           "configPath": "patient.interactions.measurement.attributes.numval",
           "filterCardPath": "patient.interactions.measurement",
           "fixedAttributes": [
@@ -207,7 +235,7 @@
           "type": "text",
           "label": "Condition 1",
           "required": true,
-          "configPath": "patient.interactions.conditionoccurrence.attributes.condition_occ_concept_name",
+          "configPath": "patient.interactions.conditionoccurrence.attributes.wizard_condition_concept_search",
           "isWizardField": true,
           "allowFreeText": true
         },
@@ -216,7 +244,7 @@
           "type": "text",
           "label": "Condition 2",
           "required": false,
-          "configPath": "patient.interactions.conditionoccurrence.attributes.condition_occ_concept_name",
+          "configPath": "patient.interactions.conditionoccurrence.attributes.wizard_condition_concept_search",
           "isWizardField": true,
           "allowFreeText": true
         },
@@ -225,7 +253,7 @@
           "type": "text",
           "label": "Condition 3",
           "required": false,
-          "configPath": "patient.interactions.conditionoccurrence.attributes.condition_occ_concept_name",
+          "configPath": "patient.interactions.conditionoccurrence.attributes.wizard_condition_concept_search",
           "isWizardField": true,
           "allowFreeText": true
         },
@@ -234,7 +262,7 @@
           "type": "text",
           "label": "Condition 4",
           "required": false,
-          "configPath": "patient.interactions.conditionoccurrence.attributes.condition_occ_concept_name",
+          "configPath": "patient.interactions.conditionoccurrence.attributes.wizard_condition_concept_search",
           "isWizardField": true,
           "allowFreeText": true
         },
@@ -243,7 +271,7 @@
           "type": "text",
           "label": "Condition 5",
           "required": false,
-          "configPath": "patient.interactions.conditionoccurrence.attributes.condition_occ_concept_name",
+          "configPath": "patient.interactions.conditionoccurrence.attributes.wizard_condition_concept_search",
           "isWizardField": true,
           "allowFreeText": true
         }
@@ -258,7 +286,18 @@
         {
           "id": "person",
           "title": "Person",
-          "groups": [{ "id": "person-details", "fieldIds": ["age", "gender", "ethnicity", "race"], "columns": 2 }]
+          "groups": [
+            {
+              "id": "person-details",
+              "fieldIds": [
+                "age",
+                "gender",
+                "ethnicity",
+                "race"
+              ],
+              "columns": 2
+            }
+          ]
         },
         {
           "id": "measurement",
@@ -267,18 +306,27 @@
             {
               "id": "body-measurement",
               "label": "Body measurement",
-              "fieldIds": ["height", "weight", "bmi"],
+              "fieldIds": [
+                "height",
+                "weight",
+                "bmi"
+              ],
               "columns": 3,
               "validation": {
-                "minAnswered": 1,
+                "minAnswered": 0,
                 "maxAnswered": 2,
-                "message": "Enter 1 or 2 of Height, Weight, and BMI."
+                "message": "Enter up to 2 of Height, Weight, and BMI."
               }
             },
             {
               "id": "vitals",
               "label": "Vitals",
-              "fieldIds": ["systolicBp", "diastolicBp", "pulseRate", "respRate"],
+              "fieldIds": [
+                "systolicBp",
+                "diastolicBp",
+                "pulseRate",
+                "respRate"
+              ],
               "columns": 2
             }
           ]
@@ -289,7 +337,15 @@
           "groups": [
             {
               "id": "condition-details",
-              "fieldIds": ["year", "condition1", "condition2", "condition3", "condition4", "condition5", "condition6"],
+              "fieldIds": [
+                "year",
+                "condition1",
+                "condition2",
+                "condition3",
+                "condition4",
+                "condition5",
+                "condition6"
+              ],
               "columns": 1
             }
           ]
@@ -308,21 +364,21 @@
           "id": "gender",
           "type": "text",
           "label": "Gender",
-          "required": true,
+          "required": false,
           "configPath": "patient.attributes.Gender_concept_name"
         },
         {
           "id": "ethnicity",
           "type": "text",
           "label": "Ethnicity",
-          "required": true,
+          "required": false,
           "configPath": "patient.attributes.ethnicityName"
         },
         {
           "id": "race",
           "type": "text",
           "label": "Race",
-          "required": true,
+          "required": false,
           "configPath": "patient.attributes.raceName"
         },
         {
@@ -382,7 +438,7 @@
           "allowNegative": false,
           "label": "Resp Rate",
           "placeholder": "bpm",
-          "required": true,
+          "required": false,
           "configPath": "patient.interactions.measurement.attributes.numval",
           "filterCardPath": "patient.interactions.measurement",
           "fixedAttributes": [
@@ -399,7 +455,7 @@
           "allowNegative": false,
           "label": "Pulse Rate",
           "placeholder": "bpm",
-          "required": true,
+          "required": false,
           "configPath": "patient.interactions.measurement.attributes.numval",
           "filterCardPath": "patient.interactions.measurement",
           "fixedAttributes": [
@@ -416,7 +472,7 @@
           "allowNegative": false,
           "label": "Systolic Blood Pressure",
           "placeholder": "mmHg",
-          "required": true,
+          "required": false,
           "configPath": "patient.interactions.measurement.attributes.numval",
           "filterCardPath": "patient.interactions.measurement",
           "fixedAttributes": [
@@ -433,7 +489,7 @@
           "allowNegative": false,
           "label": "Diastolic Blood Pressure",
           "placeholder": "mmHg",
-          "required": true,
+          "required": false,
           "configPath": "patient.interactions.measurement.attributes.numval",
           "filterCardPath": "patient.interactions.measurement",
           "fixedAttributes": [
@@ -456,7 +512,7 @@
           "type": "text",
           "label": "Condition 1",
           "required": true,
-          "configPath": "patient.interactions.conditionoccurrence.attributes.condition_occ_concept_name",
+          "configPath": "patient.interactions.conditionoccurrence.attributes.wizard_condition_concept_search",
           "isWizardField": true,
           "allowFreeText": true
         },
@@ -465,7 +521,7 @@
           "type": "text",
           "label": "Condition 2",
           "required": false,
-          "configPath": "patient.interactions.conditionoccurrence.attributes.condition_occ_concept_name",
+          "configPath": "patient.interactions.conditionoccurrence.attributes.wizard_condition_concept_search",
           "isWizardField": true,
           "allowFreeText": true
         },
@@ -474,7 +530,7 @@
           "type": "text",
           "label": "Condition 3",
           "required": false,
-          "configPath": "patient.interactions.conditionoccurrence.attributes.condition_occ_concept_name",
+          "configPath": "patient.interactions.conditionoccurrence.attributes.wizard_condition_concept_search",
           "isWizardField": true,
           "allowFreeText": true
         },
@@ -483,7 +539,7 @@
           "type": "text",
           "label": "Condition 4",
           "required": false,
-          "configPath": "patient.interactions.conditionoccurrence.attributes.condition_occ_concept_name",
+          "configPath": "patient.interactions.conditionoccurrence.attributes.wizard_condition_concept_search",
           "isWizardField": true,
           "allowFreeText": true
         },
@@ -492,7 +548,7 @@
           "type": "text",
           "label": "Condition 5",
           "required": false,
-          "configPath": "patient.interactions.conditionoccurrence.attributes.condition_occ_concept_name",
+          "configPath": "patient.interactions.conditionoccurrence.attributes.wizard_condition_concept_search",
           "isWizardField": true,
           "allowFreeText": true
         }
@@ -507,7 +563,18 @@
         {
           "id": "person",
           "title": "Person",
-          "groups": [{ "id": "person-details", "fieldIds": ["age", "gender", "ethnicity", "race"], "columns": 2 }]
+          "groups": [
+            {
+              "id": "person-details",
+              "fieldIds": [
+                "age",
+                "gender",
+                "ethnicity",
+                "race"
+              ],
+              "columns": 2
+            }
+          ]
         },
         {
           "id": "measurement",
@@ -516,18 +583,27 @@
             {
               "id": "body-measurement",
               "label": "Body measurement",
-              "fieldIds": ["height", "weight", "bmi"],
+              "fieldIds": [
+                "height",
+                "weight",
+                "bmi"
+              ],
               "columns": 3,
               "validation": {
-                "minAnswered": 1,
+                "minAnswered": 0,
                 "maxAnswered": 2,
-                "message": "Enter 1 or 2 of Height, Weight, and BMI."
+                "message": "Enter up to 2 of Height, Weight, and BMI."
               }
             },
             {
               "id": "vitals",
               "label": "Vitals",
-              "fieldIds": ["systolicBp", "diastolicBp", "pulseRate", "respRate"],
+              "fieldIds": [
+                "systolicBp",
+                "diastolicBp",
+                "pulseRate",
+                "respRate"
+              ],
               "columns": 2
             }
           ]
@@ -538,7 +614,15 @@
           "groups": [
             {
               "id": "condition-details",
-              "fieldIds": ["year", "condition1", "condition2", "condition3", "condition4", "condition5", "condition6"],
+              "fieldIds": [
+                "year",
+                "condition1",
+                "condition2",
+                "condition3",
+                "condition4",
+                "condition5",
+                "condition6"
+              ],
               "columns": 1
             }
           ]
@@ -557,21 +641,21 @@
           "id": "gender",
           "type": "text",
           "label": "Gender",
-          "required": true,
+          "required": false,
           "configPath": "patient.attributes.Gender_concept_name"
         },
         {
           "id": "ethnicity",
           "type": "text",
           "label": "Ethnicity",
-          "required": true,
+          "required": false,
           "configPath": "patient.attributes.ethnicityName"
         },
         {
           "id": "race",
           "type": "text",
           "label": "Race",
-          "required": true,
+          "required": false,
           "configPath": "patient.attributes.raceName"
         },
         {
@@ -631,7 +715,7 @@
           "allowNegative": false,
           "label": "Resp Rate",
           "placeholder": "bpm",
-          "required": true,
+          "required": false,
           "configPath": "patient.interactions.measurement.attributes.numval",
           "filterCardPath": "patient.interactions.measurement",
           "fixedAttributes": [
@@ -648,7 +732,7 @@
           "allowNegative": false,
           "label": "Pulse Rate",
           "placeholder": "bpm",
-          "required": true,
+          "required": false,
           "configPath": "patient.interactions.measurement.attributes.numval",
           "filterCardPath": "patient.interactions.measurement",
           "fixedAttributes": [
@@ -665,7 +749,7 @@
           "allowNegative": false,
           "label": "Systolic Blood Pressure",
           "placeholder": "mmHg",
-          "required": true,
+          "required": false,
           "configPath": "patient.interactions.measurement.attributes.numval",
           "filterCardPath": "patient.interactions.measurement",
           "fixedAttributes": [
@@ -682,7 +766,7 @@
           "allowNegative": false,
           "label": "Diastolic Blood Pressure",
           "placeholder": "mmHg",
-          "required": true,
+          "required": false,
           "configPath": "patient.interactions.measurement.attributes.numval",
           "filterCardPath": "patient.interactions.measurement",
           "fixedAttributes": [
@@ -705,7 +789,7 @@
           "type": "text",
           "label": "Condition 1",
           "required": true,
-          "configPath": "patient.interactions.conditionoccurrence.attributes.condition_occ_concept_name",
+          "configPath": "patient.interactions.conditionoccurrence.attributes.wizard_condition_concept_search",
           "isWizardField": true,
           "allowFreeText": true
         },
@@ -714,7 +798,7 @@
           "type": "text",
           "label": "Condition 2",
           "required": false,
-          "configPath": "patient.interactions.conditionoccurrence.attributes.condition_occ_concept_name",
+          "configPath": "patient.interactions.conditionoccurrence.attributes.wizard_condition_concept_search",
           "isWizardField": true,
           "allowFreeText": true
         },
@@ -723,7 +807,7 @@
           "type": "text",
           "label": "Condition 3",
           "required": false,
-          "configPath": "patient.interactions.conditionoccurrence.attributes.condition_occ_concept_name",
+          "configPath": "patient.interactions.conditionoccurrence.attributes.wizard_condition_concept_search",
           "isWizardField": true,
           "allowFreeText": true
         },
@@ -732,7 +816,7 @@
           "type": "text",
           "label": "Condition 4",
           "required": false,
-          "configPath": "patient.interactions.conditionoccurrence.attributes.condition_occ_concept_name",
+          "configPath": "patient.interactions.conditionoccurrence.attributes.wizard_condition_concept_search",
           "isWizardField": true,
           "allowFreeText": true
         },
@@ -741,7 +825,7 @@
           "type": "text",
           "label": "Condition 5",
           "required": false,
-          "configPath": "patient.interactions.conditionoccurrence.attributes.condition_occ_concept_name",
+          "configPath": "patient.interactions.conditionoccurrence.attributes.wizard_condition_concept_search",
           "isWizardField": true,
           "allowFreeText": true
         }
@@ -759,7 +843,15 @@
           "groups": [
             {
               "id": "condition-details",
-              "fieldIds": ["condition1", "year", "condition2", "condition3", "condition4", "condition5", "condition6"],
+              "fieldIds": [
+                "condition1",
+                "year",
+                "condition2",
+                "condition3",
+                "condition4",
+                "condition5",
+                "condition6"
+              ],
               "columns": 1
             }
           ]
@@ -767,7 +859,18 @@
         {
           "id": "person",
           "title": "Person",
-          "groups": [{ "id": "person-details", "fieldIds": ["age", "gender", "ethnicity", "race"], "columns": 2 }]
+          "groups": [
+            {
+              "id": "person-details",
+              "fieldIds": [
+                "age",
+                "gender",
+                "ethnicity",
+                "race"
+              ],
+              "columns": 2
+            }
+          ]
         },
         {
           "id": "measurement",
@@ -776,18 +879,27 @@
             {
               "id": "body-measurement",
               "label": "Body measurement",
-              "fieldIds": ["height", "weight", "bmi"],
+              "fieldIds": [
+                "height",
+                "weight",
+                "bmi"
+              ],
               "columns": 3,
               "validation": {
-                "minAnswered": 1,
+                "minAnswered": 0,
                 "maxAnswered": 2,
-                "message": "Enter 1 or 2 of Height, Weight, and BMI."
+                "message": "Enter up to 2 of Height, Weight, and BMI."
               }
             },
             {
               "id": "vitals",
               "label": "Vitals",
-              "fieldIds": ["systolicBp", "diastolicBp", "pulseRate", "respRate"],
+              "fieldIds": [
+                "systolicBp",
+                "diastolicBp",
+                "pulseRate",
+                "respRate"
+              ],
               "columns": 2
             }
           ]
@@ -799,7 +911,7 @@
           "type": "text",
           "label": "Disease/Condition",
           "required": true,
-          "configPath": "patient.interactions.conditionoccurrence.attributes.condition_occ_concept_name",
+          "configPath": "patient.interactions.conditionoccurrence.attributes.wizard_condition_concept_search",
           "isWizardField": true,
           "allowFreeText": true
         },
@@ -964,7 +1076,9 @@
       "id": "table1",
       "name": "Table 1",
       "description": "Generate a Table 1 summary using selected covariate concept sets.",
-      "surfaces": ["cohortBuilder"],
+      "surfaces": [
+        "cohortBuilder"
+      ],
       "flow": "table1-config",
       "fields": []
     }
