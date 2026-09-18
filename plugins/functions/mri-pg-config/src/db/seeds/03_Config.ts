@@ -13819,6 +13819,60 @@ export const cdwConfigDuckdb = {
                 "cohortDefinitionKey": "ConditionOccurrence",
                 "conceptIdentifierType": "",
                 "attributes": {
+                    "wizard_condition_concept_search": {
+                        "name": [
+                            {
+                                "lang": "",
+                                "value": "Wizard condition concept search"
+                            }
+                        ],
+                        "disabledLangName": [
+                            {
+                                "lang": "en",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "de",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "fr",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "es",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "pt",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "zh",
+                                "value": "",
+                                "visible": true
+                            }
+                        ],
+                        "type": "text",
+                        "expression": "@REF.CONCEPT_CODE",
+                        "defaultPlaceholder": "@REF",
+                        "defaultFilter": "@REF.CONCEPT_ID = @COND.CONDITION_CONCEPT_ID",
+                        "referenceFilter": "@REF.DOMAIN_ID = 'Condition' AND @REF.STANDARD_CONCEPT = 'S' AND JARO_SIMILARITY(lower(@REF.CONCEPT_NAME), lower('@SEARCH_QUERY')) >= 0.65",
+                        "referenceExpression": "@REF.CONCEPT_CODE",
+                        "order": 0,
+                        "domainFilter": "",
+                        "includeDescendants": false,
+                        "includeDescendantsExpression": "",
+                        "optionalFiltering": false,
+                        "standardConceptCodeFilter": "",
+                        "cohortDefinitionKey": "",
+                        "conceptIdentifierType": "code"
+                    },
                     "visitoccurrenceid": {
                         "name": [
                             {
@@ -26131,6 +26185,26 @@ const paConfigDuckdb = {
             "order": 15,
             "initial": false,
             "attributes": [
+                {
+                    "source": "patient.interactions.conditionoccurrence.attributes.wizard_condition_concept_search",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": true,
+                    "useRefValue": true,
+                    "category": false,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": false,
+                        "order": 12
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": false,
+                        "linkColumn": false
+                    },
+                    "modelName": "Wizard condition concept search"
+                },
                 {
                     "source": "patient.interactions.conditionoccurrence.attributes.visitoccurrenceid",
                     "ordered": false,
