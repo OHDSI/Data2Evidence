@@ -304,20 +304,32 @@ class TrexDao(DaoBase):
 
     def get_indexes_for_table(self, schema: str, table: str) -> list[dict]:
         """
-        Returns [{"name", "unique", "definition"}, ...] for indexes on `table`.
-        `definition` is the index's own CREATE INDEX text, for callers that need to
-        check its indexed columns rather than just whether an index exists at all.
+        Returns [{"name", "unique", "column_names", "definition"}, ...] for indexes on
+        `table`. `column_names` is the index's exact, ordered key columns - parsed from
+        duckdb_indexes().expressions rather than substring-matched against the index's
+        raw CREATE INDEX text, so a caller checking "is this index exactly these N
+        columns" (e.g. an ON CONFLICT target) can't be fooled by an index whose SQL
+        text happens to *mention* the right column names while covering additional
+        ones too. `definition` is kept only for error messages/debugging.
         """
         _, schema_only = self._split_catalog_schema(schema)
         sql = pg_sql.SQL("""
-            SELECT index_name, is_unique, sql
+            SELECT index_name, is_unique, expressions, sql
             FROM duckdb_indexes()
             WHERE schema_name = {schema} AND table_name = {table};
         """).format(schema=pg_sql.Literal(schema_only), table=pg_sql.Literal(table))
         result = self.execute_sql(sql, fetch=True)
         return [
-            {"name": name, "unique": bool(is_unique), "definition": definition or ""}
-            for name, is_unique, definition in result
+            {
+                "name": name,
+                "unique": bool(is_unique),
+                # expressions comes back over pgwire as DuckDB's list literal text
+                # (e.g. "[fhir_id, fhir_resource_type]"), not a native list - parse it
+                # into individual column names.
+                "column_names": [c.strip() for c in expressions.strip("[]").split(",")] if expressions else [],
+                "definition": definition or "",
+            }
+            for name, is_unique, expressions, definition in result
         ]
 
     def get_columns(self, schema: str, table: str) -> list[str]:

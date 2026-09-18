@@ -329,9 +329,13 @@ def _require_fhir_mapping_table(mapping_dao, mapping_schema: str) -> None:
     # A table created by an older FhirMappingNode can still carry its former
     # (fhir_id, fhir_resource_type) unique index rather than the current 4-column
     # one this plugin's ON CONFLICT target requires - existence alone isn't enough.
+    # Compared as an exact set of column_names, not a substring search against the
+    # index's raw SQL text: a 5+-column unique index whose text happens to mention
+    # all 4 required names would pass a substring check but can't actually satisfy
+    # an ON CONFLICT target scoped to exactly those 4 columns.
     indexes = mapping_dao.get_indexes_for_table(mapping_schema, "fhir_omop_key_map")
     has_current_unique_index = any(
-        index.get("unique") and all(col in index.get("definition", "") for col in _KEY_MAP_UNIQUE_COLUMNS)
+        index.get("unique") and set(index.get("column_names", [])) == set(_KEY_MAP_UNIQUE_COLUMNS)
         for index in indexes
     )
     if not has_current_unique_index:

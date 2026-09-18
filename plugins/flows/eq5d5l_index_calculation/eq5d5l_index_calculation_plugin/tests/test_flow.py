@@ -65,6 +65,7 @@ def _current_key_map_indexes():
     return [{
         "name": "fhir_omop_key_map_fhir_id_type_table_omop_id_idx",
         "unique": True,
+        "column_names": ["fhir_id", "fhir_resource_type", "omop_table_name", "omop_id"],
         "definition": (
             "CREATE UNIQUE INDEX fhir_omop_key_map_fhir_id_type_table_omop_id_idx ON "
             "fhir_omop_key_map (fhir_id, fhir_resource_type, omop_table_name, omop_id)"
@@ -458,9 +459,40 @@ class TestWriteFhirKeyMap:
         mapping_dao.get_indexes_for_table.return_value = [{
             "name": "fhir_omop_key_map_fhir_id_fhir_resource_type_idx",
             "unique": True,
+            "column_names": ["fhir_id", "fhir_resource_type"],
             "definition": (
                 "CREATE UNIQUE INDEX fhir_omop_key_map_fhir_id_fhir_resource_type_idx ON "
                 "fhir_omop_key_map (fhir_id, fhir_resource_type)"
+            ),
+        }]
+        monkeypatch.setattr(flow, "DBDao", MagicMock(return_value=mapping_dao))
+
+        rows = [{"measurement_source_value": "qr-1", "measurement_id": 555}]
+        with pytest.raises(ValueError, match="unique index"):
+            _run(
+                flow.write_fhir_key_map.fn,
+                dbdao=MagicMock(), database_code="alpdev_pg", schema_name="cdmdefault",
+                rows=rows, previous_measurement_rows=[],
+            )
+
+        mapping_dao.batch_insert_values.assert_not_called()
+
+    def test_fails_loudly_when_key_map_index_has_extra_columns(self, monkeypatch):
+        # A unique index covering the 4 required columns *plus* an extra one (e.g.
+        # transformed_at) mentions all 4 required names in its SQL text, but can't
+        # satisfy an ON CONFLICT target scoped to exactly those 4 columns - the
+        # comparison must be an exact set match, not "does the text contain each
+        # name" (which this index would incorrectly pass).
+        mapping_dao = MagicMock()
+        mapping_dao.check_schema_exists.return_value = True
+        mapping_dao.check_table_exists.return_value = True
+        mapping_dao.get_indexes_for_table.return_value = [{
+            "name": "fhir_omop_key_map_wide_idx",
+            "unique": True,
+            "column_names": ["fhir_id", "fhir_resource_type", "omop_table_name", "omop_id", "transformed_at"],
+            "definition": (
+                "CREATE UNIQUE INDEX fhir_omop_key_map_wide_idx ON fhir_omop_key_map "
+                "(fhir_id, fhir_resource_type, omop_table_name, omop_id, transformed_at)"
             ),
         }]
         monkeypatch.setattr(flow, "DBDao", MagicMock(return_value=mapping_dao))
