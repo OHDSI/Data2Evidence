@@ -141,7 +141,7 @@ test(TEST_NAME, async ({ page }) => {
 
   // Navigate back to cohorts
   await navigateBackToCohortList(page)
-  await expect(page.locator('#pane-left')).toContainText(COHORT_1)
+  await expect(explorationCard(page, COHORT_1)).toBeVisible()
 
   // Create second cohort with FEMALE filter
   await page.getByTestId('explorations-new-btn').click()
@@ -166,7 +166,7 @@ test(TEST_NAME, async ({ page }) => {
 
   // Navigate back to cohorts
   await navigateBackToCohortList(page)
-  await expect(page.locator('#pane-left')).toContainText(COHORT_2)
+  await expect(explorationCard(page, COHORT_2)).toBeVisible()
 
   // Select both cohorts and verify Compare.
   // `pa-cohort-card-*` and `pa-cohort-select-btn` came from BookmarkItems.vue,
@@ -231,7 +231,7 @@ test(TEST_NAME, async ({ page }) => {
   await expect(page.getByRole('dialog')).toContainText('Rename exploration name')
   await page.getByRole('textbox', { name: 'Exploration name' }).fill(COHORT_1_RENAMED)
   await confirmExplorationDialog(page)
-  await expect(page.locator('#pane-left')).toContainText(COHORT_1_RENAMED)
+  await expect(explorationCard(page, COHORT_1_RENAMED)).toBeVisible()
 
   // Navigate back to cohort list
   await navigateBackToCohortList(page)

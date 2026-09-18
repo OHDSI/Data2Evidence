@@ -319,9 +319,8 @@ test(TEST_NAME, async ({ page }) => {
     //Verify Cohort is saved
     await page.locator('#pane-left').getByRole('link', { name: 'Cohorts' }).click()
     await expect(explorationCard(page, NAME.patientListFilters)).toBeVisible()
-    //Click on the saved cohort
-    await page.locator('#pane-left').getByRole('link', { name: 'Cohorts' }).click()
-    await page.getByText(NAME.patientListFilters).nth(1).click()
+    //Click on the saved cohort - already on the list, so no navigation needed
+    await explorationCard(page, NAME.patientListFilters).click()
     await expect(page.locator('#patient').getByText('FEMALE')).toBeVisible()
     await expect(page.getByText('Viral sinusitis')).toBeVisible()
     await page.getByRole('link', { name: 'Exclusion (1)' }).click()
