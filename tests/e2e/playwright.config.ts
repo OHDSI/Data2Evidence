@@ -28,6 +28,9 @@ const isHana = process.env.E2E_DB_DIALECT === 'hana'
 export default defineConfig({
   testDir: 'tests',
   ...(isHana ? { testMatch: HANA_SPECS.map((spec) => `**/${spec}`) } : {}),
+  testIgnore: process.env.SKIP_IDP_SPECS
+    ? ['**/idp/physionet.spec.ts', '**/idp/entra-external-id.spec.ts']
+    : [],
   timeout: MINUTE_3, // 3 minutes per test
   expect: {
     timeout: SECOND_30 // 30 seconds for expect conditions
