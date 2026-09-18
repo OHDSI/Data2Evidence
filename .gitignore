@@ -78,6 +78,9 @@ plugins/ui/**/library-parameters.json
 plugins/ui/**/*private*
 plugins/ui/.nx
 plugins/ui/pyqetest
+plugins/ui/apps/webr-notebook/public/kernel-assets
+plugins/ui/apps/vue-mri-ui-lib/dist-atlas
+plugins/ui/apps/vue-mri-ui-lib/node_modules.localnpm.bak/*
 scripts/dist/
 scripts/docker-compose-embed.ts
 scripts/create_users.mjs
