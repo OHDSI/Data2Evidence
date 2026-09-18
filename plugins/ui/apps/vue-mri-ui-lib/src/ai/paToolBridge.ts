@@ -42,9 +42,16 @@ export interface PaToolRegistry {
   call: (name: string, args?: Record<string, unknown>) => Promise<PaToolResult>
 }
 
+export interface ClientToolRegistry {
+  version: 1
+  list: PaToolRegistry['list']
+  call: PaToolRegistry['call']
+}
+
 declare global {
   interface Window {
     __d2ePaTools?: PaToolRegistry
+    __d2eClientTools?: ClientToolRegistry
   }
 }
 
@@ -92,5 +99,27 @@ export function publishPaTools(store: Store<any>, hooks: PaComponentHooks = {}):
       delete window.__d2ePaTools
       announce()
     }
+  }
+}
+
+type PaFrameWindow = Window & { __d2ePaTools?: PaToolRegistry }
+
+/** Expose a same-origin PA iframe's registry to Pythia in the Atlas window. */
+export function publishPaClientToolProxy(frame: HTMLIFrameElement): () => void {
+  const paTools = () => (frame.contentWindow as PaFrameWindow | null)?.__d2ePaTools
+  const proxy: ClientToolRegistry = {
+    version: 1,
+    list: () => paTools()?.list() ?? [],
+    call: (name, args) => {
+      const tools = paTools()
+      if (!tools) throw new Error('PA client tools are unavailable.')
+      return tools.call(name, args)
+    },
+  }
+
+  window.__d2eClientTools = proxy
+
+  return () => {
+    if (window.__d2eClientTools === proxy) delete window.__d2eClientTools
   }
 }

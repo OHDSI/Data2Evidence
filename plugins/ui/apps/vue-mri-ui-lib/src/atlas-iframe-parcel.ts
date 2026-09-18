@@ -9,6 +9,8 @@
  * periodically because tokens expire while the plugin stays mounted.
  */
 
+import { publishPaClientToolProxy } from './ai/paToolBridge'
+
 type AtlasPluginProps = {
   domElement?: HTMLElement
   getToken?: () => Promise<string>
@@ -29,18 +31,6 @@ type HostMessageBusLike = {
 
 type ConceptSetChoice = { conceptSetId: number | string; name: string }
 
-type ClientToolRegistry = {
-  version: 1
-  list: () => Array<{ name: string; description: string; inputSchema: Record<string, unknown> }>
-  call: (name: string, args?: Record<string, unknown>) => Promise<unknown>
-}
-
-declare global {
-  interface Window {
-    __d2eClientTools?: ClientToolRegistry
-  }
-}
-
 const TOKEN_REFRESH_INTERVAL_MS = 5 * 60 * 1000
 
 // Hosts without conceptSet:choose never answer the request, so the bridge gives
@@ -51,7 +41,7 @@ let iframe: HTMLIFrameElement | null = null
 let tokenTimer: ReturnType<typeof setInterval> | null = null
 let readyListener: ((event: MessageEvent) => void) | null = null
 let propsListener: ((event: Event) => void) | null = null
-let cleanupClientTools: (() => void) | null = null
+let unpublishPaClientTools: (() => void) | null = null
 
 const resolveAppUrl = (): string => {
   // import.meta.url is the SystemJS module URL of index.system.js, i.e.
@@ -116,22 +106,7 @@ export const mount = async (props: AtlasPluginProps) => {
   iframe.style.border = '0'
   iframe.style.display = 'block'
 
-  // Pythia runs in the parent window; PA owns the tools in this iframe.
-  const childTools = () =>
-    (iframe?.contentWindow as (Window & { __d2ePaTools?: ClientToolRegistry }) | null)?.__d2ePaTools
-  const clientTools: ClientToolRegistry = {
-    version: 1,
-    list: () => childTools()?.list() ?? [],
-    call: (name, args) => {
-      const registry = childTools()
-      if (!registry) throw new Error('D2E client tools are unavailable.')
-      return registry.call(name, args)
-    },
-  }
-  window.__d2eClientTools = clientTools
-  cleanupClientTools = () => {
-    if (window.__d2eClientTools === clientTools) delete window.__d2eClientTools
-  }
+  unpublishPaClientTools = publishPaClientToolProxy(iframe)
 
   const postContext = async () => {
     let token = ''
@@ -215,8 +190,8 @@ export const mount = async (props: AtlasPluginProps) => {
 }
 
 export const unmount = async () => {
-  cleanupClientTools?.()
-  cleanupClientTools = null
+  unpublishPaClientTools?.()
+  unpublishPaClientTools = null
   if (tokenTimer !== null) {
     clearInterval(tokenTimer)
     tokenTimer = null
