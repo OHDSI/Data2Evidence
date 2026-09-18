@@ -103,7 +103,9 @@ test(TEST_NAME, async ({ browser }) => {
   // Step 8 - Select concept set
   const conditionOccConceptSet = page.getByTitle('Condition Occurrence A - Condition concept Set')
   const conceptSetTextbox = conditionOccConceptSet.getByPlaceholder('Enter search term')
-  await conditionOccConceptSet.locator('div').nth(1).click()
+  // The concept-set control is a combobox now; the old selector clicked the
+  // second div inside the title element, which the reskin renumbered.
+  await conditionOccConceptSet.getByRole('combobox').click()
   await conceptSetTextbox.fill('')
   await conceptSetTextbox.fill('test_concept_set')
   await expect(page.getByText('test_concept_set', { exact: false }).first()).toBeVisible()

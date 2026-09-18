@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test'
-import { confirmExplorationDialog, explorationAction, explorationCard, explorationMenuAction } from '../explorations'
+import { confirmExplorationDialog, explorationCard, explorationMenuAction } from '../explorations'
 
 const TEST_NAME = 'e2e PA and Cohorts'
 const SHOULD_SKIP = false
@@ -181,39 +181,28 @@ test(TEST_NAME, async ({ page }) => {
   await expect(page.getByText('Group Comparison')).toBeVisible()
   await page.getByRole('button', { name: 'Close' }).click()
 
-  // === TEST: Researcher 2 can see shared cohorts ===
-  await logout(page)
-  await loginAs(page, RESEARCHER_2)
-
-  await page.getByText('Demo dataset').first().click()
-  await navigateToCohorts(page)
-  await page.locator('.slider').click()
-
-  await expect(page.locator('#pane-left')).toContainText('Shared')
-  await expect(page.locator('#pane-left')).toContainText(COHORT_2)
-  await expect(page.locator('#pane-left')).toContainText(COHORT_1)
-
-  // Verify rename and delete are disabled on shared cohorts not owned by
-  // researcher_2. They are menu items now rather than footer icons, so the
-  // check is the item's own disabled state instead of a CSS class.
-  await explorationCard(page, COHORT_1).getByRole('button', { name: 'More actions' }).click()
-  await expect(page.getByRole('menuitem', { name: 'Rename' })).toBeDisabled()
-  await expect(page.getByRole('menuitem', { name: 'Delete' })).toBeDisabled()
-  await page.keyboard.press('Escape')
-
-  // === TEST: Materialize cohort (add patients) ===
-  await explorationAction(page, COHORT_1, 'Materialize cohort')
-  await expect(page.getByRole('dialog')).toContainText('Add Patients to Cohort')
-  await page
-    .locator('div')
-    .filter({ hasText: /^Cohort Description:$/ })
-    .first()
-    .click()
-  await page.getByRole('textbox', { name: 'Enter description' }).fill(COHORT_1)
-  await page.getByRole('button', { name: 'OK' }).click()
-  await expect(page.getByText('Patients added to cohort.').first()).toBeVisible()
-  // Wait for the success dialog to auto-close
-  await expect(page.getByText('Patients added to cohort.').first()).not.toBeVisible({ timeout: 10000 })
+  // === REMOVED: Researcher 2 can see shared cohorts ===
+  //
+  // Invalidated by the Data Exploration redesign, not by a broken selector.
+  //
+  // This section logged in as researcher_2, clicked the 'Shared' toggle and
+  // asserted that researcher_1's shared cohorts appeared, that Rename and
+  // Delete were disabled on them, and that a non-owner could still
+  // materialize one.
+  //
+  // The new page calls getDisplayBookmarks(false, username), which keeps only
+  // records the current user owns. There is no 'Shared' toggle and no shared
+  // filter, so a second user cannot see these cohorts at all - the capability
+  // the section tested is gone, so there is nothing to re-point the selectors
+  // at.
+  //
+  // Coverage lost, and worth restoring if shared cohorts come back to this
+  // page: a non-owner seeing a shared cohort, Rename/Delete disabled for a
+  // non-owner, and materialize by a non-owner. The owner's own rename and
+  // delete are still covered below.
+  //
+  // See also atlas_cohort_definition.spec.ts, where the Atlas entry point went
+  // the same way.
 
   // === TEST: Researcher 1 renames and deletes own cohort ===
   // (Only the owner can modify cohorts, so switch back to researcher_1)
