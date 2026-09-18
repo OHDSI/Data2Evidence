@@ -1,7 +1,6 @@
 from datetime import datetime, timezone
 
 from prefect.client.orchestration import get_client
-from prefect.client.schemas.actions import GlobalConcurrencyLimitUpdate
 from prefect.client.schemas.filters import (
     TaskRunFilter,
     TaskRunFilterState,
@@ -14,22 +13,9 @@ from prefect.states import Crashed
 
 
 def reconcile_stale_concurrency_slots(tags: list[str], stale_after_seconds: int, logger) -> None:
-    """Correct the real ``concurrency_limit_v2.active_slots`` counter for each tag.
-
-    Prefect exposes tag concurrency occupancy through two independent stores: the
-    ``active_slots`` integer that actually gates new task runs, and a separate lease
-    list that every v1-compatible "active slots" view (CLI, UI, trex's own
-    ``ensureConcurrencyLimit`` check) is built from instead. A task run that is hard
-    killed (OOM, SIGKILL, Docker daemon restart) never transitions out of RUNNING, so
-    nothing ever releases either one -- and because the two can drift apart
-    independently, the lease-based view an operator would check can read 0 while the
-    real counter stays stuck, which is exactly what leaves a schema or table copy
-    parked forever with no error. This reads the task run table directly (bypassing
-    the lease view), force-releases anything orphaned through Prefect's own
-    state-transition path, and then corrects the real counter to match -- the same
-    fix confirmed to work manually by deleting and recreating the limit, but without
-    discarding a limit a genuinely concurrent run still needs.
-    """
+    """Release concurrency slots leaked by task runs that were killed outright
+    (OOM, SIGKILL, Docker daemon restart) or lost their lease mid-run, so a crashed
+    copy doesn't permanently block every later one under the same tag."""
     client = get_client(sync_client=True)
     for tag in tags:
         _reconcile_tag(client, tag, stale_after_seconds, logger)
@@ -44,8 +30,6 @@ def _reconcile_tag(client, tag: str, stale_after_seconds: int, logger) -> None:
             ),
         )
     )
-    if not task_runs:
-        return
 
     alive_count = 0
     for task_run in task_runs:
@@ -60,21 +44,19 @@ def _reconcile_tag(client, tag: str, stale_after_seconds: int, logger) -> None:
     except ObjectNotFound:
         return
 
-    if limit.active_slots != alive_count:
+    excess = limit.active_slots - alive_count
+    if excess > 0:
         logger.warning(
             f"Concurrency limit '{limit_name}' active_slots was {limit.active_slots}, "
             f"but only {alive_count} task run(s) tagged '{tag}' are genuinely still "
-            f"RUNNING. Correcting active_slots to {alive_count} so new copies can proceed."
+            f"RUNNING. Releasing {excess} leaked slot(s) so new copies can proceed."
         )
-        client.update_global_concurrency_limit(
-            limit_name, GlobalConcurrencyLimitUpdate(active_slots=alive_count)
+        client.release_concurrency_slots(
+            names=[limit_name], slots=excess, occupancy_seconds=1.0
         )
 
 
 def _is_orphaned(client, task_run, stale_after_seconds: int) -> bool:
-    """A RUNNING task run is orphaned if its flow run is gone/terminal, or it has
-    simply been RUNNING too long -- the fallback for when nothing ever reports the
-    crash at all (e.g. the worker itself died in a Docker daemon restart)."""
     try:
         flow_run = client.read_flow_run(task_run.flow_run_id)
     except ObjectNotFound:
@@ -107,10 +89,4 @@ def _force_release(client, task_run, tag: str, logger) -> None:
             force=True,
         )
     except Exception as exc:
-        # Not fatal: this is the polite release path (fixes things when the lease is
-        # still intact), but active_slots is corrected directly by the caller
-        # regardless of whether this succeeds.
-        logger.warning(
-            f"Could not force-crash task run {task_run.id}: {exc}. Continuing -- "
-            "the active_slots counter will still be corrected directly."
-        )
+        logger.warning(f"Could not force-crash task run {task_run.id}: {exc}")

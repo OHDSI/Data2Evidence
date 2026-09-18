@@ -32,6 +32,7 @@ from create_cachedb_file_plugin.concurrency_reconciliation import (
 )
 
 TAG = "flow-level-concurrency"
+LIMIT_NAME = f"tag:{TAG}"
 STALE_AFTER_SECONDS = 3600
 
 
@@ -72,6 +73,14 @@ def _reconcile(client):
         reconcile_stale_concurrency_slots([TAG], STALE_AFTER_SECONDS, MagicMock())
 
 
+def _released_slots(client):
+    """The `slots` kwarg/arg of the one release_concurrency_slots call, or None."""
+    if not client.release_concurrency_slots.called:
+        return None
+    call = client.release_concurrency_slots.call_args
+    return call.kwargs.get("slots", call.args[1] if len(call.args) > 1 else None)
+
+
 def test_counter_already_matches_alive_holder_is_left_alone():
     client = _client(
         task_runs=[_task_run(age_seconds=10)],
@@ -82,10 +91,10 @@ def test_counter_already_matches_alive_holder_is_left_alone():
     _reconcile(client)
 
     client.set_task_run_state.assert_not_called()
-    client.update_global_concurrency_limit.assert_not_called()
+    client.release_concurrency_slots.assert_not_called()
 
 
-def test_terminal_flow_run_forces_release_and_corrects_stuck_counter():
+def test_terminal_flow_run_forces_release_and_decrements_the_excess():
     client = _client(
         task_runs=[_task_run(age_seconds=10)],
         flow_run_or_exc=_flow_run(StateType.CRASHED),
@@ -96,13 +105,13 @@ def test_terminal_flow_run_forces_release_and_corrects_stuck_counter():
 
     client.set_task_run_state.assert_called_once()
     assert client.set_task_run_state.call_args.kwargs["force"] is True
-    client.update_global_concurrency_limit.assert_called_once()
-    name, update = client.update_global_concurrency_limit.call_args.args
-    assert name == f"tag:{TAG}"
-    assert update.active_slots == 0
+    client.release_concurrency_slots.assert_called_once()
+    call = client.release_concurrency_slots.call_args
+    assert call.kwargs["names"] == [LIMIT_NAME]
+    assert _released_slots(client) == 1
 
 
-def test_force_release_failure_still_corrects_the_counter():
+def test_force_release_failure_still_decrements_the_excess():
     """Regression test for the production scenario: the lease behind the stuck
     task run is already gone (e.g. wiped by a lease-storage/server restart), so
     the polite force-crash finds nothing to reconcile server-side -- but the
@@ -116,9 +125,8 @@ def test_force_release_failure_still_corrects_the_counter():
 
     _reconcile(client)
 
-    client.update_global_concurrency_limit.assert_called_once()
-    _, update = client.update_global_concurrency_limit.call_args.args
-    assert update.active_slots == 0
+    client.release_concurrency_slots.assert_called_once()
+    assert _released_slots(client) == 1
 
 
 def test_missing_flow_run_is_treated_as_orphaned():
@@ -131,9 +139,8 @@ def test_missing_flow_run_is_treated_as_orphaned():
     _reconcile(client)
 
     client.set_task_run_state.assert_called_once()
-    client.update_global_concurrency_limit.assert_called_once()
-    _, update = client.update_global_concurrency_limit.call_args.args
-    assert update.active_slots == 0
+    client.release_concurrency_slots.assert_called_once()
+    assert _released_slots(client) == 1
 
 
 def test_young_running_flow_run_is_not_orphaned():
@@ -147,7 +154,7 @@ def test_young_running_flow_run_is_not_orphaned():
     _reconcile(client)
 
     client.set_task_run_state.assert_not_called()
-    client.update_global_concurrency_limit.assert_not_called()
+    client.release_concurrency_slots.assert_not_called()
 
 
 def test_stale_task_run_is_orphaned_even_if_flow_run_still_reads_running():
@@ -161,16 +168,54 @@ def test_stale_task_run_is_orphaned_even_if_flow_run_still_reads_running():
     _reconcile(client)
 
     client.set_task_run_state.assert_called_once()
-    client.update_global_concurrency_limit.assert_called_once()
-    _, update = client.update_global_concurrency_limit.call_args.args
-    assert update.active_slots == 0
+    client.release_concurrency_slots.assert_called_once()
+    assert _released_slots(client) == 1
 
 
-def test_no_running_task_runs_is_a_noop():
+def test_no_running_task_runs_but_counter_stuck_still_releases():
+    """Regression test for the ghost-leak case: the lease was lost while its task
+    was still genuinely running, and that task has since completed cleanly --
+    Prefect's own release found no lease to reconcile and silently left the
+    counter stuck, so by the time we look there is no RUNNING task run left as
+    evidence at all. This must not be mistaken for "nothing to do"."""
+    client = _client(task_runs=[], flow_run_or_exc=_flow_run(StateType.RUNNING), active_slots=1)
+
+    _reconcile(client)
+
+    client.set_task_run_state.assert_not_called()
+    client.release_concurrency_slots.assert_called_once()
+    assert _released_slots(client) == 1
+
+
+def test_no_running_task_runs_and_counter_already_zero_is_a_noop():
     client = _client(task_runs=[], flow_run_or_exc=_flow_run(StateType.RUNNING), active_slots=0)
 
     _reconcile(client)
 
-    client.read_global_concurrency_limit_by_name.assert_not_called()
     client.set_task_run_state.assert_not_called()
-    client.update_global_concurrency_limit.assert_not_called()
+    client.release_concurrency_slots.assert_not_called()
+
+
+def test_multiple_orphans_release_exactly_the_excess_not_an_absolute_value():
+    """Two leaked holders plus one genuinely alive one: the decrement must be
+    sized to the excess (2), never overwrite active_slots to alive_count (1) --
+    an absolute set would also silently erase the alive holder's slot."""
+    orphan_a = _task_run(age_seconds=10)
+    orphan_b = _task_run(age_seconds=10)
+    alive = _task_run(age_seconds=10)
+    client = MagicMock()
+    client.read_task_runs.return_value = [orphan_a, orphan_b, alive]
+
+    def read_flow_run(flow_run_id):
+        if flow_run_id == alive.flow_run_id:
+            return _flow_run(StateType.RUNNING)
+        return _flow_run(StateType.CRASHED)
+
+    client.read_flow_run.side_effect = read_flow_run
+    client.read_global_concurrency_limit_by_name.return_value = SimpleNamespace(active_slots=3)
+
+    _reconcile(client)
+
+    assert client.set_task_run_state.call_count == 2
+    client.release_concurrency_slots.assert_called_once()
+    assert _released_slots(client) == 2
