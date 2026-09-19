@@ -244,7 +244,12 @@ services:
       SECURITY_AUTH_OIDC_INTERNALURL: "http://${PROJECT_NAME:-d2e}-trex:33001/trex/oidc"
       # External URL for browser redirects - used to rewrite internal OIDC URLs to external ones
       SECURITY_AUTH_OIDC_EXTERNALURL: "https://${CADDY__D2E__PUBLIC_FQDN:-${CADDY__ALP__PUBLIC_FQDN:-localhost}}:${CADDY_PORT:-${PORT:-443}}/trex/oidc"
-      SECURITY_AUTH_OIDC_LOGOUTURL: "https://${CADDY__D2E__PUBLIC_FQDN:-${CADDY__ALP__PUBLIC_FQDN:-localhost}}:${CADDY_PORT:-${PORT:-443}}/trex/oidc/session/end"
+      # @better-auth/oauth-provider serves RP-initiated logout at
+      # /oauth2/end-session and hard-codes that path; /session/end was the
+      # hand-written provider's and answers 404 now. The provider also refuses
+      # a client whose row does not carry enable_end_session, which the seeder
+      # sets for every client it registers.
+      SECURITY_AUTH_OIDC_LOGOUTURL: "https://${CADDY__D2E__PUBLIC_FQDN:-${CADDY__ALP__PUBLIC_FQDN:-localhost}}:${CADDY_PORT:-${PORT:-443}}/trex/oidc/oauth2/end-session"
       # trex emits the application role array as `roles`; `trex_role` is a
       # different claim entirely — trex's own admin/user system role, which
       # must never be read as a WebAPI role.
@@ -322,6 +327,16 @@ services:
       # trex or logto-federated. Stamped into the env file by `d2e init` / `d2e start`;
       # logto-federated is applied with docker-compose-logto-federation.yml.
       D2E_IDP_MODE: ${D2E_IDP_MODE:-trex}
+      # D2E_IDP_AUDIENCES, D2E_IDP_RESOURCE and D2E_IDP_SCOPE are left unset on
+      # purpose. Under D2E_IDP=trex the engine derives all three from the issuer
+      # and the client id, and each one REPLACES that derivation rather than
+      # extending it. An audience list naming only the client id -- the value
+      # that was right before the provider moved onto @better-auth/oauth-provider
+      # -- rejects every access token the portal presents, and a rejection for a
+      # mismatched audience is indistinguishable from one for a forged token.
+      # A resource other than the issuer fails the same way: the issuer is the
+      # only resource the provider advertises, and a request that names none at
+      # all gets an opaque access token the portal cannot read `roles` from.
       # trex authenticates users itself, so its native login surface has to be
       # on. It is off by default in the engine for stacks fronted by an external
       # IdP. Enabling it does not expose a default account: the seeded
@@ -367,6 +382,14 @@ services:
       # it whole callback URLs, comma separated.
       TREX_OIDC_CLIENT_REDIRECT_URIS: "https://${CADDY__D2E__PUBLIC_FQDN:-${CADDY__ALP__PUBLIC_FQDN:-localhost}}:${CADDY_PORT:-${PORT:-443}}/WebAPI/user/oauth/callback/openid,https://${CADDY__D2E__PUBLIC_FQDN:-${CADDY__ALP__PUBLIC_FQDN:-localhost}}:${CADDY_PORT:-${PORT:-443}}/d2e/portal/login-callback,https://${CADDY__D2E__PUBLIC_FQDN:-${CADDY__ALP__PUBLIC_FQDN:-localhost}}:${CADDY_PORT:-${PORT:-443}}/atlas-login/,https://${CADDY__D2E__PUBLIC_FQDN:-${CADDY__ALP__PUBLIC_FQDN:-localhost}}/WebAPI/user/oauth/callback/openid,https://${CADDY__D2E__PUBLIC_FQDN:-${CADDY__ALP__PUBLIC_FQDN:-localhost}}/d2e/portal/login-callback,https://${CADDY__D2E__PUBLIC_FQDN:-${CADDY__ALP__PUBLIC_FQDN:-localhost}}/atlas-login/${TREX_OIDC__EXTRA_REDIRECT_URIS:+,${TREX_OIDC__EXTRA_REDIRECT_URIS}}"
       TREX_OIDC_CLIENT_POST_LOGOUT_URIS: "https://${CADDY__D2E__PUBLIC_FQDN:-${CADDY__ALP__PUBLIC_FQDN:-localhost}}:${CADDY_PORT:-${PORT:-443}}/atlas/,https://${CADDY__D2E__PUBLIC_FQDN:-${CADDY__ALP__PUBLIC_FQDN:-localhost}}:${CADDY_PORT:-${PORT:-443}}/d2e/portal,https://${CADDY__D2E__PUBLIC_FQDN:-${CADDY__ALP__PUBLIC_FQDN:-localhost}}/atlas/,https://${CADDY__D2E__PUBLIC_FQDN:-${CADDY__ALP__PUBLIC_FQDN:-localhost}}/d2e/portal"
+      # The ceiling /authorize narrows every request to, not a grant: it issues
+      # only what the request asks for. d2e-compat asks for offline_access on
+      # every sign-in because the provider issues a refresh token only when
+      # that scope was granted, so a row without it refuses every sign-in with
+      # an invalid_scope naming a scope nobody configured. The seeder writes
+      # this column only when this variable is set, leaving a row seeded by an
+      # older image on its old list until it is named here.
+      TREX_OIDC_CLIENT_SCOPES: "openid profile email idp_groups offline_access"
       TREX_SQL_PASSWORD: ${TREX__SQL__PASSWORD:?TREX__SQL__PASSWORD must be set (run d2e init); refusing default pencil}
       TREX__SQL__PORT: ${TREX__SQL__PORT:-5433}
       TREX__SQL__DBNAME: postgres
