@@ -47,7 +47,7 @@ cd "/src/plugins/flows/$g"
 bash ../build/stage_package.sh
 dest="/staged/$short/baked"; mkdir -p "$dest"
 cp -a flows _shared_flow_utils __init__.py pyproject.toml pixi.lock "$dest/"
-for extra in renv.lock setup_assets.sh setup_r.sh rprofile_java.R; do
+for extra in renv.lock renv.aarch64.lock setup_assets.sh setup_r.sh rprofile_java.R; do
   [ -f "$extra" ] && cp "$extra" "$dest/" || true
 done
 EOF
@@ -105,6 +105,7 @@ COPY \
     plugins/flows/hades/pyproject.toml \
     plugins/flows/hades/pixi.lock \
     plugins/flows/hades/renv.lock \
+    plugins/flows/hades/renv.aarch64.lock \
     plugins/flows/hades/setup_r.sh \
     plugins/flows/hades/rprofile_java.R \
     /staged/hades-flow/baked/
@@ -113,6 +114,7 @@ COPY \
     plugins/flows/data_transformation/pyproject.toml \
     plugins/flows/data_transformation/pixi.lock \
     plugins/flows/data_transformation/renv.lock \
+    plugins/flows/data_transformation/renv.aarch64.lock \
     plugins/flows/data_transformation/setup_assets.sh \
     plugins/flows/data_transformation/setup_r.sh \
     /staged/data-transformation-flow/baked/
@@ -121,6 +123,7 @@ COPY \
     plugins/flows/base/pyproject.toml \
     plugins/flows/base/pixi.lock \
     plugins/flows/base/renv.lock \
+    plugins/flows/base/renv.aarch64.lock \
     plugins/flows/base/setup_assets.sh \
     plugins/flows/base/setup_r.sh \
     /staged/d2e-flows/baked/
@@ -142,7 +145,18 @@ ENV PIXI_CACHE_DIR=/opt/pixi/cache \
 RUN apt-get update && apt-get install -y --no-install-recommends \
         ca-certificates curl git python3 unzip xvfb \
     && rm -rf /var/lib/apt/lists/*
-RUN curl -fsSL "https://github.com/prefix-dev/pixi/releases/download/v${PIXI_VERSION}/pixi-x86_64-unknown-linux-musl" \
+# pixi ships one static musl binary per architecture, so the asset name has to
+# follow the leg being built (TARGETARCH is amd64 | arm64 under buildx). A
+# hardcoded x86_64 asset installs fine on arm64 and then fails at the first
+# `pixi` invocation with "exec format error".
+ARG TARGETARCH
+RUN set -eu; \
+    case "${TARGETARCH:-amd64}" in \
+      amd64) PIXI_TARGET=x86_64-unknown-linux-musl ;; \
+      arm64) PIXI_TARGET=aarch64-unknown-linux-musl ;; \
+      *) echo "unsupported TARGETARCH=${TARGETARCH}" >&2; exit 1 ;; \
+    esac; \
+    curl -fsSL "https://github.com/prefix-dev/pixi/releases/download/v${PIXI_VERSION}/pixi-${PIXI_TARGET}" \
         -o /usr/local/bin/pixi && chmod +x /usr/local/bin/pixi
 
 FROM runtime-base AS provisioner
