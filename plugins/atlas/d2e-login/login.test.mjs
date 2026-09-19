@@ -91,13 +91,28 @@ function memoryStorage(initial) {
   };
 }
 
+/*
+ * Deno exposes sessionStorage as a getter/setter pair whose setter discards
+ * what it is handed, so a plain assignment leaves login.js reading Deno's own
+ * process-wide storage — shared by every test, and carrying whatever an
+ * earlier redirect wrote into it. Replacing the accessor with a data property
+ * is what actually gives each test the storage it asked for.
+ */
+function installSessionStorage(storage) {
+  Object.defineProperty(globalThis, "sessionStorage", {
+    value: storage,
+    writable: true,
+    configurable: true,
+  });
+}
+
 async function loadWithSettings(tag, settings, opts) {
   var o = opts || {};
   var doc = stubDocument();
   var replaced = [];
   globalThis.document = doc;
   globalThis.window = globalThis;
-  globalThis.sessionStorage = o.storage || memoryStorage();
+  installSessionStorage(o.storage || memoryStorage());
   globalThis.location = {
     origin: "http://localhost",
     search: o.search || "",
@@ -173,4 +188,84 @@ Deno.test("no provider and native sign-in off says so instead of rendering an em
   var el = await loadWithSettings("nothing", { external: { email: false } });
   assertEquals(el.get("form").hidden, true);
   assertEquals(el.get("error").textContent, "No sign-in method is available. Ask your administrator.");
+});
+
+// A login redirect as trex's provider emits it: the whole authorization
+// request re-serialized and signed, with no return_to anywhere in it.
+const SIGNED_SEARCH = "?response_type=code&client_id=d2e-webapi&state=s" +
+  "&exp=1800000600&ba_iat=1800000000000" +
+  "&ba_param=response_type&ba_param=client_id&ba_param=state" +
+  "&ba_param=exp&ba_param=ba_iat&ba_param=ba_param&sig=Ab%2Bc%2Fd%3D%3D";
+const AUTHORIZE_BOUNCE = "/trex/oidc/oauth2/authorize" + SIGNED_SEARCH;
+
+/*
+ * Drives the page all the way through a successful password sign-in, which is
+ * the only way to observe where it sends the browser afterwards.
+ */
+async function signInWith(tag, opts) {
+  var o = opts || {};
+  var doc = stubDocument();
+  var replaced = [];
+  globalThis.document = doc;
+  globalThis.window = globalThis;
+  installSessionStorage(memoryStorage());
+  globalThis.location = {
+    origin: "http://localhost",
+    search: o.search || "",
+    pathname: "/atlas/d2e-login/",
+    hash: "",
+    replace: function (url) { replaced.push(url); },
+  };
+  if (o.withoutProviders) delete globalThis.D2ELoginProviders;
+  else await import("./providers.js?" + tag);
+  var originalFetch = globalThis.fetch;
+  globalThis.fetch = function (url) {
+    var u = String(url);
+    if (u.indexOf("/settings") !== -1) {
+      return Promise.resolve({ ok: true, json: function () { return Promise.resolve({ external: { email: true } }); } });
+    }
+    if (u.indexOf("/sync-cookie") !== -1) return Promise.resolve({ ok: true });
+    return Promise.resolve({ ok: true, json: function () { return Promise.resolve({ access_token: "t" }); } });
+  };
+  try {
+    await import("./login.js?" + tag);
+    doc.elements.get("identifier").value = "alice";
+    doc.elements.get("password").value = "pw";
+    doc.elements.get("form").listeners.submit({ preventDefault: function () {} });
+    // The submit handler chains fetch → json → fetch → replace, which settles
+    // over several microtask turns.
+    for (var i = 0; i < 6; i++) await new Promise(function (r) { setTimeout(r, 0); });
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+  return replaced;
+}
+
+Deno.test("after signing in the browser goes back to the authorization query it arrived with", async () => {
+  assertEquals(await signInWith("bounce-signed", { search: SIGNED_SEARCH }), [AUTHORIZE_BOUNCE]);
+});
+
+Deno.test("signing in on a page nobody was redirected to lands on atlas", async () => {
+  assertEquals(await signInWith("bounce-bare", {}), ["/atlas/"]);
+});
+
+Deno.test("the old return_to is no longer followed", async () => {
+  // It used to be the destination, guarded by a same-origin check. The
+  // provider does not send it, so an unsigned query is not a sign-in in
+  // progress at all.
+  assertEquals(await signInWith("bounce-return-to", { search: "?return_to=%2Fevil" }), ["/atlas/"]);
+});
+
+Deno.test("a failed providers.js load still signs in, falling back to atlas", async () => {
+  assertEquals(
+    await signInWith("bounce-no-providers", { search: SIGNED_SEARCH, withoutProviders: true }),
+    ["/atlas/"],
+  );
+});
+
+Deno.test("the federated round trip returns to the authorization query, not to atlas", async () => {
+  var el = await loadWithSettings("signed-federated", FEDERATED, { search: SIGNED_SEARCH });
+  assertEquals(el.replaced, [
+    "/trex/auth/v1/authorize?provider=logto&redirect_to=" + encodeURIComponent(AUTHORIZE_BOUNCE),
+  ]);
 });

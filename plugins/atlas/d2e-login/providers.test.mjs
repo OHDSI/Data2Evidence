@@ -64,3 +64,66 @@ Deno.test("refusal codes get a readable message; no code means no message", () =
   assertEquals(P.errorMessage("something_else"), "Sign-in failed. Please try again.");
   assertEquals(P.errorMessage(null), null);
 });
+
+// One measured login redirect, in the serialization order the provider emits
+// (@better-auth/oauth-provider 1.7.5): only the parameters that were actually
+// sent, `exp` in seconds and `ba_iat` in milliseconds, one `ba_param` per
+// signed name including itself, and `sig` — standard base64, so `+`, `/` and
+// `=` percent-encoded — last and unsigned.
+const SIGNED_QUERY = "?response_type=code" +
+  "&redirect_uri=https%3A%2F%2Flocalhost%3A8443%2Fatlas-login%2F" +
+  "&scope=openid+profile+email&state=s&client_id=d2e-webapi" +
+  "&code_challenge=c&code_challenge_method=S256" +
+  "&exp=1800000600&ba_iat=1800000000000" +
+  "&ba_param=response_type&ba_param=redirect_uri&ba_param=scope&ba_param=state" +
+  "&ba_param=client_id&ba_param=code_challenge&ba_param=code_challenge_method" +
+  "&ba_param=exp&ba_param=ba_iat&ba_param=ba_param" +
+  "&sig=Ab%2Bc%2Fd%3D%3D";
+
+Deno.test("the continue URL is the authorize endpoint carrying the query verbatim", () => {
+  // The provider re-serializes whatever the relying party sent; there is no
+  // fixed list. Rebuilding the query from expected names would silently drop
+  // whatever a future relying party adds.
+  assertEquals(P.continueUrl(SIGNED_QUERY), "/trex/oidc/oauth2/authorize" + SIGNED_QUERY);
+});
+
+Deno.test("the query is handed back byte for byte, never re-encoded", () => {
+  // encodeURIComponent leaves ~!'() alone where form-urlencoding escapes them,
+  // so anything that parses the query and re-serializes it changes these bytes.
+  // The provider signed the bytes it sent, and `sig` is standard base64 rather
+  // than base64url, so the only safe transform is none.
+  const search = "?state=a~b!c'd&nonce=%2Fn%2B&sig=Ab%2Bc%2Fd%3D%3D";
+  assertEquals(P.continueUrl(search), "/trex/oidc/oauth2/authorize" + search);
+});
+
+Deno.test("prompt is stripped, so a prompt=login request cannot loop through this page", () => {
+  // Measured: bouncing `prompt=login` back verbatim with a live session
+  // redirects here again, forever. Removing it yields the code. It invalidates
+  // `sig`, which /oauth2/authorize never verifies — and which is why this page
+  // may only ever bounce there, not to /oauth2/consent or /oauth2/continue.
+  const url = P.continueUrl("?client_id=x&prompt=login&sig=Ab%2Bc%2Fd%3D%3D");
+  assertEquals(url, "/trex/oidc/oauth2/authorize?client_id=x&sig=Ab%2Bc%2Fd%3D%3D");
+  assertEquals(new URL(url, "https://h").searchParams.has("prompt"), false);
+});
+
+Deno.test("a page reached with no authorization query falls back to atlas", () => {
+  assertEquals(P.continueUrl(""), "/atlas/");
+  assertEquals(P.continueUrl(undefined), "/atlas/");
+  assertEquals(P.continueUrl("?"), "/atlas/");
+  assertEquals(P.continueUrl("?manual"), "/atlas/");
+});
+
+Deno.test("a query with no signature is not an authorization request", () => {
+  // The page used to follow ?return_to=, which is why it needed an
+  // open-redirect check. It no longer reads it at all.
+  assertEquals(P.continueUrl("?return_to=%2Fevil"), "/atlas/");
+  assertEquals(P.continueUrl("?return_to=https%3A%2F%2Fevil.example%2F"), "/atlas/");
+});
+
+Deno.test("the destination is a constant, so a signed query cannot redirect elsewhere", () => {
+  // return_to rides along as one more inert parameter: the path is fixed.
+  assertEquals(
+    P.continueUrl("?sig=x&return_to=https%3A%2F%2Fevil.example%2F"),
+    "/trex/oidc/oauth2/authorize?sig=x&return_to=https%3A%2F%2Fevil.example%2F",
+  );
+});

@@ -7,6 +7,8 @@
   "use strict";
 
   var TREX_BASE = "/trex/auth/v1";
+  var AUTHORIZE_PATH = "/trex/oidc/oauth2/authorize";
+  var FALLBACK_RETURN = "/atlas/";
   var LABELS = { logto: "Logto" };
   var MESSAGES = {
     no_account: "No D2E account is linked to this sign-in. Ask your administrator.",
@@ -49,6 +51,48 @@
     return providers.length === 1 ? providers[0].id : null;
   }
 
+  /**
+   * Where to send the browser once it has a trex session.
+   *
+   * trex's OIDC provider sends no `return_to`. It sends the whole authorization
+   * request back, re-serialized and signed (`sig`, `exp`, `ba_iat`, one
+   * `ba_param` per signed name), and expects it handed back to
+   * /oauth2/authorize, which re-reads the plain parameters and ignores the
+   * signature.
+   *
+   * The query is opaque: only what the relying party actually sent appears, so
+   * there is no list to rebuild it from and the raw parameter text is passed
+   * through untouched. Re-serializing it — with URLSearchParams, say — would
+   * re-encode bytes the provider chose, and `sig` is standard base64 rather
+   * than base64url, so it is exactly the value that must not be normalised.
+   *
+   * `prompt` is the one thing removed. Carried back with a live session it
+   * returns the browser here again, indefinitely, with nothing to distinguish
+   * the second pass from the first. Removing it breaks `sig`, which is
+   * harmless only because /oauth2/authorize never verifies it — and which is
+   * why this may only ever bounce there, never to /oauth2/consent or
+   * /oauth2/continue.
+   *
+   * The destination is a constant same-origin path, so unlike the old
+   * `return_to` there is nothing here for an attacker to point anywhere.
+   */
+  function continueUrl(search) {
+    var raw = String(search == null ? "" : search).replace(/^\?/, "");
+    var signed = false;
+    var kept = [];
+    raw.split("&").forEach(function (pair) {
+      if (!pair) return;
+      var name = pair.split("=")[0];
+      if (name === "sig") signed = true;
+      if (name === "prompt") return;
+      kept.push(pair);
+    });
+    // No signature means nobody was sent here by the provider — a person
+    // opening the page directly, or the federation loop's `?manual`.
+    if (!signed) return FALLBACK_RETURN;
+    return AUTHORIZE_PATH + "?" + kept.join("&");
+  }
+
   function authorizeHref(id, returnTo) {
     return TREX_BASE + "/authorize?provider=" + encodeURIComponent(id) +
       "&redirect_to=" + encodeURIComponent(returnTo);
@@ -63,6 +107,7 @@
     externalProviders: externalProviders,
     passwordLoginEnabled: passwordLoginEnabled,
     autoRedirectProvider: autoRedirectProvider,
+    continueUrl: continueUrl,
     authorizeHref: authorizeHref,
     errorMessage: errorMessage,
   };
