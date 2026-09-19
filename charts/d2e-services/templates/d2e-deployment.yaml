@@ -792,6 +792,18 @@ spec:
               value: webapi_security        
             # OpenID Connect configuration (Logto)
             # Property prefix updated for WebAPI p-hoffmann/openid branch: security.auth.openId.* (was security.oid.*)
+            #
+            # These four URLs are LOGTO's, not trex's: /oidc/* is the gateway
+            # route to the idp service (d2e-core's core-config.yaml), and
+            # /oidc/session/end is node-oidc-provider's own end-session path.
+            # trex's provider moving onto @better-auth/oauth-provider therefore
+            # leaves this chart alone, and repointing these at /trex/oidc/* on
+            # its own would break a working install: the client id and secret
+            # below still come from the Logto app's secret keys, D2E_IDP and
+            # IDP__ROLE_STORE below still say logto, and nothing here registers
+            # a trex client. Migrating the chart to trex is those changes plus
+            # TREX__OIDC__WEBAPI_CLIENT_ID/_SECRET in d2e-secrets.yaml and the
+            # TREX_OIDC_* block from docker-compose.yml, verified on a cluster.
             - name: SECURITY_AUTH_OIDC_CLIENTID
               valueFrom:
                 secretKeyRef:
