@@ -18,9 +18,13 @@ function stubDocument() {
       hidden: false,
       className: "",
       href: "",
+      children: [],
       listeners: {},
       addEventListener: function (type, handler) { el.listeners[type] = handler; },
-      appendChild: function () {},
+      // Recorded rather than discarded: the provider buttons are only
+      // reachable through their parent, and their href is the one place the
+      // click path's destination can be read.
+      appendChild: function (child) { el.children.push(child); },
     };
     return el;
   }
@@ -268,4 +272,53 @@ Deno.test("the federated round trip returns to the authorization query, not to a
   assertEquals(el.replaced, [
     "/trex/auth/v1/authorize?provider=logto&redirect_to=" + encodeURIComponent(AUTHORIZE_BOUNCE),
   ]);
+});
+
+const LOGTO_TO = (returnTo) =>
+  "/trex/auth/v1/authorize?provider=logto&redirect_to=" + encodeURIComponent(returnTo);
+
+Deno.test("the provider button carries the authorization query, like the auto-redirect does", async () => {
+  // Password login on means no auto-redirect, so the button is the only way
+  // through — and it is the live path on any installation that offers both.
+  var el = await loadWithSettings("button-signed", { external: { email: true, logto: true } }, {
+    search: SIGNED_SEARCH,
+  });
+  var buttons = el.get("providers").children;
+  assertEquals(buttons.length, 1);
+  assertEquals(buttons[0].textContent, "Sign in with Logto");
+  assertEquals(buttons[0].href, LOGTO_TO(AUTHORIZE_BOUNCE));
+});
+
+/* The wrapper trex's refusalRedirect builds, constructed the way trex builds it. */
+function refusalSearch(code, returnTo) {
+  var url = new URL("https://host/d2e-login/");
+  url.searchParams.set("error", code);
+  url.searchParams.set("return_to", returnTo);
+  return url.search;
+}
+
+Deno.test("a refused federated sign-in keeps the authorization request for the retry", async () => {
+  var el = await loadWithSettings("refusal-signed", FEDERATED, {
+    search: refusalSearch("no_account", AUTHORIZE_BOUNCE),
+  });
+  // The refusal must be read, so no auto-redirect — the button is the retry.
+  assertEquals(el.replaced, []);
+  assertEquals(el.get("error").textContent, "No D2E account is linked to this sign-in. Ask your administrator.");
+  assertEquals(el.get("providers").children[0].href, LOGTO_TO(AUTHORIZE_BOUNCE));
+});
+
+Deno.test("a refusal with an ordinary return_to behaves as it always did", async () => {
+  var el = await loadWithSettings("refusal-plain", FEDERATED, {
+    search: refusalSearch("account_disabled", "/atlas/?tab=cohorts"),
+  });
+  assertEquals(el.replaced, []);
+  assertEquals(el.get("error").textContent, "This account is deactivated.");
+  assertEquals(el.get("providers").children[0].href, LOGTO_TO("/atlas/"));
+});
+
+Deno.test("signing in after a refusal resumes the wrapped authorization request", async () => {
+  assertEquals(
+    await signInWith("refusal-submit", { search: refusalSearch("no_account", AUTHORIZE_BOUNCE) }),
+    [AUTHORIZE_BOUNCE],
+  );
 });

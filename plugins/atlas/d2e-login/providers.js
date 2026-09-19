@@ -52,19 +52,18 @@
   }
 
   /**
-   * Where to send the browser once it has a trex session.
-   *
-   * trex's OIDC provider sends no `return_to`. It sends the whole authorization
-   * request back, re-serialized and signed (`sig`, `exp`, `ba_iat`, one
-   * `ba_param` per signed name), and expects it handed back to
-   * /oauth2/authorize, which re-reads the plain parameters and ignores the
-   * signature.
+   * The bounce for one raw query string, or null if it is not a signed
+   * authorization request.
    *
    * The query is opaque: only what the relying party actually sent appears, so
-   * there is no list to rebuild it from and the raw parameter text is passed
-   * through untouched. Re-serializing it — with URLSearchParams, say — would
-   * re-encode bytes the provider chose, and `sig` is standard base64 rather
-   * than base64url, so it is exactly the value that must not be normalised.
+   * there is no list to rebuild it from and each parameter is carried as the
+   * raw text it arrived as. Round-tripping it through URLSearchParams would
+   * agree on everything the provider emits today — `sig` included, standard
+   * base64 or not — but the two encoders do not agree in general:
+   * form-urlencoding escapes `~!'()` where encodeURIComponent leaves them
+   * alone, so a relying party's `state` or `nonce` containing one of those
+   * would come back re-encoded. Carrying the text is what makes that
+   * impossible rather than merely unobserved.
    *
    * `prompt` is the one thing removed. Carried back with a live session it
    * returns the browser here again, indefinitely, with nothing to distinguish
@@ -72,12 +71,8 @@
    * harmless only because /oauth2/authorize never verifies it — and which is
    * why this may only ever bounce there, never to /oauth2/consent or
    * /oauth2/continue.
-   *
-   * The destination is a constant same-origin path, so unlike the old
-   * `return_to` there is nothing here for an attacker to point anywhere.
    */
-  function continueUrl(search) {
-    var raw = String(search == null ? "" : search).replace(/^\?/, "");
+  function bounceQuery(raw) {
     var signed = false;
     var kept = [];
     raw.split("&").forEach(function (pair) {
@@ -87,10 +82,39 @@
       if (name === "prompt") return;
       kept.push(pair);
     });
-    // No signature means nobody was sent here by the provider — a person
-    // opening the page directly, or the federation loop's `?manual`.
-    if (!signed) return FALLBACK_RETURN;
-    return AUTHORIZE_PATH + "?" + kept.join("&");
+    // No signature means nobody was sent here by the provider.
+    return signed ? AUTHORIZE_PATH + "?" + kept.join("&") : null;
+  }
+
+  /**
+   * Where to send the browser once it has a trex session.
+   *
+   * trex's OIDC provider sends no `return_to`. It sends the whole authorization
+   * request back, re-serialized and signed (`sig`, `exp`, `ba_iat`, one
+   * `ba_param` per signed name), and expects it handed back to
+   * /oauth2/authorize, which re-reads the plain parameters and ignores the
+   * signature.
+   *
+   * Its federation half still uses `return_to`: a refused upstream sign-in
+   * comes back as `?error=<code>&return_to=<the query trex was handed>`, which
+   * by now is the signed authorization request one level of percent-encoding
+   * down. Unwrapping it is what keeps a refusal from costing the whole
+   * authorization request — the person retries on this page instead of the
+   * relying party starting over. Only the wrapped *query* is taken: the
+   * destination is a constant same-origin path either way, so unlike the old
+   * return_to there is nothing here for an attacker to point anywhere.
+   *
+   * URLSearchParams is safe for that one read because it is a decode, and trex
+   * wrote the value with the matching encoder (URL.searchParams.set), so the
+   * inner text comes back byte for byte.
+   */
+  function continueUrl(search) {
+    var raw = String(search == null ? "" : search).replace(/^\?/, "");
+    var direct = bounceQuery(raw);
+    if (direct) return direct;
+    var returnTo = new URLSearchParams(raw).get("return_to");
+    var query = returnTo ? returnTo.indexOf("?") : -1;
+    return (query !== -1 && bounceQuery(returnTo.slice(query + 1))) || FALLBACK_RETURN;
   }
 
   function authorizeHref(id, returnTo) {

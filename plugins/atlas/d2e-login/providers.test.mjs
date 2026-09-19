@@ -53,8 +53,8 @@ Deno.test("auto-redirect only when a single provider is the only way in", () => 
 
 Deno.test("the authorize link carries the provider and the return path", () => {
   assertEquals(
-    P.authorizeHref("logto", "/trex/oidc/authorize?client_id=x&state=y"),
-    "/trex/auth/v1/authorize?provider=logto&redirect_to=%2Ftrex%2Foidc%2Fauthorize%3Fclient_id%3Dx%26state%3Dy",
+    P.authorizeHref("logto", "/trex/oidc/oauth2/authorize?client_id=x&state=y"),
+    "/trex/auth/v1/authorize?provider=logto&redirect_to=%2Ftrex%2Foidc%2Foauth2%2Fauthorize%3Fclient_id%3Dx%26state%3Dy",
   );
 });
 
@@ -126,4 +126,61 @@ Deno.test("the destination is a constant, so a signed query cannot redirect else
     P.continueUrl("?sig=x&return_to=https%3A%2F%2Fevil.example%2F"),
     "/trex/oidc/oauth2/authorize?sig=x&return_to=https%3A%2F%2Fevil.example%2F",
   );
+});
+
+Deno.test("prompt is the only parameter ever removed", () => {
+  // Pins the set of removals at exactly one. `manual` is this page's own
+  // parameter and looks droppable, but nothing measured says the provider
+  // minds it, and a second removal would need its own measurement.
+  const names = [
+    "response_type", "redirect_uri", "scope", "state", "nonce", "client_id",
+    "prompt", "manual", "error", "return_to", "login_hint", "resource",
+    "exp", "ba_iat", "ba_param", "sig",
+  ];
+  const kept = new URL(P.continueUrl("?" + names.map((n) => n + "=v").join("&")), "https://h");
+  assertEquals([...kept.searchParams.keys()], names.filter((n) => n !== "prompt"));
+});
+
+// trex's federation refuses a sign-in with
+// `<login page>?error=<code>&return_to=<the query it was handed>`
+// (core/server/auth/federation/request.ts:refusalRedirect), built with
+// URL.searchParams, so the signed authorization request survives one level of
+// percent-encoding down. These build the wrapper the same way trex does.
+function refusal(code, returnTo) {
+  const url = new URL("https://host/d2e-login/");
+  url.searchParams.set("error", code);
+  url.searchParams.set("return_to", returnTo);
+  return url.search;
+}
+
+Deno.test("a federation refusal resumes the authorization request it wrapped", () => {
+  // Without unwrapping, a refused Logto sign-in costs the whole authorization
+  // request: the retry button and the password form would both land on
+  // /atlas/ and the relying party would have to start over.
+  assertEquals(
+    P.continueUrl(refusal("no_account", "/trex/oidc/oauth2/authorize" + SIGNED_QUERY)),
+    "/trex/oidc/oauth2/authorize" + SIGNED_QUERY,
+  );
+});
+
+Deno.test("only the wrapped query is taken, never the wrapped path", () => {
+  // return_to is reachable by anyone who can link to this page, so the
+  // destination stays the constant even one level down.
+  assertEquals(
+    P.continueUrl(refusal("no_account", "https://evil.example/go?sig=abc&client_id=c")),
+    "/trex/oidc/oauth2/authorize?sig=abc&client_id=c",
+  );
+});
+
+Deno.test("prompt is stripped out of a wrapped query too", () => {
+  assertEquals(
+    P.continueUrl(refusal("no_account", "/trex/oidc/oauth2/authorize?prompt=login&sig=abc")),
+    "/trex/oidc/oauth2/authorize?sig=abc",
+  );
+});
+
+Deno.test("an ordinary return_to is still not an authorization request", () => {
+  assertEquals(P.continueUrl(refusal("no_account", "/atlas/")), "/atlas/");
+  assertEquals(P.continueUrl(refusal("no_account", "/atlas/?tab=cohorts")), "/atlas/");
+  assertEquals(P.continueUrl("?error=no_account"), "/atlas/");
 });
