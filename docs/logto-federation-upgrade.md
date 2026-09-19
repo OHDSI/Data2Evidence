@@ -19,7 +19,7 @@ the stack starts with `docker-compose-logto-federation.yml`:
   sends the browser straight to Logto. It stays up when trex has just refused a
   sign-in (so the reason is shown), when the browser came back within a few
   seconds of the last redirect (so a misconfiguration cannot loop), and when the
-  address carries `manual` (`/d2e-login/?manual&return_to=…`).
+  address carries `manual` (`/d2e-login/?manual`).
 - Accounts without an email address sign in too: Logto users that have only a
   username are linked by their Logto identity, which needs no address.
 - On every start, trex migrates Logto users: each usermgmt user gets a trex

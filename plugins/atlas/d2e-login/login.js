@@ -1,10 +1,11 @@
 /*
  * D2E sign-in page.
  *
- * trex's OIDC provider hosts no login UI: when /authorize finds no session it
- * sends the browser here with a return_to. This page authenticates against
- * trex's native IdP, has trex set its session cookie, and returns to that URL,
- * where /authorize now finds a session and issues the authorization code.
+ * trex's OIDC provider hosts no login UI: when /oauth2/authorize finds no
+ * session it sends the browser here with the whole authorization request
+ * re-serialized and signed. This page authenticates against trex's native IdP,
+ * has trex set its session cookie, and hands that query straight back to
+ * /oauth2/authorize, which now finds a session and issues the code.
  *
  * Plain ES, served as static files — the same shape as the other static pages
  * under /atlas, so it needs no build step.
@@ -21,24 +22,6 @@
   var submitEl = document.getElementById("submit");
   var errorEl = document.getElementById("error");
 
-  /**
-   * Only same-origin paths are honoured. return_to arrives in the query string,
-   * so an absolute URL here would let anyone turn this page into an open
-   * redirect by linking to it.
-   */
-  function safeReturnTo(raw) {
-    if (!raw) return FALLBACK_RETURN;
-    try {
-      var url = new URL(raw, location.origin);
-      if (url.origin !== location.origin) return FALLBACK_RETURN;
-      return url.pathname + url.search + url.hash;
-    } catch (e) {
-      return FALLBACK_RETURN;
-    }
-  }
-
-  var returnTo = safeReturnTo(new URLSearchParams(location.search).get("return_to"));
-
   var providersEl = document.getElementById("providers");
   var dividerEl = document.getElementById("divider");
   // providers.js is loaded from a separate <script> tag: if that request
@@ -46,6 +29,11 @@
   // password form must still work, so the federated extras simply stay
   // absent rather than throwing before form.addEventListener runs below.
   var P = window.D2ELoginProviders || null;
+
+  // A constant path plus the query the provider handed over, so there is no
+  // caller-supplied destination left to check. Without providers.js there is
+  // nothing to build it with, and signing in simply lands on the portal.
+  var returnTo = P ? P.continueUrl(location.search) : FALLBACK_RETURN;
 
   if (P) {
     // A refused federated sign-in comes back here with its reason.
