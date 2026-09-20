@@ -6,69 +6,6 @@ import type { Dataset } from '../dataset/entity/index.ts'
 import type { DatasetDetail } from '../dataset/entity/dataset-detail.entity.ts'
 import type { IDbCredentials } from './types.ts'
 
-function makeService(cacheStatus: unknown, createCacheResult?: unknown) {
-  const api = {
-    getCacheStatus: () => Promise.resolve(cacheStatus),
-    createCache: () => Promise.resolve(createCacheResult),
-  }
-  // deno-lint-ignore no-explicit-any
-  return new WebApiSourceService(api as any)
-}
-
-describe('WebApiSourceService.getCacheStatus', () => {
-  it('passes lastModified through and reports ready when built', async () => {
-    const svc = makeService({
-      cacheExists: true,
-      cacheAttached: true,
-      lastModified: 1782194854916,
-      activeJob: null,
-    })
-    const status = await svc.getCacheStatus('key')
-    assertEquals(status.ready, true)
-    assertEquals(status.lastModified, 1782194854916)
-    assertEquals(status.cacheExists, true)
-    assertEquals(status.cacheAttached, true)
-  })
-
-  it('reports not-ready and null lastModified when no cache exists', async () => {
-    const svc = makeService({ cacheExists: false, cacheAttached: false })
-    const status = await svc.getCacheStatus('key')
-    assertEquals(status.ready, false)
-    assertEquals(status.lastModified, null)
-  })
-})
-
-describe('WebApiSourceService.refreshCache', () => {
-  it('delegates to createCache with sourceKey, schemaName and authToken and returns its result', async () => {
-    const stubResult = { success: true, databaseCode: '_ds1' }
-    let capturedArgs: unknown[] = []
-    const api = {
-      getCacheStatus: () => Promise.resolve({}),
-      createCache: (...args: unknown[]) => {
-        capturedArgs = args
-        return Promise.resolve(stubResult)
-      },
-    }
-    // deno-lint-ignore no-explicit-any
-    const svc = new WebApiSourceService(api as any)
-    const result = await svc.refreshCache('ds1', 'cdm_x_123', 'Bearer t')
-    assertEquals(result, stubResult)
-    assertEquals(capturedArgs, ['ds1', 'cdm_x_123', 'Bearer t'])
-  })
-
-  it('propagates a failure result from createCache', async () => {
-    const stubResult = { success: false, databaseCode: '_ds1', error: 'boom' }
-    const api = {
-      getCacheStatus: () => Promise.resolve({}),
-      createCache: () => Promise.resolve(stubResult),
-    }
-    // deno-lint-ignore no-explicit-any
-    const svc = new WebApiSourceService(api as any)
-    const result = await svc.refreshCache('ds1', 'cdm_x_123', 'Bearer t')
-    assertEquals(result, stubResult)
-  })
-})
-
 type Call = { method: string; args: unknown[] }
 
 function createApiStub(existingSource: unknown = null) {
@@ -77,19 +14,19 @@ function createApiStub(existingSource: unknown = null) {
     calls.push({ method, args })
     if (method === 'getSourceByKey') return Promise.resolve(existingSource)
     if (method === 'getRoles') return Promise.resolve([])
-    if (method === 'createCache') return Promise.resolve({ success: true })
+    if (method === 'createCacheFlowRun') return Promise.resolve({ flowRunId: 'run-1' })
     return Promise.resolve(undefined)
   }
   const api: Partial<WebApiSourceApi> = {
     getSourceByKey: record('getSourceByKey'),
     createSource: record('createSource'),
     updateSource: record('updateSource'),
-    createCache: record('createCache'),
     deleteSource: record('deleteSource'),
     getRoles: record('getRoles'),
     deleteRole: record('deleteRole'),
   }
-  return { api, calls, methods: () => calls.map((c) => c.method) }
+  const jobPlugins = { createCacheFlowRun: record('createCacheFlowRun') }
+  return { api, jobPlugins, calls, methods: () => calls.map((c) => c.method) }
 }
 
 const credentials: IDbCredentials = {
@@ -115,8 +52,8 @@ const detail = { name: 'Test dataset' } as DatasetDetail
 
 describe('WebApiSourceService.syncSourceForDataset', () => {
   it('registers a source for a postgres dataset', async () => {
-    const { api, calls, methods } = createApiStub()
-    const service = new WebApiSourceService(api as never)
+    const { api, jobPlugins, calls, methods } = createApiStub()
+    const service = new WebApiSourceService(api as never, jobPlugins as never)
 
     await service.syncSourceForDataset(datasetWithDialect('postgres'), detail, credentials)
 
@@ -136,8 +73,8 @@ describe('WebApiSourceService.syncSourceForDataset', () => {
   // the generic JDBC fallback URL lacked the ProjectId= key bao's cache DSN
   // parser requires.
   it('registers a source for a bigquery dataset with a Simba JDBC URL and no user/password', async () => {
-    const { api, calls, methods } = createApiStub()
-    const service = new WebApiSourceService(api as never)
+    const { api, jobPlugins, calls, methods } = createApiStub()
+    const service = new WebApiSourceService(api as never, jobPlugins as never)
 
     const bqCredentials: IDbCredentials = {
       host: 'my-gcp-project', // BigQuery entries carry the project in `host`
@@ -164,13 +101,15 @@ describe('WebApiSourceService.syncSourceForDataset', () => {
         'ProjectId=my-gcp-project;DefaultDataset=my_dataset;OAuthType=3;',
     )
     assertEquals(request.daimons.map((d) => d.daimonType), ['CDM', 'Vocabulary', 'Results'])
-    // The cache build is still triggered for the schema.
-    assertEquals(methods().includes('createCache'), true)
+    // The cache flow run is still triggered for the schema.
+    assertEquals(methods().includes('createCacheFlowRun'), true)
+    const cacheCall = calls.find((c) => c.method === 'createCacheFlowRun')!
+    assertEquals(cacheCall.args[0], 'ds-1')
   })
 
   it('does not register a source for a hana dataset', async () => {
-    const { api, methods } = createApiStub()
-    const service = new WebApiSourceService(api as never)
+    const { api, jobPlugins, methods } = createApiStub()
+    const service = new WebApiSourceService(api as never, jobPlugins as never)
 
     await service.syncSourceForDataset(datasetWithDialect('hana'), detail, credentials)
 
@@ -179,8 +118,8 @@ describe('WebApiSourceService.syncSourceForDataset', () => {
   })
 
   it('does not register a source for a duckdb dataset', async () => {
-    const { api, methods } = createApiStub()
-    const service = new WebApiSourceService(api as never)
+    const { api, jobPlugins, methods } = createApiStub()
+    const service = new WebApiSourceService(api as never, jobPlugins as never)
 
     await service.syncSourceForDataset(datasetWithDialect('duckdb'), detail, credentials)
 
@@ -189,8 +128,8 @@ describe('WebApiSourceService.syncSourceForDataset', () => {
   })
 
   it('leaves an existing source in place when the dialect is unsupported', async () => {
-    const { api, methods } = createApiStub({ sourceId: 17, sourceKey: 'ds-1' })
-    const service = new WebApiSourceService(api as never)
+    const { api, jobPlugins, methods } = createApiStub({ sourceId: 17, sourceKey: 'ds-1' })
+    const service = new WebApiSourceService(api as never, jobPlugins as never)
 
     await service.syncSourceForDataset(datasetWithDialect('hana'), detail, credentials)
 
@@ -201,8 +140,8 @@ describe('WebApiSourceService.syncSourceForDataset', () => {
   })
 
   it('updates an existing source for a postgres dataset instead of creating one', async () => {
-    const { api, methods } = createApiStub({ sourceId: 42, sourceKey: 'ds-1' })
-    const service = new WebApiSourceService(api as never)
+    const { api, jobPlugins, methods } = createApiStub({ sourceId: 42, sourceKey: 'ds-1' })
+    const service = new WebApiSourceService(api as never, jobPlugins as never)
 
     await service.syncSourceForDataset(datasetWithDialect('postgres'), detail, credentials)
 
@@ -210,15 +149,48 @@ describe('WebApiSourceService.syncSourceForDataset', () => {
     assertEquals(methods().includes('createSource'), false)
   })
 
-  it('still builds the TrexSQL cache for a hana dataset despite skipping source registration', async () => {
-    const { api, methods } = createApiStub()
-    const service = new WebApiSourceService(api as never)
+  // HANA has no DuckDB cache on any dataset type (it is queried directly), so a build
+  // triggered here would start a real Prefect flow run writing to the live HANA
+  // connection's own alias. Previously bao's create-cache-handler 404'd on the missing
+  // WebAPI Source and swallowed the error; the Prefect flow has no such backstop.
+  it('does not start a cache flow run for a hana dataset', async () => {
+    const { api, jobPlugins, methods } = createApiStub()
+    const service = new WebApiSourceService(api as never, jobPlugins as never)
 
     await service.syncSourceForDataset(datasetWithDialect('hana'), detail, credentials)
 
-    assertEquals(methods().includes('createCache'), true)
+    assertEquals(methods().includes('createCacheFlowRun'), false)
     assertEquals(methods().includes('createSource'), false)
     assertEquals(methods().includes('updateSource'), false)
+  })
+})
+
+describe('WebApiSourceService.refreshCache', () => {
+  it('starts a jobplugins cache flow run and reports success', async () => {
+    const calls: unknown[] = []
+    const jobPlugins = {
+      createCacheFlowRun: (datasetId: string, token?: string) => {
+        calls.push([datasetId, token])
+        return Promise.resolve({ flowRunId: 'run-1' })
+      },
+    }
+    // deno-lint-ignore no-explicit-any
+    const svc = new WebApiSourceService({} as any, jobPlugins as any)
+    const result = await svc.refreshCache('a-b-c', 'cdm', 'tok')
+    assertEquals(result.success, true)
+    assertEquals(result.databaseCode, 'a_b_c')
+    assertEquals(calls, [['a-b-c', 'tok']])
+  })
+
+  it('reports failure with the error message when the flow cannot start', async () => {
+    const jobPlugins = {
+      createCacheFlowRun: () => Promise.reject(new Error('prefect down')),
+    }
+    // deno-lint-ignore no-explicit-any
+    const svc = new WebApiSourceService({} as any, jobPlugins as any)
+    const result = await svc.refreshCache('a-b-c', 'cdm', 'tok')
+    assertEquals(result.success, false)
+    assertEquals(result.error, 'prefect down')
   })
 })
 
@@ -230,5 +202,59 @@ describe('WebApiSourceService.deleteSourceForDataset', () => {
     await service.deleteSourceForDataset('ds-1')
 
     assertEquals(methods().includes('deleteSource'), true)
+  })
+})
+
+describe('WebApiSourceService.getCacheStatus via flow run', () => {
+  function svcWith(state: string, flowRunId = 'run-1', endTime: number | null = null) {
+    const jobPlugins = {
+      createCacheFlowRun: () => Promise.resolve({ flowRunId }),
+      getFlowRunState: () => Promise.resolve({ state, endTime }),
+    }
+    // deno-lint-ignore no-explicit-any
+    return new WebApiSourceService({} as any, jobPlugins as any)
+  }
+
+  it('reports ready once the flow run completes', async () => {
+    const svc = svcWith('COMPLETED')
+    await svc.refreshCache('a-b-c', 'cdm', 'tok')
+    const status = await svc.getCacheStatus('a-b-c', 'tok')
+    assertEquals(status.ready, true)
+    assertEquals(status.cacheExists, true)
+    assertEquals(status.cacheAttached, true)
+    assertEquals(status.activeJobStatus, 'COMPLETED')
+  })
+
+  it('surfaces the flow run end_time as lastModified once completed', async () => {
+    const endTime = Date.parse('2026-09-01T12:00:00.000Z')
+    const svc = svcWith('COMPLETED', 'run-1', endTime)
+    await svc.refreshCache('a-b-c', 'cdm', 'tok')
+    const status = await svc.getCacheStatus('a-b-c', 'tok')
+    assertEquals(status.lastModified, endTime)
+  })
+
+  it('reports not ready while the flow run is still going', async () => {
+    const svc = svcWith('RUNNING')
+    await svc.refreshCache('a-b-c', 'cdm', 'tok')
+    const status = await svc.getCacheStatus('a-b-c', 'tok')
+    assertEquals(status.ready, false)
+    assertEquals(status.cacheExists, false)
+    assertEquals(status.lastModified, null)
+  })
+
+  it('surfaces a failed flow run as FAILED', async () => {
+    const svc = svcWith('FAILED')
+    await svc.refreshCache('a-b-c', 'cdm', 'tok')
+    const status = await svc.getCacheStatus('a-b-c', 'tok')
+    assertEquals(status.ready, false)
+    assertEquals(status.activeJobStatus, 'FAILED')
+    assertEquals(status.lastModified, null)
+  })
+
+  it('reports not ready when no run has been started for the dataset', async () => {
+    const svc = svcWith('COMPLETED')
+    const status = await svc.getCacheStatus('never-built', 'tok')
+    assertEquals(status.ready, false)
+    assertEquals(status.activeJobStatus, null)
   })
 })
