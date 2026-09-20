@@ -263,6 +263,21 @@ jobs:
           jq -S "walk(if type == \"string\" then sub(\"https://localhost:${PORT}\"; \"{{ISSUER_ORIGIN}}\") else . end)" \
             /tmp/discovery-raw.json > /tmp/discovery.json
 
+          # A stale image is not drift, and reporting it as drift sends the
+          # reader after the one thing that has not happened. The cutover moved
+          # the four protocol endpoints under /oauth2/, so a document whose
+          # authorization_endpoint is not there came from a trexsql image
+          # predating it, and no edit to the golden file can fix that. Checked
+          # before the diff so this diagnosis wins the ones it explains.
+          SERVED_AUTHZ=$(jq -r '.authorization_endpoint // ""' /tmp/discovery.json)
+          case "$SERVED_AUTHZ" in
+            */oauth2/authorize) ;;
+            *)
+              echo "::error::this stack is serving a trexsql image from before the OIDC provider cutover - authorization_endpoint is '${SERVED_AUTHZ:-(absent)}', not '{{ISSUER_ORIGIN}}/trex/oidc/oauth2/authorize'. This is NOT discovery drift and the golden file is not what needs changing. Publish a trexsql image built from the trex branch and bump TREXSQL_REF in BOTH services/trex/Dockerfile.v2 and docker-compose-local.yml; see docs/trex-oidc-provider-cutover.md."
+              exit 1
+              ;;
+          esac
+
           if ! diff -u "$GOLDEN" /tmp/discovery.json; then
             echo "::error::the OIDC discovery document has drifted from ${GOLDEN}"
             exit 1

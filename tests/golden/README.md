@@ -94,8 +94,28 @@ becomes true and this note goes away.
 
 Deliberate — it reproduces the list trex advertised before the cutover — but
 worth knowing: the id_token and the access token both carry `roles` and
-`app_metadata`, which this list omits. WebAPI is configured for it explicitly
-(`SECURITY_AUTH_OIDC_ROLESCLAIM=roles`) rather than discovering it.
+`app_metadata`, which this list omits.
+
+**So a relying party configured purely from this document cannot learn the name
+of the claim it most needs.** WebAPI works only because
+`SECURITY_AUTH_OIDC_ROLESCLAIM=roles` is set explicitly in `docker-compose.yml`,
+not because it discovered the claim. Any new relying party has to be told the
+name the same way.
+
+### Open question: `dpop_signing_alg_values_supported`
+
+The document advertises DPoP over five algorithms (`EdDSA`, `ES256`, `ES512`,
+`PS256`, `RS256`). The list is the plugin's own default, not a trex setting —
+trex passes no `dpop` option, so the fallback is published as-is.
+
+**Nothing in D2E has ever sent a DPoP proof, and no test in this phase covers
+one.** This is *not* the same case as `backchannel_logout_supported`: the token
+endpoint does carry proof-handling code, so DPoP may well work for a client that
+opts into it. What is certain is only the negative — `seed-client.ts` writes no
+`dpopBoundAccessTokens`, so no client is *required* to bind its tokens, which
+says nothing about whether one that offers a proof would be served. **Nobody has
+checked.** Pinned as served; do not read the advertisement as a tested
+capability.
 
 ### `userinfo_endpoint` emits no `roles`
 
