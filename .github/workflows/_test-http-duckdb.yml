@@ -217,6 +217,58 @@ jobs:
       - name: Check status of docker containers
         run: docker ps -a
 
+      # Endpoint or issuer drift breaks WebAPI at startup and Atlas3 at sign-in
+      # with nothing in either log that names the cause, so the served document
+      # is diffed against a checked-in copy instead. A failure here is a
+      # deliberate decision to re-register relying parties: update
+      # tests/golden/trex-oidc-discovery.json in the same commit that changes
+      # the document, and read tests/golden/README.md first — it records what
+      # the document claims that this deployment does not deliver.
+      #
+      # It also enforces the cutover's ordering constraint mechanically. The
+      # trex that serves this document comes from ghcr.io/ohdsi/trexsql through
+      # TREXSQL_REF (services/trex/Dockerfile.v2), not from this repository, so
+      # a d2e change that lands ahead of its trex image fails here rather than
+      # at a user's sign-in.
+      - name: The OIDC discovery document has not drifted
+        run: |
+          set -euo pipefail
+          # The port the restart above started the gateway on, and the one
+          # tests/backend_integration_tests/lib/ci-login.sh expects.
+          PORT=41100
+          GOLDEN=tests/golden/trex-oidc-discovery.json
+          test -f "$GOLDEN" || { echo "::error::$GOLDEN is missing"; exit 1; }
+
+          # trex was restarted a step ago; poll rather than assume, so a slow
+          # boot fails as a timeout that says so instead of as a diff against
+          # an error page.
+          CODE=000
+          for i in $(seq 1 60); do
+            CODE=$(curl -sk -o /tmp/discovery-raw.json -w '%{http_code}' --max-time 10 \
+              "https://localhost:${PORT}/trex/oidc/.well-known/openid-configuration" || echo 000)
+            echo "attempt ${i}/60: HTTP ${CODE}"
+            if [ "$CODE" = "200" ]; then break; fi
+            sleep 5
+          done
+          if [ "$CODE" != "200" ]; then
+            echo "::error::the discovery endpoint never answered 200 (last ${CODE})"
+            cat /tmp/discovery-raw.json || true
+            exit 1
+          fi
+
+          # The gateway origin is the one thing that legitimately differs
+          # between a local stack, CI and a real FQDN, so it is the one thing
+          # normalised away. The /trex/oidc prefix is part of the contract and
+          # is left alone.
+          jq -S "walk(if type == \"string\" then sub(\"https://localhost:${PORT}\"; \"{{ISSUER_ORIGIN}}\") else . end)" \
+            /tmp/discovery-raw.json > /tmp/discovery.json
+
+          if ! diff -u "$GOLDEN" /tmp/discovery.json; then
+            echo "::error::the OIDC discovery document has drifted from ${GOLDEN}"
+            exit 1
+          fi
+          echo "discovery document matches ${GOLDEN}"
+
       - name: Log in and get Bearer token and sub
         run: |
           # One script for both IdPs; see the script for why the flows differ.
