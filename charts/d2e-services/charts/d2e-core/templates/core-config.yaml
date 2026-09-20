@@ -28,7 +28,16 @@ data:
           header_up X-Forwarded-Host {$CADDY__D2E__PUBLIC_FQDN}
           header_up X-Forwarded-Port {$CADDY__D2E__PUBLIC_FQDN}
           header_up X-Forwarded-Proto https
-          header_up X-Forwarded-For {remote}
+          # {remote_host}, not {remote}: Caddy's {remote} is the peer's
+          # host:PORT, and nothing downstream can parse an X-Forwarded-For
+          # spelled that way. Better Auth's isValidIP refuses it outright, so
+          # trex resolved no client IP at all and its rate limiter keyed every
+          # caller into ONE bucket per path — which is how 594 anonymous
+          # requests closed /oauth2/userinfo for the whole installation in 2.4
+          # seconds. Logto reads the same header (TRUST_PROXY_HEADER=true).
+          # trex normalises this defensively, so the two repositories can ship
+          # in either order.
+          header_up X-Forwarded-For {remote_host}
     }
 
     (portal) {
