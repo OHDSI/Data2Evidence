@@ -87,6 +87,17 @@ services:
       - path: .env.claw
         required: false
     environment:
+      # The public FQDN here is `localhost`, which inside this container is its
+      # own loopback — glibc special-cases the name (RFC 6761), so the
+      # `extra_hosts: <FQDN>:host-gateway` entry docker-compose.yml adds cannot
+      # redirect it. Without this, d2e-compat builds BOTH its JWKS URL and its
+      # /oauth/token proxy target from the public issuer (d2e-compat/idp.ts:77-79,
+      # :99, :130) and every one of them fails with `fetch failed`: the portal's
+      # code exchange retries forever and every portal API call answers
+      # "Authentication Token not valid". `iss` is unaffected — only server-side
+      # fetches take this route. docker-compose.yml's own comment at
+      # TREX_OIDC_ISSUER already says local needs this; only CI had it set.
+      TREX_OIDC_INTERNAL_BASE: "http://${PROJECT_NAME:-d2e}-trex:33001"
       TREX_DX_ENABLED: "true"
       # Enable trex's native email/password IDP for local dev (off by default in
       # the engine). trex is the identity provider in every mode; this stays on.
