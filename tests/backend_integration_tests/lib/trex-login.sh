@@ -28,12 +28,18 @@ trex_login() {
   fi
 
   # 2. Authorization code.
-  local location code
-  location=$(curl -sk -b "$jar" -o /dev/null -w '%{redirect_url}' \
-    "$gateway/trex/oidc/authorize?client_id=$client_id&redirect_uri=$(printf '%s' "$redirect" | sed 's/:/%3A/g; s#/#%2F#g')&response_type=code&scope=openid%20profile%20email&code_challenge=$challenge&code_challenge_method=S256&state=http-tests")
+  local location code status
+  # The status travels with the redirect URL because the endpoint moved once
+  # already: a bare "Location: " is the same message for a 404, a refused
+  # client and a missing session, and it cost a CI cycle to tell them apart.
+  local probe
+  probe=$(curl -sk -b "$jar" -o /dev/null -w '%{http_code} %{redirect_url}' \
+    "$gateway/trex/oidc/oauth2/authorize?client_id=$client_id&redirect_uri=$(printf '%s' "$redirect" | sed 's/:/%3A/g; s#/#%2F#g')&response_type=code&scope=openid%20profile%20email&code_challenge=$challenge&code_challenge_method=S256&state=http-tests")
+  status=${probe%% *}
+  location=${probe#* }
   code=$(printf '%s' "$location" | sed -n 's/.*[?&]code=\([^&]*\).*/\1/p')
   if [ -z "$code" ]; then
-    echo "trex authorize returned no code. Location: $location" >&2
+    echo "trex authorize returned no code (HTTP $status). Location: $location" >&2
     rm -f "$jar"; return 1
   fi
 
