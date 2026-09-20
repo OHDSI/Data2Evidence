@@ -702,7 +702,7 @@ jobs:
             BUILD_TYPE=OSS
             PLUGINS_FEED=${{ needs.setup.outputs.is_release_push == 'true' && 'stable' || 'd2e' }}
             PLUGINS_FROM_REGISTRY=@ohdsi/pythia-agent@0.1.0-develop.18.g80bf4aa
-            TREXSQL_REF=sha-04ec21ad13568d1c45fc78fd0eb04dbc99ba48c0@sha256:c42dfdb5ff18744835a41f577c8d139975913dd18616ff6a51c0bee22b3afc9f
+            TREXSQL_REF=sha-cd06ea1efeae4cb46e985736d084fa2316830269@sha256:b578c19918035283d9ac28441eb72cdd735e7fe086c05a994064cf64ee7491b2
           secrets: |
             "PLUGINS_REGISTRY=${{ secrets.PLUGINS_REGISTRY }}"
             "github_token=${{ secrets.GITHUB_TOKEN }}"
@@ -1257,9 +1257,10 @@ jobs:
     # Needs a trex engine with afterListen inits and /trex/admin/federation
     # (OHDSI/trex#318), email-less federated sign-in (OHDSI/trex#319) and
     # linking under a caller-chosen user id (OHDSI/trex#320),
-    # which both TREXSQL_REF pins now carry:
-    # services/trex/Dockerfile.v2 (ARG TREXSQL_REF) and this workflow's devx
-    # build-args. Not in docker-success's needs yet — promote it once it has
+    # which all three TREXSQL_REF pins now carry: services/trex/Dockerfile.v2
+    # (ARG TREXSQL_REF), docker-compose-local.yml, and this workflow's devx
+    # build-args -- the last of which is the one CI actually builds from, so a
+    # bump that misses it changes nothing here. Not in docker-success's needs yet — promote it once it has
     # passed on three consecutive runs.
     needs: [setup, build_images, build_trex_image, build_plugins, build_e2e_image]
     runs-on: ubuntu-24.04

@@ -12,11 +12,18 @@ D2E half.
    `plugins/atlas/d2e-login/`, the Caddy `X-Forwarded-For` fix, and the
    discovery golden file.
 2. **A published `ghcr.io/ohdsi/trexsql` image built from the trex branch.**
-3. **A `TREXSQL_REF` bump in d2e, in both places that pin it:**
+3. **A `TREXSQL_REF` bump in d2e, in all three places that pin it:**
    - `services/trex/Dockerfile.v2` — the `ARG TREXSQL_REF` default (lean/prod),
-   - `docker-compose-local.yml` — the devx pin under the `trex` build args.
+   - `docker-compose-local.yml` — the devx pin under the `trex` build args,
+   - `.github/workflows/docker-build-push.yaml` — the `TREXSQL_REF=` line in the
+     devx image's `build-args`.
 
-   They pin two different refs and both must move.
+   They pin two different refs (a `prod-sha-` and a `sha-`) and all three must
+   move. The workflow one is the pin that decides what **CI** builds: it is a
+   `--build-arg`, so it overrides the `Dockerfile.v2` default outright. An
+   earlier version of this list named only the first two, and a bump that
+   obeyed it left every CI image on the old base while looking correct in the
+   diff.
 
 The third is the one that gets missed, because `npm run build -- -s trex` reads
 like it builds trex and does not. It builds d2e's own thin layer, which is

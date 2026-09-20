@@ -273,7 +273,7 @@ jobs:
           case "$SERVED_AUTHZ" in
             */oauth2/authorize) ;;
             *)
-              echo "::error::this stack is serving a trexsql image from before the OIDC provider cutover - authorization_endpoint is '${SERVED_AUTHZ:-(absent)}', not '{{ISSUER_ORIGIN}}/trex/oidc/oauth2/authorize'. This is NOT discovery drift and the golden file is not what needs changing. Publish a trexsql image built from the trex branch and bump TREXSQL_REF in BOTH services/trex/Dockerfile.v2 and docker-compose-local.yml; see docs/trex-oidc-provider-cutover.md."
+              echo "::error::this stack is serving a trexsql image from before the OIDC provider cutover - authorization_endpoint is '${SERVED_AUTHZ:-(absent)}', not '{{ISSUER_ORIGIN}}/trex/oidc/oauth2/authorize'. This is NOT discovery drift and the golden file is not what needs changing. Publish a trexsql image built from the trex branch and bump TREXSQL_REF in ALL THREE pins - services/trex/Dockerfile.v2, docker-compose-local.yml, and the devx build-args in .github/workflows/docker-build-push.yaml, which is the one this job's image is actually built from; see docs/trex-oidc-provider-cutover.md."
               exit 1
               ;;
           esac
