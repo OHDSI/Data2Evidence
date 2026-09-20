@@ -169,6 +169,12 @@ jobs:
               - "scripts/**"
               - "tests/backend_integration_tests/**"
               - ".github/workflows/docker-build-push.yaml"
+              # The reusable workflows these jobs actually run, and the cache
+              # flow setuphttptestenv now depends on: without these, a PR that
+              # only edits them skips the very jobs it changes.
+              - ".github/workflows/_test-http-duckdb.yml"
+              - ".github/workflows/_test-regression.yml"
+              - "plugins/flows/base/create_cachedb_file_plugin/**"
             ui:
               - "plugins/ui/**"
               - ".github/workflows/docker-build-push.yaml"
