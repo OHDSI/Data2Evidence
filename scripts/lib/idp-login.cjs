@@ -182,7 +182,10 @@ async function trexBearerToken({ gateway, email, password, clientId, clientSecre
     .join("; ");
 
   // 2. Authorization code.
-  const authorize = new URL(`${gateway}/trex/oidc/authorize`);
+  //
+  // /oauth2/authorize, not /authorize: the provider moved under /oauth2 when it
+  // became @better-auth/oauth-provider, and the old path 404s.
+  const authorize = new URL(`${gateway}/trex/oidc/oauth2/authorize`);
   authorize.search = new URLSearchParams({
     client_id: clientId,
     redirect_uri: redirectUri,
@@ -198,8 +201,21 @@ async function trexBearerToken({ gateway, email, password, clientId, clientSecre
     redirect: "manual",
     dispatcher: insecureAgent,
   });
-  const location = authRes.headers.get("location") ?? "";
-  const code = new URL(location, gateway).searchParams.get("code");
+  // The provider answers a redirect in one of two shapes, and which one depends
+  // on the caller rather than on the outcome. handleRedirect
+  // (@better-auth/oauth-provider, authorize-*.mjs) returns
+  // `200 {"redirect":true,"url":…}` instead of a 302 whenever
+  // `isBrowserFetchRequest` is true — that is literally
+  // `headers.get("sec-fetch-mode") === "cors"`, which undici's fetch sets on
+  // every request. `Sec-Fetch-Mode` is a forbidden header name, so it cannot be
+  // overridden from here; the JSON shape is what this caller always gets, and a
+  // reader that only looks at `Location` always sees "no code".
+  let location = authRes.headers.get("location") ?? "";
+  if (!location && authRes.status === 200) {
+    const body = await authRes.clone().json().catch(() => null);
+    if (body && body.redirect && typeof body.url === "string") location = body.url;
+  }
+  const code = location ? new URL(location, gateway).searchParams.get("code") : null;
   if (!code) {
     throw new Error(
       `trex authorize returned no code (HTTP ${authRes.status}). Location: ${location}`,
