@@ -34,6 +34,14 @@ jobs:
     env:
       VERSION: develop
       DOCKER_TAG_NAME: ${{ inputs.run_tag }}
+      # The lean image, not the -devx one docker-compose-local.yml defaults to.
+      # `-d ./plugins/functions` (used below) pulls in docker-compose-local.yml,
+      # which pins d2e-trex:<tag>-devx. In that image alp-dataflow-gen-init fails
+      # to boot ("failed to bootstrap runtime"), so *no* Prefect variables are
+      # seeded and every flow run dies -- the cache flow crashes on import. The
+      # devx tooling is unused here (docker-compose-ci.yml sets TREX_DX_ENABLED
+      # false), so run the same lean image test_demosetup_dev does.
+      TREX_IMAGE: ${{ inputs.reg_url }}/d2e-trex:${{ inputs.run_tag }}
       PLUGINS_IMAGE_TAG: ${{ inputs.run_tag }}
     steps:
       - name: Free Disk Space (Ubuntu)
