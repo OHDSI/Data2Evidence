@@ -54,19 +54,11 @@ export function resolveAtlasPluginBaseUrl(
 }
 
 /** The SystemJS entry Atlas serves for a plugin. */
-export function resolveAtlasPluginEntryUrl(
-  pluginId: string,
-  uiFilesUrl?: string,
-  baseURI?: string
-): string {
+export function resolveAtlasPluginEntryUrl(pluginId: string, uiFilesUrl?: string, baseURI?: string): string {
   return `${resolveAtlasPluginBaseUrl(pluginId, uiFilesUrl, baseURI)}index.system.js`
 }
 
 /** The stylesheet Atlas's own parcel loader injects beside that entry. */
-export function resolveAtlasPluginStyleUrl(
-  pluginId: string,
-  uiFilesUrl?: string,
-  baseURI?: string
-): string {
+export function resolveAtlasPluginStyleUrl(pluginId: string, uiFilesUrl?: string, baseURI?: string): string {
   return `${resolveAtlasPluginBaseUrl(pluginId, uiFilesUrl, baseURI)}style.css`
 }
