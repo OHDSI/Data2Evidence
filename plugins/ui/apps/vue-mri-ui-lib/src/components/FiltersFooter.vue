@@ -369,6 +369,12 @@ export default {
             })
           }
 
+          // Re-baseline as soon as the write returns. The cohort list refresh below
+          // only resolves the saved bookmark id, so waiting for it kept the cohort
+          // dirty after a successful save. On a slow network that window is long
+          // enough for the user to navigate away and be asked about unsaved changes.
+          this[types.SET_ACTIVE_BOOKMARK_BASELINE](bookmark)
+
           const successMessage =
             isNewBookmark || this.isNotUserSharedBookmark
               ? this.getText('MRI_PA_SAVE_BMK_SUCCESS')
