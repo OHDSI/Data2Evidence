@@ -50,6 +50,7 @@ const { t } = ctx;
 const { status, overview, flowRunStateType, errorMessage, retry } = useDataQualityOverview(
   ctx.datasetId,
   ctx.getToken,
+  ctx.cohortDefinitionId,
 );
 
 /**

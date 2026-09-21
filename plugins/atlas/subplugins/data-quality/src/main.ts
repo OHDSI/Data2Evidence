@@ -26,6 +26,7 @@ import DataQualityApp from "./DataQualityApp.vue";
 import {
   DQ_HOST_CTX,
   resolveSourceKey,
+  resolveCohortDefinitionId,
   type DqHostCtx,
   type PluginProps,
 } from "./types";
@@ -36,6 +37,14 @@ import {
  * instance, and Atlas mounts at most one instance of a given plugin at a time.
  */
 const selectedSourceKey = ref("");
+
+/**
+ * Scopes the report to one cohort when the host asked for one. Module-scoped
+ * for the same reason as `selectedSourceKey`: `update()` receives props but no
+ * handle to the Vue instance, and Atlas mounts at most one instance of a given
+ * plugin at a time.
+ */
+const selectedCohortDefinitionId = ref<string | undefined>(undefined);
 
 const CSS_LINK_ID = "data-quality-plugin-styles";
 
@@ -136,6 +145,7 @@ const vueLifecycles = singleSpaVue({
       // As a parcel it calls update({ hostContext }); as a routed app it fires a
       // `custom-props-changed` window event (see useHostContext).
       datasetId: selectedSourceKey,
+      cohortDefinitionId: selectedCohortDefinitionId,
       appId: pluginProps.appId,
       t:
         pluginProps.t ??
@@ -164,6 +174,7 @@ export const bootstrap = async (props: PluginProps) => {
 
 export const mount = async (props: PluginProps) => {
   selectedSourceKey.value = resolveSourceKey(props);
+  selectedCohortDefinitionId.value = resolveCohortDefinitionId(props);
   return vueLifecycles.mount(props);
 };
 
@@ -180,10 +191,12 @@ export const mount = async (props: PluginProps) => {
  */
 export const update = async (props: PluginProps) => {
   selectedSourceKey.value = resolveSourceKey(props);
+  selectedCohortDefinitionId.value = resolveCohortDefinitionId(props);
 };
 
 export const unmount = async (props: PluginProps) => {
   const result = await vueLifecycles.unmount(props);
   selectedSourceKey.value = "";
+  selectedCohortDefinitionId.value = undefined;
   return result;
 };
