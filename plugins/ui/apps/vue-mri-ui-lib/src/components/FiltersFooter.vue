@@ -388,6 +388,9 @@ export default {
           await this.fireBookmarkQuery({ method: 'get', params: { cmd: 'loadAll' } })
           const savedBookmark = this.getBookmarkByNameAndUsername(bookmarkName, username)
           this[types.SET_ACTIVE_BOOKMARK](savedBookmark)
+          // The swap above nulls the baseline, so it has to be captured again. Use the
+          // written payload rather than live state: edits the user made while the refresh
+          // was in flight were never written and must keep the cohort dirty.
           this[types.SET_ACTIVE_BOOKMARK_BASELINE](bookmark)
         } catch (error) {
           console.error('Error during bookmark save or reload:', error)

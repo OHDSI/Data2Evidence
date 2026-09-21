@@ -49,9 +49,7 @@ const createContext = (loadAllResult: Promise<unknown>) => {
   const commits: string[] = []
   const savedBookmark = { bookmarkname: COHORT_NAME, bmkId: 'bmk-1', user_id: USERNAME }
 
-  const fireBookmarkQuery = vi.fn(({ params }) =>
-    params.cmd === 'loadAll' ? loadAllResult : Promise.resolve({})
-  )
+  const fireBookmarkQuery = vi.fn(({ params }) => (params.cmd === 'loadAll' ? loadAllResult : Promise.resolve({})))
 
   const context: any = {
     canShare: false,
@@ -137,9 +135,7 @@ describe('FiltersFooter saveBookmark', () => {
     loadAll.resolve({})
     await saving
 
-    expect(context[types.SET_ACTIVE_BOOKMARK]).toHaveBeenCalledWith(
-      expect.objectContaining({ bmkId: 'bmk-1' })
-    )
+    expect(context[types.SET_ACTIVE_BOOKMARK]).toHaveBeenCalledWith(expect.objectContaining({ bmkId: 'bmk-1' }))
     // The swap nulls the baseline, so it has to be captured again afterwards.
     expect(commits[commits.length - 1]).toBe(types.SET_ACTIVE_BOOKMARK_BASELINE)
     expect(storedBaseline()).toEqual(writtenPayload(context))
