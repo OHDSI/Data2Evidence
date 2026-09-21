@@ -15,6 +15,20 @@ permissions:
 env:
   VERSION: develop
   DOCKER_TAG_NAME: develop
+  # The lean image, not the -devx one docker-compose-local.yml defaults to.
+  # This job passes `-d ./plugins/functions`, which merges that file, which
+  # pins d2e-trex:<DOCKER_TAG_NAME>-devx -- i.e. "develop-devx", a tag that
+  # has never been published for any branch (build_trex_image pushes only
+  # <sha>-devx, and the promote matrix iterates image names, not suffixes).
+  # The pull therefore fails with "manifest unknown", compose falls back to
+  # building trex from source, and that build dies on `npm pack
+  # @ohdsi/pythia-agent` because this workflow has no Packages write token.
+  #
+  # The lean tag is published on every develop promote and does exist. The
+  # two images differ only in TREXSQL_REF: devx adds playwright, chromium
+  # and the devx payload, none of which this job uses. Neither CI build
+  # passes WITH_R, so the d2e layers are identical.
+  TREX_IMAGE: ghcr.io/ohdsi/d2e-trex:develop
   REG_URL: ghcr.io/ohdsi
   PGUSER: postgres
   PGPASSWORD: mypass
