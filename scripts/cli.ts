@@ -45,6 +45,19 @@ interface CliOptions {
   hades?: string;
 }
 
+/**
+ * The `:port` to append to the public origin, or "" when the port is the
+ * scheme's default and therefore must not appear.
+ *
+ * Only https is served publicly, so 443 is the one default to strip. An unset
+ * port means the compose default, which is also 443.
+ */
+export function publicPortSuffix(port: string | undefined): string {
+  const p = (port ?? "").trim();
+  if (p === "" || p === "443") return "";
+  return `:${p}`;
+}
+
 class D2ECli {
   version: string;
   LATEST_DOCKER_TAG_NAME: string = "0.18.2-beta"; // Update this as needed
@@ -603,6 +616,14 @@ class D2ECli {
     const envVars = {
       ...process.env,
       PORT: this.port,
+      // The public origin's port, as a suffix, EMPTY when it is the scheme's
+      // default. `https://host:443` and `https://host` are the same origin but
+      // not the same string, and an OIDC issuer is compared as a string: trex
+      // publishes the normalised form in its discovery document, so a token
+      // stamped with the `:443` form is rejected by every relying party that
+      // checks `iss` -- which is how Atlas sign-in and RP-initiated logout both
+      // broke. Computed here because compose interpolation cannot test a value.
+      D2E__PUBLIC_PORT_SUFFIX: publicPortSuffix(this.port),
       CADDY__CONFIG: this.CADDY__CONFIG,
       ENV_TYPE: this.ENV_TYPE,
     };

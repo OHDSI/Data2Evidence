@@ -240,16 +240,16 @@ services:
       # metadata and signing keys are actually read from. Both are needed: the
       # issuer cannot be swapped for the internal address without invalidating
       # every token, and the internal address cannot be reached from a browser.
-      SECURITY_AUTH_OIDC_URL: "https://${CADDY__D2E__PUBLIC_FQDN:-${CADDY__ALP__PUBLIC_FQDN:-localhost}}:${CADDY_PORT:-${PORT:-443}}/trex/oidc/.well-known/openid-configuration"
+      SECURITY_AUTH_OIDC_URL: "https://${CADDY__D2E__PUBLIC_FQDN:-${CADDY__ALP__PUBLIC_FQDN:-localhost}}${D2E__PUBLIC_PORT_SUFFIX-${CADDY_PORT:+:${CADDY_PORT}}}/trex/oidc/.well-known/openid-configuration"
       SECURITY_AUTH_OIDC_INTERNALURL: "http://${PROJECT_NAME:-d2e}-trex:33001/trex/oidc"
       # External URL for browser redirects - used to rewrite internal OIDC URLs to external ones
-      SECURITY_AUTH_OIDC_EXTERNALURL: "https://${CADDY__D2E__PUBLIC_FQDN:-${CADDY__ALP__PUBLIC_FQDN:-localhost}}:${CADDY_PORT:-${PORT:-443}}/trex/oidc"
+      SECURITY_AUTH_OIDC_EXTERNALURL: "https://${CADDY__D2E__PUBLIC_FQDN:-${CADDY__ALP__PUBLIC_FQDN:-localhost}}${D2E__PUBLIC_PORT_SUFFIX-${CADDY_PORT:+:${CADDY_PORT}}}/trex/oidc"
       # @better-auth/oauth-provider serves RP-initiated logout at
       # /oauth2/end-session and hard-codes that path; /session/end was the
       # hand-written provider's and answers 404 now. The provider also refuses
       # a client whose row does not carry enable_end_session, which the seeder
       # sets for every client it registers.
-      SECURITY_AUTH_OIDC_LOGOUTURL: "https://${CADDY__D2E__PUBLIC_FQDN:-${CADDY__ALP__PUBLIC_FQDN:-localhost}}:${CADDY_PORT:-${PORT:-443}}/trex/oidc/oauth2/end-session"
+      SECURITY_AUTH_OIDC_LOGOUTURL: "https://${CADDY__D2E__PUBLIC_FQDN:-${CADDY__ALP__PUBLIC_FQDN:-localhost}}${D2E__PUBLIC_PORT_SUFFIX-${CADDY_PORT:+:${CADDY_PORT}}}/trex/oidc/oauth2/end-session"
       # trex emits the application role array as `roles`; `trex_role` is a
       # different claim entirely — trex's own admin/user system role, which
       # must never be read as a WebAPI role.
@@ -354,7 +354,7 @@ services:
       # back at this container -- docker-compose-ci.yml sets
       # TREX_OIDC_INTERNAL_BASE so server-side fetches take a reachable route
       # while `iss` stays put.
-      TREX_OIDC_ISSUER: "https://${CADDY__D2E__PUBLIC_FQDN:-${CADDY__ALP__PUBLIC_FQDN:-localhost}}:${CADDY_PORT:-${PORT:-443}}"
+      TREX_OIDC_ISSUER: "https://${CADDY__D2E__PUBLIC_FQDN:-${CADDY__ALP__PUBLIC_FQDN:-localhost}}${D2E__PUBLIC_PORT_SUFFIX-${CADDY_PORT:+:${CADDY_PORT}}}"
       # trex ships no login UI; an unauthenticated /authorize lands here.
       TREX_OIDC_LOGIN_URL: "https://${CADDY__D2E__PUBLIC_FQDN:-${CADDY__ALP__PUBLIC_FQDN:-localhost}}:${CADDY_PORT:-${PORT:-443}}/d2e-login/"
       # WebAPI is the only relying party: Atlas reaches the IdP through it. The
