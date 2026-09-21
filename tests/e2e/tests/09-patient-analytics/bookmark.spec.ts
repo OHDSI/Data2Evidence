@@ -1,6 +1,7 @@
 import { test, expect } from '../fixtures'
 import {
   atlasCohortCard,
+  cardMenuAction,
   confirmExplorationDialog,
   deleteExploration,
   deleteExplorationCard,
@@ -436,10 +437,17 @@ test(TEST_NAME, async ({ page }) => {
     await page.locator('input[name="password"]').click()
     await page.locator('input[name="password"]').fill('Updatepassword12345')
     await page.getByRole('button', { name: 'Sign in' }).click()
-    //Rename the bookmark
+    //Rename the shared exploration bookmark, not NAME.savedFilters. That
+    //exploration is renamed to NAME.renamedFilters earlier and then deleted, so
+    //it is long gone by this point. On develop this step clicked
+    //`div:nth-child(2) > .footer > div:nth-child(2) > svg` - the second card's
+    //second icon - so it never named a cohort and never noticed.
+    //Two cards carry NAME.patientListFilters here: the exploration bookmark and
+    //the Atlas cohort definition made from it. Only the bookmark can be renamed,
+    //and it is the one shared with testuserB, who checks the new name below.
     await page.getByText('Demo dataset').first().click()
     await page.getByRole('link', { name: 'Cohorts' }).click()
-    await explorationMenuAction(page, NAME.savedFilters, 'Rename')
+    await cardMenuAction(page, explorationBookmarkCard(page, NAME.patientListFilters), 'Rename')
     await page.getByRole('textbox', { name: 'Exploration name' }).fill('')
     await page.getByRole('textbox', { name: 'Exploration name' }).fill(NAME.sharedFilter)
     await page.getByTestId('pa-save-dialog-save-btn').click()
@@ -474,20 +482,14 @@ test(TEST_NAME, async ({ page }) => {
       await deleteExploration(page, NAME.sharedFilter)
       await expect(page.getByText(NAME.sharedFilter)).not.toBeVisible()
     })
-    //Delete the Atlas Cohort Definition, then the exploration it was built from.
-    //Two cards carry this name - the exploration bookmark and the Atlas cohort
-    //definition created from it - so each has to be named. `deleteExploration`
-    //matches both and Playwright's strict mode refuses to pick one, and the
-    //empty state below only appears once both are gone.
+    //Delete the Atlas Cohort Definition. The exploration bookmark that shared
+    //this name was renamed to NAME.sharedFilter above and deleted in the step
+    //before, so the Atlas cohort definition is the only card left under it.
     await test.step('Delete Atlas Cohort Definition', async () => {
       const atlas = atlasCohortCard(page, NAME.patientListFilters)
-      const bookmark = explorationBookmarkCard(page, NAME.patientListFilters)
       await expect(atlas).toBeVisible()
       await deleteExplorationCard(page, atlas)
       await expect(atlas).not.toBeVisible()
-      await expect(bookmark).toBeVisible()
-      await deleteExplorationCard(page, bookmark)
-      await expect(bookmark).not.toBeVisible()
     })
     // The redesign's empty state reads "No explorations yet"; assert the state
     // itself rather than its copy.
