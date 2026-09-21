@@ -35,6 +35,8 @@ const buildStore = ({ held = false, currentPage = 1 } = {}) =>
     state: { ifr: { cards: [] }, held },
     getters: {
       getBookmarkFromIFR: s => (s as any).ifr,
+      // Mirrors store/modules/bookmark.ts, which collapses an empty IFR to {}.
+      getBookmarksData: s => (Object.keys((s as any).ifr).length === 0 ? {} : (s as any).ifr),
       isFireRequestHeld: s => (s as any).held,
       getPLModel: () => ({ currentPage }),
       getMriFrontendConfig: () => ({ _internalConfig: {}, getInitialIFR: () => ({ cards: [] }) }),
@@ -56,6 +58,10 @@ const buildStore = ({ held = false, currentPage = 1 } = {}) =>
       },
       setHeld(s, value: boolean) {
         ;(s as any).held = value
+      },
+      // The user clears the last filter card, leaving nothing to query.
+      clearFilters(s) {
+        ;(s as any).ifr = {}
       },
     },
     actions,
@@ -126,6 +132,49 @@ describe('PatientAnalytics cohort recalculation debounce', () => {
     await wrapper.vm.$nextTick()
 
     expect(actions.setFireRequest).not.toHaveBeenCalled()
+  })
+
+  it('drops an already-queued recalculation when a hold starts mid-window', async () => {
+    const { store, wrapper } = mountPA()
+    actions.setFireRequest.mockClear()
+
+    // A user edit arms the timer...
+    store.commit('editFilterValues', 2)
+    await wrapper.vm.$nextTick()
+    vi.advanceTimersByTime(100)
+
+    // ...then a bookmark load / WebMCP cohort patch takes the hold and completes inside
+    // the same 500ms window. Its own explicit setFireRequest (dispatched by the store,
+    // not by this component) is the one legitimate fire.
+    store.commit('setHeld', true)
+    await wrapper.vm.$nextTick()
+    store.commit('setHeld', false)
+    await wrapper.vm.$nextTick()
+
+    vi.advanceTimersByTime(1000)
+    await wrapper.vm.$nextTick()
+
+    // The timer armed before the hold must not survive it and duplicate that query.
+    expect(actions.setFireRequest).not.toHaveBeenCalled()
+  })
+
+  it('does not flag the count stale when the IFR is emptied', async () => {
+    const { store, wrapper } = mountPA()
+    actions.invalidateCurrentPatientCount.mockClear()
+    actions.setFireRequest.mockClear()
+
+    store.commit('clearFilters')
+    await wrapper.vm.$nextTick()
+    vi.advanceTimersByTime(1000)
+    await wrapper.vm.$nextTick()
+
+    // With nothing to query the chart components bail out without ever calling
+    // setCurrentPatientCount, so a flag raised here would never be lowered and
+    // pa_get_cohort_result would block for its full 60s timeout. Same guard as
+    // setFireRequest's in store/modules/chart.ts.
+    expect(actions.invalidateCurrentPatientCount).not.toHaveBeenCalled()
+    // The fire itself still goes out, as it did before debouncing was introduced.
+    expect(actions.setFireRequest).toHaveBeenCalledTimes(1)
   })
 
   it('drops a pending recalculation when the component unmounts', async () => {
