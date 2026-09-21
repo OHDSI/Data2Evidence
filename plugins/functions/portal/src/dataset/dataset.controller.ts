@@ -263,6 +263,12 @@ export class DatasetController {
     if (!dataset?.schemaName) {
       throw new HttpException(400, "Dataset has no schema to cache");
     }
+    // HANA has no DuckDB cache on any dataset type (queried directly instead), so
+    // there is nothing for the Prefect flow to build. Reject explicitly rather than
+    // starting a flow run that would write to the live HANA connection's alias.
+    if (dataset.dialect === "hana") {
+      throw new HttpException(400, "HANA datasets have no cache to refresh");
+    }
     return await this.webApiSourceService.refreshCache(
       id,
       dataset.schemaName,
