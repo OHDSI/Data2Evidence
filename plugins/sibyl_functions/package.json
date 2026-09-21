@@ -94,7 +94,11 @@
         },
         "trex-token": {
           "LOGTO__ISSUER": "${LOGTO__ISSUER}",
-          "TREX_ROOT_KEY": "${TREX_ROOT_KEY}"
+          "TREX_ROOT_KEY": "${TREX_ROOT_KEY}",
+          "D2E_IDP": "${D2E_IDP}",
+          "TREX_OIDC_ISSUER": "${TREX_OIDC_ISSUER}",
+          "TREX_OIDC_INTERNAL_BASE": "${TREX_OIDC_INTERNAL_BASE}",
+          "BASE_PATH": "${BASE_PATH}"
         }
       }
     }
