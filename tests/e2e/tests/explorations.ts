@@ -59,7 +59,12 @@ export async function explorationMenuAction(
   name: string,
   action: CardMenuAction
 ): Promise<void> {
-  await explorationCard(page, name).getByRole('button', { name: 'More actions' }).click()
+  await cardMenuAction(page, explorationCard(page, name), action)
+}
+
+/** As `explorationMenuAction`, but on a card you have already narrowed down. */
+export async function cardMenuAction(page: Page, card: Locator, action: CardMenuAction): Promise<void> {
+  await card.getByRole('button', { name: 'More actions' }).click()
   await page.getByRole('menuitem', { name: action }).click()
 }
 
@@ -70,6 +75,39 @@ export async function confirmExplorationDialog(page: Page): Promise<void> {
 
 /** Delete an exploration by name, including the confirmation step. */
 export async function deleteExploration(page: Page, name: string): Promise<void> {
-  await explorationMenuAction(page, name, 'Delete')
+  await deleteExplorationCard(page, explorationCard(page, name))
+}
+
+/**
+ * Delete one specific card, including the confirmation step.
+ *
+ * Use this over `deleteExploration` when a name is carried by more than one
+ * card - an exploration and the Atlas cohort definition made from it share one.
+ */
+export async function deleteExplorationCard(page: Page, card: Locator): Promise<void> {
+  await cardMenuAction(page, card, 'Delete')
   await confirmExplorationDialog(page)
+}
+
+/**
+ * The Atlas cohort definition card for `name`.
+ *
+ * Creating an ATLAS cohort definition from an exploration leaves two cards on
+ * the Cohorts screen under the same name: the D2E exploration bookmark it was
+ * built from, and the Atlas cohort definition itself. `explorationCard` matches
+ * both, so anything that needs one specifically has to say which.
+ *
+ * The old Bookmarks card carried a literal "Atlas Cohort Definition" type
+ * label and tests asserted the concatenated `<name>Atlas Cohort DefinitionID`.
+ * The redesigned card has no type label; the two kinds are told apart by their
+ * id row, which reads "Cohort ID" for an Atlas record and "Exploration ID" for
+ * a D2E bookmark (ExplorationsPage.vue picks the label from getBookmarkType).
+ */
+export function atlasCohortCard(page: Page, name: string): Locator {
+  return explorationCard(page, name).filter({ hasText: 'Cohort ID' })
+}
+
+/** The D2E exploration bookmark card for `name`, as opposed to an Atlas one. */
+export function explorationBookmarkCard(page: Page, name: string): Locator {
+  return explorationCard(page, name).filter({ hasText: 'Exploration ID' })
 }

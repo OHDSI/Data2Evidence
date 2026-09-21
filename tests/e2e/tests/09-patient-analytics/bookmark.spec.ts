@@ -1,5 +1,13 @@
 import { test, expect } from '../fixtures'
-import { confirmExplorationDialog, deleteExploration, explorationCard, explorationMenuAction } from '../explorations'
+import {
+  atlasCohortCard,
+  confirmExplorationDialog,
+  deleteExploration,
+  deleteExplorationCard,
+  explorationBookmarkCard,
+  explorationCard,
+  explorationMenuAction
+} from '../explorations'
 
 const TEST_NAME = 'patient_analytics_bookmark'
 const SHOULD_SKIP = false
@@ -310,6 +318,12 @@ test(TEST_NAME, async ({ page }) => {
     await page.getByRole('link', { name: 'Exclusion (0)' }).click()
     await page.getByTitle('Add Filter Card').getByRole('button').click()
     await page.getByRole('menuitem', { name: 'Death' }).click()
+    //Wait for the card to land before saving. Adding an exclusion card kicks off
+    //a recount, and Save writes whatever is in the model at the time it fires.
+    //Without this the cohort persists with Exclusion (0) and the reopen below
+    //fails - the equivalent step earlier in this file already waits the same way.
+    await expect(page.getByText('A filter card has been added: Death A')).toBeVisible()
+    await expect(page.locator('.loading-animation-component')).not.toBeVisible()
     //Save filter - the allow-sharing checkbox now lives in the filter card footer
     //rather than the save dialog, so it has to be set before the dialog opens.
     await page.getByTestId('pa-share-cohort-checkbox').click()
@@ -370,7 +384,7 @@ test(TEST_NAME, async ({ page }) => {
     await page.getByRole('button', { name: 'Create', exact: true }).click()
     await expect(page.getByText('ATLAS cohort definition created successfully and added to Cohorts.')).toBeVisible()
     await page.locator('#pane-left').getByRole('link', { name: 'Cohorts' }).click()
-    await expect(page.getByText(`${NAME.patientListFilters}Atlas Cohort DefinitionID`)).toBeVisible()
+    await expect(atlasCohortCard(page, NAME.patientListFilters)).toBeVisible()
   })
   //Create another user to verify bookmark visibility
   await test.step('Switch to admin portal', async () => {
@@ -460,11 +474,20 @@ test(TEST_NAME, async ({ page }) => {
       await deleteExploration(page, NAME.sharedFilter)
       await expect(page.getByText(NAME.sharedFilter)).not.toBeVisible()
     })
-    //Delete the Atlas Cohort Definition
+    //Delete the Atlas Cohort Definition, then the exploration it was built from.
+    //Two cards carry this name - the exploration bookmark and the Atlas cohort
+    //definition created from it - so each has to be named. `deleteExploration`
+    //matches both and Playwright's strict mode refuses to pick one, and the
+    //empty state below only appears once both are gone.
     await test.step('Delete Atlas Cohort Definition', async () => {
-      await expect(page.getByText(NAME.patientListFilters)).toBeVisible()
-      await deleteExploration(page, NAME.patientListFilters)
-      await expect(page.getByText(NAME.patientListFilters)).not.toBeVisible()
+      const atlas = atlasCohortCard(page, NAME.patientListFilters)
+      const bookmark = explorationBookmarkCard(page, NAME.patientListFilters)
+      await expect(atlas).toBeVisible()
+      await deleteExplorationCard(page, atlas)
+      await expect(atlas).not.toBeVisible()
+      await expect(bookmark).toBeVisible()
+      await deleteExplorationCard(page, bookmark)
+      await expect(bookmark).not.toBeVisible()
     })
     // The redesign's empty state reads "No explorations yet"; assert the state
     // itself rather than its copy.
