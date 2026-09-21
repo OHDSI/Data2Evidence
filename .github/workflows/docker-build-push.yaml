@@ -1462,8 +1462,8 @@ jobs:
     secrets: inherit
 
   # IDP auth e2e (logto-native / physionet-mock / entra-external-id). Reuses this run's
-  # freshly-built run_tag images (incl. the -devx trex) + ui-tgz. Runs on develop merges,
-  # manual dispatch, and PRs that touch the e2e harness (changes_e2e) — never on unrelated PRs.
+  # freshly-built run_tag images + ui-tgz. Runs on develop merges, manual dispatch, and
+  # PRs that touch the e2e harness (changes_e2e) — never on unrelated PRs.
   test_e2e_idp:
     needs: [setup, build_images, build_trex_image, build_plugins]
     if: |
