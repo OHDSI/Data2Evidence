@@ -94,12 +94,20 @@ export function createPatientAccessAuditTransport(
 
             try {
                 await writer.append(PATIENT_ACCESS_AUDIT_FILE, {
-                    ...eventData,
-                    schemaVersion: 1,
-                    eventType: "patient.access",
-                    actor: {
-                        type: "user",
-                        id: user,
+                    "log-type": "audit",
+                    "audit-log-type": "access",
+                    "service-name": "analytics-svc",
+                    // The routing fields stay at the top level; everything that
+                    // describes the event itself lives under `message`, so a
+                    // collector can route on the former without walking the payload.
+                    message: {
+                        ...eventData,
+                        schemaVersion: 1,
+                        eventType: "patient.access",
+                        actor: {
+                            type: "user",
+                            id: user,
+                        },
                     },
                 });
             } catch (_error) {

@@ -70,7 +70,46 @@ Deno.test("creates the three supabase roles with the documented attributes", () 
   const stmts = buildBootstrapStatements(CFG).join("\n");
   assertEquals(stmts.includes("CREATE ROLE anon NOLOGIN INHERIT"), true);
   assertEquals(stmts.includes("CREATE ROLE authenticated NOLOGIN INHERIT"), true);
-  assertEquals(stmts.includes("CREATE ROLE service_role NOLOGIN INHERIT BYPASSRLS"), true);
+  // Without BYPASSRLS: it requires superuser, which managed Postgres does not
+  // grant, so requesting it leaves service_role uncreated.
+  assertEquals(stmts.includes("CREATE ROLE service_role NOLOGIN INHERIT"), true);
+  assertEquals(stmts.includes("BYPASSRLS"), false);
+});
+
+Deno.test("creates supabase_admin without REPLICATION so trex's V1 can be applied", () => {
+  const stmts = buildBootstrapStatements(CFG).join("\n");
+  // V1__initial_schema requests REPLICATION, which is superuser-only on managed
+  // Postgres; pre-creating the role makes V1's IF NOT EXISTS guard skip it.
+  assertEquals(stmts.includes("CREATE ROLE supabase_admin NOLOGIN"), true);
+  assertEquals(stmts.includes("REPLICATION"), false);
+  // V1 also creates the _realtime schema AUTHORIZATION supabase_admin, which
+  // needs membership -- for the manager and for the superuser running V1.
+  assertEquals(stmts.includes("GRANT supabase_admin TO CURRENT_USER"), true);
+  assertEquals(stmts.includes('GRANT supabase_admin TO "alp_pg_admin_user"'), true);
+});
+
+Deno.test("grants CREATE on schema public to the roles that create objects there", () => {
+  const stmts = buildBootstrapStatements(CFG);
+  const joined = stmts.join("\n");
+  // logto's roles.sql creates public.check_role_type, hardcoded to public.
+  assertEquals(
+    stmts.includes('GRANT USAGE, CREATE ON SCHEMA public TO "logto_postgres"'),
+    true,
+  );
+  assertEquals(
+    stmts.includes('GRANT USAGE, CREATE ON SCHEMA public TO "alp_pg_admin_user"'),
+    true,
+  );
+  // Readers of public.objects need schema USAGE, not CREATE.
+  assertEquals(stmts.includes("GRANT USAGE ON SCHEMA public TO service_role"), true);
+  assertEquals(
+    stmts.includes('GRANT USAGE ON SCHEMA public TO "alp_pg_write_user"'),
+    true,
+  );
+  // The grant is a silent no-op unless the bootstrap user owns public, so the
+  // result has to be checked rather than assumed.
+  assertStringIncludes(joined, "has_schema_privilege('logto_postgres', 'public', 'CREATE')");
+  assertStringIncludes(joined, "RAISE WARNING");
 });
 
 Deno.test("grants per-schema privileges and default privileges to reader and writer", () => {
@@ -247,7 +286,7 @@ Deno.test("ALTER DEFAULT PRIVILEGES falls back to no-FOR-ROLE when manager is ab
   );
 });
 
-import { runBootstrapStatements } from "./bootstrap.ts";
+import { isConcurrentCatalogUpdate, redactStatement, runBootstrapStatements } from "./bootstrap.ts";
 
 Deno.test("runBootstrapStatements executes every statement in order", async () => {
   const seen: string[] = [];
@@ -268,4 +307,106 @@ Deno.test("runBootstrapStatements propagates failures (bootstrap is fatal)", asy
     assertEquals((e as Error).message.includes("boom"), true);
   }
   assertEquals(threw, true);
+});
+
+// ── Concurrent catalog update retry ───────────────────────────────────────
+// Shape copied from the real failure: node-postgres surfaces the server's
+// SQLSTATE on `.code`, and simple_heap_update's message is the discriminator.
+function concurrentUpdateError(): Error & { code: string } {
+  return Object.assign(new Error("tuple concurrently updated"), { code: "XX000" });
+}
+
+Deno.test("isConcurrentCatalogUpdate matches only the concurrent-GRANT error", () => {
+  assertEquals(isConcurrentCatalogUpdate(concurrentUpdateError()), true);
+  // Same SQLSTATE, different failure — XX000 is internal_error generally.
+  assertEquals(
+    isConcurrentCatalogUpdate(Object.assign(new Error("could not read block"), { code: "XX000" })),
+    false,
+  );
+  // Same message, different SQLSTATE.
+  assertEquals(
+    isConcurrentCatalogUpdate(
+      Object.assign(new Error("tuple concurrently updated"), { code: "40001" }),
+    ),
+    false,
+  );
+  assertEquals(isConcurrentCatalogUpdate(new Error("tuple concurrently updated")), false);
+  assertEquals(isConcurrentCatalogUpdate(null), false);
+  assertEquals(isConcurrentCatalogUpdate("tuple concurrently updated"), false);
+});
+
+Deno.test("runBootstrapStatements retries a concurrent catalog update and continues", async () => {
+  const seen: string[] = [];
+  const slept: number[] = [];
+  let failures = 2;
+  const count = await runBootstrapStatements(
+    (sql) => {
+      seen.push(sql);
+      if (seen.length === 1 && failures > 0) {
+        failures--;
+        seen.pop();
+        return Promise.reject(concurrentUpdateError());
+      }
+      return Promise.resolve(null);
+    },
+    CFG,
+    { sleep: (ms) => { slept.push(ms); return Promise.resolve(); } },
+  );
+  // Every statement still applied exactly once, in order.
+  assertEquals(count, seen.length);
+  assertStringIncludes(seen[0], "CREATE ROLE anon");
+  // Backoff doubled between the two retries.
+  assertEquals(slept, [100, 200]);
+});
+
+Deno.test("runBootstrapStatements gives up after the bounded attempts", async () => {
+  let calls = 0;
+  let threw: unknown = null;
+  try {
+    await runBootstrapStatements(
+      () => { calls++; return Promise.reject(concurrentUpdateError()); },
+      CFG,
+      { sleep: () => Promise.resolve() },
+    );
+  } catch (e) {
+    threw = e;
+  }
+  assertEquals(calls, 5);
+  assertEquals(isConcurrentCatalogUpdate(threw), true);
+});
+
+Deno.test("runBootstrapStatements does not retry any other error", async () => {
+  let calls = 0;
+  let threw = false;
+  try {
+    await runBootstrapStatements(
+      () => { calls++; return Promise.reject(Object.assign(new Error("boom"), { code: "42501" })); },
+      CFG,
+      { sleep: () => Promise.resolve() },
+    );
+  } catch (_e) {
+    threw = true;
+  }
+  assertEquals(calls, 1);
+  assertEquals(threw, true);
+});
+
+Deno.test("redactStatement keeps passwords out of the retry log", () => {
+  const stmt = buildBootstrapStatements(CFG).find((s) => /\bPASSWORD\b/i.test(s));
+  if (!stmt) throw new Error("expected a password-bearing statement in the fixture");
+  const redacted = redactStatement(stmt);
+  assertEquals(redacted.toUpperCase().includes("PASSWORD"), false);
+  assertEquals(redacted.includes("m-pass"), false);
+  assertStringIncludes(redacted, "alp_pg_admin_user");
+  // Redaction never lengthens the statement, and every password-bearing
+  // statement in the fixture is covered, not just the first.
+  for (const sql of buildBootstrapStatements(CFG).filter((s) => /\bPASSWORD\b/i.test(s))) {
+    const r = redactStatement(sql);
+    assertEquals(r.toUpperCase().includes("PASSWORD"), false);
+    for (const secret of ["m-pass", "r-pass", "w-pass", "l-pass"]) {
+      assertEquals(r.includes(secret), false);
+    }
+  }
+  // Short, password-free statements survive intact.
+  assertEquals(redactStatement('GRANT ALL ON SCHEMA "portal" TO "x"'), 'GRANT ALL ON SCHEMA "portal" TO "x"');
 });
