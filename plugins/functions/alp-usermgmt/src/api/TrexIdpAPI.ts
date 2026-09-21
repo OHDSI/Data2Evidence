@@ -270,50 +270,11 @@ export class TrexIdpAPI {
       },
       body: JSON.stringify({ banned: !active }),
     })
-    if (res.ok) return
-
-    const body = await res.text()
-
-    // TEMPORARY, REMOVE WITH OHDSI/trex#330.
-    //
-    // trex's installSoftDeleteGuard makes findUserById return null for a banned
-    // user, and its admin handler looks the user up before acting -- so the one
-    // request that LIFTS a ban answers 404 for exactly the accounts it exists to
-    // reinstate, and deactivating a user is a one-way door. #330 fixes that at
-    // the source; until an image carries it, lift the ban directly.
-    //
-    // Only this direction and only on 404: banning still goes through the API,
-    // because that path also revokes outstanding refresh tokens and nothing here
-    // should reimplement that. Lifting a ban has no such side effects -- trex's
-    // own handler runs a single UPDATE for it -- so this is faithful, not a
-    // shortcut. When #330 ships the 404 stops happening and this becomes dead
-    // code; the revert is this block.
-    if (active && res.status === 404) {
-      await this.liftBanDirectly(idpUserId)
-      return
-    }
-
-    throw new Error(
-      `trex user ${active ? 'activation' : 'deactivation'} failed for ${idpUserId}: ` +
-        `${res.status} ${body}`,
-    )
-  }
-
-  /** @deprecated Scaffolding for OHDSI/trex#330; delete with the caller above. */
-  private async liftBanDirectly(idpUserId: string): Promise<void> {
-    const { default: knex } = await import('knex')
-    const { default: config } = await import('../db/knexfile-admin')
-    const db = knex(config)
-    try {
-      const updated = await db('user')
-        .withSchema('trexdb')
-        .where({ id: idpUserId })
-        .update({ banned: false, updatedAt: db.fn.now() })
-      if (updated === 0) {
-        throw new Error(`trex user activation failed for ${idpUserId}: no such user`)
-      }
-    } finally {
-      await db.destroy()
+    if (!res.ok) {
+      throw new Error(
+        `trex user ${active ? 'activation' : 'deactivation'} failed for ${idpUserId}: ` +
+          `${res.status} ${await res.text()}`,
+      )
     }
   }
 
