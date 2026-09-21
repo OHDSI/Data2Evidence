@@ -32,6 +32,16 @@ async function openDatasetCohorts(page) {
   throw new Error('Cohorts link did not appear for selected dataset within ~60s')
 }
 
+// The Cohorts pane hides the cohorts of other users until the "Shared" toggle is on.
+// The toggle goes back to off at each login, so set it before you look for a shared cohort.
+async function showSharedCohorts(page) {
+  const toggleInput = page.locator('#pane-left label.toggle-switch input[type="checkbox"]')
+  await toggleInput.waitFor({ state: 'attached' })
+  if (!(await toggleInput.isChecked())) {
+    await page.locator('#pane-left label.toggle-switch .slider').click()
+  }
+}
+
 test(TEST_NAME, async ({ page }) => {
   test.slow()
   await page.goto('/d2e/portal')
@@ -395,8 +405,9 @@ test(TEST_NAME, async ({ page }) => {
     await page.locator('input[name="password"]').click()
     await page.locator('input[name="password"]').fill('Updatepassword12345')
     await page.getByRole('button', { name: 'Sign in' }).click()
-    //Verify that the bookmark is visible
+    //Verify that the shared bookmark is visible to the second user
     await openDatasetCohorts(page)
+    await showSharedCohorts(page)
     await expect(page.getByText(NAME.patientListFilters)).toBeVisible()
     //Login as admin again
     await page.getByRole('link', { name: 'Account' }).click()
@@ -425,7 +436,7 @@ test(TEST_NAME, async ({ page }) => {
     await page.getByRole('button', { name: 'Sign in' }).click()
     //Verify that the bookmark is renamed
     await openDatasetCohorts(page)
-    await page.locator('#pane-left label div').click()
+    await showSharedCohorts(page)
     await expect(page.getByText(NAME.sharedFilter)).toBeVisible()
     //Delete the bookmark as admin
     await page.getByRole('link', { name: 'Account' }).click()
@@ -441,10 +452,7 @@ test(TEST_NAME, async ({ page }) => {
     //Delete the Shared saved filter
     await test.step('Delete Shared saved filter', async () => {
       await expect(page.getByText(NAME.sharedFilter)).toBeVisible()
-      await page
-        .locator('.item-card', { hasText: 'D2E Cohort Definition' })
-        .locator('.footer .icon-button[title="Delete Saved Filter"]')
-        .click()
+      await page.getByTitle('Delete Saved Filter').first().click()
       await page.getByRole('button', { name: 'Delete' }).click()
       await expect(page.getByText(NAME.sharedFilter)).not.toBeVisible()
     })
