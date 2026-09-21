@@ -49,7 +49,6 @@ class DICOMETLOptions(BaseModel):
     vocab_schema_name: str
     to_truncate: Optional[bool] = False
     dicom_files_abs_path: Optional[str] = "/app/dicom_files"
-    upload_files: Optional[bool] = False
     person_to_patient_mapping: Optional[PersonPatientMapping] = None
     ingest_eav_table: Optional[bool] = True
 
@@ -64,18 +63,3 @@ class DICOMETLOptions(BaseModel):
                 person_id_column_name="person_id",
                 patient_id_column_name="person_source_value"
             )
-
-
-class FileUploadRecord(BaseModel):
-    sop_instance_id: str
-    filepath: str
-    image_series_uid: str
-    image_occurrence_id: int
-    orthanc_instance_id: str
-    uploaded_filename: str
-
-
-class FileUploadResultType(BaseModel):
-    flow_run_id: str
-    task_run_id: str
-    record: list[FileUploadRecord]

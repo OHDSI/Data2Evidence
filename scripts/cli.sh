@@ -40,9 +40,6 @@ env=.env
 context=""
 demo=""
 minio=""
-dicom=""
-jupyter=""
-mlflow=""
 compose=""
 args=""
 services=""
@@ -52,8 +49,6 @@ while [[ $# -gt 0 ]]; do
         -d|--function-path) function_path="$2"; shift ;;
         -e|--demo) demo=--profile="demodb" ;;
         --minio) minio=--profile="minio" ;;
-        -i|--dicom) dicom=--profile="dicom" ;;
-        -j|--jupyter) jupyter=--profile="jupyter" ;;
         -c|--compose-file) compose="--file $2"; shift ;;
         -t|--docker-context) context="--context $2"; shift ;;
         -v|--version) version="$2"; shift ;;
@@ -61,7 +56,6 @@ while [[ $# -gt 0 ]]; do
         -n|--env-file) env="$2"; shift ;;
         -p|--port) PORT="$2"; shift ;;
         -s|--services) services="$2"; shift ;;
-        -m|--mlflow) mlflow=--profile="mlflow" ;;
         --hana) hana=--profile="hana" ;;
         --pull) pull=true;;
         *) if [[ -z ${cmd:-} ]]; then
@@ -98,7 +92,7 @@ else
   export PLUGINS_REGISTRY=${PLUGINS_REGISTRY:-https://pkgs.dev.azure.com/data2evidence/d2e/_packaging/stable/npm/registry/}
 fi
 
-dockerbasecmd="docker $context --log-level $DOCKER_LOG_LEVEL compose --file $node_modules_path/docker-compose.yml $demo $dicom $jupyter $mlflow $hana $dev $compose $args"
+dockerbasecmd="docker $context --log-level $DOCKER_LOG_LEVEL compose --file $node_modules_path/docker-compose.yml $demo $hana $dev $compose $args"
 
 generate_random_secret() {
   LC_ALL=C tr -dc A-Za-z0-9 </dev/urandom | head -c 40
@@ -295,8 +289,6 @@ EOF
             echo PG_SUPER_PASSWORD=$(random-password $DEFAULT_PASSWORD_LENGTH) >> $DOTENV_FILE
             echo PG_WRITE_PASSWORD=$(random-password $DEFAULT_PASSWORD_LENGTH) >> $DOTENV_FILE
             echo DEMO__DB_PASSWORD=$(random-password 6) >> $DOTENV_FILE
-            echo REDIS_PASSWORD=$(random-password $DEFAULT_PASSWORD_LENGTH) >> $DOTENV_FILE
-            echo DICOM__HEALTH_CHECK_PASSWORD=$(random-password $DEFAULT_PASSWORD_LENGTH) >> $DOTENV_FILE
             echo TLS__CADDY_DIRECTIVE=\'"$TLS__CADDY_DIRECTIVE"\' >> $DOTENV_FILE
             echo "SUPABASE_STORAGE_JWT_SECRET=$JWT_SECRET" >> $DOTENV_FILE
             echo "SUPABASE_STORAGE_JWT_TOKEN=$JWT_TOKEN" >> $DOTENV_FILE
@@ -330,11 +322,6 @@ EOF
     pull)
         # Legacy per-group flow images retired: flows run on the pixi process
         # worker, whose image is part of the regular compose pull below.
-        if [[ -n "$jupyter" ]]; then
-            cmd="docker pull --platform linux/amd64 ${DOCKER_IMAGE_PREFIX:-ghcr.io/ohdsi/}d2e-r-ohdsi-kernel:${DOCKER_TAG_NAME}"
-            echo . $cmd
-            $cmd
-        fi
         cmd="$dockerbasecmd pull"
         echo . ENV_TYPE=$ENV_TYPE CADDY__CONFIG=$CADDY__CONFIG PORT=$PORT $cmd
         ENV_TYPE=$ENV_TYPE CADDY__CONFIG=$CADDY__CONFIG PORT=$PORT $cmd
@@ -395,9 +382,6 @@ Commands:
 Options:
  -d, --function-path [PATH] Development mode. [PATH] is the path to the functions plugin (e.g. ./plugins/functions)
  -e, --demo                 Include demo database
- -i, --dicom                Include DICOM Server
- -j, --jupyter              Include jupyter
- -m, --mlflow               Include mlflow
  -c, --compose-file [PATH]  [PATH] is path to an additional docker compose file
  -t, --docker-context [CONTEXT] Use docker context
  -v, --version [VERSION]    Version of the d2e services to use

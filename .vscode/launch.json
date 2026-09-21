@@ -20,23 +20,6 @@
       "type": "node"
     },
     {
-      "name": "alp-pg-mgmt",
-      "type": "node",
-      "request": "attach",
-      "restart": true,
-      "stopOnEntry": true,
-      "port": 9211,
-      "address": "localhost",
-      "localRoot": "${workspaceFolder}/services/alp-pg-management/app",
-      "remoteRoot": "/home/docker/app",
-      "protocol": "inspector",
-      "sourceMaps": true,
-      "resolveSourceMapLocations": [
-        "${workspaceFolder}/**",
-        "!**/node_modules/**"
-      ]
-    },
-    {
       "name": "hades-local",
       "type": "debugpy",
       "request": "attach",

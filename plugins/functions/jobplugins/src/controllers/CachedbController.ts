@@ -73,7 +73,14 @@ export class CachedbController {
         snapshotSchemaName = cacheDataset.schemaName;
       }
 
-      const cacheId = resolveCacheWriteTarget(dataset, cacheDataset);
+      // params.cacheId, when present, overrides the derived write target. Portal sends it
+      // explicitly for a webapi dataset: bao's cohort handlers in trex (execute-circe-handler,
+      // count-patients-handler, count-inclusion-handler) hardcode the cache catalog to
+      // sanitizeIdForCacheId(dataset.id) with no override, but the row's stored cache_id does
+      // not always equal that (e.g. a dataset transformed from type 'source', or any legacy
+      // row) — so deriving the target here would write to the wrong catalog. See fix for the
+      // Critical naming defect found in whole-branch review of #2877's follow-through.
+      const cacheId = params?.cacheId || resolveCacheWriteTarget(dataset, cacheDataset);
 
       let snapshotCopyConfig;
       if (params.snapshotCopyConfig) {

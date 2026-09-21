@@ -19,7 +19,47 @@ type PaContextMessage = {
 }
 
 let currentToken = ''
+let currentDatasetId = ''
 let booted = false
+
+const publishContext = (data: PaContextMessage) => {
+  ;(window as any).__MRI_PORTAL_CONTEXT__ = {
+    getToken: async () => currentToken,
+    datasetId: currentDatasetId,
+    releaseId: data.releaseId || '',
+    username: data.username || 'admin',
+    locale: data.locale || 'en',
+    qeSvcUrl: data.qeSvcUrl || window.location.origin,
+  }
+  // Serves alp-terminology-open, which only the portal answers otherwise.
+  void import('./utils/atlasTerminologyBridge').then(m => m.installAtlasTerminologyBridge())
+  void import('./main')
+}
+
+// Atlas can deliver the first context before its data source list has loaded, so
+// the dataset arrives in a later message. Booting on that first context leaves the
+// app without one - config requests are skipped and never retried - so hold for a
+// context that carries a dataset, but not forever: a deployment that genuinely has
+// none must still start.
+const DATASET_WAIT_MS = 10000
+
+let latest: PaContextMessage | null = null
+
+const boot = () => {
+  if (booted || !latest) return
+  booted = true
+  if (waitTimer !== null) {
+    clearTimeout(waitTimer)
+    waitTimer = null
+  }
+  currentDatasetId = latest.datasetId || ''
+  publishContext(latest)
+}
+
+// The wait cannot depend on another message arriving: contexts are only re-posted
+// on a five minute token refresh, so a deployment with no dataset would sit blank
+// until then.
+let waitTimer: ReturnType<typeof setTimeout> | null = setTimeout(boot, DATASET_WAIT_MS)
 
 window.addEventListener('message', (event: MessageEvent<PaContextMessage>) => {
   if (event.origin !== window.location.origin) return
@@ -28,17 +68,23 @@ window.addEventListener('message', (event: MessageEvent<PaContextMessage>) => {
 
   currentToken = data.token || ''
 
-  if (booted) return
-  booted = true
-  ;(window as any).__MRI_PORTAL_CONTEXT__ = {
-    getToken: async () => currentToken,
-    datasetId: data.datasetId || '',
-    releaseId: data.releaseId || '',
-    username: data.username || 'admin',
-    locale: data.locale || 'en',
-    qeSvcUrl: data.qeSvcUrl || window.location.origin,
+  if (booted) {
+    // A dataset that arrives after boot is announced the way the app already
+    // expects to hear about it.
+    if (data.datasetId && data.datasetId !== currentDatasetId) {
+      currentDatasetId = data.datasetId
+      const context = (window as any).__MRI_PORTAL_CONTEXT__
+      if (context) context.datasetId = currentDatasetId
+      window.dispatchEvent(
+        new CustomEvent('custom-props-changed', { detail: { datasetId: currentDatasetId } })
+      )
+    }
+    return
   }
-  void import('./main')
+
+  latest = data
+  if (!data.datasetId) return
+  boot()
 })
 
 window.parent?.postMessage({ type: 'pa-ready' }, window.location.origin)

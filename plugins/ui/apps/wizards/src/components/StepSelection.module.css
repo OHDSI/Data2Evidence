@@ -6,9 +6,66 @@
   box-sizing: border-box;
 }
 
+.atlasContainer {
+  max-width: none;
+  margin: 0;
+  padding: 20px 32px 32px;
+}
+
+/* Atlas currently appends analysis plugin tabs after its built-in tabs. */
+:global(.analysis-hub__tabs-rail) {
+  border-bottom-color: #ddd;
+}
+
+:global(.analysis-hub__tabs-rail .v-tabs) {
+  height: 52px;
+}
+
+:global(.analysis-hub__tabs-rail .v-tab[value="plugin:wizards:wizards"]) {
+  order: -1;
+}
+
+:global(.analysis-hub__tabs-rail .v-tab--selected .v-tab__slider) {
+  height: 4px;
+  background: #000080;
+}
+
+/* Keep transitions aligned with the Wizard tab's visual first position. */
+:global(
+  .analysis-hub .v-window__container:has(.v-window-x-reverse-transition-leave-active .plugin-parcel-outlet)
+    .v-window-x-reverse-transition-enter-active
+) {
+  animation: atlasWizardEnterFromRight 300ms cubic-bezier(0.25, 0.8, 0.5, 1);
+}
+
+:global(.analysis-hub .v-window-x-reverse-transition-leave-to:has(.plugin-parcel-outlet)) {
+  transform: translateX(-100%);
+}
+
+:global(.analysis-hub .v-window-x-transition-enter-from:has(.plugin-parcel-outlet)) {
+  transform: translateX(-100%);
+}
+
+:global(
+  .analysis-hub .v-window__container:has(.v-window-x-transition-enter-active .plugin-parcel-outlet)
+    .v-window-x-transition-leave-to
+) {
+  transform: translateX(100%);
+}
+
+@keyframes atlasWizardEnterFromRight {
+  from {
+    transform: translateX(100%);
+  }
+
+  to {
+    transform: translateX(0);
+  }
+}
+
 .header {
   margin-top: 20px;
-  margin-bottom: 48px;
+  margin-bottom: 24px;
 }
 
 .header h2 {
@@ -21,16 +78,276 @@
   color: #666;
 }
 
+.atlasIntro {
+  margin: 0 0 20px;
+  color: #222;
+  font-size: 16px;
+  line-height: 1.5;
+}
+
 .progress {
   margin: 0;
   color: #666;
   font-size: 14px;
 }
 
+.toolbar {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 20px;
+}
+
+.searchBox {
+  display: flex;
+  align-items: center;
+  flex: 1 1 480px;
+  max-width: 560px;
+  height: 48px;
+  border: 1px solid #b7b7b7;
+  border-radius: 4px;
+  background: #fff;
+  box-sizing: border-box;
+}
+
+.searchBox:focus-within {
+  border-color: #000080;
+  box-shadow: 0 0 0 1px #000080;
+}
+
+.searchBox input {
+  width: 100%;
+  height: 100%;
+  padding: 0 14px 0 6px;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: #222;
+  font: inherit;
+}
+
+.searchBox input::placeholder {
+  color: #999;
+}
+
+.searchIcon {
+  flex: 0 0 auto;
+  width: 24px;
+  height: 24px;
+  margin-left: 14px;
+  fill: none;
+  stroke: #777;
+  stroke-width: 2;
+  stroke-linecap: round;
+}
+
+.toolbarActions {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.viewToggle {
+  display: flex;
+  height: 48px;
+  padding: 2px;
+  border: 1px solid #c8cae8;
+  border-radius: 8px;
+  background: #fff;
+  box-sizing: border-box;
+}
+
+.viewButton,
+.viewButtonActive {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 42px;
+  padding: 0;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: #000080;
+  cursor: pointer;
+}
+
+.viewButtonActive {
+  background: #000080;
+  color: #fff;
+}
+
+.viewButton:focus-visible,
+.viewButtonActive:focus-visible {
+  outline: 2px solid #000080;
+  outline-offset: 2px;
+}
+
+.viewButton svg,
+.viewButtonActive svg {
+  width: 22px;
+  height: 22px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.sourceField {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.sourceSelector {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: min(100%, 260px);
+  min-height: 48px;
+  border: 1px solid #b7b7b7;
+  border-radius: 8px;
+  background: #fff;
+  box-sizing: border-box;
+}
+
+.sourceSelector:focus-within {
+  border-color: #000080;
+  box-shadow: 0 0 0 1px #000080;
+}
+
+.sourceSelector:has(.sourceControl)::after {
+  position: absolute;
+  right: 16px;
+  width: 8px;
+  height: 8px;
+  border-right: 2px solid #595757;
+  border-bottom: 2px solid #595757;
+  content: "";
+  pointer-events: none;
+  transform: translateY(-2px) rotate(45deg);
+}
+
+.sourceLabel {
+  position: absolute;
+  top: -9px;
+  left: 42px;
+  padding: 0 6px;
+  background: #fff;
+  color: #666;
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.sourceIcon {
+  flex: 0 0 auto;
+  width: 24px;
+  height: 24px;
+  margin-left: 14px;
+  fill: #666;
+  stroke: #666;
+  stroke-width: 1.2;
+}
+
+.sourceControl {
+  width: 100%;
+  min-width: 0;
+  height: 46px;
+  padding: 8px 38px 6px 10px;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: #222;
+  font: inherit;
+  cursor: pointer;
+  appearance: none;
+}
+
+.sourceControl:disabled {
+  color: #777;
+  cursor: default;
+}
+
+.sourceSelectorReadOnly {
+  width: 220px;
+}
+
+.sourceValue {
+  display: flex;
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 46px;
+  align-items: center;
+  padding: 8px 14px 6px 10px;
+  overflow: hidden;
+  color: #222;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  box-sizing: border-box;
+}
+
+.sourceError {
+  color: #c00;
+  font-size: 13px;
+}
+
 .grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
   gap: 16px;
+}
+
+.list {
+  width: 100%;
+}
+
+.listHeader,
+.listRow {
+  display: grid;
+  grid-template-columns: minmax(220px, 320px) minmax(0, 1fr);
+  column-gap: 24px;
+  align-items: center;
+}
+
+.listHeader {
+  min-height: 40px;
+  padding: 0 10px;
+  border-bottom: 1px solid #ddd;
+  color: #555;
+  font-weight: 600;
+  box-sizing: border-box;
+}
+
+.listRow {
+  width: 100%;
+  min-height: 70px;
+  padding: 12px 10px;
+  border: 0;
+  border-bottom: 1px solid #ddd;
+  background: #fff;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.listRow:hover {
+  background: #faf8f8;
+}
+
+.listRow:focus-visible {
+  outline: 2px solid #000080;
+  outline-offset: -2px;
+}
+
+.listName {
+  color: #000080;
+  font-weight: 600;
+}
+
+.listDescription {
+  line-height: 1.45;
 }
 
 .card {
@@ -41,6 +358,47 @@
   transition: all 0.2s ease;
   background: #fff;
   min-height: 250px;
+}
+
+.atlasContainer .grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 20px;
+}
+
+.atlasContainer .card {
+  min-height: 250px;
+  padding: 28px;
+  border-color: #efebed;
+  border-radius: 16px;
+  background: #faf8f8;
+  box-shadow: none;
+}
+
+.atlasContainer .card:hover {
+  border-color: #aeb4df;
+  box-shadow: 0 2px 8px rgba(0, 0, 128, 0.08);
+}
+
+.atlasContainer .cardTitle {
+  color: #000080;
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.atlasContainer .cardDescription {
+  color: #626262;
+  font-size: 17px;
+  line-height: 1.55;
+}
+
+.atlasContainer .listHeader {
+  min-height: 48px;
+  padding: 0 8px;
+}
+
+.atlasContainer .listRow {
+  min-height: 72px;
+  padding: 14px 8px;
 }
 
 .card:hover {
@@ -95,4 +453,47 @@
 .retryButton:focus {
   outline: 2px solid #0066cc;
   outline-offset: 2px;
+}
+
+@media (max-width: 800px) {
+  .toolbar {
+    flex-direction: column;
+  }
+
+  .searchBox {
+    flex-basis: auto;
+    width: 100%;
+    max-width: none;
+  }
+
+  .toolbarActions {
+    justify-content: space-between;
+    width: 100%;
+  }
+
+  .listHeader,
+  .listRow {
+    grid-template-columns: 1fr;
+    row-gap: 8px;
+  }
+
+  .listHeader span:last-child {
+    display: none;
+  }
+}
+
+@media (max-width: 1100px) {
+  .atlasContainer .grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 700px) {
+  .atlasContainer {
+    padding-inline: 20px;
+  }
+
+  .atlasContainer .grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }

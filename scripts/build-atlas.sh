@@ -60,6 +60,14 @@ for p in "${SUBPLUGINS[@]}"; do
   fi
 done
 
+DQ_DIR="$ATLAS_DIR/subplugins/data-quality"
+echo "[build-atlas] Building sub-plugin: data-quality ($DQ_DIR)"
+( cd "$DQ_DIR" && npm install && npm run build )
+if [ ! -f "$DQ_DIR/dist/index.system.js" ]; then
+  echo "[build-atlas] ERROR: data-quality did not produce dist/index.system.js" >&2
+  exit 1
+fi
+
 echo "[build-atlas] Building the Atlas plugin (assembles Atlas3 + sub-plugin dists)..."
 ( cd "$ATLAS_DIR" && npm install && npm run build )
 
@@ -80,10 +88,27 @@ mkdir -p "$PA_DEST"
 cp -r "$PA_DIR/dist-atlas/." "$PA_DEST/"
 echo "[build-atlas] Staged patient-analytics at /atlas/plugins/patient-analytics"
 
+# Datasources is a third UI-monorepo Atlas3 sub-plugin.
+DS_DIR="plugins/ui/apps/datasource"
+DS_OUT="$DS_DIR/dist-atlas"
+echo "[build-atlas] Building sub-plugin: datasource ($DS_DIR)"
+( cd "$DS_DIR" && npm install --workspaces=false --legacy-peer-deps && npm run build )
+if [ ! -f "$DS_OUT/index.system.js" ]; then
+  echo "[build-atlas] ERROR: datasource did not produce $DS_OUT/index.system.js" >&2
+  exit 1
+fi
+DS_DEST="$ATLAS_DIR/resources/atlas/plugins/datasource"
+rm -rf "$DS_DEST"
+mkdir -p "$DS_DEST"
+cp -r "$DS_OUT/." "$DS_DEST/"
+echo "[build-atlas] Staged datasource at /atlas/plugins/datasource"
+
 echo "[build-atlas] Packing Atlas plugin into $ARTIFACTS_DIR ..."
 mkdir -p "$ARTIFACTS_DIR"
 rm -f "$ARTIFACTS_DIR"/data2evidence-atlas-*.tgz
-TARBALL="$(cd "$ATLAS_DIR" && npm pack --silent)"
+# --silent quiets npm itself but not the prepack hook, whose verify-plugins
+# output would otherwise end up in $TARBALL. The filename is the last line.
+TARBALL="$(cd "$ATLAS_DIR" && npm pack --silent | tail -n 1)"
 mv "$ATLAS_DIR/$TARBALL" "$ARTIFACTS_DIR/"
 echo "[build-atlas] Staged $ARTIFACTS_DIR/$TARBALL"
 echo "[build-atlas] Done. Build the trex image to bake it in (docker compose build trex)."

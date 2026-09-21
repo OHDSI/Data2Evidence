@@ -12,6 +12,7 @@ import { createPortalContextStore } from './stores/portalContext'
 import { initGlobalsOnce, registerDirectivesAndComponents } from './bootstrap/registerGlobals'
 import type { PortalContextState } from './types/portal-props'
 import { getPortalContextBootstrap, resolvePortalContextProps } from './bootstrap/portalContextBootstrap'
+import { installPortalPropsListener } from './bootstrap/portalPropsListener'
 
 let app: Component
 const searchParams = new URLSearchParams(window.location.search)
@@ -38,7 +39,11 @@ app.use(createStore())
 
 const bootstrap = getPortalContextBootstrap()
 const portalContext: PortalContextState = resolvePortalContextProps(searchParams, import.meta.env, bootstrap)
-createPortalContextStore(portalContext, pinia)
+const portalContextStore = createPortalContextStore(portalContext, pinia)
+
+// The single-spa lifecycle installs this for the portal; the standalone and Atlas
+// iframe entries need it too, or a dataset resolved after boot never lands.
+installPortalPropsListener(portalContextStore)
 
 app.use(vuetify)
 registerDirectivesAndComponents(app as any)

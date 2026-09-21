@@ -16,7 +16,8 @@
     "dev": "vite"
   },
   "dependencies": {
-    "@ohdsi/atlas3": "0.1.0-20260817035540-9baa99a",
+    "@data2evidence/atlas-data-quality": "file:./subplugins/data-quality",
+    "@ohdsi/atlas3": "0.1.0-20260823112941-269a00a",
     "@ohdsi/network-plugin": "file:./trex-notebook/plugins/network",
     "@ohdsi/notebook-plugin": "file:./trex-notebook/plugins/notebook-plugin",
     "@ohdsi/pythia-plugin": "0.1.0-develop.18.g80bf4aa",
@@ -27,6 +28,9 @@
     "react-dom": "^18.2.0",
     "single-spa-react": "^6.0.0",
     "vue": "^3.5.0"
+  },
+  "overrides": {
+    "react-data-grid": "7.0.0-beta.48"
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^5.0.0",

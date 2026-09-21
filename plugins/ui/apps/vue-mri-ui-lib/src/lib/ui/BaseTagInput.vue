@@ -35,7 +35,8 @@
       :clear-on-select="true"
       open-direction="bottom"
       name="multiselect"
-      :showNoOptions="false"
+      :showNoOptions="showEmptyState"
+      :showNoResults="showEmptyState"
     >
       <template v-slot:option="props">{{ formatCustomOption(props.option) }}</template>
       <template v-slot:clear>
@@ -71,6 +72,12 @@
             ></i>
           </span>
         </div>
+      </template>
+      <template v-slot:noOptions>
+        <span class="multiselect__empty-state">{{ emptyStateMessage }}</span>
+      </template>
+      <template v-slot:noResult>
+        <span class="multiselect__empty-state">{{ emptyStateMessage }}</span>
       </template>
       <template v-slot:caret="{ toggle }">
         <span class="arrow" @mousedown.prevent.stop="toggle">
@@ -214,6 +221,19 @@ export default {
       }
 
       return updatedList
+    },
+    showEmptyState() {
+      return this.componentType !== 'concept'
+    },
+    emptyStateMessage() {
+      const status = this.domainValues.loadedStatus
+      if (this.domainValues.isLoading || !status) {
+        return this.texts.loadingSuggestions
+      }
+      if (status === 'TOO_MANY_RESULTS') {
+        return this.texts.tooManyValues
+      }
+      return this.texts.noSuggestions
     },
     selectedValues() {
       return this.formatValues(this.value)

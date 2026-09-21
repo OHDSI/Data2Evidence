@@ -252,11 +252,9 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/7b/44/4e421b96b67b2daff264473f7465db72fbdf36a07e05494f50300cc7b0c6/rfc3339_validator-0.1.4-py2.py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/7b/a2/70fd4432b924684c372df8b0a45708c36c057ef3596c9eb53e0a806b980b/soundfile-0.14.0-py2.py3-none-manylinux_2_28_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/7c/28/693e1d9ebf72baa062ded80d837a035b86ce75eda5a269379e9e2b1008a8/responses-0.26.2-py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/7c/67/f9b49471b1a4010054de62c5820952522fc4f7d5903b0af977fe9960e834/orthanc_api_client-0.15.3-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/7e/f5/f66802a942d491edb555dd61e3a9961140fd64c90bce1eafd741609d334d/httpcore-1.0.9-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/7f/3e/5db95bcf282c52709639744ca2a8b149baccf648e39c8cc87553df9eae0c/urllib3-2.7.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/80/ab/11a76c1e2126084fde2639514f24e6111b789b0bfa4fc6264a8975c7e1f1/zict-3.0.0-py2.py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/81/69/297302c5f5f59c862faa31e6cb9a4cd74721cd1e052b38e464c5b402df8b/StrEnum-0.4.15-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/81/c4/34e93fe5f5429d7570ec1fa436f1986fb1f00c3e0f43a589fe2bbcd22c3f/pytz-2025.2-py2.py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/84/21/a35af28dcc61f37ed850a2d64c65c701321dfbf25085e469d5559360cbbf/pillow-12.3.0-cp312-cp312-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/84/4a/98da8930ab109c73d9a5d13782a9ebb81ea8c111f6d534a567b71d23e52b/google_cloud_core-2.6.0-py3-none-any.whl
@@ -5318,19 +5316,6 @@ packages:
   - tomli ; python_full_version < '3.11' and extra == 'tests'
   - tomli-w ; extra == 'tests'
   requires_python: '>=3.8'
-- pypi: https://files.pythonhosted.org/packages/7c/67/f9b49471b1a4010054de62c5820952522fc4f7d5903b0af977fe9960e834/orthanc_api_client-0.15.3-py3-none-any.whl
-  name: orthanc-api-client
-  version: 0.15.3
-  sha256: 07e0fa5eff631765ea859eb31824db2584530e3fb2eb10fee5de8e29cd925529
-  requires_dist:
-  - requests>=2.31.0
-  - pydicom>=2.4.4
-  - strenum>=0.4.15
-  - check-manifest ; extra == 'dev'
-  - pytest ; extra == 'dev'
-  - coverage ; extra == 'test'
-  - pytest ; extra == 'test'
-  requires_python: '>=3.8,<4'
 - pypi: https://files.pythonhosted.org/packages/7e/f5/f66802a942d491edb555dd61e3a9961140fd64c90bce1eafd741609d334d/httpcore-1.0.9-py3-none-any.whl
   name: httpcore
   version: 1.0.9
@@ -5385,20 +5370,6 @@ packages:
   version: 3.0.0
   sha256: 5796e36bd0e0cc8cf0fbc1ace6a68912611c1dbd74750a3f3026b9b9d6a327ae
   requires_python: '>=3.8'
-- pypi: https://files.pythonhosted.org/packages/81/69/297302c5f5f59c862faa31e6cb9a4cd74721cd1e052b38e464c5b402df8b/StrEnum-0.4.15-py3-none-any.whl
-  name: strenum
-  version: 0.4.15
-  sha256: a30cda4af7cc6b5bf52c8055bc4bf4b2b6b14a93b574626da33df53cf7740659
-  requires_dist:
-  - sphinx ; extra == 'docs'
-  - sphinx-rtd-theme ; extra == 'docs'
-  - myst-parser[linkify] ; extra == 'docs'
-  - twine ; extra == 'release'
-  - pytest ; extra == 'test'
-  - pytest-black ; extra == 'test'
-  - pytest-cov ; extra == 'test'
-  - pytest-pylint ; extra == 'test'
-  - pylint ; extra == 'test'
 - pypi: https://files.pythonhosted.org/packages/81/c4/34e93fe5f5429d7570ec1fa436f1986fb1f00c3e0f43a589fe2bbcd22c3f/pytz-2025.2-py2.py3-none-any.whl
   name: pytz
   version: '2025.2'

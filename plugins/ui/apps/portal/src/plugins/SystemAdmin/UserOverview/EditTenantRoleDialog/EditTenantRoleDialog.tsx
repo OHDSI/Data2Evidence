@@ -36,9 +36,9 @@ const EditTenantRoleDialog: FC<EditTenantRoleDialogProps> = ({
   // Seed the editable role selection once each time the dialog opens for a user.
   // A background refresh of the user list hands down new array references for
   // these props; re-seeding on every such change would discard the admin's
-  // in-progress selection and leave Save permanently disabled. The ref guard
-  // ensures we only seed on open (or when switching user), while hasChanges()
-  // and handleSave keep reading the latest props so the baseline stays current.
+  // in-progress selection. The ref guard ensures we only seed on open (or when
+  // switching user), while hasChanges() and handleSave keep reading the latest
+  // props so the baseline stays current.
   const seededForUserId = useRef<string | undefined>(undefined);
   useEffect(() => {
     if (!open) {
@@ -116,49 +116,6 @@ const EditTenantRoleDialog: FC<EditTenantRoleDialogProps> = ({
     [ctxUser, setUserGroup]
   );
 
-  const handleSave = useCallback(async () => {
-    if (!user) return;
-
-    try {
-      setLoading(true);
-      await saveTenantRoles(user);
-      await saveDataAdminRoles(user);
-      await saveAlpUserRoles(user);
-      await updateCurrentUserGroups(user.userId);
-
-      handleClose("success");
-    } catch (err: any) {
-      setFeedback({ type: "error", message: err.message });
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  }, [user, saveTenantRoles, saveDataAdminRoles, saveAlpUserRoles, updateCurrentUserGroups, handleClose]);
-
-  const handleRoleChange = useCallback((event: ChangeEvent<HTMLInputElement>, role: string) => {
-    if (event.target.checked) {
-      setNewTenantRoles((newTenantRoles) => [...newTenantRoles, role]);
-    } else {
-      setNewTenantRoles((newTenantRoles) => newTenantRoles.filter((r) => r !== role));
-    }
-  }, []);
-
-  const handleDataAdminRoleChange = useCallback((event: ChangeEvent<HTMLInputElement>, role: string) => {
-    if (event.target.checked) {
-      setNewDataAdminRoles((newDataAdminRoles) => [...newDataAdminRoles, role]);
-    } else {
-      setNewDataAdminRoles((newDataAdminRoles) => newDataAdminRoles.filter((r) => r !== role));
-    }
-  }, []);
-
-  const handleAlpRoleChange = useCallback((event: ChangeEvent<HTMLInputElement>, role: string) => {
-    if (event.target.checked) {
-      setNewAlpRoles((newAlpRoles) => [...newAlpRoles, role]);
-    } else {
-      setNewAlpRoles((newAlpRoles) => newAlpRoles.filter((r) => r !== role));
-    }
-  }, []);
-
   const hasChanges = useCallback((): boolean => {
     const changes1 = getRoleChanges(Object.keys(TENANT_ROLES), user?.roles || [], newTenantRoles);
 
@@ -174,6 +131,70 @@ const EditTenantRoleDialog: FC<EditTenantRoleDialogProps> = ({
       changes3.withdrawRoles.length > 0
     );
   }, [user, newTenantRoles, dataAdminUserRoles, newDataAdminRoles, alpUserRoles, newAlpRoles]);
+
+  const handleSave = useCallback(async () => {
+    if (!user) return;
+
+    // No changes: keep the dialog open and show a banner instead of saving.
+    // Omitting `type` renders the banner with the Dialog/Alert default "info" severity.
+    if (!hasChanges()) {
+      setFeedback({ message: getText(i18nKeys.EDIT_TENANT_ROLE_DIALOG__NO_CHANGES) });
+      return;
+    }
+
+    try {
+      setLoading(true);
+      await saveTenantRoles(user);
+      await saveDataAdminRoles(user);
+      await saveAlpUserRoles(user);
+      await updateCurrentUserGroups(user.userId);
+
+      handleClose("success");
+    } catch (err: any) {
+      // Keep the dialog open with the admin's selection intact so they can retry.
+      setFeedback({ type: "error", message: getText(i18nKeys.EDIT_TENANT_ROLE_DIALOG__ERROR) });
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  }, [
+    user,
+    hasChanges,
+    saveTenantRoles,
+    saveDataAdminRoles,
+    saveAlpUserRoles,
+    updateCurrentUserGroups,
+    handleClose,
+    getText,
+    i18nKeys,
+  ]);
+
+  const handleRoleChange = useCallback((event: ChangeEvent<HTMLInputElement>, role: string) => {
+    setFeedback({});
+    if (event.target.checked) {
+      setNewTenantRoles((newTenantRoles) => [...newTenantRoles, role]);
+    } else {
+      setNewTenantRoles((newTenantRoles) => newTenantRoles.filter((r) => r !== role));
+    }
+  }, []);
+
+  const handleDataAdminRoleChange = useCallback((event: ChangeEvent<HTMLInputElement>, role: string) => {
+    setFeedback({});
+    if (event.target.checked) {
+      setNewDataAdminRoles((newDataAdminRoles) => [...newDataAdminRoles, role]);
+    } else {
+      setNewDataAdminRoles((newDataAdminRoles) => newDataAdminRoles.filter((r) => r !== role));
+    }
+  }, []);
+
+  const handleAlpRoleChange = useCallback((event: ChangeEvent<HTMLInputElement>, role: string) => {
+    setFeedback({});
+    if (event.target.checked) {
+      setNewAlpRoles((newAlpRoles) => [...newAlpRoles, role]);
+    } else {
+      setNewAlpRoles((newAlpRoles) => newAlpRoles.filter((r) => r !== role));
+    }
+  }, []);
 
   return (
     <Dialog
@@ -232,13 +253,7 @@ const EditTenantRoleDialog: FC<EditTenantRoleDialogProps> = ({
           block
           disabled={loading}
         />
-        <Button
-          text={getText(i18nKeys.EDIT_TENANT_ROLE_DIALOG__SAVE)}
-          onClick={handleSave}
-          block
-          loading={loading}
-          disabled={!hasChanges()}
-        />
+        <Button text={getText(i18nKeys.EDIT_TENANT_ROLE_DIALOG__UPDATE)} onClick={handleSave} block loading={loading} />
       </div>
     </Dialog>
   );

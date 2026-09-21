@@ -102,7 +102,8 @@ if (existsSync(landingImageSrc)) {
 //  - login-guard.js: silent-SSO guard; runs first, blocks the WebAPI HS256 fallback.
 //  - user-link.js: routes the navbar user menu to the d2e portal account page.
 //  - token-keeper.js: refreshes the Logto bearerToken before expiry.
-const headScripts = ['login-guard.js', 'user-link.js', 'token-keeper.js'];
+//  - analysis-default.js: opens the Wizard when entering the Analysis hub.
+const headScripts = ['login-guard.js', 'user-link.js', 'token-keeper.js', 'analysis-default.js'];
 let indexHtml = readFileSync(join(resourcesDir, 'index.html'), 'utf8');
 let indexChanged = false;
 for (const script of headScripts) {
@@ -150,6 +151,7 @@ const PLUGINS = [
   { pkg: '@ohdsi/notebook-plugin', id: 'notebook-plugin', repoints: [] },
   { pkg: '@ohdsi/network-plugin', id: 'network-plugin', repoints: [] },
   { pkg: '@ohdsi/studies-plugin', id: 'studies-plugin', repoints: [] },
+  { pkg: '@data2evidence/atlas-data-quality', id: 'data-quality', repoints: [] },
 ];
 
 for (const { pkg, id, repoints } of PLUGINS) {

@@ -50,7 +50,6 @@ jobs:
       plugins_tag: ${{ steps.tag.outputs.plugins_tag }}
       is_pr_or_mg: ${{ steps.tag.outputs.is_pr_or_mg }}
       changes_src: ${{ steps.file_changes.outputs.src }}
-      changes_rkernel: ${{ steps.file_changes.outputs.rkernel }}
       changes_dataflow: ${{ steps.file_changes.outputs.dataflow }}
       changes_plugins: ${{ steps.file_changes.outputs.plugins }}
       changes_http_tests: ${{ steps.file_changes.outputs.http_tests }}
@@ -65,6 +64,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           submodules: recursive
+
 
       - id: tag
         run: |
@@ -141,13 +141,6 @@ jobs:
               - "plugins/flows/**"
               - "services/alp-dataflow-gen-worker/**"
               - ".github/workflows/docker-build-push.yaml"
-            rkernel:
-              - "services/enterprise-gateway/CustomKernelManager/**"
-              - "services/enterprise-gateway/kernels/**"
-              - "services/enterprise-gateway/r-strategus-lib/**"
-              - "plugins/flows/hades/renv.lock"
-              - "plugins/flows/_shared_flow_utils/postgresql-42.3.1.jar"
-              - ".github/workflows/docker-build-push.yaml"
             plugins:
               - "plugins/flows/**"
               - "package.json"
@@ -169,7 +162,6 @@ jobs:
               - "plugins/functions/query-gen-svc/**"
               - "services/mri-db/**"
               - "services/alp-logto/**"
-              - "services/alp-pg-management/**"
               - "services/trex/**"
               - "package.json"
               - "docker-compose.yml"
@@ -177,6 +169,12 @@ jobs:
               - "scripts/**"
               - "tests/backend_integration_tests/**"
               - ".github/workflows/docker-build-push.yaml"
+              # The reusable workflows these jobs actually run, and the cache
+              # flow setuphttptestenv now depends on: without these, a PR that
+              # only edits them skips the very jobs it changes.
+              - ".github/workflows/_test-http-duckdb.yml"
+              - ".github/workflows/_test-regression.yml"
+              - "plugins/flows/base/create_cachedb_file_plugin/**"
             ui:
               - "plugins/ui/**"
               - ".github/workflows/docker-build-push.yaml"
@@ -200,7 +198,7 @@ jobs:
       contains(github.base_ref, 'release/') ||
       github.event_name == 'workflow_dispatch' ||
       github.event_name == 'merge_group' ||
-      (github.event_name == 'pull_request' && (needs.setup.outputs.changes_src == 'true' || needs.setup.outputs.changes_rkernel == 'true' || needs.setup.outputs.changes_plugins == 'true' || needs.setup.outputs.changes_e2e == 'true'))
+      (github.event_name == 'pull_request' && (needs.setup.outputs.changes_src == 'true' || needs.setup.outputs.changes_plugins == 'true' || needs.setup.outputs.changes_e2e == 'true'))
     runs-on: ${{ needs.setup.outputs.random_runner }}
     env:
       RUN_TAG: ${{ needs.setup.outputs.run_tag }}
@@ -211,22 +209,15 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - AZ_REG_REPOSITORY: d2e-pg-mgmt-init
-            DOCKER_BUILD_FILE_PATH: ./services/alp-pg-management/Dockerfile
-            DOCKER_BUILD_CONTEXT_PATH: ./services/alp-pg-management
           - AZ_REG_REPOSITORY: d2e-logto
             DOCKER_BUILD_FILE_PATH: ./services/alp-logto/Dockerfile
             DOCKER_BUILD_CONTEXT_PATH: ./services/alp-logto
           - AZ_REG_REPOSITORY: d2e-logto-post-init
             DOCKER_BUILD_FILE_PATH: ./services/alp-logto/post-init/Dockerfile
             DOCKER_BUILD_CONTEXT_PATH: ./services/alp-logto/post-init
-          - AZ_REG_REPOSITORY: d2e-enterprise-gateway
-            DOCKER_BUILD_FILE_PATH: ./services/enterprise-gateway/Dockerfile
-            DOCKER_BUILD_CONTEXT_PATH: ./services/enterprise-gateway
-          - AZ_REG_REPOSITORY: d2e-r-ohdsi-kernel
-            DOCKER_BUILD_FILE_PATH: ./services/enterprise-gateway/kernels/R_ohdsi_docker/Dockerfile
-            DOCKER_BUILD_CONTEXT_PATH: .
-            build_disable: ${{ (needs.setup.outputs.changes_rkernel != 'true') && 'true' || 'false' }}
+          - AZ_REG_REPOSITORY: d2e-dataflow-gen
+            DOCKER_BUILD_FILE_PATH: ./services/alp-dataflow-gen/Dockerfile
+            DOCKER_BUILD_CONTEXT_PATH: ./services/alp-dataflow-gen
           - AZ_REG_REPOSITORY: d2e-dataflow-gen-worker
             # Slowest job in the matrix (~1h50m) and it rebuilt on every run,
             # including changes it cannot possibly bake. Gate it on the paths it
@@ -430,6 +421,7 @@ jobs:
           ${{ matrix.NPM == 'bun' && 'bun install' ||'npm install --ignore-scripts' }}
         env:
           CI: ${{ matrix.NPM != 'bun' }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       # Atlas3 sub-plugins (network/notebook-plugin/strategus/studies) live in the
       # trex-notebook submodule at plugins/atlas/trex-notebook and are unpublished;
@@ -455,6 +447,16 @@ jobs:
             ( cd "$SUB/$p" && npm install \
               && npm run "$(node -e "process.stdout.write(require('./package.json').scripts['build:pkg'] ? 'build:pkg' : 'build')")" )
           done
+          # data-quality lives in this repo (plugins/atlas/subplugins), not the
+          # submodule, but is a file: dep of plugins/atlas — so unlike
+          # patient-analytics it must be built BEFORE the atlas install, whose
+          # postinstall stages its dist/. Mirrors scripts/build-atlas.sh.
+          DQ_DIR=plugins/atlas/subplugins/data-quality
+          ( cd "$DQ_DIR" && npm install && npm run build )
+          if [ ! -f "$DQ_DIR/dist/index.system.js" ]; then
+            echo "::error::data-quality did not produce dist/index.system.js"
+            exit 1
+          fi
       # Atlas plugin: postinstall bakes Atlas3 + the Pythia UI into resources/;
       # build the portal entry. Packs only resources/ (see package.json "files").
       - name: Build Atlas plugin
@@ -491,6 +493,28 @@ jobs:
           mkdir -p "$PA_DEST"
           cp -r "$PA_DIR/dist-atlas/." "$PA_DEST/"
           echo "Staged patient-analytics at /atlas/plugins/patient-analytics"
+      # Datasources is a third UI-monorepo Atlas3 sub-plugin, staged the same way as
+      # patient-analytics above. Mirrors the same steps in scripts/build-atlas.sh;
+      # keep the two in sync.
+      - name: Build Atlas sub-plugin (datasource)
+        if: ${{ matrix.ATLAS }}
+        env:
+          CI: "true"
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          DS_DIR=plugins/ui/apps/datasource
+          DS_OUT=$DS_DIR/dist-atlas
+          ( cd "$DS_DIR" && npm install --workspaces=false --legacy-peer-deps && npm run build )
+          if [ ! -f "$DS_OUT/index.system.js" ]; then
+            echo "::error::datasource did not produce $DS_OUT/index.system.js"
+            exit 1
+          fi
+          DS_DEST=plugins/atlas/resources/atlas/plugins/datasource
+          rm -rf "$DS_DEST"
+          mkdir -p "$DS_DEST"
+          cp -r "$DS_OUT/." "$DS_DEST/"
+          echo "Staged datasource at /atlas/plugins/datasource"
       - name: Patch Package
         if: ${{ matrix.NPM }}
         working-directory: ${{ matrix.PKGPATH }}
@@ -640,6 +664,12 @@ jobs:
       - uses: docker/setup-buildx-action@v3
         id: builder
 
+      # Two images off one Dockerfile, differing only in the trexsql base.
+      # The default is trexsql's lean prod target and is what docker-compose.yml
+      # runs; the -devx variant below uses the full base and is what
+      # docker-compose-local.yml runs. They share no layers, so this is a second
+      # full build rather than a cache resolve — the dev tooling lives in the
+      # base, and a later layer cannot delete it out of the image.
       - name: Build and Push trex image
         uses: docker/build-push-action@v6
         with:
@@ -656,6 +686,29 @@ jobs:
             BUILD_TYPE=OSS
             PLUGINS_FEED=${{ needs.setup.outputs.is_release_push == 'true' && 'stable' || 'd2e' }}
             PLUGINS_FROM_REGISTRY=@ohdsi/pythia-agent@0.1.0-develop.18.g80bf4aa
+          secrets: |
+            "PLUGINS_REGISTRY=${{ secrets.PLUGINS_REGISTRY }}"
+            "github_token=${{ secrets.GITHUB_TOKEN }}"
+
+      # Built on every run, not just develop, so the tag exists for whatever
+      # DOCKER_TAG_NAME a local stack is pointed at — release tags included.
+      - name: Build and Push trex devx image
+        uses: docker/build-push-action@v6
+        with:
+          builder: ${{ steps.builder.outputs.name }}
+          context: ./services/trex
+          file: ./services/trex/Dockerfile.v2
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ env.REG_URL }}/d2e-trex:${{ env.RUN_TAG }}-devx
+          provenance: false
+          sbom: false
+          build-args: |
+            GIT_COMMIT_ARG=${{ github.sha }}
+            BUILD_TYPE=OSS
+            PLUGINS_FEED=${{ needs.setup.outputs.is_release_push == 'true' && 'stable' || 'd2e' }}
+            PLUGINS_FROM_REGISTRY=@ohdsi/pythia-agent@0.1.0-develop.18.g80bf4aa
+            TREXSQL_REF=sha-48a466268dbfdd12f03d8018e2af81fe10cbdf69@sha256:923e62615ec94da06f4574e4ed80b51780746f9e8a30e8060caa9c4dd4ac754c
           secrets: |
             "PLUGINS_REGISTRY=${{ secrets.PLUGINS_REGISTRY }}"
             "github_token=${{ secrets.GITHUB_TOKEN }}"
@@ -819,10 +872,30 @@ jobs:
             -days 30 -subj "/CN=d2e-ci-ca" 2>/dev/null
           openssl req -newkey rsa:2048 -nodes \
             -keyout "$D/srv.key" -out "$D/srv.csr" \
-            -subj "/CN=d2e.cluster.local" 2>/dev/null
+            -subj "/CN=d2e.local" 2>/dev/null
+          # The SAN has to go on the signing step: `openssl x509 -req` drops CSR
+          # extensions unless told otherwise. Without a SAN the cert validates
+          # against nothing at all, since clients ignore CN when no SAN is
+          # present — which only became visible once the chart started verifying.
+          # A wildcard matches exactly one label, so `*.d2e.cluster.local` does
+          # NOT cover `idp.d2e.svc.cluster.local`. The chart addresses every
+          # internal service by its cluster DNS name, so the SAN needs the
+          # namespace-scoped entries too or every hop fails hostname
+          # verification. The `*.d2e.local` entries are kept so one cert still
+          # serves docker-compose.
+          printf '%s\n' \
+            "subjectAltName=DNS:*.${NAMESPACE}.svc.cluster.local,DNS:*.${NAMESPACE}.svc,DNS:*.d2e.local,DNS:d2e.local,DNS:*.d2e.cluster.local,DNS:d2e.cluster.local" \
+            'keyUsage=critical,digitalSignature' \
+            'extendedKeyUsage=serverAuth,clientAuth' > "$D/srv.ext"
           openssl x509 -req -in "$D/srv.csr" \
             -CA "$D/ca.crt" -CAkey "$D/ca.key" -CAcreateserial \
-            -out "$D/srv.crt" -days 30 2>/dev/null
+            -out "$D/srv.crt" -days 30 -extfile "$D/srv.ext" 2>/dev/null
+          # Assert, don't just print: `openssl x509 -noout -ext subjectAltName`
+          # exits 0 and prints "No extensions in certificate" when the SAN is
+          # missing, so on its own it cannot fail the job it exists to guard.
+          openssl x509 -in "$D/srv.crt" -noout -ext subjectAltName \
+            | tee /dev/stderr | grep -q "DNS:\*\.${NAMESPACE}\.svc\.cluster\.local"
+          openssl verify -CAfile "$D/ca.crt" "$D/srv.crt"
 
       - name: Helm install (using just-built images)
         run: |
@@ -943,7 +1016,15 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: npm install
+        # --legacy-peer-deps: @trex/notebook (reached through the nested file:
+        # link chain atlas -> notebook-plugin -> notebook) pulls webr, which
+        # pulls react-data-grid@^7.0.0-beta.44. That floats to a beta whose
+        # peers moved to react@^19.2, conflicting with the react@^18.2.0 pinned
+        # here. Resolving that conflict across the link chain crashes npm 10.8.2
+        # with "Cannot read properties of null (reading 'edgesOut')". Skipping
+        # peer resolution avoids the code path entirely. Same flag, same reason
+        # as the patient-analytics install above.
+        run: npm install --legacy-peer-deps
 
       - name: Patch seed config for e2e tests
         run: node ./scripts/patch-seed-for-e2e.js
@@ -1082,23 +1163,32 @@ jobs:
           ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }} -c ./docker-compose-ci.yml start
 
 
-      - name: Wait for webapi-init to complete
+      - name: Wait for trex to finish the atlas-db-init seeding
         run: |
-          echo "Waiting for webapi-init to complete (ensures logto admin user is created)..."
+          # trex applies atlas-db-init in d2eBoot() before it starts listening, so a
+          # healthy trex means the seeding (including the logto admin user) has run.
+          echo "Waiting for trex to become healthy..."
+          healthy=0
           for i in $(seq 1 60); do
-            status=$(docker ps -a --filter "name=webapi-init" --format '{{.Status}}')
+            status=$(docker ps -a --filter "name=${PROJECT_NAME:-d2e}-trex" --format '{{.Status}}')
             if echo "$status" | grep -q "(healthy)"; then
-              echo "webapi-init completed successfully"
+              echo "trex is healthy; atlas-db-init has run"
+              healthy=1
               break
             fi
-            if echo "$status" | grep -qE "Exited \([1-9]"; then
-              echo "webapi-init failed!"
-              docker logs d2e-webapi-init || true
+            if echo "$status" | grep -qE "Exited \("; then
+              echo "trex failed to start!"
+              docker logs ${PROJECT_NAME:-d2e}-trex || true
               exit 1
             fi
-            echo "Waiting for webapi-init... ($i/60)"
+            echo "Waiting for trex... ($i/60)"
             sleep 5
           done
+          if [ "$healthy" != "1" ]; then
+            echo "trex never reported healthy; atlas-db-init cannot be assumed to have run"
+            docker logs ${PROJECT_NAME:-d2e}-trex || true
+            exit 1
+          fi
 
       - name: Pull e2e Docker image
         run: |
@@ -1213,7 +1303,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: npm install
+        run: npm install --legacy-peer-deps
 
       - name: Initialise d2e
         if: success() || failure()
@@ -1549,12 +1639,10 @@ jobs:
       fail-fast: false
       matrix:
         image:
-          - d2e-pg-mgmt-init
           - d2e-logto
           - d2e-logto-post-init
-          - d2e-enterprise-gateway
-          - d2e-r-ohdsi-kernel
           - d2e-trex
+          - d2e-dataflow-gen
           - d2e-dataflow-gen-worker
           - d2e-supabase-storage
           - d2e-materialize-cohorts
@@ -1593,6 +1681,23 @@ jobs:
           else
             echo "Neither $SRC nor $DST present; nothing to publish."
           fi
+
+      # build_trex_image pushes a second variant as <RUN_TAG>-devx off the same
+      # Dockerfile. The matrix above iterates image *names*, so it cannot reach a
+      # tag suffix — the canonical -devx alias was therefore never published for
+      # any branch. docker-compose-local.yml asks for <DOCKER_TAG_NAME>-devx,
+      # which for the compose default (develop) surfaces far from here as
+      # "manifest unknown" on a pull.
+      #
+      # Develop only, and forward only: never publishes a commit-specific tag.
+      # No build_disable fallback arm — that is a build_images matrix input only,
+      # so <RUN_TAG>-devx is always present when this step runs.
+      - name: Re-tag develop devx image as canonical
+        if: matrix.image == 'd2e-trex' && needs.setup.outputs.is_develop_push == 'true'
+        run: |
+          SRC=${REG_URL}/d2e-trex:${RUN_TAG}-devx          # develop-<sha>-devx (read only)
+          DST=${REG_URL}/d2e-trex:develop-devx             # the alias being moved
+          docker buildx imagetools create -t "$DST" "$SRC"
 
       # Multi-arch-aware cleanup: the per-arch child manifests of a manifest
       # list are stored as untagged package versions in GHCR, so a blind

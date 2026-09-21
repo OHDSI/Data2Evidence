@@ -7,8 +7,8 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const content = readFileSync(join(__dirname, "../docker-compose.yml"), "utf8");
 
 // Bundle the atlas-db-init SQL scripts so the distributed CLI can stage them
-// next to the embedded compose file. The webapi-init service bind-mounts
-// ./services/atlas-db-init into /scripts, which only exists at repo root.
+// next to the embedded compose file. trex bind-mounts ./services/atlas-db-init
+// into /usr/src/atlas-db-init, a path that only exists at repo root.
 const atlasDbInitDir = join(__dirname, "../services/atlas-db-init");
 const atlasDbInitScripts = Object.fromEntries(
   readdirSync(atlasDbInitDir)
@@ -17,11 +17,30 @@ const atlasDbInitScripts = Object.fromEntries(
     .map((f) => [f, readFileSync(join(atlasDbInitDir, f), "utf8")])
 );
 
+// Same for the notebook-schema migration plugin: trex mounts it onto its plugin
+// path, so an unstaged mount would leave an empty plugin directory behind.
+const notebookDir = join(__dirname, "../services/trex/migrations/notebook");
+const notebookSchemaFiles = {
+  "package.json": readFileSync(join(notebookDir, "package.json"), "utf8"),
+  ...Object.fromEntries(
+    readdirSync(join(notebookDir, "migrations"))
+      .filter((f) => f.endsWith(".sql"))
+      .sort()
+      .map((f) => [
+        `migrations/${f}`,
+        readFileSync(join(notebookDir, "migrations", f), "utf8"),
+      ])
+  ),
+};
+
 writeFileSync(
   join(__dirname, "docker-compose-embed.ts"),
   `export const dockerComposeContent = ${JSON.stringify(content)};\n` +
     `export const atlasDbInitScripts: Record<string, string> = ${JSON.stringify(
       atlasDbInitScripts
+    )};\n` +
+    `export const notebookSchemaFiles: Record<string, string> = ${JSON.stringify(
+      notebookSchemaFiles
     )};\n`
 );
 

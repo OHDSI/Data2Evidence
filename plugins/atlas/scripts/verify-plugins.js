@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 /**
- * Prepack guard: every plugin registered in the served plugins.json must have its
- * entryPoint present under resources/atlas/plugins.
+ * Prepack guard: every Atlas-bundled plugin registered in the served plugins.json
+ * must have its entryPoint present under resources/atlas/plugins. Root-relative
+ * entry points are served by another Trex UI route and are not checked here.
  *
  * The Atlas3 shell reads config/plugins.json to build its menu, then SystemJS-imports
  * each entryPoint on navigation. A registered plugin whose bundle was never staged
@@ -26,9 +27,16 @@ if (!existsSync(configPath)) {
 }
 
 const { plugins = [] } = JSON.parse(readFileSync(configPath, 'utf8'));
-const missing = plugins.filter(p => p.entryPoint && !existsSync(join(pluginsDir, p.entryPoint)));
+const isTrexRoute = entryPoint => entryPoint.startsWith('/');
+const missing = plugins.filter(
+  p => p.entryPoint && !isTrexRoute(p.entryPoint) && !existsSync(join(pluginsDir, p.entryPoint))
+);
 
 for (const p of plugins) {
+  if (isTrexRoute(p.entryPoint)) {
+    console.log(`[verify-plugins] ROUTE ${p.id} -> ${p.entryPoint}`);
+    continue;
+  }
   const ok = !missing.includes(p);
   console.log(`[verify-plugins] ${ok ? 'OK  ' : 'MISS'} ${p.id} -> plugins/${p.entryPoint}`);
 }
@@ -43,4 +51,4 @@ if (missing.length) {
   process.exit(1);
 }
 
-console.log(`[verify-plugins] All ${plugins.length} registered plugins have a bundle.`);
+console.log('[verify-plugins] All bundled plugin entry points are present.');

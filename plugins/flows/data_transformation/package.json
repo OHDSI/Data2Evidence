@@ -505,18 +505,6 @@
                     "default": "/app/dicom_files",
                     "title": "Dicom Files Abs Path"
                   },
-                  "upload_files": {
-                    "anyOf": [
-                      {
-                        "type": "boolean"
-                      },
-                      {
-                        "type": "null"
-                      }
-                    ],
-                    "default": false,
-                    "title": "Upload Files"
-                  },
                   "person_to_patient_mapping": {
                     "anyOf": [
                       {

@@ -1,6 +1,6 @@
 import type { Store } from 'vuex'
 import { usePortalContextStore } from '@/stores/portalContext'
-import { SET_DATASET_RELOAD_IN_PROGRESS, SET_ACTIVE_BOOKMARK } from '@/store/mutation-types'
+import { SET_DATASET_RELOAD_IN_PROGRESS, SET_ACTIVE_BOOKMARK, RESET_ALL_BOOKMARKS } from '@/store/mutation-types'
 
 type PortalContextLike = ReturnType<typeof usePortalContextStore>
 
@@ -9,23 +9,13 @@ export function installDatasetChangeWatcher(portalContext: PortalContextLike, vu
   let previousReleaseId = portalContext.releaseId
   let latestRequestId = 0
 
-  return portalContext.$subscribe(async (_mutation, state) => {
-    const datasetId = state.datasetId
-    const releaseId = state.releaseId
-
-    if (datasetId === previousDatasetId && releaseId === previousReleaseId) {
-      return
-    }
-
-    previousDatasetId = datasetId
-    previousReleaseId = releaseId
+  const reloadForDatasetChange = async (datasetId: string, releaseId: string) => {
     latestRequestId += 1
     const requestId = latestRequestId
 
     vuexStore.commit(SET_DATASET_RELOAD_IN_PROGRESS, { datasetReloadInProgress: true })
-    // Clear the active bookmark so the cohort tab does not remain open with
-    // stale data after a dataset/release switch.
-    vuexStore.commit('SET_ACTIVE_BOOKMARK', null)
+    vuexStore.commit(SET_ACTIVE_BOOKMARK, null)
+    vuexStore.commit(RESET_ALL_BOOKMARKS)
 
     const isStale = () => requestId !== latestRequestId
 
@@ -62,5 +52,23 @@ export function installDatasetChangeWatcher(portalContext: PortalContextLike, vu
         vuexStore.commit(SET_DATASET_RELOAD_IN_PROGRESS, { datasetReloadInProgress: false })
       }
     }
+  }
+
+  const lastLoadedDatasetId = (vuexStore.getters?.getSelectedDataset as { id?: string } | undefined)?.id
+  if (lastLoadedDatasetId && lastLoadedDatasetId !== portalContext.datasetId) {
+    void reloadForDatasetChange(portalContext.datasetId, portalContext.releaseId)
+  }
+
+  return portalContext.$subscribe((_mutation, state) => {
+    const datasetId = state.datasetId
+    const releaseId = state.releaseId
+
+    if (datasetId === previousDatasetId && releaseId === previousReleaseId) {
+      return
+    }
+
+    previousDatasetId = datasetId
+    previousReleaseId = releaseId
+    void reloadForDatasetChange(datasetId, releaseId)
   })
 }

@@ -22,8 +22,6 @@ All of the following environment varialbles are required to operate the system.
 | `PG_STUDY_RESULTS_ADMIN_PASSWORD`               | password       | Study results admin permissions                                                      |
 | `PG_STUDY_RESULTS_READ_PASSWORD`                | password       | Study results read permissions                                                       |
 | `DEMO__DB_PASSWORD`                             | string         | Generated password                                                                   |
-| `REDIS_PASSWORD`                                | password       | Redis password                                                                       |
-| `DICOM__HEALTH_CHECK_PASSWORD`                  | string         | deprecated                                                                           |
 | `TLS__CADDY_DIRECTIVE`                          | string         | Generate self-signed or public x509 certificate                                      |
 | `PROJECT_NAME`                                  | string         | Default project name                                                                 |
 | `USER_MGMT__ROLE_SOURCE`                        | string         | Role source for user management (e.g. `logto`)                                       |

@@ -2,7 +2,6 @@ import { InfoOutlined } from "@mui/icons-material";
 import { FormControl, InputLabel, MenuItem, Select, SelectChangeEvent } from "@mui/material";
 import { PageProps, ResearcherStudyMetadata } from "@portal/plugin";
 import { FC, useEffect, useMemo, useState } from "react";
-import { api } from "../../../axios/api";
 import { DashboardIframe } from "../../../components/Dashboard";
 import { useTranslation } from "../../../contexts";
 import "./ShinyLive.scss";
@@ -12,8 +11,6 @@ interface ShinyLiveDashboard {
   language: "python" | "r";
 }
 
-const RESULT_VIEWER_KEY = "__result_viewer__";
-
 interface ShinyLiveProps extends PageProps<ResearcherStudyMetadata> {}
 
 export const ShinyLive: FC<ShinyLiveProps> = ({ metadata }: ShinyLiveProps) => {
@@ -22,13 +19,8 @@ export const ShinyLive: FC<ShinyLiveProps> = ({ metadata }: ShinyLiveProps) => {
   const [error, setError] = useState<string>("");
   const [dashboardUrl, setDashboardUrl] = useState<string>("");
   const [dashboards, setDashboards] = useState<ShinyLiveDashboard[]>([]);
-  const [studyId, setStudyId] = useState<string | null>(null);
-  const [isStrategusStudy, setIsStrategusStudy] = useState<boolean>(false);
-  const [viewerRunning, setViewerRunning] = useState<boolean>(false);
-  const [viewerUnauthorized, setViewerUnauthorized] = useState<boolean>(false);
   const [selectedDashboard, setSelectedDashboard] = useState<string>("");
   const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [isStartingViewer, setIsStartingViewer] = useState<boolean>(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -48,94 +40,18 @@ export const ShinyLive: FC<ShinyLiveProps> = ({ metadata }: ShinyLiveProps) => {
         };
         const fetchOpts = { headers, credentials: "include" as RequestCredentials };
 
-        // Fetch both study dashboard and strategus viewer
-        const [dashboardResp, infoResp] = await Promise.allSettled([
-          fetch(
-            `/d2e/gateway/api/dataset/dashboard/list?datasetId=${metadata.studyId}`,
-            fetchOpts
-          ),
-          fetch(
-            `/d2e/gateway/api/dataset/info?datasetId=${metadata.studyId}`,
-            fetchOpts
-          ),
-        ]);
+        const dashboardResp = await fetch(
+          `/d2e/gateway/api/dataset/dashboard/list?datasetId=${metadata.studyId}`,
+          fetchOpts
+        );
 
-        if (dashboardResp.status === "fulfilled" && dashboardResp.value.ok) {
-          const list = await dashboardResp.value.json();
+        if (dashboardResp.ok) {
+          const list = await dashboardResp.json();
           setDashboards(
             list
               .filter((d: any) => d.language && d.language !== "shiny_server")
               .map((d: any) => ({ name: d.name, language: d.language }))
           );
-        }
-
-        if (infoResp.status === "fulfilled" && infoResp.value.ok) {
-          const info = await infoResp.value.json();
-          if (info?.type === "strategus_analysis" && info?.tokenStudyCode) {
-            setIsStrategusStudy(true);
-            setStudyId(info.tokenStudyCode);
-
-            // Check if the R Shiny Server viewer is currently running
-            try {
-              const statusResp = await fetch(
-                `/strategus-results/${info.tokenStudyCode}/status`,
-                fetchOpts
-              );
-              if (statusResp.status === 401) {
-                setViewerRunning(false);
-                setViewerUnauthorized(true);
-              } else if (statusResp.ok || statusResp.status === 503) {
-                const status = statusResp.ok ? await statusResp.json() : { running: false };
-                if (status.running === true) {
-                  setViewerRunning(true);
-                  setViewerUnauthorized(false);
-                } else {
-                  // Viewer not running — start it automatically
-                  setIsStartingViewer(true);
-                  try {
-                    await api.strategusResults.startStrategusResultViewer(info.tokenStudyCode, "", "");
-                    // Poll status until the viewer is confirmed running
-                    let running = false;
-                    for (let attempt = 0; attempt < 20; attempt++) {
-                      await new Promise((resolve) => setTimeout(resolve, 3000));
-                      try {
-                        const pollResp = await fetch(
-                          `/strategus-results/${info.tokenStudyCode}/status`,
-                          fetchOpts
-                        );
-                        if (pollResp.ok || pollResp.status === 503) {
-                          const pollStatus = pollResp.ok ? await pollResp.json() : { running: false };
-                          if (pollStatus.running === true) {
-                            running = true;
-                            break;
-                          }
-                        }
-                      } catch {
-                        // continue polling
-                      }
-                    }
-                    setViewerRunning(running);
-                    if (!running) {
-                      setError("Result viewer failed to start. Please contact your Admin.");
-                    }
-                  } catch (startErr: any) {
-                    console.error("[ShinyLive] Error starting viewer:", startErr);
-                    const message = startErr?.data?.message || startErr?.message || "Failed to start the result viewer.";
-                    setError(`${message} Please contact your Admin.`);
-                  } finally {
-                    setIsStartingViewer(false);
-                  }
-                }
-              } else {
-                setViewerRunning(false);
-                setViewerUnauthorized(false);
-              }
-            } catch (err) {
-              console.error("[ShinyLive] Error checking viewer status:", err);
-              setViewerRunning(false);
-              setViewerUnauthorized(false);
-            }
-          }
         }
       } catch (err) {
         console.error("[ShinyLive] Error fetching data:", err);
@@ -151,19 +67,6 @@ export const ShinyLive: FC<ShinyLiveProps> = ({ metadata }: ShinyLiveProps) => {
   const options = useMemo(() => {
     const opts: { key: string; label: string; disabled?: boolean }[] = [];
 
-    if (isStrategusStudy && !viewerUnauthorized) {
-      let label = "Result Viewer (R Shiny Server)";
-      if (!viewerRunning) {
-        label = "Result Viewer (R Shiny Server — not running)";
-      }
-      
-      opts.push({
-        key: RESULT_VIEWER_KEY,
-        label,
-        disabled: !viewerRunning,
-      });
-    }
-
     dashboards.forEach((d) => {
       opts.push({
         key: `${d.name}_${d.language}`,
@@ -172,7 +75,7 @@ export const ShinyLive: FC<ShinyLiveProps> = ({ metadata }: ShinyLiveProps) => {
     });
 
     return opts;
-  }, [isStrategusStudy, viewerRunning, viewerUnauthorized, dashboards]);
+  }, [dashboards]);
 
   // Auto-select first enabled option
   useEffect(() => {
@@ -185,22 +88,10 @@ export const ShinyLive: FC<ShinyLiveProps> = ({ metadata }: ShinyLiveProps) => {
   useEffect(() => {
     if (!selectedDashboard || !metadata?.studyId) return;
 
-    if (selectedDashboard === RESULT_VIEWER_KEY && studyId) {
-      if (token) {
-        try {
-          document.cookie = `authtoken=${token}; path=/strategus-results; secure; SameSite=Strict;`;
-          console.log("[ShinyLive] Set authtoken cookie for strategus-results");
-        } catch (err) {
-          console.error("[ShinyLive] Error setting cookie:", err);
-        }
-      }
-      setDashboardUrl(`/strategus-results/${studyId}/`);
-    } else {
-      setDashboardUrl(
-        `/d2e/gateway/api/dataset/shiny-live/${metadata.studyId}_dashboard_${selectedDashboard}/`
-      );
-    }
-  }, [selectedDashboard, studyId, metadata?.studyId, token]);
+    setDashboardUrl(
+      `/d2e/gateway/api/dataset/shiny-live/${metadata.studyId}_dashboard_${selectedDashboard}/`
+    );
+  }, [selectedDashboard, metadata?.studyId]);
 
   const handleDashboardChange = (event: SelectChangeEvent<string>) => {
     setSelectedDashboard(event.target.value);
@@ -217,24 +108,10 @@ export const ShinyLive: FC<ShinyLiveProps> = ({ metadata }: ShinyLiveProps) => {
     );
   }
 
-  if (viewerUnauthorized && dashboards.length === 0) {
-    return (
-      <div className="shinylive-plugin">
-        <div className="shinylive-plugin__error">
-          <InfoOutlined style={{ fontSize: 64, color: "#9e9e9e", marginBottom: "1rem" }} />
-          <p>{getText(i18nKeys.UI_PLUGIN_SHINY_LIVE__UNAUTHORIZED)}</p>
-        </div>
-      </div>
-    );
-  }
-
   if (isLoading) {
-    const loadingMessage = isStartingViewer
-      ? "Starting result viewer..."
-      : getText(i18nKeys.UI_PLUGIN_SHINY_LIVE__LOADING);
     return (
       <div className="shinylive-plugin">
-        <div className="shinylive-plugin__loading">{loadingMessage}</div>
+        <div className="shinylive-plugin__loading">{getText(i18nKeys.UI_PLUGIN_SHINY_LIVE__LOADING)}</div>
       </div>
     );
   }
@@ -249,9 +126,7 @@ export const ShinyLive: FC<ShinyLiveProps> = ({ metadata }: ShinyLiveProps) => {
     );
   }
 
-  const showIframe = token && dashboardUrl && selectedDashboard && selectedDashboard !== RESULT_VIEWER_KEY;
-  const showResultViewer =
-    selectedDashboard === RESULT_VIEWER_KEY && studyId && viewerRunning && dashboardUrl;
+  const showIframe = token && dashboardUrl && selectedDashboard;
 
   return (
     <div className="shinylive-plugin">
@@ -274,22 +149,16 @@ export const ShinyLive: FC<ShinyLiveProps> = ({ metadata }: ShinyLiveProps) => {
         </FormControl>
       </div>
 
-      {showResultViewer || showIframe ? (
+      {showIframe ? (
         <DashboardIframe
           url={dashboardUrl}
           token={token}
           title={`Dashboard - ${selectedDashboard}`}
           loadingMessage="Loading dashboard..."
         />
-      ) : selectedDashboard && !showResultViewer && !showIframe ? (
+      ) : selectedDashboard && !showIframe ? (
         <div className="shinylive-plugin__empty">
-          <p>
-            {selectedDashboard === RESULT_VIEWER_KEY
-              ? viewerUnauthorized
-                ? getText(i18nKeys.UI_PLUGIN_SHINY_LIVE__UNAUTHORIZED)
-                : getText(i18nKeys.UI_PLUGIN_SHINY_LIVE__VIEWER_NOT_RUNNING)
-              : getText(i18nKeys.UI_PLUGIN_SHINY_LIVE__NO_DASHBOARD_FOR_SELECTION)}
-          </p>
+          <p>{getText(i18nKeys.UI_PLUGIN_SHINY_LIVE__NO_DASHBOARD_FOR_SELECTION)}</p>
         </div>
       ) : (
         <div className="shinylive-plugin__loading">{getText(i18nKeys.UI_PLUGIN_SHINY_LIVE__LOADING_DOTS)}</div>

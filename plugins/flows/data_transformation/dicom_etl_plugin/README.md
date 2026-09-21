@@ -14,7 +14,6 @@
 {
   "options": {
     "toTruncate": true,
-    "uploadFiles": false,
     "databaseCode": "alpdev_pg",
     "cdmSchemaName": "cdmdefault",
     "flowActionType": "load_vocab",
@@ -37,7 +36,6 @@
 ```
 {
   "options": {
-    "upload_files": true,
     "database_code": "alpdev_pg",
     "cdm_schema_name": "cdmdefault",
     "flow_action_type": "ingest_metadata",
@@ -56,7 +54,6 @@
 ```
 
 - Flow Action Type `ingest_metadata` to ingest the metadata into `dicom_file_metadata` table
-- With option upload_files: False/True to upload files to server
 - With optionmissing_person_id_options
   - `SKIP` raises an error if person id cannot be found
   - `USE_ID_ZERO` use person_id 0 to create procedure occurrence and image occurrence records
@@ -85,9 +82,9 @@ For each DICOM file in supplied folder parameter `dicom_files_abs_path`
    - Use concept id 0 if no matching concept found
 4. Extract all attributes except Pixel Data and ingest into `dicom_file_metadata` table
     - Requires `image_occurrence_id`
-5. Upload file to DICOM server (Optional) 
-  - Store uploaded metadata in `file_upload_metadata` table
-  - Requires `image_occurrence_id`, `sop_instance_id` for traceability
+
+The flow ingests DICOM metadata only; the image files themselves are never
+transferred out of `dicom_files_abs_path`.
 
 ## DICOM Vocabulary Source / Folder Structure
 - CSV files for DICOM vocabularies, concepts, and data elements sourced from https://github.com/paulnagy/DICOM2OMOP are stored in `external` folder

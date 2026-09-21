@@ -5,6 +5,7 @@ import type { FieldDefinition, FormStepConfig } from "../types/wizard";
 import { buildWizardSubmitPayload, generateFormSubmitDeepLink } from "../utils/deepLinks";
 import { fetchCdwConfig } from "../config/cdwConfig";
 import type { ConfigMeta } from "../config/cdwConfig";
+import { listAtlasSources, resolveAtlasSourceKey } from "../api/atlasSourceApi";
 import { TypeaheadField } from "./TypeaheadField";
 import { AnalyticsIcon } from "./icons/AnalyticsIcon";
 import { WizardDashboardModal } from "./WizardDashboardModal";
@@ -17,7 +18,9 @@ import {
 } from "../utils/wizardSections";
 import type { ResolvedWizardFieldGroup } from "../utils/wizardSections";
 import { resolveWizardFormNote } from "../config/wizardDefinitions";
+import { validateNumericExpression } from "../utils/numericExpression";
 import styles from "./StepForm.module.css";
+import sourceStyles from "./StepSelection.module.css";
 
 // Keep the legacy Cohort Builder action available for a one-line re-enable.
 // Standalone Wizards currently exposes only the direct dashboard action.
@@ -32,6 +35,7 @@ export function StepForm() {
     formData,
     updateFormData,
     goBack,
+    resetWizard,
     goForward,
     getCurrentStepConfig,
     portalProps,
@@ -40,6 +44,7 @@ export function StepForm() {
   } = useWizardContext();
   const stepConfig = getCurrentStepConfig();
   const [configMeta, setConfigMeta] = useState<ConfigMeta | null>(null);
+  const [atlasSourceName, setAtlasSourceName] = useState("");
   const displayValuesRef = useRef<Record<string, string>>({});
   const defaultFormValues = { ...formData };
   const dashboardFlow = useWizardDashboardFlow({
@@ -71,6 +76,28 @@ export function StepForm() {
   useEffect(() => {
     fetchCdwConfig(portalProps.datasetId).then(({ meta }) => setConfigMeta(meta));
   }, [portalProps.datasetId]);
+
+  useEffect(() => {
+    if (portalProps.isAtlas !== true) return;
+
+    let active = true;
+    setAtlasSourceName("");
+    listAtlasSources(portalProps.getToken)
+      .then((sources) => {
+        if (!active) return;
+        const sourceKey = resolveAtlasSourceKey(sources, portalProps.datasetId);
+        setAtlasSourceName(
+          sources.find((source) => source.sourceKey === sourceKey)?.sourceName || "Data source unavailable",
+        );
+      })
+      .catch(() => {
+        if (active) setAtlasSourceName("Data source unavailable");
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [portalProps.datasetId, portalProps.getToken, portalProps.isAtlas]);
 
   const {
     register,
@@ -213,7 +240,7 @@ export function StepForm() {
         <div key={field.id} className={styles.fieldGroup}>
           <label htmlFor={field.id} className={styles.label}>
             {field.label}
-            {field.required && <span className={styles.requiredAsterisk}>*</span>}:
+            {field.required && <span className={styles.requiredAsterisk}> *</span>}:
           </label>
           <div className={styles.inputWithToggle}>
             <TypeaheadField
@@ -265,7 +292,7 @@ export function StepForm() {
         <div key={field.id} className={styles.fieldGroup}>
           <label className={styles.label}>
             {field.label}
-            {field.required && <span className={styles.requiredAsterisk}>*</span>}:
+            {field.required && <span className={styles.requiredAsterisk}> *</span>}:
           </label>
           <div className={styles.groupInputs}>
             <select
@@ -325,7 +352,7 @@ export function StepForm() {
             <div className={styles.fieldLabelRow}>
               <label htmlFor={field.id} className={styles.label}>
                 {field.label}
-                {field.required && <span className={styles.requiredAsterisk}>*</span>}:
+                {field.required && <span className={styles.requiredAsterisk}> *</span>}:
               </label>
               <span className={styles.infoTooltip}>
                 <button
@@ -343,7 +370,7 @@ export function StepForm() {
                     <li>&gt; or &lt; for greater/less than</li>
                     <li>&gt;= or &lt;= for greater than or equal to/less than or equal to</li>
                     <li>[x-y] or ]x-y[ for an interval including or excluding the endpoints</li>
-                    <li>(-x) for negative values</li>
+                    {field.allowNegative === true && <li>(-x) for negative values</li>}
                   </ul>
                   <span>E.g: &gt;=60, [50-80]</span>
                 </span>
@@ -365,12 +392,13 @@ export function StepForm() {
                 {...register(field.id, {
                   required: field.required ? `${field.label} is required` : false,
                   validate: (v) => {
-                    if (!v || v === "") return true;
-                    const s = String(v).trim();
-                    const isRange = /^[[\]]\s*-?\d+(\.\d+)?\s*-\s*-?\d+(\.\d+)?\s*[[\]]$/.test(s);
-                    const isOp = /^(>=|<=|>|<|=|!=)\s*-?\d+(\.\d+)?$/.test(s);
-                    const isNum = /^-?\d+(\.\d+)?$/.test(s);
-                    if (!isRange && !isOp && !isNum) {
+                    const validationStatus = validateNumericExpression(v, {
+                      allowNegative: field.allowNegative === true,
+                    });
+                    if (validationStatus === "negative-not-allowed") {
+                      return `Negative values are not allowed for ${field.label}`;
+                    }
+                    if (validationStatus === "invalid-format") {
                       return `Invalid expression. Examples: >=60, >50, [50-80], 60`;
                     }
                     return true;
@@ -401,7 +429,7 @@ export function StepForm() {
           <div key={field.id} className={styles.fieldGroup}>
             <label htmlFor={field.id} className={styles.label}>
               {field.label}
-              {field.required && <span className={styles.requiredAsterisk}>*</span>}:
+              {field.required && <span className={styles.requiredAsterisk}> *</span>}:
             </label>
             <input
               id={field.id}
@@ -427,7 +455,7 @@ export function StepForm() {
           <div key={field.id} className={styles.fieldGroup}>
             <label htmlFor={field.id} className={styles.label}>
               {field.label}
-              {field.required && <span className={styles.requiredAsterisk}>*</span>}:
+              {field.required && <span className={styles.requiredAsterisk}> *</span>}:
             </label>
             <input
               id={field.id}
@@ -452,7 +480,7 @@ export function StepForm() {
           <div key={field.id} className={styles.fieldGroup}>
             <label className={styles.label}>
               {field.label}
-              {field.required && <span className={styles.requiredAsterisk}>*</span>}:
+              {field.required && <span className={styles.requiredAsterisk}> *</span>}:
             </label>
             <div className={styles.unsupported}>Unsupported field type: {field.type}</div>
           </div>
@@ -473,6 +501,7 @@ export function StepForm() {
 
   const submitLabel = stepConfig ? (stepConfig.config as FormStepConfig)?.submitLabel || "Next" : "Next";
   const formNote = resolveWizardFormNote(selectedWizard.formNote);
+  const handleBack = portalProps.isAtlas === true ? resetWizard : goBack;
 
   const renderFields = (fields: FieldDefinition[], containingGroup?: ResolvedWizardFieldGroup) => {
     return fields.map((field) => renderField(field, containingGroup));
@@ -497,6 +526,7 @@ export function StepForm() {
                 {group.label}
                 {isRequiredGroup && (
                   <span className={styles.groupRequiredAsterisk} aria-hidden="true">
+                    {" "}
                     *
                   </span>
                 )}
@@ -561,19 +591,36 @@ export function StepForm() {
 
   return (
     <div className={styles.container}>
-      <div className={styles.titleRow}>
-        <button
-          type="button"
-          onClick={goBack}
-          className={styles.backIconButton}
-          aria-label="Back to wizard selection"
-          title="Back to wizard selection"
-        >
-          <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
-            <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.42-1.41L7.83 13H20v-2Z" />
-          </svg>
-        </button>
-        <h2>{selectedWizard.name}</h2>
+      <div className={styles.titleBar}>
+        <div className={styles.titleRow}>
+          <button
+            type="button"
+            onClick={handleBack}
+            className={styles.backIconButton}
+            aria-label="Back to wizard selection"
+            title="Back to wizard selection"
+          >
+            <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
+              <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.42-1.41L7.83 13H20v-2Z" />
+            </svg>
+          </button>
+          <h2>{selectedWizard.name}</h2>
+        </div>
+        {portalProps.isAtlas === true ? (
+          <div
+            className={`${sourceStyles.sourceSelector} ${sourceStyles.sourceSelectorReadOnly}`}
+            aria-label="Data source"
+          >
+            <span className={sourceStyles.sourceLabel}>Data source</span>
+            <svg className={sourceStyles.sourceIcon} viewBox="0 0 24 24" aria-hidden="true">
+              <ellipse cx="12" cy="5" rx="8" ry="3" />
+              <path d="M4 5v5c0 1.7 3.6 3 8 3s8-1.3 8-3V5" />
+              <path d="M4 10v5c0 1.7 3.6 3 8 3s8-1.3 8-3v-5" />
+              <path d="M4 15v4c0 1.7 3.6 3 8 3s8-1.3 8-3v-4" />
+            </svg>
+            <span className={sourceStyles.sourceValue}>{atlasSourceName || "Loading data source..."}</span>
+          </div>
+        ) : null}
       </div>
 
       {selectedWizard.description && <div className={styles.description}>{selectedWizard.description}</div>}
@@ -595,7 +642,7 @@ export function StepForm() {
         {renderConfiguredFields()}
 
         <div className={styles.buttonRow}>
-          <button type="button" onClick={goBack} className={styles.button}>
+          <button type="button" onClick={handleBack} className={styles.button}>
             Back
           </button>
           <div className={styles.primaryActions}>
