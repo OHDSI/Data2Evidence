@@ -61,18 +61,7 @@ test('idp:logto-native', async ({ page, baseURL }) => {
     await loginViaUI(page, username, NEW_USER_PASSWORD)
     const userToken = await readAccessToken(page)
 
-    const claims = assertClaimContract(userToken, {
-      roles: [
-        'admin',
-        'role.systemadmin',
-        'anonymous',
-        `Source user (${datasetId})`,
-        'cohort reader',
-        'cohort creator',
-        'concept set creator',
-        `role.researcher.${datasetCode}`
-      ]
-    })
+    const claims = assertClaimContract(userToken)
     console.log(`[assert] iss=${claims.iss} sub=${claims.sub} name=${claims.preferred_username ?? claims.username}`)
 
     const tokenRoles = rolesFromToken(userToken)

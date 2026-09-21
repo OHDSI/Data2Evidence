@@ -436,6 +436,36 @@ export async function findUser(
   return users.find(match)
 }
 
+/**
+ * Assert the usermgmt row is bound to the token subject by idp_user_id (not merely a shared
+ * email/username) and is active; returns the row. Set `poll` to wait out first-login provisioning.
+ * A single lookup per attempt — the found row is captured, not re-fetched.
+ */
+export async function assertLinkedBySub(
+  api: APIRequestContext,
+  base: string,
+  adminHeaders: Record<string, string>,
+  sub: string,
+  opts: { poll?: boolean; label?: string } = {}
+): Promise<UsermgmtUser> {
+  const label = opts.label ?? sub
+  let linked: UsermgmtUser | undefined
+  const lookup = async () => {
+    linked = await findUser(api, base, adminHeaders, u => u.idpUserId === sub)
+    return linked?.id
+  }
+  if (opts.poll) {
+    await expect
+      .poll(lookup, { timeout: SECOND_30, message: `no usermgmt user linked to idp sub for ${label}` })
+      .toBeTruthy()
+  } else {
+    await lookup()
+    expect(linked, `no usermgmt user linked to idp sub ${label}`).toBeTruthy()
+  }
+  expect(linked!.active, `usermgmt user ${linked!.id} is not active`).not.toBe(false)
+  return linked!
+}
+
 /** Grant ALP_SYSTEM_ADMIN (-> role.systemadmin -> `admin`). */
 export async function grantSystemAdmin(
   api: APIRequestContext,

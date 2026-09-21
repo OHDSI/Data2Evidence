@@ -20,16 +20,16 @@
  *   E2E_PHYSIONET_EXPECTED_ROLE — a dataset researcher role the account's entitlement maps to
  *     (per USERMGMT__ENTITLEMENTS_DATASET_MAPPING), e.g. role.researcher.demo.
  */
-import { test, expect } from '../../fixtures'
+import { test } from '../../fixtures'
 import {
   ADMIN_PASSWORD,
   ADMIN_USERNAME,
   USERMGMT,
   assertClaimContract,
+  assertLinkedBySub,
   authHeaders,
   decodeToken,
   expectContainsAll,
-  findUser,
   loginViaConnector,
   loginViaUI,
   missingEnv,
@@ -137,10 +137,8 @@ test('idp:physionet', async ({ page, baseURL }) => {
   const adminHeaders = authHeaders(adminToken, base)
 
   const sub = String(claims.sub)
-  const user = await findUser(page.request, base, adminHeaders, u => u.idpUserId === sub)
-  expect(user, `no usermgmt user linked to idp sub ${sub}`).toBeTruthy()
-  expect(user!.active, `usermgmt user ${user!.id} is not active`).not.toBe(false)
-  console.log(`[assert] usermgmt user ${user!.id} linked to idp sub (idpUserId === sub)`)
+  const user = await assertLinkedBySub(page.request, base, adminHeaders, sub)
+  console.log(`[assert] usermgmt user ${user.id} linked to idp sub (idpUserId === sub)`)
 
   const webApiRoleNames = await webapiRoleNames(page.request, base, adminToken, webApiId)
   console.log(`[assert] WebAPI roles: ${JSON.stringify(webApiRoleNames)}`)
