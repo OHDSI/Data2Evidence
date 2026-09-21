@@ -98,6 +98,9 @@ const tokenReadyAt = Date.now() + (params.get('token') === 'late' ? 1500 : 0);
 const hostCtx: DqHostCtx = {
   getToken: async () => (Date.now() < tokenReadyAt ? '' : 'dev-token'),
   datasetId: ref(scenario === 'no-source' ? '' : 'dev-dataset'),
+  // The harness exercises the data-source scope; a cohort scope comes from a
+  // host that opens the dashboard for one, which this harness does not.
+  cohortDefinitionId: ref(undefined),
   appId: 'data-quality',
   // No host to borrow i18n from out here, so fall back to the default copy.
   t: (_key, fallback) => fallback ?? _key,
