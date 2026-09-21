@@ -42,10 +42,18 @@
    */
   function resourceFor(ac) {
     var issuer = String((ac && ac.issuer) || "");
-    if (issuer && issuer.indexOf(location.origin + "/") === 0) {
-      return issuer.replace(/\/+$/, "");
-    }
-    return LOGTO_RESOURCE;
+    if (!issuer) return LOGTO_RESOURCE;
+    var origin;
+    try { origin = new URL(issuer).origin; } catch (e) { return LOGTO_RESOURCE; }
+    // Compared as PARSED origins, never as strings. The issuer is built from
+    // TREX_OIDC_ISSUER and carries an explicit `:443`, while location.origin
+    // drops the default port -- so a string prefix test matches nothing on
+    // exactly the deployments this is for.
+    if (origin !== location.origin) return LOGTO_RESOURCE;
+    // Returned verbatim (port and all, only a trailing slash trimmed): the
+    // provider compares this against the identifier it registered, which is
+    // this string, not its normalised form.
+    return issuer.replace(/\/+$/, "");
   }
 
   function getConfig() {
