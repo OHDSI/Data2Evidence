@@ -127,6 +127,7 @@
       location="top right"
       :color="snackbarColor"
       :timeout="snackbarTimeout"
+      :z-index="snackbarZIndex"
       rounded="16px"
     >
       <span class="snackbar-content">
@@ -211,6 +212,9 @@ const snackbarIconClass = computed(() =>
   snackbar.value.type === 'success' ? 'snackbar-success-icon' : 'snackbar-error-icon'
 )
 const snackbarTimeout = computed(() => Constants.SnackbarTimeout)
+// The comparison dialog is a MessageBox overlay, which outranks Vuetify's default
+// snackbar z-index; without this the toast is hidden behind the dimming layer.
+const snackbarZIndex = Constants.SnackbarZIndex
 
 // Methods
 const setUpperAxisMenu = (menu: any) => {
