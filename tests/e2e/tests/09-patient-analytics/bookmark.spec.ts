@@ -338,7 +338,7 @@ test(TEST_NAME, async ({ page }) => {
     await expect(
       page
         .locator('div')
-        .filter({ hasText: /^Basic DataGender:FEMALE$/ })
+        .filter({ hasText: /^Basic DataGenderFEMALE$/ })
         .first()
     ).toBeVisible()
     await expect(page.getByText('ANDCondition Occurrence')).toBeVisible()
