@@ -13,3 +13,6 @@ services:
       # mount is not what gets seeded), so without this overlay the unpatched
       # (Age-default) config is used. Single-file bind mount over the bundled seed.
       - ./plugins/functions/mri-pg-config/src/db/seeds/03_Config.ts:/usr/src/bundled-plugins/d2e-functions/mri-pg-config/src/db/seeds/03_Config.ts
+  demodb:
+      ports:
+        - "15432:5432" 
