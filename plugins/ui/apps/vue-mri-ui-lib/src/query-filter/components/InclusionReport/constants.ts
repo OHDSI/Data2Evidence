@@ -1,4 +1,4 @@
-import { FONT_FAMILY } from '@/utils/Constants'
+import { BODY_TEXT_COLOR, FONT_FAMILY } from '@/utils/Constants'
 
 /**
  * Color palette for inclusion report visualizations
@@ -55,12 +55,12 @@ export const EXCLUDED_COLOR = '#CCCCCC' as const
 
 /**
  * Font the funnel chart is rendered with: vue-mri's own stack rather than plotly's Open Sans
- * default, so the chart reads like the rest of the app. Handed to plotly explicitly - for the
- * hover labels too, which otherwise fall back to plotly's Arial - so label widths can be
- * measured off-screen with exactly the font plotly draws.
+ * default, and the app's body text colour rather than plotly's #444, so the chart reads like
+ * the rest of the app.
  */
 export const FUNNEL_FONT_SIZE = 16
 export const FUNNEL_FONT_FAMILY = FONT_FAMILY
+export const FUNNEL_FONT_COLOR = BODY_TEXT_COLOR
 
 /**
  * Layout budget for the rule name labels down the left of the funnel chart: labels wrap

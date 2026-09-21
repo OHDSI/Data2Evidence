@@ -5,6 +5,7 @@ import {
   FUNNEL_THRESHOLDS,
   FUNNEL_LEGEND_LABELS,
   FUNNEL_FONT_FAMILY,
+  FUNNEL_FONT_COLOR,
   FUNNEL_FONT_SIZE,
   FUNNEL_LABEL_MAX_LINES,
   FUNNEL_LABEL_MAX_WIDTH,
@@ -199,6 +200,7 @@ export function useFunnelChart(
         font: {
           size: FUNNEL_HOVER_FONT_SIZE,
           family: FUNNEL_FONT_FAMILY,
+          color: FUNNEL_FONT_COLOR,
         },
       },
       showlegend: false, // Hide legend for main trace
@@ -237,6 +239,7 @@ export function useFunnelChart(
       font: {
         size: FUNNEL_FONT_SIZE,
         family: FUNNEL_FONT_FAMILY,
+        color: FUNNEL_FONT_COLOR,
       },
       height: 800,
       yaxis: {
@@ -262,7 +265,7 @@ export function useFunnelChart(
         title: {
           text: '       Attrition', // leading space needed to align title with legend item text
           font: {
-            size: 16,
+            size: FUNNEL_FONT_SIZE,
           },
         },
       },
