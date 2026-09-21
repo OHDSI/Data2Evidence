@@ -233,8 +233,9 @@
             </template>
           </v-tooltip>
 
-          <!-- Placeholder, on purpose: data quality is #3119, not ours. It
-               renders so the bar matches the frame, and does nothing yet. -->
+          <!-- Action placeholders. Empty for this release: see
+               SHOW_DATA_QUALITY below. The loop stays so the list only has to
+               be repopulated to bring the buttons back. -->
           <v-tooltip
             v-for="placeholder in ACTION_PLACEHOLDERS"
             :key="placeholder.testid"
@@ -458,13 +459,27 @@ const IGNORED_CLICK_TARGETS = [
 
 // #3119 data quality is not wired yet. It renders so the action bar matches
 // the frame. #3120 filter summary and #3121 analyze are wired below.
-const ACTION_PLACEHOLDERS = [
+/**
+ * Data quality is hidden for this release.
+ *
+ * The button rendered so the action bar matched the frame, but it opens
+ * nothing: the page belongs to another plugin and wiring it is #3119. Shipping
+ * a control that does nothing when clicked is worse than not showing it.
+ *
+ * Everything needed to bring it back is still here - the icon, the label and
+ * the test id. Set this to true when #3119 lands.
+ */
+const SHOW_DATA_QUALITY = false
+
+const ALL_ACTION_PLACEHOLDERS = [
   {
     icon: ExplorationDataQualityIcon,
     labelKey: 'MRI_PA_EXPLORATIONS_DATA_QUALITY',
     testid: 'explorations-dq-btn',
   },
 ]
+
+const ACTION_PLACEHOLDERS = SHOW_DATA_QUALITY ? ALL_ACTION_PLACEHOLDERS : []
 const EMPTY_VALUE = '-'
 
 const searchQuery = ref('')
