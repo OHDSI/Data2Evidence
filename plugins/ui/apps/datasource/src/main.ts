@@ -44,7 +44,7 @@ const vueLifecycles = singleSpaVue({
     },
   },
   handleInstance(app, props) {
-    app.use(createVuetify(buildVuetifyOptions()))
+    app.use(createVuetify({ ...buildVuetifyOptions(), theme: false as never }))
     app.provide('pluginProps', props)
   },
 })
