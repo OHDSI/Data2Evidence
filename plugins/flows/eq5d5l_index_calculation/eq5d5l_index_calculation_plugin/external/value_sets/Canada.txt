@@ -1,6 +1,8 @@
 ******************************************************************
 *STATA syntax code for the computation of index*
 *values with the Canadian value set (TTO)*
+*Reference: Xie F, Pullenayegum E, Gaebel K, Bansback N, Bryan S, Ohinmaa A, Poissant L, Johnson JA; Canadian EQ-5D-5L Valuation Study Group. A Time Trade-off-derived Value Set of the EQ-5D-5L for Canada. Med Care. 2016 Jan;54(1):98-105. doi: 10.1097/MLR.0000000000000447.
+*Source: https://euroqol.org/information-and-support/resources/value-sets/
 ******************************************************************;
 
 gen disut_mo = .

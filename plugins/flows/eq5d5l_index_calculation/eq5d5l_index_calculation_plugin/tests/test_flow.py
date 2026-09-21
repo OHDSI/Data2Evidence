@@ -167,6 +167,41 @@ class TestCalculateIndexRows:
         )
         assert rows == []
 
+    def test_skips_group_with_conflicting_duplicate_dimension_rows(self):
+        # The read has no ORDER BY and the OMOP table has no uniqueness constraint
+        # on (qrId, dimension) - two rows for the same dimension with different
+        # levels must not silently let whichever one comes back last win, since
+        # that would make the score nondeterministic across runs.
+        from eq5d5l_index_calculation_plugin.types import DIMENSION_CONCEPT_ID_MAP
+        value_set = scoring.load_value_set("AU")
+        rows_in = _full_health_group() + [
+            _observation_row(5, 101, list(DIMENSION_CONCEPT_ID_MAP.values())[0], "qr-1", "3"),
+        ]
+        rows = _run(
+            flow.calculate_index_rows.fn,
+            observation_rows=rows_in,
+            dimension_concept_id_map=DIMENSION_CONCEPT_ID_MAP,
+            value_set=value_set,
+        )
+        assert rows == []
+
+    def test_scores_group_with_agreeing_duplicate_dimension_rows(self):
+        # A harmless duplicate (same dimension, same level - e.g. a retried
+        # upstream write) isn't a real conflict and shouldn't block scoring.
+        from eq5d5l_index_calculation_plugin.types import DIMENSION_CONCEPT_ID_MAP
+        value_set = scoring.load_value_set("AU")
+        rows_in = _full_health_group() + [
+            _observation_row(5, 101, list(DIMENSION_CONCEPT_ID_MAP.values())[0], "qr-1", "1"),
+        ]
+        rows = _run(
+            flow.calculate_index_rows.fn,
+            observation_rows=rows_in,
+            dimension_concept_id_map=DIMENSION_CONCEPT_ID_MAP,
+            value_set=value_set,
+        )
+        assert len(rows) == 1
+        assert rows[0]["value_source_value"] == "11111"
+
     def test_ignores_rows_for_unmapped_observation_concept_id(self):
         from eq5d5l_index_calculation_plugin.types import DIMENSION_CONCEPT_ID_MAP
         value_set = scoring.load_value_set("AU")

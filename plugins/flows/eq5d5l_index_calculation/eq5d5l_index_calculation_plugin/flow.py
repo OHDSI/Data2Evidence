@@ -198,6 +198,14 @@ def calculate_index_rows(
     treated as missing for that dimension (per EQ-5D-5LObservationMap.json's own
     doc comment, the FHIR answer code vocabulary isn't guaranteed numeric, but this
     plugin has no per-deployment mapping to fall back on for one that isn't).
+
+    The read that produces observation_rows has no ORDER BY and the OMOP table has
+    no uniqueness constraint on (qrId, dimension), so if a group ever has more than
+    one row for the same dimension, which one "wins" is not something this plugin
+    can rely on being stable across runs. Rows that agree (same level) are harmless
+    duplicates; rows that disagree make the group's health state ambiguous, so it's
+    skipped rather than silently picking whichever row the query happened to return
+    last.
     """
     logger = get_run_logger()
     concept_to_dimension = {v: k for k, v in dimension_concept_id_map.items()}
@@ -220,18 +228,30 @@ def calculate_index_rows(
     rows = []
     for qr_id, dim_rows in groups.items():
         dimension_answers = {}
+        conflicting_dimensions = {}
         visit_occurrence_id = None
         person_ids = set()
         observed_at = None
         for dim, row in dim_rows:
             level = _extract_level(row["value_source_value"])
             if level is not None:
-                dimension_answers[dim] = level
+                if dim in dimension_answers and dimension_answers[dim] != level:
+                    conflicting_dimensions.setdefault(dim, {dimension_answers[dim]}).add(level)
+                else:
+                    dimension_answers[dim] = level
             if row["visit_occurrence_id"] is not None:
                 visit_occurrence_id = row["visit_occurrence_id"]
             if observed_at is None:
                 observed_at = row["observation_datetime"] or row["observation_date"]
             person_ids.add(row["person_id"])
+
+        if conflicting_dimensions:
+            logger.warning(
+                f"qrId={qr_id}: multiple observation rows disagree on dimension(s) "
+                f"{conflicting_dimensions} - skipping this questionnaire administration "
+                f"rather than picking an arbitrary value"
+            )
+            continue
 
         if len(person_ids) > 1:
             logger.warning(
