@@ -201,9 +201,7 @@ const PANEL = {
   RIGHT: 'right',
   LEFT: 'left',
 }
-// Long enough to swallow a run of filter-value clicks (observed 160-900ms apart in
-// the production incident), short enough to stay imperceptible against a query that
-// takes seconds. Not a guarantee: edits spaced wider than this still fire separately.
+
 const COHORT_RECALCULATION_DEBOUNCE_MS = 500
 
 export default {
@@ -235,8 +233,7 @@ export default {
   },
   created() {
     // Every filter-card value the user adds or removes rewrites the IFR, and each
-    // rewrite used to dispatch its own analytics query. A single medication card
-    // with ~110 values fired ~110 concurrent barchart queries; analytics-svc runs
+    // rewrite used to dispatch its own analytics query. analytics-svc runs
     // every one of them to completion (client-side cancel aborts the XHR, not the
     // query), so latency degraded from ~180ms to ~60s and the pile-up made a
     // subsequent reset look like it never fired. Coalesce the burst into one query.
@@ -264,6 +261,17 @@ export default {
         this.resetToDefaultView()
       }
     },
+    isFireRequestHeld(held) {
+      // The early return in getBookmarkFromIFR only stops NEW work being queued; a timer
+      // armed by a user edit moments earlier is still running. Every holder (bookmark
+      // load, the WebMCP cohort patch, resetChart, the dashboard wizard) ends the same
+      // way — releaseFireRequest then one explicit setFireRequest — so that surviving
+      // timer would land just after the release and fire a second, identical query.
+      // Drop it as soon as the hold goes up rather than at the next watcher run.
+      if (held) {
+        this.fireCohortRecalculation?.cancel()
+      }
+    },
     getBookmarkFromIFR(bm) {
       // Mirrors setFireRequest's own early return, but has to happen at schedule time:
       // bookmark load and the WebMCP cohort patch hold, then release and fire once
@@ -273,10 +281,17 @@ export default {
       }
       // Raise the staleness flag now, not when the debounced fire lands. setFireRequest
       // does this itself, but debouncing it would leave the previous cohort's count on
-      // screen looking authoritative for the whole window — the exact thing the flag
-      // exists to prevent. Idempotent, so the later dispatch from setFireRequest is fine.
-      this.invalidateCurrentPatientCount()
-      // The fire itself is debounced (see created()); changePage vs setFireRequest is
+      // screen looking authoritative for the whole window. Idempotent, so the later
+      // dispatch from setFireRequest is fine.
+      //
+      // Guarded exactly as setFireRequest guards it (store/modules/chart.ts): with an
+      // empty IFR every chart component bails out without querying, so nothing would
+      // ever call setCurrentPatientCount to lower the flag again and pa_get_cohort_result
+      // would block for its full 60s timeout.
+      if (Object.keys(this.getBookmarksData ?? {}).length > 0) {
+        this.invalidateCurrentPatientCount()
+      }
+      // The fire itself is debounced; changePage vs setFireRequest is
       // decided when it lands, because the patient list's own changePage watcher already
       // calls setFireRequest once and two calls in a tick cancel the fireRequest toggle.
       this.fireCohortRecalculation()
@@ -348,6 +363,7 @@ export default {
       'getChartSelection',
       'getAllChartConfigs',
       'getBookmarkFromIFR',
+      'getBookmarksData',
       'isFireRequestHeld',
       'getActiveChart',
       'getPLModel',
