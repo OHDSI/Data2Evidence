@@ -166,7 +166,7 @@ const WIZARD_FIELDS: FieldDefinition[] = [
     id: "respRate",
     type: "num",
     allowNegative: false,
-    label: "Resp Rate",
+    label: "Respiratory Rate",
     required: false,
     configPath: "patient.interactions.measurement.attributes.numval",
     filterCardPath: "patient.interactions.measurement",
