@@ -26,6 +26,7 @@ const toPortalContextProps = (props: Partial<PortalContextState>): PortalContext
   featuresLoading: props.featuresLoading ?? false,
   usernameLoading: props.usernameLoading ?? false,
   qeSvcUrl: props.qeSvcUrl,
+  uiFilesUrl: props.uiFilesUrl,
   REACT_APP_PUBLIC_WEBAPI_PROXY_URL: props.REACT_APP_PUBLIC_WEBAPI_PROXY_URL,
   REACT_APP_USE_PUBLIC_WEBAPI_PROXY: props.REACT_APP_USE_PUBLIC_WEBAPI_PROXY,
   REACT_APP_PUBLIC_WEBAPI_DATASOURCE: props.REACT_APP_PUBLIC_WEBAPI_DATASOURCE,
