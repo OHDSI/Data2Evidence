@@ -14,15 +14,15 @@
  *   must already be applied to the running stack.
  *   E2E_ENTRA_EXTID_USERNAME / E2E_ENTRA_EXTID_PASSWORD — a CIAM test account.
  */
-import { test, expect } from '../../fixtures'
+import { test } from '../../fixtures'
 import type { APIRequestContext } from '@playwright/test'
 import {
   ADMIN_PASSWORD,
   ADMIN_USERNAME,
   USERMGMT,
   assertClaimContract,
+  assertLinkedBySub,
   authHeaders,
-  findUser,
   loginViaConnector,
   loginViaUI,
   missingEnv,
@@ -79,13 +79,6 @@ test('idp:entra-external-id', async ({ page, baseURL }) => {
   await loginViaUI(page, ADMIN_USERNAME, ADMIN_PASSWORD)
   const adminHeaders = authHeaders(await readAccessToken(page), base)
 
-  await expect
-    .poll(() => findUser(api, base, adminHeaders, u => u.idpUserId === sub).then(u => u?.id), {
-      timeout: 30_000,
-      message: `no usermgmt user linked to idp sub for ${maskedEmail}`
-    })
-    .toBeTruthy()
-  const linked = await findUser(api, base, adminHeaders, u => u.idpUserId === sub)
-  expect(linked!.active, `usermgmt user ${linked!.id} is not active`).not.toBe(false)
-  console.log(`[assert] CIAM user ${maskedEmail} linked to idp sub (idpUserId === sub), user ${linked!.id}`)
+  const linked = await assertLinkedBySub(api, base, adminHeaders, sub, { poll: true, label: maskedEmail })
+  console.log(`[assert] CIAM user ${maskedEmail} linked to idp sub (idpUserId === sub), user ${linked.id}`)
 })

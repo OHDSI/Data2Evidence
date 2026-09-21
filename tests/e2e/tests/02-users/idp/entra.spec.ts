@@ -15,15 +15,15 @@
  *   E2E_ENTRA_USERNAME / E2E_ENTRA_PASSWORD — an Azure AD account in the mapped group.
  *   E2E_ENTRA_EXPECTED_ROLE — the Logto role that account's group maps to (e.g. role.researcher.demo).
  */
-import { test, expect } from '../../fixtures'
+import { test } from '../../fixtures'
 import {
   ADMIN_PASSWORD,
   ADMIN_USERNAME,
   USERMGMT,
   assertClaimContract,
+  assertLinkedBySub,
   authHeaders,
   expectContainsAll,
-  findUser,
   loginViaConnector,
   loginViaUI,
   missingEnv,
@@ -79,13 +79,6 @@ test('idp:entra', async ({ page, baseURL }) => {
   await loginViaUI(page, ADMIN_USERNAME, ADMIN_PASSWORD)
   const adminHeaders = authHeaders(await readAccessToken(page), base)
 
-  await expect
-    .poll(() => findUser(api, base, adminHeaders, u => u.idpUserId === sub).then(u => u?.id), {
-      timeout: 30_000,
-      message: `no usermgmt user linked to idp sub ${sub}`
-    })
-    .toBeTruthy()
-  const linked = await findUser(api, base, adminHeaders, u => u.idpUserId === sub)
-  expect(linked!.active, `usermgmt user ${linked!.id} is not active`).not.toBe(false)
-  console.log(`[assert] Entra user linked to idp sub (idpUserId === sub), user ${linked!.id}`)
+  const linked = await assertLinkedBySub(api, base, adminHeaders, sub, { poll: true })
+  console.log(`[assert] Entra user linked to idp sub (idpUserId === sub), user ${linked.id}`)
 })
