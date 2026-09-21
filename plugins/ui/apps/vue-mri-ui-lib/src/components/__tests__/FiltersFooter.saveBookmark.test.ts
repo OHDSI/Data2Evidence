@@ -16,6 +16,12 @@ import filtersFooter from '../FiltersFooter.vue'
  * getBookmarksData is a computed getter in the real store, so it reflects live
  * filter state on every read. The fixture models that with a getter over a
  * swappable value, which lets a test edit the filters mid-save.
+ *
+ * The baseline mutations are modelled after store/modules/bookmark.ts: a
+ * SET_ACTIVE_BOOKMARK swap nulls the baseline, and SET_ACTIVE_BOOKMARK_BASELINE
+ * sets it. getCurrentBookmarkHasChanges reports dirty whenever the baseline and
+ * the live data differ, so a baseline that is not the written payload silently
+ * marks unsaved edits clean.
  */
 
 const USERNAME = 'tester'
@@ -39,6 +45,7 @@ const createDeferred = <T>(): Deferred<T> => {
 
 const createContext = (loadAllResult: Promise<unknown>) => {
   let liveBookmarksData: unknown = SAVED_FILTERS
+  let activeBookmarkBaseline: unknown = null
   const commits: string[] = []
   const savedBookmark = { bookmarkname: COHORT_NAME, bmkId: 'bmk-1', user_id: USERNAME }
 
@@ -65,21 +72,27 @@ const createContext = (loadAllResult: Promise<unknown>) => {
     getBookmarkByNameAndUsername: () => savedBookmark,
     fireBookmarkQuery,
     closeSaveBookmark: vi.fn(),
-    commits,
   }
 
   context[types.SET_ACTIVE_BOOKMARK] = vi.fn(() => {
     commits.push(types.SET_ACTIVE_BOOKMARK)
+    activeBookmarkBaseline = null
   })
-  context[types.SET_ACTIVE_BOOKMARK_BASELINE] = vi.fn(() => {
+  context[types.SET_ACTIVE_BOOKMARK_BASELINE] = vi.fn((baseline: unknown) => {
     commits.push(types.SET_ACTIVE_BOOKMARK_BASELINE)
+    activeBookmarkBaseline = baseline
   })
 
   const editFilters = (next: unknown) => {
     liveBookmarksData = next
   }
 
-  return { context, editFilters }
+  return {
+    context,
+    commits,
+    editFilters,
+    storedBaseline: () => activeBookmarkBaseline,
+  }
 }
 
 const saveBookmark = (context: any) => filtersFooter.methods.saveBookmark.call(context)
@@ -93,7 +106,7 @@ const writtenPayload = (context: any) => {
 describe('FiltersFooter saveBookmark', () => {
   it('re-baselines the written payload before the cohort list refresh resolves', async () => {
     const loadAll = createDeferred<unknown>()
-    const { context, editFilters } = createContext(loadAll.promise)
+    const { context, editFilters, storedBaseline } = createContext(loadAll.promise)
 
     const saving = saveBookmark(context)
 
@@ -106,21 +119,20 @@ describe('FiltersFooter saveBookmark', () => {
 
     const payload = writtenPayload(context)
     expect(payload).not.toEqual(context.getBookmarksData)
-    expect(context[types.SET_ACTIVE_BOOKMARK_BASELINE]).toHaveBeenCalledWith(payload)
+    expect(storedBaseline()).toEqual(payload)
 
     loadAll.resolve({})
     await saving
   })
 
-  it('still adopts the saved bookmark and its live state once the refresh resolves', async () => {
+  it('keeps edits made during the refresh dirty by re-baselining the written payload', async () => {
     const loadAll = createDeferred<unknown>()
-    const { context, editFilters } = createContext(loadAll.promise)
+    const { context, commits, editFilters, storedBaseline } = createContext(loadAll.promise)
 
     const saving = saveBookmark(context)
     await new Promise(resolve => setTimeout(resolve, 0))
 
-    // SET_ACTIVE_BOOKMARK rebuilds the filters from the stored cohort, so the
-    // baseline taken after it must follow live state rather than the written payload.
+    // The user adds a filter card while the cohort list refresh is still in flight.
     editFilters(EDITED_FILTERS)
     loadAll.resolve({})
     await saving
@@ -128,8 +140,10 @@ describe('FiltersFooter saveBookmark', () => {
     expect(context[types.SET_ACTIVE_BOOKMARK]).toHaveBeenCalledWith(
       expect.objectContaining({ bmkId: 'bmk-1' })
     )
-    expect(context[types.SET_ACTIVE_BOOKMARK_BASELINE]).toHaveBeenLastCalledWith(EDITED_FILTERS)
-    // The baseline is re-captured after SET_ACTIVE_BOOKMARK, which clears it.
-    expect(context.commits[context.commits.length - 1]).toBe(types.SET_ACTIVE_BOOKMARK_BASELINE)
+    // The swap nulls the baseline, so it has to be captured again afterwards.
+    expect(commits[commits.length - 1]).toBe(types.SET_ACTIVE_BOOKMARK_BASELINE)
+    expect(storedBaseline()).toEqual(writtenPayload(context))
+    // Baseline differs from live state, so the unwritten filter card still reports dirty.
+    expect(storedBaseline()).not.toEqual(context.getBookmarksData)
   })
 })

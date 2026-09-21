@@ -388,7 +388,7 @@ export default {
           await this.fireBookmarkQuery({ method: 'get', params: { cmd: 'loadAll' } })
           const savedBookmark = this.getBookmarkByNameAndUsername(bookmarkName, username)
           this[types.SET_ACTIVE_BOOKMARK](savedBookmark)
-          this[types.SET_ACTIVE_BOOKMARK_BASELINE](this.getBookmarksData)
+          this[types.SET_ACTIVE_BOOKMARK_BASELINE](bookmark)
         } catch (error) {
           console.error('Error during bookmark save or reload:', error)
         } finally {
