@@ -1,9 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import {
-  resolveAtlasPluginBaseUrl,
-  resolveAtlasPluginEntryUrl,
-  resolveAtlasPluginStyleUrl,
-} from '../atlasPluginUrl'
+import { resolveAtlasPluginBaseUrl, resolveAtlasPluginEntryUrl, resolveAtlasPluginStyleUrl } from '../atlasPluginUrl'
 
 const SHELL = 'https://host.example/atlas/'
 
