@@ -2,7 +2,7 @@ name: test-e2e-idp
 
 # Reusable e2e for the IDP auth paths (logto-native / physionet-mock / entra-external-id),
 # called by docker-build-push.yaml after its build jobs — reuses that run's run_tag images
-# (incl. the -devx trex) and its ui-tgz artifact.
+# and its ui-tgz artifact.
 #
 # Required repository secrets (entra-external-id only):
 #   E2E_ENTRA_EXTID_CONNECTOR_CONFIG       full LOGTO__CONNECTOR_CONFIG JSON.
