@@ -47,7 +47,14 @@
 
   var hash = location.hash || "";
   // Atlas3 fell into WebAPI's native OIDC (HS256, trex-rejected, malformed URL).
-  var onBrokenWelcome = /#\/welcome[&?]token=/.test(hash);
+  //
+  // Both spellings, because that flow lands on this route with either a raw
+  // `token=` or an authorization `code=`, and neither belongs here: sign-in goes
+  // through /atlas-login/, which leaves nothing on the welcome route. Matching
+  // only `token=` let the `code=` variant through undetected -- no bounce, no
+  // error, and a session that had just been cleared, so the user sat logged out
+  // with no way back. Observed after a failed /trex-token exchange.
+  var onBrokenWelcome = /#\/welcome[&?](token|code)=/.test(hash);
 
   var token = currentToken();
   // One flag request feeds both gates. Wrapping fetch has to happen synchronously,
