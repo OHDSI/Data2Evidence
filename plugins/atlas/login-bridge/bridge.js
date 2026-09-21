@@ -19,6 +19,9 @@
   var VERIFIER_KEY = "atlas_pkce_verifier";
   var RETURN_KEY = "atlas_login_return_to";
   var STATE_KEY = "atlas_oidc_state";
+  // Stops a restarted sign-in from bouncing between here and /authorize.
+  var RESTART_TS_KEY = "atlas_login_restart_ts";
+  var RESTART_GUARD_MS = 10000;
 
   function fail(msg) {
     var s = document.getElementById("spinner");
@@ -118,7 +121,27 @@
 
   async function handleCallback(cfg, params) {
     var verifier = sessionStorage.getItem(VERIFIER_KEY);
-    if (!verifier) { fail("missing PKCE verifier (stale callback)"); return; }
+    if (!verifier) {
+      // A callback whose verifier has already been spent. The exchange consumes
+      // it, so ANY second visit to this URL arrives here: a reload, the Back
+      // button, a restored tab, or an autocompleted address. Dead-ending on an
+      // error was wrong -- nothing is broken, the request is simply finished,
+      // and the useful response is a fresh authorization rather than a message
+      // the user can do nothing with.
+      //
+      // Safe to restart: no token has been issued on this path, the spent code
+      // buys nothing, and startLogin mints a new verifier and state. Guarded by
+      // a timestamp so a restart that somehow lands straight back here stops
+      // instead of looping.
+      var lastRestart = parseInt(sessionStorage.getItem(RESTART_TS_KEY) || "0", 10);
+      if (Date.now() - lastRestart < RESTART_GUARD_MS) {
+        fail("sign-in did not complete. Please start again from Atlas.");
+        return;
+      }
+      sessionStorage.setItem(RESTART_TS_KEY, String(Date.now()));
+      await startLogin(cfg, params);
+      return;
+    }
     // Validate the OIDC state to prevent CSRF/login injection.
     var expectedState = sessionStorage.getItem(STATE_KEY);
     sessionStorage.removeItem(STATE_KEY);
