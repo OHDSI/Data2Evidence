@@ -33,7 +33,16 @@
     var m = document.cookie.match(/(?:^|;\s*)bearerToken=([^;]+)/);
     if (!m) return null;
     var v = decodeURIComponent(m[1]);
-    return v.indexOf("Bearer ") === 0 ? v.slice(7) : v;
+    if (v.indexOf("Bearer ") === 0) v = v.slice(7);
+    // Promoted to localStorage, which is the only place Atlas3 looks
+    // (initializeFromStorage). Signing in to the portal leaves this cookie
+    // behind, so without this the guard sees a valid token, skips the bounce
+    // through /atlas-login/, and Atlas then loads with nothing to authenticate
+    // with -- logged out, with no error and no way to recover but to wait for
+    // the cookie to expire. Reading the cookie to decide "logged in" and not
+    // storing it where the reader looks is the whole of that bug.
+    try { localStorage.setItem(TOKEN_KEY, v); } catch (e) { /* private mode */ }
+    return v;
   }
 
   var hash = location.hash || "";
