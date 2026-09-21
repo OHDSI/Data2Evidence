@@ -251,6 +251,6 @@ export default {
 
 .snackbar-error-icon {
   margin-right: 12px;
-  color: var(--color-feedback-alarm);
+  color: var(--color-feedback-alarm, #d53939);
 }
 </style>
