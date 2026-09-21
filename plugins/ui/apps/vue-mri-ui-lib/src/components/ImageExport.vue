@@ -105,18 +105,23 @@ export default {
       const targetWidth = pdfConst.targetWidth
       const response = this.response
 
-      const patientCount = response ? response.totalPatientCount : 0
+      let chartId = ''
+      if (this.compareChartType) {
+        chartId = '#' + this.compareChartType + '-chart'
+        chartType = this.compareChartType
+      } else {
+        chartId = `#${chartType}-chart`
+      }
 
-      if (patientCount && patientCount > 0) {
+      // The cohort-comparison endpoints return no totalPatientCount, so the patient-count
+      // guard cannot be applied to them. What the guard actually protects against is
+      // snapshotting a chart that is not there, which the rendered SVG answers directly.
+      const hasChartToExport = this.compareChartType
+        ? !!document.querySelector(`${chartId} svg`)
+        : !!(response && response.totalPatientCount > 0)
+
+      if (hasChartToExport) {
         try {
-          let chartId = ''
-          if (this.compareChartType) {
-            chartId = '#' + this.compareChartType + '-chart'
-            chartType = this.compareChartType
-          } else {
-            chartId = `#${chartType}-chart`
-          }
-
           const kmLegendInput =
             chartType.indexOf('km') > -1
               ? {
