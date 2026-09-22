@@ -675,6 +675,8 @@
                   },
                   "taskTimeoutSeconds": {
                     "default": 14400,
+                    "maximum": 86400,
+                    "minimum": 60,
                     "title": "Tasktimeoutseconds",
                     "type": "integer"
                   }

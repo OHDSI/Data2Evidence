@@ -1,5 +1,5 @@
 from typing import Optional, List
-from pydantic import BaseModel, computed_field
+from pydantic import BaseModel, Field, computed_field
 
 
 class DqdOptionsType(BaseModel):
@@ -23,8 +23,11 @@ class DqdOptionsType(BaseModel):
     # How long execute_dqd may run before Prefect force-ends it (#2964: it was
     # unbounded, so a wedged DB connection left the flow run RUNNING forever).
     # numThreads is pinned to 1 (sequential checks), so runtime scales directly with
-    # CDM size -- callers with a larger dataset should raise this per-run.
-    taskTimeoutSeconds: int = 14400
+    # CDM size -- callers with a larger dataset should raise this per-run. Bounds
+    # match validateDataQualityFlowRunDto's HTTP-layer check; enforced here too so a
+    # Prefect Custom Run (which validates against this model directly, bypassing the
+    # jobplugins API) can't set 0/negative or an unbounded value.
+    taskTimeoutSeconds: int = Field(default=14400, ge=60, le=86400)
 
     @property
     def use_trex_connection(self) -> bool:
