@@ -1,5 +1,4 @@
 name: ${PROJECT_NAME:-d2e}
-# test
 networks:
   alp:
   data:
