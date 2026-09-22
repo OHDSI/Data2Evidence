@@ -19,6 +19,8 @@
 | `LOGTO__D2E_SVC__CLIENT_ID`                     | string         | Logto Alp Svc Client Id                                                             |
 | `LOGTO__D2E_SVC__CLIENT_SECRET`                 | password       | Logto Alp Svc Client Secret                                                         |
 | `LOGTO__CLIENTID_PASSWORD__BASIC_AUTH`          | base64 encoded | From `LOGTO_API_M2M_CLIENT_ID` & `LOGTO_API_M2M_CLIENT_SECRET`                      |
+| `LOGTO__JUPYTERHUB__CLIENT_SECRET`              | password       | Optional. Set it to register the JupyterHub OIDC application and enable the hub; unset, no application is created and `LOGTO__CLIENT_APPS` renders unchanged. `openssl rand -hex 32` |
+| `JUPYTERHUB__PUBLIC_URL`                        | url            | Optional. Base URL JupyterHub is reached at, default `http://localhost:8000`. Drives both the registered redirect URI and the hub's own callback |
 | `LOGTO__SELF_BASE_URL`                          | string         | Base URL Logto's bundled connectors use to reach Logto's own API; must be a name the internal certificate covers |
 | `MINIO__SECRET_KEY`                             | password       | Meilisearch Secret_Key                                                              |
 | `OTEL_EXPORTER_OTLP_ENDPOINT`                   | url            | OTLP collector endpoint, e.g. `http://jaeger:4318`. Empty disables export.          |
