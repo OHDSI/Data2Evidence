@@ -274,7 +274,8 @@ services:
             "+storage": {},
             "+strategus": {},
             "+notebook": {},
-            "+network": {}
+            "+network": {},
+            "+analytics": {}
            }
           }
          }
@@ -536,6 +537,15 @@ services:
       CACHE_TABLE_LEVEL_CONCURRENCY: ${CACHE_TABLE_LEVEL_CONCURRENCY:-1}
       CACHE_TASK_TIMEOUT: ${CACHE_TASK_TIMEOUT:-10800}
       CACHE_CHUNK_TIMEOUT: ${CACHE_CHUNK_TIMEOUT:-3600}
+      # alp-dataflow-gen-init seeds this as the `duckdb_data_folder` Prefect variable,
+      # which the cache flows resolve their .db path from. It was declared only in that
+      # function's trex env profile and in CI the variable came out null, so every cache
+      # build died in Path(None) -- seed.ts posts `value: undefined`, which Prefect
+      # stores as null rather than rejecting. Declaring it on the container the init
+      # runs in makes the seeded value the real one. trex mounts the same volume at
+      # /usr/src/data and attaches cache catalogs out of /usr/src/data/cache; a flow
+      # container sees that volume as /app/duckdb_data.
+      DUCKDB__DATA_FOLDER: ${DUCKDB__DATA_FOLDER:-/app/duckdb_data/cache}
       ANALYTICS_STREAMING_CHUNK_SIZE_BY_DIALECT: '${ANALYTICS_STREAMING_CHUNK_SIZE_BY_DIALECT:-{"hana": 10000}}'
       IS_AUDIT_LOG_ENABLED: ${IS_AUDIT_LOG_ENABLED:-false}
       IS_CDM_SQL_AUDIT_LOG_ENABLED: ${IS_CDM_SQL_AUDIT_LOG_ENABLED:-false}
@@ -562,6 +572,8 @@ services:
       OTEL_EXPORTER_OTLP_PROTOCOL: ${OTEL_EXPORTER_OTLP_PROTOCOL:-}
       OTEL_EXPORTER_OTLP_HEADERS: ${OTEL_EXPORTER_OTLP_HEADERS:-}
       OTEL_SERVICE_NAME: ${OTEL_SERVICE_NAME:-}
+      COHORT_CACHE_TTL_HOURS: ${COHORT_CACHE_TTL_HOURS:-24}
+      COHORT_CACHE_MAX_AGE_DAYS: ${COHORT_CACHE_MAX_AGE_DAYS:-30}
 
   alp-caddy:
     container_name: &c1 ${PROJECT_NAME:-d2e}-caddy
