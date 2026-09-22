@@ -76,7 +76,12 @@ async function dismissUnsavedChangesDialog(page) {
 }
 
 async function navigateBackToCohortList(page) {
-  await page.locator('#pane-left').getByRole('link', { name: 'Cohorts' }).click()
+  // The top navigation's Cohorts link, not `#pane-left`'s. `#pane-left` is only
+  // rendered by the cohort builder (PatientAnalytics.vue). This helper is also
+  // called when the page is already the Data Exploration list, where that pane
+  // does not exist. The banner nav carries the link on both pages, and scoping
+  // to it keeps the locator unambiguous in the builder, which has two.
+  await page.getByRole('banner').getByRole('link', { name: 'Cohorts' }).click()
   await dismissUnsavedChangesDialog(page)
   await page.waitForTimeout(500)
 }

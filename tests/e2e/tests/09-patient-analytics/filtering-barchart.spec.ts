@@ -227,7 +227,9 @@ test(TEST_NAME, async ({ page }) => {
 
   // Reset filter card
   await page.getByRole('button', { name: '↺' }).click()
-  await page.locator('button[title="Reset"]').click()
+  // The redesigned reset dialog is a D2eDialog whose confirm button carries a
+  // test id, not a title attribute - :title moved onto the dialog itself.
+  await page.getByTestId('pa-reset-dialog-confirm-btn').click()
   await expect(page.locator('.loading-animation-component')).not.toBeVisible()
   await expect(page).toHaveScreenshot()
 })

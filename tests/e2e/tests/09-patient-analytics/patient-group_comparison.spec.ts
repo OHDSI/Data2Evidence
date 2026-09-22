@@ -102,7 +102,11 @@ test('pa-compare-cohorts', async ({ page }) => {
   await page.locator('.mainChartToolbar').getByTitle('Export to File').click()
 
   const downloadPromise = page.waitForEvent('download')
-  await page.locator('#pane-left').getByText('Export to PNG File').click()
+  // The download menu renders inline in the chart toolbar
+  // (CohortComparisonContainer.vue: .mainChartToolbar > .download-wrapper).
+  // The Compare modal opens over the Data Exploration list, which has no
+  // `#pane-left`, so the old scope matched nothing.
+  await page.locator('.mainChartToolbar').getByText('Export to PNG File').click()
   const download = await downloadPromise
   // the downloaded PNG should be prefixed with the active cohort and follows {cohortName}_{chartType}_{DD-MM-YYYY}.png format
   expect(download.suggestedFilename()).toMatch(new RegExp(`^${cohortB}_.*\\d{2}-\\d{2}-\\d{4}\\.png$`))
@@ -112,7 +116,9 @@ test('pa-compare-cohorts', async ({ page }) => {
   // ========================
   // Navigate back to cohorts list and delete the specific test cohort
   await page.getByRole('button', { name: 'Close' }).click()
-  await page.locator('#pane-left').getByRole('link', { name: 'Cohorts' }).click()
+  // Back on the Data Exploration list once the modal closes, so `#pane-left` is
+  // gone. The two earlier uses in this file are in the builder and still hold.
+  await page.getByRole('banner').getByRole('link', { name: 'Cohorts' }).click()
 
   // Find and delete the specific cohort by name to avoid deleting wrong cohorts
   // The delete button is the last img element in the action buttons container for each cohort
