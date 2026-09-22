@@ -195,7 +195,7 @@ import DialogBox from './DialogBox.vue'
 import messageBox from './MessageBox.vue'
 import { usePortalContext } from '../composables/usePortalContext'
 import { useNotificationStore } from '../stores/notifications'
-import { buildInsertedBookmark, buildUpdatedBookmark, isBookmarkSaveSuccess } from '@/utils/BookmarkUtils'
+import { isBookmarkSaveSuccess } from '@/utils/BookmarkUtils'
 import { useUserRole } from '../composables/useUserRole'
 
 export default {
@@ -247,6 +247,7 @@ export default {
       'getActiveBookmark',
       'getCurrentBookmarkHasChanges',
       'getBookmark',
+      'getBookmarkByNameAndUsername',
     ]),
     hasChanges() {
       // For regular D2E bookmarks, use existing logic with null checks
@@ -286,12 +287,7 @@ export default {
   },
   methods: {
     ...mapActions(['fireBookmarkQuery', 'loadbookmarkToState', 'resetChart']),
-    ...mapMutations([
-      types.CONFIG_SET_HAS_ASSIGNED,
-      types.UPSERT_BOOKMARK,
-      types.SET_ACTIVE_BOOKMARK,
-      types.SET_ACTIVE_BOOKMARK_BASELINE,
-    ]),
+    ...mapMutations([types.CONFIG_SET_HAS_ASSIGNED, types.SET_ACTIVE_BOOKMARK, types.SET_ACTIVE_BOOKMARK_BASELINE]),
     onAddFilterCardMenuItemSelected(configPath, isExclusion = false) {
       this.$emit('add', {
         configPath,
@@ -353,7 +349,7 @@ export default {
 
         try {
           const isInsert = isNewBookmark || this.isNotUserSharedBookmark
-          let savedBookmark = null
+          let result
 
           if (isInsert) {
             const params = {
@@ -362,46 +358,30 @@ export default {
               shareBookmark: this.shareBookmark,
               bookmark: JSON.stringify(bookmark),
             }
-            const result = await this.fireBookmarkQuery({ params, method: 'post', suppressToast: true })
-            savedBookmark = buildInsertedBookmark({
-              result,
-              bookmarkname: bookmarkName,
-              bookmark: params.bookmark,
-              user_id: username,
-              shared: this.shareBookmark,
-              paConfigId: this.getMriFrontendConfig?.getPaConfigId(),
-            })
+            result = await this.fireBookmarkQuery({ params, method: 'post', suppressToast: true })
           } else {
             const request = {
               cmd: 'update',
               bookmark: JSON.stringify(bookmark),
               shareBookmark: this.shareBookmark,
             }
-            const result = await this.fireBookmarkQuery({
+            result = await this.fireBookmarkQuery({
               method: 'put',
               params: request,
               bookmarkId: activeBookmark.bmkId,
               suppressToast: true,
             })
-            savedBookmark = isBookmarkSaveSuccess(result)
-              ? buildUpdatedBookmark(activeBookmark, { bookmark: request.bookmark, shared: this.shareBookmark })
-              : null
           }
 
           // fireBookmarkQuery reports a failed insert or update itself and then resolves,
           // so a resolved promise is not proof that the cohort was saved. Only a success
           // payload is. Stopping here leaves the cohort dirty, which is the safe direction.
-          if (!savedBookmark) {
+          if (!isBookmarkSaveSuccess(result)) {
             return
           }
 
-          // The save response carries the bookmark id, so the cohort list refresh is no
-          // longer on the critical path. Adopt the saved cohort and take the baseline from
-          // the payload that was written: waiting for the refresh is what left a saved
-          // cohort reporting dirty (#3341), and live state here would mark edits made
-          // during the save clean although they were never written.
-          this[types.UPSERT_BOOKMARK](savedBookmark)
-          this[types.SET_ACTIVE_BOOKMARK](savedBookmark)
+          // Baseline the payload that was written, before the cohort list refresh: waiting
+          // for that refresh is what left a saved cohort reporting dirty (#3341).
           this[types.SET_ACTIVE_BOOKMARK_BASELINE](bookmark)
 
           const successMessage = isInsert
@@ -413,11 +393,13 @@ export default {
           this.closeSaveBookmark()
           useNotificationStore().setToastMessage({ text: successMessage })
 
-          // Repopulate the cohort list in the background. Nothing above depends on it, and
-          // fireBookmarkQuery rethrows a failed loadAll, so the rejection needs a handler.
-          this.fireBookmarkQuery({ method: 'get', params: { cmd: 'loadAll' } }).catch(error => {
-            console.error('Error during bookmark save or reload:', error)
-          })
+          await this.fireBookmarkQuery({ method: 'get', params: { cmd: 'loadAll' } })
+          const savedBookmark = this.getBookmarkByNameAndUsername(bookmarkName, username)
+          // SET_ACTIVE_BOOKMARK clears the baseline, so it has to be captured again. Live
+          // state here would mark edits made during the refresh clean although they were
+          // never written, so the written payload is used again.
+          this[types.SET_ACTIVE_BOOKMARK](savedBookmark)
+          this[types.SET_ACTIVE_BOOKMARK_BASELINE](bookmark)
         } catch (error) {
           console.error('Error during bookmark save or reload:', error)
         } finally {

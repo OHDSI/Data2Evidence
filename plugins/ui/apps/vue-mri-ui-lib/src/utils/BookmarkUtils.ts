@@ -181,72 +181,13 @@ export function canModifyBookmark(bookmark: BookmarkOwnerInfo | null | undefined
  */
 const BOOKMARK_SAVE_SUCCESS = 'success'
 
-interface InsertBookmarkResult {
+interface BookmarkSaveResult {
   status?: string
-  bmkId?: string
 }
 
 export function isBookmarkSaveSuccess(result: unknown): boolean {
   if (result === BOOKMARK_SAVE_SUCCESS) {
     return true
   }
-  return (result as InsertBookmarkResult)?.status === BOOKMARK_SAVE_SUCCESS
-}
-
-/**
- * The bookmark record an `insert` produced, built from the save response so the
- * caller does not have to wait for a cohort list refresh to learn the new id.
- *
- * The fields are not guesses: createBookmarkDto (bookmark.service.ts:46) fixes
- * `view_name` to null and `version` to 1 for every insert, and the caller knows
- * the rest because it just sent them. Returns null when the save did not succeed.
- */
-export function buildInsertedBookmark({
-  result,
-  bookmarkname,
-  bookmark,
-  user_id,
-  shared,
-  paConfigId,
-}: {
-  result: unknown
-  bookmarkname: string
-  bookmark: string
-  user_id: string
-  shared: boolean
-  paConfigId?: string
-}): IBookmark | null {
-  if (!isBookmarkSaveSuccess(result)) {
-    return null
-  }
-
-  return {
-    bmkId: (result as InsertBookmarkResult).bmkId,
-    bookmarkname,
-    bookmark,
-    viewname: null,
-    modified: new Date().toISOString(),
-    version: 1,
-    user_id,
-    shared,
-    ...(paConfigId ? { paConfigId } : {}),
-  }
-}
-
-/**
- * The bookmark record an `update` produced. The identity does not change, so
- * this carries the existing record forward with the payload that was written.
- * _updateBookmark (bookmark.service.ts) bumps the stored version by one.
- */
-export function buildUpdatedBookmark(
-  activeBookmark: IBookmark,
-  { bookmark, shared }: { bookmark: string; shared: boolean }
-): IBookmark {
-  return {
-    ...activeBookmark,
-    bookmark,
-    shared,
-    modified: new Date().toISOString(),
-    version: (activeBookmark.version ?? 0) + 1,
-  }
+  return (result as BookmarkSaveResult)?.status === BOOKMARK_SAVE_SUCCESS
 }
