@@ -10,24 +10,19 @@
     "emitDecoratorMetadata": true
   },
   "imports": {
-    "process": "node:process",
-    "crypto": "node:crypto",
-    "https": "node:https",
-    "./src/seed": "./src/seed.ts",
-    "./src/dbCredentials": "./src/dbCredentials.ts",
-    "./src/PrefectAPI": "./src/PrefectAPI.ts",
-    "./src/types": "./src/types.ts",
-    "./src/env": "./src/env.ts",
-    "./src/customWorkpool": "./src/customWorkpool.ts",
-    "http": "node:http",
+    "pg": "npm:pg@^8.4.2",
+    "knex": "npm:knex@3.1.0",
+    "zod": "npm:zod@3.20.6",
+    "path": "jsr:@std/path@^1.0.0",
     "fs": "node:fs",
-    "path": "node:path",
+    "crypto": "node:crypto",
     "url": "node:url",
     "util": "node:util",
     "os": "node:os",
     "events": "node:events",
     "stream": "node:stream",
     "buffer": "node:buffer",
+    "process": "node:process",
     "assert": "node:assert"
   }
 }
