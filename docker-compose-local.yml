@@ -20,8 +20,7 @@ services:
         printf '%s' "$$TLS__INTERNAL__CA_CRT" > /usr/src/cert/ca.pem
         cp /usr/src/cert/ca.pem /usr/local/share/ca-certificates/d2e-internal-ca.crt
         update-ca-certificates
-        mkdir -p /usr/src/data/flow_staging
-        chmod 1777 /usr/src/data/flow_staging
+        mkdir -p /usr/src/data/flow_staging && chmod 1777 /usr/src/data/flow_staging || exit 1
         if [ "$${TREX_DX_ENABLED:-}" = "true" ] && [ -n "$${TREX_ROOT_KEY:-}" ]; then
           mkdir -p /trex-secrets
           printf 'TREX_ROOT_KEY=%s\n' "$$TREX_ROOT_KEY" > /trex-secrets/root.env
