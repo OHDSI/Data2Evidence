@@ -8,6 +8,7 @@ from prefect import runtime
 from prefect import flow, task
 from prefect.logging import get_run_logger
 from prefect.artifacts import create_markdown_artifact
+from prefect.variables import Variable
 
 from .types import DqdOptionsType, DqdParams
 
@@ -25,11 +26,7 @@ def _default_cache_id_from_dataset_id(dataset_id):
     cleaned = dataset_id.replace("-", "_")
     return f"_{cleaned}" if cleaned[:1].isdigit() else cleaned
 
-# execute_dqd blocks on a single rpy2 call into R's DatabaseConnector (JDBC), which can
-# wedge on a stuck connection/query with no exception ever raised back to Python -- the
-# flow run then sits RUNNING indefinitely with nothing to mark it terminal (#2964). A
-# timeout gives Prefect a way to end it; mirrors data_management_plugin's own bound.
-@flow(log_prints=True, timeout_seconds=14400)
+@flow(log_prints=True)
 def dqd_plugin(options: DqdOptionsType):
     logger = get_run_logger()
     logger.info(f"Flow parameters received: {options.json()}")
@@ -81,7 +78,16 @@ def dqd_plugin(options: DqdOptionsType):
         if schema_from_api:
             dqd_parameters.materializedCohortDatabaseSchema = schema_from_api
 
-    execute_dqd(dqd_parameters, flow_run_id, is_hana)
+    # execute_dqd blocks on a single rpy2 call into R's DatabaseConnector (JDBC), which
+    # can wedge on a stuck connection/query with no exception ever raised back to
+    # Python -- the flow run then sits RUNNING indefinitely with nothing to mark it
+    # terminal (#2964). A timeout gives Prefect a way to end it. Runtime is set from a
+    # Variable (rather than a fixed value) since checkLevels/checkNames and CDM size
+    # vary the real runtime by an order of magnitude across datasets.
+    task_timeout_seconds = int(Variable.get("dqd_task_timeout_seconds", default="14400"))
+    execute_dqd.with_options(timeout_seconds=task_timeout_seconds)(
+        dqd_parameters, flow_run_id, is_hana
+    )
 
 
 @task(log_prints=True, task_run_name="execute_dqd_{dqd_params.schemaName}")
