@@ -32,16 +32,29 @@ CHANGELOG_TABLE = "databasechangelog"
 MIGRATIONS_ROOT = Path(__file__).resolve().parent / "db" / "migrations"
 
 SPLIT_STATEMENTS_FALSE_REGEX = re.compile(r"splitStatements:false", re.IGNORECASE)
+# Note: some changesets carry a `labels:`/`contexts:` modifier on their
+# --changeset line (e.g. omop5-4/V1.0.0.0.4__apply_v5.4.sql). Verified against
+# the real Liquibase 4.5.0 CLI: without --labels/--contexts passed on the
+# command line (this plugin never passes either), Liquibase applies ALL
+# changesets regardless of label/context - the filter only excludes when
+# actively supplied and non-matching. So these are NOT skipped here either.
 
 # Data models fully migrated off Liquibase. Ordered changeset directories
 # mirror the previous <includeAll> entries in each dialect's Liquibase
-# changelog XML (db/migrations/<dialect>/liquibase-changelog-*.xml).
+# changelog XML (db/migrations/<dialect>/liquibase-changelog-*.xml). The two
+# dialects intentionally differ (e.g. hana's omop5-4 changelog has no `gdm`).
 DATAMODEL_CHANGESET_DIRS = {
     "postgres": {
         "medical-imaging": ["medical-imaging"],
+        "omop5-4": ["omop", "questionnaireResponse", "researchSubject", "consent",
+                    "views", "schemaMetadata", "bi", "omop5-4", "monitor",
+                    "questionnaire", "gdm"],
     },
     "hana": {
         "medical-imaging": ["medical-imaging"],
+        "omop5-4": ["omop", "questionnaireResponse", "researchSubject", "monitor",
+                    "consent", "views", "schemaMetadata", "bi", "omop5-4",
+                    "questionnaire"],
     },
 }
 
@@ -70,7 +83,14 @@ def _parse_changeset(raw_text: str) -> tuple[bool, str]:
     return split_statements, "\n".join(body_lines).strip()
 
 
+BLOCK_COMMENT_REGEX = re.compile(r"/\*.*?\*/", re.DOTALL)
+
+
 def _split_sql_statements(sql_body: str) -> List[str]:
+    # strip /* ... */ block comments first - some changesets keep old,
+    # superseded DDL inside one (e.g. omop5-4/V1.0.0.0.4__apply_v5.4.sql),
+    # and a semicolon inside the comment would otherwise split it apart
+    sql_body = BLOCK_COMMENT_REGEX.sub("", sql_body)
     statements = []
     for raw_statement in sql_body.split(";"):
         lines = [
@@ -125,8 +145,11 @@ def get_applied_filenames(dbdao: "DaoBase", schema_name: str) -> set:
 
 
 def apply_changeset(dbdao: "DaoBase", schema_name: str, dialect: str,
-                    changeset: ChangesetFile, logger) -> None:
+                    changeset: ChangesetFile, vocab_schema: str, logger) -> None:
     split_statements, sql_body = _parse_changeset(changeset.path.read_text())
+    # mirrors Liquibase's `-DVOCAB_SCHEMA=<value>` changelog parameter, which
+    # substitutes this placeholder in a handful of omop/omop5-4 changesets
+    sql_body = sql_body.replace("${VOCAB_SCHEMA}", vocab_schema)
 
     with dbdao.engine.connect() as connection:
         trans = connection.begin()
@@ -153,7 +176,8 @@ def apply_changeset(dbdao: "DaoBase", schema_name: str, dialect: str,
 
 
 def apply_data_model_schema(dbdao: "DaoBase", schema_name: str, data_model: str,
-                            dialect: str, count: Optional[int] = None) -> None:
+                            dialect: str, vocab_schema: Optional[str] = None,
+                            count: Optional[int] = None) -> None:
     logger = get_run_logger()
     ensure_changelog_table(dbdao, schema_name)
     applied = get_applied_filenames(dbdao, schema_name)
@@ -171,7 +195,7 @@ def apply_data_model_schema(dbdao: "DaoBase", schema_name: str, data_model: str,
 
     for changeset in pending:
         logger.info(f"Applying changeset '{changeset.relative_path}' to schema '{schema_name}'..")
-        apply_changeset(dbdao, schema_name, dialect, changeset, logger)
+        apply_changeset(dbdao, schema_name, dialect, changeset, vocab_schema or schema_name, logger)
         logger.info(
             f"Successfully applied changeset '{changeset.relative_path}' to schema '{schema_name}'"
         )

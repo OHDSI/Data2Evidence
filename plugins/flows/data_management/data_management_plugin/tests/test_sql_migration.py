@@ -53,6 +53,22 @@ def test_split_sql_statements_empty_body_returns_empty_list():
     assert sm._split_sql_statements("") == []
 
 
+def test_split_sql_statements_ignores_semicolons_inside_block_comments():
+    # e.g. omop5-4/V1.0.0.0.4__apply_v5.4.sql keeps old, superseded DDL wrapped
+    # in a /* ... */ block, with semicolons inside it
+    body = (
+        "CREATE TABLE foo(id integer);\n"
+        "/*\n"
+        'DROP TABLE IF EXISTS "OLD_TABLE";\n'
+        "\n"
+        'CREATE TABLE "ANOTHER_OLD_TABLE" (id integer);\n'
+        "*/\n"
+        "CREATE INDEX idx_foo ON foo(id);"
+    )
+    statements = sm._split_sql_statements(body)
+    assert statements == ["CREATE TABLE foo(id integer)", "CREATE INDEX idx_foo ON foo(id)"]
+
+
 # --- _set_current_schema_statement ---
 
 def test_set_current_schema_statement_postgres_lowercases():
@@ -65,15 +81,16 @@ def test_set_current_schema_statement_hana_uppercases():
 
 # --- is_sql_migration_data_model ---
 
+@pytest.mark.parametrize("data_model", ["medical-imaging", "omop5-4"])
 @pytest.mark.parametrize("dialect", ["postgres", "hana"])
-def test_is_sql_migration_data_model_true_for_medical_imaging(dialect):
-    assert sm.is_sql_migration_data_model("medical-imaging", dialect) is True
+def test_is_sql_migration_data_model_true_for_migrated_models(data_model, dialect):
+    assert sm.is_sql_migration_data_model(data_model, dialect) is True
 
 
 @pytest.mark.parametrize("dialect", ["postgres", "hana"])
-def test_is_sql_migration_data_model_false_for_omop5_4(dialect):
-    # omop5-4 stays on Liquibase until it's migrated too
-    assert sm.is_sql_migration_data_model("omop5-4", dialect) is False
+def test_is_sql_migration_data_model_false_for_waveform(dialect):
+    # waveform stays on Liquibase until it's migrated too
+    assert sm.is_sql_migration_data_model("waveform", dialect) is False
 
 
 def test_is_sql_migration_data_model_false_for_unknown_dialect():
@@ -94,6 +111,26 @@ def test_list_changeset_files_medical_imaging(dialect):
         f"db/migrations/{dialect}/changesets/medical-imaging/V1.0.0.0.0__create_medical_imaging_tables.sql"
     )
     assert all(f.path.exists() for f in files)
+
+
+@pytest.mark.parametrize("dialect,filename", [
+    ("postgres", "V1.0.0.0.4__apply_v5.4.sql"),
+    ("hana", "V5.4.1.1.1__apply_v5.4.sql"),
+])
+def test_list_changeset_files_includes_label_and_context_tagged_changesets(dialect, filename):
+    # These changesets carry a `labels:`/`contexts:` modifier on their
+    # --changeset line. Verified against the real Liquibase CLI: without
+    # --labels/--contexts passed (this plugin never passes either), Liquibase
+    # applies them anyway, so the runner must include them too.
+    files = sm.list_changeset_files(dialect, "omop5-4")
+    assert filename in [f.path.name for f in files]
+
+
+def test_list_changeset_files_omop5_4_postgres_includes_gdm_hana_does_not():
+    postgres_dirs = {f.relative_path.split("/")[4] for f in sm.list_changeset_files("postgres", "omop5-4")}
+    hana_dirs = {f.relative_path.split("/")[4] for f in sm.list_changeset_files("hana", "omop5-4")}
+    assert "gdm" in postgres_dirs
+    assert "gdm" not in hana_dirs
 
 
 # --- apply_changeset ---
@@ -121,7 +158,7 @@ def test_apply_changeset_sets_schema_then_executes_statements_then_records():
     )
     logger = MagicMock()
 
-    sm.apply_changeset(dbdao, "my_schema", "postgres", changeset, logger)
+    sm.apply_changeset(dbdao, "my_schema", "postgres", changeset, "my_vocab_schema", logger)
 
     executed_sql = [c.args[0].text for c in connection.execute.call_args_list]
     assert executed_sql[0] == 'SET search_path TO "my_schema"'
@@ -146,7 +183,7 @@ def test_apply_changeset_rolls_back_and_reraises_on_failure():
     logger = MagicMock()
 
     with pytest.raises(Exception, match="boom"):
-        sm.apply_changeset(dbdao, "my_schema", "postgres", changeset, logger)
+        sm.apply_changeset(dbdao, "my_schema", "postgres", changeset, "my_vocab_schema", logger)
 
     trans.rollback.assert_called_once()
     trans.commit.assert_not_called()
@@ -166,12 +203,29 @@ def test_apply_changeset_executes_split_statements_false_body_as_one_statement()
     )
     logger = MagicMock()
 
-    sm.apply_changeset(dbdao, "my_schema", "postgres", changeset, logger)
+    sm.apply_changeset(dbdao, "my_schema", "postgres", changeset, "my_vocab_schema", logger)
 
     executed_sql = [c.args[0].text for c in connection.execute.call_args_list]
     # one SET SCHEMA statement + exactly one statement for the whole procedure body
     assert len(executed_sql) == 2
     assert "BEGIN SELECT 1; SELECT 2; END;" in executed_sql[1]
+
+
+def test_apply_changeset_substitutes_vocab_schema_placeholder():
+    dbdao, connection, trans = _make_dbdao_mock()
+    changeset = sm.ChangesetFile(
+        path=MagicMock(read_text=lambda: (
+            "--liquibase formatted sql\n--changeset alp:V1\n\n"
+            'CREATE OR REPLACE VIEW "VIEW::OMOP.CONCEPT" AS SELECT * FROM ${VOCAB_SCHEMA}."CONCEPT";'
+        )),
+        relative_path="db/migrations/postgres/changesets/omop5-4/V1__view.sql",
+    )
+    logger = MagicMock()
+
+    sm.apply_changeset(dbdao, "my_schema", "postgres", changeset, "my_vocab_schema", logger)
+
+    executed_sql = [c.args[0].text for c in connection.execute.call_args_list]
+    assert executed_sql[1] == 'CREATE OR REPLACE VIEW "VIEW::OMOP.CONCEPT" AS SELECT * FROM my_vocab_schema."CONCEPT"'
 
 
 # --- apply_data_model_schema ---

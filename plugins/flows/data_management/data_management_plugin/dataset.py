@@ -79,6 +79,7 @@ def create_schema_tasks(
                 schema_name=schema_name,
                 data_model=data_model,
                 dialect=dialect,
+                vocab_schema=vocab_schema,
                 count=count,
             )
         else:
@@ -184,6 +185,7 @@ def update_datamodel(
                 schema_name=schema_name,
                 data_model=data_model,
                 dialect=dialect,
+                vocab_schema=vocab_schema,
             )
         else:
             match flow_action_type:
