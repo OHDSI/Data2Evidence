@@ -43,6 +43,12 @@ export const env = {
   SYSTEM_NAME: _env.ALP__SYSTEM_NAME,
 
   TREX_API_URL: JSON.parse(process.env.SERVICE_ROUTES || '{ "trex": "" }').trex,
+  // jobplugins is served by trex at /jobplugins. docker-compose defines an explicit
+  // "jobplugins" route; the Helm SERVICE_ROUTES does not, so fall back to the trex
+  // origin rather than requiring a chart change.
+  JOBPLUGINS_API_URL:
+    JSON.parse(process.env.SERVICE_ROUTES || '{ "trex": "" }').jobplugins ||
+    JSON.parse(process.env.SERVICE_ROUTES || '{ "trex": "" }').trex,
 
   PG_HOST: _env.PG_HOST,
   PG_PORT: parseInt(<string>_env.PG_PORT),
