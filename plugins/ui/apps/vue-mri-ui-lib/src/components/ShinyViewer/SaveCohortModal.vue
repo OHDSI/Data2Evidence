@@ -139,6 +139,7 @@ import appMessageStrip from '@/lib/ui/app-message-strip.vue'
 import * as types from '../../store/mutation-types'
 import { usePortalContext } from '../../composables/usePortalContext'
 import { useNotificationStore } from '../../stores/notifications'
+import { isBookmarkSaveSuccess } from '@/utils/BookmarkUtils'
 
 export default {
   name: 'SaveCohortModal',
@@ -470,6 +471,8 @@ export default {
         }
       }
 
+      let result
+
       if (this.isNewCohort) {
         this.savingStep = 'saving-filter'
         const params = {
@@ -483,7 +486,7 @@ export default {
           datasetId: selectedDataset?.id,
         }
 
-        await this.fireBookmarkQuery({ params, method: 'post', suppressToast: true })
+        result = await this.fireBookmarkQuery({ params, method: 'post', suppressToast: true })
       } else {
         this.savingStep = 'saving-filter'
         const params = {
@@ -492,13 +495,24 @@ export default {
           shareBookmark: false,
         }
 
-        await this.fireBookmarkQuery({
+        result = await this.fireBookmarkQuery({
           method: 'put',
           params,
           bookmarkId: activeBookmark.bmkId,
           suppressToast: true,
         })
       }
+
+      // fireBookmarkQuery reports a failed write itself and then resolves, so a resolved
+      // promise is not proof the cohort was saved. Stop before materializing something
+      // that does not exist.
+      if (!isBookmarkSaveSuccess(result)) {
+        throw new Error(this.getText(this.isNewCohort ? 'MRI_PA_SAVE_BMK_ERROR' : 'MRI_PA_UPDATE_BMK_ERROR'))
+      }
+
+      // Baseline the payload that was written, before the cohort list refresh, so the
+      // saved cohort stops reporting unsaved changes straight away (#3341).
+      this[types.SET_ACTIVE_BOOKMARK_BASELINE](bookmarkData)
 
       this.savingStep = 'refreshing-filter'
       const savedBookmark = await this.refreshAndFindBookmark()
