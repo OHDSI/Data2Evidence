@@ -320,6 +320,11 @@ const XAxisLabelMaxLength = 30
 
 const SnackbarTimeout = 3000
 
+// Snackbars are teleported to <body> by Vuetify, so they compete with the modal
+// dialogs' own stacking. `.message-box` sits at 10001 (styles/messageBox.scss), and
+// Vuetify's default of 2000 would leave the toast behind the dimming overlay.
+const SnackbarZIndex = 10002
+
 export default {
   sap,
   events,
@@ -339,4 +344,5 @@ export default {
   CohortEntryExit,
   XAxisLabelMaxLength,
   SnackbarTimeout,
+  SnackbarZIndex,
 }

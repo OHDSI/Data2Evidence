@@ -105,6 +105,7 @@ export default {
       })
 
       this.$emit('busyEv', true)
+      this.$emit('response', null)
 
       this.ajaxAuth({
         method: 'get',
@@ -130,6 +131,7 @@ export default {
           this.setupPlotly()
           this.renderChart()
           this.requestCancel = null
+          this.$emit('response', this.chartData)
           this.$emit('busyEv', false)
         })
         .catch(({ response }) => {
