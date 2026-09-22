@@ -103,6 +103,52 @@ describe('store - bookmark', () => {
       expect(state.activeBookmarkBaseline).toEqual(baseline)
     })
 
+    it('UPSERT_BOOKMARK appends a bookmark the list does not hold yet', () => {
+      state.bookmarks = [{ bmkId: 'bmk-1', bookmark: '{"filter":{"cards":[]}}' }]
+
+      bookmarkModule.mutations[types.UPSERT_BOOKMARK](state, { bmkId: 'bmk-2', bookmark: '{"filter":{"cards":["a"]}}' })
+
+      expect(state.bookmarks).toEqual([
+        { bmkId: 'bmk-1', bookmark: '{"filter":{"cards":[]}}' },
+        { bmkId: 'bmk-2', bookmark: '{"filter":{"cards":["a"]}}' },
+      ])
+    })
+
+    it('UPSERT_BOOKMARK replaces the entry with the same bmkId', () => {
+      state.bookmarks = [
+        { bmkId: 'bmk-1', bookmark: '{"filter":{"cards":[]}}' },
+        { bmkId: 'bmk-2', bookmark: '{"filter":{"cards":[]}}', version: 1 },
+      ]
+
+      bookmarkModule.mutations[types.UPSERT_BOOKMARK](state, {
+        bmkId: 'bmk-2',
+        bookmark: '{"filter":{"cards":["a"]}}',
+        version: 2,
+      })
+
+      expect(state.bookmarks).toHaveLength(2)
+      expect(state.bookmarks[1]).toEqual({ bmkId: 'bmk-2', bookmark: '{"filter":{"cards":["a"]}}', version: 2 })
+    })
+
+    it('UPSERT_BOOKMARK leaves the previous array untouched', () => {
+      const previous = [{ bmkId: 'bmk-1', bookmark: '{"filter":{"cards":[]}}' }]
+      state.bookmarks = previous
+
+      bookmarkModule.mutations[types.UPSERT_BOOKMARK](state, { bmkId: 'bmk-1', bookmark: '{"filter":{"cards":["a"]}}' })
+      bookmarkModule.mutations[types.UPSERT_BOOKMARK](state, { bmkId: 'bmk-2', bookmark: '{}' })
+
+      expect(previous).toEqual([{ bmkId: 'bmk-1', bookmark: '{"filter":{"cards":[]}}' }])
+      expect(state.bookmarks).not.toBe(previous)
+    })
+
+    it('UPSERT_BOOKMARK makes the saved bookmark readable through getBookmarkById', () => {
+      const filters = { filter: { cards: ['card-1'], configMetadata: { id: 'cfg', version: '1' } } }
+
+      bookmarkModule.mutations[types.UPSERT_BOOKMARK](state, { bmkId: 'bmk-new', bookmark: JSON.stringify(filters) })
+
+      expect(bookmarkModule.getters.getBookmarkById(state)('bmk-new')).toEqual(filters)
+    })
+
     it('SET_BOOKMARKS_DATASET_ID records the dataset the cached list belongs to', () => {
       bookmarkModule.mutations[types.SET_BOOKMARKS_DATASET_ID](state, { datasetId: 'dataset-2' })
       expect(state.bookmarksDatasetId).toBe('dataset-2')

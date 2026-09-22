@@ -7,11 +7,16 @@ vi.mock('../../../stores/notifications', () => ({
 }))
 
 import saveCohortModal from '../SaveCohortModal.vue'
+import bookmarkModule from '../../../store/modules/bookmark'
 
 /**
  * saveBookmark is called against a plain context object rather than a mounted
  * component: the behaviour under test is which value the saved bookmark id comes
  * from, not rendered markup.
+ *
+ * The cohort list is driven through the real UPSERT_BOOKMARK mutation and read
+ * back through the real getBookmarkById getter, because materializeCohort sources
+ * its filter cards from that getter and it throws when the cohort is missing.
  */
 
 const USERNAME = 'tester'
@@ -30,6 +35,8 @@ const createContext = ({ writeSucceeds = true, isNewCohort = true, activeBookmar
     return Promise.resolve(updateResult)
   })
 
+  const bookmarkState = { bookmarks: activeBookmark ? [activeBookmark] : ([] as any[]) }
+
   const context: any = {
     isNewCohort,
     cohortName: isNewCohort ? COHORT_NAME : '',
@@ -46,10 +53,13 @@ const createContext = ({ writeSucceeds = true, isNewCohort = true, activeBookmar
     fireBookmarkQuery,
   }
 
+  context[types.UPSERT_BOOKMARK] = vi.fn((savedBookmark: any) =>
+    bookmarkModule.mutations[types.UPSERT_BOOKMARK](bookmarkState, savedBookmark)
+  )
   context[types.SET_ACTIVE_BOOKMARK] = vi.fn()
   context[types.SET_ACTIVE_BOOKMARK_BASELINE] = vi.fn()
 
-  return context
+  return { context, bookmarkState }
 }
 
 const saveBookmark = (context: any) => saveCohortModal.methods.saveBookmark.call(context)
@@ -60,7 +70,7 @@ describe('SaveCohortModal saveBookmark', () => {
   })
 
   it('takes the saved bookmark id from the save response', async () => {
-    const context = createContext()
+    const { context } = createContext()
 
     await expect(saveBookmark(context)).resolves.toBe('bmk-new')
     expect(context.savedBookmarkId).toBe('bmk-new')
@@ -68,7 +78,7 @@ describe('SaveCohortModal saveBookmark', () => {
 
   it('does not wait for the cohort list refresh to learn the id', async () => {
     // The refresh promise never resolves, so a save that awaited it would hang.
-    const context = createContext()
+    const { context } = createContext()
 
     await saveBookmark(context)
 
@@ -80,7 +90,7 @@ describe('SaveCohortModal saveBookmark', () => {
   })
 
   it('adopts the saved cohort and baselines the written payload', async () => {
-    const context = createContext()
+    const { context } = createContext()
 
     await saveBookmark(context)
 
@@ -100,7 +110,7 @@ describe('SaveCohortModal saveBookmark', () => {
       shared: false,
       cohortDefinitionId: 42,
     }
-    const context = createContext({ isNewCohort: false, activeBookmark: existing })
+    const { context } = createContext({ isNewCohort: false, activeBookmark: existing })
 
     await expect(saveBookmark(context)).resolves.toBe('bmk-9')
     expect(context[types.SET_ACTIVE_BOOKMARK]).toHaveBeenCalledWith(
@@ -108,8 +118,34 @@ describe('SaveCohortModal saveBookmark', () => {
     )
   })
 
+  it('puts the saved cohort in the list before materialization reads it', async () => {
+    // The cohort list refresh never resolves, so the list only holds what the
+    // save put there - the slow-network case materializeCohort used to crash on.
+    const { context, bookmarkState } = createContext()
+
+    const savedBookmarkId = await saveBookmark(context)
+
+    expect(bookmarkModule.getters.getBookmarkById(bookmarkState)(savedBookmarkId)).toEqual(FILTERS)
+  })
+
+  it('replaces the stale list entry when updating a saved cohort', async () => {
+    const existing = {
+      bmkId: 'bmk-9',
+      bookmarkname: COHORT_NAME,
+      bookmark: JSON.stringify({ filter: { cards: ['stale'] } }),
+      user_id: USERNAME,
+      version: 2,
+    }
+    const { context, bookmarkState } = createContext({ isNewCohort: false, activeBookmark: existing })
+
+    const savedBookmarkId = await saveBookmark(context)
+
+    expect(bookmarkState.bookmarks).toHaveLength(1)
+    expect(bookmarkModule.getters.getBookmarkById(bookmarkState)(savedBookmarkId)).toEqual(FILTERS)
+  })
+
   it('raises when the write did not succeed, instead of materializing nothing', async () => {
-    const context = createContext({ writeSucceeds: false })
+    const { context } = createContext({ writeSucceeds: false })
 
     await expect(saveBookmark(context)).rejects.toThrow('MRI_PA_SAVE_BMK_ERROR')
     expect(context.savedBookmarkId).toBeNull()

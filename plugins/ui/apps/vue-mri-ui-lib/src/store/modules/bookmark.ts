@@ -743,6 +743,12 @@ const mutations = {
   [types.SET_BOOKMARKS](modulestate, bookmarks) {
     modulestate.bookmarks = bookmarks
   },
+  [types.UPSERT_BOOKMARK](modulestate, bookmark) {
+    const isKnown = modulestate.bookmarks.some(b => b.bmkId === bookmark.bmkId)
+    modulestate.bookmarks = isKnown
+      ? modulestate.bookmarks.map(b => (b.bmkId === bookmark.bmkId ? bookmark : b))
+      : [...modulestate.bookmarks, bookmark]
+  },
   [types.SET_BOOKMARKS_LOADING](modulestate, { loading }) {
     modulestate.loading = loading
   },

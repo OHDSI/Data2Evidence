@@ -247,7 +247,6 @@ export default {
       'getActiveBookmark',
       'getCurrentBookmarkHasChanges',
       'getBookmark',
-      'getBookmarkByNameAndUsername',
     ]),
     hasChanges() {
       // For regular D2E bookmarks, use existing logic with null checks
@@ -287,7 +286,12 @@ export default {
   },
   methods: {
     ...mapActions(['fireBookmarkQuery', 'loadbookmarkToState', 'resetChart']),
-    ...mapMutations([types.CONFIG_SET_HAS_ASSIGNED, types.SET_ACTIVE_BOOKMARK, types.SET_ACTIVE_BOOKMARK_BASELINE]),
+    ...mapMutations([
+      types.CONFIG_SET_HAS_ASSIGNED,
+      types.UPSERT_BOOKMARK,
+      types.SET_ACTIVE_BOOKMARK,
+      types.SET_ACTIVE_BOOKMARK_BASELINE,
+    ]),
     onAddFilterCardMenuItemSelected(configPath, isExclusion = false) {
       this.$emit('add', {
         configPath,
@@ -396,6 +400,7 @@ export default {
           // the payload that was written: waiting for the refresh is what left a saved
           // cohort reporting dirty (#3341), and live state here would mark edits made
           // during the save clean although they were never written.
+          this[types.UPSERT_BOOKMARK](savedBookmark)
           this[types.SET_ACTIVE_BOOKMARK](savedBookmark)
           this[types.SET_ACTIVE_BOOKMARK_BASELINE](bookmark)
 
@@ -410,7 +415,9 @@ export default {
 
           // Repopulate the cohort list in the background. Nothing above depends on it, and
           // fireBookmarkQuery rethrows a failed loadAll, so the rejection needs a handler.
-          this.fireBookmarkQuery({ method: 'get', params: { cmd: 'loadAll' } }).catch(() => {})
+          this.fireBookmarkQuery({ method: 'get', params: { cmd: 'loadAll' } }).catch(error => {
+            console.error('Error during bookmark save or reload:', error)
+          })
         } catch (error) {
           console.error('Error during bookmark save or reload:', error)
         } finally {

@@ -289,7 +289,7 @@ export default {
   },
   methods: {
     ...mapActions(['fireBookmarkQuery', 'onAddCohortOkButtonPress']),
-    ...mapMutations([types.SET_ACTIVE_BOOKMARK, types.SET_ACTIVE_BOOKMARK_BASELINE]),
+    ...mapMutations([types.UPSERT_BOOKMARK, types.SET_ACTIVE_BOOKMARK, types.SET_ACTIVE_BOOKMARK_BASELINE]),
     generateDefaultName(): string {
       const now = new Date()
       const timestamp = now.toLocaleString('en-US', {
@@ -524,13 +524,16 @@ export default {
       // The save response carries the bookmark id, so materialization no longer waits for
       // the cohort list. Baseline the written payload so the saved cohort stops reporting
       // unsaved changes straight away (#3341), and so edits made during the save stay dirty.
+      this[types.UPSERT_BOOKMARK](savedBookmark)
       this[types.SET_ACTIVE_BOOKMARK](savedBookmark)
       this[types.SET_ACTIVE_BOOKMARK_BASELINE](bookmarkData)
 
       // Repopulate the cohort list in the background. Nothing below depends on it, and
       // fireBookmarkQuery rethrows a failed loadAll, so the rejection needs a handler.
       this.savingStep = 'refreshing-filter'
-      this.fireBookmarkQuery({ method: 'get', params: { cmd: 'loadAll' } }).catch(() => {})
+      this.fireBookmarkQuery({ method: 'get', params: { cmd: 'loadAll' } }).catch(error => {
+        console.error('[SaveCohortModal] Error:', error)
+      })
 
       this.savedBookmarkId = savedBookmark.bmkId
       return savedBookmark.bmkId
