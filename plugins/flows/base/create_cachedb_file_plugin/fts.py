@@ -20,7 +20,12 @@ from .utils import (
       retry_delay_seconds=exponential_backoff(backoff_factor=2),
       log_prints=True, 
       task_run_name="create_fts_index_{copy_params.target_schema}",
-      timeout_seconds=int(Variable.get("cache_task_timeout")))
+      # default= matters: this lookup runs at import time, and an environment
+      # whose Prefect variables were never seeded has no value for it. Without
+      # the default, Variable.get returns None and int() raises, so flow.py --
+      # which imports this module -- fails to load on the worker and the whole
+      # cache flow run crashes before it starts. Same default as copy.py.
+      timeout_seconds=int(Variable.get("cache_task_timeout", default="10800")))
 def create_fts_index_task(
     use_trex_conn: bool,
     copy_params: CopyParameters,
