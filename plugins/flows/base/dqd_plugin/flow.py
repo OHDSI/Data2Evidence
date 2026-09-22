@@ -9,7 +9,7 @@ from prefect import flow, task
 from prefect.logging import get_run_logger
 from prefect.artifacts import create_markdown_artifact
 
-from .types import DqdOptionsType, DqdParams
+from .types import DqdOptionsType, DqdParams, TASK_TIMEOUT_SECONDS_MAX
 
 from _shared_flow_utils.dao.DBDao import DBDao
 from _shared_flow_utils.api.AnalyticsSvcAPI import AnalyticsSvcAPI
@@ -25,12 +25,17 @@ def _default_cache_id_from_dataset_id(dataset_id):
     cleaned = dataset_id.replace("-", "_")
     return f"_{cleaned}" if cleaned[:1].isdigit() else cleaned
 
+
 # Backstops execute_dqd's own (per-run configurable) task timeout: that one only
 # bounds the R/JDBC call itself, so anything that could wedge outside that call --
 # now or after a future change -- would otherwise still leave the flow RUNNING
-# forever (#2964). Fixed at the max taskTimeoutSeconds allows, so it never fires
-# before a legitimately-configured longer task timeout would.
-@flow(log_prints=True, timeout_seconds=86400)
+# forever (#2964). Must clear TASK_TIMEOUT_SECONDS_MAX, not equal it: everything
+# before execute_dqd runs on the flow's clock too (dialect probing, connection-
+# string building, the HANA JWT cohort-schema call), so a flow timeout set equal
+# to the task's own max could fire before a caller who chose that max ever gets
+# their configured duration. +300s covers that pre-task work plus Prefect's own
+# bookkeeping.
+@flow(log_prints=True, timeout_seconds=TASK_TIMEOUT_SECONDS_MAX + 300)
 def dqd_plugin(options: DqdOptionsType):
     logger = get_run_logger()
     logger.info(f"Flow parameters received: {options.json()}")

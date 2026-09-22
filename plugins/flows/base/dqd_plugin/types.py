@@ -1,6 +1,10 @@
 from typing import Optional, List
 from pydantic import BaseModel, Field, computed_field
 
+# dqd_plugin's flow-level timeout (flow.py) must clear this, not equal it --
+# shared so the two can't drift apart.
+TASK_TIMEOUT_SECONDS_MAX = 86400
+
 
 class DqdOptionsType(BaseModel):
     datasetId: str
@@ -27,7 +31,7 @@ class DqdOptionsType(BaseModel):
     # match validateDataQualityFlowRunDto's HTTP-layer check; enforced here too so a
     # Prefect Custom Run (which validates against this model directly, bypassing the
     # jobplugins API) can't set 0/negative or an unbounded value.
-    taskTimeoutSeconds: int = Field(default=14400, ge=60, le=86400)
+    taskTimeoutSeconds: int = Field(default=14400, ge=60, le=TASK_TIMEOUT_SECONDS_MAX)
 
     @property
     def use_trex_connection(self) -> bool:
