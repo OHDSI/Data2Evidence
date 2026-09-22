@@ -34,7 +34,7 @@ function isValidUUID(str: unknown): str is string {
 }
 
 function isValidCohortId(val: unknown): val is number {
-  return typeof val === "number" && Number.isInteger(val);
+  return typeof val === "number" && Number.isInteger(val) && val > 0;
 }
 
 function isValidTemplateId(str: unknown): str is string {
@@ -117,7 +117,7 @@ const RESERVED_PLACEHOLDERS = new Set([
 function substituteTemplateParams(
   sqlTemplate: string,
   params: {
-    cohortId: number;
+    cohortId?: number;
     schema: string;
     vocabSchema: string;
     resultsSchema: string;
@@ -126,7 +126,7 @@ function substituteTemplateParams(
   additionalParams: Record<string, string>,
   conceptIds?: number[],
 ): string {
-  if (!isValidCohortId(params.cohortId)) {
+  if (params.cohortId !== undefined && !isValidCohortId(params.cohortId)) {
     throw new Error("Invalid cohortId");
   }
   const schemaSql = expandSchemaPlaceholders(sqlTemplate, params);
@@ -144,7 +144,9 @@ function substituteTemplateParams(
       additionalParams[conceptCodeKey] !== ""
     ) {
       if (!isValidConceptCode(additionalParams[conceptCodeKey])) {
-        throw new Error(`Invalid ${conceptCodeKey}`);
+        throw new Error(
+          `Concept code for Condition ${i} is invalid: ${additionalParams[conceptCodeKey]}`,
+        );
       }
     }
     if (
@@ -157,8 +159,15 @@ function substituteTemplateParams(
     }
   }
 
-  let result = schemaSql
-    .replace(/\{\{COHORT_ID\}\}/g, String(params.cohortId))
+
+  let result = sqlTemplate
+    .replace(
+      /\{\{COHORT_ID\}\}/g,
+      params.cohortId !== undefined ? String(params.cohortId) : "",
+    )
+    .replace(/\{\{SCHEMA\}\}/g, params.schema)
+    .replace(/\{\{VOCAB_SCHEMA\}\}/g, params.vocabSchema || "")
+    .replace(/\{\{RESULTS_SCHEMA\}\}/g, params.resultsSchema || "")
     .replace(/\{\{STARTYEAR\}\}/g, additionalParams["STARTYEAR"] || "")
     .replace(/\{\{ENDYEAR\}\}/g, additionalParams["ENDYEAR"] || "")
     .replace(
@@ -410,10 +419,10 @@ router.post("/", async (req: Request, res: Response) => {
     const type =
       (req.body.type as string | undefined) || env.DEFAULT_QUERY_TYPE;
 
-    if (!datasetId || !cohortId || !templateId) {
+    if (!datasetId || !templateId) {
       return res.status(400).json({
         error: "Missing required parameters",
-        message: "datasetId, cohortId, and templateId are required",
+        message: "datasetId and templateId are required",
       });
     }
 
@@ -430,7 +439,10 @@ router.post("/", async (req: Request, res: Response) => {
         message: "datasetId must be a valid UUID",
       });
     }
-    if (typeof cohortId !== "number" || !Number.isInteger(cohortId)) {
+    if (
+      cohortId !== undefined &&
+      (typeof cohortId !== "number" || !Number.isInteger(cohortId))
+    ) {
       return res.status(400).json({
         error: "Invalid parameter",
         message: "cohortId must be an integer",
@@ -504,6 +516,16 @@ router.post("/", async (req: Request, res: Response) => {
         error: "Invalid parameter",
         message: "format must be 'parquet' or 'json'",
       });
+    }
+
+    // Check if template requires COHORT_ID
+    if (template.sqlText.includes("{{COHORT_ID}}")) {
+      if (!isValidCohortId(cohortId)) {
+        return res.status(400).json({
+          error: "Missing or invalid parameter",
+          message: "cohortId is required and must be a positive integer",
+        });
+      }
     }
 
     const conceptIds = req.body.conceptIds as unknown | undefined;
