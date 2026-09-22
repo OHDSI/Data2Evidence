@@ -44,6 +44,7 @@
         </template>
       </dropDownMenu>
     </div>
+    <ChartTypeChangeWarningDialog :model-value="warningVisible" @confirm="onConfirmChange" @cancel="onCancelChange" />
   </div>
 </template>
 
@@ -52,7 +53,9 @@ import { ref, computed, onMounted, onBeforeUnmount, nextTick, useTemplateRef } f
 import { useStore } from 'vuex'
 import DropDownMenu from './DropDownMenu.vue'
 import CohortDefinitionIcon from './icons/CohortDefinitionIcon.vue'
+import ChartTypeChangeWarningDialog from './ChartTypeChangeWarningDialog.vue'
 import { modeOrder, isBarChartModeEnabled, getEffectiveBarChartMode } from './StackBarModes/modes'
+import { planChartTypeChange, type ChartTypeApplication } from '../utils/chartTypeChange'
 
 defineProps<{ parentContainer?: any }>()
 
@@ -66,6 +69,8 @@ const menuButtonWrapper = useTemplateRef<HTMLDivElement>('menuButtonWrapper')
 const menuButton = useTemplateRef<HTMLButtonElement>('menuButton')
 const menuButtonEl = ref<HTMLButtonElement | null>(null)
 const menuVisible = ref(false)
+const warningVisible = ref(false)
+const pendingApply = ref<ChartTypeApplication | null>(null)
 
 const enabledModes = computed(() =>
   modeOrder.filter(mode => isBarChartModeEnabled(mode.id, getMriFrontendConfig.value))
@@ -137,15 +142,36 @@ function closeMenu() {
 }
 
 function handleClick(arg: any) {
-  if (!arg) return
-  if (arg.toggleOverlay) return
-  if (arg.id) {
-    store.dispatch('setBarChartType', arg.id)
-    const next = modeOrder.find(m => m.id === arg.id)
-    if (!next?.hasDistributionOverlay && getShowDistributionOverlay.value) {
-      store.dispatch('setShowDistributionOverlay', false)
-    }
+  const plan = planChartTypeChange(arg, {
+    currentModeId: effectiveMode.value,
+    showDistributionOverlay: getShowDistributionOverlay.value,
+  })
+  if (plan.kind === 'ignore') return
+  if (plan.kind === 'warn') {
+    pendingApply.value = plan.apply
+    warningVisible.value = true
+    return
   }
+  applyPlan(plan)
+}
+
+function applyPlan(plan: ChartTypeApplication) {
+  store.dispatch('setBarChartType', plan.modeId)
+  if (plan.resetOverlay) {
+    store.dispatch('setShowDistributionOverlay', false)
+  }
+}
+
+function onConfirmChange() {
+  const plan = pendingApply.value
+  warningVisible.value = false
+  pendingApply.value = null
+  if (plan) applyPlan(plan)
+}
+
+function onCancelChange() {
+  warningVisible.value = false
+  pendingApply.value = null
 }
 
 function onToggleOverlay(value: boolean) {
