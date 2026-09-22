@@ -20,6 +20,11 @@ class DqdOptionsType(BaseModel):
     # it fails before reaching the database and DQD had no way to opt out.
     # Mirrors DCOptionsType.useSourceConnection.
     useSourceConnection: Optional[bool] = False
+    # How long execute_dqd may run before Prefect force-ends it (#2964: it was
+    # unbounded, so a wedged DB connection left the flow run RUNNING forever).
+    # numThreads is pinned to 1 (sequential checks), so runtime scales directly with
+    # CDM size -- callers with a larger dataset should raise this per-run.
+    taskTimeoutSeconds: int = 14400
 
     @property
     def use_trex_connection(self) -> bool:
