@@ -263,6 +263,12 @@ spec:
                 configMapKeyRef:
                   name: "{{ .Release.Name }}-{{ .Chart.Name }}"
                   key: LOGTO__ROLES_SCOPES
+            # Logto rejects spaces in scope names, so researcher scopes are kebab-case;
+            # the JWT customizer rewrites them to the WebAPI role names that
+            # sec_external_role_map matches exactly. Without this, a researcher's
+            # concept-set-creator scope never becomes the "concept set creator" role.
+            - name: LOGTO__JWT_SCOPE_REWRITES
+              value: '[{"pattern":"^cohort-reader$","replacement":"cohort reader"},{"pattern":"^cohort-creator$","replacement":"cohort creator"},{"pattern":"^concept-set-creator$","replacement":"concept set creator"},{"pattern":"^source-user-(.+)$","replacement":"Source user ($1)"}]'
             - name: LOGTO__ADMIN_SERVER__FQDN_URL
               value: "https://idp-admin.{{ .Release.Namespace }}.svc.cluster.local:443"
             - name: LOGTO__ALP_ADMIN_APP
@@ -495,6 +501,18 @@ spec:
                 fi;
                 echo "Waiting... ($i/60)";
                 sleep 2;
+              done;
+              # sec_role can exist before the migration that seeds the concept-set
+              # permissions, and 215_researcher_permissions.sql skips a grant whose
+              # permission row is absent, so wait for the rows as well as the table.
+              echo "Waiting for webapi concept-set permissions...";
+              for i in $(seq 1 60); do
+                if psql -tAc "SELECT 1 FROM webapi.sec_permission WHERE value = 'read:conceptset'" | grep -q 1; then
+                  echo "webapi concept-set permissions found";
+                  break;
+                fi;
+                echo "Waiting... ($i/60)";
+                sleep 5;
               done;
               for f in /scripts/*.sql; do psql -v ON_ERROR_STOP=1 -f "$$f"; done;
               touch /tmp/webapi-init.done;
