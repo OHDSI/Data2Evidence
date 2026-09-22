@@ -13,7 +13,11 @@ from prefect.client.schemas.filters import (
 from prefect.client.schemas.objects import TERMINAL_STATES, StateType
 from prefect.client.schemas.sorting import TaskRunSort
 from prefect.concurrency.sync import concurrency
-from prefect.exceptions import ObjectNotFound, PrefectHTTPStatusError
+from prefect.exceptions import (
+    ObjectAlreadyExists,
+    ObjectNotFound,
+    PrefectHTTPStatusError,
+)
 from prefect.states import Crashed
 
 RECONCILE_LOCK = "cache-slot-reconcile"
@@ -29,17 +33,29 @@ def _ensure_reconcile_lock(client) -> None:
     starting together both read "absent" and both POST; the loser gets 409 and, left
     unhandled, takes the whole cache flow down with it:
 
-        PrefectHTTPStatusError: Client error '409 Conflict' for url
-        '.../api/v2/concurrency_limits/'
+        Encountered exception during execution: ObjectAlreadyExists()
+          ... in _ensure_reconcile_lock
+            client.upsert_global_concurrency_limit_by_name(
+          ... in create_global_concurrency_limit
+            raise ObjectAlreadyExists(http_exc=e) from e
 
-    A 409 means the limit exists, which is the only thing this call wanted. Every
-    other status still raises -- a lock that is genuinely unavailable must not be
-    mistaken for one that is ready.
+    The 409 is what the server sends, but it is NOT what reaches this frame:
+    `create_global_concurrency_limit` translates it into `ObjectAlreadyExists`
+    (prefect/client/orchestration/_concurrency_limits/client.py:373), so catching
+    only `PrefectHTTPStatusError` lets the failure through untouched. Both are
+    caught -- the translated form is the one seen in practice, and the raw status
+    is kept for a client version that does not translate.
+
+    Either one means the limit exists, which is the only thing this call wanted.
+    Every other status still raises -- a lock that is genuinely unavailable must not
+    be mistaken for one that is ready.
     """
     try:
         client.upsert_global_concurrency_limit_by_name(
             RECONCILE_LOCK, limit=1, slot_decay_per_second=0.0
         )
+    except ObjectAlreadyExists:
+        pass
     except PrefectHTTPStatusError as exc:
         if exc.response.status_code != 409:
             raise
