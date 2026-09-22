@@ -44,6 +44,7 @@
               @clickEv="switchChart(chart)"
               :name="chart.name"
               :icon="chart.icon"
+              :iconComponent="chartIconComponents[chart.name] || null"
               :iconGroup="chart.iconGroup"
               :title="getText(chart.tooltip)"
               :activeChart="getActiveChart"
@@ -155,6 +156,7 @@ import appIcon from '../lib/ui/app-icon.vue'
 import DownloadMenu from './DownloadMenu.vue'
 import DashboardFlowModals from './DashboardFlowModals.vue'
 import Button from './Button.vue'
+import CohortDefinitionIcon from './icons/CohortDefinitionIcon.vue'
 import { useDashboardFlow } from '../composables/useDashboardFlow'
 import { usePortalContext } from '../composables/usePortalContext'
 
@@ -332,6 +334,10 @@ export default {
     },
     minCohortSizeMessage() {
       return this.getText('MRI_PA_MIN_COHORT_SIZE_DISPLAY_MESSAGE', formatNumber(this.minCohortSize))
+    },
+    // Chart buttons that render an SVG icon component; every other button keeps its icon-font glyph.
+    chartIconComponents() {
+      return { stacked: CohortDefinitionIcon }
     },
   },
   methods: {

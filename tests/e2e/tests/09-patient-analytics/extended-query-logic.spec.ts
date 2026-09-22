@@ -115,5 +115,5 @@ test(TEST_NAME, async ({ page }) => {
   await deleteExploration(page, 'Extended Logic Filter')
   // Wait for delete dialog to disappear
   await expect(page.getByText('Delete Saved Filter')).not.toBeVisible()
-  await expect(page.getByText('Extended Logic Filter')).not.toBeVisible()
+  await expect(page.getByTestId('pa-cohort-card-Extended Logic Filter')).not.toBeVisible()
 })

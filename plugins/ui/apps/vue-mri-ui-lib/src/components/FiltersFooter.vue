@@ -161,6 +161,7 @@ import DialogBox from './DialogBox.vue'
 import { D2eButton, D2eDialog, D2eTextField } from '@d2e/ui'
 import { usePortalContext } from '../composables/usePortalContext'
 import { useNotificationStore } from '../stores/notifications'
+import { isBookmarkSaveSuccess } from '@/utils/BookmarkUtils'
 import { useUserRole } from '../composables/useUserRole'
 
 export default {
@@ -326,21 +327,24 @@ export default {
         this.isSavingBookmark = true
 
         try {
-          if (isNewBookmark || this.isNotUserSharedBookmark) {
+          const isInsert = isNewBookmark || this.isNotUserSharedBookmark
+          let result
+
+          if (isInsert) {
             const params = {
               cmd: 'insert',
               bookmarkname: bookmarkName,
               shareBookmark: this.shareBookmark,
               bookmark: JSON.stringify(bookmark),
             }
-            await this.fireBookmarkQuery({ params, method: 'post', suppressToast: true })
+            result = await this.fireBookmarkQuery({ params, method: 'post', suppressToast: true })
           } else {
             const request = {
               cmd: 'update',
               bookmark: JSON.stringify(bookmark),
               shareBookmark: this.shareBookmark,
             }
-            await this.fireBookmarkQuery({
+            result = await this.fireBookmarkQuery({
               method: 'put',
               params: request,
               bookmarkId: activeBookmark.bmkId,
@@ -348,10 +352,20 @@ export default {
             })
           }
 
-          const successMessage =
-            isNewBookmark || this.isNotUserSharedBookmark
-              ? this.getText('MRI_PA_SAVE_BMK_SUCCESS')
-              : this.getText('MRI_PA_UPDATE_BMK_SUCCESS')
+          // fireBookmarkQuery reports a failed insert or update itself and then resolves,
+          // so a resolved promise is not proof that the cohort was saved. Only a success
+          // payload is. Stopping here leaves the cohort dirty, which is the safe direction.
+          if (!isBookmarkSaveSuccess(result)) {
+            return
+          }
+
+          // Baseline the payload that was written, before the cohort list refresh: waiting
+          // for that refresh is what left a saved cohort reporting dirty (#3341).
+          this[types.SET_ACTIVE_BOOKMARK_BASELINE](bookmark)
+
+          const successMessage = isInsert
+            ? this.getText('MRI_PA_SAVE_BMK_SUCCESS')
+            : this.getText('MRI_PA_UPDATE_BMK_SUCCESS')
 
           // Close the dialog right after the save succeeds so the success toast is shown
           // after the modal closes, not while the subsequent list refresh is still running.
@@ -360,8 +374,11 @@ export default {
 
           await this.fireBookmarkQuery({ method: 'get', params: { cmd: 'loadAll' } })
           const savedBookmark = this.getBookmarkByNameAndUsername(bookmarkName, username)
+          // SET_ACTIVE_BOOKMARK clears the baseline, so it has to be captured again. Live
+          // state here would mark edits made during the refresh clean although they were
+          // never written, so the written payload is used again.
           this[types.SET_ACTIVE_BOOKMARK](savedBookmark)
-          this[types.SET_ACTIVE_BOOKMARK_BASELINE](this.getBookmarksData)
+          this[types.SET_ACTIVE_BOOKMARK_BASELINE](bookmark)
         } catch (error) {
           console.error('Error during bookmark save or reload:', error)
         } finally {
