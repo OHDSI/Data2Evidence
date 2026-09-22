@@ -171,6 +171,7 @@ export class DqdService {
       releaseId,
       cohortDefinitionId,
       useSourceConnection,
+      taskTimeoutSeconds,
     } = dataQualityFlowRunDto;
 
     const dataset = await portalServerApi.getDataset(datasetId);
@@ -214,6 +215,9 @@ export class DqdService {
         releaseId,
         releaseDate,
         useSourceConnection: resolvedUseSourceConnection,
+        // Omitted keeps the flow's own default (#2964); validated range enforced
+        // by validateDataQualityFlowRunDto before this ever reaches Prefect.
+        ...(taskTimeoutSeconds !== undefined ? { taskTimeoutSeconds } : {}),
       },
     };
 

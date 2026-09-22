@@ -606,6 +606,18 @@
                     "title": "Databasecode",
                     "type": "string"
                   },
+                  "cacheId": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "title": "Cacheid"
+                  },
                   "cdmVersionNumber": {
                     "title": "Cdmversionnumber",
                     "type": "string"
@@ -672,6 +684,23 @@
                     ],
                     "default": "cohort",
                     "title": "Cohorttablename"
+                  },
+                  "useSourceConnection": {
+                    "anyOf": [
+                      {
+                        "type": "boolean"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": false,
+                    "title": "Usesourceconnection"
+                  },
+                  "taskTimeoutSeconds": {
+                    "default": 14400,
+                    "title": "Tasktimeoutseconds",
+                    "type": "integer"
                   }
                 },
                 "required": [
