@@ -41,7 +41,7 @@ services:
         # image with no devx tooling under a -devx tag.
         TREXSQL_REF: ${TREXSQL_REF:-sha-48a466268dbfdd12f03d8018e2af81fe10cbdf69@sha256:923e62615ec94da06f4574e4ed80b51780746f9e8a30e8060caa9c4dd4ac754c}
         # Local builds pull published plugins from the feed; CI uses plugin-artifacts/.
-        PLUGINS_FROM_REGISTRY: ${PLUGINS_FROM_REGISTRY:-@data2evidence/d2e-ui @data2evidence/d2e-functions @data2evidence/fhir @data2evidence/sibyl @data2evidence/d2e-flows @data2evidence/i2b2-flow @data2evidence/search-embedding-flow @data2evidence/data-management-flow @data2evidence/hades-flow @data2evidence/loyalty-score-flow @data2evidence/data-transformation-flow @ohdsi/pythia-agent@0.1.0-develop.18.g80bf4aa}
+        PLUGINS_FROM_REGISTRY: ${PLUGINS_FROM_REGISTRY:-@data2evidence/d2e-ui @data2evidence/d2e-functions @data2evidence/fhir @data2evidence/sibyl @data2evidence/d2e-flows @data2evidence/i2b2-flow @data2evidence/search-embedding-flow @data2evidence/data-management-flow @data2evidence/hades-flow @data2evidence/loyalty-score-flow @data2evidence/eq5d5l-index-calculation-flow @data2evidence/data-transformation-flow @ohdsi/pythia-agent@0.1.0-develop.18.g80bf4aa}
         # Keep in sync with the `docker build --build-arg WITH_R=true` used to
         # produce the d2e-trex:withr tag above — `docker compose build trex`
         # must also bake R or it silently reverts to an R-less image.
