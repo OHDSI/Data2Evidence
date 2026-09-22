@@ -131,9 +131,19 @@ def create_embedding_index(dbdao, schema_name:str, embedding_table: str, embeddi
         )   
     dbdao.execute_sql(sql)
 
-def resolve_duckdb_file_path(duckdb_database_name: str, folder_path: str) -> str:
+# The cache volume as a flow's container sees it. Kept in step with
+# create_cachedb_file_plugin/paths.py, which writes the files this plugin reads.
+DEFAULT_DUCKDB_DATA_FOLDER = "/app/duckdb_data/cache"
+
+
+def resolve_duckdb_file_path(duckdb_database_name: str, folder_path) -> str:
     """
     Returns the full path to the DuckDB database file
     """
-    return str(Path(folder_path) / f"{duckdb_database_name}.db")
+    # `duckdb_data_folder` is seeded from DUCKDB__DATA_FOLDER, and a variable seeded
+    # from an unset env var exists with a null value, so Variable.get returns None
+    # rather than raising. Path(None) then kills the flow before it does any work.
+    if not (isinstance(folder_path, str) and folder_path.strip()):
+        folder_path = DEFAULT_DUCKDB_DATA_FOLDER
+    return str(Path(folder_path.strip()) / f"{duckdb_database_name}.db")
 
