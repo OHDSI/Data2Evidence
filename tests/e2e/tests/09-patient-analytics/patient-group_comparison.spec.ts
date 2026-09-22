@@ -120,7 +120,14 @@ test('pa-compare-cohorts', async ({ page }) => {
   // was started, so there is nothing to navigate. `#pane-left` is the builder's
   // breadcrumb and is not rendered here, and the top-nav Cohorts link is inert
   // because the list already owns that route. Wait for the list instead.
-  await expect(page.getByTestId('explorations-new-btn')).toBeVisible()
+  //
+  // Wait on the bulk bar, NOT on explorations-new-btn. ExplorationsPage renders
+  // `v-if="explorations.hasSelection"` for the bulk bar and `v-else` for the
+  // toolbar that holds the new-exploration button, so the two never coexist.
+  // Both cohorts are still selected at this point - that is how Compare was
+  // reached - so the new-exploration button cannot exist yet and waiting for it
+  // always times out.
+  await expect(page.getByTestId('explorations-bulk-bar')).toBeVisible()
 
   // Find and delete the specific cohort by name to avoid deleting wrong cohorts
   // The delete button is the last img element in the action buttons container for each cohort
