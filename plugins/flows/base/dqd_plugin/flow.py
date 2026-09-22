@@ -25,7 +25,11 @@ def _default_cache_id_from_dataset_id(dataset_id):
     cleaned = dataset_id.replace("-", "_")
     return f"_{cleaned}" if cleaned[:1].isdigit() else cleaned
 
-@flow(log_prints=True)
+# execute_dqd blocks on a single rpy2 call into R's DatabaseConnector (JDBC), which can
+# wedge on a stuck connection/query with no exception ever raised back to Python -- the
+# flow run then sits RUNNING indefinitely with nothing to mark it terminal (#2964). A
+# timeout gives Prefect a way to end it; mirrors data_management_plugin's own bound.
+@flow(log_prints=True, timeout_seconds=14400)
 def dqd_plugin(options: DqdOptionsType):
     logger = get_run_logger()
     logger.info(f"Flow parameters received: {options.json()}")
