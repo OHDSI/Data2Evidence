@@ -140,6 +140,7 @@ services:
           echo "installed $$got extra CA certificate(s)"
         fi
         update-ca-certificates
+        mkdir -p /usr/src/data/flow_staging && chmod 1777 /usr/src/data/flow_staging || exit 1
         # This command replaces the image's own CMD, so the --enable-otel flag
         # from Dockerfile.v2 never runs here; it must be re-added to this exec.
         exec /usr/src/entrypoint.sh $${TREX_OTEL_ENABLED:+--enable-otel}
