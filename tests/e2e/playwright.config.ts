@@ -27,5 +27,5 @@ export default defineConfig({
     ['playwright-ctrf-json-reporter', {}]
   ],
   workers: 1,
-  maxFailures: 0 // TEMPORARY - enumerate every remaining failure in one run. REVERT to `process.env.CI ? 1 : 0` before merge.
+  maxFailures: process.env.CI ? 1 : 0 // 0 = no cap; run all tests even if some fail
 })
