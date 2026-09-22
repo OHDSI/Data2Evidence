@@ -61,7 +61,7 @@ c.GenericOAuthenticator.userdata_from_id_token = True
 c.GenericOAuthenticator.username_claim = os.getenv(
     "LOGTO_USERNAME_CLAIM", "username"
 )
-c.GenericOAuthenticator.login_service = "D2E Logto"
+c.GenericOAuthenticator.login_service = "Data2Evidence"
 c.GenericOAuthenticator.scope = [
     "openid",
     "profile",
