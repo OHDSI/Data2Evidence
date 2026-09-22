@@ -8,6 +8,7 @@ from prefect.logging import get_run_logger
 from .hooks import *
 from .const import *
 from .liquibase import Liquibase, LiquibaseAction
+from .sql_migration import apply_data_model_schema, is_sql_migration_data_model
 from .types import FlowActionType
 
 from _shared_flow_utils.dao.DBDao import DBDao
@@ -66,28 +67,43 @@ def create_schema_tasks(
 
         # create schema if not exists
         create_db_schema_wo(schema_dao, schema_name)
-        if count == 0 or count is None:
-            action = LiquibaseAction.UPDATE
-        elif count > 0:
-            action = LiquibaseAction.UPDATECOUNT
 
-        create_tables_wo = run_liquibase_update_task.with_options(
-            on_failure=[
-                partial(drop_schema_hook, **dict(dbdao=schema_dao, schema=schema_name))
-            ]
-        )
+        if is_sql_migration_data_model(data_model, dialect):
+            create_tables_wo = run_sql_migration_task.with_options(
+                on_failure=[
+                    partial(drop_schema_hook, **dict(dbdao=schema_dao, schema=schema_name))
+                ]
+            )
+            create_tables_wo(
+                dbdao=schema_dao,
+                schema_name=schema_name,
+                data_model=data_model,
+                dialect=dialect,
+                count=count,
+            )
+        else:
+            if count == 0 or count is None:
+                action = LiquibaseAction.UPDATE
+            elif count > 0:
+                action = LiquibaseAction.UPDATECOUNT
 
-        create_tables_wo(
-            action=action,
-            dialect=dialect,
-            data_model=data_model,
-            changelog_file=changelog_file,
-            schema_name=schema_name,
-            vocab_schema=vocab_schema,
-            tenant_configs=tenant_configs,
-            plugin_classpath=plugin_classpath,
-            count=count,
-        )
+            create_tables_wo = run_liquibase_update_task.with_options(
+                on_failure=[
+                    partial(drop_schema_hook, **dict(dbdao=schema_dao, schema=schema_name))
+                ]
+            )
+
+            create_tables_wo(
+                action=action,
+                dialect=dialect,
+                data_model=data_model,
+                changelog_file=changelog_file,
+                schema_name=schema_name,
+                vocab_schema=vocab_schema,
+                tenant_configs=tenant_configs,
+                plugin_classpath=plugin_classpath,
+                count=count,
+            )
 
         # task
         enable_audit_policies_wo = enable_and_create_audit_policies_task.with_options(
@@ -147,36 +163,58 @@ def update_datamodel(
     schema_dao = DBDao(database_code=database_code)
     tenant_configs = schema_dao.tenant_configs
 
-    match flow_action_type:
-        case FlowActionType.UPDATE_DATA_MODEL:
-            action = LiquibaseAction.UPDATE
-        case FlowActionType.CHANGELOG_SYNC:
-            action = LiquibaseAction.CHANGELOG_SYNC
-
     try:
-        update_schema_wo = run_liquibase_update_task.with_options(
-            on_completion=[
-                partial(
-                    update_schema_hook, **dict(db=database_code, schema=schema_name)
-                )
-            ],
-            on_failure=[
-                partial(
-                    update_schema_hook, **dict(db=database_code, schema=schema_name)
-                )
-            ],
-        )
+        if is_sql_migration_data_model(data_model, dialect):
+            # both UPDATE_DATA_MODEL and CHANGELOG_SYNC reduce to "apply any
+            # pending changesets" here, since the runner is idempotent
+            update_schema_wo = run_sql_migration_task.with_options(
+                on_completion=[
+                    partial(
+                        update_schema_hook, **dict(db=database_code, schema=schema_name)
+                    )
+                ],
+                on_failure=[
+                    partial(
+                        update_schema_hook, **dict(db=database_code, schema=schema_name)
+                    )
+                ],
+            )
+            update_schema_wo(
+                dbdao=schema_dao,
+                schema_name=schema_name,
+                data_model=data_model,
+                dialect=dialect,
+            )
+        else:
+            match flow_action_type:
+                case FlowActionType.UPDATE_DATA_MODEL:
+                    action = LiquibaseAction.UPDATE
+                case FlowActionType.CHANGELOG_SYNC:
+                    action = LiquibaseAction.CHANGELOG_SYNC
 
-        update_schema_wo(
-            action=action,
-            dialect=dialect,
-            data_model=data_model,
-            changelog_file=changelog_file,
-            schema_name=schema_name,
-            vocab_schema=vocab_schema,
-            tenant_configs=tenant_configs,
-            plugin_classpath=plugin_classpath,
-        )
+            update_schema_wo = run_liquibase_update_task.with_options(
+                on_completion=[
+                    partial(
+                        update_schema_hook, **dict(db=database_code, schema=schema_name)
+                    )
+                ],
+                on_failure=[
+                    partial(
+                        update_schema_hook, **dict(db=database_code, schema=schema_name)
+                    )
+                ],
+            )
+
+            update_schema_wo(
+                action=action,
+                dialect=dialect,
+                data_model=data_model,
+                changelog_file=changelog_file,
+                schema_name=schema_name,
+                vocab_schema=vocab_schema,
+                tenant_configs=tenant_configs,
+                plugin_classpath=plugin_classpath,
+            )
 
         if data_model in OMOP_DATA_MODELS:
             cdm_version = DATAMODEL_CDM_VERSION.get(data_model)
@@ -397,3 +435,8 @@ def create_cdm_schema_tasks(
 def run_liquibase_update_task(**kwargs):
     liquibase = Liquibase(**kwargs)
     liquibase.update_schema()
+
+
+@task(log_prints=True)
+def run_sql_migration_task(**kwargs):
+    apply_data_model_schema(**kwargs)

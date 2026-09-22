@@ -5,6 +5,7 @@ from prefect import task
 from prefect.logging import get_run_logger
 
 from .liquibase import Liquibase, LiquibaseAction
+from .sql_migration import get_latest_available_changeset, is_sql_migration_data_model
 from .types import PortalDatasetType, ExtractDatasetSchemaType
 from .const import OMOP_DATA_MODELS, check_table_case, convert_case
 
@@ -189,15 +190,22 @@ def get_and_update_attributes(dataset: PortalDatasetType,
             try:
                 # update with latest version or error msg
                 db_dialect = dataset_dao.dialect
-                tenant_configs = dataset_dao.tenant_configs
 
-                latest_available_schema_version = get_latest_available_version(dialect=db_dialect,
-                                                                               data_model=data_model,
-                                                                               changelog_file=changelog_file,
-                                                                               schema_name=schema_name,
-                                                                               vocab_schema=vocab_schema,
-                                                                               tenant_configs=tenant_configs,
-                                                                               plugin_classpath=plugin_classpath)
+                if is_sql_migration_data_model(data_model, db_dialect):
+                    latest_available_schema_version = extract_version(get_latest_available_changeset(
+                        dbdao=dataset_dao,
+                        schema_name=schema_name,
+                        data_model=data_model,
+                        dialect=db_dialect))
+                else:
+                    tenant_configs = dataset_dao.tenant_configs
+                    latest_available_schema_version = get_latest_available_version(dialect=db_dialect,
+                                                                                   data_model=data_model,
+                                                                                   changelog_file=changelog_file,
+                                                                                   schema_name=schema_name,
+                                                                                   vocab_schema=vocab_schema,
+                                                                                   tenant_configs=tenant_configs,
+                                                                                   plugin_classpath=plugin_classpath)
                 portal_server_api.update_dataset_attributes_table(dataset_id, "latest_schema_version", latest_available_schema_version)
             except Exception as e:
                 logger.error(
