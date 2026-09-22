@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import * as types from '../../store/mutation-types'
 
 const setToastMessage = vi.fn()
@@ -43,13 +43,29 @@ const createDeferred = <T>(): Deferred<T> => {
   return { promise, resolve }
 }
 
-const createContext = (loadAllResult: Promise<unknown>) => {
+const createContext = (
+  loadAllResult: Promise<unknown>,
+  {
+    writeSucceeds = true,
+    activeBookmark = { bookmarkname: COHORT_NAME, isNew: true } as any,
+  } = {}
+) => {
+  // A write that failed resolves undefined: fireBookmarkQuery reports the error
+  // itself and only rethrows for 'delete'.
+  const insertResult = writeSucceeds ? { status: 'success', bmkId: 'bmk-1' } : undefined
+  const updateResult = writeSucceeds ? 'success' : undefined
   let liveBookmarksData: unknown = SAVED_FILTERS
   let activeBookmarkBaseline: unknown = null
   const commits: string[] = []
-  const savedBookmark = { bookmarkname: COHORT_NAME, bmkId: 'bmk-1', user_id: USERNAME }
+  const listBookmark = { bookmarkname: COHORT_NAME, bmkId: 'from-the-list', user_id: USERNAME }
 
-  const fireBookmarkQuery = vi.fn(({ params }) => (params.cmd === 'loadAll' ? loadAllResult : Promise.resolve({})))
+  // bookmark-svc answers insert with { status, bmkId } and update with the string
+  // 'success'; a write that failed resolves undefined.
+  const fireBookmarkQuery = vi.fn(({ params }) => {
+    if (params.cmd === 'loadAll') return loadAllResult
+    if (params.cmd === 'insert') return Promise.resolve(insertResult)
+    return Promise.resolve(updateResult)
+  })
 
   const context: any = {
     canShare: false,
@@ -66,8 +82,9 @@ const createContext = (loadAllResult: Promise<unknown>) => {
     get getBookmarksData() {
       return liveBookmarksData
     },
-    getActiveBookmark: { bookmarkname: COHORT_NAME, isNew: true },
-    getBookmarkByNameAndUsername: () => savedBookmark,
+    getActiveBookmark: activeBookmark,
+    getMriFrontendConfig: { getPaConfigId: () => 'pa-1' },
+    getBookmarkByNameAndUsername: vi.fn(() => listBookmark),
     fireBookmarkQuery,
     closeSaveBookmark: vi.fn(),
   }
@@ -102,6 +119,11 @@ const writtenPayload = (context: any) => {
 }
 
 describe('FiltersFooter saveBookmark', () => {
+  // setToastMessage lives in the module-level mock, so it carries calls between tests.
+  beforeEach(() => {
+    setToastMessage.mockClear()
+  })
+
   it('re-baselines the written payload before the cohort list refresh resolves', async () => {
     const loadAll = createDeferred<unknown>()
     const { context, editFilters, storedBaseline } = createContext(loadAll.promise)
@@ -141,5 +163,80 @@ describe('FiltersFooter saveBookmark', () => {
     expect(storedBaseline()).toEqual(writtenPayload(context))
     // Baseline differs from live state, so the unwritten filter card still reports dirty.
     expect(storedBaseline()).not.toEqual(context.getBookmarksData)
+  })
+  it('takes the saved bookmark id from the save response, not from the refreshed list', async () => {
+    const loadAll = createDeferred<unknown>()
+    const { context } = createContext(loadAll.promise)
+
+    await saveBookmark(context)
+
+    expect(context[types.SET_ACTIVE_BOOKMARK]).toHaveBeenCalledWith(expect.objectContaining({ bmkId: 'bmk-1' }))
+    // The cohort list is no longer the source of the id.
+    expect(context.getBookmarkByNameAndUsername).not.toHaveBeenCalled()
+
+    loadAll.resolve({})
+  })
+
+  it('adopts the saved cohort without waiting for the cohort list refresh', async () => {
+    // The refresh never resolves, which is the slow-network case from #3341.
+    const { context, storedBaseline } = createContext(new Promise(() => {}))
+
+    await saveBookmark(context)
+
+    expect(context[types.SET_ACTIVE_BOOKMARK]).toHaveBeenCalled()
+    expect(storedBaseline()).toEqual(writtenPayload(context))
+    // The list is still refreshed, just not awaited.
+    expect(context.fireBookmarkQuery).toHaveBeenCalledWith(
+      expect.objectContaining({ params: expect.objectContaining({ cmd: 'loadAll' }) })
+    )
+  })
+
+  it('carries the existing identity forward when updating a saved cohort', async () => {
+    const existing = {
+      bmkId: 'bmk-9',
+      bookmarkname: COHORT_NAME,
+      bookmark: '{}',
+      viewname: null,
+      modified: '2026-09-01T00:00:00.000Z',
+      version: 3,
+      user_id: USERNAME,
+      shared: false,
+      cohortDefinitionId: 42,
+    }
+    const { context } = createContext(new Promise(() => {}), { activeBookmark: existing })
+    context.cohortName = ''
+
+    await saveBookmark(context)
+
+    expect(context.fireBookmarkQuery).toHaveBeenCalledWith(
+      expect.objectContaining({ params: expect.objectContaining({ cmd: 'update' }) })
+    )
+    expect(context[types.SET_ACTIVE_BOOKMARK]).toHaveBeenCalledWith(
+      expect.objectContaining({ bmkId: 'bmk-9', cohortDefinitionId: 42, version: 4 })
+    )
+  })
+
+  describe('when the write did not succeed', () => {
+    // fireBookmarkQuery reports the failure itself and resolves undefined for
+    // insert and update, so a resolved promise is not proof the cohort was saved.
+    const failed = { writeSucceeds: false }
+
+    it('leaves the cohort dirty', async () => {
+      const { context, storedBaseline } = createContext(new Promise(() => {}), failed)
+
+      await saveBookmark(context)
+
+      expect(context[types.SET_ACTIVE_BOOKMARK_BASELINE]).not.toHaveBeenCalled()
+      expect(storedBaseline()).toBeNull()
+    })
+
+    it('does not adopt a saved bookmark or claim success', async () => {
+      const { context } = createContext(new Promise(() => {}), failed)
+
+      await saveBookmark(context)
+
+      expect(context[types.SET_ACTIVE_BOOKMARK]).not.toHaveBeenCalled()
+      expect(setToastMessage).not.toHaveBeenCalled()
+    })
   })
 })

@@ -139,6 +139,7 @@ import appMessageStrip from '@/lib/ui/app-message-strip.vue'
 import * as types from '../../store/mutation-types'
 import { usePortalContext } from '../../composables/usePortalContext'
 import { useNotificationStore } from '../../stores/notifications'
+import { buildInsertedBookmark, buildUpdatedBookmark, isBookmarkSaveSuccess } from '@/utils/BookmarkUtils'
 
 export default {
   name: 'SaveCohortModal',
@@ -470,6 +471,8 @@ export default {
         }
       }
 
+      let savedBookmark = null
+
       if (this.isNewCohort) {
         this.savingStep = 'saving-filter'
         const params = {
@@ -483,7 +486,15 @@ export default {
           datasetId: selectedDataset?.id,
         }
 
-        await this.fireBookmarkQuery({ params, method: 'post', suppressToast: true })
+        const result = await this.fireBookmarkQuery({ params, method: 'post', suppressToast: true })
+        savedBookmark = buildInsertedBookmark({
+          result,
+          bookmarkname: bookmarkName,
+          bookmark: params.bookmark,
+          user_id: username,
+          shared: false,
+          paConfigId: selectedDataset?.paConfigId,
+        })
       } else {
         this.savingStep = 'saving-filter'
         const params = {
@@ -492,16 +503,35 @@ export default {
           shareBookmark: false,
         }
 
-        await this.fireBookmarkQuery({
+        const result = await this.fireBookmarkQuery({
           method: 'put',
           params,
           bookmarkId: activeBookmark.bmkId,
           suppressToast: true,
         })
+        savedBookmark = isBookmarkSaveSuccess(result)
+          ? buildUpdatedBookmark(activeBookmark, { bookmark: params.bookmark, shared: false })
+          : null
       }
 
+      // fireBookmarkQuery reports a failed write itself and then resolves, so a resolved
+      // promise is not proof the cohort was saved. Stop before materializing something
+      // that does not exist.
+      if (!savedBookmark) {
+        throw new Error(this.getText('MRI_PA_SAVE_BMK_ERROR'))
+      }
+
+      // The save response carries the bookmark id, so materialization no longer waits for
+      // the cohort list. Baseline the written payload so the saved cohort stops reporting
+      // unsaved changes straight away (#3341), and so edits made during the save stay dirty.
+      this[types.SET_ACTIVE_BOOKMARK](savedBookmark)
+      this[types.SET_ACTIVE_BOOKMARK_BASELINE](bookmarkData)
+
+      // Repopulate the cohort list in the background. Nothing below depends on it, and
+      // fireBookmarkQuery rethrows a failed loadAll, so the rejection needs a handler.
       this.savingStep = 'refreshing-filter'
-      const savedBookmark = await this.refreshAndFindBookmark()
+      this.fireBookmarkQuery({ method: 'get', params: { cmd: 'loadAll' } }).catch(() => {})
+
       this.savedBookmarkId = savedBookmark.bmkId
       return savedBookmark.bmkId
     },
