@@ -116,9 +116,11 @@ test('pa-compare-cohorts', async ({ page }) => {
   // ========================
   // Navigate back to cohorts list and delete the specific test cohort
   await page.getByRole('button', { name: 'Close' }).click()
-  // Back on the Data Exploration list once the modal closes, so `#pane-left` is
-  // gone. The two earlier uses in this file are in the builder and still hold.
-  await page.getByRole('banner').getByRole('link', { name: 'Cohorts' }).click()
+  // Closing the modal leaves the Data Exploration list, which is where Compare
+  // was started, so there is nothing to navigate. `#pane-left` is the builder's
+  // breadcrumb and is not rendered here, and the top-nav Cohorts link is inert
+  // because the list already owns that route. Wait for the list instead.
+  await expect(page.getByTestId('explorations-new-btn')).toBeVisible()
 
   // Find and delete the specific cohort by name to avoid deleting wrong cohorts
   // The delete button is the last img element in the action buttons container for each cohort

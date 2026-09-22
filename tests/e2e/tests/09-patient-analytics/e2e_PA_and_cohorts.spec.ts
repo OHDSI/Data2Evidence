@@ -76,12 +76,21 @@ async function dismissUnsavedChangesDialog(page) {
 }
 
 async function navigateBackToCohortList(page) {
-  // The top navigation's Cohorts link, not `#pane-left`'s. `#pane-left` is only
-  // rendered by the cohort builder (PatientAnalytics.vue). This helper is also
-  // called when the page is already the Data Exploration list, where that pane
-  // does not exist. The banner nav carries the link on both pages, and scoping
-  // to it keeps the locator unambiguous in the builder, which has two.
-  await page.getByRole('banner').getByRole('link', { name: 'Cohorts' }).click()
+  // `#pane-left` holds the builder's breadcrumb back to the list. It is not
+  // rendered on the list itself, so this helper timed out whenever it was
+  // called with the list already open.
+  //
+  // The top-nav Cohorts link cannot stand in for the breadcrumb: the list and
+  // the builder share the /researcher/cohort route, so clicking it while the
+  // builder is open leaves the builder exactly where it is.
+  //
+  // Return early when the list is already showing, and use the breadcrumb
+  // otherwise.
+  const newExplorationBtn = page.getByTestId('explorations-new-btn')
+  if (await newExplorationBtn.isVisible().catch(() => false)) {
+    return
+  }
+  await page.locator('#pane-left').getByRole('link', { name: 'Cohorts' }).click()
   await dismissUnsavedChangesDialog(page)
   await page.waitForTimeout(500)
 }
