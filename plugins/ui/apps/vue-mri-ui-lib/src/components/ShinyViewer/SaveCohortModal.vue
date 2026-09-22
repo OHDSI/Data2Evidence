@@ -507,7 +507,7 @@ export default {
       // promise is not proof the cohort was saved. Stop before materializing something
       // that does not exist.
       if (!isBookmarkSaveSuccess(result)) {
-        throw new Error(this.getText('MRI_PA_SAVE_BMK_ERROR'))
+        throw new Error(this.getText(this.isNewCohort ? 'MRI_PA_SAVE_BMK_ERROR' : 'MRI_PA_UPDATE_BMK_ERROR'))
       }
 
       // Baseline the payload that was written, before the cohort list refresh, so the

@@ -102,4 +102,11 @@ describe('SaveCohortModal saveBookmark', () => {
     expect(context[types.SET_ACTIVE_BOOKMARK_BASELINE]).not.toHaveBeenCalled()
     expect(context.refreshAndFindBookmark).not.toHaveBeenCalled()
   })
+
+  it('names the command that failed, matching the alert fireBookmarkQuery already showed', async () => {
+    const existing = { bmkId: 'bmk-9', bookmarkname: COHORT_NAME, bookmark: '{}', user_id: USERNAME }
+    const { context } = createContext({ writeSucceeds: false, isNewCohort: false, activeBookmark: existing })
+
+    await expect(saveBookmark(context)).rejects.toThrow('MRI_PA_UPDATE_BMK_ERROR')
+  })
 })
