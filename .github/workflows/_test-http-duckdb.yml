@@ -225,117 +225,78 @@ jobs:
       - name: Check status of docker containers
         run: docker ps -a
 
-      - name: Login to logto and get Bearer token and sub
+      # Endpoint or issuer drift breaks WebAPI at startup and Atlas3 at sign-in
+      # with nothing in either log that names the cause, so the served document
+      # is diffed against a checked-in copy instead. A failure here is a
+      # deliberate decision to re-register relying parties: update
+      # tests/golden/trex-oidc-discovery.json in the same commit that changes
+      # the document, and read tests/golden/README.md first — it records what
+      # the document claims that this deployment does not deliver.
+      #
+      # It also enforces the cutover's ordering constraint mechanically. The
+      # trex that serves this document comes from ghcr.io/ohdsi/trexsql through
+      # TREXSQL_REF (services/trex/Dockerfile.v2), not from this repository, so
+      # a d2e change that lands ahead of its trex image fails here rather than
+      # at a user's sign-in.
+      - name: The OIDC discovery document has not drifted
         run: |
-          echo "LOGTO__D2E_APP__CLIENT_ID: ${LOGTO__D2E_APP__CLIENT_ID}"
-          response=$(curl -ik "https://localhost:41100/oidc/auth?redirect_uri=https%3A%2F%2Flocalhost%3A41100%2Fd2e%2Fportal%2Flogin-callback&client_id=$LOGTO__D2E_APP__CLIENT_ID&response_type=code&state=lbFDB1hcko&scope=openid%20offline_access%20profile%20email&nonce=Osptnuwqc47w&code_challenge=n6eqz8p8jj1L9Qu7pY2_GrWO7XyaQbWrcs54x9OAnPg&code_challenge_method=S256")
-          printf "%s\n" "$response"
+          set -euo pipefail
+          # The port the restart above started the gateway on, and the one
+          # tests/backend_integration_tests/lib/ci-login.sh expects.
+          PORT=41100
+          GOLDEN=tests/golden/trex-oidc-discovery.json
+          test -f "$GOLDEN" || { echo "::error::$GOLDEN is missing"; exit 1; }
 
-          interaction_cookie=$(printf "%s\n" "$response" | grep _interaction= | awk -F'=' '{print $2}' | awk -F'; ' '{print $1}')
-          interaction_sig_cookie=$(printf "%s\n" "$response" | grep _interaction.sig= | awk -F'=' '{print $2}' | awk -F'; ' '{print $1}')
-          interaction_resume_cookie=$(printf "%s\n" "$response" | grep _interaction_resume= | awk -F'=' '{print $2}' | awk -F'; ' '{print $1}')
-          interaction_resume_sig_cookie=$(printf "%s\n" "$response" | grep _interaction_resume.sig= | awk -F'=' '{print $2}' | awk -F'; ' '{print $1}')
-          logto_cookie=$(printf "%s\n" "$response" | grep _logto= | awk -F'=' '{print $2}' | awk -F'; ' '{print $1}')
+          # trex was restarted a step ago; poll rather than assume, so a slow
+          # boot fails as a timeout that says so instead of as a diff against
+          # an error page.
+          CODE=000
+          for i in $(seq 1 60); do
+            CODE=$(curl -sk -o /tmp/discovery-raw.json -w '%{http_code}' --max-time 10 \
+              "https://localhost:${PORT}/trex/oidc/.well-known/openid-configuration" || echo 000)
+            echo "attempt ${i}/60: HTTP ${CODE}"
+            if [ "$CODE" = "200" ]; then break; fi
+            sleep 5
+          done
+          if [ "$CODE" != "200" ]; then
+            echo "::error::the discovery endpoint never answered 200 (last ${CODE})"
+            cat /tmp/discovery-raw.json || true
+            exit 1
+          fi
 
-          response=$(curl -ik --request PUT 'https://localhost:41100/api/interaction' \
-              --header 'content-type: application/json' \
-              --header 'Referer: https://localhost:41100/sign-in' \
-              --header "Cookie: _interaction=$interaction_cookie; _interaction.sig=$interaction_sig_cookie; _logto={\"appId\":\"$LOGTO__D2E_APP__CLIENT_ID\"}" \
-              --data '{
-              "event": "SignIn",
-              "identifier": {
-                  "username": "admin",
-                  "password": "Updatepassword12345"
-              }
-          }')
-          printf "%s\n" "$response"
+          # The gateway origin is the one thing that legitimately differs
+          # between a local stack, CI and a real FQDN, so it is the one thing
+          # normalised away. The /trex/oidc prefix is part of the contract and
+          # is left alone.
+          jq -S "walk(if type == \"string\" then sub(\"https://localhost:${PORT}\"; \"{{ISSUER_ORIGIN}}\") else . end)" \
+            /tmp/discovery-raw.json > /tmp/discovery.json
 
-          response=$(curl -ik --request POST 'https://localhost:41100/api/interaction/submit' \
-              --header 'accept: application/json' \
-              --header 'origin: https://localhost:41100' \
-              --header 'referer: https://localhost:41100/sign-in' \
-              --header "Cookie: _interaction=$interaction_cookie; _interaction.sig=$interaction_sig_cookie; _logto={\"appId\":\"$LOGTO__D2E_APP__CLIENT_ID\"}")
-          printf "%s\n" "$response"
+          # A stale image is not drift, and reporting it as drift sends the
+          # reader after the one thing that has not happened. The cutover moved
+          # the four protocol endpoints under /oauth2/, so a document whose
+          # authorization_endpoint is not there came from a trexsql image
+          # predating it, and no edit to the golden file can fix that. Checked
+          # before the diff so this diagnosis wins the ones it explains.
+          SERVED_AUTHZ=$(jq -r '.authorization_endpoint // ""' /tmp/discovery.json)
+          case "$SERVED_AUTHZ" in
+            */oauth2/authorize) ;;
+            *)
+              echo "::error::this stack is serving a trexsql image from before the OIDC provider cutover - authorization_endpoint is '${SERVED_AUTHZ:-(absent)}', not '{{ISSUER_ORIGIN}}/trex/oidc/oauth2/authorize'. This is NOT discovery drift and the golden file is not what needs changing. Publish a trexsql image built from the trex branch and bump TREXSQL_REF in ALL THREE pins - services/trex/Dockerfile.v2, docker-compose-local.yml, and the devx build-args in .github/workflows/docker-build-push.yaml, which is the one this job's image is actually built from; see docs/trex-oidc-provider-cutover.md."
+              exit 1
+              ;;
+          esac
 
-          response=$(curl -ik "https://localhost:41100/oidc/auth/$interaction_cookie" \
-              --header 'referer: https://localhost:41100/sign-in' \
-              --header "Cookie: _interaction=$interaction_cookie; _interaction.sig=$interaction_sig_cookie; _interaction_resume=$interaction_resume_cookie; _interaction_resume.sig=$interaction_resume_sig_cookie; _logto={\"appId\":\"$LOGTO__D2E_APP__CLIENT_ID\"}")
-          printf "%s\n" "$response"
+          if ! diff -u "$GOLDEN" /tmp/discovery.json; then
+            echo "::error::the OIDC discovery document has drifted from ${GOLDEN}"
+            exit 1
+          fi
+          echo "discovery document matches ${GOLDEN}"
 
-          interaction_cookie=$(printf "%s\n" "$response" | grep _interaction= | awk -F'=' '{print $2}' | awk -F'; ' '{print $1}')
-          interaction_sig_cookie=$(printf "%s\n" "$response" | grep _interaction.sig= | awk -F'=' '{print $2}' | awk -F'; ' '{print $1}')
-          interaction_resume_cookie=$(printf "%s\n" "$response" | grep _interaction_resume= | awk -F'=' '{print $2}' | awk -F'; ' '{print $1}')
-          interaction_resume_sig_cookie=$(printf "%s\n" "$response" | grep _interaction_resume.sig= | awk -F'=' '{print $2}' | awk -F'; ' '{print $1}')
-          logto_cookie=$(printf "%s\n" "$response" | grep _logto= | awk -F'=' '{print $2}' | awk -F'; ' '{print $1}')
-          session_cookie=$(printf "%s\n" "$response" | grep _session= | awk -F'=' '{print $2}' | awk -F'; ' '{print $1}')
-          session_sig_cookie=$(printf "%s\n" "$response" | grep _session.sig= | awk -F'=' '{print $2}' | awk -F'; ' '{print $1}')
-
-          response=$(curl -ik 'https://localhost:41100/consent' \
-              --header 'accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7' \
-              --header 'referer: https://localhost:41100/sign-in' \
-              --header "Cookie: _interaction=$interaction_cookie; _interaction.sig=$interaction_sig_cookie; _interaction_resume=$interaction_resume_cookie; _interaction_resume.sig=$interaction_resume_sig_cookie; _session=$session_cookie; _session.sig=$session_sig_cookie; _logto={\"appId\":\"$LOGTO__D2E_APP__CLIENT_ID\"}")
-          printf "%s\n" "$response"
-
-          response=$(curl -ik "https://localhost:41100/oidc/auth/$interaction_cookie" \
-              --header 'accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7' \
-              --header 'referer: https://localhost:41100/sign-in' \
-              --header "Cookie: _interaction=$interaction_cookie; _interaction.sig=$interaction_sig_cookie; _interaction_resume=$interaction_resume_cookie; _interaction_resume.sig=$interaction_resume_sig_cookie; _session=$session_cookie; _session.sig=$session_sig_cookie; _logto={\"appId\":\"$LOGTO__D2E_APP__CLIENT_ID\"}")
-          printf "%s\n" "$response"
-
-          authorization_code=$(printf "%s\n" "$response" | sed -n 's/.*code=\([^&]*\).*/\1/p' | head -n 1)
-
-          response=$(curl -ik "https://localhost:41100/d2e/portal/login-callback?code=$authorization_code&state=lbFDB1hcko&iss=https%3A%2F%2Flocalhost%3A41100%2Foidc" \
-              --header 'accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7' \
-              --header 'referer: https://localhost:41100/sign-in' \
-              --header "Cookie: _interaction=$interaction_cookie; _interaction.sig=$interaction_sig_cookie; _interaction_resume=$interaction_resume_cookie; _interaction_resume.sig=$interaction_resume_sig_cookie; _session=$session_cookie; _session.sig=$session_sig_cookie; _logto={\"appId\":\"$LOGTO__D2E_APP__CLIENT_ID\"}")
-          printf "%s\n" "$response"
-
-          response=$(curl -ik 'https://localhost:41100/d2e/oauth/token' \
-              --header 'accept: application/json, text/javascript, */*; q=0.01' \
-              --header 'content-type: application/x-www-form-urlencoded' \
-              --header "Cookie: _interaction=$interaction_cookie; _interaction.sig=$interaction_sig_cookie; _interaction_resume=$interaction_resume_cookie; _interaction_resume.sig=$interaction_resume_sig_cookie; _session=$session_cookie; _session.sig=$session_sig_cookie; _logto={\"appId\":\"$LOGTO__D2E_APP__CLIENT_ID\"}" \
-              --header 'origin: https://localhost:41100' \
-              --header 'referer: https://localhost:41100/d2e/portal/login-callback?code=2sxkx6uCahwOfKo1cwzLaAq5MfdBJrMcqCLNHvOTXFv&state=odSrnZhVyE&iss=https%3A%2F%2Flocalhost%3A41100%2Foidc' \
-              --data-urlencode 'grant_type=authorization_code' \
-              --data-urlencode "client_id=$LOGTO__D2E_APP__CLIENT_ID" \
-              --data-urlencode 'redirect_uri=https://localhost:41100/d2e/portal/login-callback' \
-              --data-urlencode "code=$authorization_code" \
-              --data-urlencode 'code_verifier=kqVLhCyXRJ3Y9mXie6F9d1FW8AUbTUzIuJiqUf1SM9I')
-          printf "%s\n" "$response"
-
-          export BEARER_TOKEN=$(echo "$response" | grep -o '"access_token":"[^"]*"' | sed 's/"access_token":"\([^"]*\)"/\1/')
-          echo "BEARER_TOKEN=$BEARER_TOKEN" >> $GITHUB_ENV
-
-          decode_base64_url() {
-              local len=$((${#1} % 4))
-              local result="$1"
-              if [ $len -eq 2 ]; then
-                  result="$1"'=='
-              elif [ $len -eq 3 ]; then
-                  result="$1"'='
-              fi
-              echo "$result" | tr '_-' '/+' | openssl enc -d -base64
-          }
-
-          decode_jwt() {
-              decode_base64_url $(echo -n $2 | cut -d "." -f $1)
-          }
-
-          DECODED_TOKEN="$(decode_jwt 2 $BEARER_TOKEN)"
-          export IDP_SUB=$(echo $(echo $DECODED_TOKEN | grep -o '"sub":"[^"]*"' | awk -F':' '{print $2}' | tr -d '"'))
-          echo "IDP_SUB=$IDP_SUB" >> $GITHUB_ENV
-
-          response=$(curl -ik 'https://localhost:41100/d2e/usermgmt/api/user-group/list' \
-              -H 'accept: application/json, text/plain, */*' \
-              -H "authorization: Bearer $BEARER_TOKEN" \
-              -H 'content-type: application/json' \
-              -H 'origin: https://localhost:41100' \
-              -H 'referer: https://localhost:41100/d2e/portal/no-access' \
-              --data-raw "{\"userId\":\"$IDP_SUB\"}")
-          printf "%s\n" "$response"
-          USER_MGMT_ID=$(printf "%s\n" "$response" | grep -o '"userId":"[^"]*"' | awk -F':' '{print $2}' | tr -d '"')
-          echo "USER_MGMT_ID=$USER_MGMT_ID" >> $GITHUB_ENV
-
+      - name: Log in and get Bearer token and sub
+        run: |
+          # One script for both IdPs; see the script for why the flows differ.
+          # Exports BEARER_TOKEN, REFRESH_TOKEN and IDP_SUB to $GITHUB_ENV.
+          bash tests/backend_integration_tests/lib/ci-login.sh
       - name: Check status of docker containers
         run: docker ps -a
 

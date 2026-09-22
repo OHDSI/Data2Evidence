@@ -5,6 +5,7 @@ import { execFileSync } from "child_process";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const content = readFileSync(join(__dirname, "../docker-compose.yml"), "utf8");
+const logtoFederationContent = readFileSync(join(__dirname, "../docker-compose-logto-federation.yml"), "utf8");
 
 // Bundle the atlas-db-init SQL scripts so the distributed CLI can stage them
 // next to the embedded compose file. trex bind-mounts ./services/atlas-db-init
@@ -41,7 +42,8 @@ writeFileSync(
     )};\n` +
     `export const notebookSchemaFiles: Record<string, string> = ${JSON.stringify(
       notebookSchemaFiles
-    )};\n`
+    )};\n` +
+    `export const logtoFederationComposeContent = ${JSON.stringify(logtoFederationContent)};\n`
 );
 
 const SCRIPT_MAP = {
@@ -81,8 +83,26 @@ const generatedPaths = [];
 
 const ARGV_BLOCKS = { NOPROXY: NOPROXY_ARGV_BLOCK };
 
-for (const [filename, { fn, paramExpr, argvBlock: argvBlockKey }] of Object.entries(SCRIPT_MAP)) {
+// Shared modules the scripts import at runtime. The transform below rewrites
+// each script into a function but leaves its imports alone, so anything it
+// imports has to exist next to the emitted file or the CLI fails at require
+// time with MODULE_NOT_FOUND.
+mkdirSync(join(distDir, "lib"), { recursive: true });
+for (const lib of readdirSync(join(__dirname, "lib"))) {
+  if (!lib.endsWith(".mjs") && !lib.endsWith(".cjs")) continue;
+  writeFileSync(join(distDir, "lib", lib), readFileSync(join(__dirname, "lib", lib), "utf8"));
+  console.log(`Copied lib/${lib} to dist/lib/`);
+}
+
+for (const [filename, { fn, paramExpr, argvBlock: argvBlockKey, copy }] of Object.entries(SCRIPT_MAP)) {
   const src = readFileSync(join(__dirname, filename), "utf8");
+
+  if (copy) {
+    writeFileSync(join(distDir, filename), src);
+    console.log(`Copied ${filename} to dist/`);
+    continue;
+  }
+
   const block = argvBlockKey ? ARGV_BLOCKS[argvBlockKey] : ARGV_BLOCK;
   const param = paramExpr ?? 'envfile = ".env"';
 

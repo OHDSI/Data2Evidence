@@ -40,7 +40,11 @@ services:
         # Match the -devx image name above: without this a local build would use
         # Dockerfile.v2's default (the lean prod base) and quietly produce an
         # image with no devx tooling under a -devx tag.
-        TREXSQL_REF: ${TREXSQL_REF:-sha-48a466268dbfdd12f03d8018e2af81fe10cbdf69@sha256:923e62615ec94da06f4574e4ed80b51780746f9e8a30e8060caa9c4dd4ac754c}
+        #
+        # The second of the two TREXSQL_REF pins; the other is the ARG default
+        # in services/trex/Dockerfile.v2. Shipping trex code means bumping both.
+        # See docs/trex-oidc-provider-cutover.md.
+        TREXSQL_REF: ${TREXSQL_REF:-sha-6e7ca8500dd5126270da219bbcb168fcc5301f17@sha256:b39886c96ae7109d94d7b5d6d885d5da153ca680e4de9f4c5140f9fff8deb527}
         # Local builds pull published plugins from the feed; CI uses plugin-artifacts/.
         PLUGINS_FROM_REGISTRY: ${PLUGINS_FROM_REGISTRY:-@data2evidence/d2e-ui @data2evidence/d2e-functions @data2evidence/fhir @data2evidence/sibyl @data2evidence/d2e-flows @data2evidence/i2b2-flow @data2evidence/search-embedding-flow @data2evidence/data-management-flow @data2evidence/hades-flow @data2evidence/loyalty-score-flow @data2evidence/eq5d5l-index-calculation-flow @data2evidence/data-transformation-flow @ohdsi/pythia-agent@0.1.0-develop.18.g80bf4aa}
         # Keep in sync with the `docker build --build-arg WITH_R=true` used to
@@ -88,9 +92,20 @@ services:
       - path: .env.claw
         required: false
     environment:
+      # The public FQDN here is `localhost`, which inside this container is its
+      # own loopback — glibc special-cases the name (RFC 6761), so the
+      # `extra_hosts: <FQDN>:host-gateway` entry docker-compose.yml adds cannot
+      # redirect it. Without this, d2e-compat builds BOTH its JWKS URL and its
+      # /oauth/token proxy target from the public issuer (d2e-compat/idp.ts:77-79,
+      # :99, :130) and every one of them fails with `fetch failed`: the portal's
+      # code exchange retries forever and every portal API call answers
+      # "Authentication Token not valid". `iss` is unaffected — only server-side
+      # fetches take this route. docker-compose.yml's own comment at
+      # TREX_OIDC_ISSUER already says local needs this; only CI had it set.
+      TREX_OIDC_INTERNAL_BASE: "http://${PROJECT_NAME:-d2e}-trex:33001"
       TREX_DX_ENABLED: "true"
       # Enable trex's native email/password IDP for local dev (off by default in
-      # the engine). Production d2e authenticates via Logto and leaves it unset.
+      # the engine). trex is the identity provider in every mode; this stays on.
       TREX_IDP_ENABLED: "true"
       IS_SANDBOX: "1"
       BETTER_AUTH_URL: "https://localhost:${CADDY_PORT:-${PORT:-443}}/trex"
