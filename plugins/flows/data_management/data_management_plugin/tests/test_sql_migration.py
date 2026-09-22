@@ -81,16 +81,17 @@ def test_set_current_schema_statement_hana_uppercases():
 
 # --- is_sql_migration_data_model ---
 
-@pytest.mark.parametrize("data_model", ["medical-imaging", "omop5-4"])
+@pytest.mark.parametrize("data_model", ["medical-imaging", "omop5-4", "waveform"])
 @pytest.mark.parametrize("dialect", ["postgres", "hana"])
 def test_is_sql_migration_data_model_true_for_migrated_models(data_model, dialect):
     assert sm.is_sql_migration_data_model(data_model, dialect) is True
 
 
 @pytest.mark.parametrize("dialect", ["postgres", "hana"])
-def test_is_sql_migration_data_model_false_for_waveform(dialect):
-    # waveform stays on Liquibase until it's migrated too
-    assert sm.is_sql_migration_data_model("waveform", dialect) is False
+def test_is_sql_migration_data_model_false_for_r_based_data_model(dialect):
+    # "custom-omop-ms" is created via omop_cdm_plugin's R/CommonDataModel
+    # path, never through this plugin's Liquibase-or-not changelog mapping
+    assert sm.is_sql_migration_data_model("custom-omop-ms", dialect) is False
 
 
 def test_is_sql_migration_data_model_false_for_unknown_dialect():
@@ -131,6 +132,18 @@ def test_list_changeset_files_omop5_4_postgres_includes_gdm_hana_does_not():
     hana_dirs = {f.relative_path.split("/")[4] for f in sm.list_changeset_files("hana", "omop5-4")}
     assert "gdm" in postgres_dirs
     assert "gdm" not in hana_dirs
+
+
+@pytest.mark.parametrize("dialect", ["postgres", "hana"])
+def test_list_changeset_files_waveform_is_omop5_4_plus_waveform_dir(dialect):
+    omop54_files = sm.list_changeset_files(dialect, "omop5-4")
+    waveform_files = sm.list_changeset_files(dialect, "waveform")
+
+    assert [f.relative_path for f in waveform_files[:len(omop54_files)]] == [
+        f.relative_path for f in omop54_files
+    ]
+    trailing_dirs = {f.relative_path.split("/")[4] for f in waveform_files[len(omop54_files):]}
+    assert trailing_dirs == {"waveform"}
 
 
 # --- apply_changeset ---

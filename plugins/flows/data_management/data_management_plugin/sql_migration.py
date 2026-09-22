@@ -1,19 +1,17 @@
 """Liquibase-free schema migration runner.
 
 Applies the existing "--liquibase formatted sql" changeset files directly via
-SQLAlchemy, without shelling out to the Liquibase CLI. Changeset files are left
-untouched on disk (including their `--liquibase formatted sql` / `--changeset`
-/ `--rollback` comment lines) so this can be rolled out data-model by
-data-model alongside the Liquibase path in liquibase.py.
+SQLAlchemy, instead of shelling out to the Liquibase CLI. Changeset files are
+left untouched on disk (including their `--liquibase formatted sql` /
+`--changeset` / `--rollback` comment lines).
 
 Applied changesets are recorded in a `databasechangelog` table shaped like
-Liquibase's own (just `filename` + `dateexecuted`), so the existing
+Liquibase's own (just `filename` + `dateexecuted`), so
 DaoBase.get_last_executed_changeset / get_datamodel_created_date /
-get_datamodel_updated_date methods keep working unchanged for data models
-migrated to this runner. `filename` is stored as the same
+get_datamodel_updated_date keep working unchanged. `filename` is stored as the
 "db/migrations/<dialect>/changesets/<dir>/<file>" relative path Liquibase used
 to store, since `_shared_flow_utils.update_dataset_metadata.extract_version`
-(shared by both the Liquibase and this path) parses that exact shape.
+parses that exact shape.
 """
 import re
 from datetime import datetime
@@ -43,18 +41,24 @@ SPLIT_STATEMENTS_FALSE_REGEX = re.compile(r"splitStatements:false", re.IGNORECAS
 # mirror the previous <includeAll> entries in each dialect's Liquibase
 # changelog XML (db/migrations/<dialect>/liquibase-changelog-*.xml). The two
 # dialects intentionally differ (e.g. hana's omop5-4 changelog has no `gdm`).
+# waveform's changelog is the same directory list as omop5-4 plus `waveform`.
+_OMOP54_DIRS_POSTGRES = ["omop", "questionnaireResponse", "researchSubject", "consent",
+                        "views", "schemaMetadata", "bi", "omop5-4", "monitor",
+                        "questionnaire", "gdm"]
+_OMOP54_DIRS_HANA = ["omop", "questionnaireResponse", "researchSubject", "monitor",
+                     "consent", "views", "schemaMetadata", "bi", "omop5-4",
+                     "questionnaire"]
+
 DATAMODEL_CHANGESET_DIRS = {
     "postgres": {
         "medical-imaging": ["medical-imaging"],
-        "omop5-4": ["omop", "questionnaireResponse", "researchSubject", "consent",
-                    "views", "schemaMetadata", "bi", "omop5-4", "monitor",
-                    "questionnaire", "gdm"],
+        "omop5-4": _OMOP54_DIRS_POSTGRES,
+        "waveform": _OMOP54_DIRS_POSTGRES + ["waveform"],
     },
     "hana": {
         "medical-imaging": ["medical-imaging"],
-        "omop5-4": ["omop", "questionnaireResponse", "researchSubject", "monitor",
-                    "consent", "views", "schemaMetadata", "bi", "omop5-4",
-                    "questionnaire"],
+        "omop5-4": _OMOP54_DIRS_HANA,
+        "waveform": _OMOP54_DIRS_HANA + ["waveform"],
     },
 }
 

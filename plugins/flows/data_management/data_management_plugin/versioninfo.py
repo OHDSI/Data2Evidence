@@ -1,11 +1,10 @@
 import json
-from typing import List, Dict, Optional
+from typing import List, Optional
 
 from prefect import task
 from prefect.logging import get_run_logger
 
-from .liquibase import Liquibase, LiquibaseAction
-from .sql_migration import get_latest_available_changeset, is_sql_migration_data_model
+from .sql_migration import get_latest_available_changeset
 from .types import PortalDatasetType, ExtractDatasetSchemaType
 from .const import OMOP_DATA_MODELS, check_table_case, convert_case
 
@@ -21,9 +20,7 @@ from _shared_flow_utils.update_dataset_metadata import (extract_version,
                                                   update_metadata_last_fetched_date)
 
 
-def get_version_info_tasks(changelog_filepath_list: Dict,
-                          plugin_classpath: str,
-                          dataset_list: List[PortalDatasetType],
+def get_version_info_tasks(dataset_list: List[PortalDatasetType],
                           cache_id: Optional[str] = None):
     logger = get_run_logger()
     if (dataset_list is None) or (len(dataset_list) == 0):
@@ -35,8 +32,7 @@ def get_version_info_tasks(changelog_filepath_list: Dict,
         dataset_schema_list = extract_db_schema(dataset_list)
 
         for dataset in dataset_schema_list["datasets_with_schema"]:
-            get_and_update_attributes(
-                dataset, changelog_filepath_list, plugin_classpath, cache_id)
+            get_and_update_attributes(dataset, cache_id)
 
 
 @task(log_prints=True)
@@ -61,8 +57,6 @@ def extract_db_schema(dataset_list: List[PortalDatasetType]) -> ExtractDatasetSc
 
 @task(log_prints=True)
 def get_and_update_attributes(dataset: PortalDatasetType,
-                              changelog_filepath_list: Dict,
-                              plugin_classpath: str,
                               cache_id: Optional[str] = None
                               ):
     logger = get_run_logger()
@@ -70,9 +64,7 @@ def get_and_update_attributes(dataset: PortalDatasetType,
     dataset_id = dataset.get("id")
     database_code = dataset.get("databaseCode")
     schema_name = dataset.get("schemaName")
-    vocab_schema = dataset.get("vocabSchemaName")
     data_model = dataset.get("dataModel").split(" ")[0]
-    changelog_file = changelog_filepath_list.get(data_model)
 
     logger.info(f"Updating attributes for dataset id '{dataset_id}' - schema '{schema_name}'")
 
@@ -191,21 +183,11 @@ def get_and_update_attributes(dataset: PortalDatasetType,
                 # update with latest version or error msg
                 db_dialect = dataset_dao.dialect
 
-                if is_sql_migration_data_model(data_model, db_dialect):
-                    latest_available_schema_version = extract_version(get_latest_available_changeset(
-                        dbdao=dataset_dao,
-                        schema_name=schema_name,
-                        data_model=data_model,
-                        dialect=db_dialect))
-                else:
-                    tenant_configs = dataset_dao.tenant_configs
-                    latest_available_schema_version = get_latest_available_version(dialect=db_dialect,
-                                                                                   data_model=data_model,
-                                                                                   changelog_file=changelog_file,
-                                                                                   schema_name=schema_name,
-                                                                                   vocab_schema=vocab_schema,
-                                                                                   tenant_configs=tenant_configs,
-                                                                                   plugin_classpath=plugin_classpath)
+                latest_available_schema_version = extract_version(get_latest_available_changeset(
+                    dbdao=dataset_dao,
+                    schema_name=schema_name,
+                    data_model=data_model,
+                    dialect=db_dialect))
                 portal_server_api.update_dataset_attributes_table(dataset_id, "latest_schema_version", latest_available_schema_version)
             except Exception as e:
                 logger.error(
@@ -213,19 +195,6 @@ def get_and_update_attributes(dataset: PortalDatasetType,
             else:
                 logger.info(
                     f"Updated attribute 'latest_schema_version' for dataset id '{dataset_id}'  with value '{latest_available_schema_version}'")
-
-
-def get_latest_available_version(**kwargs) -> str:
-    kwargs["action"] = LiquibaseAction.STATUS
-    try:
-        liquibase = Liquibase(**kwargs)
-        liquibase_output = liquibase.get_latest_available_version()
-        latest_available_schema_version = extract_version(liquibase_output)
-    except Exception as e:
-        error_msg = f"Error retrieving latest available version"
-        get_run_logger().error(f"{error_msg}: {e}")
-        latest_available_schema_version = error_msg
-    return latest_available_schema_version
 
 
 def get_current_version(dao_obj: DBDao, schema_name: str) -> str:
