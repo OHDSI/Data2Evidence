@@ -13,12 +13,36 @@ from prefect.client.schemas.filters import (
 from prefect.client.schemas.objects import TERMINAL_STATES, StateType
 from prefect.client.schemas.sorting import TaskRunSort
 from prefect.concurrency.sync import concurrency
-from prefect.exceptions import ObjectNotFound
+from prefect.exceptions import ObjectNotFound, PrefectHTTPStatusError
 from prefect.states import Crashed
 
 RECONCILE_LOCK = "cache-slot-reconcile"
 LOCK_TIMEOUT_SECONDS = 120
 CONFIRM_DELAY_SECONDS = 5
+
+
+def _ensure_reconcile_lock(client) -> None:
+    """Create the reconciler's lock, tolerating another reconciler creating it first.
+
+    `upsert_global_concurrency_limit_by_name` reads then POSTs, so it is only
+    idempotent against itself when the two calls do not overlap. Two cache builds
+    starting together both read "absent" and both POST; the loser gets 409 and, left
+    unhandled, takes the whole cache flow down with it:
+
+        PrefectHTTPStatusError: Client error '409 Conflict' for url
+        '.../api/v2/concurrency_limits/'
+
+    A 409 means the limit exists, which is the only thing this call wanted. Every
+    other status still raises -- a lock that is genuinely unavailable must not be
+    mistaken for one that is ready.
+    """
+    try:
+        client.upsert_global_concurrency_limit_by_name(
+            RECONCILE_LOCK, limit=1, slot_decay_per_second=0.0
+        )
+    except PrefectHTTPStatusError as exc:
+        if exc.response.status_code != 409:
+            raise
 
 
 def reconcile_stale_concurrency_slots(tags: list[str], stale_after_seconds: int, logger) -> None:
@@ -32,9 +56,7 @@ def reconcile_stale_concurrency_slots(tags: list[str], stale_after_seconds: int,
     counts as orphaned when its flow run has ended or has shown no task-run activity
     for ``stale_after_seconds``; long-running copies are not affected."""
     client = get_client(sync_client=True)
-    client.upsert_global_concurrency_limit_by_name(
-        RECONCILE_LOCK, limit=1, slot_decay_per_second=0.0
-    )
+    _ensure_reconcile_lock(client)
     try:
         with concurrency(RECONCILE_LOCK, occupy=1, timeout_seconds=LOCK_TIMEOUT_SECONDS):
             for tag in tags:
