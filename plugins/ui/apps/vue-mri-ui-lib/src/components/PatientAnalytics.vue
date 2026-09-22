@@ -167,6 +167,10 @@ declare var sap
 const myWindow: any = window
 
 import { mapActions, mapGetters } from 'vuex'
+// lodash, not the underscore debounce used elsewhere in this app: underscore caches
+// Date.now at import time, so its trailing call never elapses under vitest's fake
+// timers and the coalescing below could not be covered by a test.
+import { debounce } from 'lodash'
 import { registerPaTools } from '@/ai/webmcpServer'
 import { publishPaTools } from '@/ai/paToolBridge'
 import icon from '../lib/ui/app-icon.vue'
@@ -198,6 +202,8 @@ const PANEL = {
   LEFT: 'left',
 }
 
+const COHORT_RECALCULATION_DEBOUNCE_MS = 500
+
 export default {
   name: 'patientanalytics',
   data() {
@@ -225,7 +231,20 @@ export default {
       atlasStore: useAtlasStore(),
     }
   },
-  created() {},
+  created() {
+    // Every filter-card value the user adds or removes rewrites the IFR, and each
+    // rewrite used to dispatch its own analytics query. analytics-svc runs
+    // every one of them to completion (client-side cancel aborts the XHR, not the
+    // query), so latency degraded from ~180ms to ~60s and the pile-up made a
+    // subsequent reset look like it never fired. Coalesce the burst into one query.
+    this.fireCohortRecalculation = debounce(() => {
+      if (this.getPLModel.currentPage !== 1) {
+        this.changePage(1)
+      } else {
+        this.setFireRequest()
+      }
+    }, COHORT_RECALCULATION_DEBOUNCE_MS)
+  },
   watch: {
     getActiveBookmark(newVal, oldVal) {
       // Auto-switch to cohort view when a bookmark is loaded (e.g., from deep link)
@@ -242,15 +261,40 @@ export default {
         this.resetToDefaultView()
       }
     },
-    getBookmarkFromIFR(bm) {
-      // In patient list, changePage is watched and already calls setFireRequest once
-      // It seems like if both are run, `setFireRequest` runs consecutively in the same tick,
-      // and the `getFireRequest` watcher is unable to pick up a diff, hence no api call is made
-      if (this.getPLModel.currentPage !== 1) {
-        this.changePage(1)
-      } else {
-        this.setFireRequest()
+    isFireRequestHeld(held) {
+      // The early return in getBookmarkFromIFR only stops NEW work being queued; a timer
+      // armed by a user edit moments earlier is still running. Every holder (bookmark
+      // load, the WebMCP cohort patch, resetChart, the dashboard wizard) ends the same
+      // way — releaseFireRequest then one explicit setFireRequest — so that surviving
+      // timer would land just after the release and fire a second, identical query.
+      // Drop it as soon as the hold goes up rather than at the next watcher run.
+      if (held) {
+        this.fireCohortRecalculation?.cancel()
       }
+    },
+    getBookmarkFromIFR(bm) {
+      // Mirrors setFireRequest's own early return, but has to happen at schedule time:
+      // bookmark load and the WebMCP cohort patch hold, then release and fire once
+      // explicitly, so a call queued here would land after the release and duplicate it.
+      if (this.isFireRequestHeld) {
+        return
+      }
+      // Raise the staleness flag now, not when the debounced fire lands. setFireRequest
+      // does this itself, but debouncing it would leave the previous cohort's count on
+      // screen looking authoritative for the whole window. Idempotent, so the later
+      // dispatch from setFireRequest is fine.
+      //
+      // Guarded exactly as setFireRequest guards it (store/modules/chart.ts): with an
+      // empty IFR every chart component bails out without querying, so nothing would
+      // ever call setCurrentPatientCount to lower the flag again and pa_get_cohort_result
+      // would block for its full 60s timeout.
+      if (Object.keys(this.getBookmarksData ?? {}).length > 0) {
+        this.invalidateCurrentPatientCount()
+      }
+      // The fire itself is debounced; changePage vs setFireRequest is
+      // decided when it lands, because the patient list's own changePage watcher already
+      // calls setFireRequest once and two calls in a tick cancel the fireRequest toggle.
+      this.fireCohortRecalculation()
     },
     getActiveChart() {
       this.chartBusy = false
@@ -304,6 +348,9 @@ export default {
       console.warn('[WebMCP] Browser tool unregistration failed', error)
     }
     this._unpublishPaTools?.()
+    // A queued recalculation would otherwise run a multi-second analytics query for a
+    // screen the user has left, and write its count into a torn-down chart.
+    this.fireCohortRecalculation?.cancel()
     window.removeEventListener('resize', this.updateMinSplitterWidth)
     this.chartBusy = false
   },
@@ -316,6 +363,8 @@ export default {
       'getChartSelection',
       'getAllChartConfigs',
       'getBookmarkFromIFR',
+      'getBookmarksData',
+      'isFireRequestHeld',
       'getActiveChart',
       'getPLModel',
       'getActiveBookmark',
@@ -358,6 +407,7 @@ export default {
       'loadSharedBookmarkList',
       'queryGenomicsSettings',
       'setFireRequest',
+      'invalidateCurrentPatientCount',
       'setupChartDefaults',
       'setIFRState',
       'drilldown',
