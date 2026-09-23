@@ -239,22 +239,21 @@
 
           <!-- Atlas only; see SHOW_DATA_QUALITY. Disabled until the
                exploration has been materialised, because DQD reports on a
-               cohort definition and there is none before that. -->
+               cohort definition and there is none before that. While a run is
+               being checked, started or followed it shows a spinner and cannot
+               be pressed again; the tooltip follows the phase (useDataQualityRun). -->
           <v-tooltip
             v-if="SHOW_DATA_QUALITY"
             location="top"
             content-class="explorations-tooltip"
-            :text="
-              card.cohortDefinitionId
-                ? getText('MRI_PA_EXPLORATIONS_DATA_QUALITY')
-                : getText('MRI_PA_DATA_QUALITY_DISABLED_NOT_MATERIALISED')
-            "
+            :text="dataQualityTooltip(card)"
           >
             <template #activator="{ props: tooltipProps }">
               <span v-bind="tooltipProps">
                 <D2eIconButton
                   category="no-stroke"
-                  :disabled="!card.cohortDefinitionId"
+                  :disabled="!card.cohortDefinitionId || dataQualityBusy(card)"
+                  :loading="dataQualityBusy(card)"
                   :aria-label="getText('MRI_PA_EXPLORATIONS_DATA_QUALITY')"
                   :data-testid="`explorations-dq-btn-${card.id}`"
                   @click="openDataQuality(card)"
@@ -409,7 +408,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, nextTick, reactive, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, reactive, ref, watch } from 'vue'
 import { useStore } from 'vuex'
 import {
   D2eButton,
@@ -434,7 +433,8 @@ import {
   shouldResetDashboardFlow,
 } from './helpers/explorationAnalyze'
 import { filterAndSort, toCardId, type ExplorationSortKey } from './helpers/explorationList'
-import { dataQualityCohortId } from './helpers/explorationDataQuality'
+import { dataQualityCohortId, dataQualityTooltipKey, isDataQualityBusy } from './helpers/explorationDataQuality'
+import { useDataQualityRun } from '../composables/useDataQualityRun'
 import { allSelected, someSelected } from './helpers/explorationSelection'
 import {
   applyFilters,
@@ -1040,11 +1040,44 @@ const dqOpen = ref(false)
 const dqCohortDefinitionId = ref('')
 const dqExplorationName = ref('')
 
-const openDataQuality = (card: { name: string; cohortDefinitionId: string | number | null }): void => {
+/**
+ * The card's Data quality action (#3119). A click reads the cohort's latest run:
+ * a completed one opens the dialog; otherwise useDataQualityRun starts or
+ * follows a run and reports when it ends. The state is learned on click only.
+ */
+const dqRun = useDataQualityRun({
+  datasetId: () => datasetId.value,
+  fetchLatest: (cohortDefinitionId, id) =>
+    store.dispatch('fetchDataQualityFlowRun', { cohortDefinitionId, datasetId: id }),
+  startRun: (cohortDefinitionId, id) =>
+    store.dispatch('startDataQualityFlowRun', { cohortDefinitionId, datasetId: id }),
+  notify: ({ kind, key, name }) => {
+    // setAlertMessage toggles `show`, so close first: the alert must end up
+    // shown even when one is already on screen.
+    notifications.closeAlertNotification()
+    notifications.setAlertMessage({
+      message: getText(key, name),
+      messageType: kind,
+      title: getText(kind === 'success' ? 'MRI_PA_NOTIFICATION_SUCCESS' : 'MRI_PA_NOTIFICATION_ERROR'),
+    })
+  },
+})
+onBeforeUnmount(() => dqRun.dispose())
+
+type DataQualityCard = { cohortDefinitionId: string | number | null }
+const dataQualityPhase = (card: DataQualityCard) =>
+  dqRun.phaseOf(card.cohortDefinitionId === null ? null : String(card.cohortDefinitionId))
+const dataQualityBusy = (card: DataQualityCard): boolean => isDataQualityBusy(dataQualityPhase(card))
+const dataQualityTooltip = (card: DataQualityCard): string =>
+  getText(dataQualityTooltipKey(dataQualityPhase(card), Boolean(card.cohortDefinitionId)))
+
+const openDataQuality = async (card: { name: string; cohortDefinitionId: string | number | null }): Promise<void> => {
   // The button is disabled in this state; the guard is for keyboard and
   // programmatic callers that do not go through it.
   if (!card.cohortDefinitionId) return
-  dqCohortDefinitionId.value = String(card.cohortDefinitionId)
+  const id = String(card.cohortDefinitionId)
+  if ((await dqRun.activate(id, card.name)) !== 'open') return
+  dqCohortDefinitionId.value = id
   dqExplorationName.value = card.name
   dqOpen.value = true
 }
