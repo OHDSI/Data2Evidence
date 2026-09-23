@@ -19,6 +19,17 @@ export { default as D2eTruncatedText } from "./components/D2eTruncatedText.vue";
 export { default as D2eTabs } from "./components/D2eTabs.vue";
 export { TABS_STYLE_MAP } from "./components/tabsStyles";
 export type { D2eTabItem } from "./components/tabsStyles";
+export { default as D2eDataTable } from "./components/D2eDataTable.vue";
+export { default as D2eDataTableDetail } from "./components/D2eDataTableDetail.vue";
+export {
+  DATA_TABLE_STYLE_MAP,
+  nextSort,
+  pageRange,
+  pageCount,
+} from "./components/dataTable";
+export type { D2eDataTableHeader, D2eSortItem } from "./components/dataTable";
+export { default as D2eSplitButton } from "./components/D2eSplitButton.vue";
+export { SPLIT_BUTTON_STYLE_MAP } from "./components/splitButton";
 export { toIsoDate, fromIsoDate } from "./components/dateFieldFormat";
 export { VARIANT_MAP, SIZE_MAP } from "./components/buttonVariants";
 export type {
