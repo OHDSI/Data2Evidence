@@ -27,7 +27,12 @@ export {
   pageRange,
   pageCount,
 } from "./components/dataTable";
-export type { D2eDataTableHeader, D2eSortItem } from "./components/dataTable";
+export type {
+  D2eDataTableHeader,
+  D2eDataTablePageLabels,
+  D2eDataTableProps,
+  D2eSortItem,
+} from "./components/dataTable";
 export { default as D2eSplitButton } from "./components/D2eSplitButton.vue";
 export { SPLIT_BUTTON_STYLE_MAP } from "./components/splitButton";
 export { toIsoDate, fromIsoDate } from "./components/dateFieldFormat";

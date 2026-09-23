@@ -124,7 +124,7 @@
   </div>
 </template>
 
-<script setup lang="ts">
+<script setup lang="ts" generic="T extends object">
 import { computed } from "vue";
 import { VDataTable, VIcon } from "vuetify/components";
 import D2eIconButton from "./D2eIconButton.vue";
@@ -134,35 +134,11 @@ import {
   nextSort,
   pageCount,
   pageRange,
-  type D2eDataTableHeader,
+  type D2eDataTableProps,
   type D2eSortItem,
 } from "./dataTable";
 
-interface PageLabels {
-  first: string;
-  previous: string;
-  next: string;
-  last: string;
-}
-
-interface Props {
-  headers: D2eDataTableHeader[];
-  items: Record<string, unknown>[];
-  /** The row field that is unique per row. */
-  itemValue: string;
-  sortBy?: D2eSortItem[];
-  page?: number;
-  itemsPerPage?: number;
-  expandable?: boolean;
-  expanded?: string[];
-  noDataText?: string;
-  rowsPerPageLabel?: string;
-  rangeLabel?: (start: number, end: number, total: number) => string;
-  pageLabels?: PageLabels;
-  expandLabel?: string;
-}
-
-const props = withDefaults(defineProps<Props>(), {
+const props = withDefaults(defineProps<D2eDataTableProps<T>>(), {
   sortBy: () => [],
   page: 1,
   itemsPerPage: DATA_TABLE_STYLE_MAP.defaultItemsPerPage,
@@ -193,14 +169,26 @@ defineOptions({ inheritAttrs: false });
 const labels = computed(() => props.pageLabels);
 
 // Vuetify must not sort: the caller owns the order (see the template comment).
-const vuetifyHeaders = computed(() =>
-  props.headers.map((header) => ({
+// The expand column leads the row, as in Figma (2855:278876); Vuetify appends
+// it last unless the headers already name it.
+const vuetifyHeaders = computed(() => [
+  ...(props.expandable
+    ? [
+        {
+          key: "data-table-expand",
+          title: "",
+          sortable: false,
+          width: DATA_TABLE_STYLE_MAP.expandColumnWidth,
+        },
+      ]
+    : []),
+  ...props.headers.map((header) => ({
     key: header.key,
     title: header.title,
     sortable: false,
     width: header.width,
   })),
-);
+]);
 
 const sizeItems = DATA_TABLE_STYLE_MAP.itemsPerPageOptions.map((size) => ({
   label: String(size),
