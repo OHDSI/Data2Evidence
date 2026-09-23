@@ -1,0 +1,5 @@
+{
+  "workspace": [],
+  "tasks": { "test": "deno test --allow-env --no-check" },
+  "imports": { "@std/assert": "jsr:@std/assert@^1.0.6" }
+}

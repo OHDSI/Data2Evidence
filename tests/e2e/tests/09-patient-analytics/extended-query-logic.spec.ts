@@ -124,5 +124,5 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByRole('button', { name: 'Delete' }).click()
   // Wait for delete dialog to disappear
   await expect(page.getByText('Delete Saved Filter')).not.toBeVisible()
-  await expect(page.getByText('Extended Logic Filter')).not.toBeVisible()
+  await expect(page.getByTestId('pa-cohort-card-Extended Logic Filter')).not.toBeVisible()
 })
