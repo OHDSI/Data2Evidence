@@ -16,6 +16,7 @@ read the computed result, and save.
 |---|---|
 | [`webmcpServer.ts`](./webmcpServer.ts) | The tool definitions. `createPaTools(store, hooks)` builds the array; `registerPaTools` adapts it to the browser's `modelContext`. |
 | [`paToolBridge.ts`](./paToolBridge.ts) | `publishPaTools(store, hooks)` — publishes the same tools on `window.__d2ePaTools` for the portal's in-app assistant drawer. |
+| [`../atlas-parcel/clientToolProxy.ts`](../atlas-parcel/clientToolProxy.ts) | Dependency-free Atlas wrapper bridge that exposes an Atlas-hosted PA iframe's tools to Pythia through parent-window `window.__pythiaClientTools`. |
 | [`cohortPatch.ts`](./cohortPatch.ts) | `applyCohortPatch` (the typed-patch applier) and `describeCardGroups` (the AND/OR grouping readout). |
 | [`valueResolution.ts`](./valueResolution.ts) | Query → stored-token matching for `pa_search_attribute_values`: `rankValues`, `alternateQueries`, `expandQuery`. Browser-side twin of the backend's `cohortValueResolver.ts`. |
 | [`__tests__/`](./__tests__/) | Vitest suites, one per module. |
@@ -59,6 +60,11 @@ user to open a builder that was already on screen.
    into a clean error instead of a dead store. `PA_TOOLS_CHANGED_EVENT` fires on
    appear/disappear. Bump `version` on any incompatible shape change; the portal
    side refuses a version it doesn't understand.
+
+When PA runs inside the same-origin Atlas iframe, `atlas-iframe-parcel.ts` calls
+`publishPaClientToolProxy(frame)`. The proxy re-reads the iframe's
+`window.__d2ePaTools` registry for every list/call and publishes it in the parent
+window as `window.__pythiaClientTools` for Pythia.
 
 `PaComponentHooks` carries anything that lives in the component rather than Vuex.
 Today that is only `showBuilder()` — functionally required, because the chart-query

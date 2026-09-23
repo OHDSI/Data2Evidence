@@ -202,7 +202,7 @@ test(TEST_NAME, async ({ page }) => {
   //Verify the saved filter
   await test.step('Verify the saved filter', async () => {
     await page.locator('#pane-left').getByRole('link', { name: 'Cohorts' }).click()
-    await expect(page.getByText(`${NAME.savedFilters}0. Icons/`)).toBeVisible()
+    await expect(page.getByText(`${NAME.savedFilters}Cohort Definition Icon`)).toBeVisible()
   })
   // Test for duplicate name validation
   await test.step('Test for duplicate name validation', async () => {
@@ -224,7 +224,7 @@ test(TEST_NAME, async ({ page }) => {
     await expect(page.getByText('Please enter a name')).toBeVisible()
     await page.getByRole('textbox').fill(NAME.renamedFilters)
     await page.getByRole('button', { name: 'Save' }).click()
-    await expect(page.getByText(`${NAME.renamedFilters}0. Icons/`)).toBeVisible()
+    await expect(page.getByText(`${NAME.renamedFilters}Cohort Definition Icon`)).toBeVisible()
     await page
       .locator('div')
       .filter({ hasText: new RegExp(`^${NAME.renamedFilters}$`) })
@@ -246,10 +246,10 @@ test(TEST_NAME, async ({ page }) => {
   //Delete the saved filter
   await test.step('Delete the saved filter', async () => {
     await page.locator('#pane-left').getByRole('link', { name: 'Cohorts' }).click()
-    await expect(page.getByText(`${NAME.renamedFilters}0. Icons/`)).toBeVisible()
+    await expect(page.getByText(`${NAME.renamedFilters}Cohort Definition Icon`)).toBeVisible()
     await page.getByTitle('Delete Saved Filter').first().click()
     await page.getByRole('button', { name: 'Delete' }).click()
-    await expect(page.getByText(`${NAME.renamedFilters}0. Icons/`)).not.toBeVisible()
+    await expect(page.getByText(`${NAME.renamedFilters}Cohort Definition Icon`)).not.toBeVisible()
   })
   //Go back to Cohorts
   await test.step('Go back to Cohorts', async () => {
@@ -325,7 +325,7 @@ test(TEST_NAME, async ({ page }) => {
     await page.locator('footer').getByRole('button', { name: 'Save' }).click()
     //Verify Cohort is saved
     await page.locator('#pane-left').getByRole('link', { name: 'Cohorts' }).click()
-    await expect(page.getByText(`${NAME.patientListFilters}0. Icons/`)).toBeVisible()
+    await expect(page.getByText(`${NAME.patientListFilters}Cohort Definition Icon`)).toBeVisible()
     //Click on the saved cohort
     await page.locator('#pane-left').getByRole('link', { name: 'Cohorts' }).click()
     await page.getByText(NAME.patientListFilters).nth(1).click()

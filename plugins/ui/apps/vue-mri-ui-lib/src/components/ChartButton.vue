@@ -8,14 +8,15 @@
     :disabled="disabled"
     :data-testid="`pa-chart-btn-${name}`"
   >
-    <span class="icon" v-bind:style="'font-family:' + iconGroup">{{ icon }}</span>
+    <component :is="iconComponent" v-if="iconComponent" class="icon iconSvg" />
+    <span v-else class="icon" v-bind:style="'font-family:' + iconGroup">{{ icon }}</span>
   </button>
 </template>
 
 <script lang="ts">
 export default {
   name: 'chartButton',
-  props: ['clickEv', 'icon', 'name', 'title', 'iconGroup', 'activeChart', 'disabled'],
+  props: ['clickEv', 'icon', 'iconComponent', 'name', 'title', 'iconGroup', 'activeChart', 'disabled'],
   data() {
     return {
       selected: false,
