@@ -27,5 +27,8 @@ export default defineConfig({
     ['playwright-ctrf-json-reporter', {}]
   ],
   workers: 1,
-  maxFailures: process.env.CI ? 1 : 0 // 0 = no cap; run all tests even if some fail
+  // TEMPORARY: 0 = no cap, so one CI run reports every drifted baseline
+  // instead of stopping at the first. Put back to `process.env.CI ? 1 : 0`
+  // as soon as the baselines are current.
+  maxFailures: 0
 })
