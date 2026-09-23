@@ -41,6 +41,8 @@ function mountApp(overrides: Partial<DqHostCtx> = {}): VueWrapper {
     uiFilesUrl: '',
     isRoutedApp: false,
     t: (_key, fallback) => fallback ?? _key,
+    view: ref('dashboard'),
+    surface: ref(''),
     ...overrides,
   };
   const wrapper = mount(DataQualityApp, {
