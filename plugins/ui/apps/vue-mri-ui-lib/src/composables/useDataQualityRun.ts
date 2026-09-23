@@ -4,7 +4,7 @@
  * follow it until it ends.
  *
  * The state is learned on click only. There is no fetch per card on page load,
- * so before the first click the button offers "Display/generate". After it, the
+ * so before the first click the button offers "Display/Generate". After it, the
  * phase for that cohort is kept here for as long as the page lives.
  *
  * When a followed run ends, the user hears about it through `notify` and the
