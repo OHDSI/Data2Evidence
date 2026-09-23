@@ -60,3 +60,31 @@ export function pageRange(
 export function pageCount(itemsPerPage: number, total: number): number {
   return Math.max(1, Math.ceil(total / itemsPerPage));
 }
+
+export interface D2eDataTablePageLabels {
+  first: string;
+  previous: string;
+  next: string;
+  last: string;
+}
+
+/** D2eDataTable's props, generic over the row type. */
+export interface D2eDataTableProps<T> {
+  headers: D2eDataTableHeader[];
+  /** The rows, already filtered and sorted by the caller. */
+  items: T[];
+  /** The row field that is unique per row. */
+  itemValue: string;
+  sortBy?: D2eSortItem[];
+  page?: number;
+  itemsPerPage?: number;
+  expandable?: boolean;
+  expanded?: string[];
+  noDataText?: string;
+  rowsPerPageLabel?: string;
+  rangeLabel?: (start: number, end: number, total: number) => string;
+  /** Accessible names of the four pager buttons. */
+  pageLabels?: D2eDataTablePageLabels;
+  /** Accessible name of each row's expand chevron. */
+  expandLabel?: string;
+}
