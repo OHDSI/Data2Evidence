@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { dataQualityCohortId, canOpenDataQuality } from '../explorationDataQuality'
+import { dataQualityCohortId, canOpenDataQuality, buildDataQualityParcelProps } from '../explorationDataQuality'
 
 describe('dataQualityCohortId', () => {
   it('returns the cohort definition id as a string when the record is materialised', () => {
@@ -40,5 +40,35 @@ describe('canOpenDataQuality', () => {
     expect(canOpenDataQuality({ cohortDefinition: { id: 0 } })).toBe(true)
     expect(canOpenDataQuality({})).toBe(false)
     expect(canOpenDataQuality(null)).toBe(false)
+  })
+})
+
+describe('buildDataQualityParcelProps', () => {
+  const getToken = async () => 'token'
+  const build = (itemId: 'dashboard' | 'checks') =>
+    buildDataQualityParcelProps({ datasetId: 'ds-1', cohortDefinitionId: '42', itemId, locale: 'de', getToken })
+
+  it('sends the full host context, because parcel.update replaces props rather than merging them', () => {
+    expect(build('dashboard')).toEqual({
+      hostContext: {
+        surface: 'mri-exploration-card',
+        itemId: 'dashboard',
+        locale: 'de',
+        permissions: [],
+        sourceKey: 'ds-1',
+        cohortDefinitionId: '42',
+      },
+      datasetId: 'ds-1',
+      getToken,
+      locale: 'de',
+    })
+  })
+
+  it('carries the tab as the itemId', () => {
+    expect((build('checks').hostContext as { itemId: string }).itemId).toBe('checks')
+  })
+
+  it('never sends uiFilesUrl, which would flip the plugin into routed mode', () => {
+    expect(build('dashboard')).not.toHaveProperty('uiFilesUrl')
   })
 })

@@ -38,6 +38,7 @@ vi.mock('single-spa', () => ({
       unmount: vi.fn(async () => {
         status = 'NOT_MOUNTED'
       }),
+      update: vi.fn(async () => undefined),
       getStatus: () => status,
     }
     parcels.push(parcel)
@@ -212,6 +213,26 @@ describe('useAtlasParcel', () => {
     await mountAndSettle(parcel)
     expect(document.querySelectorAll(`#plugin-style-${PLUGIN}`)).toHaveLength(1)
     expect(document.getElementById(`plugin-style-${PLUGIN}`)).toBe(link)
+  })
+
+  it('an update during an in-flight mount is applied after the mount', async () => {
+    let finishImport: (value: unknown) => void = () => {}
+    setSystem(
+      () =>
+        new Promise(resolve => {
+          finishImport = resolve
+        })
+    )
+    const { parcel } = makeParcel()
+    const mounting = parcel.mount()
+    await settleStylesheet()
+    await vi.waitFor(() => expect(systemImport).toHaveBeenCalled())
+    // A tab switch while the bundle is still loading: there is no handle yet.
+    const updating = parcel.update({ hostContext: { itemId: 'checks' } })
+    finishImport(makeLifecycles())
+    await Promise.all([mounting, updating])
+    expect(parcels).toHaveLength(1)
+    expect(parcels[0].update).toHaveBeenCalledWith({ hostContext: { itemId: 'checks' } })
   })
 
   it('unmount is safe when nothing was ever mounted', async () => {
