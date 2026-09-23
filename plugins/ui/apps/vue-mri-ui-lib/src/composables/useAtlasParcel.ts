@@ -237,6 +237,15 @@ export function useAtlasParcel(options: AtlasParcelOptions): UseAtlasParcel {
   }
 
   const update = async (next: Record<string, unknown>): Promise<void> => {
+    // A tab switch can land while the bundle is still loading, before there is
+    // a handle. Apply it once the mount settles rather than dropping it.
+    if (inFlight) {
+      try {
+        await inFlight
+      } catch {
+        /* already reported by run() */
+      }
+    }
     if (!handle || typeof handle.update !== 'function') return
     try {
       await handle.update(next)
