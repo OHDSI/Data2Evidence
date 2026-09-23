@@ -18,6 +18,8 @@
  * docs/atlas-plugin-report-type-flash.md.
  */
 import "./style.css";
+// The D2E design tokens (--d2e-*) the @d2e/ui components in the checks view paint from.
+import "@d2e/ui/tokens.css";
 import { h, createApp, ref } from "vue";
 import { createVuetify } from "vuetify";
 import { aliases, mdi } from "vuetify/iconsets/mdi";
