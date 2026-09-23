@@ -11,6 +11,9 @@ export { default as D2eExplorationCard } from "./components/D2eExplorationCard.v
 export { default as D2eSelect } from "./components/D2eSelect.vue";
 export { default as D2eCheckbox } from "./components/D2eCheckbox.vue";
 export { default as D2eDateField } from "./components/D2eDateField.vue";
+export { default as D2eTabs } from "./components/D2eTabs.vue";
+export { TABS_STYLE_MAP } from "./components/tabsStyles";
+export type { D2eTabItem } from "./components/tabsStyles";
 export { toIsoDate, fromIsoDate } from "./components/dateFieldFormat";
 export { VARIANT_MAP, SIZE_MAP } from "./components/buttonVariants";
 export type {
