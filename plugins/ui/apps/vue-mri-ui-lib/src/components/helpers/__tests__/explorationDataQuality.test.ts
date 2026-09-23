@@ -1,5 +1,12 @@
 import { describe, it, expect } from 'vitest'
-import { dataQualityCohortId, canOpenDataQuality, buildDataQualityParcelProps } from '../explorationDataQuality'
+import {
+  dataQualityCohortId,
+  canOpenDataQuality,
+  buildDataQualityParcelProps,
+  classifyFlowRunState,
+  isDataQualityBusy,
+  dataQualityTooltipKey,
+} from '../explorationDataQuality'
 
 describe('dataQualityCohortId', () => {
   it('returns the cohort definition id as a string when the record is materialised', () => {
@@ -70,5 +77,63 @@ describe('buildDataQualityParcelProps', () => {
 
   it('never sends uiFilesUrl, which would flip the plugin into routed mode', () => {
     expect(build('dashboard')).not.toHaveProperty('uiFilesUrl')
+  })
+})
+
+describe('classifyFlowRunState', () => {
+  it.each([
+    'SCHEDULED',
+    'PENDING',
+    'RUNNING',
+    'PAUSED',
+    'CANCELLING',
+    'LATE',
+    'RETRYING',
+    'AWAITINGRETRY',
+    'SUSPENDED',
+  ])('reads %s as running', type => expect(classifyFlowRunState(type)).toBe('running'))
+
+  it.each(['FAILED', 'CRASHED', 'TIMEDOUT'])('reads %s as failed', type =>
+    expect(classifyFlowRunState(type)).toBe('failed')
+  )
+
+  it('reads COMPLETED as completed and CANCELLED as cancelled', () => {
+    expect(classifyFlowRunState('COMPLETED')).toBe('completed')
+    expect(classifyFlowRunState('CANCELLED')).toBe('cancelled')
+  })
+
+  it('reads a missing or unknown state as failed, so the next click can run again', () => {
+    expect(classifyFlowRunState(undefined)).toBe('failed')
+    expect(classifyFlowRunState(null)).toBe('failed')
+    expect(classifyFlowRunState('X')).toBe('failed')
+  })
+})
+
+describe('isDataQualityBusy', () => {
+  it('is true while the run is being checked, started or polled', () => {
+    expect(isDataQualityBusy('checking')).toBe(true)
+    expect(isDataQualityBusy('starting')).toBe(true)
+    expect(isDataQualityBusy('running')).toBe(true)
+  })
+
+  it('is false once the outcome is known', () => {
+    expect(isDataQualityBusy('idle')).toBe(false)
+    expect(isDataQualityBusy('ready')).toBe(false)
+    expect(isDataQualityBusy('failed')).toBe(false)
+  })
+})
+
+describe('dataQualityTooltipKey', () => {
+  it('asks for materialisation first, whatever the phase', () => {
+    expect(dataQualityTooltipKey('ready', false)).toBe('MRI_PA_DATA_QUALITY_DISABLED_NOT_MATERIALISED')
+  })
+
+  it('names each phase', () => {
+    expect(dataQualityTooltipKey('idle', true)).toBe('MRI_PA_DATA_QUALITY_TOOLTIP_GENERATE')
+    expect(dataQualityTooltipKey('checking', true)).toBe('MRI_PA_DATA_QUALITY_TOOLTIP_RUNNING')
+    expect(dataQualityTooltipKey('starting', true)).toBe('MRI_PA_DATA_QUALITY_TOOLTIP_RUNNING')
+    expect(dataQualityTooltipKey('running', true)).toBe('MRI_PA_DATA_QUALITY_TOOLTIP_RUNNING')
+    expect(dataQualityTooltipKey('ready', true)).toBe('MRI_PA_DATA_QUALITY_TOOLTIP_READY')
+    expect(dataQualityTooltipKey('failed', true)).toBe('MRI_PA_DATA_QUALITY_TOOLTIP_FAILED')
   })
 })
