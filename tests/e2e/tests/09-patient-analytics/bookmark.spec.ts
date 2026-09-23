@@ -415,9 +415,15 @@ test(TEST_NAME, async ({ page }) => {
     await page.locator('input[name="password"]').click()
     await page.locator('input[name="password"]').fill('Updatepassword12345')
     await page.getByRole('button', { name: 'Sign in' }).click()
-    //Verify that the bookmark is visible
+    //testuserB does not see the bookmark of admin, and that is the design.
+    //ExplorationsPage.vue hardcodes getDisplayBookmarks(false, username), so a
+    //bookmark of another user never shows. The old page had a "show shared
+    //bookmarks" toggle in a left pane the redesign removed. The list is empty
+    //for this user, so wait for the empty state before asserting the absence -
+    //an assertion on its own would pass while the list was still loading.
     await openDatasetCohorts(page)
-    await expect(page.getByText(NAME.patientListFilters)).toBeVisible()
+    await expect(page.getByTestId('explorations-empty')).toBeVisible()
+    await expect(page.getByText(NAME.patientListFilters)).not.toBeVisible()
     //Login as admin again
     await page.getByRole('link', { name: 'Account' }).click()
     await page.getByRole('button', { name: 'Logout' }).click()
