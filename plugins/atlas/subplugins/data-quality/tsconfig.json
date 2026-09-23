@@ -16,7 +16,10 @@
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
     "paths": {
-      "@d2e/ui": ["../../../ui/libs/d2e-ui/src/index.ts"]
+      "@d2e/ui": ["../../../ui/libs/d2e-ui/src/index.ts"],
+      "vue": ["./node_modules/vue"],
+      "vuetify": ["./node_modules/vuetify"],
+      "vuetify/*": ["./node_modules/vuetify/*"]
     }
   },
   "include": ["src/**/*.ts", "src/**/*.d.ts", "src/**/*.tsx", "src/**/*.vue"],
