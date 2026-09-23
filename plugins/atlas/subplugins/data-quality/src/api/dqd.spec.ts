@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { getDataQualityOverview, getLatestDataQualityFlowRun } from './dqd';
+import { getCheckResults, getDataQualityOverview, getLatestDataQualityFlowRun } from './dqd';
 
 const token = 'access-token';
 
@@ -123,5 +123,46 @@ describe('getDataQualityOverview', () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(respond({ status: 200, body: '' })));
 
     await expect(getDataQualityOverview('run-1', 'dataset-1', token)).resolves.toBeNull();
+  });
+});
+
+describe('getCheckResults', () => {
+  it('reads the run results with the dataset in the query', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(respond({ status: 200, body: '[]' }));
+    vi.stubGlobal('fetch', fetchMock);
+
+    await getCheckResults('run-1', 'dataset-1', token);
+
+    expect(fetchMock.mock.calls[0][0]).toBe(
+      '/jobplugins/dqd/data-quality/flow-run/run-1/results?datasetId=dataset-1',
+    );
+  });
+
+  it('parses the rows it receives', async () => {
+    const body = JSON.stringify([
+      { checkId: 'c1', checkName: 'n', category: 'Plausibility', failed: 1 },
+      { checkName: 'no category' },
+    ]);
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(respond({ status: 200, body })));
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+    const rows = await getCheckResults('run-1', 'dataset-1', token);
+
+    expect(rows).toHaveLength(1);
+    expect(rows?.[0]).toMatchObject({ key: 'c1#0', checkName: 'n', failed: 1 });
+  });
+
+  it('reads a 404 as no results', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(respond({ status: 404 })));
+
+    await expect(getCheckResults('run-1', 'dataset-1', token)).resolves.toBeNull();
+  });
+
+  it('reports a failure in the same words as the other calls', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(respond({ status: 500 })));
+
+    await expect(getCheckResults('run-1', 'dataset-1', token)).rejects.toThrow(
+      'Unable to load data quality results. Please try again.',
+    );
   });
 });

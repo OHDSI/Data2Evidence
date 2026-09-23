@@ -15,6 +15,9 @@
  * so a relative base would resolve underneath it. vue-mri-ui-lib's dqd store
  * module reaches the same service through the same root prefix.
  */
+import { parseCheckResults } from '../checks/parse';
+import type { DqdCheckRow } from '../checks/types';
+
 const JOBPLUGINS_BASE = '/jobplugins';
 
 /**
@@ -171,6 +174,34 @@ export async function getDataQualityOverview(
   } catch (cause) {
     throw reportFailure(
       `could not load the overview for flow run ${flowRunId} (dataset ${datasetId})`,
+      cause,
+    );
+  }
+}
+
+/**
+ * Every check result for one flow run, validated (see parseCheckResults), or
+ * null when the run holds no DQD artifact. Cohort scope comes from the run: a
+ * cohort's run only holds that cohort's checks.
+ *
+ * Call it only for a COMPLETED run. For a run still going, jobplugins waits for
+ * it to finish - up to ten minutes - before it answers.
+ */
+export async function getCheckResults(
+  flowRunId: string,
+  datasetId: string,
+  token: string,
+): Promise<DqdCheckRow[] | null> {
+  try {
+    const body = await getJson<unknown>(
+      `/dqd/data-quality/flow-run/${encodeURIComponent(flowRunId)}/results`,
+      { datasetId },
+      token,
+    );
+    return body === null ? null : parseCheckResults(body);
+  } catch (cause) {
+    throw reportFailure(
+      `could not load check results for flow run ${flowRunId} (dataset ${datasetId})`,
       cause,
     );
   }
