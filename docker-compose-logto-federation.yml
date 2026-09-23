@@ -1,0 +1,55 @@
+# Existing installations: keep Logto as an upstream sign-in option of the trex
+# identity provider, so users who were created in Logto keep signing in.
+# Applied by the CLI whenever the env file has D2E_IDP_MODE=logto-federated.
+# trex still issues every token; see docs/logto-federation-upgrade.md.
+services:
+  alp-logto:
+    profiles: !reset []
+  alp-logto-post-init:
+    profiles: !reset []
+    environment:
+      # Registered on the upstream app next to its existing redirect URIs.
+      TREX_FEDERATION_REDIRECT_URI: "https://${CADDY__D2E__PUBLIC_FQDN:-${CADDY__ALP__PUBLIC_FQDN:-localhost}}${PORT:+:${PORT:-443}}/trex/auth/v1/callback"
+      D2E__LOGTO_UPSTREAM__CLIENT_ID: ${LOGTO__D2E_APP__CLIENT_ID:-${LOGTO__ALP_APP__CLIENT_ID}}
+  trex:
+    environment:
+      D2E_IDP_MODE: logto-federated
+      TREX_FEDERATION_ENABLED: "true"
+      # Must equal the URI registered above byte for byte, or Logto rejects the code.
+      TREX_FEDERATION_REDIRECT_URI: "https://${CADDY__D2E__PUBLIC_FQDN:-${CADDY__ALP__PUBLIC_FQDN:-localhost}}${PORT:+:${PORT:-443}}/trex/auth/v1/callback"
+      # The existing D2E app in Logto is the upstream client.
+      D2E__LOGTO_UPSTREAM__CLIENT_ID: ${LOGTO__D2E_APP__CLIENT_ID:-${LOGTO__ALP_APP__CLIENT_ID}}
+      D2E__LOGTO_UPSTREAM__CLIENT_SECRET: ${LOGTO__D2E_APP__CLIENT_SECRET:-${LOGTO__ALP_APP__CLIENT_SECRET}}
+      # @better-auth/sso refuses discovery, the token exchange and JWKS for
+      # any origin outside this list. The refusal arrives as a plain 400, so
+      # the symptom is a federated sign-in that never leaves the login page
+      # and a trex log line that reads like a Logto outage:
+      #   [federation] /authorize failed: Untrusted OIDC discovery URL
+      # Only this mode has an upstream issuer, which is why the variable is
+      # set here rather than in docker-compose.yml.
+      #
+      # Two origins, because the provider row written by the migration
+      # straddles both: `issuer` is LOGTO__ISSUER, which is internal
+      # (docker-compose.yml), while `authorizationEndpoint` is built from
+      # TREX_OIDC_ISSUER, the public origin the browser is sent to
+      # (plugins/functions/_shared/idp/migration/run.ts). Both expressions are
+      # copied from where those variables are set so they cannot drift.
+      #
+      # The public one is listed twice, with and without the port, for the
+      # same reason TREX_OIDC_CLIENT_REDIRECT_URIS is: the match is
+      # `pattern === new URL(endpoint).origin`, and URL drops `:443` from an
+      # https origin — so a `:443`-only entry would match nothing at all.
+      BETTER_AUTH_TRUSTED_ORIGINS: "https://${PROJECT_NAME:-d2e}-logto-1.${TLS__INTERNAL__DOMAIN:-d2e.local}:3001,https://${CADDY__D2E__PUBLIC_FQDN:-${CADDY__ALP__PUBLIC_FQDN:-localhost}}:${CADDY_PORT:-${PORT:-443}},https://${CADDY__D2E__PUBLIC_FQDN:-${CADDY__ALP__PUBLIC_FQDN:-localhost}}"
+      # logto.users has row-level security that only Logto's own database role
+      # (its owner) gets past; any other role reads it as empty. The migration
+      # reads Logto users with the same credentials the alp-logto service uses.
+      PG__LOGTO_MANAGER_USER: ${PG_LOGTO_MANAGER:-${PG__LOGTO_MANAGER_USER:-logto_postgres}}
+      PG__LOGTO_MANAGER_PASSWORD: ${PG__LOGTO_MANAGER_PASSWORD}
+      # Users carried over from Logto have no trex password, so the sign-in page
+      # offers only the Logto button and trex refuses the password grant. Set
+      # to true to bring the password form back, e.g. to let a trex-native
+      # admin in while Logto is unavailable.
+      TREX_NATIVE_PASSWORD_LOGIN_ENABLED: ${TREX_NATIVE_PASSWORD_LOGIN_ENABLED:-false}
+      # Roles live in trex after the migration; Logto-side group mapping must not
+      # reconcile them away.
+      IDP__AUTO_PROVISION_USERS: "false"
