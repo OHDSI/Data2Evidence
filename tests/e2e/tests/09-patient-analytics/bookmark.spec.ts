@@ -444,27 +444,11 @@ test(TEST_NAME, async ({ page }) => {
     await page.getByRole('textbox', { name: 'Exploration name' }).fill('')
     await page.getByRole('textbox', { name: 'Exploration name' }).fill(NAME.sharedFilter)
     await page.getByTestId('pa-save-dialog-save-btn').click()
-    //Logout as admin
-    await page.getByRole('link', { name: 'Account' }).click()
-    await page.getByRole('button', { name: 'Logout' }).click()
-    //Login as testuserB
-    await page.locator('input[name="identifier"]').click()
-    await page.locator('input[name="identifier"]').fill(NAME.testUserB)
-    await page.locator('input[name="identifier"]').press('Tab')
-    await page.locator('input[name="password"]').click()
-    await page.locator('input[name="password"]').fill('Updatepassword12345')
-    await page.getByRole('button', { name: 'Sign in' }).click()
-    //Verify that the bookmark is renamed
-    await openDatasetCohorts(page)
-    //Another user's shared bookmark does not show, and that is the design now.
-    //The old page carried a "show shared bookmarks" slide toggle in the left
-    //pane (Bookmarks.vue: `SlideToggle v-model="showSharedBookmarks"`), off by
-    //default, and this step clicked it through `#pane-left label div`. That pane
-    //is gone, and ExplorationsPage.vue hardcodes the argument:
-    //  getDisplayBookmarks(false, portalContext.username)
-    //so a bookmark of another user can never appear. Assert that, so the day
-    //someone puts sharing back this line fails and says so.
-    await expect(page.getByText(NAME.sharedFilter)).not.toBeVisible()
+    //The rename is the last thing this step checks. There used to be a second
+    //trip through testuserB here, to read the new name on the shared card. It
+    //could only assert the same absence as the trip above, so it was two logins
+    //that restated a fact already established. Admin stays signed in and deletes
+    //the card below.
     //Delete the bookmark as admin
     await page.getByRole('link', { name: 'Account' }).click()
     await page.getByRole('button', { name: 'Logout' }).click()
