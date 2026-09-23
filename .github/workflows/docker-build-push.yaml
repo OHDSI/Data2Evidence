@@ -169,6 +169,12 @@ jobs:
               - "scripts/**"
               - "tests/backend_integration_tests/**"
               - ".github/workflows/docker-build-push.yaml"
+              # The reusable workflows these jobs actually run, and the cache
+              # flow setuphttptestenv now depends on: without these, a PR that
+              # only edits them skips the very jobs it changes.
+              - ".github/workflows/_test-http-duckdb.yml"
+              - ".github/workflows/_test-regression.yml"
+              - "plugins/flows/base/create_cachedb_file_plugin/**"
             ui:
               - "plugins/ui/**"
               - ".github/workflows/docker-build-push.yaml"
@@ -456,6 +462,7 @@ jobs:
           - PKGPATH: ./plugins/flows/data_management/
           - PKGPATH: ./plugins/flows/hades/
           - PKGPATH: ./plugins/flows/loyalty_score/
+          - PKGPATH: ./plugins/flows/eq5d5l_index_calculation/
           - PKGPATH: ./plugins/flows/data_transformation/
           - PKGPATH: ./plugins/ui
             NPM: bun
@@ -824,7 +831,7 @@ jobs:
             BUILD_TYPE=OSS
             PLUGINS_FEED=${{ needs.setup.outputs.is_release_push == 'true' && 'stable' || 'd2e' }}
             PLUGINS_FROM_REGISTRY=@ohdsi/pythia-agent@0.1.0-develop.18.g80bf4aa
-            TREXSQL_REF=sha-48a466268dbfdd12f03d8018e2af81fe10cbdf69@sha256:923e62615ec94da06f4574e4ed80b51780746f9e8a30e8060caa9c4dd4ac754c
+            TREXSQL_REF=sha-6e7ca8500dd5126270da219bbcb168fcc5301f17@sha256:b39886c96ae7109d94d7b5d6d885d5da153ca680e4de9f4c5140f9fff8deb527
           secrets: |
             "PLUGINS_REGISTRY=${{ secrets.PLUGINS_REGISTRY }}"
             "github_token=${{ secrets.GITHUB_TOKEN }}"
@@ -1380,6 +1387,207 @@ jobs:
         if: always()
         run: docker system prune -af
 
+  test_logto_federation:
+    # Needs a trex engine with afterListen inits and /trex/admin/federation
+    # (OHDSI/trex#318), email-less federated sign-in (OHDSI/trex#319) and
+    # linking under a caller-chosen user id (OHDSI/trex#320),
+    # which all three TREXSQL_REF pins now carry: services/trex/Dockerfile.v2
+    # (ARG TREXSQL_REF), docker-compose-local.yml, and this workflow's devx
+    # build-args -- the last of which is the one CI actually builds from, so a
+    # bump that misses it changes nothing here. Not in docker-success's needs yet — promote it once it has
+    # passed on three consecutive runs.
+    needs: [setup, build_images, build_trex_image, build_plugins, build_e2e_image]
+    runs-on: ubuntu-24.04
+    env:
+      VERSION: develop
+      COMPOSE_PROJECT_NAME: d2e
+      # The installation this job starts from, to produce the Logto-era
+      # database state the upgrade then migrates: a published release, which
+      # is what a real installation upgrades from. Two things rule out a
+      # develop commit. Images are built per changed path, so most develop
+      # commits have a develop-<short sha> tag for only some of the images
+      # (compose applies one DOCKER_TAG_NAME to all of them), and those tags are
+      # pruned: every develop-337d65f image this job used to pass with was gone
+      # a day later. Release tags are neither. The pre-flight step below still
+      # checks that every image is there before the stack starts. Pinned rather
+      # than `develop` so that merging this PR does not put post-migration code
+      # in the era stack.
+      #
+      # LOGTO_ERA_REF is the commit the release was built from (the "update
+      # version to 0.18.12" commit on release/v0.18.0-beta). It must stay a
+      # full 40-char sha: actions/checkout only treats a ref as a commit sha
+      # when it is full-length; a short sha makes it look for a branch.
+      LOGTO_ERA_REF: c0f9004c3bcd0cb565df76f68ab66c8c201365ea
+      LOGTO_ERA_TAG: "0.18.12"
+    steps:
+      - name: Free Disk Space (Ubuntu)
+        uses: jlumbroso/free-disk-space@main
+        with:
+          tool-cache: true
+          android: true
+          dotnet: true
+          haskell: true
+          large-packages: true
+          docker-images: true
+          swap-storage: true
+
+      - name: Increase swapfile to 15G
+        run: |
+          sudo swapoff -a
+          sudo fallocate -l 15G /swapfile
+          sudo chmod 600 /swapfile
+          sudo mkswap /swapfile
+          sudo swapon /swapfile
+          sudo swapon --show
+
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: npm install
+        if: success() || failure()
+        run: npm install
+
+      - name: Install Atlas plugin resources
+        if: success() || failure()
+        working-directory: ./plugins/atlas
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        # --legacy-peer-deps: @trex/notebook (reached through the nested file:
+        # link chain atlas -> notebook-plugin -> notebook) pulls webr, which
+        # pulls react-data-grid@^7.0.0-beta.44. That floats to a beta whose
+        # peers moved to react@^19.2, conflicting with the react@^18.2.0 pinned
+        # here. Resolving that conflict across the link chain crashes npm 10.8.2
+        # with "Cannot read properties of null (reading 'edgesOut')". Skipping
+        # peer resolution avoids the code path entirely. Same flag, same reason
+        # as the patient-analytics install above.
+        run: npm install --legacy-peer-deps
+
+      - name: Patch seed config for e2e tests
+        run: node ./scripts/patch-seed-for-e2e.js
+
+      - name: Download UI package tarball
+        uses: actions/download-artifact@v4
+        with:
+          name: ui-tgz
+          path: ./plugins/ui
+
+      - name: Extract UI package
+        run: |
+          TGZ=$(ls ./plugins/ui/data2evidence-d2e-ui-*.tgz | head -1)
+          rm -rf ./plugins/ui-built
+          mkdir -p ./plugins/ui-built
+          tar -xzf "$TGZ" -C ./plugins/ui-built --strip-components=1
+
+      - name: Check out the last Logto-era release
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.LOGTO_ERA_REF }}
+          path: legacy
+          submodules: recursive
+
+      # Without this, a tag missing for one image surfaces three minutes later
+      # as `alp-logto-post-init Error manifest unknown` buried in compose's
+      # pull output, with every other service reported as "Interrupted".
+      - name: Check the Logto-era images were all published
+        run: |
+          missing=()
+          for image in d2e-trex d2e-logto d2e-logto-post-init d2e-dataflow-gen \
+                       d2e-dataflow-gen-worker d2e-supabase-storage; do
+            ref="ghcr.io/ohdsi/$image:$LOGTO_ERA_TAG"
+            docker manifest inspect "$ref" >/dev/null 2>&1 || missing+=("$ref")
+          done
+          if [ ${#missing[@]} -ne 0 ]; then
+            printf '::error title=Logto-era images missing::%s\n' "${missing[*]}"
+            echo "Pick a LOGTO_ERA_REF/LOGTO_ERA_TAG pair whose commit published every image above." >&2
+            exit 1
+          fi
+
+      - name: Start a Logto-era installation and seed it
+        working-directory: legacy
+        env:
+          DOCKER_TAG_NAME: ${{ env.LOGTO_ERA_TAG }}
+          PLUGINS_IMAGE_TAG: ${{ env.LOGTO_ERA_TAG }}
+        run: |
+          # LOGTO_ERA_REF already builds its CLI the same way test_demosetup_dev
+          # does: `npm install` runs the "prepare" script (build:ts). There is no
+          # yarn.lock at this commit, so `yarn install --frozen-lockfile` would
+          # simply fail here.
+          npm install
+          init_choice=y ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v develop init
+          ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v develop -c ./docker-compose-ci.yml start
+          ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v develop setupdemo
+          ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v develop -c ./docker-compose-ci.yml stop
+
+      - name: Upgrade it to this build
+        env:
+          DOCKER_TAG_NAME: ${{ needs.setup.outputs.run_tag }}
+          PLUGINS_IMAGE_TAG: ${{ needs.setup.outputs.run_tag }}
+        run: |
+          cp legacy/.env ./.env
+          ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v develop -c ./docker-compose-ci.yml start | tee start.log
+          grep -q "D2E_IDP_MODE=logto-federated" .env
+          grep -q "docker-compose-logto-federation.yml" start.log
+
+      - name: Wait for the migration to link the admin
+        run: |
+          for i in $(seq 1 60); do
+            out=$(docker exec d2e-minerva-postgres-1 psql -U postgres -d alp -tAc \
+              "select status || ' ' || counts::text from usermgmt.idp_migration where step='link'" 2>/dev/null || true)
+            echo "[$i] link step: ${out:-pending}"
+            case "$out" in ok*|partial*|skipped*|failed*) break ;; esac
+            sleep 10
+          done
+          q() { docker exec d2e-minerva-postgres-1 psql -U postgres -d alp -tAc "$1"; }
+          docker exec d2e-minerva-postgres-1 psql -U postgres -d alp -c "select * from usermgmt.idp_migration"
+          status=$(q "select status from usermgmt.idp_migration where step='link'")
+          if [ "$status" != ok ]; then
+            echo "::error title=IdP migration::link step is '${status:-missing}', expected ok"; exit 1
+          fi
+          linked=$(q "select count(*) from trexdb.account where \"providerId\"='logto'")
+          if [ "$linked" = 0 ]; then
+            echo "::error title=IdP migration::no Logto identity was linked"; exit 1
+          fi
+          # A migrated user must keep their Logto id as their trex id (the
+          # token sub): WebAPI users, artifacts and flows are keyed by it. A
+          # trex that ignores the requested id still creates the links, so
+          # counting them alone would pass while every subject had changed.
+          moved=$(q "select count(*) from trexdb.account where \"providerId\"='logto' and \"userId\" <> \"accountId\"")
+          if [ "$moved" != 0 ]; then
+            echo "::error title=IdP migration::$moved linked users got a trex id other than their Logto id"; exit 1
+          fi
+
+      - name: Pull e2e Docker image
+        env:
+          DOCKER_TAG_NAME: ${{ needs.setup.outputs.run_tag }}
+        run: |
+          docker pull ${REG_URL}/d2e-e2e:${DOCKER_TAG_NAME}
+          docker tag ${REG_URL}/d2e-e2e:${DOCKER_TAG_NAME} d2e-e2e
+
+      - name: Disable IPv6 to prevent ERR_NETWORK_CHANGED
+        run: sudo sysctl -w net.ipv6.conf.all.disable_ipv6=1
+
+      - name: Sign in through Logto
+        run: |
+          cd ./tests/e2e
+          docker run --rm --network=host --ipc=host \
+            -v "$(pwd)/test-results:/work/test-results" \
+            -e D2E_BASE_URL=https://localhost:443 -e CI=true -e GITHUB_ACTIONS=true \
+            -e D2E_LOGTO_FEDERATION=1 \
+            d2e-e2e npx playwright test tests/99-federation
+
+      - name: Logs
+        if: always()
+        run: ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v develop logs
+
   test_demosetup_hana:
     needs: [setup, build_images, merge_worker_image, build_trex_image, build_plugins]
     runs-on: ${{ needs.setup.outputs.random_runner }}
@@ -1803,6 +2011,23 @@ jobs:
           else
             echo "Neither $SRC nor $DST present; nothing to publish."
           fi
+
+      # build_trex_image pushes a second variant as <RUN_TAG>-devx off the same
+      # Dockerfile. The matrix above iterates image *names*, so it cannot reach a
+      # tag suffix — the canonical -devx alias was therefore never published for
+      # any branch. docker-compose-local.yml asks for <DOCKER_TAG_NAME>-devx,
+      # which for the compose default (develop) surfaces far from here as
+      # "manifest unknown" on a pull.
+      #
+      # Develop only, and forward only: never publishes a commit-specific tag.
+      # No build_disable fallback arm — that is a build_images matrix input only,
+      # so <RUN_TAG>-devx is always present when this step runs.
+      - name: Re-tag develop devx image as canonical
+        if: matrix.image == 'd2e-trex' && needs.setup.outputs.is_develop_push == 'true'
+        run: |
+          SRC=${REG_URL}/d2e-trex:${RUN_TAG}-devx          # develop-<sha>-devx (read only)
+          DST=${REG_URL}/d2e-trex:develop-devx             # the alias being moved
+          docker buildx imagetools create -t "$DST" "$SRC"
 
       # Multi-arch-aware cleanup: the per-arch child manifests of a manifest
       # list are stored as untagged package versions in GHCR, so a blind

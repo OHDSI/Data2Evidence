@@ -228,3 +228,30 @@ def tables_to_drop(use_trex_connection: bool) -> list[str]:
         for table in RESULTS_SCHEMA_TABLES
         if table.startswith("achilles_") or table == "concept_hierarchy"
     ]
+
+
+def webapi_cache_source_key(
+    use_trex_connection: bool, dataset_id: str | None
+) -> str | None:
+    """
+    The WebAPI source whose cached reports this run invalidates, or None.
+
+    WebAPI caches every CDM results report (dashboard, person, data density, ...)
+    per source in `webapi.achilles_cache`, with no expiry, so reports computed
+    before a DC run keep being served afterwards - an empty dashboard stays empty
+    even though the achilles tables now hold data.
+
+    Only a source-connection (webapi dataset) run rewrites the achilles tables a
+    WebAPI source reads: a legacy trex run writes into its own throwaway results
+    schema, which no source points at. The dataset id is the source key.
+    """
+    if use_trex_connection or not dataset_id:
+        return None
+    return dataset_id
+
+
+def cdmresults_clear_cache_path(source_key: str) -> str:
+    """
+    WebAPI endpoint that drops the cached CDM results reports for one source.
+    """
+    return f"cdmresults/{source_key}/clearCache"

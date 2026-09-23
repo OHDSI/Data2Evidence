@@ -28,7 +28,10 @@ def update_dataset_metadata(options: CreateCacheOptions):
             get_and_update_attributes(options, dataset)
 
 
-@task(log_prints=True, timeout_seconds=int(Variable.get("cache_task_timeout")))
+# default= matters: see the note in copy.py -- this lookup runs at import time,
+# so an unseeded Prefect variable makes the module fail to import entirely.
+@task(log_prints=True,
+      timeout_seconds=int(Variable.get("cache_task_timeout", default="10800")))
 def get_and_update_attributes(options: CreateCacheOptions, dataset: dict):
     logger = get_run_logger()
 

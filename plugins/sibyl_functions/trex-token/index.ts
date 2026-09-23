@@ -1,7 +1,7 @@
 // @ts-nocheck - Deno edge function (trex EdgeRuntime).
 //
-// POST /trex-token — exchange a Logto access token for a trex-native HS256
-// access token.
+// POST /trex-token — exchange the browser's IdP access token for a trex-native
+// HS256 access token.
 //
 // trex core's /graphql (PostGraphile) and the x-user-id-gated function APIs
 // authenticate exclusively via trex HS256 tokens (auth-context.ts). Under d2e
@@ -12,14 +12,61 @@
 // token for the same subject, expiring no later than the Logto token.
 import { createRemoteJWKSet, jwtVerify } from "npm:jose@5";
 
-const ISSUER = Deno.env.get("LOGTO__ISSUER") ?? "";
 const ROOT_KEY = Deno.env.get("TREX_ROOT_KEY") ?? "";
+
+/**
+ * Whose token the browser actually holds.
+ *
+ * This endpoint was written when that was always Logto's. Once the IdP moves to
+ * trex's own provider the browser holds a trex RS256 token instead, which can
+ * never verify against Logto's JWKS — every exchange answers 401 and the
+ * plugins that depend on it (the studies plugin, for one) show a login screen
+ * on a session that is perfectly valid. Measured on a trex-mode deployment.
+ */
+const IDP = (Deno.env.get("D2E_IDP") ?? "logto").trim().toLowerCase();
+
+/**
+ * `https://host:443` and `https://host` are one origin and two strings, and an
+ * issuer is compared as a string. trex publishes the normalised form, so the
+ * configured value has to be normalised too or nothing it issues verifies here.
+ */
+function normalizeOrigin(raw: string): string {
+  try {
+    const url = new URL(raw);
+    return url.origin + url.pathname.replace(/\/+$/, "");
+  } catch {
+    return raw;
+  }
+}
+
+const BASE_PATH = Deno.env.get("BASE_PATH") ?? "/trex";
+const trexIssuer = () => {
+  const base = Deno.env.get("TREX_OIDC_ISSUER") ?? "";
+  return base ? `${normalizeOrigin(base.replace(/\/+$/, ""))}${BASE_PATH}/oidc` : "";
+};
+
+const ISSUER = IDP === "trex" ? trexIssuer() : (Deno.env.get("LOGTO__ISSUER") ?? "");
+
+/**
+ * Where the key set is fetched from, which is not always the issuer: trex's
+ * public origin is frequently unroutable from inside the container that serves
+ * it, and TREX_OIDC_INTERNAL_BASE exists precisely to give server-side calls a
+ * route that resolves. Logto keeps its own `<issuer>/jwks`.
+ */
+const JWKS_URL = (() => {
+  if (IDP !== "trex") return `${ISSUER}/jwks`;
+  const internal = Deno.env.get("TREX_OIDC_INTERNAL_BASE");
+  const base = internal
+    ? `${normalizeOrigin(internal.replace(/\/+$/, ""))}${BASE_PATH}/oidc`
+    : ISSUER;
+  return `${base}/.well-known/jwks.json`;
+})();
 
 const encoder = new TextEncoder();
 
 let _jwks: ReturnType<typeof createRemoteJWKSet> | null = null;
 function jwks(): ReturnType<typeof createRemoteJWKSet> {
-  if (!_jwks) _jwks = createRemoteJWKSet(new URL(`${ISSUER}/jwks`));
+  if (!_jwks) _jwks = createRemoteJWKSet(new URL(JWKS_URL));
   return _jwks;
 }
 
@@ -63,12 +110,12 @@ Deno.serve(async (req: Request) => {
   if (!ISSUER || !ROOT_KEY) return json({ error: "NOT_CONFIGURED" }, 503);
 
   const auth = req.headers.get("authorization") ?? "";
-  const logtoToken = auth.startsWith("Bearer ") ? auth.slice(7) : null;
-  if (!logtoToken) return json({ error: "UNAUTHORIZED" }, 401);
+  const idpToken = auth.startsWith("Bearer ") ? auth.slice(7) : null;
+  if (!idpToken) return json({ error: "UNAUTHORIZED" }, 401);
 
   let payload: Record<string, unknown>;
   try {
-    ({ payload } = await jwtVerify(logtoToken, jwks(), { issuer: ISSUER }));
+    ({ payload } = await jwtVerify(idpToken, jwks(), { issuer: ISSUER }));
   } catch {
     return json({ error: "INVALID_TOKEN" }, 401);
   }
@@ -83,8 +130,8 @@ Deno.serve(async (req: Request) => {
     userMgmtGroups?.["alp_role_system_admin"] === true;
 
   const now = Math.floor(Date.now() / 1000);
-  const logtoExp = typeof payload.exp === "number" ? payload.exp : now + 3600;
-  const exp = Math.min(logtoExp, now + 3600);
+  const idpExp = typeof payload.exp === "number" ? payload.exp : now + 3600;
+  const exp = Math.min(idpExp, now + 3600);
   if (exp <= now) return json({ error: "TOKEN_EXPIRED" }, 401);
 
   const claims = {
@@ -95,7 +142,9 @@ Deno.serve(async (req: Request) => {
     exp,
     iat: now,
     email: typeof payload.email === "string" ? payload.email : "",
-    app_metadata: { provider: "logto", providers: ["logto"], trex_role: isAdmin ? "admin" : "user" },
+    // The provider the subject actually came from, not a constant: this claim
+    // is what downstream code reads to decide where an identity originated.
+    app_metadata: { provider: IDP, providers: [IDP], trex_role: isAdmin ? "admin" : "user" },
     user_metadata: {},
     session_id: crypto.randomUUID(),
   };

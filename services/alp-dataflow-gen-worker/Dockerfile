@@ -56,6 +56,8 @@ COPY plugins/flows/cohort_discovery /src/plugins/flows/cohort_discovery
 RUN stage_group cohort_discovery cohort-discovery-flow
 COPY plugins/flows/loyalty_score /src/plugins/flows/loyalty_score
 RUN stage_group loyalty_score loyalty-score-flow
+COPY plugins/flows/eq5d5l_index_calculation /src/plugins/flows/eq5d5l_index_calculation
+RUN stage_group eq5d5l_index_calculation eq5d5l-index-calculation-flow
 COPY plugins/flows/i2b2 /src/plugins/flows/i2b2
 RUN stage_group i2b2 i2b2-flow
 COPY plugins/flows/data_management /src/plugins/flows/data_management
@@ -82,6 +84,11 @@ COPY \
     plugins/flows/loyalty_score/pyproject.toml \
     plugins/flows/loyalty_score/pixi.lock \
     /staged/loyalty-score-flow/baked/
+# eq5d5l-index-calculation-flow
+COPY \
+    plugins/flows/eq5d5l_index_calculation/pyproject.toml \
+    plugins/flows/eq5d5l_index_calculation/pixi.lock \
+    /staged/eq5d5l-index-calculation-flow/baked/
 # i2b2-flow
 COPY \
     plugins/flows/i2b2/pyproject.toml \
@@ -173,12 +180,13 @@ RUN chmod 755 /app/provision-envs.sh /app/slim-envs.sh
 FROM provisioner AS env-light
 COPY --from=dependency-staging /staged/cohort-discovery-flow /var/lib/d2e-flows/cohort-discovery-flow
 COPY --from=dependency-staging /staged/loyalty-score-flow /var/lib/d2e-flows/loyalty-score-flow
+COPY --from=dependency-staging /staged/eq5d5l-index-calculation-flow /var/lib/d2e-flows/eq5d5l-index-calculation-flow
 COPY --from=dependency-staging /staged/i2b2-flow /var/lib/d2e-flows/i2b2-flow
 COPY --from=dependency-staging /staged/data-management-flow /var/lib/d2e-flows/data-management-flow
 COPY --from=dependency-staging /staged/search-embedding-flow /var/lib/d2e-flows/search-embedding-flow
 RUN --mount=type=cache,target=/opt/pixi/cache,sharing=locked \
     set -e; \
-    for group in cohort-discovery-flow loyalty-score-flow i2b2-flow \
+    for group in cohort-discovery-flow loyalty-score-flow eq5d5l-index-calculation-flow i2b2-flow \
                  data-management-flow search-embedding-flow; do \
       MAKEFLAGS="-j$(nproc)" /app/provision-envs.sh --dir "/var/lib/d2e-flows/$group/baked"; \
     done; \
@@ -236,6 +244,7 @@ COPY --from=env-light /var/lib/d2e-flows /var/lib/d2e-flows
 # Copy the rest of flow files to the respective plugin directories.
 COPY --from=staging /staged/cohort-discovery-flow /var/lib/d2e-flows/cohort-discovery-flow
 COPY --from=staging /staged/loyalty-score-flow /var/lib/d2e-flows/loyalty-score-flow
+COPY --from=staging /staged/eq5d5l-index-calculation-flow /var/lib/d2e-flows/eq5d5l-index-calculation-flow
 COPY --from=staging /staged/i2b2-flow /var/lib/d2e-flows/i2b2-flow
 COPY --from=staging /staged/data-management-flow /var/lib/d2e-flows/data-management-flow
 COPY --from=staging /staged/search-embedding-flow /var/lib/d2e-flows/search-embedding-flow

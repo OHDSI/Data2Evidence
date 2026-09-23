@@ -33,12 +33,28 @@
     var m = document.cookie.match(/(?:^|;\s*)bearerToken=([^;]+)/);
     if (!m) return null;
     var v = decodeURIComponent(m[1]);
-    return v.indexOf("Bearer ") === 0 ? v.slice(7) : v;
+    if (v.indexOf("Bearer ") === 0) v = v.slice(7);
+    // Promoted to localStorage, which is the only place Atlas3 looks
+    // (initializeFromStorage). Signing in to the portal leaves this cookie
+    // behind, so without this the guard sees a valid token, skips the bounce
+    // through /atlas-login/, and Atlas then loads with nothing to authenticate
+    // with -- logged out, with no error and no way to recover but to wait for
+    // the cookie to expire. Reading the cookie to decide "logged in" and not
+    // storing it where the reader looks is the whole of that bug.
+    try { localStorage.setItem(TOKEN_KEY, v); } catch (e) { /* private mode */ }
+    return v;
   }
 
   var hash = location.hash || "";
   // Atlas3 fell into WebAPI's native OIDC (HS256, trex-rejected, malformed URL).
-  var onBrokenWelcome = /#\/welcome[&?]token=/.test(hash);
+  //
+  // Both spellings, because that flow lands on this route with either a raw
+  // `token=` or an authorization `code=`, and neither belongs here: sign-in goes
+  // through /atlas-login/, which leaves nothing on the welcome route. Matching
+  // only `token=` let the `code=` variant through undetected -- no bounce, no
+  // error, and a session that had just been cleared, so the user sat logged out
+  // with no way back. Observed after a failed /trex-token exchange.
+  var onBrokenWelcome = /#\/welcome[&?](token|code)=/.test(hash);
 
   var token = currentToken();
   // One flag request feeds both gates. Wrapping fetch has to happen synchronously,

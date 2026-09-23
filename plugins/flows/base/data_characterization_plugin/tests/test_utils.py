@@ -3,8 +3,10 @@ import sqlalchemy as sa
 
 from data_characterization_plugin.utils import (
     RESULTS_SCHEMA_TABLES,
+    cdmresults_clear_cache_path,
     run_sql_statements,
     tables_to_drop,
+    webapi_cache_source_key,
 )
 
 # Tables DC itself produces; everything else in a results schema belongs to Atlas.
@@ -41,6 +43,27 @@ def test_tables_to_drop_does_not_mutate_the_shared_list():
     tables_to_drop(use_trex_connection=True).append("bogus")
     assert "bogus" not in RESULTS_SCHEMA_TABLES
 
+
+# webapi_cache_source_key
+
+
+def test_source_connection_run_clears_the_cache_of_its_own_dataset():
+    assert (
+        webapi_cache_source_key(use_trex_connection=False, dataset_id="ds-1") == "ds-1"
+    )
+
+
+def test_legacy_trex_run_has_no_webapi_source_to_clear():
+    assert webapi_cache_source_key(use_trex_connection=True, dataset_id="ds-1") is None
+
+
+def test_a_run_without_a_dataset_id_has_no_webapi_source_to_clear():
+    assert webapi_cache_source_key(use_trex_connection=False, dataset_id=None) is None
+    assert webapi_cache_source_key(use_trex_connection=False, dataset_id="") is None
+
+
+def test_clear_cache_path_is_the_cdmresults_endpoint_for_the_source():
+    assert cdmresults_clear_cache_path("ds-1") == "cdmresults/ds-1/clearCache"
 
 # run_sql_statements
 

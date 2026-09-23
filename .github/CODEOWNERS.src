@@ -23,6 +23,7 @@
 /plugins/functions/white-rabbit-init                         @data2evidence/integrate
 /plugins/functions/portal-init                               @data2evidence/integrate
 /plugins/functions/alp-usermgmt-init                         @data2evidence/integrate
+/plugins/functions/alp-idp-migration-init                    @data2evidence/integrate
 /plugins/functions/strategus-analysis-init                   @data2evidence/integrate
 /plugins/functions/perseus-init                              @data2evidence/integrate
 /plugins/functions/files-manager-init                        @data2evidence/integrate
