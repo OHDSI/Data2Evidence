@@ -94,9 +94,13 @@ const emit = defineEmits<{ 'update:page': [value: number]; 'update:pageSize': [v
 
 const store = useStore()
 
-const getText = (key: string): string => {
+// `param` must reach the store getter. Its signature is
+// (key, param?: string | string[]) => string, and it substitutes {0}, {1}, ...
+// A wrapper that accepted only `key` dropped the counts, so the label rendered
+// its raw template, "{0}-{1} of {2}" rather than "1-12 of 24".
+const getText = (key: string, param?: string | string[]): string => {
   const resolver = store.getters.getText
-  return typeof resolver === 'function' ? resolver(key) : key
+  return typeof resolver === 'function' ? resolver(key, param) : key
 }
 
 const totalPages = computed(() => pageCount(props.total, props.pageSize))

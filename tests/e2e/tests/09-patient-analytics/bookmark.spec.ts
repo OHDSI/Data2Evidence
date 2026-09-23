@@ -1,10 +1,8 @@
 import { test, expect } from '../fixtures'
 import {
-  atlasCohortCard,
   cardMenuAction,
   confirmExplorationDialog,
   deleteExploration,
-  deleteExplorationCard,
   explorationBookmarkCard,
   explorationCard,
   explorationMenuAction
@@ -358,7 +356,6 @@ test(TEST_NAME, async ({ page }) => {
     ).toBeVisible()
     await expect(page.getByText('ANDCondition Occurrence')).toBeVisible()
     await expect(page.getByText('ANDDeath A(Excluded)')).toBeVisible()
-    await expect(page.getByText('Create ATLAS cohort definition')).toBeVisible()
     await expect(page.getByText('Download SQL')).toBeVisible()
   })
   //Download SQL
@@ -374,19 +371,11 @@ test(TEST_NAME, async ({ page }) => {
     await page.getByRole('button', { name: 'Download SQL' }).click()
     const download2 = await download2Promise
   })
-  //Create ATLAS cohort definition
-  await test.step('Create ATLAS cohort definition', async () => {
-    await page.getByRole('button', { name: 'Create ATLAS cohort definition' }).click()
-    await expect(
-      page.getByText(
-        'Note that conversion to cohort definition is an approximation, and currently does not support "datetime" and "text" types and advanced time filtering. Your cohort definition will be available as an "Atlas Cohort Definition" in the Cohorts overview screen.'
-      )
-    ).toBeVisible()
-    await page.getByRole('button', { name: 'Create', exact: true }).click()
-    await expect(page.getByText('ATLAS cohort definition created successfully and added to Cohorts.')).toBeVisible()
-    await page.locator('#pane-left').getByRole('link', { name: 'Cohorts' }).click()
-    await expect(atlasCohortCard(page, NAME.patientListFilters)).toBeVisible()
-  })
+  // The "Create ATLAS cohort definition" step is gone. The entry point is not
+  // supported any more: FilterCardSummary.vue renders the button under
+  // `v-if="enableAtlasCohortDefinition"`, which reads
+  // panelOptions.atlasCohortDefinition, and the seeded config sets it false.
+  // develop removed these steps in #3270.
   //Create another user to verify bookmark visibility
   await test.step('Switch to admin portal', async () => {
     await page.getByRole('link', { name: 'Account' }).click()
@@ -442,9 +431,7 @@ test(TEST_NAME, async ({ page }) => {
     //it is long gone by this point. On develop this step clicked
     //`div:nth-child(2) > .footer > div:nth-child(2) > svg` - the second card's
     //second icon - so it never named a cohort and never noticed.
-    //Two cards carry NAME.patientListFilters here: the exploration bookmark and
-    //the Atlas cohort definition made from it. Only the bookmark can be renamed,
-    //and it is the one shared with testuserB, who checks the new name below.
+    //Name the card instead of counting on its position.
     await page.getByText('Demo dataset').first().click()
     await page.getByRole('link', { name: 'Cohorts' }).click()
     await cardMenuAction(page, explorationBookmarkCard(page, NAME.patientListFilters), 'Rename')
@@ -463,20 +450,15 @@ test(TEST_NAME, async ({ page }) => {
     await page.getByRole('button', { name: 'Sign in' }).click()
     //Verify that the bookmark is renamed
     await openDatasetCohorts(page)
-    //REGRESSION - a shared bookmark cannot be reached in the redesign.
+    //Another user's shared bookmark does not show, and that is the design now.
     //The old page carried a "show shared bookmarks" slide toggle in the left
     //pane (Bookmarks.vue: `SlideToggle v-model="showSharedBookmarks"`), off by
-    //default, and this step clicked it through `#pane-left label div`. That
-    //pane no longer exists. ExplorationsPage.vue:628 hardcodes the argument:
+    //default, and this step clicked it through `#pane-left label div`. That pane
+    //is gone, and ExplorationsPage.vue hardcodes the argument:
     //  getDisplayBookmarks(false, portalContext.username)
-    //so there is no toggle and another user's shared bookmark can never show.
-    //testuserB therefore cannot see NAME.sharedFilter. What they can see is the
-    //Atlas cohort definition, which is visible to anyone with dataset access.
-    //The original two lines are kept below. They must come back when the toggle
-    //does. This needs a product decision, like the missing Atlas entry point.
-    //await page.locator('#pane-left label div').click()
-    //await expect(page.getByText(NAME.sharedFilter)).toBeVisible()
-    await expect(atlasCohortCard(page, NAME.patientListFilters)).toBeVisible()
+    //so a bookmark of another user can never appear. Assert that, so the day
+    //someone puts sharing back this line fails and says so.
+    await expect(page.getByText(NAME.sharedFilter)).not.toBeVisible()
     //Delete the bookmark as admin
     await page.getByRole('link', { name: 'Account' }).click()
     await page.getByRole('button', { name: 'Logout' }).click()
@@ -494,15 +476,9 @@ test(TEST_NAME, async ({ page }) => {
       await deleteExploration(page, NAME.sharedFilter)
       await expect(page.getByText(NAME.sharedFilter)).not.toBeVisible()
     })
-    //Delete the Atlas Cohort Definition. The exploration bookmark that shared
-    //this name was renamed to NAME.sharedFilter above and deleted in the step
-    //before, so the Atlas cohort definition is the only card left under it.
-    await test.step('Delete Atlas Cohort Definition', async () => {
-      const atlas = atlasCohortCard(page, NAME.patientListFilters)
-      await expect(atlas).toBeVisible()
-      await deleteExplorationCard(page, atlas)
-      await expect(atlas).not.toBeVisible()
-    })
+    // No "Delete Atlas Cohort Definition" step any more. Nothing creates an
+    // Atlas cohort definition, so the shared saved filter above was the last
+    // card and the list is empty here.
     // The redesign's empty state reads "No explorations yet"; assert the state
     // itself rather than its copy.
     await expect(page.getByTestId('explorations-empty')).toBeVisible()
