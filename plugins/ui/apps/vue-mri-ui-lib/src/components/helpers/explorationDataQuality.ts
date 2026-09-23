@@ -83,3 +83,53 @@ export function buildDataQualityParcelProps(input: DataQualityParcelInput): Reco
     locale: input.locale,
   }
 }
+
+/**
+ * Where the exploration card's Data quality action stands for one cohort.
+ * `checking`, `starting` and `running` are busy: the button is disabled and
+ * shows a spinner.
+ */
+export type DataQualityPhase = 'idle' | 'checking' | 'starting' | 'running' | 'ready' | 'failed'
+
+/** What a Prefect `state.type` means for the card. */
+export type FlowRunGroup = 'running' | 'failed' | 'completed' | 'cancelled'
+
+const RUNNING_STATES = new Set([
+  'SCHEDULED',
+  'PENDING',
+  'RUNNING',
+  'PAUSED',
+  'CANCELLING',
+  'LATE',
+  'RETRYING',
+  'AWAITINGRETRY',
+  'SUSPENDED',
+])
+
+/**
+ * Groups a flow run's `state.type` (jobplugins src/const.ts). Read `state.type`,
+ * never `state_name`: the name is display text ("Running"), which is what let
+ * Bookmarks.vue miss a run in flight.
+ *
+ * A missing or unknown state reads as failed, so the next click starts a fresh
+ * run rather than waiting on a run whose outcome cannot be read.
+ */
+export function classifyFlowRunState(type: string | undefined | null): FlowRunGroup {
+  if (type === 'COMPLETED') return 'completed'
+  if (type === 'CANCELLED') return 'cancelled'
+  if (type && RUNNING_STATES.has(type)) return 'running'
+  return 'failed'
+}
+
+export function isDataQualityBusy(phase: DataQualityPhase): boolean {
+  return phase === 'checking' || phase === 'starting' || phase === 'running'
+}
+
+/** The button tooltip's i18n key. An exploration with no cohort cannot run at all. */
+export function dataQualityTooltipKey(phase: DataQualityPhase, hasCohort: boolean): string {
+  if (!hasCohort) return 'MRI_PA_DATA_QUALITY_DISABLED_NOT_MATERIALISED'
+  if (isDataQualityBusy(phase)) return 'MRI_PA_DATA_QUALITY_TOOLTIP_RUNNING'
+  if (phase === 'ready') return 'MRI_PA_DATA_QUALITY_TOOLTIP_READY'
+  if (phase === 'failed') return 'MRI_PA_DATA_QUALITY_TOOLTIP_FAILED'
+  return 'MRI_PA_DATA_QUALITY_TOOLTIP_GENERATE'
+}

@@ -6,8 +6,10 @@ let cancel
 const job_plugins_url = '/jobplugins/'
 
 const actions = {
-  async fetchDataQualityFlowRun({ commit, dispatch, rootGetters }, { cohortDefinitionId }) {
-    const datasetId = rootGetters.getSelectedDataset.id
+  async fetchDataQualityFlowRun({ commit, dispatch, rootGetters }, { cohortDefinitionId, datasetId: requested }) {
+    // The exploration card passes the dataset it resolved itself; Bookmarks.vue
+    // relies on the store's selection.
+    const datasetId = requested ?? rootGetters.getSelectedDataset.id
 
     let url = QueryString({
       url: `${job_plugins_url}dqd/data-quality/cohort/${cohortDefinitionId}/flow-run/latest`,
@@ -24,7 +26,7 @@ const actions = {
         return response.data
       })
       .catch((error: AxiosError) => {
-        if (error.response.status == 404) {
+        if (error?.response?.status == 404) {
           return null
         }
         throw 'Failed to fetch data:'
@@ -45,6 +47,28 @@ const actions = {
       })
       .catch(error => {
         throw 'Failed to run Data Quality Check'
+      })
+  },
+  /**
+   * Starts a cohort's data quality run and resolves to `{ flowRunId }`.
+   *
+   * Unlike generateDataQualityFlowRun this shares no cancel token: that one
+   * cancels any earlier POST still in flight, so two starts on two exploration
+   * cards in quick succession would lose the first. jobplugins requires the
+   * cohort id as a string.
+   */
+  async startDataQualityFlowRun({ dispatch }, { datasetId, cohortDefinitionId }) {
+    const params = {
+      datasetId,
+      comment: '',
+      cohortDefinitionId: String(cohortDefinitionId),
+      releaseId: '',
+      vocabSchemaName: '',
+    }
+    return dispatch('ajaxAuth', { url: `${job_plugins_url}dqd/data-quality/flow-run`, method: 'POST', params })
+      .then(response => response.data)
+      .catch(() => {
+        throw new Error('Failed to start data quality')
       })
   },
 }
