@@ -115,6 +115,24 @@ jobs:
           init_choice=y ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config \
             node ./scripts/dist/cli.js -e -v develop init
 
+      # `init` writes D2E_IDP_MODE=trex, which leaves Logto down. All three providers sign in
+      # through Logto, so flip to logto-federated: `start` then layers in the federation overlay
+      # that brings Logto up as trex's upstream. trex still issues every token.
+      - name: Use Logto-federated IdP mode
+        if: steps.gate.outputs.run == 'true'
+        run: |
+          sed -i 's/^D2E_IDP_MODE=.*/D2E_IDP_MODE=logto-federated/' .env
+          grep '^D2E_IDP_MODE=' .env
+          # logto-federated defaults trex's native password grant off — users
+          # migrated from Logto have no trex password, so the sign-in page offers
+          # only the Logto button. setupdemo bootstraps the d2e-setup@d2e.local
+          # account through that grant, so re-enable it for CI only (appended last,
+          # compose reads .env last-wins). The e2e sign-ins still go through Logto's
+          # own local login via the federated flow; this only unblocks the headless
+          # bootstrap and restores the email/password form for it.
+          printf '%s\n' 'TREX_NATIVE_PASSWORD_LOGIN_ENABLED=true' >> .env
+          grep '^TREX_NATIVE_PASSWORD_LOGIN_ENABLED=' .env
+
       # Connectors are applied by appending to .env (dotenv-parsed by compose, JSON-safe, last wins)
       # after init — no CLI flag. logto-native needs no connector, so neither step runs for it.
       - name: Apply PhysioNet connector overlay

@@ -62,7 +62,7 @@ test('idp:logto-native', async ({ page, baseURL }) => {
     const userToken = await readAccessToken(page)
 
     const claims = assertClaimContract(userToken)
-    console.log(`[assert] iss=${claims.iss} sub=${claims.sub} name=${claims.preferred_username ?? claims.username}`)
+    console.log(`[assert] iss=${claims.iss} sub=${claims.sub} name=${claims.preferred_username ?? claims.username ?? claims.name}`)
 
     const tokenRoles = rolesFromToken(userToken)
     console.log(`[assert] token roles: ${JSON.stringify(tokenRoles)}`)
