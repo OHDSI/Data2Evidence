@@ -16,6 +16,9 @@ export { default as D2eDateField } from "./components/D2eDateField.vue";
 export { default as D2eViewToggle } from "./components/D2eViewToggle.vue";
 export { default as D2eTooltip } from "./components/D2eTooltip.vue";
 export { default as D2eTruncatedText } from "./components/D2eTruncatedText.vue";
+export { default as D2eTabs } from "./components/D2eTabs.vue";
+export { TABS_STYLE_MAP } from "./components/tabsStyles";
+export type { D2eTabItem } from "./components/tabsStyles";
 export { toIsoDate, fromIsoDate } from "./components/dateFieldFormat";
 export { VARIANT_MAP, SIZE_MAP } from "./components/buttonVariants";
 export type {

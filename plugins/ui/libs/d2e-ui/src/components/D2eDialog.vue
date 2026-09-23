@@ -18,24 +18,38 @@
       @keydown.esc="onEscape"
     >
       <header class="d2e-dialog__header">
-        <h2 v-if="title" :id="titleId" class="d2e-dialog__title">
-          {{ title }}
-        </h2>
-        <v-btn
-          v-if="showClose"
-          class="d2e-dialog__close"
-          icon="mdi-close"
-          variant="text"
-          size="small"
-          :ripple="false"
-          :aria-label="closeLabel"
-          :disabled="busy"
-          data-testid="d2e-dialog-close"
-          @click="closeFromButton"
-        />
+        <div class="d2e-dialog__title-row">
+          <h2 v-if="title" :id="titleId" class="d2e-dialog__title">
+            {{ title }}
+          </h2>
+          <v-btn
+            v-if="showClose"
+            class="d2e-dialog__close"
+            icon="mdi-close"
+            variant="text"
+            size="small"
+            :ripple="false"
+            :aria-label="closeLabel"
+            :disabled="busy"
+            data-testid="d2e-dialog-close"
+            @click="closeFromButton"
+          />
+        </div>
+        <p
+          v-if="subtitle || $slots.subtitle"
+          class="d2e-dialog__subtitle"
+          data-testid="d2e-dialog-subtitle"
+        >
+          <slot name="subtitle">{{ subtitle }}</slot>
+        </p>
       </header>
 
-      <v-divider />
+      <!-- Header-append content (a tab bar, DialogTitle 2023:6218 + Tab set
+           2014:2267) draws its own bottom rule, so it replaces the divider. -->
+      <div v-if="$slots['header-append']" class="d2e-dialog__header-append">
+        <slot name="header-append" />
+      </div>
+      <v-divider v-else />
 
       <div class="d2e-dialog__body">
         <slot />
@@ -72,6 +86,11 @@ import { DIALOG_SIZE_MAP, type D2eDialogSize } from "./dialogSizes";
 interface Props {
   modelValue: boolean;
   title?: string;
+  /**
+   * One line under the title (DialogTitle 2023:6218, Description on). Use the
+   * `#subtitle` slot when part of it is emphasised.
+   */
+  subtitle?: string;
   /** Design size. Figma variables Modal/S 540, Modal/L 900, Modal/XL 1200. */
   size?: D2eDialogSize;
   /** Escape hatch. Overrides `size` when set. */
@@ -90,6 +109,7 @@ interface Props {
 
 const props = withDefaults(defineProps<Props>(), {
   title: undefined,
+  subtitle: undefined,
   size: "s",
   maxWidth: undefined,
   closeOnEscape: true,
@@ -100,7 +120,7 @@ const props = withDefaults(defineProps<Props>(), {
 });
 
 const resolvedMaxWidth = computed(
-  () => props.maxWidth ?? DIALOG_SIZE_MAP[props.size],
+  () => props.maxWidth ?? DIALOG_SIZE_MAP[props.size]
 );
 
 const emit = defineEmits<{
@@ -117,7 +137,7 @@ const attrs = useAttrs();
 // data-testid belongs on the card (the visible dialog surface); everything
 // else (transition, scrollable, aria-* and friends) is forwarded to v-dialog.
 const dataTestId = computed(
-  () => (attrs["data-testid"] as string | undefined) ?? undefined,
+  () => (attrs["data-testid"] as string | undefined) ?? undefined
 );
 
 const forwardAttrs = computed(() => {
@@ -153,7 +173,7 @@ watch(
       }
     }
   },
-  { immediate: true },
+  { immediate: true }
 );
 
 function onModelValueUpdate(open: boolean) {
@@ -194,11 +214,34 @@ function closeFromButton() {
 
   &__header {
     display: flex;
+    flex-direction: column;
     flex-shrink: 0;
+    align-items: stretch;
+    gap: 8px;
+    padding: 24px 24px 12px;
+  }
+
+  &__title-row {
+    display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 16px;
-    padding: 24px 24px 12px;
+  }
+
+  &__subtitle {
+    margin: 0;
+    font-size: var(--d2e-font-body2-size);
+    font-weight: var(--d2e-font-body2-weight);
+    line-height: var(--d2e-font-body2-line-height);
+    color: var(--d2e-color-neutral);
+
+    :deep(strong) {
+      font-weight: 700;
+    }
+  }
+
+  &__header-append {
+    flex-shrink: 0;
   }
 
   &__title {
