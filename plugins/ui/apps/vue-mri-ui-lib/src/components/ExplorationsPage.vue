@@ -241,7 +241,10 @@
                exploration has been materialised, because DQD reports on a
                cohort definition and there is none before that. While a run is
                being checked, started or followed it shows a spinner and cannot
-               be pressed again; the tooltip follows the phase (useDataQualityRun). -->
+               be pressed again; the tooltip follows the phase (useDataQualityRun).
+               The click stops here: the spinner replaces the icon before the
+               card's own listener runs, so its closest() ignore check would
+               start from a detached node and open the exploration. -->
           <v-tooltip
             v-if="SHOW_DATA_QUALITY"
             location="top"
@@ -256,7 +259,7 @@
                   :loading="dataQualityBusy(card)"
                   :aria-label="getText('MRI_PA_EXPLORATIONS_DATA_QUALITY')"
                   :data-testid="`explorations-dq-btn-${card.id}`"
-                  @click="openDataQuality(card)"
+                  @click.stop="openDataQuality(card)"
                 >
                   <ExplorationDataQualityIcon />
                 </D2eIconButton>
