@@ -12,6 +12,7 @@ export const usePortalContextStore = defineStore('portalContext', {
     features: [],
     featuresLoading: true,
     qeSvcUrl: undefined,
+    uiFilesUrl: undefined,
     REACT_APP_PUBLIC_WEBAPI_PROXY_URL: undefined,
     REACT_APP_USE_PUBLIC_WEBAPI_PROXY: undefined,
     REACT_APP_PUBLIC_WEBAPI_DATASOURCE: undefined,

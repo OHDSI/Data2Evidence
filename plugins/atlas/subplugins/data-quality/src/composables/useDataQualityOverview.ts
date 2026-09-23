@@ -92,6 +92,12 @@ export interface UseDataQualityOverview {
 export function useDataQualityOverview(
   datasetId: Ref<string>,
   getToken: () => Promise<string>,
+  /**
+   * Scope the report to one cohort definition rather than the whole data
+   * source. Optional and defaulted, so the datasource-sidebar mount - which
+   * has no cohort - keeps calling this with two arguments and is unaffected.
+   */
+  cohortDefinitionId: Ref<string | undefined> = ref(undefined),
 ): UseDataQualityOverview {
   const flowRunStateType = ref<FlowRunStateType | undefined>(undefined);
   const overview = ref<OverviewResults | null>(null);
@@ -203,7 +209,13 @@ export function useDataQualityOverview(
     authAttempts = 0;
 
     try {
-      const latest = await getLatestDataQualityFlowRun(sourceKey, token);
+      // Two explicit calls rather than one with an optional third argument:
+      // without a cohort this stays the same two-argument call it has always
+      // been, so the datasource-sidebar mount's behaviour - and its tests -
+      // are untouched by the cohort scope.
+      const latest = cohortDefinitionId.value
+        ? await getLatestDataQualityFlowRun(sourceKey, token, cohortDefinitionId.value)
+        : await getLatestDataQualityFlowRun(sourceKey, token);
       const results =
         latest?.state?.type === 'COMPLETED'
           ? await getDataQualityOverview(latest.id, sourceKey, token)
@@ -254,8 +266,10 @@ export function useDataQualityOverview(
     return overview.value ? 'ready' : 'no-results';
   });
 
+  // Both scope the request, so switching either has to refetch. A cohort
+  // switch without this would keep showing the previous cohort's run.
   watch(
-    datasetId,
+    [datasetId, cohortDefinitionId],
     () => {
       forget();
       void load();

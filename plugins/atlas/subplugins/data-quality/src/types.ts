@@ -14,6 +14,12 @@ export interface PluginHostContext {
   permissions: string[];
   /** WebAPI sourceKey of the source selected in the Data Sources header. */
   sourceKey?: string;
+  /**
+   * Scope the report to one cohort definition rather than the whole source.
+   * Sent by hosts that open the dashboard for a cohort - the Patient Analytics
+   * exploration card does. Absent for the datasource-sidebar mount.
+   */
+  cohortDefinitionId?: string;
 }
 
 // Props Atlas3 passes to a plugin. Two shapes, because Atlas mounts plugins two
@@ -84,6 +90,11 @@ export interface DqHostCtx {
    * `custom-props-changed` window event as a routed app.
    */
   datasetId: Ref<string>;
+  /**
+   * Reactive for the same reason `datasetId` is: a host may swap the cohort
+   * through `parcel.update` rather than remounting us.
+   */
+  cohortDefinitionId: Ref<string | undefined>;
   appId: string;
   locale: string;
   uiFilesUrl: string;
@@ -118,4 +129,15 @@ export const DQ_HOST_CTX = 'dqHostCtx';
  */
 export function resolveSourceKey(props: PluginProps): string {
   return props.hostContext?.sourceKey ?? props.datasetId ?? '';
+}
+
+/**
+ * The cohort to scope the report to, if the host asked for one.
+ *
+ * Parcel-only, like `sourceKey`. Returns `undefined` rather than `''` so a
+ * blank value from a host cannot be mistaken for a real id and send the
+ * request to the cohort route with an empty path segment.
+ */
+export function resolveCohortDefinitionId(props: PluginProps): string | undefined {
+  return props.hostContext?.cohortDefinitionId || undefined;
 }
