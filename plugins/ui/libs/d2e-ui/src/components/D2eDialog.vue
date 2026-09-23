@@ -120,7 +120,7 @@ const props = withDefaults(defineProps<Props>(), {
 });
 
 const resolvedMaxWidth = computed(
-  () => props.maxWidth ?? DIALOG_SIZE_MAP[props.size]
+  () => props.maxWidth ?? DIALOG_SIZE_MAP[props.size],
 );
 
 const emit = defineEmits<{
@@ -137,7 +137,7 @@ const attrs = useAttrs();
 // data-testid belongs on the card (the visible dialog surface); everything
 // else (transition, scrollable, aria-* and friends) is forwarded to v-dialog.
 const dataTestId = computed(
-  () => (attrs["data-testid"] as string | undefined) ?? undefined
+  () => (attrs["data-testid"] as string | undefined) ?? undefined,
 );
 
 const forwardAttrs = computed(() => {
@@ -173,7 +173,7 @@ watch(
       }
     }
   },
-  { immediate: true }
+  { immediate: true },
 );
 
 function onModelValueUpdate(open: boolean) {
