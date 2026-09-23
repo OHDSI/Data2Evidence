@@ -257,6 +257,7 @@ export type TokenClaims = Record<string, unknown> & {
   email?: string
   preferred_username?: string
   username?: string
+  name?: string
   roles?: unknown
 }
 
@@ -307,14 +308,14 @@ export function assertClaimContract(token: string, expected: ClaimContractExpect
   expect(claims.aud, `aud missing`).toBeTruthy()
   expect(typeof claims.email, `email claim missing; got ${JSON.stringify(claims.email)}`).toBe('string')
 
-  // Display name: WebAPI/Atlas show the login, not the opaque sub. Logto's JWT customizer
-  // emits both; Trex currently emits neither — this assertion is the phase-2 gap tripwire.
-  const displayName = claims.preferred_username ?? claims.username
+  // Display name under any of the three; Trex carries the login in `name`.
+  const displayName = claims.preferred_username ?? claims.username ?? claims.name
   expect(
     typeof displayName === 'string' && displayName.length > 0,
-    `neither preferred_username nor username present; got ${JSON.stringify({
+    `no display-name claim (preferred_username/username/name) present; got ${JSON.stringify({
       preferred_username: claims.preferred_username,
-      username: claims.username
+      username: claims.username,
+      name: claims.name
     })}`
   ).toBeTruthy()
 
