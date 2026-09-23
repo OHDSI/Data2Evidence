@@ -1,0 +1,39 @@
+import { describe, expect, it } from 'vitest';
+import { CSV_COLUMNS, exportFileName, toCsv, toJson } from './export';
+import { row } from './fixtures';
+
+describe('toCsv', () => {
+  it('writes a header and one CRLF line per row, without queryText', () => {
+    const csv = toCsv([row(), row({ key: 'c2#1', checkId: 'c2' })]);
+    const lines = csv.split('\r\n');
+    expect(lines).toHaveLength(3);
+    expect(lines[0].split(',')).toEqual(CSV_COLUMNS.map((c) => c.title));
+    expect(csv).not.toContain('SELECT 1');
+    expect(CSV_COLUMNS.map((c) => c.key)).not.toContain('queryText');
+  });
+
+  it('quotes a field with a comma, quote or line break, doubling quotes', () => {
+    const csv = toCsv([row({ checkDescription: 'a, "b"\nc' })]);
+    expect(csv).toContain('"a, ""b""\nc"');
+  });
+
+  it('writes the status as its English label', () => {
+    const csv = toCsv([row({ failed: 1 })]);
+    expect(csv.split('\r\n')[1]).toContain(',Failed,');
+  });
+});
+
+describe('toJson', () => {
+  it('writes the full rows without the table key', () => {
+    const parsed = JSON.parse(toJson([row()]));
+    expect(parsed).toHaveLength(1);
+    expect(parsed[0]).not.toHaveProperty('key');
+    expect(parsed[0].queryText).toBe('SELECT 1');
+  });
+});
+
+describe('exportFileName', () => {
+  it('uses the local date', () => {
+    expect(exportFileName('csv', new Date(2026, 8, 3, 23, 30))).toBe('data-quality-checks-2026-09-03.csv');
+  });
+});
