@@ -24,8 +24,13 @@ import pytest
 
 pytest.importorskip("prefect")
 
+import httpx
 from prefect.client.schemas.objects import StateType
-from prefect.exceptions import ObjectNotFound
+from prefect.exceptions import (
+    ObjectAlreadyExists,
+    ObjectNotFound,
+    PrefectHTTPStatusError,
+)
 
 from create_cachedb_file_plugin import concurrency_reconciliation as module
 from create_cachedb_file_plugin.concurrency_reconciliation import (
@@ -293,3 +298,73 @@ def test_missing_limit_is_a_noop():
     _reconcile(client)
 
     client.release_concurrency_slots.assert_not_called()
+
+
+# THE LOCK ITSELF. Two cache builds start together, both find the lock absent and
+# both POST it; the loser's flow used to die outright and take the cache build --
+# and so the whole http-test setup -- with it. These tests exist because that was
+# fixed twice: the first attempt caught PrefectHTTPStatusError, which is what the
+# server sends but NOT what reaches the caller.
+
+
+def _http_status_error(status):
+    request = httpx.Request("POST", "https://prefect.test/api/v2/concurrency_limits/")
+    return PrefectHTTPStatusError(
+        f"Client error '{status}'",
+        request=request,
+        response=httpx.Response(status, request=request),
+    )
+
+
+def _idle_client():
+    """A client with nothing to reconcile, so only the lock is under test."""
+    return _client(running=[[], []], counters=[0], holders=[[]])
+
+
+def test_the_lock_is_created_before_anything_is_read():
+    client = _idle_client()
+
+    _reconcile(client)
+
+    client.upsert_global_concurrency_limit_by_name.assert_called_once_with(
+        module.RECONCILE_LOCK, limit=1, slot_decay_per_second=0.0
+    )
+
+
+def test_a_concurrent_reconciler_creating_the_lock_first_is_tolerated():
+    # What prefect actually raises: create_global_concurrency_limit translates the
+    # 409 (prefect/client/orchestration/_concurrency_limits/client.py) before the
+    # caller ever sees a status code.
+    client = _idle_client()
+    client.upsert_global_concurrency_limit_by_name.side_effect = ObjectAlreadyExists(
+        http_exc=_http_status_error(409)
+    )
+
+    _reconcile(client)
+
+    # Reconciliation proceeded rather than dying: the lock exists, which is all
+    # the call wanted.
+    assert client.read_task_runs.called
+
+
+def test_an_untranslated_409_is_tolerated_too():
+    # Kept for a client version that does not translate; no version is required to.
+    client = _idle_client()
+    client.upsert_global_concurrency_limit_by_name.side_effect = _http_status_error(409)
+
+    _reconcile(client)
+
+    assert client.read_task_runs.called
+
+
+def test_a_lock_that_cannot_be_created_still_raises():
+    # A lock that is genuinely unavailable must not be mistaken for one that is
+    # ready -- reconciling unserialized is how slots get released out from under a
+    # live task run.
+    client = _idle_client()
+    client.upsert_global_concurrency_limit_by_name.side_effect = _http_status_error(500)
+
+    with pytest.raises(PrefectHTTPStatusError):
+        _reconcile(client)
+
+    client.read_task_runs.assert_not_called()
