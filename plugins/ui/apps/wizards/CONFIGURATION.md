@@ -78,8 +78,7 @@ the domain rule it needs without changing the CDW config:
 The checked-in templates explicitly mark their age, anthropometric, and vital
 fields with `"allowNegative": false`. If an active PA Wizard config contains a
 field whose domain legitimately includes signed values, set `allowNegative` to
-`true` before rollout. Updating these repository templates does not modify
-already persisted PA configurations.
+`true` before rollout.
 
 ## Form Notes
 
@@ -141,6 +140,8 @@ Define `sections` on each wizard because the section presence and order can diff
 - Individual field `required` rules remain independent. For an interchangeable group such as Height/Weight/BMI, keep the fields optional and express the required count on the group.
 
 ## Uploading the Config
+
+Wizard forms render from the config stored for the dataset. Editing a template in this repository, including its field labels and other display copy, changes nothing on a dataset that already holds a PA Wizards config. Upload the updated template to apply it.
 
 ### Via Portal
 1. Go to **Settings** → **PA Config**

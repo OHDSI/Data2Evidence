@@ -3,7 +3,7 @@ const chartIdToRawConfigMap = {
   stacked: {
     className: 'hc.mri.pa.ui.lib.StackedBarChart',
     icon: 'app-icon://vertical-bar-chart',
-    tooltip: '{i18n>MRI_PA_TOOLTIP_CHARTTYPE_STACKED}',
+    tooltip: '{i18n>MRI_PA_TOOLTIP_CHARTTYPE_CHART}',
     urlKey: 'stacked',
     keyCode: 119, // F8
   },
