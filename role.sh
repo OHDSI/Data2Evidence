@@ -1,13 +1,3 @@
-#!/bin/sh
-# Grant, revoke or list the JupyterHub Logto role.
-#
-#   ./role.sh list
-#   ./role.sh grant <username>
-#   ./role.sh revoke <username>
-#
-# Reads the Logto management credentials straight from the running Logto
-# container, so nothing has to be exported first. Run it from the directory that
-# holds services/jupyterhub.
 set -e
 
 DIR=$(cd "$(dirname "$0")" && pwd)
