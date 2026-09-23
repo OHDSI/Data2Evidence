@@ -1204,18 +1204,36 @@ jobs:
       - name: Disable IPv6 to prevent ERR_NETWORK_CHANGED
         run: sudo sysctl -w net.ipv6.conf.all.disable_ipv6=1
 
+      # TEMPORARY: regenerate the screenshot baselines and hand them back.
+      # The image bakes tests in (Dockerfile: COPY tests ./tests) and the
+      # container is --rm, so --update-snapshots alone would write the new
+      # baselines inside the container and throw them away. The tests mount
+      # below puts them on the runner so the next step can upload them.
+      # Revert BOTH the mount and --update-snapshots once the baselines land:
+      # with -u the comparisons always pass, so this job is green for free and
+      # proves nothing.
       - name: e2e tests
         run: |
           cd ./tests/e2e
           docker run --rm \
             --network=host \
             --ipc=host \
+            -v "$(pwd)/tests:/work/tests" \
             -v "$(pwd)/test-results:/work/test-results" \
             -v "$(pwd)/ctrf:/work/ctrf" \
             -e D2E_BASE_URL=https://localhost:443 \
             -e CI=true \
             -e GITHUB_ACTIONS=true \
-            d2e-e2e npm test
+            d2e-e2e npm test -- --update-snapshots=changed
+
+      # TEMPORARY: remove together with the two lines above.
+      - name: Upload regenerated baselines
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: regenerated-baselines-attempt-${{ matrix.attempt }}
+          path: tests/e2e/tests/**/*-snapshots/**
+          overwrite: true
 
       - name: Mark e2e attempt success
         if: success()
