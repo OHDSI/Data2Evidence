@@ -17,7 +17,11 @@
  */
 const JOBPLUGINS_BASE = '/jobplugins';
 
-/** Prefect flow-run states, as the portal enumerates them (SystemAdmin/DQD/types.ts). */
+/**
+ * Prefect flow-run states. The portal enumerates the first nine
+ * (SystemAdmin/DQD/types.ts); jobplugins knows the rest too
+ * (plugins/functions/jobplugins/src/const.ts), and a run can report any of them.
+ */
 export type FlowRunStateType =
   | 'COMPLETED'
   | 'SCHEDULED'
@@ -27,7 +31,12 @@ export type FlowRunStateType =
   | 'CANCELLING'
   | 'CANCELLED'
   | 'FAILED'
-  | 'CRASHED';
+  | 'CRASHED'
+  | 'LATE'
+  | 'AWAITINGRETRY'
+  | 'RETRYING'
+  | 'SUSPENDED'
+  | 'TIMEDOUT';
 
 export interface FlowRun {
   id: string;

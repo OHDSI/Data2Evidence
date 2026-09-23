@@ -108,6 +108,9 @@ const hostCtx: DqHostCtx = {
   uiFilesUrl: '',
   // The harness stands in for the parcel surface, which is how we ship.
   isRoutedApp: false,
+  // `?view=checks` previews the checks view; anything else is the dashboard.
+  view: ref(params.get('view') === 'checks' ? 'checks' : 'dashboard'),
+  surface: ref('datasource-sidebar'),
 };
 
 const app = createApp({

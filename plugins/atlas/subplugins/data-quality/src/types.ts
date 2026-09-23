@@ -108,6 +108,17 @@ export interface DqHostCtx {
    * (see useHostContext).
    */
   isRoutedApp: boolean;
+  /**
+   * Which view to render, from `hostContext.itemId` (resolveView). Reactive:
+   * Atlas switches between its two sidebar entries through `parcel.update`,
+   * without a remount, and the vue-mri dialog's tabs do the same.
+   */
+  view: Ref<DataQualityView>;
+  /**
+   * The host surface, e.g. 'datasource-sidebar'. The checks view shows its own
+   * heading only there; the vue-mri dialog already titles the tab.
+   */
+  surface: Ref<string>;
 }
 
 /**
@@ -140,4 +151,22 @@ export function resolveSourceKey(props: PluginProps): string {
  */
 export function resolveCohortDefinitionId(props: PluginProps): string | undefined {
   return props.hostContext?.cohortDefinitionId || undefined;
+}
+
+/** The two views this plugin renders. */
+export type DataQualityView = 'dashboard' | 'checks';
+
+/**
+ * The view the host asked for. Only 'checks' selects the checks view; every
+ * other value - 'dashboard', the 'data-quality-dashboard' the first vue-mri
+ * dialog sent, a missing host context in routed mode, anything unknown - is the
+ * dashboard, so no existing host changes what it sees.
+ */
+export function resolveView(props: PluginProps): DataQualityView {
+  return props.hostContext?.itemId === 'checks' ? 'checks' : 'dashboard';
+}
+
+/** The mount surface, or '' when there is no host context (routed mode). */
+export function resolveSurface(props: PluginProps): string {
+  return props.hostContext?.surface ?? '';
 }
