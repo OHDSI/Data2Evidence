@@ -9,7 +9,7 @@ describe("D2eSplitButton style map", () => {
       paddingX: 16,
       iconSize: 22,
       chevronWidth: 40,
-      menuWidth: 177,
+      menuWidth: "max-content",
     });
   });
 });
