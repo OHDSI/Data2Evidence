@@ -1,4 +1,5 @@
 import { test, expect } from '../fixtures'
+import { confirmExplorationDialog, explorationCard } from '../explorations'
 
 test('pa-compare-cohorts', async ({ page }) => {
   test.slow()
@@ -45,13 +46,15 @@ test('pa-compare-cohorts', async ({ page }) => {
   // Re-saving an already-saved cohort owned by the current user no longer opens the
   // naming dialog - FiltersFooter.openSaveBookmark() only does that when
   // needsSaveDialog (isNewCohort || isNotUserSharedBookmark) is true.
-  await page.getByRole('button', { name: 'Save' }).click()
+  await page.getByTestId('pa-save-cohort-btn').click()
   await expect(page.locator('#app')).toContainText('Saved filter updated.')
 
   // Navigate back to the cohorts list
   await page.locator('#pane-left').getByRole('link', { name: 'Cohorts' }).click()
-  await page.getByTitle('Enter Fullscreen').click()
-  await expect(page.locator('#pane-left')).toContainText(cohortA)
+  // The fullscreen toggle expanded the old bookmark list inside the builder's
+  // pane. The exploration list replaces that pane, so there is nothing to
+  // expand and no such control.
+  await expect(explorationCard(page, cohortA)).toBeVisible()
 
   // Cohort B creation: with Condition Occurrence A filtercard
   await page.waitForTimeout(10000)
@@ -70,16 +73,24 @@ test('pa-compare-cohorts', async ({ page }) => {
   // Re-saving an already-saved cohort owned by the current user no longer opens the
   // naming dialog - FiltersFooter.openSaveBookmark() only does that when
   // needsSaveDialog (isNewCohort || isNotUserSharedBookmark) is true.
-  await page.getByRole('button', { name: 'Save' }).click()
+  await page.getByTestId('pa-save-cohort-btn').click()
   await expect(page.locator('#app')).toContainText('Saved filter updated.')
 
   // Navigate back to the cohorts list
   await page.locator('#pane-left').getByRole('link', { name: 'Cohorts' }).click()
-  await page.getByTitle('Enter Fullscreen').click()
-  await expect(page.locator('#pane-left')).toContainText(cohortB)
+  // The fullscreen toggle expanded the old bookmark list inside the builder's
+  // pane. The exploration list replaces that pane, so there is nothing to
+  // expand and no such control.
+  await expect(explorationCard(page, cohortB)).toBeVisible()
 
-  await page.locator('div:nth-child(1) > .footer > div > svg').first().click()
-  await page.locator('div:nth-child(2) > .footer > div > svg').first().click()
+  // Selection moved from an icon in each card's footer to a checkbox on the
+  // card, and Compare moved from the page header into the bulk-actions bar
+  // that appears once something is selected. The bar's button keeps the
+  // 'Compare' label, so only the selection changes here.
+  // Naming the cohorts beats positional selectors: the list sorts by last
+  // updated, so nth-child(1) and (2) were never guaranteed to be these two.
+  await page.getByRole('checkbox', { name: `Select exploration ${cohortA}` }).check()
+  await page.getByRole('checkbox', { name: `Select exploration ${cohortB}` }).check()
   await expect(page.getByRole('button', { name: 'Compare' })).toBeEnabled()
 
   await page.getByRole('button', { name: 'Compare' }).click()
@@ -90,7 +101,11 @@ test('pa-compare-cohorts', async ({ page }) => {
   await page.locator('.mainChartToolbar').getByTitle('Export to File').click()
 
   const downloadPromise = page.waitForEvent('download')
-  await page.locator('#pane-left').getByText('Export to PNG File').click()
+  // The download menu renders inline in the chart toolbar
+  // (CohortComparisonContainer.vue: .mainChartToolbar > .download-wrapper).
+  // The Compare modal opens over the Data Exploration list, which has no
+  // `#pane-left`, so the old scope matched nothing.
+  await page.locator('.mainChartToolbar').getByText('Export to PNG File').click()
   const download = await downloadPromise
   // the downloaded PNG should be prefixed with the active cohort and follows {cohortName}_{chartType}_{DD-MM-YYYY}.png format
   expect(download.suggestedFilename()).toMatch(new RegExp(`^${cohortB}_.*\\d{2}-\\d{2}-\\d{4}\\.png$`))
@@ -100,7 +115,18 @@ test('pa-compare-cohorts', async ({ page }) => {
   // ========================
   // Navigate back to cohorts list and delete the specific test cohort
   await page.getByRole('button', { name: 'Close' }).click()
-  await page.locator('#pane-left').getByRole('link', { name: 'Cohorts' }).click()
+  // Closing the modal leaves the Data Exploration list, which is where Compare
+  // was started, so there is nothing to navigate. `#pane-left` is the builder's
+  // breadcrumb and is not rendered here, and the top-nav Cohorts link is inert
+  // because the list already owns that route. Wait for the list instead.
+  //
+  // Wait on the bulk bar, NOT on explorations-new-btn. ExplorationsPage renders
+  // `v-if="explorations.hasSelection"` for the bulk bar and `v-else` for the
+  // toolbar that holds the new-exploration button, so the two never coexist.
+  // Both cohorts are still selected at this point - that is how Compare was
+  // reached - so the new-exploration button cannot exist yet and waiting for it
+  // always times out.
+  await expect(page.getByTestId('explorations-bulk-bar')).toBeVisible()
 
   // Find and delete the specific cohort by name to avoid deleting wrong cohorts
   // The delete button is the last img element in the action buttons container for each cohort
@@ -108,20 +134,17 @@ test('pa-compare-cohorts', async ({ page }) => {
   // await page.locator('.footer > div:nth-child(5)').first().click()
   // await page.getByRole('button', { name: 'Delete' }).click()
 
-  // Delete all saved cohorts until none remain
-  while (
-    await page
-      .getByTitle('Delete Saved Filter')
-      .first()
-      .isVisible()
-      .catch(() => false)
-  ) {
-    await page.getByTitle('Delete Saved Filter').first().click()
-    await page.getByRole('button', { name: 'Delete' }).click()
+  // Delete all saved cohorts until none remain. The delete icon with its
+  // "Delete Saved Filter" title is gone; Delete is a More-menu item now, so
+  // drain the list card by card.
+  while (await page.locator('.d2e-exploration-card').first().isVisible().catch(() => false)) {
+    await page.locator('.d2e-exploration-card').first().getByRole('button', { name: 'More actions' }).click()
+    await page.getByRole('menuitem', { name: 'Delete' }).click()
+    await confirmExplorationDialog(page)
     await page.waitForTimeout(10000)
   }
 
-  await expect(page.getByText('You have not yet saved any')).toBeVisible()
+  await expect(page.getByTestId('explorations-empty')).toBeVisible()
 })
 
 async function createCohortWithOneConditionOccurrenceFilercard(page, cohortName) {
@@ -129,8 +152,8 @@ async function createCohortWithOneConditionOccurrenceFilercard(page, cohortName)
   // COHORT CREATION SECTION
   // ========================
   // Start creating a new cohort using D2E cohort builder
-  await page.getByRole('button', { name: 'D2E' }).click()
-  await expect(page.locator('#pane-left')).toContainText('New cohort')
+  await page.getByTestId('explorations-new-btn').click()
+  await expect(page.locator('#pane-left')).toContainText('New exploration')
 
   // Configure cohort sharing settings. The allow-sharing checkbox now lives in the
   // filter card footer instead of the save dialog, so it has to be set before the
@@ -138,14 +161,14 @@ async function createCohortWithOneConditionOccurrenceFilercard(page, cohortName)
   await page.getByTestId('pa-share-cohort-checkbox').click()
 
   // Save the initial cohort configuration
-  await page.getByRole('button', { name: 'Save' }).click()
+  await page.getByTestId('pa-save-cohort-btn').click()
   await page.waitForTimeout(5000)
 
   // Name the cohort with unique timestamp-based name and save
   await page.getByRole('textbox', { name: 'Enter name' }).click()
   await page.getByRole('textbox', { name: 'Enter name' }).fill(cohortName)
   await page.waitForTimeout(10000)
-  await page.locator('footer').getByRole('button', { name: 'Save' }).click()
+  await page.getByTestId('pa-save-dialog-save-btn').click()
   // await expect(page.locator('#pane-left')).toContainText(cohortName)
 
   // ========================
