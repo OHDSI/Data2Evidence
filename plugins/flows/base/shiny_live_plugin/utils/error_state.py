@@ -1,6 +1,6 @@
 """Shared fetch-error state for the calculate-* dashboards and cross-sectional-demographics.py.
 
-The error card reuses empty_state.py's card layout (_state_card) in the same
+The error card reuses empty_state.py's card layout (state_card) in the same
 chart slot as the no-data card. This module holds what's specific to the
 error variant - the wording, the warning glyph, the retry button and their
 CSS - so the dashboards don't each carry their own copy. empty_state.py

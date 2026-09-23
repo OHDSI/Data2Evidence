@@ -181,11 +181,15 @@ def empty_state_card(style=""):
     )
 
 
-def _state_card(title, subtitle, icon=EMPTY_STATE_ICON, action=None):
+def state_card(title, subtitle, icon=EMPTY_STATE_ICON, action=None):
     """The icon/title/subtitle block shared by the empty and error states -
     same layout, only the icon and wording differ. action, if given, is
     an extra element (e.g. the error card's retry button) shown below the
-    subtitle."""
+    subtitle.
+
+    Public for dashboards whose layout doesn't fit register_empty_state's
+    single no_data_state slot (loss-to-follow-up.py renders its states
+    inside its own results_area)."""
     return ui.div(
         icon,
         ui.p(title, class_="empty-state-title"),
@@ -250,6 +254,6 @@ def register_empty_state(
             retry_button = None
             if retry_input_id:
                 retry_button = error_state_retry_button(retry_input_id, retry_label)
-            return _state_card(error_title, error_subtitle, error_icon, retry_button)
+            return state_card(error_title, error_subtitle, error_icon, retry_button)
 
-        return _state_card(title, subtitle)
+        return state_card(title, subtitle)
