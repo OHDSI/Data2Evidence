@@ -950,8 +950,8 @@ test(TEST_NAME, async ({ page }) => {
     await page.getByText('wizardE2E').first().click()
 
     await page.getByRole('link', { name: 'Cohorts' }).click()
-    await expect(page.getByRole('button', { name: 'D2E' })).toBeVisible({ timeout: MINUTE_1 })
-    await page.getByRole('button', { name: 'D2E' }).click()
+    await expect(page.getByTestId('explorations-new-btn')).toBeVisible({ timeout: MINUTE_1 })
+    await page.getByTestId('explorations-new-btn').click()
     await page.getByRole('button', { name: 'Analyze' }).click()
     await page.getByRole('button', { name: 'Cross sectional Demographics' }).click()
     await page.getByRole('textbox', { name: 'Disease/Condition *' }).click()

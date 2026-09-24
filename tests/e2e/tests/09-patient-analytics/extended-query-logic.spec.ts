@@ -1,4 +1,5 @@
 import { test, expect } from '../fixtures'
+import { deleteExploration } from '../explorations'
 const TEST_NAME = 'patient-analytics-extended-query-logic'
 const SHOULD_SKIP = false
 test.fixme(SHOULD_SKIP, `${TEST_NAME} test is temporarily disabled.`)
@@ -14,7 +15,7 @@ test(TEST_NAME, async ({ page }) => {
 
   await page.getByText('Demo dataset').first().click()
   await page.getByRole('link', { name: 'Cohorts' }).click()
-  await page.getByRole('button', { name: 'D2E' }).click()
+  await page.getByTestId('explorations-new-btn').click()
   await expect(page.getByText('2,694 / 2,694')).toBeVisible()
   await expect(page.locator('.loading-animation-component')).not.toBeVisible()
 
@@ -79,10 +80,10 @@ test(TEST_NAME, async ({ page }) => {
   await expect(page.locator('.loading-animation-component')).not.toBeVisible()
 
   // Save filter
-  await page.getByRole('button', { name: 'Save' }).click()
+  await page.getByTestId('pa-save-cohort-btn').click()
   await page.getByRole('textbox', { name: 'Enter name' }).click()
   await page.getByRole('textbox', { name: 'Enter name' }).fill('Extended Logic Filter')
-  await page.locator('footer').getByRole('button', { name: 'Save' }).click()
+  await page.getByTestId('pa-save-dialog-save-btn').click()
   // Wait for save dialog to disappear
   await expect(page.getByText('Save Current Filters')).not.toBeVisible()
 
@@ -96,7 +97,7 @@ test(TEST_NAME, async ({ page }) => {
 
   // Reload saved filter
   await page.locator('#pane-left').getByRole('link', { name: 'Cohorts' }).click()
-  await page.getByRole('button', { name: 'D2E' }).click()
+  await page.getByTestId('explorations-new-btn').click()
   await page.getByRole('button', { name: 'Leave without saving' }).click()
   await page.locator('#pane-left').getByRole('link', { name: 'Cohorts' }).click()
   await page.getByText('Extended Logic Filter').click()
@@ -111,17 +112,7 @@ test(TEST_NAME, async ({ page }) => {
 
   // Delete saved filter
   await page.locator('#pane-left').getByRole('link', { name: 'Cohorts' }).click()
-  await page
-    .getByText('Extended Logic Filter')
-    .locator('..')
-    .locator('..')
-    .locator('..')
-    .locator('..')
-    .locator('> .footer')
-    .locator('div:nth-child(5) > svg')
-    .first()
-    .click()
-  await page.getByRole('button', { name: 'Delete' }).click()
+  await deleteExploration(page, 'Extended Logic Filter')
   // Wait for delete dialog to disappear
   await expect(page.getByText('Delete Saved Filter')).not.toBeVisible()
   await expect(page.getByTestId('pa-cohort-card-Extended Logic Filter')).not.toBeVisible()

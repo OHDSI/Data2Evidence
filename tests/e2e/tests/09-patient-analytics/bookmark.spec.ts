@@ -1,4 +1,12 @@
 import { test, expect } from '../fixtures'
+import {
+  cardMenuAction,
+  confirmExplorationDialog,
+  deleteExploration,
+  explorationBookmarkCard,
+  explorationCard,
+  explorationMenuAction
+} from '../explorations'
 
 const TEST_NAME = 'patient_analytics_bookmark'
 const SHOULD_SKIP = false
@@ -32,16 +40,6 @@ async function openDatasetCohorts(page) {
   throw new Error('Cohorts link did not appear for selected dataset within ~60s')
 }
 
-// The Cohorts pane hides the cohorts of other users until the "Shared" toggle is on.
-// The toggle goes back to off at each login, so set it before you look for a shared cohort.
-async function showSharedCohorts(page) {
-  const toggleInput = page.locator('#pane-left label.toggle-switch input[type="checkbox"]')
-  await toggleInput.waitFor({ state: 'attached' })
-  if (!(await toggleInput.isChecked())) {
-    await page.locator('#pane-left label.toggle-switch .slider').click()
-  }
-}
-
 test(TEST_NAME, async ({ page }) => {
   test.slow()
   await page.goto('/d2e/portal')
@@ -54,7 +52,7 @@ test(TEST_NAME, async ({ page }) => {
   await test.step('Navigate back to the researcher portal, click Cohort', async () => {
     await page.getByText('Demo dataset').first().click()
     await page.getByRole('link', { name: 'Cohorts' }).click()
-    await page.getByRole('button', { name: 'D2E' }).click()
+    await page.getByTestId('explorations-new-btn').click()
     await expect(page.getByText('2,694 / 2,694')).toBeVisible()
     await expect(page.locator('.loading-animation-component')).not.toBeVisible()
   })
@@ -141,14 +139,14 @@ test(TEST_NAME, async ({ page }) => {
   })
   //Save the filter card
   await test.step('Save the filter card', async () => {
-    await page.getByRole('button', { name: 'Save' }).click()
+    await page.getByTestId('pa-save-cohort-btn').click()
     await page.getByRole('textbox', { name: 'Enter name' }).fill('Test Cohort 2')
     await page.getByRole('textbox', { name: 'Enter name' }).click()
     //Cancel the save
-    await page.locator('footer').getByRole('button', { name: 'Cancel' }).click()
+    await page.getByTestId('pa-save-dialog-cancel-btn').click()
     await expect(page.locator('.loading-animation-component')).not.toBeVisible()
     //Click Save again
-    await page.getByRole('button', { name: 'Save' }).click()
+    await page.getByTestId('pa-save-cohort-btn').click()
     //Previous filter name should be visible
     await expect(page.getByRole('textbox', { name: 'Enter name' })).toHaveValue('Test Cohort 2')
     await page.getByRole('textbox', { name: 'Enter name' }).fill('')
@@ -158,11 +156,11 @@ test(TEST_NAME, async ({ page }) => {
     await page.getByRole('textbox', { name: 'Enter name' }).fill('')
     await expect(page.getByText('Filter name must not exceed 255 characters')).not.toBeVisible()
     await page.getByRole('textbox', { name: 'Enter name' }).fill('  ')
-    await page.locator('footer').getByRole('button', { name: 'Save' }).click()
+    await page.getByTestId('pa-save-dialog-save-btn').click()
     await expect(page.getByText('Please enter a name')).toBeVisible()
     await page.getByRole('textbox', { name: 'Enter name' }).fill(NAME.savedFilters)
     await page.getByRole('textbox', { name: 'Enter name' }).click()
-    await page.locator('footer').getByRole('button', { name: 'Save' }).click()
+    await page.getByTestId('pa-save-dialog-save-btn').click()
     await expect(page.getByText('Filters saved.')).toBeVisible()
   })
   //Reset x1 selection to avoid displaying errors
@@ -192,7 +190,7 @@ test(TEST_NAME, async ({ page }) => {
   await test.step('Save the filter card', async () => {
     // Confirm that the 'Enter name' textbox is not visible before proceeding
     await expect(page.getByRole('textbox', { name: 'Enter name' })).not.toBeVisible()
-    await page.getByRole('button', { name: 'Save' }).click()
+    await page.getByTestId('pa-save-cohort-btn').click()
     // Re-saving an already-saved cohort owned by the current user no longer opens the
     // naming dialog - FiltersFooter.openSaveBookmark() only does that when
     // needsSaveDialog (isNewCohort || isNotUserSharedBookmark) is true.
@@ -202,29 +200,31 @@ test(TEST_NAME, async ({ page }) => {
   //Verify the saved filter
   await test.step('Verify the saved filter', async () => {
     await page.locator('#pane-left').getByRole('link', { name: 'Cohorts' }).click()
-    await expect(page.getByText(`${NAME.savedFilters}Cohort Definition Icon`)).toBeVisible()
+    await expect(explorationCard(page, NAME.savedFilters)).toBeVisible()
   })
   // Test for duplicate name validation
   await test.step('Test for duplicate name validation', async () => {
-    await page.locator('#pane-left').getByRole('link', { name: 'Cohorts' }).click()
-    await page.getByRole('button', { name: 'D2E' }).click()
-    await page.getByRole('button', { name: 'Save' }).click()
+    // Already on the Cohorts list from the step above. The 'Cohorts' link is
+    // part of the builder's left pane, and the exploration list replaces that
+    // pane, so there is nothing to click once the list is showing.
+    await page.getByTestId('explorations-new-btn').click()
+    await page.getByTestId('pa-save-cohort-btn').click()
     await page.getByRole('textbox', { name: 'Enter name' }).click()
     await page.getByRole('textbox', { name: 'Enter name' }).fill(NAME.savedFilters)
-    await page.locator('footer').getByRole('button', { name: 'Save' }).click()
+    await page.getByTestId('pa-save-dialog-save-btn').click()
     await expect(page.getByText('Cohort name already exists. Please enter another name.')).toBeVisible()
-    await page.getByRole('button', { name: 'Cancel' }).click()
+    await page.getByTestId('pa-save-dialog-cancel-btn').click()
   })
   //Rename the saved filter
   await test.step('Rename the saved filter', async () => {
     await page.locator('#pane-left').getByRole('link', { name: 'Cohorts' }).click()
-    await page.locator('.footer > div:nth-child(2) > svg').first().click()
-    await page.getByRole('textbox').fill('')
-    await page.locator('footer').getByRole('button', { name: 'Save' }).click()
+    await explorationMenuAction(page, NAME.savedFilters, 'Rename')
+    await page.getByRole('textbox', { name: 'Exploration name' }).fill('')
+    await page.getByTestId('pa-save-dialog-save-btn').click()
     await expect(page.getByText('Please enter a name')).toBeVisible()
-    await page.getByRole('textbox').fill(NAME.renamedFilters)
-    await page.getByRole('button', { name: 'Save' }).click()
-    await expect(page.getByText(`${NAME.renamedFilters}Cohort Definition Icon`)).toBeVisible()
+    await page.getByRole('textbox', { name: 'Exploration name' }).fill(NAME.renamedFilters)
+    await page.getByTestId('pa-save-dialog-save-btn').click()
+    await expect(explorationCard(page, NAME.renamedFilters)).toBeVisible()
     await page
       .locator('div')
       .filter({ hasText: new RegExp(`^${NAME.renamedFilters}$`) })
@@ -246,15 +246,15 @@ test(TEST_NAME, async ({ page }) => {
   //Delete the saved filter
   await test.step('Delete the saved filter', async () => {
     await page.locator('#pane-left').getByRole('link', { name: 'Cohorts' }).click()
-    await expect(page.getByText(`${NAME.renamedFilters}Cohort Definition Icon`)).toBeVisible()
-    await page.getByTitle('Delete Saved Filter').first().click()
-    await page.getByRole('button', { name: 'Delete' }).click()
-    await expect(page.getByText(`${NAME.renamedFilters}Cohort Definition Icon`)).not.toBeVisible()
+    await expect(explorationCard(page, NAME.renamedFilters)).toBeVisible()
+    await explorationMenuAction(page, NAME.renamedFilters, 'Delete')
+    await confirmExplorationDialog(page)
+    await expect(explorationCard(page, NAME.renamedFilters)).not.toBeVisible()
   })
   //Go back to Cohorts
   await test.step('Go back to Cohorts', async () => {
-    await page.getByRole('button', { name: 'D2E' }).click()
-    await expect(page.getByText('New cohort')).toBeVisible()
+    await page.getByTestId('explorations-new-btn').click()
+    await expect(page.getByText('New exploration')).toBeVisible()
   })
   //Go to patient list
   await test.step('Go to patient list', async () => {
@@ -317,18 +317,23 @@ test(TEST_NAME, async ({ page }) => {
     await page.getByRole('link', { name: 'Exclusion (0)' }).click()
     await page.getByTitle('Add Filter Card').getByRole('button').click()
     await page.getByRole('menuitem', { name: 'Death' }).click()
+    //Wait for the card to land before saving. Adding an exclusion card kicks off
+    //a recount, and Save writes whatever is in the model at the time it fires.
+    //Without this the cohort persists with Exclusion (0) and the reopen below
+    //fails - the equivalent step earlier in this file already waits the same way.
+    await expect(page.getByText('A filter card has been added: Death A')).toBeVisible()
+    await expect(page.locator('.loading-animation-component')).not.toBeVisible()
     //Save filter - the allow-sharing checkbox now lives in the filter card footer
     //rather than the save dialog, so it has to be set before the dialog opens.
     await page.getByTestId('pa-share-cohort-checkbox').click()
-    await page.getByRole('button', { name: 'Save' }).click()
+    await page.getByTestId('pa-save-cohort-btn').click()
     await page.getByRole('textbox', { name: 'Enter name' }).fill(NAME.patientListFilters)
-    await page.locator('footer').getByRole('button', { name: 'Save' }).click()
+    await page.getByTestId('pa-save-dialog-save-btn').click()
     //Verify Cohort is saved
     await page.locator('#pane-left').getByRole('link', { name: 'Cohorts' }).click()
-    await expect(page.getByText(`${NAME.patientListFilters}Cohort Definition Icon`)).toBeVisible()
-    //Click on the saved cohort
-    await page.locator('#pane-left').getByRole('link', { name: 'Cohorts' }).click()
-    await page.getByText(NAME.patientListFilters).nth(1).click()
+    await expect(explorationCard(page, NAME.patientListFilters)).toBeVisible()
+    //Click on the saved cohort - already on the list, so no navigation needed
+    await explorationCard(page, NAME.patientListFilters).click()
     await expect(page.locator('#patient').getByText('FEMALE')).toBeVisible()
     await expect(page.getByText('Viral sinusitis')).toBeVisible()
     await page.getByRole('link', { name: 'Exclusion (1)' }).click()
@@ -346,7 +351,7 @@ test(TEST_NAME, async ({ page }) => {
     await expect(
       page
         .locator('div')
-        .filter({ hasText: /^Basic DataGender:FEMALE$/ })
+        .filter({ hasText: /^Basic DataGenderFEMALE$/ })
         .first()
     ).toBeVisible()
     await expect(page.getByText('ANDCondition Occurrence')).toBeVisible()
@@ -366,6 +371,11 @@ test(TEST_NAME, async ({ page }) => {
     await page.getByRole('button', { name: 'Download SQL' }).click()
     const download2 = await download2Promise
   })
+  // The "Create ATLAS cohort definition" step is gone. The entry point is not
+  // supported any more: FilterCardSummary.vue renders the button under
+  // `v-if="enableAtlasCohortDefinition"`, which reads
+  // panelOptions.atlasCohortDefinition, and the seeded config sets it false.
+  // develop removed these steps in #3270.
   //Create another user to verify bookmark visibility
   await test.step('Switch to admin portal', async () => {
     await page.getByRole('link', { name: 'Account' }).click()
@@ -405,10 +415,15 @@ test(TEST_NAME, async ({ page }) => {
     await page.locator('input[name="password"]').click()
     await page.locator('input[name="password"]').fill('Updatepassword12345')
     await page.getByRole('button', { name: 'Sign in' }).click()
-    //Verify that the shared bookmark is visible to the second user
+    //testuserB does not see the bookmark of admin, and that is the design.
+    //ExplorationsPage.vue hardcodes getDisplayBookmarks(false, username), so a
+    //bookmark of another user never shows. The old page had a "show shared
+    //bookmarks" toggle in a left pane the redesign removed. The list is empty
+    //for this user, so wait for the empty state before asserting the absence -
+    //an assertion on its own would pass while the list was still loading.
     await openDatasetCohorts(page)
-    await showSharedCohorts(page)
-    await expect(page.getByText(NAME.patientListFilters)).toBeVisible()
+    await expect(page.getByTestId('explorations-empty')).toBeVisible()
+    await expect(page.getByText(NAME.patientListFilters)).not.toBeVisible()
     //Login as admin again
     await page.getByRole('link', { name: 'Account' }).click()
     await page.getByRole('button', { name: 'Logout' }).click()
@@ -417,27 +432,23 @@ test(TEST_NAME, async ({ page }) => {
     await page.locator('input[name="password"]').click()
     await page.locator('input[name="password"]').fill('Updatepassword12345')
     await page.getByRole('button', { name: 'Sign in' }).click()
-    //Rename the bookmark
+    //Rename the shared exploration bookmark, not NAME.savedFilters. That
+    //exploration is renamed to NAME.renamedFilters earlier and then deleted, so
+    //it is long gone by this point. On develop this step clicked
+    //`div:nth-child(2) > .footer > div:nth-child(2) > svg` - the second card's
+    //second icon - so it never named a cohort and never noticed.
+    //Name the card instead of counting on its position.
     await page.getByText('Demo dataset').first().click()
     await page.getByRole('link', { name: 'Cohorts' }).click()
-    await page.locator('.footer > div:nth-child(2) > svg').first().click()
-    await page.getByRole('textbox').fill('')
-    await page.getByRole('textbox').fill(NAME.sharedFilter)
-    await page.getByRole('button', { name: 'Save' }).click()
-    //Logout as admin
-    await page.getByRole('link', { name: 'Account' }).click()
-    await page.getByRole('button', { name: 'Logout' }).click()
-    //Login as testuserB
-    await page.locator('input[name="identifier"]').click()
-    await page.locator('input[name="identifier"]').fill(NAME.testUserB)
-    await page.locator('input[name="identifier"]').press('Tab')
-    await page.locator('input[name="password"]').click()
-    await page.locator('input[name="password"]').fill('Updatepassword12345')
-    await page.getByRole('button', { name: 'Sign in' }).click()
-    //Verify that the bookmark is renamed
-    await openDatasetCohorts(page)
-    await showSharedCohorts(page)
-    await expect(page.getByText(NAME.sharedFilter)).toBeVisible()
+    await cardMenuAction(page, explorationBookmarkCard(page, NAME.patientListFilters), 'Rename')
+    await page.getByRole('textbox', { name: 'Exploration name' }).fill('')
+    await page.getByRole('textbox', { name: 'Exploration name' }).fill(NAME.sharedFilter)
+    await page.getByTestId('pa-save-dialog-save-btn').click()
+    //The rename is the last thing this step checks. There used to be a second
+    //trip through testuserB here, to read the new name on the shared card. It
+    //could only assert the same absence as the trip above, so it was two logins
+    //that restated a fact already established. Admin stays signed in and deletes
+    //the card below.
     //Delete the bookmark as admin
     await page.getByRole('link', { name: 'Account' }).click()
     await page.getByRole('button', { name: 'Logout' }).click()
@@ -452,11 +463,15 @@ test(TEST_NAME, async ({ page }) => {
     //Delete the Shared saved filter
     await test.step('Delete Shared saved filter', async () => {
       await expect(page.getByText(NAME.sharedFilter)).toBeVisible()
-      await page.getByTitle('Delete Saved Filter').first().click()
-      await page.getByRole('button', { name: 'Delete' }).click()
+      await deleteExploration(page, NAME.sharedFilter)
       await expect(page.getByText(NAME.sharedFilter)).not.toBeVisible()
     })
-    await expect(page.getByText('You have not yet saved any cohort definitions')).toBeVisible()
+    // No "Delete Atlas Cohort Definition" step any more. Nothing creates an
+    // Atlas cohort definition, so the shared saved filter above was the last
+    // card and the list is empty here.
+    // The redesign's empty state reads "No explorations yet"; assert the state
+    // itself rather than its copy.
+    await expect(page.getByTestId('explorations-empty')).toBeVisible()
   })
 
   //Delete concept sets
