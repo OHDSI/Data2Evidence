@@ -39,12 +39,40 @@ export function skipReason(names: string[]): string {
 /** Native username/password login on the Logto sign-in form (no upstream connector). */
 export async function loginViaUI(page: Page, username: string, password: string): Promise<void> {
   await page.goto('/d2e/portal')
-  await page.locator('input[name="identifier"]').waitFor({ state: 'visible', timeout: MINUTE_1 })
-  await page.locator('input[name="identifier"]').click()
-  await page.locator('input[name="identifier"]').fill(username)
-  await page.locator('input[name="password"]').click()
-  await page.locator('input[name="password"]').fill(password)
-  await page.getByRole('button', { name: 'Sign in' }).click()
+
+  // A trex-native account (CI's seeded admin) uses the native form; a Logto account (the
+  // federated admin) falls through to "Sign in with Logto" when the native credential is rejected.
+  const nativeId = page.locator('input[name="identifier"]')
+  const logtoButton = page
+    .getByRole('link', { name: /sign in with logto/i })
+    .or(page.getByRole('button', { name: /sign in with logto/i }))
+  await Promise.race([
+    nativeId.first().waitFor({ state: 'visible', timeout: MINUTE_1 }),
+    logtoButton.first().waitFor({ state: 'visible', timeout: MINUTE_1 })
+  ]).catch(() => {})
+
+  if (await nativeId.first().isVisible().catch(() => false)) {
+    await nativeId.first().fill(username)
+    await page.locator('input[name="password"]').first().fill(password)
+    await page.getByRole('button', { name: /^\s*sign in\s*$/i }).first().click()
+    const rejected = page.getByRole('alert').filter({
+      hasText: /incorrect|invalid|wrong|isn.?t correct|doesn.?t exist|couldn.?t find|not found|no account/i
+    })
+    const outcome = await Promise.race([
+      nativeId.first().waitFor({ state: 'detached', timeout: SECOND_30 }).then(() => 'ok' as const).catch(() => null),
+      rejected.first().waitFor({ state: 'visible', timeout: SECOND_30 }).then(() => 'rejected' as const).catch(() => null)
+    ])
+    if (outcome === 'ok') return
+  }
+
+  await logtoButton.first().click()
+  const logtoId = page
+    .locator('input[name="identifier"], input[name="username"], input[type="email"], input[type="text"]:not([type="hidden"])')
+    .first()
+  await logtoId.waitFor({ state: 'visible', timeout: MINUTE_1 })
+  await logtoId.fill(username)
+  await page.locator('input[name="password"], input[type="password"]').first().fill(password)
+  await page.getByRole('button', { name: /sign ?in|log ?in|continue/i }).first().click()
 }
 
 export interface UpstreamCreds {
@@ -81,6 +109,20 @@ export async function loginViaConnector(
   const connectorButton = page.getByRole('button', { name: connectorName }).or(
     page.getByRole('link', { name: connectorName })
   )
+
+  // Federated mode: the connectors live on Logto, behind trex's "Sign in with
+  // Logto" button. Click through to it first. On a Logto-only stack that button
+  // is absent and the connector renders here already, so this is best-effort.
+  const logtoButton = page.getByRole('link', { name: /sign in with logto/i })
+  await Promise.race([
+    logtoButton.first().waitFor({ state: 'visible', timeout: MINUTE_1 }),
+    connectorButton.first().waitFor({ state: 'visible', timeout: MINUTE_1 })
+  ]).catch(() => {})
+  if (await logtoButton.first().isVisible().catch(() => false)) {
+    console.log('[login] federated mode: clicking "Sign in with Logto"')
+    await logtoButton.first().click()
+  }
+
   await connectorButton.first().waitFor({ state: 'visible', timeout: MINUTE_1 })
   console.log(`[login] clicking connector "${target}"`)
   await connectorButton.first().click()
@@ -173,10 +215,13 @@ export async function loginViaConnector(
         /incorrect|isn.?t correct|invalid|wrong|try again|couldn.?t (sign|find)|could not find|account with this email|email address or password|does.?n.?t match/i
     })
   const staySignedInBtn = page.getByRole('button', { name: /yes|ja/i })
+  // In the race so a generic upstream's consent page resolves it instead of a ~30s timeout.
+  const consent = page.getByRole('button', { name: /authorize|allow|approve|accept|consent/i })
   await Promise.race([
     passwordError.first().waitFor({ state: 'visible', timeout: SECOND_30 }).catch(() => {}),
     page.waitForURL(url => url.origin === portalOrigin, { timeout: SECOND_30 }).catch(() => {}),
-    staySignedInBtn.first().waitFor({ state: 'visible', timeout: SECOND_30 }).catch(() => {})
+    staySignedInBtn.first().waitFor({ state: 'visible', timeout: SECOND_30 }).catch(() => {}),
+    consent.first().waitFor({ state: 'visible', timeout: SECOND_30 }).catch(() => {})
   ])
   if (await passwordError.first().isVisible().catch(() => false)) {
     throw new Error(`connector "${target}": upstream IdP rejected the password`)
@@ -188,14 +233,24 @@ export async function loginViaConnector(
     if (await staySignedIn.first().isVisible({ timeout: SECOND_30 }).catch(() => false)) {
       await staySignedIn.first().click()
     }
-  } else {
-    // Generic OIDC (e.g. PhysioNet) may show an authorize/consent page after login that must
-    // be approved before it redirects back with the code.
-    const authorize = page.getByRole('button', { name: /authorize|allow|approve|accept|consent/i })
-    if (await authorize.first().isVisible({ timeout: SECOND_30 }).catch(() => false)) {
-      console.log('[login] approving upstream consent')
-      await authorize.first().click()
-    }
+  } else if (await consent.first().isVisible().catch(() => false)) {
+    // Generic OIDC (e.g. PhysioNet) shows a consent page after login.
+    console.log('[login] approving upstream consent')
+    await consent.first().click()
+  }
+}
+
+/**
+ * Silently re-enter trex via the Logto SSO session a prior loginViaConnector established (no
+ * connector screen). Used after prelinking so the trex callback takes the link branch.
+ */
+export async function reauthViaLogtoSession(page: Page): Promise<void> {
+  await page.goto('/d2e/portal')
+  const logtoButton = page
+    .getByRole('link', { name: /sign in with logto/i })
+    .or(page.getByRole('button', { name: /sign in with logto/i }))
+  if (await logtoButton.first().isVisible({ timeout: MINUTE_1 }).catch(() => false)) {
+    await logtoButton.first().click()
   }
 }
 
@@ -217,25 +272,138 @@ export async function resetSession(page: Page): Promise<void> {
   await page.locator('input[name="identifier"]').waitFor({ state: 'visible', timeout: MINUTE_1 })
 }
 
+// ---- federated pre-link (test-only bridge over a Trex phase-5 gap) -------------
+
+function requireEnv(name: string): string {
+  const v = (process.env[name] ?? '').trim()
+  if (!v) throw new Error(`prelink needs ${name} (from the stack's generated .env)`)
+  return v
+}
+
+interface LogtoUser {
+  id: string
+  name?: string | null
+  primaryEmail?: string | null
+  identities?: Record<string, { details?: { email?: string } }>
+}
+
+/** Logto Management API token. */
+async function logtoMgmtToken(request: APIRequestContext, base: string): Promise<string> {
+  const m2mId = requireEnv('LOGTO_API_M2M_CLIENT_ID')
+  const m2mSecret = requireEnv('LOGTO_API_M2M_CLIENT_SECRET')
+  const res = await request.post(`${base}/oidc/token`, {
+    headers: {
+      'content-type': 'application/x-www-form-urlencoded',
+      authorization: 'Basic ' + Buffer.from(`${m2mId}:${m2mSecret}`).toString('base64')
+    },
+    form: { grant_type: 'client_credentials', resource: 'https://default.logto.app/api', scope: 'all' }
+  })
+  expect(res.ok(), `Logto M2M token failed: ${res.status()} ${await res.text()}`).toBeTruthy()
+  return (await res.json()).access_token as string
+}
+
+async function listLogtoUsers(
+  request: APIRequestContext,
+  base: string,
+  mgmtToken: string,
+  params: Record<string, string>
+): Promise<LogtoUser[]> {
+  const res = await request.get(`${base}/api/users`, { params, headers: { authorization: `Bearer ${mgmtToken}` } })
+  return res.ok() ? ((await res.json()) as LogtoUser[]) : []
+}
+
+/**
+ * The Logto user matching `search` and carrying a `target` connector identity, if any.
+ * Logto's `search` is a SQL LIKE, so wrap the term in `%…%` for a substring match (a real
+ * upstream stores the term in `email`/`name`, not as the whole field).
+ */
+async function findLogtoConnectorUser(
+  request: APIRequestContext,
+  base: string,
+  mgmtToken: string,
+  opts: { target: string; search: string }
+): Promise<LogtoUser | undefined> {
+  return (await listLogtoUsers(request, base, mgmtToken, { search: `%${opts.search}%` })).find(u => u.identities?.[opts.target])
+}
+
+/** Delete any prior Logto user for this connector identity so every run starts fresh (CI is clean). */
+export async function resetLogtoConnectorUser(
+  request: APIRequestContext,
+  base: string,
+  opts: { target: string; search: string }
+): Promise<void> {
+  const mgmtToken = await logtoMgmtToken(request, base)
+  const user = await findLogtoConnectorUser(request, base, mgmtToken, opts)
+  if (!user) return
+  const res = await request.delete(`${base}/api/users/${user.id}`, { headers: { authorization: `Bearer ${mgmtToken}` } })
+  console.log(`[reset] deleted logto user ${user.id} -> ${res.status()}`)
+}
+
+/**
+ * trex's Logto provider maps the account email from the upstream `sub` claim, so a first-time
+ * connector user is refused at provisioning (upstream_email_unusable) while an already-linked user
+ * signs in fine (link branch never reads the address). Pre-create the link the way the IdP migration
+ * does (trex's /admin/federation/links, keyed by the Logto user id). Remove once trex provisions
+ * connector users directly (Trex phase 5).
+ */
+export async function prelinkLogtoConnectorUser(
+  request: APIRequestContext,
+  base: string,
+  opts: { target: string; search: string }
+): Promise<{ logtoUserId: string; email: string }> {
+  const serviceKey = requireEnv('TREX__SERVICE_ROLE_KEY')
+  const mgmtToken = await logtoMgmtToken(request, base)
+
+  // The connector may not have written the identity the instant login returns; poll.
+  let user: LogtoUser | undefined
+  for (let i = 0; i < 20 && !user; i++) {
+    user = await findLogtoConnectorUser(request, base, mgmtToken, opts)
+    if (!user) await new Promise(r => setTimeout(r, 1000))
+  }
+  if (!user) {
+    const all = await listLogtoUsers(request, base, mgmtToken, { page_size: '100' })
+    const seen = all.map(u => `${u.id}:${u.primaryEmail ?? u.name ?? '?'}[${Object.keys(u.identities ?? {}).join(',')}]`).join(' ')
+    expect(
+      user,
+      `no Logto user with a "${opts.target}" identity (the connector login likely didn't complete). Logto users: ${seen || '(none)'}`
+    ).toBeTruthy()
+  }
+
+  const logtoUserId = user!.id
+  const email = user!.primaryEmail || user!.identities![opts.target].details?.email || `${logtoUserId}@physionet.local`
+  const linkRes = await request.put(`${base}/trex/admin/federation/links`, {
+    headers: { authorization: `Bearer ${serviceKey}`, 'content-type': 'application/json' },
+    data: { providerId: 'logto', accountId: logtoUserId, userId: logtoUserId, email, name: user!.name ?? null, banned: false }
+  })
+  // 409 = already linked to this id on a re-run; still the state we want.
+  expect(
+    [200, 201, 409].includes(linkRes.status()),
+    `trex federation link failed: ${linkRes.status()} ${await linkRes.text()}`
+  ).toBeTruthy()
+  console.log(`[prelink] logto user ${logtoUserId} (${email}) linked in trex -> ${linkRes.status()}`)
+  return { logtoUserId, email }
+}
+
 // ---- token read + decode ------------------------------------------------------
 
 /**
- * The portal (@axa-fr/react-oidc) stores its tokens in sessionStorage under
- * `oidc.default:<origin>/d2e/portal/login-callback`. Wait until it lands, then read it.
- * Uses expect.poll + page.evaluate (not waitForFunction, whose in-page harness is blocked
- * by the portal's strict CSP: script-src has no 'unsafe-eval').
+ * Portal keeps the token in sessionStorage `oidc.default:*.tokens.accessToken`; Atlas (where a
+ * researcher lands) stores the raw JWT in localStorage `bearerToken`. Read the portal key first,
+ * fall back to Atlas's. expect.poll + page.evaluate because the portal CSP blocks waitForFunction.
  */
 export async function readAccessToken(page: Page): Promise<string> {
   const readToken = async (): Promise<string | null> => {
     try {
       return await page.evaluate(() => {
         const key = Object.keys(sessionStorage).find(k => k.startsWith('oidc.default:'))
-        if (!key) return null
-        try {
-          return JSON.parse(sessionStorage.getItem(key) || '{}')?.tokens?.accessToken || null
-        } catch {
-          return null
+        if (key) {
+          try {
+            const t = JSON.parse(sessionStorage.getItem(key) || '{}')?.tokens?.accessToken
+            if (t) return t
+          } catch { /* fall through to Atlas */ }
         }
+        const bt = localStorage.getItem('bearerToken') // Atlas
+        return bt && bt.length > 0 ? bt : null
       })
     } catch {
       // Execution context destroyed by an in-flight OIDC redirect — retry.
@@ -243,10 +411,10 @@ export async function readAccessToken(page: Page): Promise<string> {
     }
   }
   await expect
-    .poll(readToken, { timeout: MINUTE_1, message: 'access token did not appear in sessionStorage' })
+    .poll(readToken, { timeout: MINUTE_1, message: 'access token did not appear in portal sessionStorage or Atlas localStorage' })
     .toBeTruthy()
   const token = await readToken()
-  if (!token) throw new Error('access token did not appear in sessionStorage')
+  if (!token) throw new Error('access token did not appear in portal sessionStorage or Atlas localStorage')
   return token
 }
 
