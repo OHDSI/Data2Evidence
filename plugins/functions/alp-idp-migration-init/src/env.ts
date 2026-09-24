@@ -9,6 +9,10 @@ export const env = {
   TREX_ROLES_ADMIN_URL: Deno.env.get('TREX__ADMIN_URL') ?? '',
   SERVICE_ROLE_KEY: Deno.env.get('TREX__SERVICE_ROLE_KEY') || Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '',
   USER_DOMAIN: Deno.env.get('IDP__INITIAL_USER__DOMAIN') ?? 'd2e.local',
+  // Whether the Logto provider trex registers may auto-provision a first-time
+  // federated user. Same flag usermgmt reads for the usermgmt-row side, so one
+  // switch turns on both halves of connector auto-provisioning.
+  AUTO_PROVISION_USERS: Deno.env.get('IDP__AUTO_PROVISION_USERS') === 'true',
   // Logto's own database role, which owns logto.users and so bypasses its
   // row-level policy; see KnexMigrationStore. Empty on a trex-mode install,
   // which has no Logto schema to read.
