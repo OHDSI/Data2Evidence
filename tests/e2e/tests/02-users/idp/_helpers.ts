@@ -81,6 +81,20 @@ export async function loginViaConnector(
   const connectorButton = page.getByRole('button', { name: connectorName }).or(
     page.getByRole('link', { name: connectorName })
   )
+
+  // Federated mode: the connectors live on Logto, behind trex's "Sign in with
+  // Logto" button. Click through to it first. On a Logto-only stack that button
+  // is absent and the connector renders here already, so this is best-effort.
+  const logtoButton = page.getByRole('link', { name: /sign in with logto/i })
+  await Promise.race([
+    logtoButton.first().waitFor({ state: 'visible', timeout: MINUTE_1 }),
+    connectorButton.first().waitFor({ state: 'visible', timeout: MINUTE_1 })
+  ]).catch(() => {})
+  if (await logtoButton.first().isVisible().catch(() => false)) {
+    console.log('[login] federated mode: clicking "Sign in with Logto"')
+    await logtoButton.first().click()
+  }
+
   await connectorButton.first().waitFor({ state: 'visible', timeout: MINUTE_1 })
   console.log(`[login] clicking connector "${target}"`)
   await connectorButton.first().click()
