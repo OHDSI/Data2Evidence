@@ -1,4 +1,5 @@
 import { test, expect } from '../fixtures'
+import { deleteExploration, explorationCard } from '../explorations'
 
 const TEST_NAME = 'patient-analytics-patient-list'
 const SHOULD_SKIP = true
@@ -17,7 +18,7 @@ test(TEST_NAME, async ({ page }) => {
   await test.step('Navigate to Cohort page', async () => {
     await page.getByText('Demo dataset').first().click()
     await page.getByRole('link', { name: 'Cohorts' }).click()
-    await page.getByRole('button', { name: 'D2E' }).click()
+    await page.getByTestId('explorations-new-btn').click()
     await expect(page.getByText('2,694 / 2,694')).toBeVisible()
     await expect(page.locator('.loading-animation-component')).not.toBeVisible()
   })
@@ -71,17 +72,17 @@ test(TEST_NAME, async ({ page }) => {
     // The allow-sharing checkbox now lives in the filter card footer rather than the
     // save dialog, so it has to be set before the dialog opens.
     await page.getByTestId('pa-share-cohort-checkbox').click()
-    await page.getByRole('button', { name: 'Save' }).click()
+    await page.getByTestId('pa-save-cohort-btn').click()
     await page.getByRole('textbox', { name: 'Enter name' }).fill('Cohort Test')
     await page.getByRole('textbox', { name: 'Enter name' }).click()
-    await page.locator('footer').getByRole('button', { name: 'Save' }).click()
+    await page.getByTestId('pa-save-dialog-save-btn').click()
     // await page.getByRole('button', { name: 'Cancel' }).click();
     await expect(page.locator('.loading-animation-component')).not.toBeVisible()
   })
   //Check if the cohort is saved
   await test.step('Check if the cohort is saved', async () => {
     await page.locator('#pane-left').getByRole('link', { name: 'Cohorts' }).click()
-    await expect(page.getByText('Cohort TestCohort Definition Icon')).toBeVisible()
+    await expect(explorationCard(page, 'Cohort Test')).toBeVisible()
   })
   //Go to patient list
   await test.step('Go to patient list', async () => {
@@ -144,10 +145,11 @@ test(TEST_NAME, async ({ page }) => {
   await test.step('Delete cohort', async () => {
     // await page.getByRole('button', { name: '' }).click();
     await page.locator('#pane-left').getByRole('link', { name: 'Cohorts' }).click()
-    await expect(page.getByText('Cohort TestCohort Definition Icon')).toBeVisible()
-    await page.locator('div:nth-child(5) > svg').first().click()
-    // await page.getByRole('row', { name: 'Cohort Test' }).getByRole('button').nth(2).click();
-    await page.getByRole('button', { name: 'Delete' }).click()
-    await expect(page.getByText('Cohort TestCohort Definition Icon')).not.toBeVisible()
+    await expect(explorationCard(page, 'Cohort Test')).toBeVisible()
+    // Was the fifth icon of the old card footer, then a confirm button labelled
+    // "Delete". The card has a More menu now and the dialog confirms with
+    // "Yes, delete", so both halves moved.
+    await deleteExploration(page, 'Cohort Test')
+    await expect(explorationCard(page, 'Cohort Test')).not.toBeVisible()
   })
 })

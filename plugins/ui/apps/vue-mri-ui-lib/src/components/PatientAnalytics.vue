@@ -1,7 +1,12 @@
 <template>
   <div :class="['pa-component-wrapper']">
     <AtlasView v-if="atlasStore.showAtlas" />
-    <div :class="['fullHeight', 'pa-splitter', { 'right-pane-opened': rightPaneEverOpened }]">
+    <ExplorationsPage
+      v-if="displayCohorts"
+      @open-exploration="loadExploration"
+      @start-new-exploration="startNewExploration"
+    />
+    <div v-else :class="['fullHeight', 'pa-splitter', { 'right-pane-opened': rightPaneEverOpened }]">
       <splitpanes class="default-theme" @resize="onSplitterDrag($event)">
         <pane :size="paneSize" :min-size="hideLeftPane ? 0 : splitterMinWidth">
           <div id="pane-left" class="split" data-testid="pa-pane-left">
@@ -33,18 +38,7 @@
               </div>
             </div>
             <div class="pane-left-content">
-              <bookmarks
-                @unloadBookmarkEv="toggleCohorts"
-                @loadAtlasCohortDefinition="handleLoadAtlasCohortDefinition"
-                :init-bookmark-id="querystring.bmkId"
-                v-if="getMriFrontendConfig && displayCohorts"
-              ></bookmarks>
-
-              <filters
-                ref="filtersRef"
-                v-if="!showQueryFilter && !displayCohorts"
-                v-bind:class="{ hidden: displayCohorts }"
-              ></filters>
+              <filters ref="filtersRef" v-if="!showQueryFilter && !displayCohorts"></filters>
 
               <QueryFilter
                 v-else-if="showQueryFilter"
@@ -166,15 +160,15 @@
 declare var sap
 const myWindow: any = window
 
-import { mapActions, mapGetters } from 'vuex'
+import { mapActions, mapGetters, mapMutations } from 'vuex'
 import { registerPaTools } from '@/ai/webmcpServer'
 import { publishPaTools } from '@/ai/paToolBridge'
 import icon from '../lib/ui/app-icon.vue'
 import appButton from '../lib/ui/app-button.vue'
 import appIcon from '../lib/ui/app-icon.vue'
 import appLink from '../lib/ui/app-link.vue'
-import Bookmarks from './Bookmarks.vue'
-import ChartController from './ChartController.vue'
+import ExplorationsPage from './ExplorationsPage.vue'
+import { lazyComponent } from '../utils/lazyComponent'
 import ChartToolbar from './ChartToolbar.vue'
 import FilterCardSummary from './FilterCardSummary.vue'
 import filters from './Filters.vue'
@@ -186,7 +180,16 @@ import { Splitpanes, Pane } from 'splitpanes'
 import 'splitpanes/dist/splitpanes.css'
 import { QueryFilter } from '@/query-filter'
 import AtlasView from '../views/AtlasView.vue'
+import * as types from '../store/mutation-types'
 import { useAtlasStore } from '../stores/atlas'
+import { useUnsavedChanges } from '../composables/useUnsavedChanges'
+import { usePortalContext } from '../composables/usePortalContext'
+import { useNotificationStore } from '../stores/notifications'
+import { useExplorationsStore } from '../stores/explorations'
+
+// Loaded on demand so plotly.js stays out of the single-spa entry's static
+// dependency graph. See docs: the chart chunk was blocking mount.
+const ChartController = lazyComponent('ChartController', () => import('./ChartController.vue'))
 
 const PANE_SIZE = {
   FULL: 100,
@@ -200,6 +203,14 @@ const PANEL = {
 
 export default {
   name: 'patientanalytics',
+  setup() {
+    return {
+      unsavedChanges: useUnsavedChanges(),
+      portalContext: usePortalContext(),
+      notifications: useNotificationStore(),
+      explorations: useExplorationsStore(),
+    }
+  },
   data() {
     return {
       displayCohorts: true,
@@ -227,7 +238,18 @@ export default {
   },
   created() {},
   watch: {
+    'querystring.bmkId'(bmkId) {
+      // Restore the bookmark referenced by the URL (?bmkId=). This watch used to
+      // live in Bookmarks.vue, which is no longer mounted.
+      if (bmkId) {
+        this.loadExploration(bmkId)
+      }
+    },
     getActiveBookmark(newVal, oldVal) {
+      // The Analyze card action also sets the active bookmark (dashboardContext
+      // needs it), but it must not trigger this auto-switch: it would unmount
+      // ExplorationsPage, and the wizard modals mounted inside it, mid-click.
+      if (this.explorations.analyzeInProgress) return
       // Auto-switch to cohort view when a bookmark is loaded (e.g., from deep link)
       // Only trigger when going from no bookmark to having one
       if (newVal && !oldVal && this.displayCohorts) {
@@ -319,6 +341,7 @@ export default {
       'getActiveChart',
       'getPLModel',
       'getActiveBookmark',
+      'getBookmarks',
       'getBookmarkById',
       'getDatasetReloadInProgress',
     ]),
@@ -368,7 +391,9 @@ export default {
       'fireCheckIfDatasetCanMaterializeCohorts',
       'setRightPaneMounted',
       'loadValuesForAttributePath',
+      'resetChart',
     ]),
+    ...mapMutations([types.SET_ACTIVE_BOOKMARK, types.SET_ACTIVE_BOOKMARK_BASELINE]),
     loadDefaultFilters() {
       this.setIFRState({ ifr: this.getMriFrontendConfig.getInitialIFR() })
       this.setupChartDefaults()
@@ -407,6 +432,53 @@ export default {
     toggleQueryFilter(show) {
       this.showQueryFilter = show
       this.displayCohorts = !show
+    },
+    checkCohortName(bookmarkName, suffix = '') {
+      const username = this.portalContext.username
+      const uniqueName = bookmarkName + (suffix ? ` ${suffix}` : '')
+      for (const bookmark of this.getBookmarks || []) {
+        if (username === bookmark.user_id && bookmark.bookmarkname === uniqueName) {
+          return this.checkCohortName(bookmarkName, suffix ? parseInt(suffix) + 1 : 1)
+        }
+      }
+      return uniqueName
+    },
+    startNewExploration() {
+      // Moved from Bookmarks.addNewCohort, which no longer mounts. Opens the
+      // builder on a fresh, uniquely named cohort.
+      this.unsavedChanges.guard(async () => {
+        const cohortName = this.checkCohortName(this.getText('MRI_PA_EXPLORATIONS_NEW_NAME'))
+        this[types.SET_ACTIVE_BOOKMARK]({ bookmarkname: cohortName, isNew: true })
+        this.toggleCohorts(false)
+        await this.resetChart()
+        // Let chart defaults that are applied reactively after resetChart (axes /
+        // auto-default colorAxis via onChartDataReady) flush before snapshotting the
+        // baseline; otherwise it captures the previous cohort's not-yet-reset state.
+        await this.$nextTick()
+        this[types.SET_ACTIVE_BOOKMARK_BASELINE](this.$store.getters.getBookmarksData)
+      })
+    },
+    loadExploration(bmkId, chartType = null) {
+      // Mirrors Bookmarks.loadBookmarkCheck: reopening the exploration that is
+      // already active must not re-load it, or an in-progress edit is discarded
+      // and the unsaved-changes guard fires for a no-op.
+      if (this.getActiveBookmark && bmkId === this.getActiveBookmark.bmkId) {
+        this.toggleCohorts(false)
+        return
+      }
+      this.unsavedChanges.guard(() => {
+        this.loadbookmarkToState({ bmkId, chartType })
+          .then(() => this.toggleCohorts(false))
+          .catch(() => {
+            // The saved filter does not fit the active config. Bookmarks.vue
+            // showed a message box for this; without it the click looks dead.
+            this.notifications.setAlertMessage({
+              message: this.getText('MRI_PA_BMK_COMPATIBLE_ERROR'),
+              messageType: 'error',
+              title: this.getText('MRI_PA_NOTIFICATION_ERROR'),
+            })
+          })
+      })
     },
     toggleCohorts(isDisplayCohort, isPaAtlas = false) {
       if (isDisplayCohort) {
@@ -554,7 +626,7 @@ export default {
     icon,
     appButton,
     appLink,
-    Bookmarks,
+    ExplorationsPage,
     ChartToolbar,
     ChartController,
     filters,

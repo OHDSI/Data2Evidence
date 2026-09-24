@@ -280,6 +280,7 @@ function getStandardJoin(
             let tmp = settings.getDimPlaceholderForAttribute(key);
             if (typeof tmp === "string") {
                 oPlaceholders[tmp] = true;
+                oPlaceholders[settings.getFactTablePlaceholder()] = true;
             }
         }
         if (

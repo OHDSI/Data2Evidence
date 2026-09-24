@@ -542,7 +542,7 @@ test(TEST_NAME, async ({ page }, testInfo) => {
     await page.getByRole('button', { name: 'Switch to Researcher portal' }).click()
     await page.getByText('Demo dataset').first().click()
     await page.getByRole('link', { name: 'Cohorts' }).click()
-    await page.getByRole('button', { name: 'D2E' }).click()
+    await page.getByTestId('explorations-new-btn').click()
     await expect(page.getByTitle('Add Filter Card').getByRole('button')).toBeVisible()
     await page.getByTitle('Add Filter Card').getByRole('button').click()
     await expect(page.getByRole('menuitem', { name: 'Dups Condition Occurrence' })).toBeVisible()

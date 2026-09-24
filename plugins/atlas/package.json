@@ -60,23 +60,7 @@
           "source": "/d2e-login",
           "target": "/resources/d2e-login"
         }
-      ],
-      "uiplugins": {
-        "researcher": [
-          {
-            "name": "Atlas",
-            "nameI18nKey": "UI_PLUGIN_ATLAS",
-            "route": "atlas",
-            "pluginPath": "/atlas-portal/index.js",
-            "type": "app",
-            "autoMount": false,
-            "enabled": true,
-            "requiredRoles": [
-              "RESEARCHER"
-            ]
-          }
-        ]
-      }
+      ]
     }
   }
 }
