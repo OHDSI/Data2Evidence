@@ -53,6 +53,27 @@ export default async (req: IMRIRequest, res, next) => {
         return "";
     };
 
+    /**
+     * Three attempts, then give up, with a short backoff.
+     *
+     * Bounded on purpose: a portal that is genuinely down must not hold every
+     * analytics request open. The delays are sized for a worker restart, not
+     * for an outage.
+     */
+    const fetchWithRetry = async <T>(attempt: () => Promise<T>): Promise<T> => {
+        const delaysMs = [100, 300];
+        for (let i = 0; ; i++) {
+            try {
+                return await attempt();
+            } catch (error) {
+                if (i >= delaysMs.length) {
+                    throw error;
+                }
+                await new Promise((resolve) => setTimeout(resolve, delaysMs[i]));
+            }
+        }
+    };
+
     const addConfigMetadataToReq = async (datasetId: string): Promise<void> => {
         if (!datasetId) {
             log.info(`Skip PA/CDM metadata injection for path ${req.url}`);
@@ -61,8 +82,20 @@ export default async (req: IMRIRequest, res, next) => {
 
         try {
             const portalServerAPI = new PortalServerAPI();
+            // Retried, because the common failure here is not the portal being
+            // down but the portal's edge worker being recycled mid-request:
+            //
+            //   event_type: "Shutdown", reason: "EarlyDrop"
+            //
+            // The replacement re-registers its routes within ~100ms, so a
+            // request that lands in that window gets one 500 and the next
+            // succeeds. Without a retry that single 500 is silently converted
+            // into an absent paConfigId, and the damage surfaces much later as
+            // PA reporting "No suggestions available" with no patient count --
+            // observed in CI as pa-filter-cards failing all four attempts while
+            // every other dataset call on the same page returned 200.
             const paBackendConfigResponse: PABackendConfigResponse =
-                await portalServerAPI.getPABackendConfig(datasetId);
+                await fetchWithRetry(() => portalServerAPI.getPABackendConfig(datasetId));
             const responseMeta = paBackendConfigResponse?.meta;
 
             if (!responseMeta) {
