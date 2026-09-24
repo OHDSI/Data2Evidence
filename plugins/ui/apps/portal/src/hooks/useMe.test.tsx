@@ -103,6 +103,20 @@ test("does not retry a rate-limited request", async () => {
   expect(mockGetMe).toHaveBeenCalledTimes(1);
 });
 
+// THE SHAPE THAT ACTUALLY ARRIVES. axios/request.ts rejects with
+// `error.response || error.message`, so consumers get the response itself and
+// the status sits at the top level. A guard reading only `error.response.status`
+// saw undefined and retried every throttled call.
+test("recognises the rejection shape axios/request.ts actually produces", async () => {
+  mockGetMe.mockRejectedValue({ status: 429, data: "Too many requests", headers: {} });
+  jest.spyOn(console, "error").mockImplementation(() => {});
+
+  render(<Capture />);
+
+  await waitFor(() => expect(latest![1]).toBe(false));
+  expect(mockGetMe).toHaveBeenCalledTimes(1);
+});
+
 test("does not retry a 4xx that will not answer differently", async () => {
   const badRequest = Object.assign(new Error("Bad Request"), {
     response: { status: 400 },

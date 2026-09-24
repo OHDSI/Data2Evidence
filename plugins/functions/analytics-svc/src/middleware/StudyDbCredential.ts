@@ -71,8 +71,23 @@ export default async (req: IMRIRequest, res, next) => {
                 // the calls beside it. A 4xx will not answer differently next
                 // time either; the transient this exists for is the worker
                 // restart, which shows as a 5xx or a dropped connection.
-                const status = (error as { response?: { status?: number } })
-                    ?.response?.status;
+                //
+                // Three shapes, because this client offers no single one: it
+                // throws whatever its transport produced, and what was observed
+                // in CI carried the code only in the text --
+                // "Request failed with status 500: Internal Server Error". A
+                // guard reading a structured field alone finds nothing there
+                // and retries the throttled calls it exists to spare.
+                const err = error as {
+                    status?: number;
+                    response?: { status?: number };
+                    message?: string;
+                };
+                const fromText = /status (\d{3})/.exec(err?.message ?? "");
+                const status = err?.status ?? err?.response?.status ??
+                    (fromText ? Number(fromText[1]) : undefined);
+                // Unknown status means no reply at all -- a network error, which
+                // is worth one more try.
                 const worthRetrying = status === undefined || status >= 500;
 
                 if (i >= delaysMs.length || !worthRetrying) {

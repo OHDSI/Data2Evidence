@@ -60,8 +60,17 @@ const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
  * or a dropped connection -- so that is all it covers.
  */
 const isWorthRetrying = (error: any): boolean => {
-  const status = error?.response?.status;
-  if (status === undefined) return true; // no response: network error or abort
+  // BOTH SHAPES, because axios/request.ts does not reject with the axios error:
+  //
+  //     return Promise.reject(error.response || error.message);
+  //
+  // so what arrives here is the RESPONSE (status at the top level), and only a
+  // caller bypassing that wrapper would see `error.response.status`. Reading
+  // just the nested one returned undefined for every throttled call, which this
+  // function then treated as "no response, worth retrying" -- the exact
+  // amplification it was added to stop.
+  const status = error?.status ?? error?.response?.status;
+  if (typeof status !== "number") return true; // network error or abort
   return status >= 500;
 };
 
