@@ -524,7 +524,18 @@ const loadError = computed(() => store.getters.getBookmarksLoadError)
  * application reloading.
  */
 const datasetReloading = computed<boolean>(() => Boolean(store.getters.getDatasetReloadInProgress))
-const showInitialLoader = computed(() => loading.value && allCards.value.length === 0 && !datasetReloading.value)
+/**
+ * Whether the owner key is settled.
+ *
+ * `allCards` filters on `portalContext.username`, so until it resolves every
+ * card belongs to somebody else and the grid is empty -- indistinguishable,
+ * without this, from a user who has saved nothing. The portal fetches the name
+ * from usermgmt (its `useMe`), so there is a real window on first paint.
+ */
+const usernamePending = computed(() => Boolean(portalContext.usernameLoading))
+const showInitialLoader = computed(
+  () => (loading.value || usernamePending.value) && allCards.value.length === 0 && !datasetReloading.value,
+)
 /** The active source's id. Still the select's value: the id is what every call
     downstream uses, and the label is only what the user reads. */
 const datasetId = computed(() => store.getters.getSelectedDataset?.id || portalContext.datasetId)
@@ -1167,7 +1178,10 @@ const moreItems = (card: { source: BookmarkDisplay }) => {
   // Do not offer an action the user cannot perform: the same ownership guard
   // BookmarkItems applies to rename and delete.
   const owner = card.source.bookmark ?? card.source.atlasCohortDefinition ?? null
-  const disabled = !canModifyBookmark(owner, portalContext.username)
+  // Also while the name is pending: canModifyBookmark would answer "not yours"
+  // and the action would be offered as permanently disabled rather than as not
+  // yet known.
+  const disabled = usernamePending.value || !canModifyBookmark(owner, portalContext.username)
   // Rename has no path for an Atlas-backed record: the D2E branch dereferences
   // `bookmark.id` and the materialized branch renames the cohort rather than the
   // definition. Bookmarks.vue gated on the type for exactly this reason.

@@ -65,14 +65,45 @@ test("fetches once however many components ask", async () => {
   expect(mockGetMe).toHaveBeenCalledTimes(1);
 });
 
+// THE FAILURE THAT MUST NOT LOOK LIKE AN ANSWER. A consumer compares this name
+// to a stored owner, so a transient error that settles as "no name" renders
+// exactly like "you have saved nothing" -- and these mounts live for the whole
+// session, so a later mount never comes to correct it.
+test("a transient failure is retried and still resolves, without ever settling", async () => {
+  mockGetMe
+    .mockRejectedValueOnce(new Error("usermgmt restarting"))
+    .mockResolvedValue({ id: "u1", username: "brandan" });
+
+  render(<Capture />);
+
+  // Still pending across the retry rather than briefly reported as resolved.
+  expect(latest![1]).toBe(true);
+
+  await waitFor(() => expect(latest![0]).toBe("brandan"));
+  expect(mockGetMe).toHaveBeenCalledTimes(2);
+});
+
+test("gives up after a bounded number of attempts", async () => {
+  mockGetMe.mockRejectedValue(new Error("usermgmt down"));
+  jest.spyOn(console, "error").mockImplementation(() => {});
+
+  render(<Capture />);
+
+  await waitFor(() => expect(latest![1]).toBe(false), { timeout: 5000 });
+  expect(latest![0]).toBeUndefined();
+  // Bounded: a hard outage must not spin forever.
+  expect(mockGetMe).toHaveBeenCalledTimes(3);
+});
+
 // A rejected promise left latched in `inflight` would make one failed call
 // permanent for the session, which is worse than the bug being fixed.
-test("a failure leaves no name and is retried by the next mount", async () => {
-  mockGetMe.mockRejectedValueOnce(new Error("usermgmt down"));
+test("an exhausted sequence is retried by the next mount", async () => {
+  mockGetMe.mockRejectedValue(new Error("usermgmt down"));
   jest.spyOn(console, "error").mockImplementation(() => {});
 
   const first = render(<Capture />);
-  await waitFor(() => expect(latest![1]).toBe(false));
+  // Longer than the retry sequence, which is the point of the test.
+  await waitFor(() => expect(latest![1]).toBe(false), { timeout: 5000 });
   // Deliberately not falling back to some other string: a wrong name would
   // show one user another's saved work.
   expect(latest![0]).toBeUndefined();
@@ -82,5 +113,7 @@ test("a failure leaves no name and is retried by the next mount", async () => {
   render(<Capture />);
 
   await waitFor(() => expect(latest![0]).toBe("brandan"));
-  expect(mockGetMe).toHaveBeenCalledTimes(2);
+  // Three from the exhausted sequence, then one from the fresh mount: nothing
+  // is latched, so the session recovers as soon as usermgmt does.
+  expect(mockGetMe).toHaveBeenCalledTimes(4);
 });

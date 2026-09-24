@@ -28,20 +28,43 @@ export const invalidateMe = (): void => {
   inflight = null;
 };
 
+/**
+ * Attempts before giving up, and the gap between them.
+ *
+ * A transient failure must not end as a settled answer: the consumers of this
+ * name compare it to a stored owner, so "the request failed" and "resolved to
+ * nobody" render identically as an empty list of the user's own work. These
+ * mounts are long-lived -- the plugin container stays up for the session -- so
+ * retrying only on a future mount does not recover the page in front of the
+ * user. `loading` stays true across the whole sequence, which is what keeps a
+ * consumer from treating an intermediate failure as final.
+ */
+const ATTEMPTS = 3;
+const RETRY_BASE_MS = 500;
+
+const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
 const loadUsername = (): Promise<string> => {
   if (cache) return Promise.resolve(cache);
   if (!inflight) {
-    inflight = api.userMgmt
-      .getMe()
-      .then(({ username }) => {
-        cache = username;
-        return username;
-      })
-      .finally(() => {
-        // Cleared either way, so a failed call is retried by the next mount
-        // rather than latched as a rejection every later mount re-throws.
-        inflight = null;
-      });
+    inflight = (async () => {
+      let lastError: unknown;
+      for (let attempt = 0; attempt < ATTEMPTS; attempt++) {
+        if (attempt > 0) await wait(RETRY_BASE_MS * 2 ** (attempt - 1));
+        try {
+          const { username } = await api.userMgmt.getMe();
+          cache = username;
+          return username;
+        } catch (e) {
+          lastError = e;
+        }
+      }
+      throw lastError;
+    })().finally(() => {
+      // Cleared either way, so an exhausted sequence is retried by the next
+      // mount rather than latched as a rejection every later mount re-throws.
+      inflight = null;
+    });
   }
   return inflight;
 };

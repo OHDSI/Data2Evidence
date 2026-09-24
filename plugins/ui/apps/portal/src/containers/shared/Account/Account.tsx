@@ -41,18 +41,21 @@ export const Account: FC<AccountProps> = ({ portalType }) => {
     setLoading(false);
   }, [idTokenClaims, setUserGroup]);
 
+  // Split from the name below: group membership does not depend on it, and
+  // sharing one effect made resolving /me issue a second getUserGroupList.
   useEffect(() => {
-    if (idTokenClaims) {
-      fetchUserGroups();
-      setMyUser({
-        id: idTokenClaims[subProp],
-        // The same name the rest of the portal matches saved work against, so
-        // the account page cannot show one name while cohorts are filed under
-        // another.
-        name: username ?? "",
-      });
-    }
-  }, [idTokenClaims, fetchUserGroups, username]);
+    if (idTokenClaims) fetchUserGroups();
+  }, [idTokenClaims, fetchUserGroups]);
+
+  useEffect(() => {
+    if (!idTokenClaims) return;
+    setMyUser({
+      id: idTokenClaims[subProp],
+      // The same name the rest of the portal matches saved work against, so the
+      // account page cannot show one name while cohorts are filed under another.
+      name: username ?? "",
+    });
+  }, [idTokenClaims, username]);
 
   const handleSwitchToResearcher = useCallback(() => {
     navigate(config.ROUTES.researcher);
