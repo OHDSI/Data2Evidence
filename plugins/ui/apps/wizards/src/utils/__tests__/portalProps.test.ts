@@ -79,6 +79,47 @@ describe("normalizeWizardPortalProps", () => {
     ).toBe("atlas-researcher");
   });
 
+  // THE OWNERSHIP KEY. parseCandidate rejects any bookmark whose `user_id` is
+  // not this string, and `user_id` is usermgmt's username -- which the login
+  // bridge stores here. authContext's comes from the ID token, which under
+  // trex's provider carries no `username` claim and degrades to the
+  // synthesised <username>@d2e.local; preferring it hides the user's own
+  // saved work.
+  it("prefers the username the login bridge read from usermgmt over the token's", () => {
+    localStorage.setItem("atlas_username", "brandan");
+
+    expect(
+      normalizeWizardPortalProps({
+        isAtlas: true,
+        authContext: { user: { username: "brandan@d2e.local" } },
+      }).username,
+    ).toBe("brandan");
+  });
+
+  it("still falls back to the token's username when nothing was stored", () => {
+    expect(
+      normalizeWizardPortalProps({
+        isAtlas: true,
+        authContext: { user: { username: "atlas-researcher" } },
+      }).username,
+    ).toBe("atlas-researcher");
+  });
+
+  // The portal supplies its own, already read from usermgmt, and it wins: a
+  // stale key left in localStorage by an earlier Atlas session must not rename
+  // the signed-in user.
+  it("keeps the portal's username ahead of a stored Atlas one", () => {
+    localStorage.setItem("atlas_username", "somebody-else");
+
+    expect(
+      normalizeWizardPortalProps({
+        isAtlas: true,
+        username: "brandan",
+        authContext: { user: { username: "brandan@d2e.local" } },
+      }).username,
+    ).toBe("brandan");
+  });
+
   it("preserves the username supplied directly by the portal", () => {
     const props: PortalProps = {
       username: "portal-researcher",

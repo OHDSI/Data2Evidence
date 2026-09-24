@@ -45,6 +45,9 @@ export const resolvePortalContextProps = (
     datasetId,
     releaseId,
     username: bootstrap.username || env.VITE_USERNAME || 'admin',
+    // Only a host that fetches the name asynchronously has anything to report
+    // here; a bootstrap that already holds one is not waiting for it.
+    usernameLoading: bootstrap.usernameLoading ?? false,
     locale: bootstrap.locale || env.VITE_LOCALE || 'en',
     features: bootstrap.features || parseFeatures(env.VITE_FEATURES),
     featuresLoading: bootstrap.featuresLoading ?? false,
