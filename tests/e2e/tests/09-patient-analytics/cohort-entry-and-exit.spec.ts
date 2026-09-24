@@ -41,7 +41,7 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByRole('button', { name: 'Switch to Researcher portal' }).click()
   await page.getByText('Demo dataset').first().click()
   await page.getByRole('link', { name: 'Cohorts' }).click()
-  await page.getByRole('button', { name: 'D2E' }).click()
+  await page.getByTestId('explorations-new-btn').click()
   await page.getByTitle('Add Filter Card').getByRole('button').click()
   await page.getByRole('menuitem', { name: 'Visit' }).click()
   await page.getByTitle('Add Filter Card').getByRole('button').click()

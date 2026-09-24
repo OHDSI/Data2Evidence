@@ -88,3 +88,108 @@ describe("DomainValuesSvc empty-search handling", () => {
         expect(result.queryString.toUpperCase()).not.toContain("LIKE_REGEXPR");
     });
 });
+
+describe("DomainValuesSvc join construction for dim-level attribute tables", () => {
+    // A dim-level attribute table is a satellite hanging off a dim table, declared in that dim's
+    // `attributeTables`. It carries no PATIENT_ID, so it is reachable only through its dim, which in
+    // turn joins the fact table. getStandardJoin closes over those dependencies while iterating a
+    // snapshot of its placeholder set, so the dim it adds mid-walk is never revisited. Without an
+    // explicit push of the fact table at that point, the fact table is left out of the FROM clause
+    // while the SELECT still emits COUNT(DISTINCT P."PATIENT_ID") — SQL referencing an alias that was
+    // never joined, which the database rejects.
+    //
+    // minCohortSize MUST be > 0 here. The gr_cnt term, and therefore the fact-table reference, is only
+    // emitted when a threshold is set; with 0 the defect is invisible. That is why the specs above,
+    // which use 0, cannot catch it.
+    const dimAttributeConfig = {
+        chartOptions: { minCohortSize: 1 },
+        advancedSettings: {
+            tableTypePlaceholderMap: {
+                factTable: { placeholder: "@PATIENT", attributeTables: [] },
+                dimTables: [
+                    {
+                        placeholder: "@DIM",
+                        hierarchy: true,
+                        time: true,
+                        oneToN: true,
+                        attributeTables: [{ placeholder: "@DIMATTR", oneToN: true }],
+                    },
+                ],
+            },
+            tableMapping: {
+                "@PATIENT": '$$SCHEMA$$."FACT_TABLE"',
+                "@PATIENT.PATIENT_ID": '"PATIENT_ID"',
+                "@DIM": '$$SCHEMA$$."DIM_TABLE"',
+                "@DIM.PATIENT_ID": '"PATIENT_ID"',
+                "@DIM.INTERACTION_ID": '"DIM_ID"',
+                "@DIMATTR": '$$SCHEMA$$."DIM_ATTRIBUTE_TABLE"',
+                "@DIMATTR.INTERACTION_ID": '"DIM_ID"',
+            },
+        },
+        patient: {
+            interactions: {
+                dimension: {
+                    defaultFilter: "1=1",
+                    attributes: {
+                        dimattrvalue: {
+                            name: [{ lang: "", value: "Dim attribute value" }],
+                            type: "text",
+                            expression: '@DIMATTR."ATTRIBUTE_VALUE"',
+                            order: 0,
+                        },
+                        dimvalue: {
+                            name: [{ lang: "", value: "Dim value" }],
+                            type: "text",
+                            expression: '@DIM."DIM_VALUE"',
+                            order: 1,
+                        },
+                    },
+                },
+            },
+        },
+    };
+
+    const squash = (sql: string) => sql.replace(/\s+/g, " ").trim();
+
+    const generate = async (attributeKey: string) => {
+        const svc = new DomainValuesSvc(
+            dimAttributeConfig,
+            `patient.interactions.dimension.attributes.${attributeKey}`,
+            100,
+            ""
+        );
+        return squash((await svc.generateQuery()).queryString);
+    };
+
+    it("joins the fact table through PATIENT_ID for an attribute on a dim-level attribute table", async () => {
+        const sql = await generate("dimattrvalue");
+
+        // the fact table is present, and the dim joins to it on PATIENT_ID
+        expect(sql).toContain('$$SCHEMA$$."FACT_TABLE" P');
+        expect(sql).toContain('INNER JOIN $$SCHEMA$$."DIM_TABLE" I ON I."PATIENT_ID"=P."PATIENT_ID"');
+        // the attribute table joins to its dim on INTERACTION_ID
+        expect(sql).toContain(
+            'INNER JOIN $$SCHEMA$$."DIM_ATTRIBUTE_TABLE" C ON C."DIM_ID"=I."DIM_ID"'
+        );
+    });
+
+    it("never references the fact alias without joining the fact table", async () => {
+        const sql = await generate("dimattrvalue");
+
+        // gr_cnt counts the fact alias; if that term is emitted, the fact table must be in the FROM
+        // clause. This is the assertion that fails if the fact-table push is removed.
+        expect(sql).toContain('COUNT(DISTINCT P. "PATIENT_ID") as "gr_cnt"');
+        if (/COUNT\(DISTINCT P\./.test(sql)) {
+            expect(sql).toContain('$$SCHEMA$$."FACT_TABLE" P');
+        }
+    });
+
+    it("produces the same fact join for a plain dim attribute", async () => {
+        const sql = await generate("dimvalue");
+
+        expect(sql).toContain('$$SCHEMA$$."FACT_TABLE" P');
+        expect(sql).toContain('INNER JOIN $$SCHEMA$$."DIM_TABLE" I ON I."PATIENT_ID"=P."PATIENT_ID"');
+        // a dim attribute needs no attribute table
+        expect(sql).not.toContain('"DIM_ATTRIBUTE_TABLE"');
+    });
+});
