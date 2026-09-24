@@ -79,6 +79,7 @@ const normalizeProps = (props: AtlasProps, defaults?: { features: unknown[]; rel
   qeSvcUrl: window.location.origin,
   features: defaults?.features,
   featuresLoading: false,
+  usernameLoading: false,
   releaseId: defaults ? props.releaseId ?? defaults.releaseId : props.releaseId,
 })
 

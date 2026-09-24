@@ -334,6 +334,11 @@ export default {
       return errors
     },
     isBookmarksLoading() {
+      // Also while the name is still arriving. bookmarksDisplay filters on
+      // portalContext.username, so before it resolves every bookmark is
+      // somebody else's and the list is empty -- indistinguishable, without
+      // this, from a user who has saved nothing.
+      if (this.portalContext.usernameLoading) return true
       return this.bookmarksDisplay.length === 0 && this.getBookmarksLoading
     },
     bookmarkBodyStyle() {
