@@ -44,6 +44,27 @@ const RETRY_BASE_MS = 500;
 
 const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
+/**
+ * Whether asking again could plausibly succeed.
+ *
+ * NEVER ON 429. trex rate-limits per client address and an e2e suite runs from
+ * one, so the bucket is shared across the whole run; retrying a throttled
+ * request spends more of it and makes the throttling worse for every other
+ * call. Measured: this hook's own retries made /me the most-requested endpoint
+ * on the page, three calls all answered 429, while
+ * system-portal/dataset/list was throttled beside it and the portal rendered
+ * "No dataset available".
+ *
+ * A 4xx generally will not answer differently on the next attempt either. What
+ * this retry exists for is the transient the worker restart produces -- a 5xx
+ * or a dropped connection -- so that is all it covers.
+ */
+const isWorthRetrying = (error: any): boolean => {
+  const status = error?.response?.status;
+  if (status === undefined) return true; // no response: network error or abort
+  return status >= 500;
+};
+
 const loadUsername = (): Promise<string> => {
   if (cache) return Promise.resolve(cache);
   if (!inflight) {
@@ -57,6 +78,7 @@ const loadUsername = (): Promise<string> => {
           return username;
         } catch (e) {
           lastError = e;
+          if (!isWorthRetrying(e)) break;
         }
       }
       throw lastError;

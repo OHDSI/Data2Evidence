@@ -83,6 +83,54 @@ test("a transient failure is retried and still resolves, without ever settling",
   expect(mockGetMe).toHaveBeenCalledTimes(2);
 });
 
+// RETRY AMPLIFICATION. trex rate-limits per client address and an e2e run comes
+// from one, so the bucket is shared across the whole suite. Retrying a throttled
+// request spends more of it: this hook's own retries made /me the most-requested
+// endpoint on the page -- three calls, all 429 -- while dataset/list was
+// throttled beside it and the portal rendered "No dataset available".
+test("does not retry a rate-limited request", async () => {
+  const tooMany = Object.assign(new Error("Too many requests"), {
+    response: { status: 429 },
+  });
+  mockGetMe.mockRejectedValue(tooMany);
+  jest.spyOn(console, "error").mockImplementation(() => {});
+
+  render(<Capture />);
+
+  await waitFor(() => expect(latest![1]).toBe(false));
+  expect(latest![0]).toBeUndefined();
+  // Exactly one call: asking again is what made the throttling worse.
+  expect(mockGetMe).toHaveBeenCalledTimes(1);
+});
+
+test("does not retry a 4xx that will not answer differently", async () => {
+  const badRequest = Object.assign(new Error("Bad Request"), {
+    response: { status: 400 },
+  });
+  mockGetMe.mockRejectedValue(badRequest);
+  jest.spyOn(console, "error").mockImplementation(() => {});
+
+  render(<Capture />);
+
+  await waitFor(() => expect(latest![1]).toBe(false));
+  expect(mockGetMe).toHaveBeenCalledTimes(1);
+});
+
+// The transient it does exist for.
+test("retries a 5xx, which is what a worker restart looks like", async () => {
+  const serverError = Object.assign(new Error("Bad Gateway"), {
+    response: { status: 502 },
+  });
+  mockGetMe
+    .mockRejectedValueOnce(serverError)
+    .mockResolvedValue({ id: "u1", username: "brandan" });
+
+  render(<Capture />);
+
+  await waitFor(() => expect(latest![0]).toBe("brandan"));
+  expect(mockGetMe).toHaveBeenCalledTimes(2);
+});
+
 test("gives up after a bounded number of attempts", async () => {
   mockGetMe.mockRejectedValue(new Error("usermgmt down"));
   jest.spyOn(console, "error").mockImplementation(() => {});

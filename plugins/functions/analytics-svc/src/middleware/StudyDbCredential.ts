@@ -66,7 +66,16 @@ export default async (req: IMRIRequest, res, next) => {
             try {
                 return await attempt();
             } catch (error) {
-                if (i >= delaysMs.length) {
+                // Never on 429. trex rate-limits per client address, so a retry
+                // spends more of a bucket that is already empty and throttles
+                // the calls beside it. A 4xx will not answer differently next
+                // time either; the transient this exists for is the worker
+                // restart, which shows as a 5xx or a dropped connection.
+                const status = (error as { response?: { status?: number } })
+                    ?.response?.status;
+                const worthRetrying = status === undefined || status >= 500;
+
+                if (i >= delaysMs.length || !worthRetrying) {
                     throw error;
                 }
                 await new Promise((resolve) => setTimeout(resolve, delaysMs[i]));
