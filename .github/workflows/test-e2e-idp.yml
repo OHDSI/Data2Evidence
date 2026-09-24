@@ -122,16 +122,8 @@ jobs:
         if: steps.gate.outputs.run == 'true'
         run: |
           sed -i 's/^D2E_IDP_MODE=.*/D2E_IDP_MODE=logto-federated/' .env
-          grep '^D2E_IDP_MODE=' .env
-          # logto-federated defaults trex's native password grant off — users
-          # migrated from Logto have no trex password, so the sign-in page offers
-          # only the Logto button. setupdemo bootstraps the d2e-setup@d2e.local
-          # account through that grant, so re-enable it for CI only (appended last,
-          # compose reads .env last-wins). The e2e sign-ins still go through Logto's
-          # own local login via the federated flow; this only unblocks the headless
-          # bootstrap and restores the email/password form for it.
           printf '%s\n' 'TREX_NATIVE_PASSWORD_LOGIN_ENABLED=true' >> .env
-          grep '^TREX_NATIVE_PASSWORD_LOGIN_ENABLED=' .env
+          grep -E '^(D2E_IDP_MODE|TREX_NATIVE_PASSWORD_LOGIN_ENABLED)=' .env
 
       # Connectors are applied by appending to .env (dotenv-parsed by compose, JSON-safe, last wins)
       # after init — no CLI flag. logto-native needs no connector, so neither step runs for it.
@@ -164,6 +156,7 @@ jobs:
           { printf 'LOGTO__CONNECTOR_CONFIG=%s\n' "$CFG"
             echo 'LOGTO__SOCIAL_SIGNIN_TARGETS=entra-external-id-alp'
             echo 'IDP__AUTO_PROVISION_USERS=true'
+            echo 'AUTO_GRANT_RESEARCHER_BY_DATASET_CODES=demo'
           } >> .env
 
       - name: Pull docker compose images
@@ -263,6 +256,9 @@ jobs:
         working-directory: tests/e2e
         env:
           SPEC: ${{ matrix.spec }}
+          # The harness runs federated (set above); expose it so a spec can gate a
+          # trex-not-yet-implemented assertion (physionet's phase-5 passthrough).
+          D2E_IDP_MODE: logto-federated
         run: npx playwright test "$SPEC"
 
       - name: d2e service logs (on failure)

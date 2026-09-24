@@ -45,9 +45,12 @@ function makeSigner() {
 function identityFromUsername(username) {
   const name = username || 'ci_e2e_test_user'
   const email = name.includes('@') ? name : `${name}@mock.physionet.local`
-  // Stable subject per username so repeat logins resolve to the same account.
-  const sub = `mock|${crypto.createHash('sha256').update(email).digest('hex').slice(0, 24)}`
-  return { sub, email, name }
+  // Stable UUID subject per username, matching the real physionet-build's `sub` shape.
+  const h = crypto.createHash('sha256').update(email).digest('hex')
+  const sub = `${h.slice(0, 8)}-${h.slice(8, 12)}-${h.slice(12, 16)}-${h.slice(16, 20)}-${h.slice(20, 32)}`
+  const [givenName, ...rest] = name.split(/\s+/)
+  const familyName = rest.join(' ') || givenName
+  return { sub, email, name, givenName, familyName }
 }
 
 function readBody(req) {
@@ -146,7 +149,7 @@ export function startMock({ port = 8000 } = {}) {
         if (!record) return json(400, { error: 'invalid_grant' })
         codes.delete(body.get('code'))
         const clientId = body.get('client_id') || record.clientId || 'mock-client'
-        const { sub, email, name } = record.user
+        const { sub, email, name, givenName, familyName } = record.user
         tokens.set(accessToken, record.user)
         const idToken = sign({
           iss: ISSUER,
@@ -155,8 +158,11 @@ export function startMock({ port = 8000 } = {}) {
           email,
           email_verified: true,
           name,
+          given_name: givenName,
+          family_name: familyName,
           preferred_username: name,
           is_credentialed: true,
+          auth_time: now,
           ...(record.nonce ? { nonce: record.nonce } : {}),
           iat: now,
           exp: now + 3600
@@ -185,6 +191,8 @@ export function startMock({ port = 8000 } = {}) {
           email: user.email,
           email_verified: true,
           name: user.name,
+          given_name: user.givenName,
+          family_name: user.familyName,
           preferred_username: user.name
         })
       }

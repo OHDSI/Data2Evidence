@@ -28,6 +28,7 @@ import {
   missingEnv,
   readAccessToken,
   resetSession,
+  rolesFromToken,
   skipReason,
   syncWebapiRoles,
   webapiUserId
@@ -61,15 +62,22 @@ test('idp:entra-external-id', async ({ page, baseURL }) => {
   const sub = String(claims.sub)
   console.log(`[assert] iss=${claims.iss} sub=${sub} email=${maskedEmail}`)
 
-  // Trigger provisioning + prove the token works downstream. A `sync` request runs
-  // grant-roles-by-scopes, which auto-provisions the usermgmt row via IDP__AUTO_PROVISION_USERS
-  // (CIAM does NOT use USERMGMT__AUTO_PROVISION_CONNECTORS). Then WebAPI must accept the token.
   await api.post(`${base}${USERMGMT}/user-group/list`, {
     headers: authHeaders(userToken, base),
     data: { userId: sub, sync: true }
   })
-  await syncWebapiRoles(api, base, userToken)
-  const webApiId = await webapiUserId(api, base, userToken)
+
+  let downstreamToken = userToken
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    await resetSession(page)
+    await loginViaConnector(page, { target: 'entra-external-id-alp', connectorName: /Entra External ID/i, creds })
+    downstreamToken = await readAccessToken(page)
+    if (rolesFromToken(downstreamToken).length > 0) break
+    console.log(`[assert] attempt ${attempt}: token carries no roles yet, retrying login`)
+  }
+
+  await syncWebapiRoles(api, base, downstreamToken)
+  const webApiId = await webapiUserId(api, base, downstreamToken)
   console.log(`[assert] WebAPI accepted the token; user id ${webApiId}`)
 
   // Identity linkage — the usermgmt row must be bound to the token subject by idp_user_id, not
