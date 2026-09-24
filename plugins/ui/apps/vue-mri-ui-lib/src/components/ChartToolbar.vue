@@ -44,6 +44,7 @@
               @clickEv="switchChart(chart)"
               :name="chart.name"
               :icon="chart.icon"
+              :iconComponent="chartIconComponents[chart.name] || null"
               :iconGroup="chart.iconGroup"
               :title="getText(chart.tooltip)"
               :activeChart="getActiveChart"
@@ -95,67 +96,11 @@
     </div>
   </div>
 
-  <Teleport to="#app">
-    <DashboardSelectionModal
-      :is-open="dashboardFlow.showDashboardSelectionModal"
-      :dashboards="dashboardFlow.dashboardCodes"
-      :wizard-definitions="dashboardFlow.wizardDefinitions"
-      :loading="dashboardFlow.dashboardMetadataLoading"
-      :error="dashboardFlow.dashboardSelectionError"
-      @close="dashboardFlow.closeDashboardSelectionModal"
-      @select="dashboardFlow.handleDashboardSelected"
-    />
-  </Teleport>
-
-  <Teleport to="#app">
-    <CompleteRequiredFiltersModal
-      :is-open="dashboardFlow.showRequiredFiltersModal"
-      :all-fields="dashboardFlow.allWizardFields"
-      :sections="dashboardFlow.selectedWizardDefinition?.sections"
-      :form-note="dashboardFlow.selectedWizardDefinition?.formNote"
-      :initial-values="dashboardFlow.initialFormValues"
-      :initial-display-values="dashboardFlow.initialDisplayValues"
-      :loading="dashboardFlow.applyingRequiredFilters"
-      :error="dashboardFlow.requiredFiltersError"
-      @cancel="dashboardFlow.handleRequiredFiltersCancel"
-      @submit="dashboardFlow.handleRequiredFiltersSubmit"
-    />
-  </Teleport>
-
-  <Teleport to="#app">
-    <ConfigureTable1Dialog
-      :is-open="dashboardFlow.showTable1ConfigModal"
-      :dataset-id="getSelectedDataset?.id || ''"
-      :initial-concept-sets="dashboardFlow.confirmedTable1ConceptSets"
-      @cancel="dashboardFlow.handleTable1ConfigCancel"
-      @close="dashboardFlow.closeDashboardFlow"
-      @confirm="dashboardFlow.handleTable1ConfigConfirm"
-    />
-  </Teleport>
-
-  <Teleport to="#app">
-    <ShinyDashboardModal
-      v-if="dashboardFlow.showDashboardModal"
-      :is-open="dashboardFlow.showDashboardModal"
-      :dataset-id="getSelectedDataset.id"
-      :cohort-id="(dashboardFlow.savedCohortId ?? getActiveCohortMaterializedId)?.toString() || ''"
-      :wizard-config="dashboardFlow.dashboardContext.wizardConfig"
-      :conditions="dashboardFlow.dashboardContext.conditions"
-      :mriquery="dashboardFlow.dashboardContext.mriquery"
-      @close="dashboardFlow.closeDashboardModal"
-    />
-  </Teleport>
-
-  <Teleport to="#app">
-    <SaveCohortModal
-      :is-open="dashboardFlow.showSaveCohortModal"
-      :mode="dashboardFlow.saveCohortModalMode"
-      :wizard-config="dashboardFlow.dashboardContext.wizardConfig"
-      @success="dashboardFlow.handleSaveCohortSuccess"
-      @cancel="dashboardFlow.handleCancelSaveCohort"
-      @close="dashboardFlow.closeDashboardFlow"
-    />
-  </Teleport>
+  <DashboardFlowModals
+    :flow="dashboardFlow"
+    :dataset-id="getSelectedDataset?.id || ''"
+    :cohort-id="(dashboardFlow.savedCohortId ?? getActiveCohortMaterializedId)?.toString() || ''"
+  />
 
   <Teleport to="#app">
     <VDialog
@@ -209,12 +154,9 @@ import { formatNumber } from '../utils/NumberUtils'
 import icon from '../lib/ui/app-icon.vue'
 import appIcon from '../lib/ui/app-icon.vue'
 import DownloadMenu from './DownloadMenu.vue'
-import ShinyDashboardModal from './ShinyViewer/ShinyDashboardModal.vue'
-import SaveCohortModal from './ShinyViewer/SaveCohortModal.vue'
-import DashboardSelectionModal from './ShinyViewer/DashboardSelectionModal.vue'
-import CompleteRequiredFiltersModal from './ShinyViewer/CompleteRequiredFiltersModal.vue'
-import ConfigureTable1Dialog from './ShinyViewer/ConfigureTable1Dialog.vue'
+import DashboardFlowModals from './DashboardFlowModals.vue'
 import Button from './Button.vue'
+import CohortDefinitionIcon from './icons/CohortDefinitionIcon.vue'
 import { useDashboardFlow } from '../composables/useDashboardFlow'
 import { usePortalContext } from '../composables/usePortalContext'
 
@@ -235,13 +177,17 @@ function getBookmarkKey(bookmark) {
 }
 import VButton from './vuetify/VButton.vue'
 import VDialog from './vuetify/VDialog.vue'
-import InclusionReport from '../query-filter/components/InclusionReport/index.vue'
+import { lazyComponent } from '../utils/lazyComponent'
 import type { RuleFilterCardDetails } from '../query-filter/types/InclusionReportTypes'
 import {
   getAttributeName,
   getAdvanceTimeFilterFormatted,
   getInclusionReportFilterCardDetails,
 } from '../utils/filterCardUtils'
+
+// Loaded on demand so plotly.js stays out of the single-spa entry's static
+// dependency graph. See docs: the chart chunk was blocking mount.
+const InclusionReport = lazyComponent('InclusionReport', () => import('../query-filter/components/InclusionReport/index.vue'))
 
 export default {
   name: 'chartToolbar',
@@ -388,6 +334,10 @@ export default {
     },
     minCohortSizeMessage() {
       return this.getText('MRI_PA_MIN_COHORT_SIZE_DISPLAY_MESSAGE', formatNumber(this.minCohortSize))
+    },
+    // Chart buttons that render an SVG icon component; every other button keeps its icon-font glyph.
+    chartIconComponents() {
+      return { stacked: CohortDefinitionIcon }
     },
   },
   methods: {
@@ -575,11 +525,7 @@ export default {
     DisabledHoverPopover,
     appIcon,
     DownloadMenu,
-    ShinyDashboardModal,
-    SaveCohortModal,
-    DashboardSelectionModal,
-    CompleteRequiredFiltersModal,
-    ConfigureTable1Dialog,
+    DashboardFlowModals,
     Button,
     VButton,
     VDialog,

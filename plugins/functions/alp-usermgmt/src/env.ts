@@ -31,6 +31,15 @@ export const env = {
   IDP_ALP_ADMIN_CLIENT_ID: Deno.env.get("IDP__ALP_ADMIN__CLIENT_ID"),
   IDP_ALP_ADMIN_CLIENT_SECRET: Deno.env.get("IDP__ALP_ADMIN__CLIENT_SECRET"),
   IDP_ALP_ADMIN_RESOURCE: Deno.env.get("IDP__ALP_ADMIN__RESOURCE"),
+  TREX_ADMIN_URL: Deno.env.get("TREX__ADMIN_URL"),
+  // Account creation, as opposed to role assignment on TREX__ADMIN_URL.
+  TREX_AUTH_URL: Deno.env.get("TREX__AUTH_URL"),
+  // The identity provider identifies accounts by email; this turns a bare
+  // username into one, and has to match what the sign-in page appends.
+  IDP_USER_DOMAIN: Deno.env.get("IDP__INITIAL_USER__DOMAIN") ?? "d2e.local",
+  TREX_SERVICE_ROLE_KEY: Deno.env.get("TREX__SERVICE_ROLE_KEY"),
+  SUPABASE_SERVICE_ROLE_KEY: Deno.env.get("SUPABASE_SERVICE_ROLE_KEY"),
+  IDP_ROLE_STORE: Deno.env.get("IDP__ROLE_STORE"),
   SSL_PRIVATE_KEY: Deno.env.get("TLS__INTERNAL__KEY")?.replace(/\\n/g, '\n'),
   SSL_PUBLIC_CERT: Deno.env.get("TLS__INTERNAL__CRT")?.replace(/\\n/g, '\n'),
   SSL_CA_CERT: Deno.env.get("TLS__INTERNAL__CA_CRT")?.replace(/\\n/g, '\n'),
@@ -43,6 +52,12 @@ export const env = {
   AUTO_GRANT_RESEARCHER_BY_DATASET_CODES:
     _env.AUTO_GRANT_RESEARCHER_BY_DATASET_CODES || _env.AZ_AUTO_GRANT_RESEARCHER_BY_DATASET_CODES,
   USER_MGMT_ROLE_SOURCE: Deno.env.get("USER_MGMT__ROLE_SOURCE"),
+  // The account the setup scripts run as. It has to administer tenants to grant
+  // study roles, and unlike the initial user it does not exist when the seeds
+  // run - it is created on its first sign-in - so the privilege is attached
+  // where the row is created instead. Unset means no account is treated this
+  // way, so a deployment has to name it deliberately.
+  D2E_SETUP_USER: Deno.env.get("D2E__SETUP_USER"),
   USERMGMT_AUTO_PROVISION_ENABLED: Deno.env.get("USERMGMT__AUTO_PROVISION_ENABLED") === 'true',
   USERMGMT_AUTO_PROVISION_CONNECTORS: Deno.env.get("USERMGMT__AUTO_PROVISION_CONNECTORS") || '',
   USERMGMT_AUTO_PROVISION_DEFAULT_TENANT_ID: Deno.env.get("USERMGMT__AUTO_PROVISION_DEFAULT_TENANT_ID") || Deno.env.get("APP__TENANT_ID"),
@@ -58,6 +73,13 @@ export const env = {
   USERMGMT_ENTITLEMENTS_PHYSIONET_CLIENT_SECRET: Deno.env.get("USERMGMT__ENTITLEMENTS_PHYSIONET_CLIENT_SECRET") || '',
   USERMGMT_ENTITLEMENTS_PHYSIONET_TOKEN_PATH: Deno.env.get("USERMGMT__ENTITLEMENTS_PHYSIONET_TOKEN_PATH") || '/oauth/token/',
   USERMGMT_ENTITLEMENTS_DATASET_MAPPING: Deno.env.get("USERMGMT__ENTITLEMENTS_DATASET_MAPPING") || '',
+  // Upstream idp group id -> d2e role, keyed by idp_provider. Replaces the role
+  // assignment that used to live in Logto's connector-alp-azuread and JWT
+  // customizer. Operator-supplied JSON; see `getIdpGroupRoleMapping` for how a
+  // malformed value is handled.
+  IDP_GROUP_ROLE_MAPPING: Deno.env.get("IDP__GROUP_ROLE_MAPPING") ?? '{}',
+  // trex or logto-federated; see @alp/idp/mode.ts.
+  D2E_IDP_MODE: Deno.env.get("D2E_IDP_MODE"),
 }
 
 export const services = JSON.parse(env.SERVICE_ROUTES)
@@ -71,4 +93,28 @@ export const getAutoGrantDatasetCodes = (): string[] => {
 export const getAutoProvisionConnectors = (): string[] => {
   if (!env.USERMGMT_AUTO_PROVISION_CONNECTORS) return []
   return env.USERMGMT_AUTO_PROVISION_CONNECTORS.split(',').map(c => c.trim()).filter(c => c)
+}
+
+// `IDP__GROUP_ROLE_MAPPING` is operator-supplied JSON, so a typo must not take
+// request handling down for every user. An absent, empty, or unparseable value
+// (or one that doesn't parse to an object, e.g. an array or a string) is
+// treated as "no mapping configured" — the caller then maps nothing to no
+// roles, same as an unknown provider. Logs once per process so a bad value is
+// discoverable without spamming logs on every request.
+let hasWarnedInvalidIdpGroupRoleMapping = false
+export const getIdpGroupRoleMapping = (): Record<string, Record<string, string>> => {
+  try {
+    const parsed = JSON.parse(env.IDP_GROUP_ROLE_MAPPING || '{}')
+    if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+      return parsed
+    }
+  } catch {
+    // fall through to the warning below
+  }
+
+  if (!hasWarnedInvalidIdpGroupRoleMapping) {
+    console.warn('IDP__GROUP_ROLE_MAPPING is not a valid JSON object; treating as empty (no idp groups will be mapped to roles)')
+    hasWarnedInvalidIdpGroupRoleMapping = true
+  }
+  return {}
 }

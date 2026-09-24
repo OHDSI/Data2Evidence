@@ -89,99 +89,65 @@
       </div>
     </div>
 
-    <messageBox v-if="showSaveBookmark" dim="true" @close="closeSaveBookmark" :busy="getBookmarksLoading">
-      <template v-slot:header>{{ getText('MRI_PA_TITLE_SAVE_BOOKMARK') }}</template>
-      <template v-slot:body>
-        <div>
-          <div class="save-bookmark">
-            <div class="form-group">
-              <div class="name" v-if="this.isNewCohort || this.isNotUserSharedBookmark">
-                <div class="row">
-                  <div class="col-sm-12 form-check col-form-label">
-                    <label v-if="this.isNewCohort">
-                      Enter a new name if you would like to overwrite the current name ({{
-                        this.getActiveBookmark.bookmarkname
-                      }}).
-                    </label>
-                    <label v-else> Enter a new name for the cohort. </label>
-                  </div>
-                </div>
-                <div class="row">
-                  <div class="col">
-                    <!-- maxLength for input is this.maxLength+1 to allow invalid-feedback to be shown -->
-                    <input
-                      class="form-control"
-                      :class="{ 'is-invalid': cohortNameValidationState !== 'valid' }"
-                      :placeholder="getText('MRI_PA_COLL_ENTER_NAME')"
-                      v-model="cohortName"
-                      tabindex="0"
-                      v-focus
-                      required
-                      :maxlength="this.maxLength + 1"
-                      @keydown.enter="saveBookmark"
-                    />
-                    <div
-                      class="invalid-feedback"
-                      v-bind:style="[cohortNameValidationState === 'invalid' && 'display: block;']"
-                    >
-                      {{ getText('MRI_PA_INVALID_NAME_ERROR') }}
-                    </div>
-                    <div class="invalid-feedback" v-bind:style="[hasExceededLength && 'display: block;']">
-                      Filter name must not exceed 255 characters
-                    </div>
-                    <div
-                      class="invalid-feedback"
-                      v-bind:style="[cohortNameValidationState === 'empty' && 'display: block;']"
-                    >
-                      {{ getText('MRI_PA_BMK_EMPTY_NAME_ERROR') }}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+    <D2eDialog
+      v-model="showSaveBookmark"
+      :busy="getBookmarksLoading"
+      :title="getText('MRI_PA_TITLE_SAVE_BOOKMARK')"
+      data-testid="pa-modal-wrapper"
+      @close="closeSaveBookmark"
+    >
+      <D2eTextField
+        v-model="cohortName"
+        :label="getText('MRI_PA_COLL_ENTER_NAME')"
+        :error-messages="cohortNameErrors"
+        :maxlength="maxLength + 1"
+        required
+        autofocus
+        data-testid="pa-save-dialog-name-input"
+        @keydown.enter="saveBookmark"
+      />
+      <template #actions>
+        <D2eButton
+          variant="secondary"
+          data-testid="pa-save-dialog-cancel-btn"
+          @click="closeSaveBookmark"
+        >
+          {{ getText('MRI_PA_BUTTON_CANCEL') }}
+        </D2eButton>
+        <D2eButton
+          :disabled="hasExceededLength || getBookmarksLoading || isSavingBookmark"
+          data-testid="pa-save-dialog-save-btn"
+          @click="saveBookmark"
+        >
+          {{ getText('MRI_PA_BUTTON_SAVE') }}
+        </D2eButton>
       </template>
-      <template v-slot:footer>
-        <div class="flex-spacer"></div>
-        <appButton
-          :click="saveBookmark"
-          :text="getText('MRI_PA_BUTTON_SAVE')"
-          :tooltip="getText('MRI_PA_BUTTON_SAVE')"
-          :disabled="this.hasExceededLength || getBookmarksLoading || this.isSavingBookmark"
-          testId="pa-save-dialog-save-btn"
-        ></appButton>
-        <appButton
-          :click="closeSaveBookmark"
-          :text="getText('MRI_PA_BUTTON_CANCEL')"
-          :tooltip="getText('MRI_PA_BUTTON_CANCEL')"
-          testId="pa-save-dialog-cancel-btn"
-        ></appButton>
-      </template>
-    </messageBox>
+    </D2eDialog>
 
-    <messageBox dim="true" dialogWidth="400px" v-if="showResetDialog" @close="closeResetDialog">
-      <template v-slot:header>{{ getText('MRI_PA_RESET_FILTERS_TITLE') }}</template>
-      <template v-slot:body>
-        <div>
-          <div class="div-reset-text">{{ getText('MRI_PA_TXT_RESET_FILTERS') }}</div>
-        </div>
-      </template>
-      <template v-slot:footer>
-        <div class="flex-spacer"></div>
-        <appButton
-          :click="reset"
-          :text="getText('MRI_PA_RESET_FILTERS_OK')"
-          :tooltip="getText('MRI_PA_RESET_FILTERS_OK')"
+    <D2eDialog
+      v-model="showResetDialog"
+      :title="getText('MRI_PA_RESET_FILTERS_TITLE')"
+      data-testid="pa-modal-wrapper"
+      @close="closeResetDialog"
+    >
+      <p class="reset-dialog-text">{{ getText('MRI_PA_TXT_RESET_FILTERS') }}</p>
+      <template #actions>
+        <D2eButton
+          variant="secondary"
+          data-testid="pa-reset-dialog-cancel-btn"
+          @click="closeResetDialog"
+        >
+          {{ getText('MRI_PA_BUTTON_CANCEL') }}
+        </D2eButton>
+        <D2eButton
           v-focus
-        ></appButton>
-        <appButton
-          :click="closeResetDialog"
-          :text="getText('MRI_PA_BUTTON_CANCEL')"
-          :tooltip="getText('MRI_PA_BUTTON_CANCEL')"
-        ></appButton>
+          data-testid="pa-reset-dialog-confirm-btn"
+          @click="reset"
+        >
+          {{ getText('MRI_PA_RESET_FILTERS_OK') }}
+        </D2eButton>
       </template>
-    </messageBox>
+    </D2eDialog>
   </div>
 </template>
 
@@ -192,9 +158,10 @@ import bsDropdown from '../lib/ui/bs-dropdown.vue'
 import bsDropdownItemButton from '../lib/ui/bs-dropdown-item-button.vue'
 import * as types from '../store/mutation-types'
 import DialogBox from './DialogBox.vue'
-import messageBox from './MessageBox.vue'
+import { D2eButton, D2eDialog, D2eTextField } from '@d2e/ui'
 import { usePortalContext } from '../composables/usePortalContext'
 import { useNotificationStore } from '../stores/notifications'
+import { isBookmarkSaveSuccess } from '@/utils/BookmarkUtils'
 import { useUserRole } from '../composables/useUserRole'
 
 export default {
@@ -256,6 +223,19 @@ export default {
     isNewCohort() {
       return this.getActiveBookmark?.isNew
     },
+    cohortNameErrors(): string[] {
+      const errors: string[] = []
+      if (this.cohortNameValidationState === 'invalid') {
+        errors.push(this.getText('MRI_PA_INVALID_NAME_ERROR'))
+      }
+      if (this.cohortNameValidationState === 'empty') {
+        errors.push(this.getText('MRI_PA_BMK_EMPTY_NAME_ERROR'))
+      }
+      if (this.hasExceededLength) {
+        errors.push('Filter name must not exceed 255 characters')
+      }
+      return errors
+    },
     hasExceededLength() {
       return this.cohortName.length > this.maxLength
     },
@@ -285,7 +265,7 @@ export default {
     },
   },
   methods: {
-    ...mapActions(['fireBookmarkQuery', 'loadbookmarkToState', 'resetChart', 'queryReset']),
+    ...mapActions(['fireBookmarkQuery', 'loadbookmarkToState', 'resetChart']),
     ...mapMutations([types.CONFIG_SET_HAS_ASSIGNED, types.SET_ACTIVE_BOOKMARK, types.SET_ACTIVE_BOOKMARK_BASELINE]),
     onAddFilterCardMenuItemSelected(configPath, isExclusion = false) {
       this.$emit('add', {
@@ -347,21 +327,24 @@ export default {
         this.isSavingBookmark = true
 
         try {
-          if (isNewBookmark || this.isNotUserSharedBookmark) {
+          const isInsert = isNewBookmark || this.isNotUserSharedBookmark
+          let result
+
+          if (isInsert) {
             const params = {
               cmd: 'insert',
               bookmarkname: bookmarkName,
               shareBookmark: this.shareBookmark,
               bookmark: JSON.stringify(bookmark),
             }
-            await this.fireBookmarkQuery({ params, method: 'post', suppressToast: true })
+            result = await this.fireBookmarkQuery({ params, method: 'post', suppressToast: true })
           } else {
             const request = {
               cmd: 'update',
               bookmark: JSON.stringify(bookmark),
               shareBookmark: this.shareBookmark,
             }
-            await this.fireBookmarkQuery({
+            result = await this.fireBookmarkQuery({
               method: 'put',
               params: request,
               bookmarkId: activeBookmark.bmkId,
@@ -369,10 +352,20 @@ export default {
             })
           }
 
-          const successMessage =
-            isNewBookmark || this.isNotUserSharedBookmark
-              ? this.getText('MRI_PA_SAVE_BMK_SUCCESS')
-              : this.getText('MRI_PA_UPDATE_BMK_SUCCESS')
+          // fireBookmarkQuery reports a failed insert or update itself and then resolves,
+          // so a resolved promise is not proof that the cohort was saved. Only a success
+          // payload is. Stopping here leaves the cohort dirty, which is the safe direction.
+          if (!isBookmarkSaveSuccess(result)) {
+            return
+          }
+
+          // Baseline the payload that was written, before the cohort list refresh: waiting
+          // for that refresh is what left a saved cohort reporting dirty (#3341).
+          this[types.SET_ACTIVE_BOOKMARK_BASELINE](bookmark)
+
+          const successMessage = isInsert
+            ? this.getText('MRI_PA_SAVE_BMK_SUCCESS')
+            : this.getText('MRI_PA_UPDATE_BMK_SUCCESS')
 
           // Close the dialog right after the save succeeds so the success toast is shown
           // after the modal closes, not while the subsequent list refresh is still running.
@@ -381,8 +374,11 @@ export default {
 
           await this.fireBookmarkQuery({ method: 'get', params: { cmd: 'loadAll' } })
           const savedBookmark = this.getBookmarkByNameAndUsername(bookmarkName, username)
+          // SET_ACTIVE_BOOKMARK clears the baseline, so it has to be captured again. Live
+          // state here would mark edits made during the refresh clean although they were
+          // never written, so the written payload is used again.
           this[types.SET_ACTIVE_BOOKMARK](savedBookmark)
-          this[types.SET_ACTIVE_BOOKMARK_BASELINE](this.getBookmarksData)
+          this[types.SET_ACTIVE_BOOKMARK_BASELINE](bookmark)
         } catch (error) {
           console.error('Error during bookmark save or reload:', error)
         } finally {
@@ -392,10 +388,12 @@ export default {
         }
       }
     },
-    reset() {
-      this.queryReset()
-      this.resetChart()
-      this.closeResetDialog()
+    async reset() {
+      try {
+        await this.resetChart()
+      } finally {
+        this.closeResetDialog()
+      }
     },
     getRefreshUnicodeCharacter() {
       const charSpan = document.createElement('textarea')
@@ -414,7 +412,9 @@ export default {
     bsDropdown,
     bsDropdownItemButton,
     DialogBox,
-    messageBox,
+    D2eButton,
+    D2eDialog,
+    D2eTextField,
   },
 }
 </script>

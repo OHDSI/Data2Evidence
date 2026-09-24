@@ -160,7 +160,29 @@ export function buildBootstrapStatements(cfg: BootstrapConfig): string[] {
   // ── Supabase roles (PostGraphile connects as authenticator and SET ROLEs) ──
   out.push(createGroupRole("anon", "NOLOGIN INHERIT"));
   out.push(createGroupRole("authenticated", "NOLOGIN INHERIT"));
-  out.push(createGroupRole("service_role", "NOLOGIN INHERIT BYPASSRLS"));
+  // No BYPASSRLS: setting that attribute requires superuser, which managed
+  // Postgres (Azure Flexible Server included) never grants -- even to a role
+  // that already holds it. Requesting it fails the statement outright with
+  // "must be superuser to change bypassrls attribute", leaving service_role
+  // absent on every greenfield install. Reachability of storage.buckets is
+  // provided by the service_role buckets policy migration instead.
+  out.push(createGroupRole("service_role", "NOLOGIN INHERIT"));
+  // trex's V1__initial_schema creates supabase_admin WITH ... REPLICATION, which
+  // is superuser-only on managed Postgres, so V1 aborts and the whole trexdb
+  // schema is never created. V1 is checksum-verified and already applied in
+  // existing deployments, so it cannot be edited; pre-creating the role here
+  // makes V1's own IF NOT EXISTS guard skip the failing statement. No
+  // REPLICATION: V5__drop_realtime_admin drops this role and the _realtime
+  // schema a few migrations later, so nothing ever replicates as it.
+  out.push(createGroupRole("supabase_admin", "NOLOGIN"));
+  // Postgres 15 does not give a CREATEROLE creator membership in the role it
+  // just created, and bootstrap runs as the superuser that also runs V1.
+  out.push(`GRANT supabase_admin TO CURRENT_USER`);
+  // The storage post-init grants these roles access to public.objects, which is
+  // only usable with USAGE on the schema itself.
+  for (const role of ["anon", "authenticated", "service_role"]) {
+    out.push(`GRANT USAGE ON SCHEMA public TO ${role}`);
+  }
 
   for (const dbKey of Object.keys(cfg.manageConfig.databases)) {
     if (!dbKey.startsWith("+")) continue; // only creation scenarios
@@ -184,8 +206,42 @@ export function buildBootstrapStatements(cfg: BootstrapConfig): string[] {
 
     // ── Role membership: manager gets service_role, reader anon, writer authenticated ──
     if (users.manager) out.push(`GRANT service_role TO ${quoteIdent(users.manager)}`);
+    // V1 creates the _realtime schema AUTHORIZATION supabase_admin, which needs
+    // membership in that role rather than mere CREATEROLE.
+    if (users.manager) out.push(`GRANT supabase_admin TO ${quoteIdent(users.manager)}`);
     if (users.reader) out.push(`GRANT anon TO ${quoteIdent(users.reader)}`);
     if (users.writer) out.push(`GRANT authenticated TO ${quoteIdent(users.writer)}`);
+
+    // ── CREATE on schema public ──────────────────────────────────────────────
+    // Postgres 15 stopped granting CREATE on public to PUBLIC. logto's
+    // roles.sql creates public.check_role_type -- hardcoded to public, not to
+    // its own schema -- so on a greenfield database logto's seed dies with
+    // "permission denied for schema public".
+    //
+    // public is owned by the platform admin role (azure_pg_admin on Azure), so
+    // these only take effect when the bootstrap superuser is a member of it. A
+    // non-member gets "WARNING: no privileges were granted for public" and
+    // Postgres still reports success, hence the explicit check below: the
+    // failure otherwise surfaces much later as an unrelated error.
+    const publicCreators = [users.manager, users.logtoManager].filter(
+      (u): u is string => !!u,
+    );
+    for (const user of publicCreators) {
+      out.push(`GRANT USAGE, CREATE ON SCHEMA public TO ${quoteIdent(user)}`);
+    }
+    if (users.writer) out.push(`GRANT USAGE ON SCHEMA public TO ${quoteIdent(users.writer)}`);
+    for (const user of publicCreators) {
+      out.push(
+        doBlock(
+          `BEGIN IF NOT has_schema_privilege(${quoteLiteral(user)}, 'public', 'CREATE') THEN ` +
+            `RAISE WARNING ${quoteLiteral(
+              `no CREATE on schema public for ${user}; schema public is owned by the platform ` +
+                "admin role, so the bootstrap user must be a member of it (on Azure: GRANT " +
+                "azure_pg_admin TO <superuser>). logto seeding will fail without it.",
+            )}; END IF; END`,
+        ),
+      );
+    }
 
     // ── Database-level CREATE ────────────────────────────────────────────────
     // `CREATE SCHEMA IF NOT EXISTS` checks CREATE on the database before it
@@ -253,15 +309,91 @@ export function buildBootstrapStatements(cfg: BootstrapConfig): string[] {
   return out;
 }
 
+// ── Concurrent catalog writers ────────────────────────────────────────────
+//
+// Postgres offers no lock that serialises two sessions granting on the same
+// catalog row. `GRANT ... ON ALL TABLES IN SCHEMA x` rewrites pg_class.relacl
+// for every table in the schema, so when a second client touches the same
+// tables at the same instant one of the two loses the race and gets
+// `XX000 tuple concurrently updated` out of simple_heap_update.
+//
+// That is not hypothetical: alp-logto's entrypoint runs
+// `node packages/core/d2e-grants.mjs`, which grants on all tables in schema
+// `logto` to its logto_tenant_* roles, while this bootstrap grants on the same
+// tables to alp_pg_admin_user. On a first boot the logto entrypoint waits for
+// this bootstrap to create the schema and privileges it polls for, so the two
+// are ordered by accident; on a restart those privileges already exist, the
+// poll passes immediately and the two run concurrently.
+//
+// Every statement built above is idempotent, so replaying the loser is safe,
+// and retry is the only remedy Postgres offers. Deliberately scoped to exactly
+// this error: any other failure still aborts on the first attempt, because a
+// half-provisioned database must never reach trex's server.listen.
+const CONCURRENT_UPDATE_ATTEMPTS = 5;
+const CONCURRENT_UPDATE_BACKOFF_MS = 100;
+
+/** True only for Postgres' `XX000 tuple concurrently updated`. The executor
+ *  trex hands us is node-postgres' `pool.query`, which carries the server's
+ *  SQLSTATE on `.code`; both halves must match so a different XX000
+ *  (internal_error covers more than this) is never retried. */
+export function isConcurrentCatalogUpdate(err: unknown): boolean {
+  if (typeof err !== "object" || err === null) return false;
+  const { code, message } = err as { code?: unknown; message?: unknown };
+  return code === "XX000" && typeof message === "string" &&
+    message.includes("tuple concurrently updated");
+}
+
+/** Statement text for the retry warning. Role statements carry
+ *  `ENCRYPTED PASSWORD <literal>`, so everything from the keyword on is
+ *  dropped rather than written to stdout, and the rest is capped — the log
+ *  only has to say which statement lost the race. */
+export function redactStatement(sql: string): string {
+  const cut = sql.search(/\bPASSWORD\b/i);
+  const head = cut === -1 ? sql : sql.slice(0, cut);
+  const capped = head.slice(0, 120);
+  return capped.length < sql.length ? `${capped.trimEnd()} ...` : capped;
+}
+
+export interface RunBootstrapOptions {
+  /** Total attempts per statement, including the first. */
+  attempts?: number;
+  /** Delay before the first retry; doubled for each further attempt. */
+  backoffMs?: number;
+  /** Injectable for tests so they do not pay the real backoff. */
+  sleep?: (ms: number) => Promise<void>;
+}
+
+const defaultSleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
+
 /** Execute the built statements in order. Rejects on the first failure — the
- *  caller treats a bootstrap failure as fatal. */
+ *  caller treats a bootstrap failure as fatal — except for a concurrent
+ *  catalog update, which is retried a bounded number of times first. */
 export async function runBootstrapStatements(
   exec: (sql: string) => Promise<unknown>,
   cfg: BootstrapConfig,
+  opts: RunBootstrapOptions = {},
 ): Promise<number> {
+  const attempts = opts.attempts ?? CONCURRENT_UPDATE_ATTEMPTS;
+  const backoffMs = opts.backoffMs ?? CONCURRENT_UPDATE_BACKOFF_MS;
+  const sleep = opts.sleep ?? defaultSleep;
   const statements = buildBootstrapStatements(cfg);
   for (const sql of statements) {
-    await exec(sql);
+    for (let attempt = 1;; attempt++) {
+      try {
+        await exec(sql);
+        break;
+      } catch (err) {
+        if (attempt >= attempts || !isConcurrentCatalogUpdate(err)) throw err;
+        // Logged, not swallowed: a bootstrap that quietly races another writer
+        // on every restart is worth seeing in the boot log.
+        console.warn(
+          `[d2e-bootstrap] concurrent catalog update on attempt ${attempt}/${attempts}, retrying: ${
+            redactStatement(sql)
+          }`,
+        );
+        await sleep(backoffMs * 2 ** (attempt - 1));
+      }
+    }
   }
   return statements.length;
 }

@@ -5,6 +5,8 @@ import { DatasetDetail } from '../dataset/entity/dataset-detail.entity.ts'
 import { WebApiSourceApi } from './webapi-source.api.ts'
 import { IDbCredentials, IDaimonRequest, ISourceRequest } from './types.ts'
 import { findRoleByName, sourceUserRoleName } from './webapi-role.util.ts'
+import { JobPluginsApi } from './jobplugins.api.ts'
+import { sanitizeIdForCacheId } from '../dataset/entity/dataset.entity.ts'
 
 // Mirrors org.ohdsi.webapi.common.DBMSType. A source whose dialect is absent there throws from
 // DataSourceDTOParser during WebAPI's connection check, and that exception escapes
@@ -29,7 +31,15 @@ const WEBAPI_SUPPORTED_DIALECTS = new Set([
 export class WebApiSourceService {
   private readonly logger = createLogger(this.constructor.name)
 
-  constructor(private readonly webApiSourceApi: WebApiSourceApi) {}
+  // dataset id -> most recent cache flow run. In-memory only: a portal restart
+  // loses it, and getCacheStatus then reports "no active job" rather than lying
+  // about a build it cannot see. Callers re-trigger, which is idempotent.
+  private readonly cacheFlowRuns = new Map<string, string>()
+
+  constructor(
+    private readonly webApiSourceApi: WebApiSourceApi,
+    private readonly jobPluginsApi: JobPluginsApi,
+  ) {}
 
   async syncSourceForDataset(
     dataset: Dataset,
@@ -38,10 +48,15 @@ export class WebApiSourceService {
     authToken?: string
   ): Promise<void> {
     const dialect = this.mapDialect(dataset.dialect)
+    const isHana = dialect === 'hana'
     if (!WEBAPI_SUPPORTED_DIALECTS.has(dialect)) {
       await this.warnUnsupportedDialect(dataset.id, dialect, authToken)
-      if (dataset.schemaName) {
+      if (dataset.schemaName && !isHana) {
         await this.triggerCacheCreation(dataset.id, dataset.schemaName, authToken)
+      } else if (isHana) {
+        this.logger.debug(
+          `Skipping cache build for dataset ${dataset.id}: HANA has no DuckDB cache on any dataset type`
+        )
       }
       return
     }
@@ -56,8 +71,12 @@ export class WebApiSourceService {
         await this.webApiSourceApi.createSource(sourceRequest, authToken)
       }
 
-      if (dataset.schemaName) {
+      if (dataset.schemaName && !isHana) {
         await this.triggerCacheCreation(dataset.id, dataset.schemaName, authToken)
+      } else if (isHana) {
+        this.logger.debug(
+          `Skipping cache build for dataset ${dataset.id}: HANA has no DuckDB cache on any dataset type`
+        )
       }
     } catch (error) {
       this.logger.error(`Failed to sync WebAPI source for dataset ${dataset.id}: ${error}`)
@@ -79,57 +98,70 @@ export class WebApiSourceService {
     )
   }
 
-  // Manual cache (re)build for a webapi dataset. Unlike the private
-  // triggerCacheCreation used during source sync, this returns the result so
-  // the HTTP caller can surface success/failure.
+  // Build the cache with the same Prefect flow every other dataset type uses.
+  // jobplugins resolves the dataset and derives the cache catalog itself, so the
+  // dataset id is all we send. bao's POST /trexsql/{key}/cache is no longer called
+  // from d2e; it remains in trex for standalone WebAPI.
   async refreshCache(
-    sourceKey: string,
-    schemaName: string,
+    datasetId: string,
+    _schemaName: string,
     authToken?: string
   ): Promise<{ success: boolean; databaseCode: string; error?: string }> {
-    return await this.webApiSourceApi.createCache(sourceKey, schemaName, authToken)
+    const databaseCode = sanitizeIdForCacheId(datasetId)
+    try {
+      const { flowRunId } = await this.jobPluginsApi.createCacheFlowRun(datasetId, authToken)
+      this.cacheFlowRuns.set(datasetId, flowRunId)
+      return { success: true, databaseCode }
+    } catch (error) {
+      return { success: false, databaseCode, error: (error as Error).message }
+    }
   }
 
-  // Kick off the TrexSQL cache build. We deliberately do NOT await
-  // `waitForCacheReady` here: bao's COMPLETED transition can take minutes, and
-  // edge-function HTTP callers (e.g. the dataset gateway) time out well before
-  // that. Consumers that depend on a hot cache (DQD, DC, analytics-svc
-  // cdmversion) must wait for readiness explicitly via `waitForCacheReady`.
+  // Kick off the cache build without waiting for it. waitForCacheReady below
+  // exists for a consumer that needs a hot cache before proceeding, but has no
+  // callers yet.
   private async triggerCacheCreation(
-    sourceKey: string,
+    datasetId: string,
     schemaName: string,
     authToken?: string
   ): Promise<void> {
-    try {
-      const result = await this.webApiSourceApi.createCache(sourceKey, schemaName, authToken)
-      if (!result.success) {
-        this.logger.warn(`TrexSQL cache creation failed for ${sourceKey}: ${result.error}`)
+    const result = await this.refreshCache(datasetId, schemaName, authToken)
+    if (!result.success) {
+      this.logger.warn(`Cache flow run failed to start for ${datasetId}: ${result.error}`)
+    }
+  }
+
+  // Block until the cache for the given dataset is built. Currently unused — grep
+  // confirms no callers — but intended for a consumer that needs a hot cache before
+  // proceeding (e.g. before dispatching downstream work against the cache catalog).
+  async waitForCacheReady(
+    datasetId: string,
+    authToken?: string,
+    options: { timeoutMs?: number; pollIntervalMs?: number } = {}
+  ): Promise<void> {
+    const timeoutMs = options.timeoutMs ?? 15 * 60 * 1000
+    const pollIntervalMs = options.pollIntervalMs ?? 2000
+    const deadline = Date.now() + timeoutMs
+    while (Date.now() < deadline) {
+      const status = await this.getCacheStatus(datasetId, authToken)
+      if (status.activeJobStatus === 'FAILED') {
+        throw new Error(`Cache build for ${datasetId} failed: ${status.lastJobError}`)
       }
-    } catch (error) {
-      this.logger.error(`Failed to create TrexSQL cache for ${sourceKey}: ${error}`)
+      if (status.ready) return
+      await new Promise(resolve => setTimeout(resolve, pollIntervalMs))
     }
+    throw new Error(`Cache build for ${datasetId} did not become ready within ${timeoutMs}ms`)
   }
 
-  // Block until the TrexSQL cache for the given dataset is COMPLETED.
-  // Call this from consumers that explicitly need a hot cache (DQD/DC kickoff).
-  async waitForCacheReady(sourceKey: string, authToken?: string): Promise<void> {
-    try {
-      await this.webApiSourceApi.waitForCacheReady(sourceKey, authToken)
-    } catch (error) {
-      this.logger.error(`Cache wait failed for ${sourceKey}: ${error}`)
-      throw error
-    }
-  }
-
-  // Snapshot the TrexSQL cache state for a dataset. Callers poll this and decide
-  // when it's safe to issue queries that read from the cache catalog.
+  // Snapshot the cache build state for a dataset. Callers poll this and decide when
+  // it is safe to query the cache catalog.
   //
-  // bao returns a single :activeJob field (no separate :lastJob). For postgres/
-  // bigquery dialects the cache POST builds synchronously and never inserts a
-  // job row, so activeJob is null and the cache is ready as soon as the file
-  // exists + is attached. For JDBC dialects, the job row persists after the
-  // batch finishes with status=COMPLETED — treat that as ready too.
-  async getCacheStatus(sourceKey: string, authToken?: string): Promise<{
+  // bao reported cacheExists/cacheAttached by stat-ing the file; the flow reports
+  // neither, so both are derived from the run reaching COMPLETED. lastModified comes
+  // from the flow run's end_time, and is only ever populated once the run has
+  // COMPLETED (getFlowRunState returns endTime for other terminal/in-flight states
+  // too when Prefect has one, but we deliberately only surface it on success).
+  async getCacheStatus(datasetId: string, authToken?: string): Promise<{
     ready: boolean
     cacheExists: boolean
     cacheAttached: boolean
@@ -137,17 +169,26 @@ export class WebApiSourceService {
     activeJobStatus?: string | null
     lastJobError?: string | null
   }> {
-    const status = await this.webApiSourceApi.getCacheStatus(sourceKey, authToken)
-    const jobStatus = status.activeJob?.status ?? null
-    const jobDone = jobStatus === null || jobStatus === 'COMPLETED'
-    const ready = !!status.cacheExists && !!status.cacheAttached && jobDone
+    const flowRunId = this.cacheFlowRuns.get(datasetId)
+    if (!flowRunId) {
+      return {
+        ready: false,
+        cacheExists: false,
+        cacheAttached: false,
+        lastModified: null,
+        activeJobStatus: null,
+        lastJobError: null,
+      }
+    }
+    const { state, endTime } = await this.jobPluginsApi.getFlowRunState(flowRunId, authToken)
+    const ready = state === 'COMPLETED'
     return {
       ready,
-      cacheExists: !!status.cacheExists,
-      cacheAttached: !!status.cacheAttached,
-      lastModified: status.lastModified ?? null,
-      activeJobStatus: jobStatus,
-      lastJobError: status.activeJob?.error ?? null,
+      cacheExists: ready,
+      cacheAttached: ready,
+      lastModified: ready ? endTime : null,
+      activeJobStatus: state,
+      lastJobError: state === 'FAILED' ? `Cache flow run ${flowRunId} failed` : null,
     }
   }
 
