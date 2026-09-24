@@ -20,6 +20,14 @@ export const validateDataQualityFlowRunDto = () => [
     .optional()
     .isString()
     .withMessage("cohortDefinitionId must be a string"),
+  // Bounds the dqd_plugin flow-run timeout override (#2964): floor avoids a run that
+  // times out before execute_dqd can even connect, ceiling avoids parking a worker
+  // slot indefinitely on a value meant to raise, not remove, the safety net.
+  body("taskTimeoutSeconds")
+    .optional()
+    .isInt({ min: 60, max: 86400 })
+    .withMessage("taskTimeoutSeconds must be an integer between 60 and 86400 seconds")
+    .toInt(),
 ];
 
 export const validateDataQualityDatasetId = () =>

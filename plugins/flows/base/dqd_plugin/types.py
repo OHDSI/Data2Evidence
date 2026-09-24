@@ -1,5 +1,9 @@
 from typing import Optional, List
-from pydantic import BaseModel, computed_field
+from pydantic import BaseModel, Field, computed_field
+
+# dqd_plugin's flow-level timeout (flow.py) must clear this, not equal it --
+# shared so the two can't drift apart.
+TASK_TIMEOUT_SECONDS_MAX = 86400
 
 
 class DqdOptionsType(BaseModel):
@@ -20,6 +24,14 @@ class DqdOptionsType(BaseModel):
     # it fails before reaching the database and DQD had no way to opt out.
     # Mirrors DCOptionsType.useSourceConnection.
     useSourceConnection: Optional[bool] = False
+    # How long execute_dqd may run before Prefect force-ends it (#2964: it was
+    # unbounded, so a wedged DB connection left the flow run RUNNING forever).
+    # numThreads is pinned to 1 (sequential checks), so runtime scales directly with
+    # CDM size -- callers with a larger dataset should raise this per-run. Bounds
+    # match validateDataQualityFlowRunDto's HTTP-layer check; enforced here too so a
+    # Prefect Custom Run (which validates against this model directly, bypassing the
+    # jobplugins API) can't set 0/negative or an unbounded value.
+    taskTimeoutSeconds: int = Field(default=14400, ge=60, le=TASK_TIMEOUT_SECONDS_MAX)
 
     @property
     def use_trex_connection(self) -> bool:

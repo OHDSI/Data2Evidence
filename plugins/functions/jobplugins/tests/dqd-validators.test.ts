@@ -67,6 +67,48 @@ Deno.test("validateDataQualityFlowRunDto reports every badly-typed optional fiel
   ]);
 });
 
+Deno.test("validateDataQualityFlowRunDto accepts taskTimeoutSeconds at the lower bound", async () => {
+  const req = createMockRequest({ body: { datasetId: VALID_UUID, taskTimeoutSeconds: 60 } });
+  assertEquals(await runValidators(validateDataQualityFlowRunDto(), req), []);
+});
+
+Deno.test("validateDataQualityFlowRunDto accepts taskTimeoutSeconds at the upper bound", async () => {
+  const req = createMockRequest({ body: { datasetId: VALID_UUID, taskTimeoutSeconds: 86400 } });
+  assertEquals(await runValidators(validateDataQualityFlowRunDto(), req), []);
+});
+
+Deno.test("validateDataQualityFlowRunDto rejects taskTimeoutSeconds below the lower bound", async () => {
+  const req = createMockRequest({ body: { datasetId: VALID_UUID, taskTimeoutSeconds: 59 } });
+  assertEquals(await runValidators(validateDataQualityFlowRunDto(), req), [
+    "taskTimeoutSeconds must be an integer between 60 and 86400 seconds",
+  ]);
+});
+
+Deno.test("validateDataQualityFlowRunDto rejects taskTimeoutSeconds above the upper bound", async () => {
+  const req = createMockRequest({ body: { datasetId: VALID_UUID, taskTimeoutSeconds: 86401 } });
+  assertEquals(await runValidators(validateDataQualityFlowRunDto(), req), [
+    "taskTimeoutSeconds must be an integer between 60 and 86400 seconds",
+  ]);
+});
+
+Deno.test("validateDataQualityFlowRunDto rejects a non-integer taskTimeoutSeconds", async () => {
+  const req = createMockRequest({ body: { datasetId: VALID_UUID, taskTimeoutSeconds: 3600.5 } });
+  assertEquals(await runValidators(validateDataQualityFlowRunDto(), req), [
+    "taskTimeoutSeconds must be an integer between 60 and 86400 seconds",
+  ]);
+});
+
+Deno.test("validateDataQualityFlowRunDto omits taskTimeoutSeconds errors when absent (optional)", async () => {
+  const req = createMockRequest({ body: { datasetId: VALID_UUID } });
+  assertEquals(await runValidators(validateDataQualityFlowRunDto(), req), []);
+});
+
+Deno.test("validateDataQualityFlowRunDto coerces a numeric string taskTimeoutSeconds to a number", async () => {
+  const req = createMockRequest({ body: { datasetId: VALID_UUID, taskTimeoutSeconds: "3600" as never } });
+  assertEquals(await runValidators(validateDataQualityFlowRunDto(), req), []);
+  assertEquals((req.body as { taskTimeoutSeconds: number }).taskTimeoutSeconds, 3600);
+});
+
 Deno.test("validateDataQualityDatasetId accepts a valid UUID query param", async () => {
   const req = createMockRequest({ query: { datasetId: VALID_UUID } });
   assertEquals(await runValidators(validateDataQualityDatasetId(), req), []);

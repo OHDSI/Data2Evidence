@@ -9,7 +9,7 @@ from prefect import flow, task
 from prefect.logging import get_run_logger
 from prefect.artifacts import create_markdown_artifact
 
-from .types import DqdOptionsType, DqdParams
+from .types import DqdOptionsType, DqdParams, TASK_TIMEOUT_SECONDS_MAX
 
 from _shared_flow_utils.dao.DBDao import DBDao
 from _shared_flow_utils.api.AnalyticsSvcAPI import AnalyticsSvcAPI
@@ -25,7 +25,17 @@ def _default_cache_id_from_dataset_id(dataset_id):
     cleaned = dataset_id.replace("-", "_")
     return f"_{cleaned}" if cleaned[:1].isdigit() else cleaned
 
-@flow(log_prints=True)
+
+# Backstops execute_dqd's own (per-run configurable) task timeout: that one only
+# bounds the R/JDBC call itself, so anything that could wedge outside that call --
+# now or after a future change -- would otherwise still leave the flow RUNNING
+# forever (#2964). Must clear TASK_TIMEOUT_SECONDS_MAX, not equal it: everything
+# before execute_dqd runs on the flow's clock too (dialect probing, connection-
+# string building, the HANA JWT cohort-schema call), so a flow timeout set equal
+# to the task's own max could fire before a caller who chose that max ever gets
+# their configured duration. +300s covers that pre-task work plus Prefect's own
+# bookkeeping.
+@flow(log_prints=True, timeout_seconds=TASK_TIMEOUT_SECONDS_MAX + 300)
 def dqd_plugin(options: DqdOptionsType):
     logger = get_run_logger()
     logger.info(f"Flow parameters received: {options.json()}")
@@ -77,7 +87,18 @@ def dqd_plugin(options: DqdOptionsType):
         if schema_from_api:
             dqd_parameters.materializedCohortDatabaseSchema = schema_from_api
 
-    execute_dqd(dqd_parameters, flow_run_id, is_hana)
+    # Known gap: Prefect 3.6.10's sync task timeout raises via an in-process signal/
+    # async exception, which only fires once execution returns to the Python
+    # interpreter loop -- it cannot interrupt a call blocked inside rpy2/R/rJava's own
+    # blocking JDBC read. A wedged connection or query can still outlast this timeout.
+    # Closing that gap needs a JDBC-level socket/login timeout on the connection
+    # string built by _shared_flow_utils.dao.daobase.get_r_database_connector_connection_string,
+    # which is shared by every R-based flow (data_characterization_plugin,
+    # phenotype_plugin, omop_cdm_plugin, cohort_generator_plugin, ...) -- out of
+    # scope here; tracked as a separate follow-up rather than changed blind.
+    execute_dqd.with_options(timeout_seconds=options.taskTimeoutSeconds)(
+        dqd_parameters, flow_run_id, is_hana
+    )
 
 
 @task(log_prints=True, task_run_name="execute_dqd_{dqd_params.schemaName}")
