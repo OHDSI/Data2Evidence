@@ -77,8 +77,17 @@ export default async (req: IMRIRequest, res, next) => {
         } catch (error) {
             const errorMessage =
                 error instanceof Error ? error.message : "unknown error";
-            log.info(
-                `PA/CDM metadata fetch failed for datasetId ${datasetId}: ${errorMessage}`
+            // ERROR, not info. Swallowing this leaves req.paConfigId undefined,
+            // and the request continues to a handler that reads it --
+            // controllers/values.ts takes `configId` from here, not from the
+            // query string the browser sent -- so the failure re-emerges far
+            // away as a config-less call into mri-pa-config. What the user sees
+            // is "No suggestions available" and an empty patient count, naming
+            // neither the dataset nor the fetch that failed. At info level the
+            // one line that explains it does not appear in a default log.
+            log.error(
+                `PA/CDM metadata fetch failed for datasetId ${datasetId}: ${errorMessage}. ` +
+                `Requests that read paConfigId/cdmConfigId will be served without it.`
             );
         }
     };
