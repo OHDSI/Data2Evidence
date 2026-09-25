@@ -5,19 +5,15 @@ Applied changesets are recorded in a Liquibase-shaped `databasechangelog` table,
 schemas Liquibase already migrated are picked up as-is and the DAO version/date
 methods keep working.
 """
+import hashlib
 import re
-import socket
-import threading
-import time
-import uuid
 from contextlib import contextmanager
-from datetime import datetime, timedelta
+from datetime import datetime
 from pathlib import Path
 from typing import Iterator, List, NamedTuple, Optional
 
 from sqlalchemy import (
-    Boolean, Column, DateTime, Integer, MetaData, String, Table, and_, false, func, inspect, or_,
-    select, text,
+    Boolean, Column, DateTime, Integer, MetaData, String, Table, func, inspect, select, text,
 )
 
 from prefect.logging import get_run_logger
@@ -29,17 +25,14 @@ CHANGELOG_TABLE = "databasechangelog"
 MIGRATIONS_ROOT = Path(__file__).resolve().parent / "db" / "migrations"
 
 LOCK_TABLE = "databasechangeloglock"
-LOCK_TIMEOUT_SECONDS = 600
-# the holder renews `lockgranted` every heartbeat; a lock not renewed for a whole
-# lease is treated as left behind by a crashed run
-LOCK_LEASE_SECONDS = 900
-LOCK_HEARTBEAT_SECONDS = LOCK_LEASE_SECONDS / 3
-LOCK_POLL_SECONDS = 2
 
 SPLIT_STATEMENTS_FALSE_REGEX = re.compile(r"splitStatements:false", re.IGNORECASE)
 CHANGESET_HEADER_REGEX = re.compile(r"^--changeset\s+([^:\s]+):(\S+)")
 SPLIT_STATEMENTS_FALSE_LINE_REGEX = re.compile(r"^--\s*splitStatements:false\b", re.IGNORECASE)
 DEFAULT_AUTHOR = "d2e"
+# fits Liquibase's md5sum column (35 chars); marks checksums this runner wrote, since
+# Liquibase's own can't be recomputed
+CHECKSUM_PREFIX = "d2:"
 VOCAB_SCHEMA_PLACEHOLDER = "${VOCAB_SCHEMA}"
 # used unquoted in the changesets, so it must be a plain identifier
 SAFE_IDENTIFIER_REGEX = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
@@ -77,6 +70,12 @@ class ChangesetFile(NamedTuple):
     relative_path: str
 
 
+class AppliedChangeset(NamedTuple):
+    id: Optional[str]
+    author: Optional[str]
+    md5sum: Optional[str]
+
+
 def _parse_changeset(raw_text: str) -> tuple[bool, str]:
     split_statements = True
     body_lines = []
@@ -99,6 +98,11 @@ def _parse_changeset(raw_text: str) -> tuple[bool, str]:
     if changeset_count > 1:
         raise ValueError(f"Found {changeset_count} '--changeset' sections, expected exactly 1 per file")
     return split_statements, "\n".join(body_lines).strip()
+
+
+def _checksum(raw_text: str) -> str:
+    normalized = raw_text.replace("\r\n", "\n").strip()
+    return CHECKSUM_PREFIX + hashlib.md5(normalized.encode(), usedforsecurity=False).hexdigest()
 
 
 def _parse_changeset_header(raw_text: str, filename: str) -> tuple[str, str]:
@@ -204,20 +208,55 @@ def ensure_changelog_table(dbdao: DaoBase, schema_name: str) -> None:
                 "dateexecuted": DateTime,
                 "orderexecuted": Integer,
                 "exectype": String(10),
+                "md5sum": String(35),
             },
         )
 
 
-def get_applied_filenames(dbdao: DaoBase, schema_name: str, engine=None) -> set:
+def get_applied_changesets(dbdao: DaoBase, schema_name: str, engine=None) -> dict:
     engine = dbdao.engine if engine is None else engine
     with engine.connect() as connection:
         table = Table(CHANGELOG_TABLE, MetaData(schema=schema_name), autoload_with=connection)
-        rows = connection.execute(select(table.c.filename)).scalars().all()
-        return set(rows)
+        columns = [table.c[name] for name in ("filename", "id", "author", "md5sum") if name in table.c]
+        rows = connection.execute(select(*columns)).mappings().all()
+        return {
+            row["filename"]: AppliedChangeset(row.get("id"), row.get("author"), row.get("md5sum"))
+            for row in rows
+        }
+
+
+def get_applied_filenames(dbdao: DaoBase, schema_name: str, engine=None) -> set:
+    return set(get_applied_changesets(dbdao, schema_name, engine))
+
+
+def _validate_applied_changesets(all_files: List[ChangesetFile], applied: dict) -> None:
+    """Refuse to continue if an already-applied changeset file was edited: its author/id changed,
+    or (for changesets this runner recorded) its content did."""
+    problems = []
+    for changeset in all_files:
+        recorded = applied.get(changeset.relative_path)
+        if recorded is None:
+            continue
+        raw_text = changeset.path.read_text()
+        author, changeset_id = _parse_changeset_header(raw_text, changeset.path.name)
+        if recorded.id is not None and recorded.author is not None \
+                and (recorded.author, recorded.id) != (author, changeset_id):
+            problems.append(
+                f"{changeset.relative_path}: recorded as {recorded.author}:{recorded.id}, "
+                f"the file now says {author}:{changeset_id}"
+            )
+        elif recorded.md5sum and recorded.md5sum.startswith(CHECKSUM_PREFIX) \
+                and recorded.md5sum != _checksum(raw_text):
+            problems.append(f"{changeset.relative_path}: changed since it was applied")
+    if problems:
+        raise ValueError(
+            "Already-applied changesets were modified; add a new changeset instead of editing one:\n- "
+            + "\n- ".join(problems)
+        )
 
 
 def _record_changeset(connection, schema_name: str, changeset: ChangesetFile,
-                      author: str, changeset_id: str) -> None:
+                      author: str, changeset_id: str, checksum: str) -> None:
     """Insert into databasechangelog on the caller's connection, writing only the columns the table has."""
     table = Table(CHANGELOG_TABLE, MetaData(schema=schema_name), autoload_with=connection)
     row = {
@@ -226,6 +265,7 @@ def _record_changeset(connection, schema_name: str, changeset: ChangesetFile,
         "filename": changeset.relative_path,
         "dateexecuted": datetime.now(),
         "exectype": "EXECUTED",
+        "md5sum": checksum,
     }
     if "orderexecuted" in table.c:
         current_max = connection.execute(select(func.max(table.c.orderexecuted))).scalar()
@@ -255,7 +295,7 @@ def apply_changeset(dbdao: DaoBase, schema_name: str, dialect: str,
                 connection.execute(text(_set_current_schema_statement(dialect, schema_name)))
             for statement in statements:
                 connection.execute(_to_text(statement))
-            _record_changeset(connection, schema_name, changeset, author, changeset_id)
+            _record_changeset(connection, schema_name, changeset, author, changeset_id, _checksum(raw_text))
             trans.commit()
         except Exception:
             trans.rollback()
@@ -266,13 +306,12 @@ def apply_changeset(dbdao: DaoBase, schema_name: str, dialect: str,
 
 
 def _lock_table(schema_name: str) -> Table:
+    # same table Liquibase used, so one Liquibase already created works as-is
     return Table(
         LOCK_TABLE,
         MetaData(schema=schema_name),
         Column("id", Integer, primary_key=True, autoincrement=False),
         Column("locked", Boolean, nullable=False),
-        Column("lockgranted", DateTime),
-        Column("lockedby", String(255)),
     )
 
 
@@ -292,97 +331,21 @@ def _ensure_lock_row(engine, table: Table) -> None:
                     raise
 
 
-def _try_acquire_lock(engine, table: Table, holder: str) -> bool:
-    now = datetime.now()
-    stale_before = now - timedelta(seconds=LOCK_LEASE_SECONDS)
-    with engine.begin() as connection:
-        result = connection.execute(
-            table.update()
-            .where(and_(table.c.id == 1,
-                        or_(table.c.locked == false(), table.c.lockgranted < stale_before)))
-            .values(locked=True, lockgranted=now, lockedby=holder)
-        )
-        return result.rowcount == 1
-
-
-def _renew_lock_until_stopped(engine, table: Table, holder: str,
-                              stop: threading.Event, lost: threading.Event) -> None:
-    while not stop.wait(LOCK_HEARTBEAT_SECONDS):
-        try:
-            with engine.begin() as connection:
-                renewed = connection.execute(
-                    table.update()
-                    .where(and_(table.c.id == 1, table.c.lockedby == holder))
-                    .values(lockgranted=datetime.now())
-                ).rowcount
-        except Exception:
-            continue  # transient; the next beat retries
-        if renewed != 1:
-            lost.set()
-            return
-
-
 @contextmanager
-def _table_lock(engine, schema_name: str) -> Iterator[None]:
-    """Liquibase's databasechangeloglock protocol: one row, taken with an atomic conditional UPDATE."""
+def _schema_migration_lock(engine, schema_name: str) -> Iterator[None]:
+    """Serialize migrations of one schema by holding a row lock on a connection of its own.
+
+    The database releases the lock if this run dies, so there is no lease to expire. The changesets
+    run on other connections, which is why HANA's auto-committing DDL does not release it.
+    """
     table = _lock_table(schema_name)
     _ensure_lock_row(engine, table)
-    holder = f"{socket.gethostname()}-{uuid.uuid4()}"
-    deadline = time.monotonic() + LOCK_TIMEOUT_SECONDS
-    while not _try_acquire_lock(engine, table, holder):
-        if time.monotonic() >= deadline:
-            raise TimeoutError(
-                f"Timed out after {LOCK_TIMEOUT_SECONDS}s waiting for the migration lock on schema '{schema_name}'"
-            )
-        time.sleep(LOCK_POLL_SECONDS)
-
-    stop, lost = threading.Event(), threading.Event()
-    heartbeat = threading.Thread(
-        target=_renew_lock_until_stopped, args=(engine, table, holder, stop, lost),
-        name="d2e-migration-lock-heartbeat", daemon=True,
-    )
-    heartbeat.start()
-    try:
-        yield
-    finally:
-        stop.set()
-        heartbeat.join()
-        with engine.begin() as connection:
-            connection.execute(
-                table.update()
-                .where(and_(table.c.id == 1, table.c.lockedby == holder))
-                .values(locked=False, lockgranted=None, lockedby=None)
-            )
-    if lost.is_set():
-        raise RuntimeError(
-            f"Lost the migration lock on schema '{schema_name}' while migrating; "
-            "another run may have applied changesets concurrently"
-        )
-
-
-@contextmanager
-def _schema_migration_lock(engine, dialect: str, schema_name: str) -> Iterator[None]:
-    """Serialize concurrent migrations of one schema: advisory lock on Postgres, lock table elsewhere."""
-    if dialect != "postgres":
-        with _table_lock(engine, schema_name):
-            yield
-        return
-    params = {"schema": schema_name}
     with engine.connect() as lock_connection:
-        lock_connection = lock_connection.execution_options(isolation_level="AUTOCOMMIT")
-        lock_connection.execute(text(f"SET lock_timeout = '{LOCK_TIMEOUT_SECONDS}s'"))
-        lock_connection.execute(
-            text("SELECT pg_advisory_lock(hashtext('d2e_schema_migration'), hashtext(:schema))"),
-            params,
-        )
-        lock_connection.execute(text("RESET lock_timeout"))
+        lock_connection.execute(select(table.c.id).where(table.c.id == 1).with_for_update())
         try:
             yield
         finally:
-            lock_connection.execute(
-                text("SELECT pg_advisory_unlock(hashtext('d2e_schema_migration'), hashtext(:schema))"),
-                params,
-            )
+            lock_connection.rollback()
 
 
 def apply_data_model_schema(dbdao: DaoBase, schema_name: str, data_model: str,
@@ -394,9 +357,10 @@ def apply_data_model_schema(dbdao: DaoBase, schema_name: str, data_model: str,
     all_files = list_changeset_files(dialect, data_model)
     engine = dbdao.engine
 
-    with _schema_migration_lock(engine, dialect, schema_name):
+    with _schema_migration_lock(engine, schema_name):
         ensure_changelog_table(dbdao, schema_name)
-        applied = get_applied_filenames(dbdao, schema_name, engine)
+        applied = get_applied_changesets(dbdao, schema_name, engine)
+        _validate_applied_changesets(all_files, applied)
 
         pending = [f for f in all_files if f.relative_path not in applied]
 

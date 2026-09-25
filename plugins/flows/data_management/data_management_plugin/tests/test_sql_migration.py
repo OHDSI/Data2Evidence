@@ -1,5 +1,3 @@
-import threading
-import time
 from contextlib import contextmanager
 from unittest.mock import MagicMock, patch
 
@@ -274,7 +272,7 @@ def test_apply_changeset_sets_schema_runs_statements_and_records_in_same_transac
 
     executed_sql = [c.args[0].text for c in connection.execute.call_args_list]
     assert executed_sql == ['SET LOCAL search_path TO "my_schema"', "CREATE TABLE foo(id integer)"]
-    record_mock.assert_called_once_with(connection, "my_schema", changeset, "alp", "V1")
+    record_mock.assert_called_once_with(connection, "my_schema", changeset, "alp", "V1", sm._checksum(SIMPLE_CHANGESET))
     trans.commit.assert_called_once()
     trans.rollback.assert_not_called()
 
@@ -394,7 +392,7 @@ def sqlite_engine():
 def _record(engine, filename="db/migrations/postgres/changesets/x/V2__b.sql"):
     changeset = sm.ChangesetFile(path=None, relative_path=filename)
     with engine.begin() as connection:
-        sm._record_changeset(connection, "legacy", changeset, "alp", "V2__b")
+        sm._record_changeset(connection, "legacy", changeset, "alp", "V2__b", "d2:" + "a" * 32)
 
 
 def _rows(engine):
@@ -450,115 +448,41 @@ def test_ensure_changelog_table_leaves_an_existing_table_alone():
     dbdao.create_table.assert_not_called()
 
 
-# --- _schema_migration_lock ---
+# --- _schema_migration_lock: a row lock held on its own connection for the whole migration ---
 
-def test_schema_migration_lock_takes_and_releases_advisory_lock_on_postgres():
+def test_schema_migration_lock_takes_a_row_lock_and_releases_it_at_the_end():
     engine = MagicMock()
-    connection = engine.connect.return_value.__enter__.return_value
-    connection.execution_options.return_value = connection
+    lock_connection = engine.connect.return_value.__enter__.return_value
 
-    with sm._schema_migration_lock(engine, "postgres", "s1"):
-        statements = [str(c.args[0]) for c in connection.execute.call_args_list]
-        assert any("pg_advisory_lock" in s for s in statements)
-        assert not any("pg_advisory_unlock" in s for s in statements)
+    with patch("data_management_plugin.sql_migration._ensure_lock_row"):
+        with sm._schema_migration_lock(engine, "s1"):
+            assert "FOR UPDATE" in str(lock_connection.execute.call_args.args[0])
+            lock_connection.rollback.assert_not_called()
 
-    statements = [str(c.args[0]) for c in connection.execute.call_args_list]
-    assert "pg_advisory_unlock" in statements[-1]
-    assert connection.execute.call_args_list[-1].args[1] == {"schema": "s1"}
+    lock_connection.rollback.assert_called_once()
 
 
 def test_schema_migration_lock_releases_when_the_body_raises():
     engine = MagicMock()
-    connection = engine.connect.return_value.__enter__.return_value
-    connection.execution_options.return_value = connection
+    lock_connection = engine.connect.return_value.__enter__.return_value
 
-    with pytest.raises(RuntimeError):
-        with sm._schema_migration_lock(engine, "postgres", "s1"):
-            raise RuntimeError("migration failed")
+    with patch("data_management_plugin.sql_migration._ensure_lock_row"):
+        with pytest.raises(RuntimeError):
+            with sm._schema_migration_lock(engine, "s1"):
+                raise RuntimeError("migration failed")
 
-    assert "pg_advisory_unlock" in str(connection.execute.call_args_list[-1].args[0])
-
-
-def test_schema_migration_lock_uses_the_lock_table_off_postgres():
-    engine = MagicMock()
-    events = []
-
-    @contextmanager
-    def fake_table_lock(eng, schema_name):
-        events.append(("lock", eng, schema_name))
-        yield
-        events.append(("unlock",))
-
-    with patch("data_management_plugin.sql_migration._table_lock", fake_table_lock):
-        with sm._schema_migration_lock(engine, "hana", "s1"):
-            events.append(("body",))
-
-    assert events == [("lock", engine, "s1"), ("body",), ("unlock",)]
-    engine.connect.assert_not_called()
+    lock_connection.rollback.assert_called_once()
 
 
-# --- _table_lock (Liquibase's databasechangeloglock protocol; sqlite stands in for HANA) ---
+def test_schema_migration_lock_creates_the_lock_table_and_row_when_missing(sqlite_engine):
+    with sm._schema_migration_lock(sqlite_engine, "legacy"):
+        pass
 
-def _lock_state(engine):
-    with engine.connect() as connection:
-        return connection.execute(text("SELECT locked, lockedby FROM legacy.databasechangeloglock WHERE id = 1")).one()
-
-
-def test_table_lock_takes_and_releases_the_row(sqlite_engine):
-    with sm._table_lock(sqlite_engine, "legacy"):
-        locked, holder = _lock_state(sqlite_engine)
-        assert locked and holder
-
-    assert tuple(_lock_state(sqlite_engine)) == (0, None)
+    with sqlite_engine.connect() as connection:
+        assert connection.execute(text("SELECT count(*) FROM legacy.databasechangeloglock WHERE id = 1")).scalar() == 1
 
 
-def test_table_lock_releases_when_the_body_raises(sqlite_engine):
-    with pytest.raises(RuntimeError):
-        with sm._table_lock(sqlite_engine, "legacy"):
-            raise RuntimeError("migration failed")
-
-    assert tuple(_lock_state(sqlite_engine)) == (0, None)
-
-
-def test_table_lock_is_exclusive_and_times_out_while_held(sqlite_engine):
-    table = sm._lock_table("legacy")
-    sm._ensure_lock_row(sqlite_engine, table)
-    assert sm._try_acquire_lock(sqlite_engine, table, "run-a") is True
-
-    with patch.object(sm, "LOCK_TIMEOUT_SECONDS", 0), patch.object(sm, "LOCK_POLL_SECONDS", 0):
-        with pytest.raises(TimeoutError, match="schema 'legacy'"):
-            with sm._table_lock(sqlite_engine, "legacy"):
-                pass
-
-    assert _lock_state(sqlite_engine).lockedby == "run-a"
-
-
-def test_table_lock_only_the_holder_can_release(sqlite_engine):
-    table = sm._lock_table("legacy")
-    sm._ensure_lock_row(sqlite_engine, table)
-    sm._try_acquire_lock(sqlite_engine, table, "run-a")
-
-    with pytest.raises(TimeoutError):
-        with patch.object(sm, "LOCK_TIMEOUT_SECONDS", 0), patch.object(sm, "LOCK_POLL_SECONDS", 0):
-            with sm._table_lock(sqlite_engine, "legacy"):
-                pass
-
-    # the timed-out waiter never held it, so it must not have cleared run-a's lock
-    assert tuple(_lock_state(sqlite_engine)) == (1, "run-a")
-
-
-def test_table_lock_takes_over_a_stale_lock(sqlite_engine):
-    table = sm._lock_table("legacy")
-    sm._ensure_lock_row(sqlite_engine, table)
-    stale = sm.datetime.now() - sm.timedelta(seconds=sm.LOCK_LEASE_SECONDS + 60)
-    with sqlite_engine.begin() as connection:
-        connection.execute(table.update().values(locked=True, lockgranted=stale, lockedby="crashed-run"))
-
-    assert sm._try_acquire_lock(sqlite_engine, table, "run-b") is True
-    assert _lock_state(sqlite_engine).lockedby == "run-b"
-
-
-def test_table_lock_reuses_a_liquibase_created_lock_table(sqlite_engine):
+def test_schema_migration_lock_reuses_a_liquibase_created_lock_table(sqlite_engine):
     with sqlite_engine.begin() as connection:
         connection.exec_driver_sql(
             "CREATE TABLE legacy.databasechangeloglock (id INTEGER NOT NULL PRIMARY KEY, "
@@ -566,8 +490,8 @@ def test_table_lock_reuses_a_liquibase_created_lock_table(sqlite_engine):
         )
         connection.exec_driver_sql("INSERT INTO legacy.databasechangeloglock (id, locked) VALUES (1, 0)")
 
-    with sm._table_lock(sqlite_engine, "legacy"):
-        assert _lock_state(sqlite_engine).locked
+    with sm._schema_migration_lock(sqlite_engine, "legacy"):
+        pass
 
     with sqlite_engine.connect() as connection:
         assert connection.execute(text("SELECT count(*) FROM legacy.databasechangeloglock")).scalar() == 1
@@ -586,14 +510,14 @@ def test_ensure_lock_row_is_idempotent(sqlite_engine):
 # --- apply_data_model_schema ---
 
 @patch("data_management_plugin.sql_migration.apply_changeset")
-@patch("data_management_plugin.sql_migration.get_applied_filenames")
+@patch("data_management_plugin.sql_migration.get_applied_changesets")
 @patch("data_management_plugin.sql_migration.ensure_changelog_table")
 def test_apply_data_model_schema_skips_already_applied_changesets(
     ensure_table_mock, get_applied_mock, apply_changeset_mock
 ):
     dbdao = MagicMock()
     all_files = sm.list_changeset_files("postgres", "medical-imaging")
-    get_applied_mock.return_value = {all_files[0].relative_path}
+    get_applied_mock.return_value = {all_files[0].relative_path: sm.AppliedChangeset(None, None, None)}
 
     with patch("data_management_plugin.sql_migration.get_run_logger", return_value=MagicMock()):
         sm.apply_data_model_schema(dbdao, "my_schema", "medical-imaging", "postgres")
@@ -607,14 +531,14 @@ def test_apply_data_model_schema_skips_already_applied_changesets(
 
 
 @patch("data_management_plugin.sql_migration.apply_changeset")
-@patch("data_management_plugin.sql_migration.get_applied_filenames")
+@patch("data_management_plugin.sql_migration.get_applied_changesets")
 @patch("data_management_plugin.sql_migration.ensure_changelog_table")
 def test_apply_data_model_schema_noop_when_fully_applied(
     ensure_table_mock, get_applied_mock, apply_changeset_mock
 ):
     dbdao = MagicMock()
     all_files = sm.list_changeset_files("postgres", "medical-imaging")
-    get_applied_mock.return_value = {f.relative_path for f in all_files}
+    get_applied_mock.return_value = {f.relative_path: sm.AppliedChangeset(None, None, None) for f in all_files}
 
     with patch("data_management_plugin.sql_migration.get_run_logger", return_value=MagicMock()):
         sm.apply_data_model_schema(dbdao, "my_schema", "medical-imaging", "postgres")
@@ -623,7 +547,7 @@ def test_apply_data_model_schema_noop_when_fully_applied(
 
 
 @patch("data_management_plugin.sql_migration.apply_changeset")
-@patch("data_management_plugin.sql_migration.get_applied_filenames", return_value=set())
+@patch("data_management_plugin.sql_migration.get_applied_changesets", return_value={})
 @patch("data_management_plugin.sql_migration.ensure_changelog_table")
 def test_apply_data_model_schema_count_limits_pending_changesets(
     ensure_table_mock, get_applied_mock, apply_changeset_mock
@@ -635,7 +559,7 @@ def test_apply_data_model_schema_count_limits_pending_changesets(
 
 
 @patch("data_management_plugin.sql_migration.apply_changeset")
-@patch("data_management_plugin.sql_migration.get_applied_filenames", return_value=set())
+@patch("data_management_plugin.sql_migration.get_applied_changesets", return_value={})
 @patch("data_management_plugin.sql_migration.ensure_changelog_table")
 def test_apply_data_model_schema_holds_the_lock_while_applying(
     ensure_table_mock, get_applied_mock, apply_changeset_mock
@@ -643,8 +567,8 @@ def test_apply_data_model_schema_holds_the_lock_while_applying(
     events = []
 
     @contextmanager
-    def fake_lock(engine, dialect, schema_name):
-        events.append(("lock", dialect, schema_name))
+    def fake_lock(engine, schema_name):
+        events.append(("lock", schema_name))
         yield
         events.append(("unlock",))
 
@@ -654,14 +578,14 @@ def test_apply_data_model_schema_holds_the_lock_while_applying(
          patch("data_management_plugin.sql_migration.get_run_logger", return_value=MagicMock()):
         sm.apply_data_model_schema(MagicMock(), "s1", "medical-imaging", "postgres")
 
-    assert events == [("lock", "postgres", "s1"), ("apply",), ("apply",), ("unlock",)]
+    assert events == [("lock", "s1"), ("apply",), ("apply",), ("unlock",)]
 
 
 def test_apply_data_model_schema_rejects_unsupported_data_model_before_touching_the_schema():
     dbdao = MagicMock()
     with patch("data_management_plugin.sql_migration.get_run_logger", return_value=MagicMock()), \
          patch("data_management_plugin.sql_migration.ensure_changelog_table") as ensure_table_mock, \
-         patch("data_management_plugin.sql_migration.get_applied_filenames", return_value=set()), \
+         patch("data_management_plugin.sql_migration.get_applied_changesets", return_value={}), \
          pytest.raises(ValueError, match="not supported"):
         sm.apply_data_model_schema(dbdao, "s1", "custom-omop-ms", "postgres")
 
@@ -709,13 +633,13 @@ def test_apply_changeset_record_only_records_without_running_the_sql(record_mock
                        MagicMock(), record_only=True)
 
     connection.execute.assert_not_called()
-    record_mock.assert_called_once_with(connection, "my_schema", changeset, "alp", "V1")
+    record_mock.assert_called_once_with(connection, "my_schema", changeset, "alp", "V1", sm._checksum(SIMPLE_CHANGESET))
     trans.commit.assert_called_once()
 
 
 @pytest.mark.parametrize("record_only", [True, False])
 @patch("data_management_plugin.sql_migration.apply_changeset")
-@patch("data_management_plugin.sql_migration.get_applied_filenames", return_value=set())
+@patch("data_management_plugin.sql_migration.get_applied_changesets", return_value={})
 @patch("data_management_plugin.sql_migration.ensure_changelog_table")
 def test_apply_data_model_schema_passes_record_only_to_every_changeset(
     ensure_table_mock, get_applied_mock, apply_changeset_mock, record_only
@@ -727,64 +651,219 @@ def test_apply_data_model_schema_passes_record_only_to_every_changeset(
     assert all(c.args[7] is record_only for c in apply_changeset_mock.call_args_list)
 
 
-# --- lock heartbeat (file-backed sqlite so the heartbeat thread gets its own connection) ---
+# --- identity and checksum validation of already-applied changesets ---
 
-@pytest.fixture
-def sqlite_file_engine(tmp_path):
-    engine = sql.create_engine(f"sqlite:///{tmp_path / 'main.db'}")
-    legacy_db = tmp_path / "legacy.db"
-
-    @sql.event.listens_for(engine, "connect")
-    def attach(dbapi_connection, _record):
-        dbapi_connection.execute(f"ATTACH DATABASE '{legacy_db}' AS legacy")
-
-    return engine
+def _applied_row(changeset, author, changeset_id, md5sum):
+    return {changeset.relative_path: sm.AppliedChangeset(changeset_id, author, md5sum)}
 
 
-def test_table_lock_heartbeat_keeps_a_long_migration_from_being_taken_over(sqlite_file_engine):
-    table = sm._lock_table("legacy")
-    with patch.object(sm, "LOCK_LEASE_SECONDS", 1), patch.object(sm, "LOCK_HEARTBEAT_SECONDS", 0.1):
-        with sm._table_lock(sqlite_file_engine, "legacy"):
-            time.sleep(1.5)  # longer than the lease
-            assert sm._try_acquire_lock(sqlite_file_engine, table, "intruder") is False
+def _plain_changeset(tmp_path, body="CREATE TABLE t(id integer);", name="V1.0.0.0.0__create_t.sql"):
+    path = tmp_path / name
+    path.write_text(body)
+    return sm.ChangesetFile(path=path, relative_path=f"db/migrations/postgres/changesets/m/{name}")
 
 
-def test_table_lock_without_a_heartbeat_would_be_taken_over(sqlite_file_engine):
-    table = sm._lock_table("legacy")
-    with patch.object(sm, "LOCK_LEASE_SECONDS", 1), \
-         patch.object(sm, "_renew_lock_until_stopped", lambda *a, **k: None):
-        with sm._table_lock(sqlite_file_engine, "legacy"):
-            time.sleep(1.5)
-            assert sm._try_acquire_lock(sqlite_file_engine, table, "intruder") is True
+def test_checksum_fits_the_liquibase_column_and_ignores_line_endings_and_edge_whitespace():
+    checksum = sm._checksum("CREATE TABLE t(id integer);\n")
+
+    assert checksum.startswith("d2:") and len(checksum) == 35
+    assert sm._checksum("  CREATE TABLE t(id integer);\r\n\r\n") == checksum
+    assert sm._checksum("CREATE TABLE t(id bigint);") != checksum
 
 
-def test_table_lock_raises_when_the_lock_was_taken_over_mid_run(sqlite_file_engine):
-    table = sm._lock_table("legacy")
-    with patch.object(sm, "LOCK_HEARTBEAT_SECONDS", 0.05):
-        with pytest.raises(RuntimeError, match="Lost the migration lock"):
-            with sm._table_lock(sqlite_file_engine, "legacy"):
-                with sqlite_file_engine.begin() as connection:
-                    connection.execute(table.update().values(lockedby="thief"))
-                time.sleep(0.4)
+def test_validate_accepts_unmodified_changesets_and_ignores_unapplied_ones(tmp_path):
+    changeset = _plain_changeset(tmp_path)
+    applied = _applied_row(changeset, "d2e", "V1.0.0.0.0__create_t", sm._checksum(changeset.path.read_text()))
 
-    assert _lock_state(sqlite_file_engine).lockedby == "thief"
+    sm._validate_applied_changesets([changeset], applied)
+    sm._validate_applied_changesets([changeset], {})
 
 
-def test_table_lock_stops_its_heartbeat_thread(sqlite_file_engine):
-    with sm._table_lock(sqlite_file_engine, "legacy"):
-        assert any(t.name == "d2e-migration-lock-heartbeat" for t in threading.enumerate())
+def test_validate_rejects_an_applied_changeset_whose_content_changed(tmp_path):
+    changeset = _plain_changeset(tmp_path)
+    applied = _applied_row(changeset, "d2e", "V1.0.0.0.0__create_t", sm._checksum(changeset.path.read_text()))
+    changeset.path.write_text("CREATE TABLE t(id bigint);")
 
-    assert not any(t.name == "d2e-migration-lock-heartbeat" for t in threading.enumerate())
+    with pytest.raises(ValueError, match="V1.0.0.0.0__create_t.sql: changed since it was applied"):
+        sm._validate_applied_changesets([changeset], applied)
 
 
-@patch("data_management_plugin.sql_migration._record_changeset")
-def test_apply_changeset_runs_and_records_a_plain_sql_file(record_mock):
-    dbdao, connection, trans = _make_dbdao_mock()
-    changeset = _changeset("-- adds t\nCREATE TABLE t(id integer);\nCREATE INDEX i ON t(id);",
-                           "db/migrations/postgres/changesets/new-model/V1.0.0.0.0__create_t.sql")
+def test_validate_rejects_an_applied_changeset_whose_author_or_id_changed(tmp_path):
+    changeset = _plain_changeset(
+        tmp_path, "--liquibase formatted sql\n--changeset alp:renamed_id\nCREATE TABLE t(id integer);")
+    applied = _applied_row(changeset, "alp", "original_id", "d2:" + "0" * 32)
 
-    sm.apply_changeset(dbdao, "my_schema", "postgres", changeset, "v", MagicMock())
+    with pytest.raises(ValueError, match="recorded as alp:original_id, the file now says alp:renamed_id"):
+        sm._validate_applied_changesets([changeset], applied)
 
-    executed_sql = [c.args[0].text for c in connection.execute.call_args_list]
-    assert executed_sql[1:] == ["CREATE TABLE t(id integer)", "CREATE INDEX i ON t(id)"]
-    record_mock.assert_called_once_with(connection, "my_schema", changeset, "d2e", "V1.0.0.0.0__create_t")
+
+def test_validate_only_checks_identity_for_rows_liquibase_wrote(tmp_path):
+    # Liquibase's own checksum can't be recomputed, so an edited body isn't detected for its rows
+    changeset = _plain_changeset(
+        tmp_path, "--liquibase formatted sql\n--changeset alp:V1\nCREATE TABLE t(id bigint);")
+    liquibase_row = _applied_row(changeset, "alp", "V1", "8:0123456789abcdef0123456789abcdef")
+
+    sm._validate_applied_changesets([changeset], liquibase_row)
+
+
+def test_validate_lists_every_modified_changeset(tmp_path):
+    first = _plain_changeset(tmp_path, name="V1__a.sql")
+    second = _plain_changeset(tmp_path, name="V2__b.sql")
+    applied = {**_applied_row(first, "d2e", "V1__a", "d2:" + "0" * 32),
+               **_applied_row(second, "d2e", "V2__b", "d2:" + "1" * 32)}
+
+    with pytest.raises(ValueError) as error:
+        sm._validate_applied_changesets([first, second], applied)
+
+    assert "V1__a.sql" in str(error.value) and "V2__b.sql" in str(error.value)
+
+
+@patch("data_management_plugin.sql_migration.apply_changeset")
+@patch("data_management_plugin.sql_migration.get_applied_changesets")
+@patch("data_management_plugin.sql_migration.ensure_changelog_table")
+def test_apply_data_model_schema_refuses_to_run_when_an_applied_changeset_was_modified(
+    ensure_table_mock, get_applied_mock, apply_changeset_mock
+):
+    first = sm.list_changeset_files("postgres", "medical-imaging")[0]
+    get_applied_mock.return_value = {first.relative_path: sm.AppliedChangeset("some-other-id", "alp", None)}
+
+    with patch("data_management_plugin.sql_migration.get_run_logger", return_value=MagicMock()), \
+         pytest.raises(ValueError, match="Already-applied changesets were modified"):
+        sm.apply_data_model_schema(MagicMock(), "s1", "medical-imaging", "postgres")
+
+    apply_changeset_mock.assert_not_called()
+
+
+def test_get_applied_changesets_reads_identity_and_checksum(sqlite_engine):
+    with sqlite_engine.begin() as connection:
+        connection.exec_driver_sql(LIQUIBASE_TABLE_DDL)
+        connection.exec_driver_sql(
+            "INSERT INTO legacy.databasechangelog (id, author, filename, dateexecuted, orderexecuted, exectype, md5sum) "
+            "VALUES ('V1__a', 'alp', 'f/V1__a.sql', CURRENT_TIMESTAMP, 1, 'EXECUTED', '8:abc')"
+        )
+    dao = MagicMock()
+
+    assert sm.get_applied_changesets(dao, "legacy", sqlite_engine) == {
+        "f/V1__a.sql": sm.AppliedChangeset("V1__a", "alp", "8:abc")}
+
+
+def test_get_applied_changesets_tolerates_a_table_with_only_filename_and_dateexecuted(sqlite_engine):
+    with sqlite_engine.begin() as connection:
+        connection.exec_driver_sql("CREATE TABLE legacy.databasechangelog (filename VARCHAR(500), dateexecuted TIMESTAMP)")
+        connection.exec_driver_sql("INSERT INTO legacy.databasechangelog VALUES ('f/V1__a.sql', CURRENT_TIMESTAMP)")
+
+    assert sm.get_applied_changesets(MagicMock(), "legacy", sqlite_engine) == {
+        "f/V1__a.sql": sm.AppliedChangeset(None, None, None)}
+
+
+def test_record_changeset_stores_the_checksum(sqlite_engine):
+    with sqlite_engine.begin() as connection:
+        connection.exec_driver_sql(LIQUIBASE_TABLE_DDL)
+
+    _record(sqlite_engine)
+
+    with sqlite_engine.connect() as connection:
+        assert connection.execute(text("SELECT md5sum FROM legacy.databasechangelog")).scalar() == "d2:" + "a" * 32
+
+
+# --- remaining edge cases ---
+
+def test_to_text_refuses_a_statement_whose_bind_parameter_cannot_be_escaped():
+    with patch.object(sm, "_escape_bind_params", lambda statement: statement):
+        with pytest.raises(ValueError, match="unescapable bind parameter"):
+            sm._to_text("SELECT * FROM t WHERE id = :id")
+
+
+def test_get_applied_filenames_returns_only_the_recorded_file_names(sqlite_engine):
+    with sqlite_engine.begin() as connection:
+        connection.exec_driver_sql(LIQUIBASE_TABLE_DDL)
+        for order, name in enumerate(["f/V1__a.sql", "f/V2__b.sql"], start=1):
+            connection.exec_driver_sql(
+                "INSERT INTO legacy.databasechangelog (id, author, filename, dateexecuted, orderexecuted, exectype) "
+                f"VALUES ('id{order}', 'alp', '{name}', CURRENT_TIMESTAMP, {order}, 'EXECUTED')"
+            )
+
+    assert sm.get_applied_filenames(MagicMock(), "legacy", sqlite_engine) == {"f/V1__a.sql", "f/V2__b.sql"}
+
+
+def test_split_sql_statements_handles_unterminated_comments_and_strings():
+    assert sm._split_sql_statements("SELECT 1; /* never closed; SELECT 2") == ["SELECT 1"]
+    assert sm._split_sql_statements("SELECT 1; -- trailing comment without a newline") == ["SELECT 1"]
+    assert sm._split_sql_statements("SELECT 'never closed; SELECT 2") == ["SELECT 'never closed; SELECT 2"]
+
+
+def test_split_sql_statements_keeps_a_doubled_quote_inside_an_identifier():
+    assert sm._split_sql_statements('SELECT "a""b;c" FROM t;') == ['SELECT "a""b;c" FROM t']
+
+
+# --- _ensure_lock_row: races between concurrent first runs ---
+
+def _lock_engine(rows_seen, seed_error=None):
+    """An engine mock whose connection returns `rows_seen` for successive SELECTs of the lock row."""
+    engine = MagicMock()
+    connection = engine.begin.return_value.__enter__.return_value
+    selects = iter(rows_seen)
+
+    def execute(statement):
+        if "INSERT" in str(statement):
+            if seed_error:
+                raise seed_error
+            return MagicMock()
+        result = MagicMock()
+        result.first.return_value = next(selects)
+        return result
+
+    connection.execute.side_effect = execute
+    return engine, connection
+
+
+def test_ensure_lock_row_tolerates_another_run_creating_the_table_first():
+    table = sm._lock_table("s1")
+    engine, _ = _lock_engine([("row",)])
+
+    with patch.object(sm.Table, "create", side_effect=RuntimeError("already exists")), \
+         patch.object(sm, "inspect") as inspector:
+        inspector.return_value.has_table.return_value = True
+        sm._ensure_lock_row(engine, table)
+
+    inspector.return_value.has_table.assert_called_once_with("databasechangeloglock", schema="s1")
+
+
+def test_ensure_lock_row_reraises_when_the_table_could_not_be_created():
+    table = sm._lock_table("s1")
+    engine, _ = _lock_engine([])
+
+    with patch.object(sm.Table, "create", side_effect=RuntimeError("permission denied")), \
+         patch.object(sm, "inspect") as inspector:
+        inspector.return_value.has_table.return_value = False
+        with pytest.raises(RuntimeError, match="permission denied"):
+            sm._ensure_lock_row(engine, table)
+
+
+def test_ensure_lock_row_tolerates_another_run_seeding_the_row_first():
+    table = sm._lock_table("s1")
+    engine, _ = _lock_engine([None, ("row",)], seed_error=RuntimeError("duplicate key"))
+
+    with patch.object(sm.Table, "create"):
+        sm._ensure_lock_row(engine, table)
+
+
+def test_ensure_lock_row_reraises_when_the_row_could_not_be_seeded():
+    table = sm._lock_table("s1")
+    engine, _ = _lock_engine([None, None], seed_error=RuntimeError("read-only database"))
+
+    with patch.object(sm.Table, "create"):
+        with pytest.raises(RuntimeError, match="read-only database"):
+            sm._ensure_lock_row(engine, table)
+
+
+def test_ensure_lock_row_seeds_an_unlocked_row_when_missing():
+    table = sm._lock_table("s1")
+    engine, connection = _lock_engine([None])
+
+    with patch.object(sm.Table, "create"):
+        sm._ensure_lock_row(engine, table)
+
+    insert = connection.execute.call_args_list[-1].args[0]
+    assert "INSERT INTO s1.databasechangeloglock" in str(insert)
+    assert insert.compile().params == {"id": 1, "locked": False}

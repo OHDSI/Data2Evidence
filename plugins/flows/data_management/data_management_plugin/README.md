@@ -29,7 +29,7 @@ CREATE INDEX idx_test_id ON test (id);
   lines are ignored. Without a header the author is recorded as `d2e` and the id as the file name.
 
 `tests/test_sql_migration.py` lints every changeset (one changeset per file, no `$$` body in a file
-that is split, no unknown `${...}` placeholder), so a bad file fails CI rather than a deployment.
+that is split, no unknown `${...}` placeholder), so run the tests after adding or editing one.
 
 ## Creating a new data model
 
@@ -59,6 +59,11 @@ Applied changesets are recorded per schema in the `databasechangelog` table, the
 used, so schemas Liquibase already migrated are picked up as-is. Each run applies only the changesets
 not yet recorded there.
 
+An applied changeset must not be edited. Each run first checks every already-applied file against its
+record and stops before running anything if the author or id changed, or, for changesets this runner
+recorded, if the file's content changed (Liquibase's own checksums can't be recomputed, so for rows
+Liquibase wrote only the author and id are checked). Add a new changeset instead.
+
 ## Flow actions
 
 | Action | What it does |
@@ -73,10 +78,25 @@ not yet recorded there.
 
 ## Guarantees and limits
 
-- **Postgres:** a changeset and its `databasechangelog` row commit in one transaction. Concurrent runs
-  on the same schema are serialized with an advisory lock.
-- **HANA:** concurrent runs are serialized with the `databasechangeloglock` row (the holder renews it
-  while migrating; a lock not renewed for 15 minutes is treated as left by a crashed run). DDL
-  auto-commits on HANA, so a crash between a changeset and its changelog row can leave them out of
-  step. The HANA changesets and this lock have not been run against a real HANA instance.
+- **One migration per schema at a time.** A run holds a row lock on `databasechangeloglock` (the table
+  Liquibase used) for its whole duration, on both Postgres and HANA. A second run waits for the first to
+  finish. The database drops the lock if a run dies, so a crashed run never blocks the next one.
+- **Postgres:** a changeset and its `databasechangelog` row commit in one transaction.
+- **HANA:** DDL auto-commits, so a crash between a changeset and its changelog row can leave them out of
+  step. The HANA changesets and the HANA lock have not been run against a real HANA instance.
 - A data model or dialect that isn't registered fails before anything in the schema is changed.
+
+## Running the tests
+
+From `plugins/flows/data_management`:
+
+```
+uv run pytest data_management_plugin/tests
+uv run --with pytest-cov pytest data_management_plugin/tests --cov=data_management_plugin --cov-branch --cov-report=term-missing
+```
+
+The unit tests need no database: Prefect tasks and DAOs are mocked, and SQLite stands in for the
+changelog and lock tables. Every statement and branch of the plugin is covered. They do not run in CI
+automatically. Behavior that needs a real database (a schema Liquibase already migrated, concurrent
+runs, a crashed run, an edited changeset) was checked by hand against Postgres, and nothing has been run
+against HANA.
