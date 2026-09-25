@@ -51,5 +51,8 @@ services:
       # admin in while Logto is unavailable.
       TREX_NATIVE_PASSWORD_LOGIN_ENABLED: ${TREX_NATIVE_PASSWORD_LOGIN_ENABLED:-false}
       # Roles live in trex after the migration; Logto-side group mapping must not
-      # reconcile them away.
-      IDP__AUTO_PROVISION_USERS: "false"
+      # reconcile them away, so this defaults off. Overridable from .env (the idp
+      # migration, which runs in this container, reads it to set the Logto
+      # provider's auto_provision) — a connector deployment that provisions users
+      # on first sign-in sets it true.
+      IDP__AUTO_PROVISION_USERS: ${IDP__AUTO_PROVISION_USERS:-false}

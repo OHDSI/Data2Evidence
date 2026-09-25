@@ -51,6 +51,12 @@ export interface MigrationConfig {
   /** Public origin a browser uses, e.g. https://d2e.example:443 (TREX_OIDC_ISSUER). */
   publicOrigin: string
   userDomain: string
+  /**
+   * Whether the Logto provider may auto-provision a first-time federated user
+   * into trex. Off by default so migrated users keep the roles the migration
+   * gave them; on only where a connector is expected to create users on sign-in.
+   */
+  autoProvision?: boolean
 }
 
 export interface MigrationSummary {
@@ -198,7 +204,7 @@ export async function runIdpMigration(
       authorizationEndpoint: `${cfg.publicOrigin.replace(/\/+$/, '')}/oidc/auth`,
       scopes: 'openid profile email',
       groupsSource: 'none',
-      autoProvision: false,
+      autoProvision: cfg.autoProvision ?? false,
       enabled: true
     })
   } catch (err) {

@@ -8,6 +8,12 @@ services:
       # resolves; `iss` stays the public issuer from docker-compose.yml, so tokens
       # verify unchanged everywhere else.
       TREX_OIDC_INTERNAL_BASE: "http://${PROJECT_NAME:-d2e}-trex:33001"
+    # physionet-host: reach the host mock (the IDP harness runs without -d, so
+    # docker-compose-local.yml isn't merged). extra_hosts is replaced, not merged —
+    # keep the base CADDY alias too.
+    extra_hosts:
+      - "${CADDY__D2E__PUBLIC_FQDN:-${CADDY__ALP__PUBLIC_FQDN:-localhost}}:host-gateway"
+      - "physionet-host:host-gateway"
     volumes:
       - ./plugins/ui-built:/usr/src/plugins/d2e-ui-pr
       # Overlay the e2e-patched MRI/PA seed config onto the image-bundled
@@ -19,3 +25,8 @@ services:
       # mount is not what gets seeded), so without this overlay the unpatched
       # (Age-default) config is used. Single-file bind mount over the bundled seed.
       - ./plugins/functions/mri-pg-config/src/db/seeds/03_Config.ts:/usr/src/bundled-plugins/d2e-functions/mri-pg-config/src/db/seeds/03_Config.ts
+
+  # Logto's connector exchanges the auth code at the host mock's token endpoint.
+  alp-logto:
+    extra_hosts:
+      - "physionet-host:host-gateway"

@@ -5,7 +5,11 @@
     "test": "playwright test",
     "test-last-failed": "playwright test --last-failed",
     "init": "playwright install chromium --with-deps",
-    "local-codegen": "playwright codegen --ignore-https-errors https://localhost:443"
+    "local-codegen": "playwright codegen --ignore-https-errors https://localhost:443",
+    "test:idp:logto": "playwright test tests/02-users/idp/logto-native.spec.ts",
+    "test:idp:entra": "E2E_ENV_FILE=.env.entra E2E_MANUAL_LOGIN=1 playwright test tests/02-users/idp/entra.spec.ts --headed --timeout=720000",
+    "test:idp:entra-external-id": "E2E_ENV_FILE=.env.entra-external-id playwright test tests/02-users/idp/entra-external-id.spec.ts",
+    "test:idp:physionet": "E2E_ENV_FILE=.env.physionet playwright test tests/02-users/idp/physionet.spec.ts"
   },
   "devDependencies": {
     "@playwright/test": "1.55.1",
