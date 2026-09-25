@@ -115,7 +115,7 @@ CHUNK_COLUMN_MAP = {
 
 TABLES_TO_EXCLUDE = [
     r"\b\w+(\.\w+)*_history\b",
-    # Liquibase tables
+    # Schema-migration tracking table (Liquibase's, and data_management_plugin's sql_migration)
     r"^databasechangelog$",
     r"^DATABASECHANGELOG$",
     # Postgres system tables

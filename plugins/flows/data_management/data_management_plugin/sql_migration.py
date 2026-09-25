@@ -6,19 +6,29 @@ left untouched on disk (including their `--liquibase formatted sql` /
 `--changeset` / `--rollback` comment lines).
 
 Applied changesets are recorded in a `databasechangelog` table shaped like
-Liquibase's own (just `filename` + `dateexecuted`), so
-DaoBase.get_last_executed_changeset / get_datamodel_created_date /
-get_datamodel_updated_date keep working unchanged. `filename` is stored as the
+Liquibase's own, so DaoBase.get_last_executed_changeset /
+get_datamodel_created_date / get_datamodel_updated_date keep working
+unchanged, and schemas that Liquibase already migrated are picked up as-is
+(Liquibase's table requires id/author/orderexecuted/exectype, so those are
+always written). `filename` is stored as the
 "db/migrations/<dialect>/changesets/<dir>/<file>" relative path Liquibase used
 to store, since `_shared_flow_utils.update_dataset_metadata.extract_version`
 parses that exact shape.
+
+Guarantees and limits:
+- Postgres: a changeset and its changelog row commit in one transaction, and
+  concurrent runs on the same schema are serialized with an advisory lock.
+- HANA: DDL auto-commits, so a crash between a changeset and its changelog row
+  can leave the two out of step, and there is no lock. Neither is verified
+  against a real HANA instance.
 """
 import re
+from contextlib import contextmanager
 from datetime import datetime
 from pathlib import Path
-from typing import TYPE_CHECKING, List, NamedTuple, Optional
+from typing import TYPE_CHECKING, Iterator, List, NamedTuple, Optional
 
-from sqlalchemy import DateTime, MetaData, String, Table, select, text
+from sqlalchemy import DateTime, Integer, MetaData, String, Table, func, select, text
 
 from prefect.logging import get_run_logger
 
@@ -29,7 +39,17 @@ CHANGELOG_TABLE = "databasechangelog"
 
 MIGRATIONS_ROOT = Path(__file__).resolve().parent / "db" / "migrations"
 
+LOCK_TIMEOUT_SECONDS = 600
+
 SPLIT_STATEMENTS_FALSE_REGEX = re.compile(r"splitStatements:false", re.IGNORECASE)
+CHANGESET_HEADER_REGEX = re.compile(r"^--changeset\s+([^:\s]+):(\S+)")
+VOCAB_SCHEMA_PLACEHOLDER = "${VOCAB_SCHEMA}"
+# ${VOCAB_SCHEMA} is used unquoted (`${VOCAB_SCHEMA}.concept`) and inside string
+# literals, so it must be a plain identifier.
+SAFE_IDENTIFIER_REGEX = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
+# Same pattern SQLAlchemy's text() uses to find `:name` bind parameters.
+BIND_PARAM_REGEX = re.compile(r"(?<![:\w\x5c]):(\w+)(?!:)")
+
 # Note: some changesets carry a `labels:`/`contexts:` modifier on their
 # --changeset line (e.g. omop5-4/V1.0.0.0.4__apply_v5.4.sql). Verified against
 # the real Liquibase 4.5.0 CLI: without --labels/--contexts passed on the
@@ -39,9 +59,9 @@ SPLIT_STATEMENTS_FALSE_REGEX = re.compile(r"splitStatements:false", re.IGNORECAS
 
 # Data models fully migrated off Liquibase. Ordered changeset directories
 # mirror the previous <includeAll> entries in each dialect's Liquibase
-# changelog XML (db/migrations/<dialect>/liquibase-changelog-*.xml). The two
-# dialects intentionally differ (e.g. hana's omop5-4 changelog has no `gdm`).
-# waveform's changelog is the same directory list as omop5-4 plus `waveform`.
+# changelog XML. The two dialects intentionally differ (e.g. hana's omop5-4
+# changelog has no `gdm`). waveform's changelog is the same directory list as
+# omop5-4 plus `waveform`.
 _OMOP54_DIRS_POSTGRES = ["omop", "questionnaireResponse", "researchSubject", "consent",
                         "views", "schemaMetadata", "bi", "omop5-4", "monitor",
                         "questionnaire", "gdm"]
@@ -73,38 +93,94 @@ class ChangesetFile(NamedTuple):
 def _parse_changeset(raw_text: str) -> tuple[bool, str]:
     split_statements = True
     body_lines = []
+    changeset_count = 0
     for line in raw_text.splitlines():
         stripped = line.strip()
         if stripped.startswith("--liquibase formatted sql"):
             continue
         if stripped.startswith("--changeset"):
+            changeset_count += 1
             if SPLIT_STATEMENTS_FALSE_REGEX.search(stripped):
                 split_statements = False
             continue
         if stripped.startswith("--rollback"):
             continue
         body_lines.append(line)
+    if changeset_count > 1:
+        # Liquibase tracks each section separately; this runner records one
+        # changeset per file, so refuse rather than silently merge them.
+        raise ValueError(f"Found {changeset_count} '--changeset' sections, expected exactly 1 per file")
     return split_statements, "\n".join(body_lines).strip()
 
 
-BLOCK_COMMENT_REGEX = re.compile(r"/\*.*?\*/", re.DOTALL)
+def _parse_changeset_header(raw_text: str) -> tuple[str, str]:
+    for line in raw_text.splitlines():
+        match = CHANGESET_HEADER_REGEX.match(line.strip())
+        if match:
+            return match.group(1), match.group(2)
+    raise ValueError("Missing '--changeset author:id' header")
 
 
 def _split_sql_statements(sql_body: str) -> List[str]:
-    # strip /* ... */ block comments first - some changesets keep old,
-    # superseded DDL inside one (e.g. omop5-4/V1.0.0.0.4__apply_v5.4.sql),
-    # and a semicolon inside the comment would otherwise split it apart
-    sql_body = BLOCK_COMMENT_REGEX.sub("", sql_body)
-    statements = []
-    for raw_statement in sql_body.split(";"):
-        lines = [
-            line for line in raw_statement.split("\n")
-            if line.strip() and not line.strip().startswith("--")
-        ]
-        cleaned = "\n".join(lines).strip()
-        if cleaned:
-            statements.append(cleaned)
+    """Split on top-level `;`, dropping comments. `;` inside string literals,
+    quoted identifiers and comments does not split (e.g. omop5-4's
+    V1.0.0.0.4__apply_v5.4.sql keeps old DDL inside a /* ... */ block)."""
+    statements: List[str] = []
+    current: List[str] = []
+
+    def flush() -> None:
+        statement = "".join(current).strip()
+        if statement:
+            statements.append(statement)
+        current.clear()
+
+    i, n = 0, len(sql_body)
+    while i < n:
+        char = sql_body[i]
+        following = sql_body[i + 1] if i + 1 < n else ""
+        if char == "-" and following == "-":
+            end = sql_body.find("\n", i)
+            i = n if end == -1 else end
+        elif char == "/" and following == "*":
+            end = sql_body.find("*/", i + 2)
+            i = n if end == -1 else end + 2
+            current.append(" ")
+        elif char in ("'", '"'):
+            j = i + 1
+            while j < n:
+                if sql_body[j] == char:
+                    if j + 1 < n and sql_body[j + 1] == char:
+                        j += 2
+                        continue
+                    break
+                j += 1
+            current.append(sql_body[i:j + 1])
+            i = j + 1
+        elif char == ";":
+            flush()
+            i += 1
+        else:
+            current.append(char)
+            i += 1
+    flush()
     return statements
+
+
+def _escape_bind_params(statement: str) -> str:
+    # text() reads `:name` as a bind parameter, but HANA SQLScript uses it for
+    # variables (`:Questionnaire_ID`); a backslash makes it literal.
+    return BIND_PARAM_REGEX.sub(r"\\:\1", statement)
+
+
+def _to_text(statement: str):
+    clause = text(_escape_bind_params(statement))
+    if clause.compile().params:
+        raise ValueError(f"Statement contains an unescapable bind parameter: {statement[:100]}")
+    return clause
+
+
+def _quote_identifier(name: str) -> str:
+    return '"' + name.replace('"', '""') + '"'
 
 
 def _set_current_schema_statement(dialect: str, schema_name: str) -> str:
@@ -112,16 +188,18 @@ def _set_current_schema_statement(dialect: str, schema_name: str) -> str:
     # schema must be pointed at the target schema first - this is what
     # Liquibase's `--defaultSchemaName`/JDBC `currentSchema` property did.
     if dialect == "hana":
-        return f'SET SCHEMA "{schema_name.upper()}"'
-    return f'SET search_path TO "{schema_name.lower()}"'
-
-
-def is_sql_migration_data_model(data_model: str, dialect: str) -> bool:
-    return data_model in DATAMODEL_CHANGESET_DIRS.get(dialect, {})
+        return f"SET SCHEMA {_quote_identifier(schema_name.upper())}"
+    # LOCAL: scoped to the changeset's transaction, never leaks to a pooled connection
+    return f"SET LOCAL search_path TO {_quote_identifier(schema_name.lower())}"
 
 
 def list_changeset_files(dialect: str, data_model: str) -> List[ChangesetFile]:
-    changeset_dirs = DATAMODEL_CHANGESET_DIRS[dialect][data_model]
+    try:
+        changeset_dirs = DATAMODEL_CHANGESET_DIRS[dialect][data_model]
+    except KeyError:
+        raise ValueError(
+            f"Data model '{data_model}' is not supported for dialect '{dialect}'"
+        ) from None
     files = []
     for dir_name in changeset_dirs:
         changeset_dir = MIGRATIONS_ROOT / dialect / "changesets" / dir_name
@@ -136,34 +214,68 @@ def ensure_changelog_table(dbdao: "DaoBase", schema_name: str) -> None:
         dbdao.create_table(
             schema_name,
             CHANGELOG_TABLE,
-            {"filename": String(500), "dateexecuted": DateTime},
+            {
+                "id": String(255),
+                "author": String(255),
+                "filename": String(500),
+                "dateexecuted": DateTime,
+                "orderexecuted": Integer,
+                "exectype": String(10),
+            },
         )
 
 
-def get_applied_filenames(dbdao: "DaoBase", schema_name: str) -> set:
-    with dbdao.engine.connect() as connection:
-        metadata_obj = MetaData(schema=schema_name)
-        table = Table(CHANGELOG_TABLE, metadata_obj, autoload_with=connection)
+def get_applied_filenames(dbdao: "DaoBase", schema_name: str, engine=None) -> set:
+    engine = dbdao.engine if engine is None else engine
+    with engine.connect() as connection:
+        table = Table(CHANGELOG_TABLE, MetaData(schema=schema_name), autoload_with=connection)
         rows = connection.execute(select(table.c.filename)).scalars().all()
         return set(rows)
 
 
+def _record_changeset(connection, schema_name: str, changeset: ChangesetFile,
+                      author: str, changeset_id: str) -> None:
+    """Insert into `databasechangelog` on the caller's connection, so the row
+    commits (or rolls back) together with the changeset itself. Only writes
+    columns the table actually has, so it works on both Liquibase-created and
+    runner-created tables."""
+    table = Table(CHANGELOG_TABLE, MetaData(schema=schema_name), autoload_with=connection)
+    row = {
+        "id": changeset_id,
+        "author": author,
+        "filename": changeset.relative_path,
+        "dateexecuted": datetime.now(),
+        "exectype": "EXECUTED",
+    }
+    if "orderexecuted" in table.c:
+        current_max = connection.execute(select(func.max(table.c.orderexecuted))).scalar()
+        row["orderexecuted"] = (current_max or 0) + 1
+    connection.execute(table.insert(), [{k: v for k, v in row.items() if k in table.c}])
+
+
 def apply_changeset(dbdao: "DaoBase", schema_name: str, dialect: str,
-                    changeset: ChangesetFile, vocab_schema: str, logger) -> None:
-    split_statements, sql_body = _parse_changeset(changeset.path.read_text())
+                    changeset: ChangesetFile, vocab_schema: str, logger,
+                    engine=None) -> None:
+    raw_text = changeset.path.read_text()
+    split_statements, sql_body = _parse_changeset(raw_text)
+    author, changeset_id = _parse_changeset_header(raw_text)
     # mirrors Liquibase's `-DVOCAB_SCHEMA=<value>` changelog parameter, which
     # substitutes this placeholder in a handful of omop/omop5-4 changesets
-    sql_body = sql_body.replace("${VOCAB_SCHEMA}", vocab_schema)
+    if VOCAB_SCHEMA_PLACEHOLDER in sql_body:
+        if not SAFE_IDENTIFIER_REGEX.match(vocab_schema):
+            raise ValueError(f"Vocab schema name '{vocab_schema}' is not a plain identifier")
+        sql_body = sql_body.replace(VOCAB_SCHEMA_PLACEHOLDER, vocab_schema)
 
-    with dbdao.engine.connect() as connection:
+    statements = _split_sql_statements(sql_body) if split_statements else [sql_body]
+    engine = dbdao.engine if engine is None else engine
+
+    with engine.connect() as connection:
         trans = connection.begin()
         try:
             connection.execute(text(_set_current_schema_statement(dialect, schema_name)))
-            if split_statements:
-                for statement in _split_sql_statements(sql_body):
-                    connection.execute(text(statement))
-            else:
-                connection.execute(text(sql_body))
+            for statement in statements:
+                connection.execute(_to_text(statement))
+            _record_changeset(connection, schema_name, changeset, author, changeset_id)
             trans.commit()
         except Exception:
             trans.rollback()
@@ -172,37 +284,61 @@ def apply_changeset(dbdao: "DaoBase", schema_name: str, dialect: str,
             )
             raise
 
-    dbdao.insert_values_into_table(
-        schema_name,
-        CHANGELOG_TABLE,
-        [{"filename": changeset.relative_path, "dateexecuted": datetime.now()}],
-    )
+
+@contextmanager
+def _schema_migration_lock(engine, dialect: str, schema_name: str) -> Iterator[None]:
+    """Serialize concurrent migrations of one schema (Postgres advisory lock;
+    replaces Liquibase's databasechangeloglock). No-op on other dialects."""
+    if dialect != "postgres":
+        yield
+        return
+    params = {"schema": schema_name}
+    with engine.connect() as lock_connection:
+        lock_connection = lock_connection.execution_options(isolation_level="AUTOCOMMIT")
+        lock_connection.execute(text(f"SET lock_timeout = '{LOCK_TIMEOUT_SECONDS}s'"))
+        lock_connection.execute(
+            text("SELECT pg_advisory_lock(hashtext('d2e_schema_migration'), hashtext(:schema))"),
+            params,
+        )
+        lock_connection.execute(text("RESET lock_timeout"))
+        try:
+            yield
+        finally:
+            lock_connection.execute(
+                text("SELECT pg_advisory_unlock(hashtext('d2e_schema_migration'), hashtext(:schema))"),
+                params,
+            )
 
 
 def apply_data_model_schema(dbdao: "DaoBase", schema_name: str, data_model: str,
                             dialect: str, vocab_schema: Optional[str] = None,
                             count: Optional[int] = None) -> None:
     logger = get_run_logger()
-    ensure_changelog_table(dbdao, schema_name)
-    applied = get_applied_filenames(dbdao, schema_name)
+    dbdao.validate_schema_name(schema_name)
+    engine = dbdao.engine
 
-    pending = [f for f in list_changeset_files(dialect, data_model) if f.relative_path not in applied]
+    with _schema_migration_lock(engine, dialect, schema_name):
+        ensure_changelog_table(dbdao, schema_name)
+        applied = get_applied_filenames(dbdao, schema_name, engine)
 
-    if count:
-        pending = pending[:count]
+        pending = [f for f in list_changeset_files(dialect, data_model) if f.relative_path not in applied]
 
-    if not pending:
-        logger.info(
-            f"Schema '{schema_name}' is already up to date for data model '{data_model}'"
-        )
-        return
+        if count:
+            pending = pending[:count]
 
-    for changeset in pending:
-        logger.info(f"Applying changeset '{changeset.relative_path}' to schema '{schema_name}'..")
-        apply_changeset(dbdao, schema_name, dialect, changeset, vocab_schema or schema_name, logger)
-        logger.info(
-            f"Successfully applied changeset '{changeset.relative_path}' to schema '{schema_name}'"
-        )
+        if not pending:
+            logger.info(
+                f"Schema '{schema_name}' is already up to date for data model '{data_model}'"
+            )
+            return
+
+        for changeset in pending:
+            logger.info(f"Applying changeset '{changeset.relative_path}' to schema '{schema_name}'..")
+            apply_changeset(dbdao, schema_name, dialect, changeset, vocab_schema or schema_name,
+                            logger, engine)
+            logger.info(
+                f"Successfully applied changeset '{changeset.relative_path}' to schema '{schema_name}'"
+            )
 
 
 def get_latest_available_changeset(dbdao: "DaoBase", schema_name: str, data_model: str,

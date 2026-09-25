@@ -59,4 +59,20 @@ execution path that changed, not the file format.
   CREATE TABLE test ("ID" VARCHAR(50));
   ```
 - Changesets already applied to a schema are tracked in that schema's own `databasechangelog`
-  table; re-running the flow only applies changesets not yet recorded there.
+  table (the same table Liquibase used, so schemas Liquibase already migrated are picked up as-is);
+  re-running the flow only applies changesets not yet recorded there.
+
+### Constraints on changeset files
+The runner runs a lint over every changeset (`tests/test_sql_migration.py`), so a file that breaks
+these fails CI rather than a deployment:
+- exactly one `--changeset author:id` header per file (one file = one changeset);
+- a `$$ ... $$` body (stored procedure, trigger) must set `splitStatements:false`;
+- `:name` is fine (it is escaped, e.g. HANA SQLScript variables); the only `${...}` placeholder
+  supported is `${VOCAB_SCHEMA}`.
+
+### Guarantees
+- **Postgres:** a changeset and its `databasechangelog` row commit in one transaction, and concurrent
+  runs on the same schema are serialized with an advisory lock.
+- **HANA:** DDL auto-commits, so a crash between a changeset and its changelog row can leave them out
+  of step, and there is no lock. The HANA changesets have not been run against a real HANA instance.
+- Rollback (`rollback_count` / `rollback_tag`) is no longer supported.

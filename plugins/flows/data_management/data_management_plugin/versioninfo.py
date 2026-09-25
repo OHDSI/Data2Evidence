@@ -181,13 +181,8 @@ def get_and_update_attributes(dataset: PortalDatasetType,
                     )
             try:
                 # update with latest version or error msg
-                db_dialect = dataset_dao.dialect
-
-                latest_available_schema_version = extract_version(get_latest_available_changeset(
-                    dbdao=dataset_dao,
-                    schema_name=schema_name,
-                    data_model=data_model,
-                    dialect=db_dialect))
+                latest_available_schema_version = get_latest_available_version(
+                    dataset_dao, schema_name, data_model)
                 portal_server_api.update_dataset_attributes_table(dataset_id, "latest_schema_version", latest_available_schema_version)
             except Exception as e:
                 logger.error(
@@ -195,6 +190,23 @@ def get_and_update_attributes(dataset: PortalDatasetType,
             else:
                 logger.info(
                     f"Updated attribute 'latest_schema_version' for dataset id '{dataset_id}'  with value '{latest_available_schema_version}'")
+
+
+def get_latest_available_version(dao_obj: DBDao, schema_name: str, data_model: str) -> str:
+    # portal datasets include data models this plugin doesn't manage (e.g. omop
+    # created via omop_cdm_plugin); report an error message rather than raise
+    try:
+        latest_changeset = get_latest_available_changeset(
+            dbdao=dao_obj,
+            schema_name=schema_name,
+            data_model=data_model,
+            dialect=dao_obj.dialect)
+        latest_available_version = extract_version(latest_changeset)
+    except Exception as e:
+        error_msg = "Error retrieving latest available version"
+        get_run_logger().error(f"{error_msg}: {e}")
+        latest_available_version = error_msg
+    return latest_available_version
 
 
 def get_current_version(dao_obj: DBDao, schema_name: str) -> str:
