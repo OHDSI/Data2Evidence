@@ -8,17 +8,32 @@ export async function up(knex: Knex): Promise<void> {
     CREATE OR REPLACE VIEW public.migrations AS SELECT * FROM storage.migrations;
   `);
 
-  // Check if service_role exists before granting permissions
-  const roleExists = await knex.raw(`
-    SELECT 1 FROM pg_roles WHERE rolname = 'service_role'
+  // service_role must hold BYPASSRLS, not just table grants: storage.buckets and
+  // storage.objects have row-level security enabled, and a GRANT does not satisfy
+  // a row policy. Without it the storage API -- which switches to service_role
+  // from the JWT -- fails every bucket insert with "new row violates row-level
+  // security policy for table buckets", so no bucket exists and uploads 404.
+  //
+  // trex's bootstrap creates the same role with BYPASSRLS, but only when it is
+  // absent (createGroupRole is IF NOT EXISTS and never alters). Whichever of the
+  // two runs first wins, so this migration has to converge on the same shape
+  // rather than assume it creates the role.
+  //
+  // ALTER ROLE needs superuser. Where the migration runs as a lesser role the
+  // exception is downgraded to a warning: the grants below still apply, and the
+  // bootstrap may already have created the role correctly.
+  await knex.raw(`
+    DO $$
+    BEGIN
+      IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'service_role') THEN
+        CREATE ROLE service_role NOLOGIN INHERIT BYPASSRLS;
+      ELSIF NOT (SELECT rolbypassrls FROM pg_roles WHERE rolname = 'service_role') THEN
+        ALTER ROLE service_role BYPASSRLS;
+      END IF;
+    EXCEPTION WHEN insufficient_privilege THEN
+      RAISE WARNING 'service_role lacks BYPASSRLS and this connection cannot grant it; storage bucket writes will fail until a superuser runs ALTER ROLE service_role BYPASSRLS';
+    END $$;
   `);
-
-  // Create service_role if it doesn't exist
-  if (!roleExists.rows || roleExists.rows.length === 0) {
-    await knex.raw(`
-      CREATE ROLE service_role;
-    `);
-  }
 
   // Grant permissions to service_role
   await knex.raw(`
