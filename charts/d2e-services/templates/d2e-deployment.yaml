@@ -264,6 +264,12 @@ spec:
                 configMapKeyRef:
                   name: "{{ .Release.Name }}-{{ .Chart.Name }}"
                   key: LOGTO__ROLES_SCOPES
+            # Logto rejects spaces in scope names, so researcher scopes are kebab-case;
+            # the JWT customizer rewrites them to the WebAPI role names that
+            # sec_external_role_map matches exactly. Without this, a researcher's
+            # concept-set-creator scope never becomes the "concept set creator" role.
+            - name: LOGTO__JWT_SCOPE_REWRITES
+              value: '[{"pattern":"^cohort-reader$","replacement":"cohort reader"},{"pattern":"^cohort-creator$","replacement":"cohort creator"},{"pattern":"^concept-set-creator$","replacement":"concept set creator"},{"pattern":"^source-user-(.+)$","replacement":"Source user ($1)"}]'
             - name: LOGTO__ADMIN_SERVER__FQDN_URL
               value: "https://idp-admin.{{ .Release.Namespace }}.svc.cluster.local:443"
             - name: LOGTO__ALP_ADMIN_APP
