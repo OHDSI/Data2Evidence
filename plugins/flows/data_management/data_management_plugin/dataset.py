@@ -7,6 +7,7 @@ from prefect.logging import get_run_logger
 from .hooks import *
 from .const import *
 from .sql_migration import apply_data_model_schema
+from .types import FlowActionType
 
 from _shared_flow_utils.dao.DBDao import DBDao
 from _shared_flow_utils.create_dataset_tasks import *
@@ -111,6 +112,7 @@ def create_schema_tasks(
 
 
 def update_datamodel(
+    flow_action_type: str,
     database_code: str,
     data_model: str,
     schema_name: str,
@@ -122,8 +124,7 @@ def update_datamodel(
     schema_dao = DBDao(database_code=database_code)
 
     try:
-        # both UPDATE_DATA_MODEL and CHANGELOG_SYNC reduce to "apply any
-        # pending changesets" here, since the runner is idempotent
+        # CHANGELOG_SYNC only records pending changesets, to baseline an already-provisioned schema
         update_schema_wo = run_sql_migration_task.with_options(
             on_completion=[
                 partial(
@@ -142,6 +143,7 @@ def update_datamodel(
             data_model=data_model,
             dialect=dialect,
             vocab_schema=vocab_schema,
+            record_only=flow_action_type == FlowActionType.CHANGELOG_SYNC,
         )
 
         if data_model in OMOP_DATA_MODELS:

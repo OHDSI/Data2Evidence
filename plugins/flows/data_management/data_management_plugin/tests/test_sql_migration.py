@@ -1,3 +1,5 @@
+import threading
+import time
 from contextlib import contextmanager
 from unittest.mock import MagicMock, patch
 
@@ -57,12 +59,25 @@ def test_parse_changeset_rejects_multiple_changeset_sections():
 
 def test_parse_changeset_header_returns_author_and_id():
     raw = "--liquibase formatted sql\n--changeset alp:V1.0.0.0.0__create_x labels:frankfurt\n\nSELECT 1;"
-    assert sm._parse_changeset_header(raw) == ("alp", "V1.0.0.0.0__create_x")
+    assert sm._parse_changeset_header(raw, "V1.0.0.0.0__create_x.sql") == ("alp", "V1.0.0.0.0__create_x")
 
 
-def test_parse_changeset_header_requires_header():
-    with pytest.raises(ValueError, match="Missing"):
-        sm._parse_changeset_header("--liquibase formatted sql\nSELECT 1;")
+def test_parse_changeset_header_is_optional_for_plain_sql_files():
+    assert sm._parse_changeset_header("CREATE TABLE t(id integer);", "V2.0.0.0.0__create_t.sql") == (
+        "d2e", "V2.0.0.0.0__create_t")
+
+
+def test_parse_changeset_accepts_a_plain_sql_file():
+    split_statements, body = sm._parse_changeset("-- adds t\nCREATE TABLE t(id integer);\nCREATE INDEX i ON t(id);")
+    assert split_statements is True
+    assert "CREATE TABLE t(id integer);" in body
+
+
+def test_parse_changeset_plain_file_can_turn_off_statement_splitting():
+    raw = "-- splitStatements:false\nCREATE PROCEDURE p() AS $$ BEGIN SELECT 1; END; $$;"
+    split_statements, body = sm._parse_changeset(raw)
+    assert split_statements is False
+    assert "splitStatements" not in body
 
 
 # --- _split_sql_statements ---
@@ -219,7 +234,7 @@ def test_all_changesets_are_executable_by_the_runner(dialect, data_model):
         name = changeset.relative_path
         raw = changeset.path.read_text()
         split_statements, body = sm._parse_changeset(raw)
-        sm._parse_changeset_header(raw)
+        sm._parse_changeset_header(raw, changeset.path.name)
 
         assert "${" not in body.replace(sm.VOCAB_SCHEMA_PLACEHOLDER, ""), f"{name}: unknown placeholder"
         if split_statements:
@@ -681,3 +696,95 @@ def test_get_latest_available_changeset_returns_newest_applied_when_up_to_date(g
 def test_get_latest_available_changeset_rejects_unsupported_data_model():
     with pytest.raises(ValueError, match="not supported"):
         sm.get_latest_available_changeset(MagicMock(), "s1", "custom-omop-ms", "postgres")
+
+
+# --- record-only mode (changelog_sync) ---
+
+@patch("data_management_plugin.sql_migration._record_changeset")
+def test_apply_changeset_record_only_records_without_running_the_sql(record_mock):
+    dbdao, connection, trans = _make_dbdao_mock()
+    changeset = _changeset(SIMPLE_CHANGESET)
+
+    sm.apply_changeset(dbdao, "my_schema", "postgres", changeset, "not a plain identifier",
+                       MagicMock(), record_only=True)
+
+    connection.execute.assert_not_called()
+    record_mock.assert_called_once_with(connection, "my_schema", changeset, "alp", "V1")
+    trans.commit.assert_called_once()
+
+
+@pytest.mark.parametrize("record_only", [True, False])
+@patch("data_management_plugin.sql_migration.apply_changeset")
+@patch("data_management_plugin.sql_migration.get_applied_filenames", return_value=set())
+@patch("data_management_plugin.sql_migration.ensure_changelog_table")
+def test_apply_data_model_schema_passes_record_only_to_every_changeset(
+    ensure_table_mock, get_applied_mock, apply_changeset_mock, record_only
+):
+    with patch("data_management_plugin.sql_migration.get_run_logger", return_value=MagicMock()):
+        sm.apply_data_model_schema(MagicMock(), "s1", "medical-imaging", "postgres", record_only=record_only)
+
+    assert apply_changeset_mock.call_count == 2
+    assert all(c.args[7] is record_only for c in apply_changeset_mock.call_args_list)
+
+
+# --- lock heartbeat (file-backed sqlite so the heartbeat thread gets its own connection) ---
+
+@pytest.fixture
+def sqlite_file_engine(tmp_path):
+    engine = sql.create_engine(f"sqlite:///{tmp_path / 'main.db'}")
+    legacy_db = tmp_path / "legacy.db"
+
+    @sql.event.listens_for(engine, "connect")
+    def attach(dbapi_connection, _record):
+        dbapi_connection.execute(f"ATTACH DATABASE '{legacy_db}' AS legacy")
+
+    return engine
+
+
+def test_table_lock_heartbeat_keeps_a_long_migration_from_being_taken_over(sqlite_file_engine):
+    table = sm._lock_table("legacy")
+    with patch.object(sm, "LOCK_LEASE_SECONDS", 1), patch.object(sm, "LOCK_HEARTBEAT_SECONDS", 0.1):
+        with sm._table_lock(sqlite_file_engine, "legacy"):
+            time.sleep(1.5)  # longer than the lease
+            assert sm._try_acquire_lock(sqlite_file_engine, table, "intruder") is False
+
+
+def test_table_lock_without_a_heartbeat_would_be_taken_over(sqlite_file_engine):
+    table = sm._lock_table("legacy")
+    with patch.object(sm, "LOCK_LEASE_SECONDS", 1), \
+         patch.object(sm, "_renew_lock_until_stopped", lambda *a, **k: None):
+        with sm._table_lock(sqlite_file_engine, "legacy"):
+            time.sleep(1.5)
+            assert sm._try_acquire_lock(sqlite_file_engine, table, "intruder") is True
+
+
+def test_table_lock_raises_when_the_lock_was_taken_over_mid_run(sqlite_file_engine):
+    table = sm._lock_table("legacy")
+    with patch.object(sm, "LOCK_HEARTBEAT_SECONDS", 0.05):
+        with pytest.raises(RuntimeError, match="Lost the migration lock"):
+            with sm._table_lock(sqlite_file_engine, "legacy"):
+                with sqlite_file_engine.begin() as connection:
+                    connection.execute(table.update().values(lockedby="thief"))
+                time.sleep(0.4)
+
+    assert _lock_state(sqlite_file_engine).lockedby == "thief"
+
+
+def test_table_lock_stops_its_heartbeat_thread(sqlite_file_engine):
+    with sm._table_lock(sqlite_file_engine, "legacy"):
+        assert any(t.name == "d2e-migration-lock-heartbeat" for t in threading.enumerate())
+
+    assert not any(t.name == "d2e-migration-lock-heartbeat" for t in threading.enumerate())
+
+
+@patch("data_management_plugin.sql_migration._record_changeset")
+def test_apply_changeset_runs_and_records_a_plain_sql_file(record_mock):
+    dbdao, connection, trans = _make_dbdao_mock()
+    changeset = _changeset("-- adds t\nCREATE TABLE t(id integer);\nCREATE INDEX i ON t(id);",
+                           "db/migrations/postgres/changesets/new-model/V1.0.0.0.0__create_t.sql")
+
+    sm.apply_changeset(dbdao, "my_schema", "postgres", changeset, "v", MagicMock())
+
+    executed_sql = [c.args[0].text for c in connection.execute.call_args_list]
+    assert executed_sql[1:] == ["CREATE TABLE t(id integer)", "CREATE INDEX i ON t(id)"]
+    record_mock.assert_called_once_with(connection, "my_schema", changeset, "d2e", "V1.0.0.0.0__create_t")

@@ -1,11 +1,13 @@
-"""Applies the "--liquibase formatted sql" changesets directly via SQLAlchemy.
+"""Applies the changeset .sql files directly via SQLAlchemy.
 
+Plain SQL files work; the Liquibase "--liquibase formatted sql" / "--changeset" comments are optional.
 Applied changesets are recorded in a Liquibase-shaped `databasechangelog` table, so
 schemas Liquibase already migrated are picked up as-is and the DAO version/date
 methods keep working.
 """
 import re
 import socket
+import threading
 import time
 import uuid
 from contextlib import contextmanager
@@ -28,12 +30,16 @@ MIGRATIONS_ROOT = Path(__file__).resolve().parent / "db" / "migrations"
 
 LOCK_TABLE = "databasechangeloglock"
 LOCK_TIMEOUT_SECONDS = 600
-# a lock older than this is treated as left behind by a crashed run
+# the holder renews `lockgranted` every heartbeat; a lock not renewed for a whole
+# lease is treated as left behind by a crashed run
 LOCK_LEASE_SECONDS = 900
+LOCK_HEARTBEAT_SECONDS = LOCK_LEASE_SECONDS / 3
 LOCK_POLL_SECONDS = 2
 
 SPLIT_STATEMENTS_FALSE_REGEX = re.compile(r"splitStatements:false", re.IGNORECASE)
 CHANGESET_HEADER_REGEX = re.compile(r"^--changeset\s+([^:\s]+):(\S+)")
+SPLIT_STATEMENTS_FALSE_LINE_REGEX = re.compile(r"^--\s*splitStatements:false\b", re.IGNORECASE)
+DEFAULT_AUTHOR = "d2e"
 VOCAB_SCHEMA_PLACEHOLDER = "${VOCAB_SCHEMA}"
 # used unquoted in the changesets, so it must be a plain identifier
 SAFE_IDENTIFIER_REGEX = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
@@ -79,6 +85,9 @@ def _parse_changeset(raw_text: str) -> tuple[bool, str]:
         stripped = line.strip()
         if stripped.startswith("--liquibase formatted sql"):
             continue
+        if SPLIT_STATEMENTS_FALSE_LINE_REGEX.match(stripped):
+            split_statements = False
+            continue
         if stripped.startswith("--changeset"):
             changeset_count += 1
             if SPLIT_STATEMENTS_FALSE_REGEX.search(stripped):
@@ -92,12 +101,13 @@ def _parse_changeset(raw_text: str) -> tuple[bool, str]:
     return split_statements, "\n".join(body_lines).strip()
 
 
-def _parse_changeset_header(raw_text: str) -> tuple[str, str]:
+def _parse_changeset_header(raw_text: str, filename: str) -> tuple[str, str]:
+    """(author, id) from the `--changeset author:id` line; plain SQL files get the default author and the file name."""
     for line in raw_text.splitlines():
         match = CHANGESET_HEADER_REGEX.match(line.strip())
         if match:
             return match.group(1), match.group(2)
-    raise ValueError("Missing '--changeset author:id' header")
+    return DEFAULT_AUTHOR, Path(filename).stem
 
 
 def _split_sql_statements(sql_body: str) -> List[str]:
@@ -225,22 +235,24 @@ def _record_changeset(connection, schema_name: str, changeset: ChangesetFile,
 
 def apply_changeset(dbdao: DaoBase, schema_name: str, dialect: str,
                     changeset: ChangesetFile, vocab_schema: str, logger,
-                    engine=None) -> None:
+                    engine=None, record_only: bool = False) -> None:
     raw_text = changeset.path.read_text()
-    split_statements, sql_body = _parse_changeset(raw_text)
-    author, changeset_id = _parse_changeset_header(raw_text)
-    if VOCAB_SCHEMA_PLACEHOLDER in sql_body:
-        if not SAFE_IDENTIFIER_REGEX.match(vocab_schema):
-            raise ValueError(f"Vocab schema name '{vocab_schema}' is not a plain identifier")
-        sql_body = sql_body.replace(VOCAB_SCHEMA_PLACEHOLDER, vocab_schema)
-
-    statements = _split_sql_statements(sql_body) if split_statements else [sql_body]
+    author, changeset_id = _parse_changeset_header(raw_text, changeset.relative_path.rsplit("/", 1)[-1])
+    statements: List[str] = []
+    if not record_only:
+        split_statements, sql_body = _parse_changeset(raw_text)
+        if VOCAB_SCHEMA_PLACEHOLDER in sql_body:
+            if not SAFE_IDENTIFIER_REGEX.match(vocab_schema):
+                raise ValueError(f"Vocab schema name '{vocab_schema}' is not a plain identifier")
+            sql_body = sql_body.replace(VOCAB_SCHEMA_PLACEHOLDER, vocab_schema)
+        statements = _split_sql_statements(sql_body) if split_statements else [sql_body]
     engine = dbdao.engine if engine is None else engine
 
     with engine.connect() as connection:
         trans = connection.begin()
         try:
-            connection.execute(text(_set_current_schema_statement(dialect, schema_name)))
+            if not record_only:
+                connection.execute(text(_set_current_schema_statement(dialect, schema_name)))
             for statement in statements:
                 connection.execute(_to_text(statement))
             _record_changeset(connection, schema_name, changeset, author, changeset_id)
@@ -293,6 +305,23 @@ def _try_acquire_lock(engine, table: Table, holder: str) -> bool:
         return result.rowcount == 1
 
 
+def _renew_lock_until_stopped(engine, table: Table, holder: str,
+                              stop: threading.Event, lost: threading.Event) -> None:
+    while not stop.wait(LOCK_HEARTBEAT_SECONDS):
+        try:
+            with engine.begin() as connection:
+                renewed = connection.execute(
+                    table.update()
+                    .where(and_(table.c.id == 1, table.c.lockedby == holder))
+                    .values(lockgranted=datetime.now())
+                ).rowcount
+        except Exception:
+            continue  # transient; the next beat retries
+        if renewed != 1:
+            lost.set()
+            return
+
+
 @contextmanager
 def _table_lock(engine, schema_name: str) -> Iterator[None]:
     """Liquibase's databasechangeloglock protocol: one row, taken with an atomic conditional UPDATE."""
@@ -306,15 +335,29 @@ def _table_lock(engine, schema_name: str) -> Iterator[None]:
                 f"Timed out after {LOCK_TIMEOUT_SECONDS}s waiting for the migration lock on schema '{schema_name}'"
             )
         time.sleep(LOCK_POLL_SECONDS)
+
+    stop, lost = threading.Event(), threading.Event()
+    heartbeat = threading.Thread(
+        target=_renew_lock_until_stopped, args=(engine, table, holder, stop, lost),
+        name="d2e-migration-lock-heartbeat", daemon=True,
+    )
+    heartbeat.start()
     try:
         yield
     finally:
+        stop.set()
+        heartbeat.join()
         with engine.begin() as connection:
             connection.execute(
                 table.update()
                 .where(and_(table.c.id == 1, table.c.lockedby == holder))
                 .values(locked=False, lockgranted=None, lockedby=None)
             )
+    if lost.is_set():
+        raise RuntimeError(
+            f"Lost the migration lock on schema '{schema_name}' while migrating; "
+            "another run may have applied changesets concurrently"
+        )
 
 
 @contextmanager
@@ -344,7 +387,8 @@ def _schema_migration_lock(engine, dialect: str, schema_name: str) -> Iterator[N
 
 def apply_data_model_schema(dbdao: DaoBase, schema_name: str, data_model: str,
                             dialect: str, vocab_schema: Optional[str] = None,
-                            count: Optional[int] = None) -> None:
+                            count: Optional[int] = None, record_only: bool = False) -> None:
+    """record_only marks pending changesets as executed without running their SQL (Liquibase's changelog-sync)."""
     logger = get_run_logger()
     dbdao.validate_schema_name(schema_name)
     all_files = list_changeset_files(dialect, data_model)
@@ -365,13 +409,12 @@ def apply_data_model_schema(dbdao: DaoBase, schema_name: str, data_model: str,
             )
             return
 
+        verb = "Recording (without running)" if record_only else "Applying"
         for changeset in pending:
-            logger.info(f"Applying changeset '{changeset.relative_path}' to schema '{schema_name}'..")
+            logger.info(f"{verb} changeset '{changeset.relative_path}' for schema '{schema_name}'..")
             apply_changeset(dbdao, schema_name, dialect, changeset, vocab_schema or schema_name,
-                            logger, engine)
-            logger.info(
-                f"Successfully applied changeset '{changeset.relative_path}' to schema '{schema_name}'"
-            )
+                            logger, engine, record_only)
+            logger.info(f"Done with changeset '{changeset.relative_path}' for schema '{schema_name}'")
 
 
 def get_latest_available_changeset(dbdao: DaoBase, schema_name: str, data_model: str,

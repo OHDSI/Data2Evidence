@@ -67,6 +67,7 @@ def update_datamodel_flow(options: UpdateDataModelType, logger):
         db_dialect = get_db_dialect(options)
 
         update_datamodel(
+            flow_action_type=options.flow_action_type,
             database_code=options.database_code,
             data_model=options.data_model,
             schema_name=options.schema_name,
