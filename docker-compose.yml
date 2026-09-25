@@ -1028,6 +1028,8 @@ services:
     networks:
       data:
         priority: 20
+      alp:
+        priority: 10
     volumes:
       # duckdb/cachedb data shared with trexsql; plugins travel as artifacts,
       # not volumes. The docker.sock mount is gone with the docker worker.
