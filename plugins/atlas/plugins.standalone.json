@@ -167,7 +167,7 @@
       "enableDarkMode": false,
       "primaryColor": "#000080",
       "logoUrl": "/atlas/config/d2e2.svg",
-      "logoNavigateTo": "/",
+      "logoNavigateTo": "/plugins/datasources/",
       "accentColor": "#ff5e59",
       "landingLogoUrl": "/atlas/config/landing-page-illustration.svg",
       "chartColors": [

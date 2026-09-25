@@ -15,7 +15,9 @@
   // other, so this constant cannot be sent to it. resourceFor() picks per IdP.
   var LOGTO_RESOURCE = "https://alp-default";
   var REDIRECT_URI = location.origin + "/atlas-login/";
-  var DEFAULT_RETURN = "/atlas/#/cohorts";
+  // Data Sources is d2e's Atlas landing route (plugins.standalone.json sets
+  // theme.logoNavigateTo to it, which is what Atlas3 redirects "/" to).
+  var DEFAULT_RETURN = "/atlas/#/plugins/datasources/";
   var VERIFIER_KEY = "atlas_pkce_verifier";
   var RETURN_KEY = "atlas_login_return_to";
   var STATE_KEY = "atlas_oidc_state";
