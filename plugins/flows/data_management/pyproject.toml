@@ -45,13 +45,9 @@ pip = "*"
 # pypi requirements' bounds (ibis needs <25)
 packaging = "<25"
 python = "3.12.*"
-openjdk = "17.*"
 
 [tool.pixi.activation.env]
 PYTHONPATH = "$PIXI_PROJECT_ROOT"
-
-[tool.pixi.tasks]
-setup-assets = "bash setup_assets.sh"
 
 # The hana feature comes from [project.optional-dependencies]; the environment
 # is provisioned at runtime only (INSTALL_SQLALCHEMY_HANA) — never shipped.

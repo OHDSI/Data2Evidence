@@ -1,18 +1,16 @@
 from functools import partial
 from datetime import datetime
-from typing import Optional
 
 from prefect import task
 from prefect.logging import get_run_logger
 
 from .hooks import *
 from .const import *
-from .liquibase import Liquibase, LiquibaseAction
+from .sql_migration import apply_data_model_schema
 from .types import FlowActionType
 
 from _shared_flow_utils.dao.DBDao import DBDao
 from _shared_flow_utils.create_dataset_tasks import *
-from _shared_flow_utils.types import DBCredentialsType
 
 
 def create_datamodel(
@@ -20,23 +18,15 @@ def create_datamodel(
     data_model: str,
     schema_name: str,
     vocab_schema: str,
-    changelog_file: str,
-    plugin_classpath: str,
     dialect: str,
     count: int = 0,
 ):
-    dbdao = DBDao(database_code=database_code)
-    tenant_configs = dbdao.tenant_configs
-
     create_schema_tasks(
         dialect=dialect,
         database_code=database_code,
         data_model=data_model,
-        changelog_file=changelog_file,
         schema_name=schema_name,
         vocab_schema=vocab_schema,
-        tenant_configs=tenant_configs,
-        plugin_classpath=plugin_classpath,
         count=count,
     )
 
@@ -45,11 +35,8 @@ def create_schema_tasks(
     dialect: str,
     database_code: str,
     data_model: str,
-    changelog_file: str,
     schema_name: str,
     vocab_schema: str,
-    tenant_configs: DBCredentialsType,
-    plugin_classpath: str,
     count: int,
 ) -> bool:
     try:
@@ -66,26 +53,18 @@ def create_schema_tasks(
 
         # create schema if not exists
         create_db_schema_wo(schema_dao, schema_name)
-        if count == 0 or count is None:
-            action = LiquibaseAction.UPDATE
-        elif count > 0:
-            action = LiquibaseAction.UPDATECOUNT
 
-        create_tables_wo = run_liquibase_update_task.with_options(
+        create_tables_wo = run_sql_migration_task.with_options(
             on_failure=[
                 partial(drop_schema_hook, **dict(dbdao=schema_dao, schema=schema_name))
             ]
         )
-
         create_tables_wo(
-            action=action,
-            dialect=dialect,
-            data_model=data_model,
-            changelog_file=changelog_file,
+            dbdao=schema_dao,
             schema_name=schema_name,
+            data_model=data_model,
+            dialect=dialect,
             vocab_schema=vocab_schema,
-            tenant_configs=tenant_configs,
-            plugin_classpath=plugin_classpath,
             count=count,
         )
 
@@ -138,23 +117,15 @@ def update_datamodel(
     data_model: str,
     schema_name: str,
     vocab_schema: str,
-    changelog_file: str,
-    plugin_classpath: str,
     dialect: str,
 ):
     logger = get_run_logger()
 
     schema_dao = DBDao(database_code=database_code)
-    tenant_configs = schema_dao.tenant_configs
-
-    match flow_action_type:
-        case FlowActionType.UPDATE_DATA_MODEL:
-            action = LiquibaseAction.UPDATE
-        case FlowActionType.CHANGELOG_SYNC:
-            action = LiquibaseAction.CHANGELOG_SYNC
 
     try:
-        update_schema_wo = run_liquibase_update_task.with_options(
+        # CHANGELOG_SYNC only records pending changesets, to baseline an already-provisioned schema
+        update_schema_wo = run_sql_migration_task.with_options(
             on_completion=[
                 partial(
                     update_schema_hook, **dict(db=database_code, schema=schema_name)
@@ -166,16 +137,13 @@ def update_datamodel(
                 )
             ],
         )
-
         update_schema_wo(
-            action=action,
-            dialect=dialect,
-            data_model=data_model,
-            changelog_file=changelog_file,
+            dbdao=schema_dao,
             schema_name=schema_name,
+            data_model=data_model,
+            dialect=dialect,
             vocab_schema=vocab_schema,
-            tenant_configs=tenant_configs,
-            plugin_classpath=plugin_classpath,
+            record_only=flow_action_type == FlowActionType.CHANGELOG_SYNC,
         )
 
         if data_model in OMOP_DATA_MODELS:
@@ -208,90 +176,6 @@ def update_datamodel(
         logger.info("Dataset schema successfully updated!")
     except Exception as e:
         logger.error(f"Dataset schema update failed! Error: {e}")
-        raise e
-
-
-def rollback_count_task(
-    database_code: str,
-    data_model: str,
-    schema_name: str,
-    vocab_schema: str,
-    changelog_file: str,
-    plugin_classpath: str,
-    dialect: str,
-    rollback_count: int,
-    cache_id: Optional[str] = None,
-):
-    dbdao = DBDao(database_code=database_code, cache_id=cache_id)
-    tenant_configs = dbdao.tenant_configs
-
-    try:
-        rollback_count_wo = run_liquibase_update_task.with_options(
-            on_completion=[
-                partial(
-                    rollback_count_hook, **dict(db=database_code, schema=schema_name)
-                )
-            ],
-            on_failure=[
-                partial(
-                    rollback_count_hook, **dict(db=database_code, schema=schema_name)
-                )
-            ],
-        )
-        rollback_count_wo(
-            action=LiquibaseAction.ROLLBACK_COUNT,
-            dialect=dialect,
-            data_model=data_model,
-            changelog_file=changelog_file,
-            schema_name=schema_name,
-            vocab_schema=vocab_schema,
-            tenant_configs=tenant_configs,
-            plugin_classpath=plugin_classpath,
-            rollback_count=rollback_count,
-        )
-
-    except Exception as e:
-        print(e)
-        raise e
-
-
-def rollback_tag_task(
-    database_code: str,
-    data_model: str,
-    schema_name: str,
-    vocab_schema: str,
-    changelog_file: str,
-    plugin_classpath: str,
-    dialect: str,
-    rollback_tag: str,
-    cache_id: Optional[str] = None,
-):
-    dbdao = DBDao(database_code=database_code, cache_id=cache_id)
-    tenant_configs = dbdao.tenant_configs
-
-    try:
-        rollback_tag_wo = run_liquibase_update_task.with_options(
-            on_completion=[
-                partial(rollback_tag_hook, **dict(db=database_code, schema=schema_name))
-            ],
-            on_failure=[
-                partial(rollback_tag_hook, **dict(db=database_code, schema=schema_name))
-            ],
-        )
-        rollback_tag_wo(
-            action=LiquibaseAction.ROLLBACK_TAG,
-            dialect=dialect,
-            data_model=data_model,
-            changelog_file=changelog_file,
-            schema_name=schema_name,
-            vocab_schema=vocab_schema,
-            tenant_configs=tenant_configs,
-            plugin_classpath=plugin_classpath,
-            rollback_tag=rollback_tag,
-        )
-
-    except Exception as e:
-        print(e)
         raise e
 
 
@@ -344,8 +228,6 @@ def create_cdm_schema_tasks(
     data_model: str,
     schema_name: str,
     vocab_schema: str,
-    changelog_file: str,
-    plugin_classpath: str,
     dialect: str,
 ):
     logger = get_run_logger()
@@ -362,8 +244,6 @@ def create_cdm_schema_tasks(
                 data_model=data_model,
                 schema_name=vocab_schema,
                 vocab_schema=vocab_schema,
-                changelog_file=changelog_file,
-                plugin_classpath=plugin_classpath,
                 dialect=dialect,
             )
         except Exception as e:
@@ -382,8 +262,6 @@ def create_cdm_schema_tasks(
                     data_model=data_model,
                     schema_name=schema_name,
                     vocab_schema=vocab_schema,
-                    changelog_file=changelog_file,
-                    plugin_classpath=plugin_classpath,
                     dialect=dialect,
                 )
             except Exception as e:
@@ -394,6 +272,5 @@ def create_cdm_schema_tasks(
 
 
 @task(log_prints=True)
-def run_liquibase_update_task(**kwargs):
-    liquibase = Liquibase(**kwargs)
-    liquibase.update_schema()
+def run_sql_migration_task(**kwargs):
+    apply_data_model_schema(**kwargs)
