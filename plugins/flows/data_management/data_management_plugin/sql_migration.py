@@ -7,6 +7,7 @@ methods keep working.
 """
 import hashlib
 import re
+import time
 from contextlib import contextmanager
 from datetime import datetime
 from pathlib import Path
@@ -173,6 +174,38 @@ def _quote_identifier(name: str) -> str:
     return '"' + name.replace('"', '""') + '"'
 
 
+def _normalize_identifier(name: str, dialect: Optional[str]) -> str:
+    return name.upper() if dialect == "hana" else name
+
+
+def _normalized_schema_name(engine, schema_name: str) -> str:
+    return _normalize_identifier(schema_name, engine.dialect.name)
+
+
+def _normalized_table_name(engine, table_name: str) -> str:
+    return _normalize_identifier(table_name, engine.dialect.name)
+
+
+def _resolve_column(table: Table, column_name: str):
+    if column_name in table.c:
+        return table.c[column_name]
+    needle = column_name.lower()
+    for column in table.c:
+        if column.name.lower() == needle:
+            return column
+    return None
+
+
+def _is_locked_value(value) -> bool:
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, int):
+        return value != 0
+    if isinstance(value, str):
+        return value.strip().lower() in {"1", "true", "t", "yes", "y"}
+    return False
+
+
 def _set_current_schema_statement(dialect: str, schema_name: str) -> str:
     # changesets use unqualified table names
     if dialect == "hana":
@@ -197,10 +230,13 @@ def list_changeset_files(dialect: str, data_model: str) -> List[ChangesetFile]:
 
 
 def ensure_changelog_table(dbdao: DaoBase, schema_name: str) -> None:
-    if not dbdao.check_table_exists(schema_name, CHANGELOG_TABLE):
+    dialect = getattr(getattr(getattr(dbdao, "engine", None), "dialect", None), "name", None)
+    normalized_schema_name = _normalize_identifier(schema_name, dialect)
+    changelog_table_name = _normalize_identifier(CHANGELOG_TABLE, dialect)
+    if not dbdao.check_table_exists(normalized_schema_name, changelog_table_name):
         dbdao.create_table(
-            schema_name,
-            CHANGELOG_TABLE,
+            normalized_schema_name,
+            changelog_table_name,
             {
                 "id": String(255),
                 "author": String(255),
@@ -216,8 +252,19 @@ def ensure_changelog_table(dbdao: DaoBase, schema_name: str) -> None:
 def get_applied_changesets(dbdao: DaoBase, schema_name: str, engine=None) -> dict:
     engine = dbdao.engine if engine is None else engine
     with engine.connect() as connection:
-        table = Table(CHANGELOG_TABLE, MetaData(schema=schema_name), autoload_with=connection)
-        columns = [table.c[name] for name in ("filename", "id", "author", "md5sum") if name in table.c]
+        table = Table(
+            _normalized_table_name(engine, CHANGELOG_TABLE),
+            MetaData(schema=_normalized_schema_name(engine, schema_name)),
+            autoload_with=connection,
+        )
+        filename_column = _resolve_column(table, "filename")
+        if filename_column is None:
+            return {}
+        columns = [filename_column.label("filename")]
+        for name in ("id", "author", "md5sum"):
+            column = _resolve_column(table, name)
+            if column is not None:
+                columns.append(column.label(name))
         rows = connection.execute(select(*columns)).mappings().all()
         return {
             row["filename"]: AppliedChangeset(row.get("id"), row.get("author"), row.get("md5sum"))
@@ -258,7 +305,12 @@ def _validate_applied_changesets(all_files: List[ChangesetFile], applied: dict) 
 def _record_changeset(connection, schema_name: str, changeset: ChangesetFile,
                       author: str, changeset_id: str, checksum: str) -> None:
     """Insert into databasechangelog on the caller's connection, writing only the columns the table has."""
-    table = Table(CHANGELOG_TABLE, MetaData(schema=schema_name), autoload_with=connection)
+    engine = connection.engine
+    table = Table(
+        _normalized_table_name(engine, CHANGELOG_TABLE),
+        MetaData(schema=_normalized_schema_name(engine, schema_name)),
+        autoload_with=connection,
+    )
     row = {
         "id": changeset_id,
         "author": author,
@@ -267,10 +319,16 @@ def _record_changeset(connection, schema_name: str, changeset: ChangesetFile,
         "exectype": "EXECUTED",
         "md5sum": checksum,
     }
-    if "orderexecuted" in table.c:
-        current_max = connection.execute(select(func.max(table.c.orderexecuted))).scalar()
+    orderexecuted_column = _resolve_column(table, "orderexecuted")
+    if orderexecuted_column is not None:
+        current_max = connection.execute(select(func.max(orderexecuted_column))).scalar()
         row["orderexecuted"] = (current_max or 0) + 1
-    connection.execute(table.insert(), [{k: v for k, v in row.items() if k in table.c}])
+    insert_row = {}
+    for key, value in row.items():
+        column = _resolve_column(table, key)
+        if column is not None:
+            insert_row[column.name] = value
+    connection.execute(table.insert(), [insert_row])
 
 
 def apply_changeset(dbdao: DaoBase, schema_name: str, dialect: str,
@@ -305,31 +363,34 @@ def apply_changeset(dbdao: DaoBase, schema_name: str, dialect: str,
             raise
 
 
-def _lock_table(schema_name: str) -> Table:
+def _lock_table(engine, schema_name: str) -> Table:
     # same table Liquibase used, so one Liquibase already created works as-is
+    dialect = engine.dialect.name
     return Table(
-        LOCK_TABLE,
-        MetaData(schema=schema_name),
-        Column("id", Integer, primary_key=True, autoincrement=False),
-        Column("locked", Boolean, nullable=False),
+        _normalize_identifier(LOCK_TABLE, dialect),
+        MetaData(schema=_normalize_identifier(schema_name, dialect)),
+        Column(_normalize_identifier("id", dialect), Integer, primary_key=True, autoincrement=False),
+        Column(_normalize_identifier("locked", dialect), Boolean, nullable=False),
     )
 
 
 def _ensure_lock_row(engine, table: Table) -> None:
+    id_column = _resolve_column(table, "id")
+    locked_column = _resolve_column(table, "locked")
     # concurrent first runs can race on creating the table or seeding the row
     try:
         table.create(engine, checkfirst=True)
     except Exception:
-        if not inspect(engine).has_table(LOCK_TABLE, schema=table.schema):
+        if not inspect(engine).has_table(table.name, schema=table.schema):
             raise
     try:
         with engine.begin() as connection:
-            if connection.execute(select(table.c.id).where(table.c.id == 1)).first() is None:
-                connection.execute(table.insert().values(id=1, locked=False))
+            if connection.execute(select(id_column).where(id_column == 1)).first() is None:
+                connection.execute(table.insert().values({id_column.name: 1, locked_column.name: False}))
     except Exception as seed_error:
         # a duplicate key aborts the transaction, so look again on a fresh connection
         with engine.connect() as connection:
-            if connection.execute(select(table.c.id).where(table.c.id == 1)).first() is None:
+            if connection.execute(select(id_column).where(id_column == 1)).first() is None:
                 raise seed_error
 
 
@@ -340,10 +401,26 @@ def _schema_migration_lock(engine, schema_name: str) -> Iterator[None]:
     The database releases the lock if this run dies, so there is no lease to expire. The changesets
     run on other connections, which is why HANA's auto-committing DDL does not release it.
     """
-    table = _lock_table(schema_name)
+    table = _lock_table(engine, schema_name)
+    id_column = _resolve_column(table, "id")
+    locked_column = _resolve_column(table, "locked")
     _ensure_lock_row(engine, table)
     with engine.connect() as lock_connection:
-        lock_connection.execute(select(table.c.id).where(table.c.id == 1).with_for_update())
+        while True:
+            row = lock_connection.execute(
+                select(id_column.label("id"), locked_column.label("locked"))
+                .where(id_column == 1)
+                .with_for_update()
+            ).mappings().first()
+            if row is None:
+                lock_connection.rollback()
+                _ensure_lock_row(engine, table)
+                continue
+            if _is_locked_value(row["locked"]):
+                lock_connection.rollback()
+                time.sleep(1)
+                continue
+            break
         try:
             yield
         finally:

@@ -448,11 +448,26 @@ def test_ensure_changelog_table_leaves_an_existing_table_alone():
     dbdao.create_table.assert_not_called()
 
 
+def test_ensure_changelog_table_normalizes_hana_schema_and_table_names():
+    dbdao = MagicMock()
+    dbdao.engine.dialect.name = "hana"
+    dbdao.check_table_exists.return_value = False
+
+    sm.ensure_changelog_table(dbdao, "my_schema")
+
+    dbdao.check_table_exists.assert_called_once_with("MY_SCHEMA", "DATABASECHANGELOG")
+    schema, table, _ = dbdao.create_table.call_args.args
+    assert (schema, table) == ("MY_SCHEMA", "DATABASECHANGELOG")
+
+
 # --- _schema_migration_lock: a row lock held on its own connection for the whole migration ---
 
 def test_schema_migration_lock_takes_a_row_lock_and_releases_it_at_the_end():
     engine = MagicMock()
     lock_connection = engine.connect.return_value.__enter__.return_value
+    lock_row = MagicMock()
+    lock_row.mappings.return_value.first.return_value = {"id": 1, "locked": False}
+    lock_connection.execute.return_value = lock_row
 
     with patch("data_management_plugin.sql_migration._ensure_lock_row"):
         with sm._schema_migration_lock(engine, "s1"):
@@ -465,6 +480,9 @@ def test_schema_migration_lock_takes_a_row_lock_and_releases_it_at_the_end():
 def test_schema_migration_lock_releases_when_the_body_raises():
     engine = MagicMock()
     lock_connection = engine.connect.return_value.__enter__.return_value
+    lock_row = MagicMock()
+    lock_row.mappings.return_value.first.return_value = {"id": 1, "locked": False}
+    lock_connection.execute.return_value = lock_row
 
     with patch("data_management_plugin.sql_migration._ensure_lock_row"):
         with pytest.raises(RuntimeError):
@@ -497,8 +515,27 @@ def test_schema_migration_lock_reuses_a_liquibase_created_lock_table(sqlite_engi
         assert connection.execute(text("SELECT count(*) FROM legacy.databasechangeloglock")).scalar() == 1
 
 
+def test_schema_migration_lock_waits_when_liquibase_holds_the_logical_lock():
+    engine = MagicMock()
+    lock_connection = engine.connect.return_value.__enter__.return_value
+    first_try = MagicMock()
+    first_try.mappings.return_value.first.return_value = {"id": 1, "locked": True}
+    second_try = MagicMock()
+    second_try.mappings.return_value.first.return_value = {"id": 1, "locked": False}
+    lock_connection.execute.side_effect = [first_try, second_try]
+
+    with patch("data_management_plugin.sql_migration._ensure_lock_row"), \
+         patch("data_management_plugin.sql_migration.time.sleep") as sleep_mock:
+        with sm._schema_migration_lock(engine, "s1"):
+            pass
+
+    sleep_mock.assert_called_once_with(1)
+    # one rollback while waiting + one rollback when leaving the lock context
+    assert lock_connection.rollback.call_count == 2
+
+
 def test_ensure_lock_row_is_idempotent(sqlite_engine):
-    table = sm._lock_table("legacy")
+    table = sm._lock_table(sqlite_engine, "legacy")
 
     sm._ensure_lock_row(sqlite_engine, table)
     sm._ensure_lock_row(sqlite_engine, table)
@@ -756,6 +793,21 @@ def test_get_applied_changesets_tolerates_a_table_with_only_filename_and_dateexe
         "f/V1__a.sql": sm.AppliedChangeset(None, None, None)}
 
 
+def test_get_applied_changesets_handles_uppercase_reflected_columns(sqlite_engine):
+    with sqlite_engine.begin() as connection:
+        connection.exec_driver_sql(
+            "CREATE TABLE legacy.databasechangelog "
+            "(ID VARCHAR(255), AUTHOR VARCHAR(255), FILENAME VARCHAR(500), MD5SUM VARCHAR(35))"
+        )
+        connection.exec_driver_sql(
+            "INSERT INTO legacy.databasechangelog (ID, AUTHOR, FILENAME, MD5SUM) "
+            "VALUES ('V1__a', 'alp', 'f/V1__a.sql', '8:abc')"
+        )
+
+    assert sm.get_applied_changesets(MagicMock(), "legacy", sqlite_engine) == {
+        "f/V1__a.sql": sm.AppliedChangeset("V1__a", "alp", "8:abc")}
+
+
 def test_record_changeset_stores_the_checksum(sqlite_engine):
     with sqlite_engine.begin() as connection:
         connection.exec_driver_sql(LIQUIBASE_TABLE_DDL)
@@ -820,7 +872,7 @@ def _lock_engine(first_seen, recheck_seen=None, seed_error=None):
 
 
 def test_ensure_lock_row_tolerates_another_run_creating_the_table_first():
-    table = sm._lock_table("s1")
+    table = sm._lock_table(MagicMock(), "s1")
     engine, _, _ = _lock_engine(first_seen=("row",))
 
     with patch.object(sm.Table, "create", side_effect=RuntimeError("already exists")), \
@@ -832,7 +884,7 @@ def test_ensure_lock_row_tolerates_another_run_creating_the_table_first():
 
 
 def test_ensure_lock_row_reraises_when_the_table_could_not_be_created():
-    table = sm._lock_table("s1")
+    table = sm._lock_table(MagicMock(), "s1")
     engine, _, _ = _lock_engine(first_seen=None)
 
     with patch.object(sm.Table, "create", side_effect=RuntimeError("permission denied")), \
@@ -843,7 +895,7 @@ def test_ensure_lock_row_reraises_when_the_table_could_not_be_created():
 
 
 def test_ensure_lock_row_tolerates_another_run_seeding_the_row_first():
-    table = sm._lock_table("s1")
+    table = sm._lock_table(MagicMock(), "s1")
     engine, _, connect_connection = _lock_engine(
         first_seen=None, recheck_seen=("row",), seed_error=RuntimeError("duplicate key"))
 
@@ -855,7 +907,7 @@ def test_ensure_lock_row_tolerates_another_run_seeding_the_row_first():
 
 
 def test_ensure_lock_row_reraises_when_the_row_could_not_be_seeded():
-    table = sm._lock_table("s1")
+    table = sm._lock_table(MagicMock(), "s1")
     engine, _, _ = _lock_engine(first_seen=None, recheck_seen=None, seed_error=RuntimeError("read-only database"))
 
     with patch.object(sm.Table, "create"):
@@ -864,7 +916,7 @@ def test_ensure_lock_row_reraises_when_the_row_could_not_be_seeded():
 
 
 def test_ensure_lock_row_seeds_an_unlocked_row_when_missing():
-    table = sm._lock_table("s1")
+    table = sm._lock_table(MagicMock(), "s1")
     engine, begin_connection, connect_connection = _lock_engine(first_seen=None)
 
     with patch.object(sm.Table, "create"):
