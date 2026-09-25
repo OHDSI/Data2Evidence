@@ -150,9 +150,6 @@ for (const script of headScripts) {
 if (indexChanged) writeFileSync(join(resourcesDir, 'index.html'), indexHtml);
 console.log('[postinstall] Injected helper scripts into Atlas3 index.html');
 
-// Portal resources directory (for the /atlas-portal iframe wrapper build).
-mkdirSync(join(rootDir, 'resources', 'portal'), { recursive: true });
-
 // Standalone login bridge (served at /atlas-login): copy the static page that
 // performs a Logto OIDC login and seeds localStorage.bearerToken for Atlas3.
 const loginSrc = join(rootDir, 'login-bridge');

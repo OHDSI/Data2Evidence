@@ -458,8 +458,11 @@ jobs:
             echo "::error::data-quality did not produce dist/index.system.js"
             exit 1
           fi
-      # Atlas plugin: postinstall bakes Atlas3 + the Pythia UI into resources/;
-      # build the portal entry. Packs only resources/ (see package.json "files").
+      # Atlas plugin: postinstall bakes Atlas3 + the Pythia UI into resources/,
+      # which is the whole of what gets packed (see package.json "files"), so
+      # npm install is the build. This ran `npm run build:portal` until the
+      # portal-embedded Atlas was removed; that script built only the iframe
+      # wrapper, and no other entry was ever built here.
       - name: Build Atlas plugin
         if: ${{ matrix.ATLAS }}
         working-directory: ${{ matrix.PKGPATH }}
@@ -469,7 +472,6 @@ jobs:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           npm install
-          npm run build:portal
       # Patient Analytics (Data Exploration) is an Atlas3 sub-plugin too, but it lives
       # in the UI monorepo instead of the trex-notebook submodule, so it is built and
       # staged here rather than by the atlas postinstall — and it has to run AFTER the
