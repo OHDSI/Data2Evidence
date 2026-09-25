@@ -61,7 +61,14 @@ export default async (req: IMRIRequest, res, next) => {
      * for an outage.
      */
     const fetchWithRetry = async <T>(attempt: () => Promise<T>): Promise<T> => {
-        const delaysMs = [100, 300];
+        // Five attempts over ~3.7s. The first budget was two retries inside
+        // 400ms, sized for the ~80ms a worker needs to re-register its routes,
+        // and it was not enough: the portal worker is dropped 41 times in one
+        // CI run, and under that much churn a replacement can be unavailable
+        // for seconds rather than milliseconds. A fetch that gives up here
+        // leaves paConfigId unset and the failure re-emerges as an empty
+        // patient count, so the budget is worth more than the latency.
+        const delaysMs = [200, 500, 1000, 2000];
         for (let i = 0; ; i++) {
             try {
                 return await attempt();
