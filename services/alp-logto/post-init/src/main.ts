@@ -191,6 +191,29 @@ async function ensureAtlasLoginRedirectUri(headers: any, appId: string) {
   console.log(`Registered Atlas login redirect URI ${bridgeUri}: status ${patch.status}`);
 }
 
+// Federated mode (docker-compose-logto-federation.yml): trex signs users in
+// through this Logto app, so its callback has to be an allowed redirect URI.
+// Exact value from the overlay, so it matches TREX_FEDERATION_REDIRECT_URI.
+async function ensureTrexFederationRedirectUri(headers: any, appId: string) {
+  const uri = process.env.TREX_FEDERATION_REDIRECT_URI;
+  if (!uri || appId !== process.env.D2E__LOGTO_UPSTREAM__CLIENT_ID) return;
+  const resp = await logto.get(`applications/${appId}`, headers);
+  if (!resp.ok) {
+    console.warn(`Could not read application ${appId} (status ${resp.status}); skipping trex federation redirect URI`);
+    return;
+  }
+  const app = await resp.json();
+  const meta = app.oidcClientMetadata || {};
+  const uris: string[] = meta.redirectUris || [];
+  if (uris.includes(uri)) {
+    console.log(`trex federation redirect URI already registered: ${uri}`);
+    return;
+  }
+  meta.redirectUris = uris.concat(uri);
+  const patch = await logto.patch(`applications/${appId}`, headers, { oidcClientMetadata: meta });
+  console.log(`Registered trex federation redirect URI ${uri}: status ${patch.status}`);
+}
+
 async function main() {
   let apps: Array<{ name: string; id: string }> =
     JSON.parse(process.env.LOGTO__CLIENT_APPS) || [];
@@ -228,6 +251,7 @@ async function main() {
   // Allow the standalone Atlas login bridge's redirect URI on the OIDC app(s).
   for (const app of apps) {
     await ensureAtlasLoginRedirectUri(headers, app.id);
+    await ensureTrexFederationRedirectUri(headers, app.id);
   }
 
   // Create Apps
@@ -248,6 +272,13 @@ async function main() {
     if (appExists) {
       await update(`applications/${app.id}`, headers, app); //Update other attributes such as oidcClientMetadata and custom_client_metadata
     }
+  }
+
+  // The loop above (before "Create Apps") runs on a brand-new Logto before
+  // these apps exist, so ensureTrexFederationRedirectUri's GET 404s and it
+  // skips silently. Run it again now that the apps are guaranteed to exist.
+  for (const app of apps) {
+    await ensureTrexFederationRedirectUri(headers, app.id);
   }
 
   // Create Resource

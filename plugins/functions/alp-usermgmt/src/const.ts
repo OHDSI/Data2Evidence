@@ -1,40 +1,14 @@
 import { ITokenUser } from './types'
 
-export const ROLES = {
-  ALP_USER_ADMIN: 'ALP_USER_ADMIN',
-  ALP_SYSTEM_ADMIN: 'ALP_SYSTEM_ADMIN',
-  ALP_DASHBOARD_VIEWER: 'ALP_DASHBOARD_VIEWER',
-  ETL_MAPPING_CONTRIBUTOR: 'ETL_MAPPING_CONTRIBUTOR',
-  TENANT_ADMIN: 'TENANT_ADMIN',
-  TENANT_VIEWER: 'TENANT_VIEWER',
-  STUDY_ADMIN: 'STUDY_ADMIN',
-  STUDY_RESEARCHER: 'RESEARCHER',
-  STUDY_WRITE_DQD_RESEARCHER: 'STUDY_WRITE_DQD_RESEARCHER',
-  STUDY_RESULTS_READ_RESEARCHER: 'STUDY_RESULTS_READ_RESEARCHER',
-  ALP_SHARED: 'ALP_SHARED'
-}
-
-export const LOGTO_ROLES = {
-  USER_ADMIN: 'role.useradmin',
-  SYSTEM_ADMIN: 'role.systemadmin',
-  DASHBOARD_VIEWER: 'role.dashboardviewer',
-  TENANT_VIEWER: 'role.viewer',
-  RESEARCHER: 'role.researcher',
-  JOB_RUNNER: 'role.jobrunner',
-  STUDY_RESULTS_READER: 'role.studyresultsreader',
-  ETL_MAPPING_CONTRIBUTOR: 'role.etlmappingcontributor'
-} as const
-
-export const LOGTO_ROLE_NAMES: Record<string, string> = {
-  [ROLES.ALP_USER_ADMIN]: LOGTO_ROLES.USER_ADMIN,
-  [ROLES.ALP_SYSTEM_ADMIN]: LOGTO_ROLES.SYSTEM_ADMIN,
-  [ROLES.ALP_DASHBOARD_VIEWER]: LOGTO_ROLES.DASHBOARD_VIEWER,
-  [ROLES.TENANT_VIEWER]: LOGTO_ROLES.TENANT_VIEWER,
-  [ROLES.STUDY_RESEARCHER]: LOGTO_ROLES.RESEARCHER,
-  [ROLES.STUDY_WRITE_DQD_RESEARCHER]: LOGTO_ROLES.JOB_RUNNER,
-  [ROLES.STUDY_RESULTS_READ_RESEARCHER]: LOGTO_ROLES.STUDY_RESULTS_READER,
-  [ROLES.ETL_MAPPING_CONTRIBUTOR]: LOGTO_ROLES.ETL_MAPPING_CONTRIBUTOR
-}
+import { LOGTO_ROLE_NAMES } from '@alp/idp/roles.ts'
+export {
+  ROLES,
+  LOGTO_ROLES,
+  LOGTO_ROLE_NAMES,
+  WEBAPI_RESEARCHER_SCOPES,
+  sourceUserScopeName,
+  datasetResearcherScopes
+} from '@alp/idp/roles.ts'
 
 // Reverse mapping: Logto role name → internal role name
 export const LOGTO_TO_INTERNAL_ROLES: Record<string, string> = Object.fromEntries(
@@ -75,24 +49,4 @@ export const IDP_SCOPE_ROLE = {
   USER_ADMIN: 'role.useradmin',
   DASHBOARD_VIEWER: 'role.dashboardviewer',
   DATASET_RESEARCHER_PREFIX: 'role.researcher.'
-}
-
-// Kebab-case because Logto rejects spaces in scope names; LOGTO__CUSTOM_JWT (docker-compose.yml)
-// expands them back to canonical sec_role names ("cohort reader", etc.) for WebAPI matching.
-export const WEBAPI_RESEARCHER_SCOPES = ['cohort-reader', 'cohort-creator', 'concept-set-creator']
-
-// JWT customizer expands to `Source user (<id>)` to match WebAPI's per-source sec_role.
-export const sourceUserScopeName = (datasetId: string) => `source-user-${datasetId}`
-
-// Cohort and concept-set scopes apply to every dataset type: those objects live in
-// WebAPI whatever the dataset's own type, so a researcher on a hana__omop or omop
-// dataset needs them to create a concept set as much as one on a webapi dataset.
-// Only the per-source "Source user" scope stays webapi-only, because the WebAPI
-// source role it maps to exists only for webapi-type datasets.
-export const datasetResearcherScopes = (roleName: string, datasetId: string, type?: string): string[] => {
-  const scopes = [roleName, `role.researcher.${datasetId}`, ...WEBAPI_RESEARCHER_SCOPES]
-  if (type === 'webapi') {
-    scopes.push(sourceUserScopeName(datasetId))
-  }
-  return scopes
 }

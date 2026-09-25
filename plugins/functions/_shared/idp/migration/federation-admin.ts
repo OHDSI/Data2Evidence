@@ -1,0 +1,132 @@
+// trex's service-role admin API, as the IdP migration uses it. Network errors
+// are retried (trex may still be settling right after it starts listening);
+// HTTP errors are answers and are not.
+
+// Error bodies can come back from a validation layer that echoes the request,
+// and upsertProvider's request body carries clientSecret. Never let a raw
+// response body reach an Error message: it ends up in usermgmt.idp_migration
+// and in stdout. Redact anything secret/password-shaped, then cap the length.
+function safeErrorDetail(text: string): string {
+  const redacted = text
+    .replace(/("?[\w-]*secret[\w-]*"?\s*[:=]\s*)"[^"]*"/gi, '$1"[redacted]"')
+    .replace(/("?[\w-]*password[\w-]*"?\s*[:=]\s*)"[^"]*"/gi, '$1"[redacted]"')
+  return redacted.length > 200 ? `${redacted.slice(0, 200)}…` : redacted
+}
+
+export interface ProviderBody {
+  displayName: string
+  clientId: string
+  clientSecret: string
+  issuer: string
+  authorizationEndpoint: string
+  scopes: string
+  groupsSource: 'none'
+  autoProvision: false
+  enabled: true
+}
+
+export interface LinkRequest {
+  providerId: string
+  accountId: string
+  /**
+   * The trex user id the account must end up under. The migration passes the
+   * Logto user id, so a migrated user keeps the `sub` every other D2E store
+   * (WebAPI, portal artifacts, flows) is keyed by. trex answers 409 when that
+   * id cannot be honoured; a trex predating explicit-id linking ignores the
+   * field and answers with a fresh id, which the caller must reject.
+   */
+  userId: string
+  email: string
+  name: string | null
+  banned: boolean
+}
+
+export type LinkOutcome =
+  | { userId: string; outcome: 'linked' | 'created' | 'already_linked' }
+  | { conflict: true; userId: string }
+
+export interface FederationAdmin {
+  upsertProvider(id: string, body: ProviderBody): Promise<void>
+  setProviderEnabled(id: string, enabled: boolean, opts?: { attempts?: number }): Promise<'ok' | 'unknown_provider'>
+  link(req: LinkRequest): Promise<LinkOutcome>
+  assignRole(userId: string, role: string): Promise<void>
+}
+
+export class HttpFederationAdmin implements FederationAdmin {
+  private readonly fetchImpl: typeof fetch
+  private readonly attempts: number
+  private readonly delayMs: number
+
+  constructor(private readonly opts: {
+    federationUrl: string
+    rolesUrl: string
+    serviceRoleKey: string
+    fetchImpl?: typeof fetch
+    attempts?: number
+    delayMs?: number
+  }) {
+    this.fetchImpl = opts.fetchImpl ?? fetch
+    this.attempts = opts.attempts ?? 10
+    this.delayMs = opts.delayMs ?? 3000
+  }
+
+  private async send(method: string, url: string, body: unknown, attempts?: number): Promise<Response> {
+    if (!this.opts.serviceRoleKey) {
+      throw new Error('no trex service-role key (SUPABASE_SERVICE_ROLE_KEY / TREX__SERVICE_ROLE_KEY)')
+    }
+    const maxAttempts = attempts ?? this.attempts
+    let lastError: unknown
+    for (let i = 0; i < maxAttempts; i++) {
+      try {
+        return await this.fetchImpl(url, {
+          method,
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${this.opts.serviceRoleKey}` },
+          body: JSON.stringify(body)
+        })
+      } catch (err) {
+        lastError = err
+        if (i < maxAttempts - 1) await new Promise(r => setTimeout(r, this.delayMs))
+      }
+    }
+    throw new Error(`trex unreachable at ${url}: ${lastError}`)
+  }
+
+  private async expectOk(res: Response, what: string): Promise<void> {
+    if (!res.ok) throw new Error(`${what} failed: ${res.status} ${safeErrorDetail(await res.text())}`)
+    await res.body?.cancel()
+  }
+
+  async upsertProvider(id: string, body: ProviderBody): Promise<void> {
+    await this.expectOk(await this.send('PUT', `${this.opts.federationUrl}/providers/${id}`, body), `provider ${id} upsert`)
+  }
+
+  async setProviderEnabled(id: string, enabled: boolean, opts?: { attempts?: number }): Promise<'ok' | 'unknown_provider'> {
+    const res = await this.send('PATCH', `${this.opts.federationUrl}/providers/${id}`, { enabled }, opts?.attempts)
+    if (res.status === 404) {
+      await res.body?.cancel()
+      return 'unknown_provider'
+    }
+    await this.expectOk(res, `provider ${id} enable=${enabled}`)
+    return 'ok'
+  }
+
+  async link(req: LinkRequest): Promise<LinkOutcome> {
+    // Spelled out rather than forwarding `req`, so the wire body is exactly
+    // the contract and nothing a caller adds to the object leaks into it.
+    const { providerId, accountId, userId, email, name, banned } = req
+    const res = await this.send('PUT', `${this.opts.federationUrl}/links`, { providerId, accountId, userId, email, name, banned })
+    if (res.status === 409) {
+      const body = await res.json()
+      if (typeof body?.userId !== 'string') throw new Error(`link ${req.accountId}: 409 response missing userId`)
+      return { conflict: true, userId: body.userId }
+    }
+    if (!res.ok) throw new Error(`link ${req.accountId} failed: ${res.status} ${safeErrorDetail(await res.text())}`)
+    const body = await res.json()
+    if (typeof body?.userId !== 'string') throw new Error(`link ${req.accountId}: response missing userId`)
+    return body as LinkOutcome
+  }
+
+  async assignRole(userId: string, role: string): Promise<void> {
+    await this.expectOk(await this.send('POST', `${this.opts.rolesUrl}/assign`, { userId, role }), `assign ${role}`)
+  }
+}

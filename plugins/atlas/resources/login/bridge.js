@@ -10,12 +10,24 @@
   // Atlas3 reads its bearer token from this localStorage key (initializeFromStorage).
   var TOKEN_KEY = "bearerToken";
   // Logto API resource → makes Logto issue a verifiable JWT access token (not opaque).
-  var RESOURCE = "https://alp-default";
+  // Only Logto's. trex's provider registers exactly ONE RFC 8707 resource — its
+  // own issuer — and answers `requested resource ... is not configured` for any
+  // other, so this constant cannot be sent to it. resourceFor() picks per IdP.
+  var LOGTO_RESOURCE = "https://alp-default";
   var REDIRECT_URI = location.origin + "/atlas-login/";
   var DEFAULT_RETURN = "/atlas/#/cohorts";
   var VERIFIER_KEY = "atlas_pkce_verifier";
   var RETURN_KEY = "atlas_login_return_to";
   var STATE_KEY = "atlas_oidc_state";
+  // Stops a restarted sign-in from bouncing between here and /authorize.
+  var RESTART_TS_KEY = "atlas_login_restart_ts";
+  var RESTART_GUARD_MS = 10000;
+  // Same origin as Atlas, behind the same gateway the portal reaches usermgmt
+  // through. The name it answers with is the one vue-mri matches saved work by.
+  var USERMGMT_ME_URL = "/d2e/usermgmt/api/me";
+  // Long enough for a same-origin call that normally answers in milliseconds,
+  // short enough that a stalled one is never what the user waits behind.
+  var USERMGMT_ME_TIMEOUT_MS = 3000;
 
   function fail(msg) {
     var s = document.getElementById("spinner");
@@ -23,6 +35,34 @@
     var el = document.getElementById("status");
     if (el) { el.className = "err"; el.textContent = "Sign-in failed: " + msg; }
     console.error("[atlas-login]", msg);
+  }
+
+  /**
+   * The RFC 8707 resource to ask for, which differs per IdP.
+   *
+   * trex's provider is mounted on this same origin (its issuer is
+   * `<origin>/trex/oidc`), while an external IdP's issuer names another host —
+   * Logto's is its internal URL. Same-origin therefore means "trex is the
+   * provider", and its registered resource is precisely that issuer.
+   *
+   * The resource is still sent rather than omitted: a token request naming none
+   * gets no audience claim at all, and the access token comes back opaque rather
+   * than a JWT, which Atlas cannot read.
+   */
+  function resourceFor(ac) {
+    var issuer = String((ac && ac.issuer) || "");
+    if (!issuer) return LOGTO_RESOURCE;
+    var origin;
+    try { origin = new URL(issuer).origin; } catch (e) { return LOGTO_RESOURCE; }
+    // Compared as PARSED origins, never as strings. The issuer is built from
+    // TREX_OIDC_ISSUER and carries an explicit `:443`, while location.origin
+    // drops the default port -- so a string prefix test matches nothing on
+    // exactly the deployments this is for.
+    if (origin !== location.origin) return LOGTO_RESOURCE;
+    // Returned verbatim (port and all, only a trailing slash trimmed): the
+    // provider compares this against the identifier it registered, which is
+    // this string, not its normalised form.
+    return issuer.replace(/\/+$/, "");
   }
 
   function getConfig() {
@@ -40,7 +80,8 @@
       clientId: cfg.client_id,
       authorize: ac.authorization_endpoint,
       token: ac.token_endpoint,
-      scope: scope.trim()
+      scope: scope.trim(),
+      resource: resourceFor(ac)
     };
   }
 
@@ -86,7 +127,27 @@
 
   async function handleCallback(cfg, params) {
     var verifier = sessionStorage.getItem(VERIFIER_KEY);
-    if (!verifier) { fail("missing PKCE verifier (stale callback)"); return; }
+    if (!verifier) {
+      // A callback whose verifier has already been spent. The exchange consumes
+      // it, so ANY second visit to this URL arrives here: a reload, the Back
+      // button, a restored tab, or an autocompleted address. Dead-ending on an
+      // error was wrong -- nothing is broken, the request is simply finished,
+      // and the useful response is a fresh authorization rather than a message
+      // the user can do nothing with.
+      //
+      // Safe to restart: no token has been issued on this path, the spent code
+      // buys nothing, and startLogin mints a new verifier and state. Guarded by
+      // a timestamp so a restart that somehow lands straight back here stops
+      // instead of looping.
+      var lastRestart = parseInt(sessionStorage.getItem(RESTART_TS_KEY) || "0", 10);
+      if (Date.now() - lastRestart < RESTART_GUARD_MS) {
+        fail("sign-in did not complete. Please start again from Atlas.");
+        return;
+      }
+      sessionStorage.setItem(RESTART_TS_KEY, String(Date.now()));
+      await startLogin(cfg, params);
+      return;
+    }
     // Validate the OIDC state to prevent CSRF/login injection.
     var expectedState = sessionStorage.getItem(STATE_KEY);
     sessionStorage.removeItem(STATE_KEY);
@@ -99,7 +160,7 @@
     body.set("redirect_uri", REDIRECT_URI);
     body.set("client_id", cfg.clientId);
     body.set("code_verifier", verifier);
-    body.set("resource", RESOURCE);
+    body.set("resource", cfg.resource);
 
     var resp = await fetch(cfg.token, {
       method: "POST",
@@ -112,23 +173,64 @@
       return;
     }
     localStorage.setItem(TOKEN_KEY, data.access_token);
-    // The access token has no profile claims, but vue-mri needs the d2e username
-    // (= the id_token `username` claim, e.g. "admin") to match the current user's
-    // own bookmarks/cohort definitions. Capture it from the id_token.
+    // vue-mri matches the current user's own bookmarks and cohort definitions by
+    // username, so this has to be the SAME STRING the services that store them
+    // write: usermgmt's `username` column, which bookmark-svc reads from this
+    // very endpoint to set a bookmark's user_id.
+    //
+    // It used to be read off the id_token instead:
+    //
+    //   idc.username || idc.preferred_username || idc.email || idc.name || idc.sub
+    //
+    // which agreed with usermgmt only while Logto was the provider, because
+    // Logto emitted a `username` claim. trex's Better Auth provider emits none,
+    // so that chain fell through to `email` — the synthesised
+    // <username>@d2e.local an email-less account is registered under — and
+    // every bookmark the user owned stopped matching. The list still arrived;
+    // the client dropped it, and PA reported "No saved cohort definitions".
+    //
+    // An id_token is not the place to look for this even when a claim is
+    // present: it describes the authenticated subject, while the saved work is
+    // filed under a name a different system owns. Ask that system.
+    // BOUNDED, because this sits between the token exchange and the redirect
+    // below. An unbounded await here does not fail the sign-in, it SUSPENDS it:
+    // location.replace(ret) is never reached, the callback page stays on screen
+    // and the user sees a sign-in that never completes. A try/catch does not
+    // help -- it catches a rejection, and the failure mode is a request that
+    // simply never settles.
+    //
+    // So the name is worth a short wait and nothing more. Losing it costs a
+    // listing of the user's own saved work until the next sign-in; losing the
+    // redirect costs the session.
     try {
-      if (data.id_token) {
-        var idc = JSON.parse(atob(data.id_token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/")));
-        var uname = idc.username || idc.preferred_username || idc.email || idc.name || idc.sub || "";
-        if (uname) localStorage.setItem("atlas_username", uname);
+      var meCtl = new AbortController();
+      var meTimer = setTimeout(function () { meCtl.abort(); }, USERMGMT_ME_TIMEOUT_MS);
+      try {
+        var me = await fetch(USERMGMT_ME_URL, {
+          headers: { Authorization: "Bearer " + data.access_token },
+          signal: meCtl.signal
+        });
+        if (me.ok) {
+          var meBody = await me.json();
+          if (meBody && meBody.username) localStorage.setItem("atlas_username", meBody.username);
+        } else {
+          console.warn("[login] usermgmt /me returned " + me.status + "; saved cohorts may not be listed");
+        }
+      } finally {
+        clearTimeout(meTimer);
       }
-    } catch (e) { /* ignore */ }
+    } catch (e) {
+      // Deliberately not falling back to an id_token claim: a wrong name shows
+      // one user another's saved work, which is worse than showing none.
+      console.warn("[login] could not resolve the username from usermgmt: " + e);
+    }
     // Persist the refresh token + the bits the token-keeper needs to renew it,
     // so the session survives the (~1h) access-token TTL without re-prompting.
     if (data.refresh_token) localStorage.setItem("atlas_refresh_token", data.refresh_token);
     localStorage.setItem("atlas_oidc_cfg", JSON.stringify({
       tokenEndpoint: cfg.token,
       clientId: cfg.clientId,
-      resource: RESOURCE,
+      resource: cfg.resource,
       scope: cfg.scope
     }));
     sessionStorage.removeItem(VERIFIER_KEY);
@@ -149,7 +251,7 @@
     url.searchParams.set("redirect_uri", REDIRECT_URI);
     url.searchParams.set("response_type", "code");
     url.searchParams.set("scope", cfg.scope);
-    url.searchParams.set("resource", RESOURCE);
+    url.searchParams.set("resource", cfg.resource);
     url.searchParams.set("code_challenge", challenge);
     url.searchParams.set("code_challenge_method", "S256");
     url.searchParams.set("state", state);

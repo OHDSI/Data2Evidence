@@ -17,7 +17,11 @@
 # stack never runs; TREX_DX_ENABLED only gates it at runtime, it is in the image
 # either way. Pinned by tag AND index digest — `image:tag@digest` is valid, so
 # one arg carries both.
-ARG TREXSQL_REF=prod-sha-48a466268dbfdd12f03d8018e2af81fe10cbdf69@sha256:c04013ea5e04939bc97501a5c5d911d4a4e58899c21dd3a64cee2fec2aebf936
+#
+# Bumping this pin is how trex code reaches a d2e stack — this file vendors no
+# core. There is a SECOND pin, for the devx base, in docker-compose-local.yml;
+# both move together. See docs/trex-oidc-provider-cutover.md.
+ARG TREXSQL_REF=prod-sha-a012a0826579d9358593f6ff010697160d330308@sha256:f7c98fadafb6c1b75b791990a747c21ea96aab37c6482c851d0852e341280597
 FROM ghcr.io/ohdsi/trexsql:${TREXSQL_REF} AS base
 
 USER root

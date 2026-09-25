@@ -105,9 +105,7 @@ export default {
       const targetWidth = pdfConst.targetWidth
       const response = this.response
 
-      const patientCount = response ? response.totalPatientCount : 0
-
-      if (patientCount && patientCount > 0) {
+      if (this.hasExportableData(response)) {
         try {
           let chartId = ''
           if (this.compareChartType) {
@@ -157,6 +155,22 @@ export default {
           console.error('Image export failed:', e)
         }
       }
+    },
+    // The main-chart response carries totalPatientCount, but the cohort-compare
+    // response does not. Its shape is { categories, measures, data[], noDataReason }
+    // and the per-cohort counts sit in data[]['patient.attributes.pcount'].
+    //
+    // Gating the export on totalPatientCount alone made the compare export skip
+    // silently - no canvas, no anchor click, no download event and no error - so
+    // page.waitForEvent('download') simply timed out with nothing to show for it.
+    hasExportableData(response) {
+      if (!response) {
+        return false
+      }
+      if (typeof response.totalPatientCount === 'number') {
+        return response.totalPatientCount > 0
+      }
+      return Array.isArray(response.data) && response.data.length > 0
     },
     cropCanvas(canvas, width, height, y = 0, x = 0) {
       const croppedCanvas = document.createElement('canvas')

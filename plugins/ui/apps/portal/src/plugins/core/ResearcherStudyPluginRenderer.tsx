@@ -9,14 +9,12 @@ import {
 } from "../../singleSpa";
 import { getAuthToken } from "../../containers/auth";
 import { useUser } from "../../contexts";
-import { useToken } from "../../contexts/app-context/hooks/use-token";
 import { useTranslation } from "../../contexts/app-context/hooks/use-translation";
-import { useFeatures } from "../../hooks";
+import { useFeatures, useMe } from "../../hooks";
 import { PluginDropdownItem, SubFeatureFlags } from "@portal/plugin";
 import { PluginType } from "../../types";
 import env from "../../env";
 
-const nameProp = env.REACT_APP_IDP_NAME_PROP;
 
 const VUE_APP_HOST = env.REACT_APP_DN_BASE_URL.endsWith("/")
   ? `${env.REACT_APP_DN_BASE_URL}d2e`
@@ -55,10 +53,9 @@ export const ResearcherStudyPluginRenderer: FC<ResearcherStudyPluginRendererProp
     userId,
     user: { idpUserId },
   } = useUser();
-  const { idTokenClaims } = useToken();
   const { locale } = useTranslation();
   const [features, featuresLoading] = useFeatures();
-  const username = idTokenClaims?.[nameProp] as string | undefined;
+  const [username, usernameLoading] = useMe();
 
   const [component, setComponent] = useState<any>();
   const [pluginType, setPluginType] = useState<PluginType | null>(null);
@@ -83,6 +80,7 @@ export const ResearcherStudyPluginRenderer: FC<ResearcherStudyPluginRendererProp
               autoMount,
               getToken: getAuthToken,
               username,
+              usernameLoading,
               idpUserId,
               datasetId: studyId,
               locale,
@@ -109,7 +107,7 @@ export const ResearcherStudyPluginRenderer: FC<ResearcherStudyPluginRendererProp
       };
       registerApp();
     }
-  }, [path, studyId, locale, idpUserId, username, data, route, configType, isRegistered]);
+  }, [path, studyId, locale, idpUserId, username, usernameLoading, data, route, configType, isRegistered]);
 
   useEffect(() => {
     if (configType === "app" && isRegistered) {
@@ -118,6 +116,7 @@ export const ResearcherStudyPluginRenderer: FC<ResearcherStudyPluginRendererProp
         getToken: getAuthToken,
         idpUserId,
         username,
+        usernameLoading,
         datasetId: studyId,
         locale,
         features,
@@ -126,7 +125,7 @@ export const ResearcherStudyPluginRenderer: FC<ResearcherStudyPluginRendererProp
         ...data,
       });
     }
-  }, [studyId, locale, idpUserId, username, data, path, configType, isRegistered, features, featuresLoading]);
+  }, [studyId, locale, idpUserId, username, usernameLoading, data, path, configType, isRegistered, features, featuresLoading]);
 
   // Cleanup: unload the single-spa app when the component unmounts
   // This ensures the app can be properly remounted when returning to Researcher
