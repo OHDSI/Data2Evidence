@@ -5,6 +5,7 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
+    "prebuild": "cp package.json package.org.json",
     "build": "tbuild ."
   },
   "author": "",
