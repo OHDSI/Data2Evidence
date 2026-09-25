@@ -798,11 +798,12 @@ def test_split_sql_statements_keeps_a_doubled_quote_inside_an_identifier():
 
 # --- _ensure_lock_row: races between concurrent first runs ---
 
-def _lock_engine(rows_seen, seed_error=None):
-    """An engine mock whose connection returns `rows_seen` for successive SELECTs of the lock row."""
+def _lock_engine(first_seen, recheck_seen=None, seed_error=None):
+    """An engine mock. The seeding transaction (`begin`) first looks for the lock row, then inserts it;
+    after a failure the row is looked for again on a separate connection (`connect`)."""
     engine = MagicMock()
-    connection = engine.begin.return_value.__enter__.return_value
-    selects = iter(rows_seen)
+    begin_connection = engine.begin.return_value.__enter__.return_value
+    connect_connection = engine.connect.return_value.__enter__.return_value
 
     def execute(statement):
         if "INSERT" in str(statement):
@@ -810,16 +811,17 @@ def _lock_engine(rows_seen, seed_error=None):
                 raise seed_error
             return MagicMock()
         result = MagicMock()
-        result.first.return_value = next(selects)
+        result.first.return_value = first_seen
         return result
 
-    connection.execute.side_effect = execute
-    return engine, connection
+    begin_connection.execute.side_effect = execute
+    connect_connection.execute.return_value.first.return_value = recheck_seen
+    return engine, begin_connection, connect_connection
 
 
 def test_ensure_lock_row_tolerates_another_run_creating_the_table_first():
     table = sm._lock_table("s1")
-    engine, _ = _lock_engine([("row",)])
+    engine, _, _ = _lock_engine(first_seen=("row",))
 
     with patch.object(sm.Table, "create", side_effect=RuntimeError("already exists")), \
          patch.object(sm, "inspect") as inspector:
@@ -831,7 +833,7 @@ def test_ensure_lock_row_tolerates_another_run_creating_the_table_first():
 
 def test_ensure_lock_row_reraises_when_the_table_could_not_be_created():
     table = sm._lock_table("s1")
-    engine, _ = _lock_engine([])
+    engine, _, _ = _lock_engine(first_seen=None)
 
     with patch.object(sm.Table, "create", side_effect=RuntimeError("permission denied")), \
          patch.object(sm, "inspect") as inspector:
@@ -842,15 +844,19 @@ def test_ensure_lock_row_reraises_when_the_table_could_not_be_created():
 
 def test_ensure_lock_row_tolerates_another_run_seeding_the_row_first():
     table = sm._lock_table("s1")
-    engine, _ = _lock_engine([None, ("row",)], seed_error=RuntimeError("duplicate key"))
+    engine, _, connect_connection = _lock_engine(
+        first_seen=None, recheck_seen=("row",), seed_error=RuntimeError("duplicate key"))
 
     with patch.object(sm.Table, "create"):
         sm._ensure_lock_row(engine, table)
 
+    # the check after the failed insert runs on a fresh connection, not the aborted transaction
+    connect_connection.execute.assert_called_once()
+
 
 def test_ensure_lock_row_reraises_when_the_row_could_not_be_seeded():
     table = sm._lock_table("s1")
-    engine, _ = _lock_engine([None, None], seed_error=RuntimeError("read-only database"))
+    engine, _, _ = _lock_engine(first_seen=None, recheck_seen=None, seed_error=RuntimeError("read-only database"))
 
     with patch.object(sm.Table, "create"):
         with pytest.raises(RuntimeError, match="read-only database"):
@@ -859,11 +865,12 @@ def test_ensure_lock_row_reraises_when_the_row_could_not_be_seeded():
 
 def test_ensure_lock_row_seeds_an_unlocked_row_when_missing():
     table = sm._lock_table("s1")
-    engine, connection = _lock_engine([None])
+    engine, begin_connection, connect_connection = _lock_engine(first_seen=None)
 
     with patch.object(sm.Table, "create"):
         sm._ensure_lock_row(engine, table)
 
-    insert = connection.execute.call_args_list[-1].args[0]
+    insert = begin_connection.execute.call_args_list[-1].args[0]
     assert "INSERT INTO s1.databasechangeloglock" in str(insert)
     assert insert.compile().params == {"id": 1, "locked": False}
+    connect_connection.execute.assert_not_called()

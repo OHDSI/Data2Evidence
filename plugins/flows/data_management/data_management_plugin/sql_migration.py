@@ -322,13 +322,15 @@ def _ensure_lock_row(engine, table: Table) -> None:
     except Exception:
         if not inspect(engine).has_table(LOCK_TABLE, schema=table.schema):
             raise
-    with engine.begin() as connection:
-        if connection.execute(select(table.c.id).where(table.c.id == 1)).first() is None:
-            try:
+    try:
+        with engine.begin() as connection:
+            if connection.execute(select(table.c.id).where(table.c.id == 1)).first() is None:
                 connection.execute(table.insert().values(id=1, locked=False))
-            except Exception:
-                if connection.execute(select(table.c.id).where(table.c.id == 1)).first() is None:
-                    raise
+    except Exception as seed_error:
+        # a duplicate key aborts the transaction, so look again on a fresh connection
+        with engine.connect() as connection:
+            if connection.execute(select(table.c.id).where(table.c.id == 1)).first() is None:
+                raise seed_error
 
 
 @contextmanager
