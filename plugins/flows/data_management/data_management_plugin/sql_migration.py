@@ -26,6 +26,8 @@ CHANGELOG_TABLE = "databasechangelog"
 MIGRATIONS_ROOT = Path(__file__).resolve().parent / "db" / "migrations"
 
 LOCK_TABLE = "databasechangeloglock"
+LOCK_WAIT_TIMEOUT_SECONDS = 300
+LOCK_WAIT_INTERVAL_SECONDS = 1
 
 SPLIT_STATEMENTS_FALSE_REGEX = re.compile(r"splitStatements:false", re.IGNORECASE)
 CHANGESET_HEADER_REGEX = re.compile(r"^--changeset\s+([^:\s]+):(\S+)")
@@ -203,6 +205,29 @@ def _is_locked_value(value) -> bool:
         return value != 0
     if isinstance(value, str):
         return value.strip().lower() in {"1", "true", "t", "yes", "y"}
+    return False
+
+
+def _is_missing_table_error(error: Exception, table_name: str) -> bool:
+    message = str(error).lower()
+    markers = (
+        "does not exist",
+        "no such table",
+        "invalid table name",
+        "undefined table",
+        "could not find table",
+    )
+    return table_name.lower() in message and any(marker in message for marker in markers)
+
+
+def _is_missing_changelog_table_error(error: Exception) -> bool:
+    seen = set()
+    current: Optional[BaseException] = error
+    while current is not None and id(current) not in seen:
+        seen.add(id(current))
+        if _is_missing_table_error(current, CHANGELOG_TABLE):
+            return True
+        current = current.__cause__ or current.__context__
     return False
 
 
@@ -406,6 +431,7 @@ def _schema_migration_lock(engine, schema_name: str) -> Iterator[None]:
     locked_column = _resolve_column(table, "locked")
     _ensure_lock_row(engine, table)
     with engine.connect() as lock_connection:
+        lock_wait_started = None
         while True:
             row = lock_connection.execute(
                 select(id_column.label("id"), locked_column.label("locked"))
@@ -417,9 +443,18 @@ def _schema_migration_lock(engine, schema_name: str) -> Iterator[None]:
                 _ensure_lock_row(engine, table)
                 continue
             if _is_locked_value(row["locked"]):
+                if lock_wait_started is None:
+                    lock_wait_started = time.monotonic()
+                elif time.monotonic() - lock_wait_started >= LOCK_WAIT_TIMEOUT_SECONDS:
+                    lock_connection.rollback()
+                    raise TimeoutError(
+                        "DATABASECHANGELOGLOCK remains locked. Wait for Liquibase to finish "
+                        "or release the lock row before retrying."
+                    )
                 lock_connection.rollback()
-                time.sleep(1)
+                time.sleep(LOCK_WAIT_INTERVAL_SECONDS)
                 continue
+            lock_wait_started = None
             break
         try:
             yield
@@ -443,7 +478,9 @@ def apply_data_model_schema(dbdao: DaoBase, schema_name: str, data_model: str,
 
         pending = [f for f in all_files if f.relative_path not in applied]
 
-        if count:
+        if count is not None:
+            if count < 0:
+                raise ValueError("count must be non-negative")
             pending = pending[:count]
 
         if not pending:
@@ -464,7 +501,13 @@ def get_latest_available_changeset(dbdao: DaoBase, schema_name: str, data_model:
                                    dialect: str) -> str:
     """Newest pending changeset, or the newest applied one if the schema is up to date."""
     all_files = list_changeset_files(dialect, data_model)
-    applied = get_applied_filenames(dbdao, schema_name)
+    try:
+        applied = get_applied_filenames(dbdao, schema_name)
+    except Exception as error:
+        if _is_missing_changelog_table_error(error):
+            applied = set()
+        else:
+            raise
     pending = [f for f in all_files if f.relative_path not in applied]
     latest = pending[-1] if pending else (all_files[-1] if all_files else None)
     return latest.relative_path if latest else ""

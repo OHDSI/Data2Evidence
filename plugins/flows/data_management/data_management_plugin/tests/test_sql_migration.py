@@ -534,6 +534,22 @@ def test_schema_migration_lock_waits_when_liquibase_holds_the_logical_lock():
     assert lock_connection.rollback.call_count == 2
 
 
+def test_schema_migration_lock_times_out_when_liquibase_lock_stays_true():
+    engine = MagicMock()
+    lock_connection = engine.connect.return_value.__enter__.return_value
+    locked = MagicMock()
+    locked.mappings.return_value.first.return_value = {"id": 1, "locked": True}
+    lock_connection.execute.side_effect = [locked, locked]
+
+    with patch("data_management_plugin.sql_migration._ensure_lock_row"), \
+         patch("data_management_plugin.sql_migration.time.sleep"), \
+         patch("data_management_plugin.sql_migration.time.monotonic",
+               side_effect=[0, sm.LOCK_WAIT_TIMEOUT_SECONDS]):
+        with pytest.raises(TimeoutError, match="DATABASECHANGELOGLOCK remains locked"):
+            with sm._schema_migration_lock(engine, "s1"):
+                pass
+
+
 def test_ensure_lock_row_is_idempotent(sqlite_engine):
     table = sm._lock_table(sqlite_engine, "legacy")
 
@@ -598,6 +614,19 @@ def test_apply_data_model_schema_count_limits_pending_changesets(
 @patch("data_management_plugin.sql_migration.apply_changeset")
 @patch("data_management_plugin.sql_migration.get_applied_changesets", return_value={})
 @patch("data_management_plugin.sql_migration.ensure_changelog_table")
+def test_apply_data_model_schema_rejects_negative_count(
+    ensure_table_mock, get_applied_mock, apply_changeset_mock
+):
+    with patch("data_management_plugin.sql_migration.get_run_logger", return_value=MagicMock()), \
+         pytest.raises(ValueError, match="count must be non-negative"):
+        sm.apply_data_model_schema(MagicMock(), "my_schema", "omop5-4", "postgres", count=-1)
+
+    apply_changeset_mock.assert_not_called()
+
+
+@patch("data_management_plugin.sql_migration.apply_changeset")
+@patch("data_management_plugin.sql_migration.get_applied_changesets", return_value={})
+@patch("data_management_plugin.sql_migration.ensure_changelog_table")
 def test_apply_data_model_schema_holds_the_lock_while_applying(
     ensure_table_mock, get_applied_mock, apply_changeset_mock
 ):
@@ -657,6 +686,17 @@ def test_get_latest_available_changeset_returns_newest_applied_when_up_to_date(g
 def test_get_latest_available_changeset_rejects_unsupported_data_model():
     with pytest.raises(ValueError, match="not supported"):
         sm.get_latest_available_changeset(MagicMock(), "s1", "custom-omop-ms", "postgres")
+
+
+@patch("data_management_plugin.sql_migration.get_applied_filenames")
+def test_get_latest_available_changeset_treats_missing_changelog_as_empty(get_applied_mock):
+    dbdao = MagicMock()
+    all_files = sm.list_changeset_files("postgres", "medical-imaging")
+    get_applied_mock.side_effect = Exception('relation "databasechangelog" does not exist')
+
+    result = sm.get_latest_available_changeset(dbdao, "my_schema", "medical-imaging", "postgres")
+
+    assert result == all_files[-1].relative_path
 
 
 # --- record-only mode (changelog_sync) ---
