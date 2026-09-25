@@ -99,7 +99,24 @@ export class MRIConfig {
         return new Promise<HPHConfigMetaType>(async (resolve, reject) => {
             // close to cdw
             if (!configId) {
-                throw new Error("CONFIG_ERROR_NO_CONFIG_ID_SPECIFIED");
+                // REJECT, NEVER THROW. The executor is `async`, so a throw here
+                // does not reject this promise -- it rejects the executor's own,
+                // which nobody holds. ConfigFacade awaits and catches
+                // (ConfigFacade.ts, case "getBackendConfig"), so its catch never
+                // ran and the await never settled; the escaped rejection reached
+                // the worker instead:
+                //
+                //   event_type: "UncaughtException"
+                //   exception: "event loop error: Error: CONFIG_ERROR_NO_CONFIG_ID_SPECIFIED"
+                //   Worker call error: Error: event loop error: ...
+                //
+                // One request with a missing configId therefore took down the
+                // whole deno worker, and every other request in flight on it
+                // died as a 500 -- observed in CI as analytics-svc answering 500
+                // for /values and /population/json/barchart at the same instant,
+                // which the UI renders as "No suggestions available" and an empty
+                // patient count rather than as an error.
+                return reject(new Error("CONFIG_ERROR_NO_CONFIG_ID_SPECIFIED"));
             }
             try {
                 const configObj = await this._getConfig({
@@ -123,7 +140,9 @@ export class MRIConfig {
         return new Promise<HPHConfigMetaType>(async (resolve, reject) => {
             // close to cdw
             if (!configId) {
-                throw new Error("CONFIG_ERROR_NO_CONFIG_ID_SPECIFIED");
+                // Same reason as getBackendConfig above: an async executor's
+                // throw escapes the promise its caller is awaiting.
+                return reject(new Error("CONFIG_ERROR_NO_CONFIG_ID_SPECIFIED"));
             }
             try {
                 const configObj = await this.ffhConfig.getConfig({

@@ -22,6 +22,12 @@
   // Stops a restarted sign-in from bouncing between here and /authorize.
   var RESTART_TS_KEY = "atlas_login_restart_ts";
   var RESTART_GUARD_MS = 10000;
+  // Same origin as Atlas, behind the same gateway the portal reaches usermgmt
+  // through. The name it answers with is the one vue-mri matches saved work by.
+  var USERMGMT_ME_URL = "/d2e/usermgmt/api/me";
+  // Long enough for a same-origin call that normally answers in milliseconds,
+  // short enough that a stalled one is never what the user waits behind.
+  var USERMGMT_ME_TIMEOUT_MS = 3000;
 
   function fail(msg) {
     var s = document.getElementById("spinner");
@@ -167,16 +173,57 @@
       return;
     }
     localStorage.setItem(TOKEN_KEY, data.access_token);
-    // The access token has no profile claims, but vue-mri needs the d2e username
-    // (= the id_token `username` claim, e.g. "admin") to match the current user's
-    // own bookmarks/cohort definitions. Capture it from the id_token.
+    // vue-mri matches the current user's own bookmarks and cohort definitions by
+    // username, so this has to be the SAME STRING the services that store them
+    // write: usermgmt's `username` column, which bookmark-svc reads from this
+    // very endpoint to set a bookmark's user_id.
+    //
+    // It used to be read off the id_token instead:
+    //
+    //   idc.username || idc.preferred_username || idc.email || idc.name || idc.sub
+    //
+    // which agreed with usermgmt only while Logto was the provider, because
+    // Logto emitted a `username` claim. trex's Better Auth provider emits none,
+    // so that chain fell through to `email` — the synthesised
+    // <username>@d2e.local an email-less account is registered under — and
+    // every bookmark the user owned stopped matching. The list still arrived;
+    // the client dropped it, and PA reported "No saved cohort definitions".
+    //
+    // An id_token is not the place to look for this even when a claim is
+    // present: it describes the authenticated subject, while the saved work is
+    // filed under a name a different system owns. Ask that system.
+    // BOUNDED, because this sits between the token exchange and the redirect
+    // below. An unbounded await here does not fail the sign-in, it SUSPENDS it:
+    // location.replace(ret) is never reached, the callback page stays on screen
+    // and the user sees a sign-in that never completes. A try/catch does not
+    // help -- it catches a rejection, and the failure mode is a request that
+    // simply never settles.
+    //
+    // So the name is worth a short wait and nothing more. Losing it costs a
+    // listing of the user's own saved work until the next sign-in; losing the
+    // redirect costs the session.
     try {
-      if (data.id_token) {
-        var idc = JSON.parse(atob(data.id_token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/")));
-        var uname = idc.username || idc.preferred_username || idc.email || idc.name || idc.sub || "";
-        if (uname) localStorage.setItem("atlas_username", uname);
+      var meCtl = new AbortController();
+      var meTimer = setTimeout(function () { meCtl.abort(); }, USERMGMT_ME_TIMEOUT_MS);
+      try {
+        var me = await fetch(USERMGMT_ME_URL, {
+          headers: { Authorization: "Bearer " + data.access_token },
+          signal: meCtl.signal
+        });
+        if (me.ok) {
+          var meBody = await me.json();
+          if (meBody && meBody.username) localStorage.setItem("atlas_username", meBody.username);
+        } else {
+          console.warn("[login] usermgmt /me returned " + me.status + "; saved cohorts may not be listed");
+        }
+      } finally {
+        clearTimeout(meTimer);
       }
-    } catch (e) { /* ignore */ }
+    } catch (e) {
+      // Deliberately not falling back to an id_token claim: a wrong name shows
+      // one user another's saved work, which is worse than showing none.
+      console.warn("[login] could not resolve the username from usermgmt: " + e);
+    }
     // Persist the refresh token + the bits the token-keeper needs to renew it,
     // so the session survives the (~1h) access-token TTL without re-prompting.
     if (data.refresh_token) localStorage.setItem("atlas_refresh_token", data.refresh_token);

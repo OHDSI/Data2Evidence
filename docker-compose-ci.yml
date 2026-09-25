@@ -8,6 +8,21 @@ services:
       # resolves; `iss` stays the public issuer from docker-compose.yml, so tokens
       # verify unchanged everywhere else.
       TREX_OIDC_INTERNAL_BASE: "http://${PROJECT_NAME:-d2e}-trex:33001"
+      # trex's general API limiter is 5000 requests per 15 minutes, keyed per
+      # client address. A whole e2e run comes from one address, so the suite
+      # shares a single bucket: one demosetup shard makes 10,502 gateway
+      # requests, and once the bucket empties the throttling lands on whatever
+      # is asking next. It showed up as filtering-barchart timing out on a
+      # dataset tile that never arrived, because system-portal/dataset/list had
+      # been answered 429 and the portal rendered "No dataset available" --
+      # nothing that names a rate limit.
+      #
+      # Set here rather than in docker-compose.yml on purpose: the limit is
+      # doing its job for real traffic, and trex's own note says as much. CI is
+      # a single trusted caller with no one to protect, so the number only has
+      # to be high enough never to be the reason a run fails -- roughly five
+      # times a shard's whole-job total, so no distribution of it can trip.
+      TREX_API_RATE_LIMIT_MAX: "${TREX__API_RATE_LIMIT_MAX:-50000}"
     volumes:
       - ./plugins/ui-built:/usr/src/plugins/d2e-ui-pr
       # Overlay the e2e-patched MRI/PA seed config onto the image-bundled

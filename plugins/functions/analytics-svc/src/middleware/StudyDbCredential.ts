@@ -53,6 +53,58 @@ export default async (req: IMRIRequest, res, next) => {
         return "";
     };
 
+    /**
+     * Three attempts, then give up, with a short backoff.
+     *
+     * Bounded on purpose: a portal that is genuinely down must not hold every
+     * analytics request open. The delays are sized for a worker restart, not
+     * for an outage.
+     */
+    const fetchWithRetry = async <T>(attempt: () => Promise<T>): Promise<T> => {
+        // Five attempts over ~3.7s. The first budget was two retries inside
+        // 400ms, sized for the ~80ms a worker needs to re-register its routes,
+        // and it was not enough: the portal worker is dropped 41 times in one
+        // CI run, and under that much churn a replacement can be unavailable
+        // for seconds rather than milliseconds. A fetch that gives up here
+        // leaves paConfigId unset and the failure re-emerges as an empty
+        // patient count, so the budget is worth more than the latency.
+        const delaysMs = [200, 500, 1000, 2000];
+        for (let i = 0; ; i++) {
+            try {
+                return await attempt();
+            } catch (error) {
+                // Never on 429. trex rate-limits per client address, so a retry
+                // spends more of a bucket that is already empty and throttles
+                // the calls beside it. A 4xx will not answer differently next
+                // time either; the transient this exists for is the worker
+                // restart, which shows as a 5xx or a dropped connection.
+                //
+                // Three shapes, because this client offers no single one: it
+                // throws whatever its transport produced, and what was observed
+                // in CI carried the code only in the text --
+                // "Request failed with status 500: Internal Server Error". A
+                // guard reading a structured field alone finds nothing there
+                // and retries the throttled calls it exists to spare.
+                const err = error as {
+                    status?: number;
+                    response?: { status?: number };
+                    message?: string;
+                };
+                const fromText = /status (\d{3})/.exec(err?.message ?? "");
+                const status = err?.status ?? err?.response?.status ??
+                    (fromText ? Number(fromText[1]) : undefined);
+                // Unknown status means no reply at all -- a network error, which
+                // is worth one more try.
+                const worthRetrying = status === undefined || status >= 500;
+
+                if (i >= delaysMs.length || !worthRetrying) {
+                    throw error;
+                }
+                await new Promise((resolve) => setTimeout(resolve, delaysMs[i]));
+            }
+        }
+    };
+
     const addConfigMetadataToReq = async (datasetId: string): Promise<void> => {
         if (!datasetId) {
             log.info(`Skip PA/CDM metadata injection for path ${req.url}`);
@@ -61,8 +113,20 @@ export default async (req: IMRIRequest, res, next) => {
 
         try {
             const portalServerAPI = new PortalServerAPI();
+            // Retried, because the common failure here is not the portal being
+            // down but the portal's edge worker being recycled mid-request:
+            //
+            //   event_type: "Shutdown", reason: "EarlyDrop"
+            //
+            // The replacement re-registers its routes within ~100ms, so a
+            // request that lands in that window gets one 500 and the next
+            // succeeds. Without a retry that single 500 is silently converted
+            // into an absent paConfigId, and the damage surfaces much later as
+            // PA reporting "No suggestions available" with no patient count --
+            // observed in CI as pa-filter-cards failing all four attempts while
+            // every other dataset call on the same page returned 200.
             const paBackendConfigResponse: PABackendConfigResponse =
-                await portalServerAPI.getPABackendConfig(datasetId);
+                await fetchWithRetry(() => portalServerAPI.getPABackendConfig(datasetId));
             const responseMeta = paBackendConfigResponse?.meta;
 
             if (!responseMeta) {
@@ -77,8 +141,17 @@ export default async (req: IMRIRequest, res, next) => {
         } catch (error) {
             const errorMessage =
                 error instanceof Error ? error.message : "unknown error";
-            log.info(
-                `PA/CDM metadata fetch failed for datasetId ${datasetId}: ${errorMessage}`
+            // ERROR, not info. Swallowing this leaves req.paConfigId undefined,
+            // and the request continues to a handler that reads it --
+            // controllers/values.ts takes `configId` from here, not from the
+            // query string the browser sent -- so the failure re-emerges far
+            // away as a config-less call into mri-pa-config. What the user sees
+            // is "No suggestions available" and an empty patient count, naming
+            // neither the dataset nor the fetch that failed. At info level the
+            // one line that explains it does not appear in a default log.
+            log.error(
+                `PA/CDM metadata fetch failed for datasetId ${datasetId}: ${errorMessage}. ` +
+                `Requests that read paConfigId/cdmConfigId will be served without it.`
             );
         }
     };
