@@ -25,6 +25,9 @@
   // Same origin as Atlas, behind the same gateway the portal reaches usermgmt
   // through. The name it answers with is the one vue-mri matches saved work by.
   var USERMGMT_ME_URL = "/d2e/usermgmt/api/me";
+  // Long enough for a same-origin call that normally answers in milliseconds,
+  // short enough that a stalled one is never what the user waits behind.
+  var USERMGMT_ME_TIMEOUT_MS = 3000;
 
   function fail(msg) {
     var s = document.getElementById("spinner");
@@ -189,15 +192,32 @@
     // An id_token is not the place to look for this even when a claim is
     // present: it describes the authenticated subject, while the saved work is
     // filed under a name a different system owns. Ask that system.
+    // BOUNDED, because this sits between the token exchange and the redirect
+    // below. An unbounded await here does not fail the sign-in, it SUSPENDS it:
+    // location.replace(ret) is never reached, the callback page stays on screen
+    // and the user sees a sign-in that never completes. A try/catch does not
+    // help -- it catches a rejection, and the failure mode is a request that
+    // simply never settles.
+    //
+    // So the name is worth a short wait and nothing more. Losing it costs a
+    // listing of the user's own saved work until the next sign-in; losing the
+    // redirect costs the session.
     try {
-      var me = await fetch(USERMGMT_ME_URL, {
-        headers: { Authorization: "Bearer " + data.access_token }
-      });
-      if (me.ok) {
-        var meBody = await me.json();
-        if (meBody && meBody.username) localStorage.setItem("atlas_username", meBody.username);
-      } else {
-        console.warn("[login] usermgmt /me returned " + me.status + "; saved cohorts may not be listed");
+      var meCtl = new AbortController();
+      var meTimer = setTimeout(function () { meCtl.abort(); }, USERMGMT_ME_TIMEOUT_MS);
+      try {
+        var me = await fetch(USERMGMT_ME_URL, {
+          headers: { Authorization: "Bearer " + data.access_token },
+          signal: meCtl.signal
+        });
+        if (me.ok) {
+          var meBody = await me.json();
+          if (meBody && meBody.username) localStorage.setItem("atlas_username", meBody.username);
+        } else {
+          console.warn("[login] usermgmt /me returned " + me.status + "; saved cohorts may not be listed");
+        }
+      } finally {
+        clearTimeout(meTimer);
       }
     } catch (e) {
       // Deliberately not falling back to an id_token claim: a wrong name shows
