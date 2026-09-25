@@ -208,6 +208,23 @@ export class UserMgmt {
     });
   }
 
+  /**
+   * The caller's own usermgmt record.
+   *
+   * `username` here is the owner key every service that stores per-user work
+   * writes: bookmark-svc keys bookmarks on it (via its own call to this same
+   * endpoint), and white-rabbit, files-manager and perseus do the same for
+   * theirs. Read it rather than deriving a name from an ID-token claim, which
+   * is a different string from a different system and drifts from this one.
+   */
+  public getMe(): Promise<{ id: string; username: string }> {
+    return request({
+      baseURL: USER_MGMT_BASE_URL,
+      url: "me",
+      method: "GET",
+    });
+  }
+
   public deleteMyUser(): Promise<{ id: string }> {
     return request({
       baseURL: USER_MGMT_BASE_URL,
