@@ -163,6 +163,15 @@ test(TEST_NAME, async ({ page }) => {
     await page.getByTestId('pa-save-dialog-save-btn').click()
     await expect(page.getByText('Filters saved.')).toBeVisible()
   })
+  //Verify the new bookmark is listed on the Data Exploration page
+  await test.step('Verify the new bookmark on the Data Exploration page', async () => {
+    await page.locator('#pane-left').getByRole('link', { name: 'Cohorts' }).click()
+    await expect(explorationBookmarkCard(page, NAME.savedFilters)).toBeVisible()
+    // Open it again, so the steps below continue on the saved cohort.
+    await explorationBookmarkCard(page, NAME.savedFilters).click()
+    await expect(page.getByText('325 / 2,694')).toBeVisible()
+    await expect(page.locator('.loading-animation-component')).not.toBeVisible()
+  })
   //Reset x1 selection to avoid displaying errors
   await test.step('Reset the x1 attributes', async () => {
     await page
