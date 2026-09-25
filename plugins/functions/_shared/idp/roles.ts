@@ -50,10 +50,11 @@ export const sourceUserScopeName = (datasetId: string) => `source-user-${dataset
 // Only the per-source "Source user" scope stays webapi-only, because the WebAPI
 // source role it maps to exists only for webapi-type datasets.
 export const datasetResearcherScopes = (roleName: string, datasetId: string, type?: string): string[] => {
-  const scopes = [roleName, `role.researcher.${datasetId}`, ...WEBAPI_RESEARCHER_SCOPES]
+  const scopes = [roleName, `role.researcher.${datasetId}`]
   if (type === 'webapi') {
     scopes.push(sourceUserScopeName(datasetId))
   }
+  scopes.push(...WEBAPI_RESEARCHER_SCOPES)
   return scopes
 }
 
