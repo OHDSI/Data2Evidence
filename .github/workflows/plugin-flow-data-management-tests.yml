@@ -1,0 +1,26 @@
+name: plugin-flow-data-management-tests
+
+on:
+  pull_request:
+    paths:
+      - 'plugins/flows/data_management/**'
+      - '.github/workflows/plugin-flow-data-management-tests.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  sql-migration-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: prefix-dev/setup-pixi@v0.9.0
+        with:
+          pixi-version: v0.72.2
+      - name: Install data-management flow environment
+        run: pixi install --frozen --manifest-path plugins/flows/data_management/pyproject.toml
+      - name: Run data-management SQL migration tests
+        run: >
+          pixi run --manifest-path plugins/flows/data_management/pyproject.toml
+          python -m pytest plugins/flows/data_management/data_management_plugin/tests/test_sql_migration.py

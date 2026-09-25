@@ -29,7 +29,8 @@ CREATE INDEX idx_test_id ON test (id);
   lines are ignored. Without a header the author is recorded as `d2e` and the id as the file name.
 
 `tests/test_sql_migration.py` lints every changeset (one changeset per file, no `$$` body in a file
-that is split, no unknown `${...}` placeholder), so run the tests after adding or editing one.
+that is split, no unknown `${...}` placeholder). The `plugin-flow-data-management-tests`
+pull-request workflow runs this suite, so bad files fail CI before deployment.
 
 ## Creating a new data model
 
