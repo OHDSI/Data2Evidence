@@ -73,6 +73,8 @@ these fails CI rather than a deployment:
 ### Guarantees
 - **Postgres:** a changeset and its `databasechangelog` row commit in one transaction, and concurrent
   runs on the same schema are serialized with an advisory lock.
-- **HANA:** DDL auto-commits, so a crash between a changeset and its changelog row can leave them out
-  of step, and there is no lock. The HANA changesets have not been run against a real HANA instance.
+- **HANA:** concurrent runs are serialized with Liquibase's `databasechangeloglock` row (a lock left by
+  a crashed run is taken over after 15 minutes). DDL auto-commits, so a crash between a changeset and
+  its changelog row can still leave them out of step. The HANA changesets and this lock have not been
+  run against a real HANA instance.
 - Rollback (`rollback_count` / `rollback_tag`) is no longer supported.

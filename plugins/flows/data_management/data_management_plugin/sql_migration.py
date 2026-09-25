@@ -5,12 +5,18 @@ schemas Liquibase already migrated are picked up as-is and the DAO version/date
 methods keep working.
 """
 import re
+import socket
+import time
+import uuid
 from contextlib import contextmanager
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Iterator, List, NamedTuple, Optional
 
-from sqlalchemy import DateTime, Integer, MetaData, String, Table, func, select, text
+from sqlalchemy import (
+    Boolean, Column, DateTime, Integer, MetaData, String, Table, and_, false, func, inspect, or_,
+    select, text,
+)
 
 from prefect.logging import get_run_logger
 
@@ -20,7 +26,11 @@ CHANGELOG_TABLE = "databasechangelog"
 
 MIGRATIONS_ROOT = Path(__file__).resolve().parent / "db" / "migrations"
 
+LOCK_TABLE = "databasechangeloglock"
 LOCK_TIMEOUT_SECONDS = 600
+# a lock older than this is treated as left behind by a crashed run
+LOCK_LEASE_SECONDS = 900
+LOCK_POLL_SECONDS = 2
 
 SPLIT_STATEMENTS_FALSE_REGEX = re.compile(r"splitStatements:false", re.IGNORECASE)
 CHANGESET_HEADER_REGEX = re.compile(r"^--changeset\s+([^:\s]+):(\S+)")
@@ -243,11 +253,76 @@ def apply_changeset(dbdao: DaoBase, schema_name: str, dialect: str,
             raise
 
 
+def _lock_table(schema_name: str) -> Table:
+    return Table(
+        LOCK_TABLE,
+        MetaData(schema=schema_name),
+        Column("id", Integer, primary_key=True, autoincrement=False),
+        Column("locked", Boolean, nullable=False),
+        Column("lockgranted", DateTime),
+        Column("lockedby", String(255)),
+    )
+
+
+def _ensure_lock_row(engine, table: Table) -> None:
+    # concurrent first runs can race on creating the table or seeding the row
+    try:
+        table.create(engine, checkfirst=True)
+    except Exception:
+        if not inspect(engine).has_table(LOCK_TABLE, schema=table.schema):
+            raise
+    with engine.begin() as connection:
+        if connection.execute(select(table.c.id).where(table.c.id == 1)).first() is None:
+            try:
+                connection.execute(table.insert().values(id=1, locked=False))
+            except Exception:
+                if connection.execute(select(table.c.id).where(table.c.id == 1)).first() is None:
+                    raise
+
+
+def _try_acquire_lock(engine, table: Table, holder: str) -> bool:
+    now = datetime.now()
+    stale_before = now - timedelta(seconds=LOCK_LEASE_SECONDS)
+    with engine.begin() as connection:
+        result = connection.execute(
+            table.update()
+            .where(and_(table.c.id == 1,
+                        or_(table.c.locked == false(), table.c.lockgranted < stale_before)))
+            .values(locked=True, lockgranted=now, lockedby=holder)
+        )
+        return result.rowcount == 1
+
+
+@contextmanager
+def _table_lock(engine, schema_name: str) -> Iterator[None]:
+    """Liquibase's databasechangeloglock protocol: one row, taken with an atomic conditional UPDATE."""
+    table = _lock_table(schema_name)
+    _ensure_lock_row(engine, table)
+    holder = f"{socket.gethostname()}-{uuid.uuid4()}"
+    deadline = time.monotonic() + LOCK_TIMEOUT_SECONDS
+    while not _try_acquire_lock(engine, table, holder):
+        if time.monotonic() >= deadline:
+            raise TimeoutError(
+                f"Timed out after {LOCK_TIMEOUT_SECONDS}s waiting for the migration lock on schema '{schema_name}'"
+            )
+        time.sleep(LOCK_POLL_SECONDS)
+    try:
+        yield
+    finally:
+        with engine.begin() as connection:
+            connection.execute(
+                table.update()
+                .where(and_(table.c.id == 1, table.c.lockedby == holder))
+                .values(locked=False, lockgranted=None, lockedby=None)
+            )
+
+
 @contextmanager
 def _schema_migration_lock(engine, dialect: str, schema_name: str) -> Iterator[None]:
-    """Serialize concurrent migrations of one schema (Postgres advisory lock only)."""
+    """Serialize concurrent migrations of one schema: advisory lock on Postgres, lock table elsewhere."""
     if dialect != "postgres":
-        yield
+        with _table_lock(engine, schema_name):
+            yield
         return
     params = {"schema": schema_name}
     with engine.connect() as lock_connection:
@@ -272,13 +347,14 @@ def apply_data_model_schema(dbdao: DaoBase, schema_name: str, data_model: str,
                             count: Optional[int] = None) -> None:
     logger = get_run_logger()
     dbdao.validate_schema_name(schema_name)
+    all_files = list_changeset_files(dialect, data_model)
     engine = dbdao.engine
 
     with _schema_migration_lock(engine, dialect, schema_name):
         ensure_changelog_table(dbdao, schema_name)
         applied = get_applied_filenames(dbdao, schema_name, engine)
 
-        pending = [f for f in list_changeset_files(dialect, data_model) if f.relative_path not in applied]
+        pending = [f for f in all_files if f.relative_path not in applied]
 
         if count:
             pending = pending[:count]

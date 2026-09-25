@@ -464,13 +464,108 @@ def test_schema_migration_lock_releases_when_the_body_raises():
     assert "pg_advisory_unlock" in str(connection.execute.call_args_list[-1].args[0])
 
 
-def test_schema_migration_lock_is_a_noop_on_hana():
+def test_schema_migration_lock_uses_the_lock_table_off_postgres():
     engine = MagicMock()
+    events = []
 
-    with sm._schema_migration_lock(engine, "hana", "s1"):
-        pass
+    @contextmanager
+    def fake_table_lock(eng, schema_name):
+        events.append(("lock", eng, schema_name))
+        yield
+        events.append(("unlock",))
 
+    with patch("data_management_plugin.sql_migration._table_lock", fake_table_lock):
+        with sm._schema_migration_lock(engine, "hana", "s1"):
+            events.append(("body",))
+
+    assert events == [("lock", engine, "s1"), ("body",), ("unlock",)]
     engine.connect.assert_not_called()
+
+
+# --- _table_lock (Liquibase's databasechangeloglock protocol; sqlite stands in for HANA) ---
+
+def _lock_state(engine):
+    with engine.connect() as connection:
+        return connection.execute(text("SELECT locked, lockedby FROM legacy.databasechangeloglock WHERE id = 1")).one()
+
+
+def test_table_lock_takes_and_releases_the_row(sqlite_engine):
+    with sm._table_lock(sqlite_engine, "legacy"):
+        locked, holder = _lock_state(sqlite_engine)
+        assert locked and holder
+
+    assert tuple(_lock_state(sqlite_engine)) == (0, None)
+
+
+def test_table_lock_releases_when_the_body_raises(sqlite_engine):
+    with pytest.raises(RuntimeError):
+        with sm._table_lock(sqlite_engine, "legacy"):
+            raise RuntimeError("migration failed")
+
+    assert tuple(_lock_state(sqlite_engine)) == (0, None)
+
+
+def test_table_lock_is_exclusive_and_times_out_while_held(sqlite_engine):
+    table = sm._lock_table("legacy")
+    sm._ensure_lock_row(sqlite_engine, table)
+    assert sm._try_acquire_lock(sqlite_engine, table, "run-a") is True
+
+    with patch.object(sm, "LOCK_TIMEOUT_SECONDS", 0), patch.object(sm, "LOCK_POLL_SECONDS", 0):
+        with pytest.raises(TimeoutError, match="schema 'legacy'"):
+            with sm._table_lock(sqlite_engine, "legacy"):
+                pass
+
+    assert _lock_state(sqlite_engine).lockedby == "run-a"
+
+
+def test_table_lock_only_the_holder_can_release(sqlite_engine):
+    table = sm._lock_table("legacy")
+    sm._ensure_lock_row(sqlite_engine, table)
+    sm._try_acquire_lock(sqlite_engine, table, "run-a")
+
+    with pytest.raises(TimeoutError):
+        with patch.object(sm, "LOCK_TIMEOUT_SECONDS", 0), patch.object(sm, "LOCK_POLL_SECONDS", 0):
+            with sm._table_lock(sqlite_engine, "legacy"):
+                pass
+
+    # the timed-out waiter never held it, so it must not have cleared run-a's lock
+    assert tuple(_lock_state(sqlite_engine)) == (1, "run-a")
+
+
+def test_table_lock_takes_over_a_stale_lock(sqlite_engine):
+    table = sm._lock_table("legacy")
+    sm._ensure_lock_row(sqlite_engine, table)
+    stale = sm.datetime.now() - sm.timedelta(seconds=sm.LOCK_LEASE_SECONDS + 60)
+    with sqlite_engine.begin() as connection:
+        connection.execute(table.update().values(locked=True, lockgranted=stale, lockedby="crashed-run"))
+
+    assert sm._try_acquire_lock(sqlite_engine, table, "run-b") is True
+    assert _lock_state(sqlite_engine).lockedby == "run-b"
+
+
+def test_table_lock_reuses_a_liquibase_created_lock_table(sqlite_engine):
+    with sqlite_engine.begin() as connection:
+        connection.exec_driver_sql(
+            "CREATE TABLE legacy.databasechangeloglock (id INTEGER NOT NULL PRIMARY KEY, "
+            "locked BOOLEAN NOT NULL, lockgranted TIMESTAMP, lockedby VARCHAR(255))"
+        )
+        connection.exec_driver_sql("INSERT INTO legacy.databasechangeloglock (id, locked) VALUES (1, 0)")
+
+    with sm._table_lock(sqlite_engine, "legacy"):
+        assert _lock_state(sqlite_engine).locked
+
+    with sqlite_engine.connect() as connection:
+        assert connection.execute(text("SELECT count(*) FROM legacy.databasechangeloglock")).scalar() == 1
+
+
+def test_ensure_lock_row_is_idempotent(sqlite_engine):
+    table = sm._lock_table("legacy")
+
+    sm._ensure_lock_row(sqlite_engine, table)
+    sm._ensure_lock_row(sqlite_engine, table)
+
+    with sqlite_engine.connect() as connection:
+        assert connection.execute(text("SELECT count(*) FROM legacy.databasechangeloglock")).scalar() == 1
 
 
 # --- apply_data_model_schema ---
@@ -550,10 +645,13 @@ def test_apply_data_model_schema_holds_the_lock_while_applying(
 def test_apply_data_model_schema_rejects_unsupported_data_model_before_touching_the_schema():
     dbdao = MagicMock()
     with patch("data_management_plugin.sql_migration.get_run_logger", return_value=MagicMock()), \
-         patch("data_management_plugin.sql_migration.ensure_changelog_table"), \
+         patch("data_management_plugin.sql_migration.ensure_changelog_table") as ensure_table_mock, \
          patch("data_management_plugin.sql_migration.get_applied_filenames", return_value=set()), \
          pytest.raises(ValueError, match="not supported"):
         sm.apply_data_model_schema(dbdao, "s1", "custom-omop-ms", "postgres")
+
+    ensure_table_mock.assert_not_called()
+    dbdao.engine.connect.assert_not_called()
 
 
 # --- get_latest_available_changeset ---
