@@ -78,6 +78,9 @@ export default defineConfig({
     // build scopes the theme stylesheet. src/plugins/vuetify.ts reads it; every
     // other build leaves it undefined and keeps the theme global.
     'import.meta.env.VITE_ATLAS_NATIVE': JSON.stringify('true'),
+    // Atlas hosts this build too. Separate from the flag above because that one
+    // is about sharing a document, not about who owns the data source.
+    'import.meta.env.VITE_ATLAS_HOSTED': JSON.stringify('true'),
     // Process env replacements (lightweight alternative to vite-plugin-node-polyfills)
     'process.env.NODE_ENV': JSON.stringify('production'),
     'process.env.VUE_APP_API_BASE_URL': JSON.stringify(''),
