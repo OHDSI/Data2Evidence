@@ -151,6 +151,27 @@ services:
         - *x-tls
         - *x-pg
         - *x-trex-sql
+      # Edge-worker limits, pinned to the values d2e ran on before trexsql
+      # 8c081f6. OHDSI/trex#333 made these configurable and, in the same change,
+      # raised the built-in defaults from 150MB/5min to 512MB/30min -- so taking
+      # that image silently gave every d2e worker 3.4x the memory ceiling and 6x
+      # the lifetime, on a stack that sets neither variable.
+      #
+      # That is not a free win. The ceiling is what the supervisor halves to
+      # decide an early drop, and the lifetime is how long a worker accumulates
+      # before it is replaced, so raising both together trades frequent cheap
+      # recycles for rare expensive ones. Measured on the bump: filtering-barchart
+      # failed twice on the same commit, both times at the last chart of a 17-minute
+      # run, with the patient count reading "-- / --" -- healthy early, degraded
+      # late, which is the shape a longer-lived worker produces. The same suite
+      # passes on develop, one commit behind, with 150MB/5min.
+      #
+      # Pinned rather than reverted: the bump carries other fixes, and keeping the
+      # runtime identical is what makes it a version bump instead of a behaviour
+      # change. Raising these is worth doing -- trex#333 exists because 150MB
+      # recycles healthy workers -- but as its own change, measured on its own.
+      TREX_WORKER_MEMORY_LIMIT_MB: "${TREX__WORKER_MEMORY_LIMIT_MB:-150}"
+      TREX_WORKER_TIMEOUT_MS: "${TREX__WORKER_TIMEOUT_MS:-300000}"
       # With the rebuilt trexas runtime (cert_provider fix), the worker HTTP client
       # honors DENO_TLS_CA_STORE=system, so it trusts the internal CA installed into
       # the OS store by the command above (via update-ca-certificates).
