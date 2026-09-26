@@ -21,7 +21,7 @@
 # Bumping this pin is how trex code reaches a d2e stack — this file vendors no
 # core. There is a SECOND pin, for the devx base, in docker-compose-local.yml;
 # both move together. See docs/trex-oidc-provider-cutover.md.
-ARG TREXSQL_REF=prod-sha-a012a0826579d9358593f6ff010697160d330308@sha256:f7c98fadafb6c1b75b791990a747c21ea96aab37c6482c851d0852e341280597
+ARG TREXSQL_REF=prod-sha-8c081f6040008741dd46505721bab9e7df85e66a@sha256:076fb187f2b1b6fd9e753e095dd8ff9dd2ebcd9a00ba82b7f936cd3457a4d4e7
 FROM ghcr.io/ohdsi/trexsql:${TREXSQL_REF} AS base
 
 USER root

@@ -458,8 +458,11 @@ jobs:
             echo "::error::data-quality did not produce dist/index.system.js"
             exit 1
           fi
-      # Atlas plugin: postinstall bakes Atlas3 + the Pythia UI into resources/;
-      # build the portal entry. Packs only resources/ (see package.json "files").
+      # Atlas plugin: postinstall bakes Atlas3 + the Pythia UI into resources/,
+      # which is the whole of what gets packed (see package.json "files"), so
+      # npm install is the build. This ran `npm run build:portal` until the
+      # portal-embedded Atlas was removed; that script built only the iframe
+      # wrapper, and no other entry was ever built here.
       - name: Build Atlas plugin
         if: ${{ matrix.ATLAS }}
         working-directory: ${{ matrix.PKGPATH }}
@@ -469,7 +472,6 @@ jobs:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           npm install
-          npm run build:portal
       # Patient Analytics (Data Exploration) is an Atlas3 sub-plugin too, but it lives
       # in the UI monorepo instead of the trex-notebook submodule, so it is built and
       # staged here rather than by the atlas postinstall — and it has to run AFTER the
@@ -709,7 +711,7 @@ jobs:
             BUILD_TYPE=OSS
             PLUGINS_FEED=${{ needs.setup.outputs.is_release_push == 'true' && 'stable' || 'd2e' }}
             PLUGINS_FROM_REGISTRY=@ohdsi/pythia-agent@0.1.0-develop.18.g80bf4aa
-            TREXSQL_REF=sha-a012a0826579d9358593f6ff010697160d330308@sha256:b1f901a2d5940840ed38f09892a9b9ac237fb22a5e214c3ed302a9fd848db16d
+            TREXSQL_REF=sha-8c081f6040008741dd46505721bab9e7df85e66a@sha256:88a1c0021cfa61d1c04252f7c9b750ed3cd71d3ea5c855657964bf3009331d29
           secrets: |
             "PLUGINS_REGISTRY=${{ secrets.PLUGINS_REGISTRY }}"
             "github_token=${{ secrets.GITHUB_TOKEN }}"

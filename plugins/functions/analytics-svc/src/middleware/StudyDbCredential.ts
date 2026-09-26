@@ -54,21 +54,34 @@ export default async (req: IMRIRequest, res, next) => {
     };
 
     /**
-     * Three attempts, then give up, with a short backoff.
+     * Retries a few times with a growing backoff, then gives up.
      *
      * Bounded on purpose: a portal that is genuinely down must not hold every
-     * analytics request open. The delays are sized for a worker restart, not
-     * for an outage.
+     * analytics request open. The delays are sized for a burst of worker
+     * restarts, not for an outage. The attempt count lives with the delays
+     * below, so the two cannot drift.
      */
     const fetchWithRetry = async <T>(attempt: () => Promise<T>): Promise<T> => {
-        // Five attempts over ~3.7s. The first budget was two retries inside
-        // 400ms, sized for the ~80ms a worker needs to re-register its routes,
-        // and it was not enough: the portal worker is dropped 41 times in one
-        // CI run, and under that much churn a replacement can be unavailable
-        // for seconds rather than milliseconds. A fetch that gives up here
-        // leaves paConfigId unset and the failure re-emerges as an empty
-        // patient count, so the budget is worth more than the latency.
-        const delaysMs = [200, 500, 1000, 2000];
+        // Seven attempts over ~10.7s. This budget has been raised twice, each
+        // time against a measured outage rather than a guess. It began as two
+        // retries inside 400ms, sized for the ~80ms a worker needs to
+        // re-register its routes. That became five attempts over ~3.7s when a
+        // CI run showed the portal worker dropped 41 times.
+        //
+        // ~3.7s is still short of what the drops actually do. They arrive in
+        // bursts, not singly: one run recycled workers continuously from
+        // 23:21:47 to 23:21:57 -- ten seconds, outlasting the whole budget --
+        // and the fetch that gave up in the middle of it left paConfigId unset.
+        // The chart then rendered "Not enough data to display" against a
+        // dataset holding 2,694 patients, and the run failed on a screenshot
+        // diff that named neither the portal nor the fetch.
+        //
+        // Still bounded, and still not sized for an outage: a portal that is
+        // genuinely down must not hold every analytics request open. But an
+        // empty chart is a WRONG ANSWER, not a slow one -- it reads as "your
+        // filter matched nobody" -- so buying the full length of a restart
+        // burst is worth the latency it costs when the portal really is down.
+        const delaysMs = [200, 500, 1000, 2000, 3000, 4000];
         for (let i = 0; ; i++) {
             try {
                 return await attempt();
