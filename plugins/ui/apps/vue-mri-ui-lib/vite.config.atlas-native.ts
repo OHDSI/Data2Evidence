@@ -6,7 +6,7 @@ import cssInjectedByJsPlugin from 'vite-plugin-css-injected-by-js'
 import path from 'path'
 import { copyFileSync, mkdirSync, readdirSync } from 'fs'
 import { createRequire } from 'module'
-import { vueDir } from './vite.resolve-deps'
+import { vueDir, vuetifyDir } from './vite.resolve-deps'
 
 // The d4l web components use Stencil lazy loading: entry chunks are resolved at
 // runtime relative to the importing chunk's URL, invisible to Rollup's static
@@ -90,19 +90,40 @@ export default defineConfig({
     process: JSON.stringify({ env: { NODE_ENV: 'production' } }),
   },
 
+  // An array, not an object, because the vuetify entries below need regex
+  // finds. Order matters: the more specific patterns come before bare
+  // `vuetify`.
   resolve: {
-    alias: {
+    alias: [
       // Load the d4l loader from the un-bundled Stencil esm files staged next
       // to index.system.js (see copyD4lStencilChunks above)
-      '@d4l/web-components-library/dist/loader': path.resolve(__dirname, 'src/bootstrap/d4lLoaderNativeImport.ts'),
+      {
+        find: '@d4l/web-components-library/dist/loader',
+        replacement: path.resolve(__dirname, 'src/bootstrap/d4lLoaderNativeImport.ts'),
+      },
       // @d2e/ui is private and unpublished, so neither the registry nor
       // node_modules resolves it — this alias is the only path to the library.
       // The portal config carries the same two entries. This build config
       // predated the component library, and rebasing onto the redesign is what
       // surfaced the gap.
-      '@d2e/ui/tokens.css': path.resolve(__dirname, '../../libs/d2e-ui/src/tokens/tokens.css'),
-      '@d2e/ui': path.resolve(__dirname, '../../libs/d2e-ui/src/index.ts'),
-      '@': path.resolve(__dirname, './src'),
+      { find: '@d2e/ui/tokens.css', replacement: path.resolve(__dirname, '../../libs/d2e-ui/src/tokens/tokens.css') },
+      { find: '@d2e/ui', replacement: path.resolve(__dirname, '../../libs/d2e-ui/src/index.ts') },
+      // Aliasing @d2e/ui to its SOURCE means its own bare imports are resolved
+      // from here, not from the library's folder -- and under the isolated
+      // install this build uses (npm install --workspaces=false) there is no
+      // vuetify to find, so the build died on:
+      //
+      //   [vite]: Rollup failed to resolve import "vuetify/components"
+      //     from libs/d2e-ui/src/components/D2eTextField.vue
+      //
+      // vite.config.atlas-app.ts carries exactly these three; this config was
+      // given the @d2e/ui aliases without them.
+      { find: 'vuetify/styles', replacement: path.join(vuetifyDir, 'lib/styles/main.css') },
+      {
+        find: /^vuetify\/(components|directives)(\/(.+))?$/,
+        replacement: path.join(vuetifyDir, 'lib/$1$2'),
+      },
+      { find: /^vuetify$/, replacement: path.join(vuetifyDir, 'lib/framework.js') },
       // Dedupe Vue to prevent multiple instances (matching webpack alias).
       // Resolved through vite.resolve-deps rather than hardcoded to
       // `<app>/node_modules/vue`: the bun workspace install that CI and local
@@ -110,10 +131,11 @@ export default defineConfig({
       // only under the isolated atlas install and fails everywhere else with
       // ENOENT. That helper exists for exactly this, and the portal config
       // already uses it.
-      vue: vueDir,
+      { find: 'vue', replacement: vueDir },
       // D3 v3 wrapper - provides access to window.d3 (loaded from public/vendor)
-      d3: path.resolve(__dirname, './src/lib/d3.ts'),
-    },
+      { find: 'd3', replacement: path.resolve(__dirname, './src/lib/d3.ts') },
+      { find: '@', replacement: path.resolve(__dirname, './src') },
+    ],
   },
 
   css: {
