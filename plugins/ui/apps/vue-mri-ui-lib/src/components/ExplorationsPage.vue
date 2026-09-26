@@ -545,7 +545,17 @@ const datasetId = computed(() => store.getters.getSelectedDataset?.id || portalC
 const datasetName = computed(() => store.getters.getSelectedDatasetName || datasetId.value)
 
 /**
- * Switching the source is only possible in the native Atlas mount.
+ * Switching the source is only possible when Atlas is the host.
+ *
+ * VITE_ATLAS_HOSTED, not VITE_ATLAS_NATIVE. The two are not the same question
+ * and reusing the latter here was a bug: it is defined only by the native
+ * build, where it exists to scope the Vuetify theme stylesheet because that
+ * mount shares a document with Atlas3's own Vuetify (see plugins/vuetify.ts).
+ * The build that actually ships to /atlas is the iframe one, which leaves it
+ * undefined -- so this read false there, the switcher was compiled out, and
+ * Data Exploration in Atlas offered only the dataset it was handed, with no way
+ * to change it. Its own document means it must never take the scoping, so the
+ * two flags have to stay apart.
  *
  * In the portal the dataset arrives through customProps and nothing flows
  * back, so changing it here would desynchronise the app from the shell that
@@ -554,7 +564,7 @@ const datasetName = computed(() => store.getters.getSelectedDatasetName || datas
  * `portalContext.datasetId`, so setting that is the whole switch.
  */
 const canSwitchDataSource = computed(
-  () => import.meta.env.VITE_ATLAS_NATIVE === 'true' && dataSourceItems.value.length > 1,
+  () => import.meta.env.VITE_ATLAS_HOSTED === 'true' && dataSourceItems.value.length > 1,
 )
 
 /** Every source the user can read, for the switcher. */
