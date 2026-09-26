@@ -1,9 +1,6 @@
 import { test, expect } from '../fixtures'
 
 const TEST_NAME = 'filtering-barchart'
-// Fixed, not unique: this name is rendered in the filter card and therefore
-// appears in the committed screenshot baselines. See the retry handling below.
-const CONCEPT_SET_NAME = 'Sinusitis'
 const SHOULD_SKIP = false
 test.fixme(SHOULD_SKIP, `${TEST_NAME} test is temporarily disabled.`)
 
@@ -58,45 +55,11 @@ test(TEST_NAME, async ({ page }) => {
   await expect(page.locator('tbody')).toContainText('4294548')
 
   // Save concept set
-  await page.getByRole('textbox', { name: 'Concept set name' }).fill(CONCEPT_SET_NAME)
+  await page.getByRole('textbox', { name: 'Concept set name' }).fill('Sinusitis')
   await page.getByRole('button', { name: 'Create' }).click()
-
-  // A concept set outlives the test that created it, and a Playwright retry
-  // re-runs this body against a database that already has one. The name cannot
-  // simply be made unique: it is rendered in the filter card, so it is baked
-  // into all 15 committed screenshot baselines. So on a retry the existing set
-  // is selected instead of created -- same name, same rendering, baselines
-  // intact.
-  //
-  // Without this, attempt 1 created "Sinusitis" and both retries were refused
-  // with 'Concept set name "Sinusitis" already exists. Please enter another
-  // name.', Update never enabled, and the run failed there. The retries could
-  // not pass whatever went wrong the first time. This suite's first attempt
-  // fails often enough for that to matter: four of develop's last eight
-  // completed runs failed on these jobs, and develop's own failure shows this
-  // same leftover in its third retry.
-  //
-  // Only reachable when the message appears, so the first attempt of a clean
-  // run takes exactly the path it took before.
-  const alreadyExists = await page
-    .getByText(/already exists/)
-    .waitFor({ state: 'visible', timeout: 3000 })
-    .then(() => true)
-    .catch(() => false)
-
-  if (alreadyExists) {
-    await page.getByRole('button', { name: 'Close' }).click()
-    const conditionOccConceptSet = page.getByTitle('Condition Occurrence A - Condition concept Set')
-    const conceptSetTextbox = conditionOccConceptSet.getByPlaceholder('Enter search term')
-    await conditionOccConceptSet.getByRole('combobox').click()
-    await conceptSetTextbox.fill(CONCEPT_SET_NAME)
-    await page.getByText(CONCEPT_SET_NAME, { exact: false }).first().click()
-    await conceptSetTextbox.press('Escape')
-  } else {
-    // Wait for concept set to be succesfully created
-    await expect(page.getByRole('button', { name: 'Update' })).toBeEnabled()
-    await page.getByRole('button', { name: 'Close' }).click()
-  }
+  // Wait for concept set to be succesfully created
+  await expect(page.getByRole('button', { name: 'Update' })).toBeEnabled()
+  await page.getByRole('button', { name: 'Close' }).click()
   await expect(page.getByText('1,132 / 2,694')).toBeVisible()
 
   // Dismiss popover if present
