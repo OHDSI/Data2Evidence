@@ -486,15 +486,15 @@ jobs:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           PA_DIR=plugins/ui/apps/vue-mri-ui-lib
-          ( cd "$PA_DIR" && npm install --workspaces=false --legacy-peer-deps && npm run build:atlas )
-          if [ ! -f "$PA_DIR/dist-atlas/index.system.js" ]; then
-            echo "::error::patient-analytics did not produce dist-atlas/index.system.js"
+          ( cd "$PA_DIR" && npm install --workspaces=false --legacy-peer-deps && npm run build:atlas-native )
+          if [ ! -f "$PA_DIR/dist-atlas-native/index.system.js" ]; then
+            echo "::error::patient-analytics did not produce dist-atlas-native/index.system.js"
             exit 1
           fi
           PA_DEST=plugins/atlas/resources/atlas/plugins/patient-analytics
           rm -rf "$PA_DEST"
           mkdir -p "$PA_DEST"
-          cp -r "$PA_DIR/dist-atlas/." "$PA_DEST/"
+          cp -r "$PA_DIR/dist-atlas-native/." "$PA_DEST/"
           echo "Staged patient-analytics at /atlas/plugins/patient-analytics"
       # Datasources is a third UI-monorepo Atlas3 sub-plugin, staged the same way as
       # patient-analytics above. Mirrors the same steps in scripts/build-atlas.sh;
