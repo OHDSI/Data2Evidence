@@ -30,6 +30,7 @@ import {
 type AtlasProps = Record<string, any>
 
 const FEATURE_LIST_URL = '/system-portal/feature/list'
+const ME_URL = '/usermgmt/api/me'
 
 /**
  * Atlas3 passes no `features`, and several things in this app are gated on
@@ -60,6 +61,39 @@ const fetchFeatures = async (props: AtlasProps): Promise<unknown[]> => {
 }
 
 /**
+ * The caller's usermgmt account name, which is the owner key for saved work.
+ *
+ * Atlas3 passes no `username` either, and unlike a missing feature list an
+ * empty one is not a benign default: every ownership test in this app compares
+ * it to a stored `user_id` (bookmark-svc writes that from its own GET /me), so
+ * `''` reads as "owned by nobody" and a user's own saved cohorts are reported
+ * as none. The portal resolves it the same way, through useMe.
+ *
+ * Deliberately usermgmt and not a token claim: trex's Better Auth provider
+ * emits no `username`, so a claim-derived name is a different string from a
+ * different system — the drift `useMe` documents at length.
+ *
+ * `undefined` on failure, never a substitute: showing one user another's saved
+ * work is worse than showing none, and `usernameLoading` below keeps consumers
+ * from reading the gap as an empty account.
+ */
+const fetchUsername = async (props: AtlasProps): Promise<string | undefined> => {
+  if (typeof props.username === 'string' && props.username) return props.username
+  try {
+    const token = typeof props.getToken === 'function' ? await props.getToken() : null
+    const response = await fetch(ME_URL, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    })
+    if (!response.ok) throw new Error(`${response.status}`)
+    const { username } = await response.json()
+    return typeof username === 'string' && username ? username : undefined
+  } catch (error) {
+    console.error('[atlas-lifecycles] Could not resolve the current username; saved work stays hidden', error)
+    return undefined
+  }
+}
+
+/**
  * Normalize the host's props for the portal contract.
  *
  * `features` and `releaseId` are passed through as given, including
@@ -67,18 +101,24 @@ const fetchFeatures = async (props: AtlasProps): Promise<unknown[]> => {
  * `applyProps` skips `undefined` values, so leaving a field undefined on
  * `update` means "keep what is already there".
  *
- * That matters for both. Atlas3 never sends a feature list, so re-deriving one
- * on update would overwrite what `mount` fetched with an empty array and turn
- * Analyze back off after a source switch. And `releaseId` had a hard `?? ''`
+ * That matters for all three. Atlas3 never sends a feature list, so re-deriving
+ * one on update would overwrite what `mount` fetched with an empty array and
+ * turn Analyze back off after a source switch; `username` is resolved once at
+ * mount for the same reason, and re-reading it here would blank the owner key
+ * on the first update and hide the user's saved work again. And `releaseId` had a hard `?? ''`
  * fallback, so any update that omitted it — a token refresh, a locale change —
  * would clear release scoping, because `''` is not `undefined` and
  * `applyProps` would happily write it.
  */
-const normalizeProps = (props: AtlasProps, defaults?: { features: unknown[]; releaseId: string }): AtlasProps => ({
+const normalizeProps = (
+  props: AtlasProps,
+  defaults?: { features: unknown[]; username: string | undefined; releaseId: string }
+): AtlasProps => ({
   ...props,
   qeSvcUrl: window.location.origin,
   features: defaults?.features,
   featuresLoading: false,
+  username: defaults?.username,
   usernameLoading: false,
   releaseId: defaults ? props.releaseId ?? defaults.releaseId : props.releaseId,
 })
@@ -223,8 +263,13 @@ export const unmount = async (props: AtlasProps) => {
 
 export const mount = async (props: AtlasProps) => {
   const mountGeneration = ++currentMountGeneration
+  const [features, username] = await Promise.all([
+    fetchFeatures(props ?? {}),
+    fetchUsername(props ?? {}),
+  ])
   const normalizedProps = normalizeProps(props ?? {}, {
-    features: await fetchFeatures(props ?? {}),
+    features,
+    username,
     releaseId: '',
   })
   const domElement = await resolveDomElement(normalizedProps)
