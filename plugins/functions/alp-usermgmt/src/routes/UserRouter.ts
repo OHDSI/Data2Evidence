@@ -7,7 +7,7 @@ import { IAppRequest } from '../types'
 import { createLogger } from '../Logger'
 import { permittedUserCheck } from '../middlewares/permitted-user-check'
 import { LogtoAPI, TrexIdpAPI } from '../api'
-import { resolveRoleStore } from '../services/UserGroupService'
+import { resolveUserStore } from '../services/UserGroupService'
 
 @Service()
 export class UserRouter {
@@ -144,7 +144,7 @@ export class UserRouter {
       this.logger.info(`Update password for user ${id}`)
 
       try {
-        if (resolveRoleStore(env.IDP_ROLE_STORE) === 'trex') {
+        if (resolveUserStore(env.D2E_IDP_MODE, env.TREX_NATIVE_PASSWORD_LOGIN_ENABLED, env.IDP_ROLE_STORE) === 'trex') {
           const result = await this.trexIdpAPI.setPassword(user.idpUserId, password)
           if (!result.ok) {
             this.logger.warn(`Error when updating user password ${id}: ${result.message}`)

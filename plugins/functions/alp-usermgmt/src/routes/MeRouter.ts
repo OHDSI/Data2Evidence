@@ -5,7 +5,7 @@ import { MemberService, UserGroupService, UserService } from '../services'
 import { IAppRequest, UserDeleteRequest } from '../types'
 import { createLogger } from '../Logger'
 import { LogtoAPI, TrexIdpAPI, WebAPI } from '../api'
-import { resolveRoleStore } from '../services/UserGroupService'
+import { resolveUserStore } from '../services/UserGroupService'
 import { env } from '../env'
 import { mayRekeyExistingSubject, resolveIdpMode } from '@alp/idp/mode.ts'
 
@@ -46,7 +46,7 @@ export class MeRouter {
       /* fall through to Logto lookup */
     }
     try {
-      if (resolveRoleStore(env.IDP_ROLE_STORE) === 'trex') {
+      if (resolveUserStore(env.D2E_IDP_MODE, env.TREX_NATIVE_PASSWORD_LOGIN_ENABLED, env.IDP_ROLE_STORE) === 'trex') {
         return (await this.trexIdpAPI.getUser(idpUserId))?.email
       }
       const logtoUser = await this.logtoApi.getUser(idpUserId)
@@ -191,7 +191,7 @@ export class MeRouter {
       }
 
       try {
-        if (resolveRoleStore(env.IDP_ROLE_STORE) === 'trex') {
+        if (resolveUserStore(env.D2E_IDP_MODE, env.TREX_NATIVE_PASSWORD_LOGIN_ENABLED, env.IDP_ROLE_STORE) === 'trex') {
           const result = await this.trexIdpAPI.changePassword(user.username!, oldPassword, password)
           if (!result.ok) {
             this.logger.warn(`Error when updating user password ${idpUserId}: ${result.message}`)
