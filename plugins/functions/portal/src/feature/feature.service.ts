@@ -67,13 +67,13 @@ export class FeatureService {
       featureFlag: 'sibyl',
       name: 'Sibyl (experimental)',
       nameI18nKey: 'FEATURE__SIBYL',
-      defaultEnabled: false
+      defaultEnabled: true
     },
     {
       featureFlag: 'dataExploration',
       name: 'Data Exploration (experimental)',
       nameI18nKey: 'FEATURE__DATA_EXPLORATION',
-      defaultEnabled: false
+      defaultEnabled: true
     }
   ]
 
