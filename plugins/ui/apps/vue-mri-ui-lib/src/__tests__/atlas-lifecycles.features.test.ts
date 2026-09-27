@@ -38,6 +38,8 @@ import { usePortalContextStore } from '../stores/portalContext'
 
 const FEATURES = [{ feature: 'wizards', isEnabled: true }]
 const USERNAME = 'brandan'
+const FEATURE_LIST_URL = '/system-portal/feature/list'
+const ME_URL = '/usermgmt/api/me'
 
 // The entry fetches two unrelated things on mount, so the stub answers by URL
 // rather than returning one body to both.
@@ -62,7 +64,7 @@ describe('atlas-lifecycles: the feature list', () => {
   it('fetches the feature list on mount, because the host sends none', async () => {
     await mount({ getToken: async () => 'tok', domElement: null })
 
-    expect(fetch).toHaveBeenCalledWith('/system-portal/feature/list', {
+    expect(fetch).toHaveBeenCalledWith(FEATURE_LIST_URL, {
       headers: { Authorization: 'Bearer tok' },
     })
     expect(mountSpy.mock.calls[0][0].features).toEqual(FEATURES)
@@ -70,10 +72,10 @@ describe('atlas-lifecycles: the feature list', () => {
 
   it('keeps the host-supplied list when there is one', async () => {
     const hostFeatures = [{ feature: 'wizards', isEnabled: false }]
-    // username too, or the entry still calls out for that half alone.
-    await mount({ getToken: async () => 'tok', features: hostFeatures, username: USERNAME, domElement: null })
+    await mount({ getToken: async () => 'tok', features: hostFeatures, domElement: null })
 
-    expect(fetch).not.toHaveBeenCalled()
+    // Only the feature list is skipped; the username is always resolved.
+    expect(fetch).not.toHaveBeenCalledWith(FEATURE_LIST_URL, expect.anything())
     expect(mountSpy.mock.calls[0][0].features).toEqual(hostFeatures)
   })
 
@@ -127,16 +129,20 @@ describe('atlas-lifecycles: the username', () => {
   it('resolves the username from usermgmt on mount, because the host sends none', async () => {
     await mount({ getToken: async () => 'tok', domElement: null })
 
-    expect(fetch).toHaveBeenCalledWith('/usermgmt/api/me', {
+    expect(fetch).toHaveBeenCalledWith(ME_URL, {
       headers: { Authorization: 'Bearer tok' },
     })
     expect(mountSpy.mock.calls[0][0].username).toBe(USERNAME)
   })
 
-  it('keeps the host-supplied username when there is one', async () => {
-    await mount({ getToken: async () => 'tok', features: FEATURES, username: 'someone-else', domElement: null })
+  it('ignores the host-supplied username, which is a claim-derived name', async () => {
+    // Atlas3 sends authContext.user?.username, which under trex degrades to
+    // `<username>@d2e.local` and matches no stored user_id. Preferring it is
+    // how this stayed broken after the username was first wired up.
+    await mount({ getToken: async () => 'tok', username: 'brandan@d2e.local', domElement: null })
 
-    expect(mountSpy.mock.calls[0][0].username).toBe('someone-else')
+    expect(fetch).toHaveBeenCalledWith(ME_URL, { headers: { Authorization: 'Bearer tok' } })
+    expect(mountSpy.mock.calls[0][0].username).toBe(USERNAME)
   })
 
   it('leaves the username undefined when the lookup fails, never a substitute', async () => {
