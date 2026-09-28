@@ -82,7 +82,6 @@
           v-if="activeChart === 'stacked'"
           @response="setResponse"
           @busyEv="setChartBusy"
-          @response="setResponse"
           :bookmarkList="bookmarkIds"
           :xAxes="axis"
           :yAxis="yaxis"
