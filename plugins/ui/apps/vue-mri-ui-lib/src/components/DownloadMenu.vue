@@ -188,6 +188,11 @@ export default {
     ...mapActions(['setFireDownloadZIP']),
     async handleMenuClick(arg) {
       if (arg) {
+        // A second ZIP would abort the first mid-stream, and dismissing its picker would drop the
+        // first one's result toast, so ignore ZIP until the running export reports back.
+        if (arg === 'zip' && this.pendingDownload === 'zip') {
+          return
+        }
         this.pendingDownload = arg
         switch (arg) {
           case 'csv':
