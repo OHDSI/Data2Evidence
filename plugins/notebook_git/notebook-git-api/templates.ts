@@ -10,8 +10,10 @@
 // malformed <id>.json must never block notebook creation — every failure
 // here degrades to an empty or partial list, never a thrown error.
 import { Git, type GitConfig } from "./git.ts";
+import { parseJupystar } from "./jupystar.ts";
 
 const REPO_DIR = "./NotebookTemplateRepository";
+const DEFAULT_SUBDIR = "notebooks";
 const JSON_FILE_FILTER = /\.json$/;
 
 export interface NotebookTemplate {
@@ -21,10 +23,17 @@ export interface NotebookTemplate {
   content: unknown;
 }
 
+/**
+ * Shape of a file in <repo>/notebooks. The published templates repo
+ * (data2evidence/templates) stores the cells under `notebookContent` and has
+ * no `description` field; `content`/`description` are accepted too so a repo
+ * written to the React side's older shape still loads.
+ */
 interface TemplateFile {
   name?: string;
   description?: string;
   content?: unknown;
+  notebookContent?: unknown;
 }
 
 export interface TemplateGitLike {
@@ -49,6 +58,10 @@ export function loadTemplateConfig(
     repoDir: REPO_DIR,
     repoUrl,
     branch: env("NOTEBOOK_TEMPLATE_REPO_BRANCH") || "main",
+    // The templates repo keeps notebooks in `notebooks/`, next to `flows/` and
+    // `fhir/` trees that are not notebooks; without this scope the listing is
+    // empty (listFiles does not recurse) or, worse, full of ETL flows.
+    subDir: env("NOTEBOOK_TEMPLATE_REPO_SUBDIR") || DEFAULT_SUBDIR,
     ...(pat ? { pat } : {}),
   };
 }
@@ -80,11 +93,16 @@ export async function listTemplates(
     const id = fileName.replace(JSON_FILE_FILTER, "");
     try {
       const data: TemplateFile = JSON.parse(await git.readFile(fileName));
+      // `notebookContent` is the React notebook's plaintext format (a string);
+      // `content` is already-structured NotebookData. Accept both so a repo in
+      // either shape loads, but always hand the UI structured data.
+      const raw = data.notebookContent ?? data.content;
+      const content = typeof raw === "string" ? parseJupystar(raw) : (raw ?? {});
       templates.push({
         id,
         name: data.name || id,
         description: data.description || "",
-        content: data.content ?? {},
+        content,
       });
     } catch (e) {
       // One bad template must not break the list.
