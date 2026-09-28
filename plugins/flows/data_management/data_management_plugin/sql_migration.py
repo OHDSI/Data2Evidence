@@ -430,7 +430,9 @@ def _schema_migration_lock(engine, schema_name: str) -> Iterator[None]:
     """Serialize migrations of one schema by holding a row lock on a connection of its own.
 
     The database releases the lock if this run dies, so there is no lease to expire. The changesets
-    run on other connections, which is why HANA's auto-committing DDL does not release it.
+    run on other connections, which is why HANA's auto-committing DDL does not release it. If a
+    row already has locked=true, this process waits up to LOCK_WAIT_TIMEOUT_SECONDS for it to clear
+    before timing out; there is no stale-lock takeover timer.
     """
     table = _lock_table(engine, schema_name)
     id_column = _resolve_column(table, "id")
