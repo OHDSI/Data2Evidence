@@ -22,8 +22,6 @@
     </VSnackbar>
     <D2eDialog
       v-model="showRenameDialog"
-      dim="true"
-      dialogWidth="400px"
       :busy="isRenamingBookmark"
       :title="getText('MRI_PA_EXPLORATION_RENAME_DIALOG_TITLE')"
       data-testid="pa-modal-wrapper"
