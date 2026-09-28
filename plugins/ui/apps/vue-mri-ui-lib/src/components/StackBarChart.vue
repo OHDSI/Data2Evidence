@@ -22,6 +22,7 @@ import { useNotificationStore } from '../stores/notifications'
 import Plotly from '../lib/CustomPlotly'
 import Constants from '../utils/Constants'
 import processCSV from '../utils/ProcessCSV'
+import { isAbortError } from '../utils/saveFile'
 import { generateDownloadFileName } from '../utils/generateDownloadFileName'
 import { postProcessBarChartData } from './helpers/postProcessBarChartData'
 import StackBarChartLegend from './StackBarChartLegend.vue'
@@ -136,7 +137,8 @@ export default {
         .then(response => processCSV(response, this.csvFileName))
         .catch(err => {
           // The request failure is already flagged by the store; this also covers failing to save the file
-          if (!axios.isCancel(err)) {
+          // A cancelled request or save is not a failure
+          if (!axios.isCancel(err) && !isAbortError(err)) {
             this.setCSVDownloadError(true)
           }
         })

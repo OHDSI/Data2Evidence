@@ -5,13 +5,18 @@ import {
   setPendingSaveTarget,
   takePendingSaveTarget,
   clearPendingSaveTarget,
+  getPendingSaveSignal,
 } from '../saveFile'
 
 vi.mock('file-saver', () => ({ saveAs: vi.fn() }))
 vi.mock('streamsaver', () => ({ default: { createWriteStream: vi.fn() } }))
 
 const makeHandle = (name = 'picked.csv') => {
-  const writable = { write: vi.fn().mockResolvedValue(undefined), close: vi.fn().mockResolvedValue(undefined) }
+  const writable = {
+    write: vi.fn().mockResolvedValue(undefined),
+    close: vi.fn().mockResolvedValue(undefined),
+    abort: vi.fn().mockResolvedValue(undefined),
+  }
   return { handle: { name, createWritable: vi.fn().mockResolvedValue(writable) } as any, writable }
 }
 
@@ -68,6 +73,37 @@ describe('saveFile', () => {
       await writeBlobToSaveTarget({ kind: 'fallback', fileName: 'a.csv' }, blob)
       expect(saveAs).toHaveBeenCalledWith(blob, 'a.csv')
     })
+
+    it('discards the picked file when aborted mid-write', async () => {
+      const { handle, writable } = makeHandle()
+      const controller = new AbortController()
+      let finishWrite: () => void = () => undefined
+      writable.write.mockReturnValue(new Promise<void>(resolve => (finishWrite = resolve)))
+
+      const saving = writeBlobToSaveTarget({ kind: 'picker', fileName: 'picked.csv', handle }, new Blob(['x']), controller.signal)
+      await vi.waitFor(() => expect(writable.write).toHaveBeenCalled())
+      controller.abort()
+      finishWrite()
+
+      await expect(saving).rejects.toMatchObject({ name: 'AbortError' })
+      expect(writable.abort).toHaveBeenCalled()
+      expect(writable.close).not.toHaveBeenCalled()
+    })
+
+    it('does not start writing when already aborted', async () => {
+      const { handle } = makeHandle()
+      const controller = new AbortController()
+      controller.abort()
+
+      await expect(
+        writeBlobToSaveTarget({ kind: 'picker', fileName: 'picked.csv', handle }, new Blob(['x']), controller.signal)
+      ).rejects.toMatchObject({ name: 'AbortError' })
+      await expect(
+        writeBlobToSaveTarget({ kind: 'fallback', fileName: 'a.csv' }, new Blob(['x']), controller.signal)
+      ).rejects.toMatchObject({ name: 'AbortError' })
+      expect(handle.createWritable).not.toHaveBeenCalled()
+      expect(saveAs).not.toHaveBeenCalled()
+    })
   })
 
   describe('pending targets', () => {
@@ -78,6 +114,27 @@ describe('saveFile', () => {
 
       expect(takePendingSaveTarget('csv', 'a.csv')).toBe(target)
       expect(takePendingSaveTarget('csv', 'a.csv')).toEqual({ kind: 'fallback', fileName: 'a.csv' })
+    })
+
+    it('aborts the export once cleared, even after its target was taken', () => {
+      const { handle } = makeHandle()
+      setPendingSaveTarget('csv', { kind: 'picker', fileName: 'picked.csv', handle })
+      const signal = getPendingSaveSignal('csv')
+      takePendingSaveTarget('csv', 'a.csv')
+
+      expect(signal?.aborted).toBe(false)
+      clearPendingSaveTarget('csv')
+      expect(signal?.aborted).toBe(true)
+      expect(getPendingSaveSignal('csv')).toBeUndefined()
+    })
+
+    it('gives each export its own signal', () => {
+      const { handle } = makeHandle()
+      setPendingSaveTarget('csv', { kind: 'picker', fileName: 'picked.csv', handle })
+      const first = getPendingSaveSignal('csv')
+      setPendingSaveTarget('csv', { kind: 'picker', fileName: 'picked.csv', handle })
+
+      expect(getPendingSaveSignal('csv')).not.toBe(first)
     })
   })
 })

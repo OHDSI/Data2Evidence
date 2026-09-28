@@ -158,6 +158,7 @@ import appLabel from '../lib/ui/app-label.vue'
 import Constants from '../utils/Constants'
 import DateUtils from '../utils/DateUtils'
 import processCSV from '../utils/ProcessCSV'
+import { isAbortError } from '../utils/saveFile'
 import { generateDownloadFileName } from '../utils/generateDownloadFileName'
 import chartErrorMessage from './ChartErrorMessage.vue'
 import ChartPopover from './ChartPopover.vue'
@@ -414,7 +415,8 @@ export default {
         .then(response => processCSV(response, this.csvFileName))
         .catch(err => {
           // The request failure is already flagged by the store; this also covers failing to save the file
-          if (!axios.isCancel(err)) {
+          // A cancelled request or save is not a failure
+          if (!axios.isCancel(err) && !isAbortError(err)) {
             this.setCSVDownloadError(true)
           }
         })

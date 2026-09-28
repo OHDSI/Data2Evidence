@@ -50,19 +50,32 @@ export async function pickSaveTarget(fileName: string, type: SaveFileType): Prom
   }
 }
 
-/** Writes a complete blob to the target. For a picker target this resolves once the file is saved. */
-export async function writeBlobToSaveTarget(target: SaveTarget, blob: Blob): Promise<void> {
+/**
+ * Writes a complete blob to the target. For a picker target this resolves once the file is saved.
+ * Aborting `signal` stops a picker write before it is committed (the file keeps its previous
+ * contents) and rejects with an AbortError. A fallback download cannot be recalled once handed to
+ * the browser, so the signal is only honoured up to that point.
+ */
+export async function writeBlobToSaveTarget(target: SaveTarget, blob: Blob, signal?: AbortSignal): Promise<void> {
+  signal?.throwIfAborted()
   if (target.kind === 'fallback') {
     saveAs(blob, target.fileName)
     return
   }
   const writable = await (target.handle as any).createWritable()
+  // The write only lands on disk at close(), so aborting before then discards it
+  const onAbort = () => writable.abort(signal.reason).catch(() => undefined)
+  signal?.addEventListener('abort', onAbort, { once: true })
   try {
+    signal?.throwIfAborted()
     await writable.write(blob)
+    signal?.throwIfAborted()
     await writable.close()
   } catch (err) {
     await writable.abort?.().catch(() => undefined)
-    throw err
+    throw signal?.aborted ? signal.reason : err
+  } finally {
+    signal?.removeEventListener('abort', onAbort)
   }
 }
 
@@ -79,10 +92,23 @@ export async function openSaveTargetStream(target: SaveTarget): Promise<Writable
  * chart / patient-list component once the backend responds, so the chosen target is parked here.
  */
 const pendingTargets = new Map<'csv' | 'zip', SaveTarget>()
+// One per export, so cancelling can still stop the write after its target has been taken
+const saveControllers = new Map<'csv' | 'zip', AbortController>()
 
-export const setPendingSaveTarget = (key: 'csv' | 'zip', target: SaveTarget) => pendingTargets.set(key, target)
+export const setPendingSaveTarget = (key: 'csv' | 'zip', target: SaveTarget) => {
+  pendingTargets.set(key, target)
+  saveControllers.set(key, new AbortController())
+}
 
-export const clearPendingSaveTarget = (key: 'csv' | 'zip') => pendingTargets.delete(key)
+/** Drops the parked target and aborts the export's write if it is already under way. */
+export const clearPendingSaveTarget = (key: 'csv' | 'zip') => {
+  pendingTargets.delete(key)
+  saveControllers.get(key)?.abort()
+  saveControllers.delete(key)
+}
+
+/** The signal that `clearPendingSaveTarget` aborts for the current export, if one was started. */
+export const getPendingSaveSignal = (key: 'csv' | 'zip'): AbortSignal | undefined => saveControllers.get(key)?.signal
 
 /** Returns and clears the parked target, or a fallback target for `fileName` when none was parked. */
 export function takePendingSaveTarget(key: 'csv' | 'zip', fileName: string): SaveTarget {
