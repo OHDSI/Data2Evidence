@@ -49,6 +49,8 @@ import VSnackbar from './vuetify/VSnackbar.vue'
 import appIcon from '../lib/ui/app-icon.vue'
 import Constants from '../utils/Constants'
 import { formatNumber } from '../utils/NumberUtils'
+import { generateDownloadFileName } from '../utils/generateDownloadFileName'
+import { clearPendingSaveTarget, pickSaveTarget, setPendingSaveTarget } from '../utils/saveFile'
 
 export default {
   name: 'downloadMenu',
@@ -70,6 +72,7 @@ export default {
       'getText',
       'getAllChartConfigs',
       'getActiveChart',
+      'getActiveBookmark',
       'getCurrentPatientCount',
       'getCSVDownloadError',
       'getZIPDownloadCompleted',
@@ -170,18 +173,20 @@ export default {
     },
     getZIPDownloadError(val) {
       if (val && this.pendingDownload === 'zip') {
+        clearPendingSaveTarget('zip')
         this.showExportErrorToast()
       }
     },
     getCSVDownloadError(val) {
       if (val && this.pendingDownload === 'csv') {
+        clearPendingSaveTarget('csv')
         this.showExportErrorToast()
       }
     },
   },
   methods: {
     ...mapActions(['setFireDownloadZIP']),
-    handleMenuClick(arg) {
+    async handleMenuClick(arg) {
       if (arg) {
         this.pendingDownload = arg
         switch (arg) {
@@ -191,9 +196,20 @@ export default {
           case 'image':
             this.imageShow = true
             break
-          case 'zip':
+          case 'zip': {
+            // Ask where to save now, while the click still counts as a user gesture; the archive
+            // is streamed there once the backend responds.
+            const fileName = generateDownloadFileName(this.getActiveBookmark?.bookmarkname, 'patientlist', 'zip')
+            const target = await pickSaveTarget(fileName, 'zip')
+            if (!target) {
+              // Save picker dismissed: nothing was exported
+              this.pendingDownload = null
+              return
+            }
+            setPendingSaveTarget('zip', target)
             this.setFireDownloadZIP({ columnsToInclude: 'SELECTED' })
             break
+          }
         }
       }
     },
@@ -206,7 +222,10 @@ export default {
     onImageExported(payload) {
       this.imageShow = false
       if (this.pendingDownload === 'image') {
-        if (payload && payload.success) {
+        if (payload && payload.cancelled) {
+          // Save picker dismissed: nothing was exported
+          this.pendingDownload = null
+        } else if (payload && payload.success) {
           this.showExportSuccessToast('MRI_PA_EXPORT_FILE_PNG')
         } else {
           this.showExportErrorToast(this.fileTypeKeyMap['image'])

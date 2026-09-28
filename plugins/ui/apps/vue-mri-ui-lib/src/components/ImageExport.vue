@@ -1,7 +1,5 @@
 <template>
-  <div>
-    <a v-bind:href="imageURL" ref="imgDownloadBtn" :download="downloadFileName"></a>
-  </div>
+  <div></div>
 </template>
 
 <script lang="ts">
@@ -10,15 +8,14 @@ import MessageBox from './MessageBox.vue'
 import Constants from '../utils/Constants'
 import { createChartCanvas, buildXAxisTitle } from '../utils/ExportUtils'
 import { generateDownloadFileName } from '../utils/generateDownloadFileName'
+import { pickSaveTarget, writeBlobToSaveTarget } from '../utils/saveFile'
 
 export default {
   name: 'exportImage',
   props: ['closeEv', 'compareChartType', 'overrideResponse'],
   data() {
     return {
-      imageURL: '',
       busy: true,
-      exportSuccess: false,
     }
   },
   computed: {
@@ -39,21 +36,42 @@ export default {
     this.fileName = ''
     this.paperSize = 'a4'
     this.orientation = 'l'
-    this.downloadImage()
-    setTimeout(() => {
+    this.downloadImage().then(result => {
       this.busy = false
       this.setChartCover({ chartCover: false })
-      this.$emit('closeEv', { success: this.exportSuccess })
-    }, 400)
+      this.$emit('closeEv', { success: result === 'success', cancelled: result === 'cancelled' })
+    })
   },
   methods: {
     ...mapActions(['setChartCover']),
-    downloadImage() {
+    /**
+     * Renders the chart and saves it. Resolves once the PNG is saved (or handed to the browser
+     * download where the save picker is unsupported).
+     * @returns 'success', 'cancelled' when the user dismissed the save picker, or 'error'
+     */
+    async downloadImage(): Promise<'success' | 'cancelled' | 'error'> {
       this.busy = true
-      this.exportSuccess = false
       this.setChartCover({ chartCover: true })
       this.prepareImageChart()
-      this.generatePdfCharts()
+      const chartCanvas = this.generatePdfCharts()
+      if (!chartCanvas) {
+        return 'error'
+      }
+      try {
+        // Opened from the menu click, so this still counts as a user gesture
+        const target = await pickSaveTarget(this.downloadFileName, 'png')
+        if (!target) {
+          return 'cancelled'
+        }
+        const blob = await new Promise<Blob>((resolve, reject) =>
+          chartCanvas.toBlob(b => (b ? resolve(b) : reject(new Error('Chart image could not be encoded'))), 'image/png')
+        )
+        await writeBlobToSaveTarget(target, blob)
+        return 'success'
+      } catch (e) {
+        console.error('Image export failed:', e)
+        return 'error'
+      }
     },
     prepareImageChart() {
       /**
@@ -98,7 +116,8 @@ export default {
         targetWidth,
       }
     },
-    generatePdfCharts() {
+    /** @returns the rendered chart canvas, or null when there is no chart to export */
+    generatePdfCharts(): HTMLCanvasElement | null {
       const pdfConst = this.calculatedConst
       let chartType = this.pdfParam.chartType
       const targetHeight = pdfConst.targetHeight
@@ -153,15 +172,12 @@ export default {
             xAxisTitle
           )
 
-          this.imageURL = chartCanvas.toDataURL('image/png')
-          this.$refs.imgDownloadBtn.href = this.imageURL
-          this.$refs.imgDownloadBtn.click()
-          this.exportSuccess = true
+          return chartCanvas
         } catch (e) {
-          this.exportSuccess = false
           console.error('Image export failed:', e)
         }
       }
+      return null
     },
     // The main-chart response carries totalPatientCount, but the cohort-compare
     // response does not. Its shape is { categories, measures, data[], noDataReason }
