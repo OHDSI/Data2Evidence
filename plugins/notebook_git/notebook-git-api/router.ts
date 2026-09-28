@@ -84,10 +84,8 @@ export async function handleRequest(req: Request, deps: RouterDeps): Promise<Res
 
     return json({ error: "NOT_FOUND" }, 404);
   } catch (e) {
-    return json(
-      { error: "NOTEBOOK_GIT_ERROR", detail: e instanceof Error ? e.message : String(e) },
-      500,
-    );
+      console.error("notebook-git-api request failed", e);
+      return json({ error: "NOTEBOOK_GIT_ERROR" }, 500);
   }
 }
 
