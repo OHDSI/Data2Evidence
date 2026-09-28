@@ -1,115 +1,80 @@
-# Overlay, not a standalone stack. It is merged with the D2E compose file so
-# that the alp network, PROJECT_NAME and the rest come from there:
-#
-#   docker compose -f docker-compose.yml -f docker-compose-jupyterhub.yml up -d --build
-#
-# Against the d2e CLI, which keeps its own compose file outside this repository,
-# pass --project-directory so that the relative paths below still resolve here;
-# Compose resolves them against the first -f file's directory, not this one:
-#
-#   d2e -c $PWD/docker-compose-jupyterhub.yml start
-#   docker compose --project-directory . \
-#     -f /opt/homebrew/lib/node_modules/@ohdsi/d2e/docker-compose.yml \
-#     -f docker-compose-jupyterhub.yml config
-#
-# On a VM where D2E is remote there is no alp network to join: drop it from the
-# hub's networks, point LOGTO_TOKEN_URL at the public HTTPS token endpoint, give
-# the image the CA that signs it, and keep the other two networks.
 services:
-  # DockerSpawner needs the Docker API to create notebook containers. Mounting
-  # /var/run/docker.sock into the hub would be equivalent to giving the hub root
-  # on the host, so the socket is mounted here instead and this proxy exposes
-  # only the endpoints DockerSpawner calls. Everything else is refused.
-  docker-socket-proxy:
-    image: tecnativa/docker-socket-proxy:0.3.0
-    container_name: ${PROJECT_NAME:-d2e}-jupyterhub-socket-proxy
-    environment:
-      # Read access to what the spawner inspects.
-      CONTAINERS: 1
-      IMAGES: 1
-      NETWORKS: 1
-      VOLUMES: 1
-      # Write access, without which no container can be created.
-      POST: 1
-      # Refused. EXEC in particular would allow running arbitrary commands in
-      # any container on the host.
-      EXEC: 0
-      AUTH: 0
-      SECRETS: 0
-      CONFIGS: 0
-      SWARM: 0
-      NODES: 0
-      TASKS: 0
-      SERVICES: 0
-      PLUGINS: 0
-      SYSTEM: 0
-      INFO: 0
-      DISTRIBUTION: 0
-      BUILD: 0
-      COMMIT: 0
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock:ro
-    networks:
-      # Only the hub can reach the proxy, and no ports are published.
-      jupyterhub-dockerproxy:
-    restart: unless-stopped
-
   jupyterhub:
     build:
       context: ./services/jupyterhub
     container_name: ${PROJECT_NAME:-d2e}-jupyterhub
     depends_on:
-      - docker-socket-proxy
+      - jupyter-poc-postgres
     env_file:
-      # Optional, and only for tuning: the crypt key, resource limits, the
-      # notebook image, logout behaviour. Everything the hub cannot start
-      # without is derived below, so a default install needs no such file.
       - path: ./services/jupyterhub/.env
         required: false
     environment:
-      # docker-py, and so DockerSpawner, talks to the proxy. The hub holds no
-      # socket of its own.
-      DOCKER_HOST: tcp://docker-socket-proxy:2375
-      # The OIDC client, taken from the same variables docker-compose.yml uses
-      # to register the application, so the two cannot disagree.
-      LOGTO_JUPYTERHUB_CLIENT_ID: ${LOGTO__JUPYTERHUB__CLIENT_ID:-jupyterhub}
-      LOGTO_JUPYTERHUB_CLIENT_SECRET: ${LOGTO__JUPYTERHUB__CLIENT_SECRET:?set LOGTO__JUPYTERHUB__CLIENT_SECRET in .env, the same value the application is registered with}
-      LOGTO_ALLOWED_ROLE: ${LOGTO__JUPYTERHUB__ROLE:-role.jupyteruser}
-      # The callback follows the same JUPYTERHUB__PUBLIC_URL that the registered
-      # redirect URI does. A mismatch between the two is the most common cause
-      # of "redirect_uri mismatch", so neither is written out by hand.
-      JUPYTERHUB_OAUTH_CALLBACK_URL: ${JUPYTERHUB__PUBLIC_URL:-http://localhost:8000}/hub/oauth_callback
-      # Browser-facing, through caddy's TLS listener.
-      LOGTO_AUTHORIZE_URL: https://${CADDY__D2E__PUBLIC_FQDN:-${CADDY__ALP__PUBLIC_FQDN:-localhost}}/oidc/auth
-      # Server to server, through caddy's internal HTTP listener, so the hub
-      # needs no local CA trust for the token exchange.
-      LOGTO_TOKEN_URL: http://${PROJECT_NAME:-d2e}-caddy:8080/oidc/token
-      # Notebooks reach the hub by container name.
-      JUPYTERHUB_HUB_CONNECT_URL: http://${PROJECT_NAME:-d2e}-jupyterhub:8081
+      DOCKER_HOST: unix:///var/run/docker.sock # for docker spawner to connect docker (for vm we need to set it up rootless sotcket add?)
+      LOGTO_JUPYTERHUB_CLIENT_ID: ${LOGTO__JUPYTERHUB__CLIENT_ID} # logto jupyterhub app id
+      LOGTO_JUPYTERHUB_CLIENT_SECRET: ${LOGTO__JUPYTERHUB__CLIENT_SECRET} # that app's secret
+
+      LOGTO_ALLOWED_ROLE: ${LOGTO__JUPYTERHUB__ROLE:-role.jupyteruser} # default is role.jupyteruser now
+
+      JUPYTERHUB_OAUTH_CALLBACK_URL: ${JUPYTERHUB__PUBLIC_URL:-http://localhost:8000}/hub/oauth_callback # after logto login browser comes back to this hub
+
+      LOGTO_AUTHORIZE_URL: https://${CADDY__D2E__PUBLIC_FQDN:-${CADDY__ALP__PUBLIC_FQDN:-localhost}}/oidc/auth # when you click login goes to logto login
+
+      LOGTO_TOKEN_URL: http://${PROJECT_NAME:-d2e}-caddy:8080/oidc/token # hub changes temp code to token (hub goes into alp network caddy)
+
+      JUPYTERHUB_HUB_CONNECT_URL: http://${PROJECT_NAME:-d2e}-jupyterhub:8081 # notebook container -> hub api
+
+      DOCKER_NETWORK_NAME: jupyterhub-notebooks-isolated
+      JUPYTERHUB_NOTEBOOK_IMAGE: ${JUPYTERHUB_NOTEBOOK_IMAGE:-d2e-jupyter-notebook:local} 
+      JUPYTER_DB_ENABLED: ${JUPYTER_DB_ENABLED:-true}
+
+      JUPYTER_DB_ADMIN_DSN: postgresql://jupyter_broker:${JUPYTER_DB_BROKER_PASSWORD:-local-poc-change-me}@jupyter-poc-postgres:5432/jupyter_poc # hub goes here when creates temp db users
+
+      JUPYTER_DB_HOST: jupyter-poc-postgres
+      JUPYTER_DB_PORT: 5432
+      JUPYTER_DB_NAME: jupyter_poc
+      JUPYTER_DB_SSLMODE: disable
+      JUPYTER_DB_ROLE_MAP: '${JUPYTER_DB_ROLE_MAP:-{"role.jupyteruser":"jupyter_poc_reader"}}' # logto role <> psql role mapping. default to jupyteruser has jupter reader in psql
+      JUPYTER_DB_LEASE_SECONDS: ${JUPYTER_DB_LEASE_SECONDS:-3600} # dfault now 1hr
     ports:
-      # Loopback only: on a VM the reverse proxy is the only way in.
       - "127.0.0.1:8000:8000"
     volumes:
       - jupyterhub-data:/srv/jupyterhub/data
+      # full docker access for the hub only; notebooks never get this socket
+      - /var/run/docker.sock:/var/run/docker.sock
     networks:
-      # alp is needed only to reach caddy for the OIDC token exchange. Drop it
-      # when D2E is on another host.
       alp:
-      # Spawned notebooks live here and nowhere else, so user code cannot reach
-      # Postgres, Redis, Logto's management API or anything else on alp.
       jupyterhub-notebooks:
-      jupyterhub-dockerproxy:
+    restart: unless-stopped
+
+  # A separate PostgreSQL
+  jupyter-poc-postgres:
+    image: postgres:15-alpine
+    container_name: ${PROJECT_NAME:-d2e}-jupyter-poc-postgres
+    environment:
+      POSTGRES_DB: jupyter_poc
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${JUPYTER_POC_POSTGRES_PASSWORD:-local-poc-superuser-change-me}
+      JUPYTER_DB_BROKER_PASSWORD: ${JUPYTER_DB_BROKER_PASSWORD:-local-poc-change-me}
+    volumes:
+      - jupyter-poc-postgres-data:/var/lib/postgresql/data
+      - ./services/jupyterhub/postgres/init:/docker-entrypoint-initdb.d:ro
+    networks:
+      jupyterhub-notebooks:
+        aliases:
+          - jupyter-poc-postgres
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d jupyter_poc"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
     restart: unless-stopped
 
 volumes:
   jupyterhub-data:
+  jupyter-poc-postgres-data:
 
 networks:
-  # Declared by the D2E compose file this overlay is merged with.
   alp:
   jupyterhub-notebooks:
-    # Named explicitly so DOCKER_NETWORK_NAME can refer to it.
-    name: jupyterhub-notebooks
-  jupyterhub-dockerproxy:
-    name: jupyterhub-dockerproxy
+    name: jupyterhub-notebooks-isolated
     internal: true
