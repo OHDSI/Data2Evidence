@@ -8,7 +8,7 @@ import { UserGroupService } from './UserGroupService'
 import { UserField } from '../repositories'
 import { LogtoAPI, TrexIdpAPI, WebAPI } from '../api'
 import { env } from '../env'
-import { resolveRoleStore } from './UserGroupService'
+import { resolveUserStore } from './UserGroupService'
 
 @Service()
 export class MemberService {
@@ -59,7 +59,7 @@ export class MemberService {
       // the call went to a service that is no longer running and adding a user
       // failed with a DNS error naming a host nobody expects to exist.
       const idpUserId =
-        resolveRoleStore(env.IDP_ROLE_STORE) === 'trex'
+        resolveUserStore(env.D2E_IDP_MODE, env.TREX_NATIVE_PASSWORD_LOGIN_ENABLED, env.IDP_ROLE_STORE) === 'trex'
           ? (await this.trexIdpAPI.createUser(username, password)).id
           : (await this.logtoApi.createUser(username, password)).id
 
@@ -100,7 +100,7 @@ export class MemberService {
     try {
       await this.userService.deleteUser(userId, trx)
       if (user.idpUserId) {
-        if (resolveRoleStore(env.IDP_ROLE_STORE) === 'trex') {
+        if (resolveUserStore(env.D2E_IDP_MODE, env.TREX_NATIVE_PASSWORD_LOGIN_ENABLED, env.IDP_ROLE_STORE) === 'trex') {
           await this.trexIdpAPI.deleteUser(user.idpUserId)
         } else {
           await this.logtoApi.deleteUser(user.idpUserId)
@@ -145,7 +145,7 @@ export class MemberService {
 
       await this.userService.touchAuthzChangedAt(userId, trx)
 
-      if (resolveRoleStore(env.IDP_ROLE_STORE) === 'trex') {
+      if (resolveUserStore(env.D2E_IDP_MODE, env.TREX_NATIVE_PASSWORD_LOGIN_ENABLED, env.IDP_ROLE_STORE) === 'trex') {
         await this.trexIdpAPI.setUserActive(user.idpUserId, active)
       } else {
         await this.logtoApi.activateUser(user.idpUserId, active)

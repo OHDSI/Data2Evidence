@@ -63,22 +63,24 @@ const fetchFeatures = async (props: AtlasProps): Promise<unknown[]> => {
 /**
  * The caller's usermgmt account name, which is the owner key for saved work.
  *
- * Atlas3 passes no `username` either, and unlike a missing feature list an
- * empty one is not a benign default: every ownership test in this app compares
- * it to a stored `user_id` (bookmark-svc writes that from its own GET /me), so
- * `''` reads as "owned by nobody" and a user's own saved cohorts are reported
- * as none. The portal resolves it the same way, through useMe.
+ * Every ownership test in this app compares it to a stored `user_id` that
+ * bookmark-svc wrote from its own GET /me, so a value from anywhere else reads
+ * as "owned by nobody" and a user's own saved cohorts are reported as none.
  *
- * Deliberately usermgmt and not a token claim: trex's Better Auth provider
- * emits no `username`, so a claim-derived name is a different string from a
- * different system — the drift `useMe` documents at length.
+ * WHAT THE HOST SENDS IS NOT USABLE, which is why this ignores `props.username`
+ * rather than preferring it. Atlas3 passes `authContext.user?.username`, and
+ * trex's provider emits no `username` claim at all — the OIDC user falls back
+ * to `name`, which for a user whose upstream record carried no display name is
+ * the synthesised address `<username>@d2e.local`. Against a `user_id` of
+ * `brandan` that matches nothing, and the list is silently empty. `useMe`
+ * documents the same drift on the portal side and resolves it the same way:
+ * read the owner key from the system that owns it.
  *
  * `undefined` on failure, never a substitute: showing one user another's saved
  * work is worse than showing none, and `usernameLoading` below keeps consumers
  * from reading the gap as an empty account.
  */
 const fetchUsername = async (props: AtlasProps): Promise<string | undefined> => {
-  if (typeof props.username === 'string' && props.username) return props.username
   try {
     const token = typeof props.getToken === 'function' ? await props.getToken() : null
     const response = await fetch(ME_URL, {

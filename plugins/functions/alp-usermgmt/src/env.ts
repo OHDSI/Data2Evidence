@@ -40,6 +40,9 @@ export const env = {
   TREX_SERVICE_ROLE_KEY: Deno.env.get("TREX__SERVICE_ROLE_KEY"),
   SUPABASE_SERVICE_ROLE_KEY: Deno.env.get("SUPABASE_SERVICE_ROLE_KEY"),
   IDP_ROLE_STORE: Deno.env.get("IDP__ROLE_STORE"),
+  // Set on the trex service by docker-compose-logto-federation.yml; usermgmt
+  // runs as a function worker inside that container, so it reads the same env.
+  TREX_NATIVE_PASSWORD_LOGIN_ENABLED: Deno.env.get("TREX_NATIVE_PASSWORD_LOGIN_ENABLED"),
   SSL_PRIVATE_KEY: Deno.env.get("TLS__INTERNAL__KEY")?.replace(/\\n/g, '\n'),
   SSL_PUBLIC_CERT: Deno.env.get("TLS__INTERNAL__CRT")?.replace(/\\n/g, '\n'),
   SSL_CA_CERT: Deno.env.get("TLS__INTERNAL__CA_CRT")?.replace(/\\n/g, '\n'),
