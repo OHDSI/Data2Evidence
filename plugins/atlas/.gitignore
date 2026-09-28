@@ -1,3 +1,7 @@
 node_modules/
 resources/atlas/
 subplugins/*/dist/
+# Deno resolves its project root up to this directory (package.json, no
+# deno.json), so running the d2e-login tests drops a lock file here for
+# dependencies nothing in this package declares.
+deno.lock

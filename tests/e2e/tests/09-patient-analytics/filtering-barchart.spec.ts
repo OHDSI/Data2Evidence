@@ -17,7 +17,7 @@ test(TEST_NAME, async ({ page }) => {
   // Select demo dataset, open cohorts
   await page.getByText('Demo datasetDemo datasetTotal').click()
   await page.getByRole('link', { name: 'Cohorts' }).click()
-  await page.getByRole('button', { name: 'D2E' }).click()
+  await page.getByTestId('explorations-new-btn').click()
   await expect(page.getByText('2,694 / 2,694')).toBeVisible()
   await expect(page.locator('.loading-animation-component')).not.toBeVisible()
   // Wait for chart animations to settle
@@ -227,7 +227,9 @@ test(TEST_NAME, async ({ page }) => {
 
   // Reset filter card
   await page.getByRole('button', { name: '↺' }).click()
-  await page.locator('button[title="Reset"]').click()
+  // The redesigned reset dialog is a D2eDialog whose confirm button carries a
+  // test id, not a title attribute - :title moved onto the dialog itself.
+  await page.getByTestId('pa-reset-dialog-confirm-btn').click()
   await expect(page.locator('.loading-animation-component')).not.toBeVisible()
   await expect(page).toHaveScreenshot()
 })

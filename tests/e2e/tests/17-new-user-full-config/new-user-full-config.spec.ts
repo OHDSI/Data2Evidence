@@ -243,7 +243,7 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByRole('link', { name: 'Dataset' }).click()
   await page.getByRole('link', { name: 'Cohorts' }).click()
   await page.locator('.slider').click()
-  await page.getByRole('button', { name: 'D2E' }).click()
+  await page.getByTestId('explorations-new-btn').click()
   await expect(page.locator('#pane-left')).toContainText("Testerson's Procedure Occurence")
   await expect(page.locator('#pane-right')).toMatchAriaSnapshot(
     `- button "A - Testerson's Procedure Occurence Testerson's Procedure Concept Name ◢"`

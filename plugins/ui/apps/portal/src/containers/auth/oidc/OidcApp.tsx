@@ -14,12 +14,15 @@ import { OidcError } from "./OidcError";
 import { OidcCallbackSuccess } from "./OidcCallbackSuccess";
 import { OidcSessionLost } from "./OidcSessionLost";
 import { getOidcTokenPayload } from "./oidc";
+import { normalizeEndSessionEndpoint } from "./endSessionEndpoint";
 import { getOidcToken } from "./oidc";
 import env from "../../../env";
 
 let oidcConfig: any;
 try {
-  oidcConfig = JSON.parse(env.REACT_APP_IDP_OIDC_CONFIG.replaceAll("{window.location.origin}", window.location.origin));
+  oidcConfig = normalizeEndSessionEndpoint(
+    JSON.parse(env.REACT_APP_IDP_OIDC_CONFIG.replaceAll("{window.location.origin}", window.location.origin))
+  );
 } catch (err) {
   console.error(`Error when reading ${env.REACT_APP_IDP_OIDC_CONFIG}`);
 }

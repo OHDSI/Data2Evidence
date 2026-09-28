@@ -5,6 +5,7 @@ import hanaLeanConfig from "../../../wizards-config-hana-lean.json";
 interface TemplateField {
   id: string;
   type: string;
+  label?: string;
   allowNegative?: boolean;
 }
 
@@ -36,6 +37,19 @@ describe("Wizard config templates", () => {
 
     expect(policies.length).toBeGreaterThan(0);
     expect(policies.every((allowNegative) => allowNegative === false)).toBe(true);
+  });
+
+  it.each([
+    ["standard", standardConfig],
+    ["HANA Lean", hanaLeanConfig],
+  ])("spells out the respiratory rate label in every %s wizard", (_name, config) => {
+    const labels = (config as TemplateConfig).wizards
+      .flatMap((wizard) => wizard.fields)
+      .filter((field) => field.id === "respRate")
+      .map((field) => field.label);
+
+    expect(labels.length).toBeGreaterThan(0);
+    labels.forEach((label) => expect(label).toBe("Respiratory Rate"));
   });
 
   it("keeps equivalent fields aligned across templates", () => {

@@ -169,3 +169,25 @@ export function canModifyBookmark(bookmark: BookmarkOwnerInfo | null | undefined
 
   return bookmarkUsername === currentUsername
 }
+
+const BOOKMARK_SAVE_SUCCESS = 'success'
+
+interface BookmarkSaveResult {
+  status?: string
+}
+
+/**
+ * Whether a bookmark write actually succeeded.
+ *
+ * bookmark-svc answers the two commands differently: `insert` returns
+ * `{ status: 'success', bmkId }` while `update` returns the bare string
+ * `'success'` (bookmark.service.ts:199 and the shared `cb` at :475). A write
+ * that failed resolves `undefined` instead, because fireBookmarkQuery reports
+ * the error itself and does not rethrow for `insert` or `update`.
+ */
+export function isBookmarkSaveSuccess(result: unknown): boolean {
+  if (result === BOOKMARK_SAVE_SUCCESS) {
+    return true
+  }
+  return (result as BookmarkSaveResult)?.status === BOOKMARK_SAVE_SUCCESS
+}

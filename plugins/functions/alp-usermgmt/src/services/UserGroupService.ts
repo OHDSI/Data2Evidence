@@ -16,13 +16,66 @@ import { B2cGroupService } from './B2cGroupService'
 import { UserService } from './UserService'
 import { IPortalDataset, ITokenUser, RoleMap, UserGroupMetadata } from '../types'
 import { createLogger } from '../Logger'
-import { LogtoAPI, PortalAPI } from '../api'
+import { LogtoAPI, PortalAPI, TrexIdpAPI } from '../api'
 import { env, getAutoGrantDatasetCodes } from '../env'
+import { canonicalRoleNames } from '@alp/idp/roles.ts'
+export { canonicalRoleNames }
 
 export type SyncRoleResult =
   | { status: 'synced' }
   | { status: 'skipped'; reason: string }
   | { status: 'failed'; reason: string }
+
+/**
+ * Which identity provider holds role assignments. Logto remains selectable for a
+ * deployment that has not migrated; anything unrecognised means trex, so a typo
+ * fails towards the provider this system now authenticates against.
+ */
+export function resolveRoleStore(raw: string | undefined): 'trex' | 'logto' {
+  return raw === 'logto' ? 'logto' : 'trex'
+}
+
+/**
+ * Which provider a new account is created in, and has its password changed in.
+ *
+ * NOT the role store. Roles live in trex after the migration, and
+ * IDP__ROLE_STORE is pinned to `trex` in docker-compose.yml, but in
+ * logto-federated mode Logto is still where people authenticate: trex refuses
+ * the password grant and the sign-in page offers only the Logto button, so an
+ * account created in trex has no way to sign in at all. Create the credential
+ * where the credential will be checked.
+ *
+ * Re-enabling native password login means a trex-native account can sign in
+ * again, so that case stays with the role store — it is also the documented
+ * escape hatch for letting an admin in while Logto is unavailable.
+ */
+export function resolveUserStore(
+  idpMode: string | undefined,
+  nativePasswordLogin: string | undefined,
+  roleStore: string | undefined
+): 'trex' | 'logto' {
+  if (idpMode === 'logto-federated' && nativePasswordLogin !== 'true') return 'logto'
+  return resolveRoleStore(roleStore)
+}
+
+/**
+ * The names to actually revoke when a group is removed.
+ *
+ * A group expands to several trex role names, and the WebAPI ones -
+ * `cohort reader`, `cohort creator`, `concept set creator` - are identical for
+ * every dataset a user researches, so revoking the whole expansion strips
+ * permissions the user's remaining groups still grant. Logto never had this
+ * problem: it removed one dataset-scoped role and left the rest alone.
+ *
+ * `others` is every remaining membership as its own (role, scopes) pair.
+ */
+export function removableRoleNames(
+  removed: { role: string; scopes: string[] },
+  others: Array<{ role: string; scopes: string[] }>
+): string[] {
+  const retained = new Set(others.flatMap(o => canonicalRoleNames(o.role, o.scopes)))
+  return canonicalRoleNames(removed.role, removed.scopes).filter(name => !retained.has(name))
+}
 
 @Service()
 export class UserGroupService {
@@ -33,7 +86,8 @@ export class UserGroupService {
     private readonly userGroupRepo: UserGroupRepository,
     private readonly groupService: B2cGroupService,
     private readonly userService: UserService,
-    private readonly logtoAPI: LogtoAPI
+    private readonly logtoAPI: LogtoAPI,
+    private readonly trexIdpAPI: TrexIdpAPI
   ) {}
 
   async getUserGroupsMetadataByIdpUserId(
@@ -88,8 +142,8 @@ export class UserGroupService {
     return await this.userGroupRepo.getOne(criteria)
   }
 
-  async getUserGroups(userId: string): Promise<UserGroupExt[]> {
-    return await this.userGroupRepo.getGroupsByUser(userId)
+  async getUserGroups(userId: string, trx?: Knex): Promise<UserGroupExt[]> {
+    return await this.userGroupRepo.getGroupsByUser(userId, undefined, undefined, trx)
   }
 
   async userGroupExists(userId: string, b2cGroupId: string, trx?: Knex): Promise<boolean> {
@@ -117,17 +171,30 @@ export class UserGroupService {
       throw Error(`User ${userId} does not exist`)
     }
 
+    // An existing membership still gets synced. The row and the identity
+    // provider's roles are two stores that can disagree — a sync that failed
+    // once leaves the membership recorded and the role never granted — and
+    // returning here made that permanent, because every retry saw the row and
+    // skipped the only step that was actually missing.
     const userGroup = await this.getUserGroup(userId, groupId)
-    if (userGroup) {
-      this.logger.warn(`Skip registering user ${userId} to group ${groupId}. User group already exist`)
-      return
+    if (!userGroup) {
+      await this.addUserToGroup(userId, groupId, trx)
+      if (!opt.skipAuthzStamp) {
+        await this.userService.touchAuthzChangedAt(userId, trx)
+      }
+    } else {
+      this.logger.info(`User ${userId} already in group ${groupId}; reconciling roles only`)
     }
 
-    await this.addUserToGroup(userId, groupId, trx)
-    if (!opt.skipAuthzStamp) {
-      await this.userService.touchAuthzChangedAt(userId, trx)
+    const sync = await this.syncRoleToLogto(userId, groupId, 'assign')
+    if (sync.status === 'failed') {
+      // Reported rather than swallowed: a caller that is told the grant
+      // succeeded has no reason to look, and the account silently never gets
+      // the access it was granted.
+      throw new Error(
+        `Registered user ${userId} to group ${groupId} but the role did not reach the identity provider: ${sync.reason}`
+      )
     }
-    await this.syncRoleToLogto(userId, groupId, 'assign')
   }
 
   async addUserToGroup(userId: string, groupId: string, trx?: Knex) {
@@ -179,7 +246,7 @@ export class UserGroupService {
     if (!options?.skipAuthzStamp) {
       await this.userService.touchAuthzChangedAt(userId, trx)
     }
-    await this.syncRoleToLogto(userId, groupId, 'remove')
+    await this.syncRoleToLogto(userId, groupId, 'remove', trx)
   }
 
   async withdrawUserFromGroups(userId: string, groupIds: string[]): Promise<void> {
@@ -247,7 +314,12 @@ export class UserGroupService {
   }
 
   // Sync role assignment/removal to Logto
-  async syncRoleToLogto(userId: string, groupId: string, action: 'assign' | 'remove'): Promise<SyncRoleResult> {
+  async syncRoleToLogto(
+    userId: string,
+    groupId: string,
+    action: 'assign' | 'remove',
+    trx?: Knex
+  ): Promise<SyncRoleResult> {
     try {
       const user = await this.userService.getUser(userId)
       if (!user?.idpUserId) {
@@ -270,12 +342,33 @@ export class UserGroupService {
 
       const { role, scopes } = logtoRole
 
+      const store = resolveRoleStore(env.IDP_ROLE_STORE)
+      // One group is one Logto role plus its scopes, but several trex roles:
+      // trex has no scope concept, so each name is stored in its own right.
+      const names = canonicalRoleNames(role, scopes)
+
       if (action === 'assign') {
-        await this.logtoAPI.assignRoleToUser(user.idpUserId, role, scopes)
-        this.logger.info(`Assigned Logto role ${role} to user ${user.idpUserId}`)
+        if (store === 'trex') {
+          await this.trexIdpAPI.assignRolesToUser(user.idpUserId, names)
+        } else {
+          await this.logtoAPI.assignRoleToUser(user.idpUserId, role, scopes)
+        }
+        this.logger.info(`Assigned ${names.length} role(s) to user ${user.idpUserId} in ${store}`)
       } else {
-        await this.logtoAPI.removeRoleFromUser(user.idpUserId, role)
-        this.logger.info(`Removed Logto role ${role} from user ${user.idpUserId}`)
+        if (store === 'trex') {
+          const removable = removableRoleNames(
+            { role, scopes },
+            await this.otherGroupExpansions(userId, groupId, trx)
+          )
+          await this.trexIdpAPI.removeRolesFromUser(user.idpUserId, removable)
+          this.logger.info(
+            `Removed ${removable.length} of ${names.length} role(s) from user ${user.idpUserId} in ${store}; ` +
+              `${names.length - removable.length} still granted by other groups`
+          )
+        } else {
+          await this.logtoAPI.removeRoleFromUser(user.idpUserId, role)
+          this.logger.info(`Removed ${names.length} role(s) from user ${user.idpUserId} in ${store}`)
+        }
       }
       return { status: 'synced' }
     } catch (err) {
@@ -283,6 +376,34 @@ export class UserGroupService {
       this.logger.error(`Failed to sync role to Logto for user ${userId}, group ${groupId}: ${reason}`)
       return { status: 'failed', reason }
     }
+  }
+
+  /**
+   * Every remaining membership of the user's, expanded to its (role, scopes) pair.
+   *
+   * Feeds removableRoleNames, which decides what a withdrawal may actually
+   * revoke.
+   *
+   * `removedGroupId` is excluded explicitly rather than relying on the delete
+   * that precedes this call: bulk withdrawal deletes inside an open transaction,
+   * so the row can still be visible. Passing that transaction through is what
+   * makes withdrawing several groups at once come out right - each step sees the
+   * earlier deletes, so the last researcher group leaving does drop the shared
+   * names.
+   */
+  private async otherGroupExpansions(
+    userId: string,
+    removedGroupId: string,
+    trx?: Knex
+  ): Promise<Array<{ role: string; scopes: string[] }>> {
+    const others = (await this.getUserGroups(userId, trx)).filter(g => g.b2cGroupId !== removedGroupId)
+    const expansions: Array<{ role: string; scopes: string[] }> = []
+
+    for (const other of others) {
+      const resolved = await this.buildLogtoRoleName(other)
+      if (resolved) expansions.push(resolved)
+    }
+    return expansions
   }
 
   /**

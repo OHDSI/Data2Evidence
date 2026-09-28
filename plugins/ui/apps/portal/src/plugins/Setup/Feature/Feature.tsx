@@ -1,6 +1,6 @@
 import React, { ChangeEvent, FC, useCallback, useEffect, useState } from "react";
 import { Button, Checkbox, Loader, Title } from "@portal/components";
-import { useFeatures } from "../../../hooks";
+import { useFeatures, invalidateFeatures } from "../../../hooks";
 import { useFeedback, useTranslation } from "../../../contexts";
 import { LanguageMappings } from "../../../contexts/app-context/hooks/use-translation";
 import { api } from "../../../axios/api";
@@ -44,6 +44,9 @@ export const Feature: FC = () => {
     try {
       setSaving(true);
       await api.systemPortal.setFeatures(formData.features);
+      // useFeatures caches for the page load, so the write has to drop it or
+      // every other reader keeps showing the flags as they were before this save.
+      invalidateFeatures();
       setFeedback({ type: "success", message: getText(i18nKeys.FEATURE__SUCCESS), autoClose: 6000 });
     } catch (err: any) {
       console.error(err);

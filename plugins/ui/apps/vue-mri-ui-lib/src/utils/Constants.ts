@@ -91,7 +91,7 @@ const chartInfo = {
     icon: '',
     iconGroup: 'app-icons',
     keyCode: 120,
-    tooltip: 'MRI_PA_TOOLTIP_CHARTTYPE_STACKED',
+    tooltip: 'MRI_PA_TOOLTIP_CHARTTYPE_CHART',
   },
   list: {
     name: 'list',
