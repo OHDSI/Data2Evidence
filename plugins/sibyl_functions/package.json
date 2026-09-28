@@ -1,7 +1,7 @@
 {
   "name": "@data2evidence/sibyl",
   "version": "0.0.99",
-  "description": "Sibyl (Strategus/notebook) backend functions — hades-api, metadata-api, network-api, and their init/token functions.",
+  "description": "Sibyl (Strategus/notebook) backend functions \u2014 hades-api, metadata-api, network-api, and their init/token functions.",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
@@ -43,6 +43,13 @@
           "allowHostFsAccess": true
         },
         {
+          "source": "/notebook-git-api",
+          "function": "/notebook-git-api",
+          "imports": "/notebook-git-api/deno.json",
+          "env": "notebook-git-api",
+          "allowHostFsAccess": true
+        },
+        {
           "source": "/trex-token",
           "function": "/trex-token",
           "imports": "/trex-token/deno.json",
@@ -62,6 +69,11 @@
           "STORAGE_BASE_URL": "${STORAGE_BASE_URL:-https://${PROJECT_NAME:-d2e}-supabase-storage-1.${TLS__INTERNAL__DOMAIN:-d2e.local}:9000}",
           "SUPABASE_STORAGE_JWT_TOKEN": "${SUPABASE_STORAGE_JWT_TOKEN}",
           "TREX_BASE_URL": "${TREX_BASE_URL:-http://localhost:8001/trex}"
+        },
+        "notebook-git-api": {
+          "NOTEBOOK_GIT_PAT": "${NOTEBOOK_GIT_PAT:-}",
+          "NOTEBOOK_TEMPLATE_REPO_URL": "${NOTEBOOK_TEMPLATE_REPO_URL:-}",
+          "NOTEBOOK_TEMPLATE_REPO_BRANCH": "${NOTEBOOK_TEMPLATE_REPO_BRANCH:-main}"
         },
         "network-api": {
           "NETWORK_COGNITO_DOMAIN": "${NETWORK_COGNITO_DOMAIN:-}",
@@ -100,7 +112,24 @@
           "TREX_OIDC_INTERNAL_BASE": "${TREX_OIDC_INTERNAL_BASE}",
           "BASE_PATH": "${BASE_PATH}"
         }
-      }
+      },
+      "scopes": [
+        {
+          "path": "^/notebook-git-api",
+          "scopes": [],
+          "httpMethods": [
+            "GET",
+            "POST"
+          ]
+        },
+        {
+          "path": "^/trex-token",
+          "scopes": [],
+          "httpMethods": [
+            "POST"
+          ]
+        }
+      ]
     }
   }
 }

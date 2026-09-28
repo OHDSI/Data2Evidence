@@ -1,0 +1,7 @@
+# The Git constructor (git.ts) eagerly mkdirSync's its configured repoDir, so
+# both the test suite and production create real directories here on disk.
+NotebookGitTest/
+R/
+NotebookGitRepository/
+NotebookTemplateRepository/
+node_modules/
