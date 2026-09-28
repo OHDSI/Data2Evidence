@@ -13,6 +13,26 @@ export interface DatasetPrerequisiteProblem {
 }
 
 /**
+ * A dataset that cannot support the analysis, as a client error.
+ *
+ * `statusCode` follows the convention the data characterization controller
+ * already documents — "services tag client errors with statusCode; everything
+ * else stays a 500" — which is what lets a controller forward this message
+ * while still hiding unrelated internal failures. Without it the detail dies in
+ * the controller's generic 500 and #3201's symptom is unchanged.
+ */
+export class DatasetPrerequisiteError extends Error {
+  readonly statusCode = 400;
+  constructor(
+    message: string,
+    readonly problems: DatasetPrerequisiteProblem[],
+  ) {
+    super(message);
+    this.name = "DatasetPrerequisiteError";
+  }
+}
+
+/**
  * The message for a dataset that cannot support an analysis, or null when there
  * is nothing to report.
  *
@@ -46,10 +66,7 @@ export const assertDatasetPrerequisites = async (
   analysis: string,
   datasetId: string,
 ): Promise<void> => {
-  const message = prerequisiteErrorMessage(
-    analysis,
-    datasetId,
-    await api.getDatasetPrerequisiteProblems(datasetId),
-  );
-  if (message) throw new Error(message);
+  const problems = await api.getDatasetPrerequisiteProblems(datasetId);
+  const message = prerequisiteErrorMessage(analysis, datasetId, problems);
+  if (message) throw new DatasetPrerequisiteError(message, problems);
 };

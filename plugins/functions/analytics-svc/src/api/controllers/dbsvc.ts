@@ -89,7 +89,7 @@ export async function getCDMVersion(req, res, next) {
  *
  * `requireRows` separates the two failure shapes. A missing or empty CDM_SOURCE
  * stops a run outright, because the CDM version is read from it. An empty
- * OBSERVATION_PERSON is worse than an error: both analyses run to completion and
+ * OBSERVATION_PERIOD is worse than an error: both analyses run to completion and
  * report almost nothing, with no failure at any layer, so it is reported here
  * rather than left to look like a finished run with no findings.
  */
@@ -132,10 +132,20 @@ export async function getDatasetPrerequisites(req, res, next) {
         const { analyticsConnection } = req.dbConnections;
         const dbDao = new DBDAO(analyticsConnection);
         const trexAlias = cacheId ?? databaseCode;
+        // HANA holds schema names uppercased, and the table listing compares
+        // SYS.M_TABLES.SCHEMA_NAME as a bound parameter rather than as an
+        // identifier, so a mixed-case name from the portal record matches
+        // nothing and would report every prerequisite as missing. The request
+        // middleware uppercases only its own credential copy
+        // (StudyDbCredential.ts), not the name read here.
+        const effectiveSchema =
+            dialect === ANALYTICS_DB_DIALECTS.HANA
+                ? schemaName.toUpperCase()
+                : schemaName;
 
         const tableNames = await dbDao.getSchemaTableNames(
             trexAlias,
-            schemaName,
+            effectiveSchema,
             dialect
         );
         const present = new Set(tableNames.map((t) => t.toLowerCase()));
@@ -153,8 +163,8 @@ export async function getDatasetPrerequisites(req, res, next) {
                 problems.push({
                     code: "MISSING_TABLE",
                     table,
-                    schema: schemaName,
-                    message: `${table} is missing from ${trexAlias}.${schemaName} — ${why}.`,
+                    schema: effectiveSchema,
+                    message: `${table} is missing from ${trexAlias}.${effectiveSchema} — ${why}.`,
                 });
                 continue;
             }
@@ -163,41 +173,41 @@ export async function getDatasetPrerequisites(req, res, next) {
             // Counted one table at a time so a single unreadable table is
             // reported as that table rather than failing the whole check.
             try {
-                const rows = await dbDao.countTableRows(
+                const hasRows = await dbDao.tableHasRows(
                     trexAlias,
-                    schemaName,
+                    effectiveSchema,
                     table,
                     dialect
                 );
-                if (rows === 0) {
+                if (!hasRows) {
                     problems.push({
                         code: "EMPTY_TABLE",
                         table,
-                        schema: schemaName,
-                        message: `${table} in ${trexAlias}.${schemaName} has no rows — ${why}.`,
+                        schema: effectiveSchema,
+                        message: `${table} in ${trexAlias}.${effectiveSchema} has no rows — ${why}.`,
                     });
                 }
             } catch (err) {
                 problems.push({
                     code: "UNREADABLE_TABLE",
                     table,
-                    schema: schemaName,
+                    schema: effectiveSchema,
                     message:
-                        `${table} in ${trexAlias}.${schemaName} could not be read — ${why}. ` +
+                        `${table} in ${trexAlias}.${effectiveSchema} could not be read — ${why}. ` +
                         `Underlying error: ${err instanceof Error ? err.message : String(err)}`,
                 });
             }
         }
 
         logger.info(
-            `Prerequisite check for dataset ${datasetId} (${trexAlias}.${schemaName}): ` +
+            `Prerequisite check for dataset ${datasetId} (${trexAlias}.${effectiveSchema}): ` +
                 `${problems.length} problem(s)`
         );
         res.status(200).json({
             ok: problems.length === 0,
             datasetId,
             databaseCode: trexAlias,
-            schemaName,
+            schemaName: effectiveSchema,
             problems,
         });
     } catch (err) {

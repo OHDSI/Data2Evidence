@@ -2,6 +2,7 @@ import { describe, it } from "jsr:@std/testing@1/bdd";
 import { assertEquals, assertRejects } from "jsr:@std/assert@1";
 import {
   assertDatasetPrerequisites,
+  DatasetPrerequisiteError,
   DatasetPrerequisiteProblem,
   prerequisiteErrorMessage,
 } from "./datasetPrerequisites.ts";
@@ -68,5 +69,22 @@ describe("assertDatasetPrerequisites", () => {
     // The API reports an unreachable check as an empty list, so a preflight
     // that fails must not stop a run that would otherwise have worked.
     await assertDatasetPrerequisites(apiReturning([]), "Data characterization", "ds-1");
+  });
+});
+
+describe("DatasetPrerequisiteError", () => {
+  it("is tagged as a client error so a controller forwards its message", async () => {
+    // The controllers only forward a message when statusCode says the caller
+    // caused it; a bare Error is reported as a generic 500, which is the
+    // behaviour #3201 is about.
+    const thrown = await assertDatasetPrerequisites(
+      apiReturning([MISSING]),
+      "Data Quality",
+      "ds-1",
+    ).catch((e) => e);
+
+    assertEquals(thrown instanceof DatasetPrerequisiteError, true);
+    assertEquals((thrown as DatasetPrerequisiteError).statusCode, 400);
+    assertEquals((thrown as DatasetPrerequisiteError).problems.length, 1);
   });
 });

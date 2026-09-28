@@ -72,37 +72,38 @@ export class DBDAO {
     };
 
     /**
-     * Row count for one table, to tell an absent prerequisite from an empty one.
+     * Whether a table holds at least one row.
+     *
+     * Existence, not cardinality: the callers only need to tell an empty table
+     * from a populated one, and COUNT(*) over OBSERVATION_PERIOD would make
+     * every DQD or DC submission pay for a full scan of one of the largest
+     * tables in the CDM — worst on the direct HANA path, which does not go
+     * through the cache.
      *
      * `tableName` is interpolated because it names a table, which cannot be
      * bound as a parameter. Callers pass a fixed name from their own list —
      * never anything from a request.
      */
-    public countTableRows = async (
+    public tableHasRows = async (
         databaseCode: string,
         schemaName: string,
         tableName: string,
         dialect: string
-    ): Promise<number> => {
+    ): Promise<boolean> => {
         const qualified =
             dialect === ANALYTICS_DB_DIALECTS.HANA
                 ? `${schemaName}.${tableName}`
                 : `${databaseCode}.${schemaName}.${tableName}`;
         return new Promise((resolve, reject) => {
             this.connection.executeQuery(
-                `SELECT COUNT(*) AS ROW_COUNT FROM ${qualified}`,
+                `SELECT 1 AS PRESENT FROM ${qualified} LIMIT 1`,
                 [],
                 (err: any, result: any) => {
                     if (err) {
                         logger.info(err);
                         return reject(err);
                     }
-                    // Key casing follows the source dialect, as in getCDMVersion.
-                    const row = result?.[0] ?? {};
-                    const key = Object.keys(row).find(
-                        (k) => k.toLowerCase() === "row_count"
-                    );
-                    resolve(Number(key ? row[key] : 0) || 0);
+                    resolve((result?.length ?? 0) > 0);
                 }
             );
         });
