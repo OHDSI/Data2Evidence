@@ -119,6 +119,7 @@
     <imageExport
       v-if="showDownloadPNGDialog"
       :overrideResponse="response"
+      :chartBusy="chartBusy"
       @closeEv="onImageExported"
       :compareChartType="compareChartType"
     ></imageExport>

@@ -12,7 +12,7 @@ import { pickSaveTarget, writeBlobToSaveTarget } from '../utils/saveFile'
 
 export default {
   name: 'exportImage',
-  props: ['closeEv', 'compareChartType', 'overrideResponse'],
+  props: ['closeEv', 'compareChartType', 'overrideResponse', 'chartBusy'],
   data() {
     return {
       busy: true,
@@ -135,8 +135,10 @@ export default {
       // The cohort-comparison endpoints return no totalPatientCount, so the patient-count
       // guard cannot be applied to them. What the guard actually protects against is
       // snapshotting a chart that is not there, which the rendered SVG answers directly.
+      // While a comparison chart refetches, the previous SVG stays mounted until the new
+      // data renders, so a busy chart is treated as having nothing current to export.
       const hasChartToExport = this.compareChartType
-        ? !!document.querySelector(`${chartId} svg`)
+        ? !this.chartBusy && !!document.querySelector(`${chartId} svg`)
         : this.hasExportableData(response)
 
       if (hasChartToExport) {
