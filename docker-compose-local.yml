@@ -78,8 +78,6 @@ services:
       - ${D2E_FUNCTIONS:-./plugins/functions}:/usr/src/bundled-plugins/d2e-functions
       - ${D2E_FHIRFUNCTIONS:-./plugins/fhir_functions}:/usr/src/plugins/fhir
       - ${D2E_SIBYLFUNCTIONS:-./plugins/sibyl_functions}:/usr/src/plugins/sibyl
-      # @ohdsi-scoped, so trex mounts it at /plugins/ohdsi/notebook-git-api and
-      # guards it with its own auth instead of the legacy d2e Logto path.
       - ./plugins/notebook_git:/usr/src/plugins/notebook-git
       - ./plugins/atlas:/usr/src/plugins/atlas  # Atlas UI plugin
       - studio-edge-functions:/app/edge-functions  # shared with the studio sidecar (LOCAL ONLY)
