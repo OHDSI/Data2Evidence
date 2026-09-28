@@ -127,11 +127,15 @@ if (existsSync(landingImageSrc)) {
 }
 
 // Helper scripts injected into Atlas3's index.html:
-//  - login-guard.js: silent-SSO guard; runs first, blocks the WebAPI HS256 fallback.
+//  - landing-redirect.js: sends Atlas3's welcome route to Data Sources. First,
+//    because it publishes the landing route login-guard.js returns users to.
+//  - login-guard.js: silent-SSO guard; blocks the WebAPI HS256 fallback.
 //  - user-link.js: routes the navbar user menu to the d2e portal account page.
 //  - token-keeper.js: refreshes the Logto bearerToken before expiry.
 //  - analysis-default.js: opens the Wizard when entering the Analysis hub.
-const headScripts = ['login-guard.js', 'user-link.js', 'token-keeper.js', 'analysis-default.js'];
+// Injected in this order: each is appended before </head>, so the array order is
+// the execution order, and login-guard.js reads a global the first one sets.
+const headScripts = ['landing-redirect.js', 'login-guard.js', 'user-link.js', 'token-keeper.js', 'analysis-default.js'];
 let indexHtml = readFileSync(join(resourcesDir, 'index.html'), 'utf8');
 let indexChanged = false;
 for (const script of headScripts) {
@@ -145,9 +149,6 @@ for (const script of headScripts) {
 }
 if (indexChanged) writeFileSync(join(resourcesDir, 'index.html'), indexHtml);
 console.log('[postinstall] Injected helper scripts into Atlas3 index.html');
-
-// Portal resources directory (for the /atlas-portal iframe wrapper build).
-mkdirSync(join(rootDir, 'resources', 'portal'), { recursive: true });
 
 // Standalone login bridge (served at /atlas-login): copy the static page that
 // performs a Logto OIDC login and seeds localStorage.bearerToken for Atlas3.

@@ -44,13 +44,17 @@ export const WEBAPI_RESEARCHER_SCOPES = ['cohort-reader', 'cohort-creator', 'con
 
 export const sourceUserScopeName = (datasetId: string) => `source-user-${datasetId}`
 
-// Base researcher scopes apply to every dataset type. The WebAPI-specific scopes
-// (per-source "Source user" + cohort/concept-set scopes) only apply to type === 'webapi'.
+// Cohort and concept-set scopes apply to every dataset type: those objects live in
+// WebAPI whatever the dataset's own type, so a researcher on a hana__omop or omop
+// dataset needs them to create a concept set as much as one on a webapi dataset.
+// Only the per-source "Source user" scope stays webapi-only, because the WebAPI
+// source role it maps to exists only for webapi-type datasets.
 export const datasetResearcherScopes = (roleName: string, datasetId: string, type?: string): string[] => {
   const scopes = [roleName, `role.researcher.${datasetId}`]
   if (type === 'webapi') {
-    scopes.push(sourceUserScopeName(datasetId), ...WEBAPI_RESEARCHER_SCOPES)
+    scopes.push(sourceUserScopeName(datasetId))
   }
+  scopes.push(...WEBAPI_RESEARCHER_SCOPES)
   return scopes
 }
 

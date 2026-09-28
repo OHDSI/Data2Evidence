@@ -59,6 +59,12 @@ export default defineConfig({
     __VUE_PROD_DEVTOOLS__: JSON.stringify(false),
     __VUE_PROD_HYDRATION_MISMATCH_DETAILS__: JSON.stringify(false),
     'import.meta.env.VITE_STANDALONE_ATLAS': JSON.stringify('false'),
+    // Atlas hosts this build, so the app owns its data source: nothing upstream
+    // holds a dataset it has to stay in step with, and the dataset-change
+    // watcher can move the app on its own. Deliberately NOT VITE_ATLAS_NATIVE,
+    // which means something else entirely -- "shares a document with Atlas3's
+    // Vuetify" -- and would switch on theme scoping this build must not have.
+    'import.meta.env.VITE_ATLAS_HOSTED': JSON.stringify('true'),
     'process.env.NODE_ENV': JSON.stringify('production'),
     'process.env.VUE_APP_API_BASE_URL': JSON.stringify(''),
     'process.env': JSON.stringify({}),

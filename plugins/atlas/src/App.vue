@@ -22,6 +22,28 @@ const src = ref('');
 const frameStyle =
   'display:block;width:100%;height:calc(100vh - 56px);min-height:calc(100vh - 56px);border:0;';
 
+/**
+ * The first data source this user can read, or '' if that cannot be determined.
+ *
+ * Deliberately total: a failure here must leave the page exactly as it was
+ * before this fallback existed, never worse. The caller treats '' the same way
+ * it always treated a missing dataset.
+ */
+async function firstReadableSourceKey(token: string): Promise<string> {
+  try {
+    const res = await fetch('/d2e-webapi/source/sources', {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    });
+    if (!res.ok) return '';
+    const sources = await res.json();
+    if (!Array.isArray(sources)) return '';
+    const first = sources.find((s: { sourceKey?: string }) => typeof s?.sourceKey === 'string' && s.sourceKey);
+    return first?.sourceKey ?? '';
+  } catch {
+    return '';
+  }
+}
+
 onMounted(async () => {
   // Prefer Atlas3's plugin token (always fresh), fall back to shared localStorage.
   let token = '';
@@ -30,10 +52,32 @@ onMounted(async () => {
   } catch { /* ignore */ }
   if (!token) token = localStorage.getItem('bearerToken') || '';
 
-  const studyId =
+  // THE DATASET, AND A LAST RESORT WHEN THERE ISN'T ONE.
+  //
+  // Neither source is guaranteed. On a first visit storage is empty, and Atlas3
+  // does not pass `datasetId` to this plugin at all, so `studyId` was '' and the
+  // `if (studyId)` guard below meant nothing was ever stored -- permanently, for
+  // that browser. mri-host.js then handed vue-mri `studyId: ""` and every
+  // dataset-scoped call went out with `datasetId=`, which the bookmark service
+  // answers with a 500. What the user sees is "No explorations yet" and a live
+  // preview of 0: an empty result, not an error, so nothing points at a missing
+  // dataset.
+  //
+  // The deadlock is that the data-source picker is the only control that could
+  // set one, and it lives inside the page that cannot load without one.
+  //
+  // So when nothing supplies a dataset, take the first source the user can read.
+  // That is not a privilege decision -- /d2e-webapi/source/sources is already
+  // scoped to them, and picking among sources they can already open grants
+  // nothing new. It only breaks the tie that otherwise leaves the page inert.
+  let studyId =
     localStorage.getItem('selectedVocabulary') ||
     (pluginProps as any)?.datasetId ||
     '';
+
+  if (!studyId) {
+    studyId = await firstReadableSourceKey(token);
+  }
 
   // The d2e username (id_token `username` claim, captured by the login bridge)
   // — vue-mri needs it to show the current user's own cohort definitions/bookmarks.

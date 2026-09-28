@@ -458,8 +458,11 @@ jobs:
             echo "::error::data-quality did not produce dist/index.system.js"
             exit 1
           fi
-      # Atlas plugin: postinstall bakes Atlas3 + the Pythia UI into resources/;
-      # build the portal entry. Packs only resources/ (see package.json "files").
+      # Atlas plugin: postinstall bakes Atlas3 + the Pythia UI into resources/,
+      # which is the whole of what gets packed (see package.json "files"), so
+      # npm install is the build. This ran `npm run build:portal` until the
+      # portal-embedded Atlas was removed; that script built only the iframe
+      # wrapper, and no other entry was ever built here.
       - name: Build Atlas plugin
         if: ${{ matrix.ATLAS }}
         working-directory: ${{ matrix.PKGPATH }}
@@ -469,7 +472,6 @@ jobs:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           npm install
-          npm run build:portal
       # Patient Analytics (Data Exploration) is an Atlas3 sub-plugin too, but it lives
       # in the UI monorepo instead of the trex-notebook submodule, so it is built and
       # staged here rather than by the atlas postinstall — and it has to run AFTER the
@@ -484,15 +486,15 @@ jobs:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           PA_DIR=plugins/ui/apps/vue-mri-ui-lib
-          ( cd "$PA_DIR" && npm install --workspaces=false --legacy-peer-deps && npm run build:atlas )
-          if [ ! -f "$PA_DIR/dist-atlas/index.system.js" ]; then
-            echo "::error::patient-analytics did not produce dist-atlas/index.system.js"
+          ( cd "$PA_DIR" && npm install --workspaces=false --legacy-peer-deps && npm run build:atlas-native )
+          if [ ! -f "$PA_DIR/dist-atlas-native/index.system.js" ]; then
+            echo "::error::patient-analytics did not produce dist-atlas-native/index.system.js"
             exit 1
           fi
           PA_DEST=plugins/atlas/resources/atlas/plugins/patient-analytics
           rm -rf "$PA_DEST"
           mkdir -p "$PA_DEST"
-          cp -r "$PA_DIR/dist-atlas/." "$PA_DEST/"
+          cp -r "$PA_DIR/dist-atlas-native/." "$PA_DEST/"
           echo "Staged patient-analytics at /atlas/plugins/patient-analytics"
       # Datasources is a third UI-monorepo Atlas3 sub-plugin, staged the same way as
       # patient-analytics above. Mirrors the same steps in scripts/build-atlas.sh;
@@ -709,7 +711,7 @@ jobs:
             BUILD_TYPE=OSS
             PLUGINS_FEED=${{ needs.setup.outputs.is_release_push == 'true' && 'stable' || 'd2e' }}
             PLUGINS_FROM_REGISTRY=@ohdsi/pythia-agent@0.1.0-develop.18.g80bf4aa
-            TREXSQL_REF=sha-6e7ca8500dd5126270da219bbcb168fcc5301f17@sha256:b39886c96ae7109d94d7b5d6d885d5da153ca680e4de9f4c5140f9fff8deb527
+            TREXSQL_REF=sha-771180de28f1bc520ca0549f303f39f2fe5cf5a1@sha256:966a62f9955356c4d36663c2c8507d5d1c1c59ba1faceaefbb60b4b8da932902
           secrets: |
             "PLUGINS_REGISTRY=${{ secrets.PLUGINS_REGISTRY }}"
             "github_token=${{ secrets.GITHUB_TOKEN }}"

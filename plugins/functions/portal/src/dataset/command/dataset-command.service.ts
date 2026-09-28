@@ -644,6 +644,10 @@ export class DatasetCommandService {
   async updateDatasetDetailMetadata(
     datasetDetailMetadataUpdateDto: IDatasetDetailMetadataUpdateDto,
   ) {
+    // Set inside the transaction, read after it commits. Recomputed if the
+    // runner retries the function, so a retry cannot leave it stale.
+    let daimonsChanged = false;
+
     const updateDatasetDetailMetadataFn = async (
       entityMgr: EntityManager,
       datasetUpdateDto: IDatasetDetailMetadataUpdateDto,
@@ -656,7 +660,7 @@ export class DatasetCommandService {
         attributes,
       } = datasetUpdateDto;
 
-      await this.updateDataset(entityMgr, datasetUpdateDto);
+      daimonsChanged = await this.updateDataset(entityMgr, datasetUpdateDto);
       await this.updateDatasetDetail(entityMgr, datasetId, detail);
       await this.updateDatasetDashboards(entityMgr, datasetId, dashboards);
       await this.updateDatasetTags(entityMgr, datasetId, tags);
@@ -666,16 +670,102 @@ export class DatasetCommandService {
         id: datasetId,
       };
     };
-    return this.transactionRunner.run(
+    const result = await this.transactionRunner.run(
       updateDatasetDetailMetadataFn,
       datasetDetailMetadataUpdateDto,
     );
+
+    // WebAPI holds its own copy of the daimons, written only by
+    // syncSourceForDataset, and until now nothing re-ran it for an edit. A
+    // results schema set after the source was registered therefore never
+    // reached WebAPI, and the source kept answering 500 on the features that
+    // read that daimon. See syncWebApiSource.
+    //
+    // Only when a daimon actually changed: a re-sync also triggers a TrexSQL
+    // cache build, which has no business running because someone edited a
+    // description.
+    //
+    // After the transaction, and deliberately not fatal: the edit is committed,
+    // so failing the request here would report a change that was in fact saved.
+    // The error is logged and POST :id/sync-webapi-source retries it.
+    if (daimonsChanged) {
+      try {
+        await this.syncWebApiSource(datasetDetailMetadataUpdateDto.id);
+      } catch (err) {
+        this.logger.error(
+          `Dataset ${datasetDetailMetadataUpdateDto.id} was updated, but its ` +
+            `WebAPI source still holds the old daimons -- re-sync failed: ${err}. ` +
+            `Retry with POST /system-portal/dataset/${datasetDetailMetadataUpdateDto.id}/sync-webapi-source`,
+        );
+      }
+    }
+
+    return result;
   }
 
+  /**
+   * Re-registers a dataset's WebAPI source from the dataset row as it stands.
+   *
+   * WebAPI keeps its own copy of a source's daimons (CDM, Vocabulary, Results),
+   * taken when the source is registered. syncSourceForDataset is the only thing
+   * that writes them, and it ran only on dataset creation and on
+   * transform-to-webapi -- so a schema name that arrived later never reached
+   * WebAPI. A source with no Results daimon registers happily and then fails
+   * whenever anything reads it:
+   *
+   *   java.lang.RuntimeException: DaimonType (Results) not found in Source
+   *     at CohortDefinitionService.getInclusionRuleReportSummary
+   *
+   * which surfaces as a 500 from an inclusion-rule report or a cohort sample
+   * while the source looks healthy in every picker.
+   *
+   * Idempotent, and safe to call on a healthy source: syncSourceForDataset
+   * looks the source up by key and updates it in place, creating one only when
+   * none exists.
+   */
+  async syncWebApiSource(datasetId: string) {
+    const dataset = await this.datasetRepo.getDataset(datasetId);
+    if (!dataset) {
+      throw new HttpException(404, `Dataset with id ${datasetId} not found`);
+    }
+
+    const detail = await this.detailRepo.getDetail(datasetId);
+    if (!detail) {
+      throw new HttpException(
+        404,
+        `Dataset ${datasetId} has no detail record to name its WebAPI source`,
+      );
+    }
+
+    // syncDatasetToWebApi skips anything that owns no WebAPI source; report
+    // that back rather than letting a no-op look like a repair.
+    const synced = dataset.type === "webapi" && !dataset.fhirDatasetId;
+
+    await this.syncDatasetToWebApi(
+      {
+        id: dataset.id,
+        databaseCode: dataset.databaseCode,
+        dialect: dataset.dialect,
+        schemaName: dataset.schemaName,
+        vocabSchemaName: dataset.vocabSchemaName,
+        resultsSchemaName: dataset.resultsSchemaName,
+        type: dataset.type,
+        fhirDatasetId: dataset.fhirDatasetId ?? null,
+      },
+      detail,
+    );
+
+    return { id: datasetId, synced };
+  }
+
+  /**
+   * Returns true when this edit changed a value WebAPI copied into a daimon, so
+   * the caller knows the registered source no longer matches the dataset.
+   */
   private async updateDataset(
     entityMgr: EntityManager,
     datasetUpdateDto: IDatasetDetailMetadataUpdateDto,
-  ) {
+  ): Promise<boolean> {
     const {
       id: datasetId,
       type,
@@ -715,11 +805,23 @@ export class DatasetCommandService {
       );
     }
 
+    // vocabSchemaName and resultsSchemaName are the Vocabulary and Results
+    // daimons' tableQualifiers. Compared after toUpperCaseIfHana, so a HANA
+    // dataset re-cased to the value WebAPI already holds is not a change.
+    // schemaName (CDM), dialect and databaseCode are not editable here.
+    const daimonsChanged =
+      (vocabSchemaName !== undefined &&
+        dataset.vocabSchemaName !== currDataset.vocabSchemaName) ||
+      (resultsSchemaName !== undefined &&
+        dataset.resultsSchemaName !== currDataset.resultsSchemaName);
+
     await this.datasetRepo.updateDataset(
       entityMgr,
       datasetId,
       this.addOwner(dataset),
     );
+
+    return daimonsChanged;
   }
 
   private async updateDatasetDetail(
