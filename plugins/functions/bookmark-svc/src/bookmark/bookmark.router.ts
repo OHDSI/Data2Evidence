@@ -38,6 +38,20 @@ export class BookmarkRouter {
         const userName = req.userName
         const language = user.lang
 
+        // A missing datasetId is the caller's mistake, not ours, and it reached
+        // the query and came back as a 500 -- which the UI renders as an empty
+        // list. That is how an Atlas session with no dataset selected looked
+        // like "you have saved nothing" instead of "you have chosen nothing":
+        // the one fact that would have explained it was spent on a stack trace
+        // nobody sees. Say which parameter is missing, with a status that means
+        // what it says.
+        if (!datasetId) {
+          this.log.warn('Bookmark list requested without a datasetId')
+          return res.status(400).json({
+            error: 'datasetId is required to list bookmarks',
+          })
+        }
+
         const token = req.headers['authorization']
 
         req.body.cmd = 'loadAll'

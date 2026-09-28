@@ -1085,6 +1085,26 @@ paths:
           description: Error
           schema:
             $ref: "#/definitions/Error"
+  /alpdb/dataset-prerequisites:
+    x-swagger-router-controller: dbsvc
+    get:
+      description: Report the tables an analysis needs that the dataset is missing or has empty
+      operationId: getDatasetPrerequisites
+      produces:
+        - application/json
+      parameters:
+        - name: datasetId
+          in: query
+          description: ID of dataset
+          required: true
+          type: string
+      responses:
+        "200":
+          description: success
+        default:
+          description: Error
+          schema:
+            $ref: "#/definitions/Error"
   /alpdb/schema/exists:
     x-swagger-router-controller: dbsvc
     get:

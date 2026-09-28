@@ -11,6 +11,10 @@ export const usePortalContextStore = defineStore('portalContext', {
     locale: 'en',
     features: [],
     featuresLoading: true,
+    // True until a host applies props, for the same reason featuresLoading is:
+    // before that the name is genuinely unknown, and an ownership test must not
+    // read "" as "owned by nobody".
+    usernameLoading: true,
     qeSvcUrl: undefined,
     REACT_APP_PUBLIC_WEBAPI_PROXY_URL: undefined,
     REACT_APP_USE_PUBLIC_WEBAPI_PROXY: undefined,
