@@ -23,6 +23,7 @@
 /plugins/functions/white-rabbit-init                         @hengxian-jiang @SantanM @suwarnoong @p-hoffmann
 /plugins/functions/portal-init                               @hengxian-jiang @SantanM @suwarnoong @p-hoffmann
 /plugins/functions/alp-usermgmt-init                         @hengxian-jiang @SantanM @suwarnoong @p-hoffmann
+/plugins/functions/alp-idp-migration-init                    @hengxian-jiang @SantanM @suwarnoong @p-hoffmann
 /plugins/functions/strategus-analysis-init                   @hengxian-jiang @SantanM @suwarnoong @p-hoffmann
 /plugins/functions/perseus-init                              @hengxian-jiang @SantanM @suwarnoong @p-hoffmann
 /plugins/functions/files-manager-init                        @hengxian-jiang @SantanM @suwarnoong @p-hoffmann

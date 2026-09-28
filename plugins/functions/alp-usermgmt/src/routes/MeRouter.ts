@@ -4,7 +4,10 @@ import jwt, { JwtPayload } from 'jsonwebtoken'
 import { MemberService, UserGroupService, UserService } from '../services'
 import { IAppRequest, UserDeleteRequest } from '../types'
 import { createLogger } from '../Logger'
-import { LogtoAPI, WebAPI } from '../api'
+import { LogtoAPI, TrexIdpAPI, WebAPI } from '../api'
+import { resolveRoleStore } from '../services/UserGroupService'
+import { env } from '../env'
+import { mayRekeyExistingSubject, resolveIdpMode } from '@alp/idp/mode.ts'
 
 @Service()
 export class MeRouter {
@@ -16,6 +19,7 @@ export class MeRouter {
     private readonly userGroupService: UserGroupService,
     private readonly memberService: MemberService,
     private readonly logtoApi: LogtoAPI,
+    private readonly trexIdpAPI: TrexIdpAPI,
     private readonly webApi: WebAPI
   ) {
     this.registerRoutes()
@@ -42,6 +46,9 @@ export class MeRouter {
       /* fall through to Logto lookup */
     }
     try {
+      if (resolveRoleStore(env.IDP_ROLE_STORE) === 'trex') {
+        return (await this.trexIdpAPI.getUser(idpUserId))?.email
+      }
       const logtoUser = await this.logtoApi.getUser(idpUserId)
       return (logtoUser?.username ?? logtoUser?.primaryEmail) as string | undefined
     } catch (e) {
@@ -77,11 +84,20 @@ export class MeRouter {
           if (username) {
             const byName = await this.userService.getUserByUsername(username)
             if (byName?.id) {
-              this.logger.info(
-                `Linking idp_user_id ${idpUserId} to existing user "${username}"`
-              )
-              await this.userService.updateUser({ id: byName.id, idp_user_id: idpUserId })
-              user = byName
+              if (mayRekeyExistingSubject(byName.idpUserId, resolveIdpMode(env.D2E_IDP_MODE))) {
+                this.logger.info(
+                  `Linking idp_user_id ${idpUserId} to existing user "${username}"`
+                )
+                await this.userService.updateUser({ id: byName.id, idp_user_id: idpUserId })
+                user = byName
+              } else {
+                // Federated mode: the IdP migration owns re-keying. Answering as
+                // this row on a name match could hand one person's memberships
+                // to another identity that happens to share the name.
+                this.logger.warn(
+                  `Not re-keying "${username}" from ${byName.idpUserId} to ${idpUserId}: the IdP migration has not linked this identity`
+                )
+              }
             }
           }
         }
@@ -175,6 +191,15 @@ export class MeRouter {
       }
 
       try {
+        if (resolveRoleStore(env.IDP_ROLE_STORE) === 'trex') {
+          const result = await this.trexIdpAPI.changePassword(user.username!, oldPassword, password)
+          if (!result.ok) {
+            this.logger.warn(`Error when updating user password ${idpUserId}: ${result.message}`)
+            return res.status(result.status).send({ message: result.message })
+          }
+          return res.sendStatus(204)
+        }
+
         await this.logtoApi.updatePassword(idpUserId, password, oldPassword)
         res.sendStatus(204)
       } catch (err) {

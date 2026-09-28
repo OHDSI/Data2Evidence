@@ -80,6 +80,7 @@
         <loadingAnimation v-if="chartBusy"></loadingAnimation>
         <StackBarCohortCompare
           v-if="activeChart === 'stacked'"
+          @response="setResponse"
           @busyEv="setChartBusy"
           :bookmarkList="bookmarkIds"
           :xAxes="axis"

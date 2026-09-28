@@ -16,6 +16,7 @@
     "uuid": "npm:uuid@8.3.2",
     "express": "npm:express@4.17.3",
     "passport-azure-ad": "npm:passport-azure-ad@4.3.4",
+    "@alp/idp/": "../_shared/idp/",
     "./src/env": "./src/env.ts",
     "./src/const": "./src/const.ts",
     "./src/types": "./src/types.d.ts",

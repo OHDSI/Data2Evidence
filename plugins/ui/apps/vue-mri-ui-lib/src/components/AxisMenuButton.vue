@@ -6,7 +6,8 @@
   >
     <div class="iconWrapper">
       <label class="iconLabel">
-        <span class="icon cursorDefault" v-bind:style="'font-family:' + iconFamily">{{ icon }}</span>
+        <component :is="iconComponent" v-if="iconComponent" class="icon iconSvg cursorDefault" />
+        <span v-else class="icon cursorDefault" v-bind:style="'font-family:' + iconFamily">{{ icon }}</span>
       </label>
     </div>
     <div class="buttonWrapper" ref="menuButtonWrapper">
@@ -65,6 +66,11 @@ export default {
     parentContainer: {},
     beforeSelect: {
       type: Function,
+      default: null,
+    },
+    // Optional SVG icon component rendered instead of the icon-font glyph from the axis model.
+    iconComponent: {
+      type: [Object, Function],
       default: null,
     },
   },

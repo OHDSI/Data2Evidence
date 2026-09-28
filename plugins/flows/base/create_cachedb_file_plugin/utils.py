@@ -5,8 +5,16 @@ from pathlib import Path
 from time import time
 
 from prefect.blocks.system import Secret
+from prefect.variables import Variable
 
 from _shared_flow_utils.types import SupportedDatabaseDialects
+
+# Re-exported so `from .utils import *` keeps handing callers resolve_duckdb_file_path.
+from .paths import (
+    DEFAULT_DUCKDB_DATA_FOLDER,
+    resolve_duckdb_data_folder,
+    resolve_duckdb_file_path,
+)
 
 
 DUCKDB_EXTENSIONS_FILEPATH = os.path.join(os.getcwd(), "duckdb_extensions")
@@ -149,8 +157,17 @@ def check_if_file_exists(file_path: str) -> bool:
     return Path(file_path).exists()
 
 
-def resolve_duckdb_file_path(duckdb_database_name: str, folder_path: str) -> str:
+def get_duckdb_data_folder(logger=None) -> str:
     """
-    Returns the full path to the DuckDB database file
+    Returns the folder cache files are written into, warning when the
+    `duckdb_data_folder` Prefect variable is not set and the default is used.
     """
-    return str(Path(folder_path) / f"{duckdb_database_name}.db")
+    configured = Variable.get("duckdb_data_folder")
+    folder = resolve_duckdb_data_folder(configured)
+    if configured != folder and logger:
+        logger.warning(
+            f"Prefect variable 'duckdb_data_folder' is not set (got {configured!r}); "
+            f"writing cache files to '{folder}'. Set DUCKDB__DATA_FOLDER in the "
+            "environment that runs alp-dataflow-gen-init to configure it."
+        )
+    return folder

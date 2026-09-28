@@ -5,10 +5,10 @@ from typing import Any
 
 from prefect import flow, task
 from prefect.cache_policies import NONE
-from prefect.variables import Variable
 from prefect.logging import get_run_logger
 
 from .utils import *
+from .concurrency_reconciliation import reconcile_stale_concurrency_slots
 from .fts import create_fts_index_task, create_fts_index
 from .versioninfo import update_dataset_metadata
 from .copy import create_schema_tables_task, create_schema_if_not_exists_task, create_schema_if_not_exists, create_schema_tables
@@ -121,7 +121,7 @@ def create_cache_flow(options: CreateCacheOptions):
     )
 
     duckdb_file_path = resolve_duckdb_file_path(
-        cache_database, Variable.get("duckdb_data_folder")
+        cache_database, get_duckdb_data_folder(logger)
     )
 
     if dbdao.dialect == SupportedDatabaseDialects.SNOWFLAKE.value:
@@ -132,7 +132,7 @@ def create_cache_flow(options: CreateCacheOptions):
         # database_code only for legacy rows without a cache_id.
         sf_catalog = options.cache_id or options.database_code
         duckdb_file_path = resolve_duckdb_file_path(
-            sf_catalog, Variable.get("duckdb_data_folder")
+            sf_catalog, get_duckdb_data_folder(logger)
         )
         copy_params.target_database = sf_catalog
         # A Snowflake source holds CDM data only; a results schema (e.g. CDM_results) has no
@@ -167,6 +167,15 @@ def create_cache_flow(options: CreateCacheOptions):
                 copy_all_schemas(duckdb_file_path, dbdao, copy_params)
     else:
         logger.info("Using TREX SQL connection to cache")
+        # create_schema_tables_task and copy_table_task carry a concurrency-limited
+        # tag (limit 1). A task killed outright (OOM, SIGKILL, Docker daemon restart)
+        # never transitions out of RUNNING, so nothing ever releases its slot and every
+        # later run parks forever. Reconcile before touching either tag.
+        reconcile_stale_concurrency_slots(
+            ["flow-level-concurrency", "table-level-concurrency"],
+            int(Variable.get("cache_concurrency_slot_stale_after_seconds", default="21600")),
+            logger,
+        )
         create_schema_if_not_exists_task(options.use_trex_connection, copy_params, duckdb_file_path)
         create_schema_tables_task(options.use_trex_connection, dbdao, copy_params, duckdb_file_path)
         create_fts_index_task(options.use_trex_connection, copy_params, duckdb_file_path)
@@ -240,7 +249,7 @@ def create_cdw_validation_config_plugin(options: CreateCDWValidationConfig):
     )
 
     duckdb_file_path = resolve_duckdb_file_path(
-        options.database_code, Variable.get("duckdb_data_folder")
+        options.database_code, get_duckdb_data_folder(logger)
     )
 
     if not options.use_trex_connection:

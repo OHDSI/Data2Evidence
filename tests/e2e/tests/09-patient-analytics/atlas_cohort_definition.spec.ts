@@ -36,8 +36,17 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByText('Demo dataset').first().click()
   await page.getByRole('link', { name: 'Cohorts' }).click()
   // The embedded "Atlas Lite" iframe was removed (standalone Atlas3 replaces it).
-  // Verify the Atlas cohort-definition button is present, but do not open it.
-  await expect(page.getByRole('button', { name: 'Atlas' })).toBeVisible()
+  //
+  // This used to assert the 'Atlas' cohort-definition button was present. The
+  // Data Exploration redesign replaced the old Bookmarks header - which carried
+  // a D2E / Atlas / Import / Compare button group - with a single
+  // "Start new exploration" action, so that button exists in no state now and
+  // the assertion cannot be rewritten against an equivalent control.
+  //
+  // Assert what this step is really for instead: turning PA-Atlas on leaves the
+  // Cohorts screen reachable and rendering. Do not reinstate a control
+  // assertion here unless an Atlas entry point comes back.
+  await expect(page.getByTestId('explorations-page')).toBeVisible()
 
   await page.getByRole('link', { name: 'Account' }).click()
   await page.getByRole('button', { name: 'Switch to Admin portal' }).click()

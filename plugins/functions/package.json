@@ -34,7 +34,8 @@
           "function": "/alp-dataflow-gen-init",
           "imports": "/alp-dataflow-gen-init/deno.json",
           "env": "alp-dataflow-gen-init",
-          "waitforEnvVar": "PREFECT_HEALTH_CHECK"
+          "waitforEnvVar": "PREFECT_HEALTH_CHECK",
+          "eszip": "/alp-dataflow-gen-init/index.eszip"
         },
         {
           "function": "/files-manager-init",
@@ -57,6 +58,12 @@
           "env": "alp-usermgmt"
         },
         {
+          "env": "alp-usermgmt",
+          "function": "/alp-idp-migration-init",
+          "imports": "/alp-idp-migration-init/deno.json",
+          "afterListen": true
+        },
+        {
           "function": "/portal-init",
           "imports": "/portal-init/deno.json",
           "env": "portal"
@@ -70,6 +77,11 @@
           "function": "/supabase-storage-init",
           "imports": "/supabase-storage-init/deno.json",
           "env": "supabase-storage"
+        },
+        {
+          "function": "/analytics-svc-init",
+          "imports": "/analytics-svc-init/deno.json",
+          "env": "analytics-svc-init"
         }
       ],
       "api": [
@@ -328,7 +340,11 @@
           "IS_AUDIT_LOG_ENABLED": "${IS_AUDIT_LOG_ENABLED:-false}",
           "IS_CDM_SQL_AUDIT_LOG_ENABLED": "${IS_CDM_SQL_AUDIT_LOG_ENABLED:-false}",
           "AUDIT_LOG_TO_CONSOLE": "${AUDIT_LOG_TO_CONSOLE:-false}",
-          "ANALYTICS_HANA_STREAMING_ENABLED": "${ANALYTICS_HANA_STREAMING_ENABLED:-false}"
+          "ANALYTICS_HANA_STREAMING_ENABLED": "${ANALYTICS_HANA_STREAMING_ENABLED:-false}",
+          "PG_PASSWORD": "${PG_WRITE_PASSWORD}",
+          "PG_SCHEMA": "analytics",
+          "PG_USER": "${PG_WRITE_USER:-alp_pg_write_user}",
+          "COHORT_CACHE_TTL_HOURS": "${COHORT_CACHE_TTL_HOURS:-24}"
         },
         "mri-pg-config": {
           "PG_ADMIN_PASSWORD": "${PG_ADMIN_PASSWORD}",
@@ -386,7 +402,22 @@
           "USER_MGMT__IDP_SUBJECT_PROP": "sub",
           "USER_MGMT__LOG_LEVEL": "info",
           "USER_MGMT__PATH": "/usermgmt/",
-          "USER_MGMT__PORT": 41104
+          "USER_MGMT__PORT": 41104,
+          "D2E__SEED_USER": "${D2E__SEED_USER}",
+          "TREX__AUTH_URL": "${TREX__AUTH_URL}",
+          "TREX__SERVICE_ROLE_KEY": "${TREX__SERVICE_ROLE_KEY}",
+          "IDP__INITIAL_USER__DOMAIN": "${IDP__INITIAL_USER__DOMAIN:-d2e.local}",
+          "SUPABASE_SERVICE_ROLE_KEY": "${SUPABASE_SERVICE_ROLE_KEY}",
+          "TREX__ADMIN_URL": "${TREX__ADMIN_URL}",
+          "D2E__SETUP_USER": "${D2E__SETUP_USER}",
+          "D2E_IDP_MODE": "${D2E_IDP_MODE:-trex}",
+          "LOGTO__ISSUER": "${LOGTO__ISSUER:-}",
+          "D2E__LOGTO_UPSTREAM__CLIENT_ID": "${D2E__LOGTO_UPSTREAM__CLIENT_ID:-}",
+          "D2E__LOGTO_UPSTREAM__CLIENT_SECRET": "${D2E__LOGTO_UPSTREAM__CLIENT_SECRET:-}",
+          "TREX_OIDC_ISSUER": "${TREX_OIDC_ISSUER:-}",
+          "TREX__FEDERATION_ADMIN_URL": "${TREX__FEDERATION_ADMIN_URL:-}",
+          "PG__LOGTO_MANAGER_USER": "${PG__LOGTO_MANAGER_USER:-logto_postgres}",
+          "PG__LOGTO_MANAGER_PASSWORD": "${PG__LOGTO_MANAGER_PASSWORD:-}"
         },
         "white-rabbit": {
           "PG_ADMIN_PASSWORD": "${PG_ADMIN_PASSWORD}",
@@ -420,6 +451,14 @@
           "PORT": 41114,
           "PG__MAX_POOL": "10",
           "isTestEnv": "${isTestEnv}"
+        },
+        "analytics-svc-init": {
+          "PG_ADMIN_PASSWORD": "${PG_ADMIN_PASSWORD}",
+          "PG_ADMIN_USER": "${PG_ADMIN_USER:-alp_pg_admin_user}",
+          "PG_PASSWORD": "${PG_WRITE_PASSWORD}",
+          "PG_SCHEMA": "analytics",
+          "PG_USER": "${PG_WRITE_USER:-alp_pg_write_user}",
+          "COHORT_CACHE_MAX_AGE_DAYS": "${COHORT_CACHE_MAX_AGE_DAYS:-30}"
         },
         "jobplugins-init": {
           "PG_ADMIN_PASSWORD": "${PG_ADMIN_PASSWORD}",
@@ -529,7 +568,9 @@
           "DEMO__DB_DEFAULT": "{ \"name\": \"postgres\", \"dialect\": \"postgres\", \"host\": \"demodb\", \"port\": 5432, \"extra\": { \"Internal\": { \"statementTimeout\": 60000, \"queryTimeout\": 60000, \"idleTimeoutMillis\": 300000, \"idleInTransactionSessionTimeout\": 300000, \"max\": 50 } }, \"authenticationMode\": \"Password\", \"credentials\": []}",
           "DEMO__DB_USER": "${DEMO__DB_USER:-postgres}",
           "DEMO__DB_PASSWORD": "${DEMO__DB_PASSWORD:-mypass}",
-          "DEMO__DATASET": "{ \"tokenStudyCode\": \"demo\", \"type\": \"source\", \"tenantId\": \"e0348e4d-2e17-43f2-a3c6-efd752d17c23\", \"schemaOption\": \"existing_cdm\", \"dialect\": \"postgres\", \"dataModel\": \"omop5-4\", \"plugin\": \"omop_cdm_plugin\", \"paConfigId\": \"4fce3cb7-32bf-4b46-8cba-32e4f77a14dd\", \"visibilityStatus\": \"DEFAULT\", \"detail\": { \"name\": \"Demo dataset\", \"summary\": \"Demo dataset\", \"description\": \"Demo dataset\", \"showRequestAccess\": false }, \"dashboards\": [], \"attributes\": [], \"tags\": [], \"cacheDatasetName\": \"Demo dataset\", \"cacheDatasetType\": \"omop\" }"
+          "DEMO__DATASET": "{ \"tokenStudyCode\": \"demo\", \"type\": \"source\", \"tenantId\": \"e0348e4d-2e17-43f2-a3c6-efd752d17c23\", \"schemaOption\": \"existing_cdm\", \"dialect\": \"postgres\", \"dataModel\": \"omop5-4\", \"plugin\": \"omop_cdm_plugin\", \"paConfigId\": \"4fce3cb7-32bf-4b46-8cba-32e4f77a14dd\", \"visibilityStatus\": \"DEFAULT\", \"detail\": { \"name\": \"Demo dataset\", \"summary\": \"Demo dataset\", \"description\": \"Demo dataset\", \"showRequestAccess\": false }, \"dashboards\": [], \"attributes\": [], \"tags\": [], \"cacheDatasetName\": \"Demo dataset\", \"cacheDatasetType\": \"omop\" }",
+          "IDP__INITIAL_USER__NAME": "${IDP__INITIAL_USER__NAME:-admin}",
+          "IDP__INITIAL_USER__DOMAIN": "${IDP__INITIAL_USER__DOMAIN:-d2e.local}"
         },
         "d2e-webapi": {},
         "alp-dataflow-gen-init": {
@@ -1077,6 +1118,16 @@
           "path": "^/analytics-svc/api/services/(fhir|data|datastream|userStudies|population)/(?!schema)(.*)",
           "scopes": [
             "PA.svc"
+          ]
+        },
+        {
+          "_comment": "Intended for Service-to-service only, this scope exists solely to deny every browser caller, so it must NEVER be added to trex.functions.roles. This is required because of the catch-all PA.svc scope",
+          "path": "^/analytics-svc/api/services/cohort-cache/?$",
+          "scopes": [
+            "PA.cohortCache.write.serviceOnly.neverGrant"
+          ],
+          "httpMethods": [
+            "PUT"
           ]
         },
         {
