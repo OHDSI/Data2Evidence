@@ -15,6 +15,13 @@ export async function createZip({ responses, cohortName }: { responses: any; coh
   const fileStream = await openSaveTargetStream(takePendingSaveTarget('zip', fileName))
   const writer = fileStream.getWriter()
 
+  // With nothing to add, zip.end() is never reached and the archive would never finish
+  if (!responses?.length) {
+    const err = new Error('No patient list data to export')
+    await writer.abort(err).catch(() => undefined)
+    throw err
+  }
+
   await new Promise<void>((resolve, reject) => {
     const fail = err => {
       writer.abort(err).catch(() => undefined)
