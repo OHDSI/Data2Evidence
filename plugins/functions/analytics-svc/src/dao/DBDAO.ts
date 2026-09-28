@@ -50,6 +50,64 @@ export class DBDAO {
         });
     };
 
+    /**
+     * The tables present in a schema, for checking prerequisites before an
+     * analysis is submitted.
+     *
+     * Delegates to the snapshot listing rather than repeating its SQL: that one
+     * already picks information_schema or SYS.M_TABLES by connection type and
+     * binds its parameters. Names come back in the source's own casing —
+     * lowercase from postgres, uppercase from HANA — so compare them
+     * case-insensitively.
+     */
+    public getSchemaTableNames = async (
+        databaseName: string,
+        schemaName: string,
+        dialect: string
+    ): Promise<string[]> => {
+        // Same reason as getCDMVersion: a pooled Trex connection can miss a
+        // schema created after its ATTACH, which would read as "no tables".
+        await this._clearTrexSchemaCache(dialect);
+        return this.getSnapshotSchemaTables(databaseName, schemaName);
+    };
+
+    /**
+     * Row count for one table, to tell an absent prerequisite from an empty one.
+     *
+     * `tableName` is interpolated because it names a table, which cannot be
+     * bound as a parameter. Callers pass a fixed name from their own list —
+     * never anything from a request.
+     */
+    public countTableRows = async (
+        databaseCode: string,
+        schemaName: string,
+        tableName: string,
+        dialect: string
+    ): Promise<number> => {
+        const qualified =
+            dialect === ANALYTICS_DB_DIALECTS.HANA
+                ? `${schemaName}.${tableName}`
+                : `${databaseCode}.${schemaName}.${tableName}`;
+        return new Promise((resolve, reject) => {
+            this.connection.executeQuery(
+                `SELECT COUNT(*) AS ROW_COUNT FROM ${qualified}`,
+                [],
+                (err: any, result: any) => {
+                    if (err) {
+                        logger.info(err);
+                        return reject(err);
+                    }
+                    // Key casing follows the source dialect, as in getCDMVersion.
+                    const row = result?.[0] ?? {};
+                    const key = Object.keys(row).find(
+                        (k) => k.toLowerCase() === "row_count"
+                    );
+                    resolve(Number(key ? row[key] : 0) || 0);
+                }
+            );
+        });
+    };
+
     private _clearTrexSchemaCache = async (
         dialect: string
     ): Promise<boolean> => {
