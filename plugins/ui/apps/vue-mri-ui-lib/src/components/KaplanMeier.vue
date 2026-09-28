@@ -412,8 +412,11 @@ export default {
         kmEndEventOccurence,
       })
         .then(response => processCSV(response, this.csvFileName))
-        .catch(() => {
-          // do nothing
+        .catch(err => {
+          // The request failure is already flagged by the store; this also covers failing to save the file
+          if (!axios.isCancel(err)) {
+            this.setCSVDownloadError(true)
+          }
         })
         .finally(() => {
           this.completeDownloadCSV()
@@ -534,6 +537,7 @@ export default {
       'setKMLegends',
       'setKMFirstLoad',
       'completeDownloadCSV',
+      'setCSVDownloadError',
       'setChartPropertyValue',
     ]),
     buildRequest() {

@@ -134,8 +134,11 @@ export default {
     getCsvFireDownload() {
       this.downloadCSV({ ...this.getBookmarksData })
         .then(response => processCSV(response, this.csvFileName))
-        .catch(() => {
-          // do something
+        .catch(err => {
+          // The request failure is already flagged by the store; this also covers failing to save the file
+          if (!axios.isCancel(err)) {
+            this.setCSVDownloadError(true)
+          }
         })
         .finally(() => {
           this.completeDownloadCSV()
@@ -363,6 +366,7 @@ export default {
       'setCurrentPatientCount',
       'setFireRequest',
       'completeDownloadCSV',
+      'setCSVDownloadError',
       'setPlotlyElement',
     ]),
     /**
