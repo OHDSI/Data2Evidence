@@ -16,6 +16,7 @@ from typing import Iterator, List, NamedTuple, Optional
 from sqlalchemy import (
     Boolean, Column, DateTime, Integer, MetaData, String, Table, func, inspect, select, text,
 )
+from sqlalchemy.exc import NoSuchTableError
 
 from prefect.logging import get_run_logger
 
@@ -222,12 +223,17 @@ def _is_missing_table_error(error: Exception, table_name: str) -> bool:
 
 def _is_missing_changelog_table_error(error: Exception) -> bool:
     seen = set()
-    current: Optional[BaseException] = error
-    while current is not None and id(current) not in seen:
+    to_visit = [error]
+    while to_visit:
+        current = to_visit.pop()
+        if current is None or id(current) in seen:
+            continue
         seen.add(id(current))
+        if isinstance(current, NoSuchTableError):
+            return True
         if _is_missing_table_error(current, CHANGELOG_TABLE):
             return True
-        current = current.__cause__ or current.__context__
+        to_visit.extend([current.__cause__, current.__context__, getattr(current, "orig", None)])
     return False
 
 
@@ -481,7 +487,8 @@ def apply_data_model_schema(dbdao: DaoBase, schema_name: str, data_model: str,
         if count is not None:
             if count < 0:
                 raise ValueError("count must be non-negative")
-            pending = pending[:count]
+            if count > 0:
+                pending = pending[:count]
 
         if not pending:
             logger.info(
@@ -491,7 +498,7 @@ def apply_data_model_schema(dbdao: DaoBase, schema_name: str, data_model: str,
 
         verb = "Recording (without running)" if record_only else "Applying"
         for changeset in pending:
-            logger.info(f"{verb} changeset '{changeset.relative_path}' for schema '{schema_name}'..")
+            logger.info(f"{verb} changeset '{changeset.relative_path}' for schema '{schema_name}'.")
             apply_changeset(dbdao, schema_name, dialect, changeset, vocab_schema or schema_name,
                             logger, engine, record_only)
             logger.info(f"Done with changeset '{changeset.relative_path}' for schema '{schema_name}'")

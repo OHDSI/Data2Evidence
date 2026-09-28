@@ -4,6 +4,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 import sqlalchemy as sql
 from sqlalchemy import text
+from sqlalchemy.exc import NoSuchTableError
 from sqlalchemy.pool import StaticPool
 
 from data_management_plugin import sql_migration as sm
@@ -614,6 +615,18 @@ def test_apply_data_model_schema_count_limits_pending_changesets(
 @patch("data_management_plugin.sql_migration.apply_changeset")
 @patch("data_management_plugin.sql_migration.get_applied_changesets", return_value={})
 @patch("data_management_plugin.sql_migration.ensure_changelog_table")
+def test_apply_data_model_schema_count_zero_means_apply_all_pending(
+    ensure_table_mock, get_applied_mock, apply_changeset_mock
+):
+    with patch("data_management_plugin.sql_migration.get_run_logger", return_value=MagicMock()):
+        sm.apply_data_model_schema(MagicMock(), "my_schema", "medical-imaging", "postgres", count=0)
+
+    assert apply_changeset_mock.call_count == len(sm.list_changeset_files("postgres", "medical-imaging"))
+
+
+@patch("data_management_plugin.sql_migration.apply_changeset")
+@patch("data_management_plugin.sql_migration.get_applied_changesets", return_value={})
+@patch("data_management_plugin.sql_migration.ensure_changelog_table")
 def test_apply_data_model_schema_rejects_negative_count(
     ensure_table_mock, get_applied_mock, apply_changeset_mock
 ):
@@ -694,6 +707,31 @@ def test_get_latest_available_changeset_treats_missing_changelog_as_empty(get_ap
     all_files = sm.list_changeset_files("postgres", "medical-imaging")
     get_applied_mock.side_effect = Exception('relation "databasechangelog" does not exist')
 
+    result = sm.get_latest_available_changeset(dbdao, "my_schema", "medical-imaging", "postgres")
+
+    assert result == all_files[-1].relative_path
+
+
+@patch("data_management_plugin.sql_migration.get_applied_filenames")
+def test_get_latest_available_changeset_treats_nosuchtableerror_as_empty(get_applied_mock):
+    dbdao = MagicMock()
+    all_files = sm.list_changeset_files("postgres", "medical-imaging")
+    get_applied_mock.side_effect = NoSuchTableError("databasechangelog")
+
+    result = sm.get_latest_available_changeset(dbdao, "my_schema", "medical-imaging", "postgres")
+
+    assert result == all_files[-1].relative_path
+
+
+@patch("data_management_plugin.sql_migration.get_applied_filenames")
+def test_get_latest_available_changeset_treats_wrapped_nosuchtableerror_as_empty(get_applied_mock):
+    dbdao = MagicMock()
+    all_files = sm.list_changeset_files("postgres", "medical-imaging")
+
+    def _raise_wrapped(*_args, **_kwargs):
+        raise RuntimeError("wrapped") from NoSuchTableError("databasechangelog")
+
+    get_applied_mock.side_effect = _raise_wrapped
     result = sm.get_latest_available_changeset(dbdao, "my_schema", "medical-imaging", "postgres")
 
     assert result == all_files[-1].relative_path
