@@ -179,7 +179,9 @@ test(TEST_NAME, async ({ page }) => {
       .last()
       .getByRole('button', { name: 'A - Condition Occurrence Condition concept Name ◢' })
       .click()
-    await page.getByText('Reset Selection').click()
+    // The reopened bookmark has a colour axis selected, and its closed menu also has a
+    // 'Reset Selection' item. Scope to the x1 menu.
+    await page.getByTestId('pa-dropdown-menu-x1').getByText('Reset Selection').click()
     await expect(page.locator('.loading-animation-component')).not.toBeVisible()
     await page.getByRole('button', { name: 'Basic Data Month of Birth ◢' }).click()
     await page.getByRole('listitem').filter({ hasText: 'Reset Selection' }).waitFor({ state: 'visible' })
