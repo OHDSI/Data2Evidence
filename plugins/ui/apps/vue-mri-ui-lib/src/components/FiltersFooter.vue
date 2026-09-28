@@ -1,6 +1,6 @@
 <template>
   <div class="filters-footer">
-    <!-- "Allow sharing" sits in its own row at the bottom of the side panel, directly above the action buttons. -->
+    <!-- "Enable sharing" sits in its own row at the bottom of the side panel, directly above the action buttons. -->
     <div v-if="canShare" class="filters-footer__share" data-testid="pa-share-cohort-row">
       <v-checkbox
         v-model="shareBookmark"
