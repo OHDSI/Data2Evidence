@@ -267,6 +267,8 @@ const showExportToast = (type: 'success' | 'error') => {
 
 const onImageExported = (payload: any) => {
   showDownloadPNGDialog.value = false
+  // Save picker dismissed: nothing was exported, so nothing to report
+  if (payload?.cancelled) return
   showExportToast(payload && payload.success ? 'success' : 'error')
 }
 
