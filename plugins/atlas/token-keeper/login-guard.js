@@ -68,7 +68,10 @@
     if (Date.now() - last > LOOP_GUARD_MS) {
       sessionStorage.setItem(GUARD_TS, String(Date.now()));
       // Strip the broken welcome token; return to a sane route after re-auth.
-      var ret = onBrokenWelcome || !hash ? "#/cohorts" : hash;
+      // landing-redirect.js owns the landing route; the literal is the pre-existing
+      // fallback, used only if that script is ever not injected.
+      var landing = window.D2E_ATLAS_LANDING_HASH || "#/cohorts";
+      var ret = onBrokenWelcome || !hash ? landing : hash;
       location.replace("/atlas-login/?redirectUrl=" + encodeURIComponent(ret));
     }
   } else {

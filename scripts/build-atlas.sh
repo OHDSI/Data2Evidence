@@ -75,17 +75,23 @@ echo "[build-atlas] Building the Atlas plugin (assembles Atlas3 + sub-plugin dis
 # (not the trex-notebook submodule), so it is built and staged separately —
 # after the atlas npm install, whose postinstall recreates resources/atlas.
 # --workspaces=false keeps npm from resolving the whole bun-managed monorepo.
+# Patient Analytics runs as a NATIVE Atlas3 plugin: Atlas System.imports
+# index.system.js and calls its single-spa lifecycles directly, in Atlas's own
+# document. The previous build wrapped the app in a same-origin iframe instead.
+# The iframe cost real behaviour -- src/main.ts boots inside it and installs a
+# different set of bootstrap hooks from src/lifecycles.ts, which is how the
+# Data Exploration data source picker came to render but never switch.
 PA_DIR="plugins/ui/apps/vue-mri-ui-lib"
 echo "[build-atlas] Building sub-plugin: patient-analytics ($PA_DIR)"
-( cd "$PA_DIR" && npm install --workspaces=false --legacy-peer-deps && npm run build:atlas )
-if [ ! -f "$PA_DIR/dist-atlas/index.system.js" ]; then
-  echo "[build-atlas] ERROR: patient-analytics did not produce dist-atlas/index.system.js" >&2
+( cd "$PA_DIR" && npm install --workspaces=false --legacy-peer-deps && npm run build:atlas-native )
+if [ ! -f "$PA_DIR/dist-atlas-native/index.system.js" ]; then
+  echo "[build-atlas] ERROR: patient-analytics did not produce dist-atlas-native/index.system.js" >&2
   exit 1
 fi
 PA_DEST="$ATLAS_DIR/resources/atlas/plugins/patient-analytics"
 rm -rf "$PA_DEST"
 mkdir -p "$PA_DEST"
-cp -r "$PA_DIR/dist-atlas/." "$PA_DEST/"
+cp -r "$PA_DIR/dist-atlas-native/." "$PA_DEST/"
 echo "[build-atlas] Staged patient-analytics at /atlas/plugins/patient-analytics"
 
 # Datasources is a third UI-monorepo Atlas3 sub-plugin.

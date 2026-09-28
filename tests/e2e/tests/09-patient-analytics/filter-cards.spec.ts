@@ -15,6 +15,20 @@ test(TEST_NAME, async ({ browser }) => {
   })
   const page = await context.newPage()
 
+  // Unique per attempt, because a concept set outlives the test that made it.
+  // With a fixed name, attempt 1 created it and every retry was refused with
+  // "already exists" -- so Create never happened, and Step 8 then timed out
+  // waiting to pick a concept set that was never added:
+  //
+  //   locator.fill: Timeout 20000ms exceeded
+  //     waiting for getByTitle('Condition Occurrence A - Condition concept Set')
+  //       .getByPlaceholder('Enter search term')
+  //
+  // The retries could not pass, whatever went wrong the first time, which turns
+  // any one transient failure into a failed job. This suite fails on develop
+  // roughly half the time, so recovering on retry is the difference.
+  const conceptSetName = `test_concept_set_${Date.now()}`
+
   // Step 1 - navigate to the portal
   await page.goto('/d2e/portal')
   await page.locator('input[name="identifier"]').click()
@@ -79,7 +93,7 @@ test(TEST_NAME, async ({ browser }) => {
   await page.getByRole('button', { name: '+' }).click()
   await expect(page.locator('.loading-animation-component')).not.toBeVisible()
   await page.getByRole('textbox', { name: 'Concept set name' }).click()
-  await page.getByRole('textbox', { name: 'Concept set name' }).fill('test_concept_set')
+  await page.getByRole('textbox', { name: 'Concept set name' }).fill(conceptSetName)
   await page.getByRole('textbox', { name: 'search terms' }).click()
   await page.getByRole('textbox', { name: 'search terms' }).fill('260139 10509002 Acute bronchitis')
   await page.getByRole('button', { name: 'Search' }).click()
@@ -107,9 +121,9 @@ test(TEST_NAME, async ({ browser }) => {
   // second div inside the title element, which the reskin renumbered.
   await conditionOccConceptSet.getByRole('combobox').click()
   await conceptSetTextbox.fill('')
-  await conceptSetTextbox.fill('test_concept_set')
-  await expect(page.getByText('test_concept_set', { exact: false }).first()).toBeVisible()
-  await page.getByText('test_concept_set', { exact: false }).first().click()
+  await conceptSetTextbox.fill(conceptSetName)
+  await expect(page.getByText(conceptSetName, { exact: false }).first()).toBeVisible()
+  await page.getByText(conceptSetName, { exact: false }).first().click()
   await conceptSetTextbox.press('Escape')
 
   // Step 8 - Entering incorrect condition occurrence concept
