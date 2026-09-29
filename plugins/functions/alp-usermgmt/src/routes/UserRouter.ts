@@ -151,15 +151,9 @@ export class UserRouter {
             return res.status(result.status).send({ message: result.message })
           }
         } else {
-          // idp_user_id is the trex id; the password lives with the credential.
-          const upstream = await this.logtoApi.getUserByUsername(user.username!)
-          if (!upstream) {
-            this.logger.error(`No upstream account for ${user.username}`)
-            return res.status(400).send({
-              message: `No upstream account for ${user.username}; the password cannot be reset here.`,
-            })
-          }
-          await this.logtoApi.updatePassword(upstream.id, password)
+          // The password lives with the credential, which on a federated
+          // deployment is upstream; idp_user_id names the account there too.
+          await this.logtoApi.updatePassword(user.idpUserId, password)
         }
         return res.sendStatus(204)
       } catch (err) {

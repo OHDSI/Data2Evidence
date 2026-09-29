@@ -200,15 +200,10 @@ export class MeRouter {
           return res.sendStatus(204)
         }
 
-        // idp_user_id is the trex id; the password lives with the credential.
-        const upstream = await this.logtoApi.getUserByUsername(user.username!)
-        if (!upstream) {
-          this.logger.error(`No upstream account for ${user.username}`)
-          return res.status(400).send({
-            message: `No upstream account for ${user.username}; the password cannot be changed here.`,
-          })
-        }
-        await this.logtoApi.updatePassword(upstream.id, password, oldPassword)
+        // The password lives with the credential, which on a federated
+        // deployment is upstream. One id reaches both: the account is linked
+        // under the id Logto issued, so idp_user_id names it in either store.
+        await this.logtoApi.updatePassword(idpUserId, password, oldPassword)
         res.sendStatus(204)
       } catch (err) {
         if (err?.response?.status >= 400 && err?.response?.status < 500) {

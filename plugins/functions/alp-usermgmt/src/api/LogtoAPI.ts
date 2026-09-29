@@ -168,22 +168,6 @@ export class LogtoAPI extends BaseIDPAPI {
     await patch(url, data, options)
   }
 
-  /**
-   * The upstream account for a username, or undefined.
-   *
-   * Needed because idp_user_id holds the trex id — the token `sub` everything
-   * else is keyed by — while a password lives with the credential, which on a
-   * federated deployment is here. `search` narrows the page server-side where
-   * the deployment supports it; the exact match is applied either way, so a
-   * version that ignores the parameter still answers correctly.
-   */
-  async getUserByUsername(username: string): Promise<ILogtoUser | undefined> {
-    const users = await this.fetchAllPages<ILogtoUser>(
-      `/api/users?search=${encodeURIComponent(username)}`
-    )
-    return users.find(u => u.username === username)
-  }
-
   async getUsers(): Promise<ILogtoUser[]> {
     this.logger.debug('Fetching all Logto users')
     return this.fetchAllPages<ILogtoUser>('/api/users')

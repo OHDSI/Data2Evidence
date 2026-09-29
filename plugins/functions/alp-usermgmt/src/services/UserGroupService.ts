@@ -36,6 +36,14 @@ export function resolveRoleStore(raw: string | undefined): 'trex' | 'logto' {
 }
 
 /**
+ * The sso_provider row a federated deployment signs in through.
+ *
+ * One value because one provider is configured: docker-compose-logto-federation.yml
+ * registers Logto under this id, and the idp migration writes the same one.
+ */
+export const FEDERATION_PROVIDER_ID = 'logto'
+
+/**
  * Which provider a new account is created in, and has its password changed in.
  *
  * NOT the role store. Roles live in trex after the migration, and
@@ -49,14 +57,6 @@ export function resolveRoleStore(raw: string | undefined): 'trex' | 'logto' {
  * again, so that case stays with the role store — it is also the documented
  * escape hatch for letting an admin in while Logto is unavailable.
  */
-/**
- * The sso_provider row a federated deployment signs in through.
- *
- * One value because one provider is configured: docker-compose-logto-federation.yml
- * registers Logto under this id, and the idp migration writes the same one.
- */
-export const FEDERATION_PROVIDER_ID = 'logto'
-
 export function resolveUserStore(
   idpMode: string | undefined,
   nativePasswordLogin: string | undefined,

@@ -9,6 +9,7 @@ import { UserField } from '../repositories'
 import { LogtoAPI, TrexIdpAPI, WebAPI } from '../api'
 import { env } from '../env'
 import { FEDERATION_PROVIDER_ID, resolveRoleStore, resolveUserStore } from './UserGroupService'
+import { HttpFederationAdmin } from '@alp/idp/migration/federation-admin.ts'
 
 @Service()
 export class MemberService {
@@ -21,6 +22,27 @@ export class MemberService {
     private readonly trexIdpAPI: TrexIdpAPI,
     private readonly webApi: WebAPI
   ) {}
+
+  /**
+   * The same client the idp migration links with, so a new account and a
+   * migrated one reach trex by one contract.
+   */
+  private federationAdmin(): HttpFederationAdmin {
+    return new HttpFederationAdmin({
+      federationUrl: env.TREX_FEDERATION_ADMIN_URL ?? '',
+      rolesUrl: env.TREX_ADMIN_URL ?? '',
+      serviceRoleKey: env.TREX_SERVICE_ROLE_KEY || env.SUPABASE_SERVICE_ROLE_KEY || '',
+    })
+  }
+
+  /**
+   * The address the account is registered under, matching what the sign-in
+   * page appends so a name and the account it authenticates as stay one
+   * identity.
+   */
+  private accountEmail(username: string): string {
+    return username.includes('@') ? username : `${username}@${env.IDP_USER_DOMAIN}`
+  }
 
   async addUser(request: UserAddRequest) {
     const { username, groupIds } = request
@@ -69,24 +91,42 @@ export class MemberService {
       // could neither sign in nor hold a role. So create the credential
       // upstream, pre-link it, and keep the trex id as the account's subject.
       let idpUserId: string
-      if (resolveUserStore(env.D2E_IDP_MODE, env.TREX_NATIVE_PASSWORD_LOGIN_ENABLED, env.IDP_ROLE_STORE) === 'trex') {
-        idpUserId = (await this.trexIdpAPI.createUser(username, password)).id
+      if (env.D2E_IDP_MODE !== 'logto-federated') {
+        // Includes a legacy IDP__ROLE_STORE=logto deployment, which has no trex
+        // to link to and is explicitly allowed to carry no trex service key.
+        idpUserId = resolveUserStore(env.D2E_IDP_MODE, env.TREX_NATIVE_PASSWORD_LOGIN_ENABLED, env.IDP_ROLE_STORE) === 'trex'
+          ? (await this.trexIdpAPI.createUser(username, password)).id
+          : (await this.logtoApi.createUser(username, password)).id
       } else {
         const upstream = await this.logtoApi.createUser(username, password)
-        // The credential is upstream, but idp_user_id is the trex id, because
-        // that is the `sub` trex puts in the token and therefore what
-        // getUserByIdpUserId is asked for on every request. Storing the
-        // upstream id instead left the account unfindable after sign-in and
-        // its roles unassignable — trexdb.user_role references trexdb."user",
-        // so every grant failed with
+        // The credential is upstream; the identity still has to exist in trex,
+        // because that id is the token `sub` getUserByIdpUserId is asked for on
+        // every request and the key trexdb.user_role references. Creating only
+        // the upstream account left every grant failing with
         //   Key (userId)=(<upstream id>) is not present in table "user"
-        // Pre-linking here, rather than leaving it to the first sign-in, is
-        // what makes that id exist in time for the roles granted alongside.
-        idpUserId = await this.trexIdpAPI.linkFederatedIdentity(
-          FEDERATION_PROVIDER_ID,
-          upstream.id,
-          username,
-        )
+        // and the account unfindable after sign-in.
+        //
+        // The upstream id is REQUESTED as the trex id, which is what the
+        // migration does, so one account has one subject across D2E. A trex
+        // that cannot honour it answers 409, and one predating explicit-id
+        // linking quietly allocates its own — both are rejected here rather
+        // than stored, since either leaves `sub` naming a row nothing else
+        // can find.
+        const outcome = await this.federationAdmin().link({
+          providerId: FEDERATION_PROVIDER_ID,
+          accountId: upstream.id,
+          userId: upstream.id,
+          email: this.accountEmail(username),
+          name: username,
+          banned: false,
+        })
+        if ('conflict' in outcome || outcome.userId !== upstream.id) {
+          throw new Error(
+            `trex linked ${username} under ${'conflict' in outcome ? outcome.userId : outcome.userId} ` +
+              `instead of ${upstream.id}; the account would be unreachable by its own subject`,
+          )
+        }
+        idpUserId = upstream.id
       }
 
       this.logger.info('Update IDP user ID')
