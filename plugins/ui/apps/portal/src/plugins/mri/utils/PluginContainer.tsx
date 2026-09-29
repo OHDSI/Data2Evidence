@@ -1,8 +1,7 @@
 import React, { FC, ReactNode, useEffect } from "react";
-import { useToken, useTranslation } from "../../../contexts";
-import { useFeatures } from "../../../hooks";
+import { useTranslation } from "../../../contexts";
+import { useFeatures, useMe } from "../../../hooks";
 import "./PluginContainer.scss";
-import { resolveIdTokenName } from "../../../utils/idTokenName";
 
 interface PluginContainerProps {
   getToken?: () => Promise<string>;
@@ -19,9 +18,9 @@ const PluginContainer: FC<PluginContainerProps> = ({
   studyId,
   releaseId,
 }) => {
-  const { idTokenClaims } = useToken();
   const { locale } = useTranslation();
   const [features, featuresLoading] = useFeatures();
+  const [username, usernameLoading] = useMe();
 
   return (
     <div
@@ -33,7 +32,8 @@ const PluginContainer: FC<PluginContainerProps> = ({
             qeSvcUrl,
             studyId,
             releaseId,
-            username: resolveIdTokenName(idTokenClaims),
+            username,
+            usernameLoading,
             features,
             featuresLoading,
             locale,

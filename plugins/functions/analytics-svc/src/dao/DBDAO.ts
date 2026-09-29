@@ -50,6 +50,65 @@ export class DBDAO {
         });
     };
 
+    /**
+     * The tables present in a schema, for checking prerequisites before an
+     * analysis is submitted.
+     *
+     * Delegates to the snapshot listing rather than repeating its SQL: that one
+     * already picks information_schema or SYS.M_TABLES by connection type and
+     * binds its parameters. Names come back in the source's own casing —
+     * lowercase from postgres, uppercase from HANA — so compare them
+     * case-insensitively.
+     */
+    public getSchemaTableNames = async (
+        databaseName: string,
+        schemaName: string,
+        dialect: string
+    ): Promise<string[]> => {
+        // Same reason as getCDMVersion: a pooled Trex connection can miss a
+        // schema created after its ATTACH, which would read as "no tables".
+        await this._clearTrexSchemaCache(dialect);
+        return this.getSnapshotSchemaTables(databaseName, schemaName);
+    };
+
+    /**
+     * Whether a table holds at least one row.
+     *
+     * Existence, not cardinality: the callers only need to tell an empty table
+     * from a populated one, and COUNT(*) over OBSERVATION_PERIOD would make
+     * every DQD or DC submission pay for a full scan of one of the largest
+     * tables in the CDM — worst on the direct HANA path, which does not go
+     * through the cache.
+     *
+     * `tableName` is interpolated because it names a table, which cannot be
+     * bound as a parameter. Callers pass a fixed name from their own list —
+     * never anything from a request.
+     */
+    public tableHasRows = async (
+        databaseCode: string,
+        schemaName: string,
+        tableName: string,
+        dialect: string
+    ): Promise<boolean> => {
+        const qualified =
+            dialect === ANALYTICS_DB_DIALECTS.HANA
+                ? `${schemaName}.${tableName}`
+                : `${databaseCode}.${schemaName}.${tableName}`;
+        return new Promise((resolve, reject) => {
+            this.connection.executeQuery(
+                `SELECT 1 AS PRESENT FROM ${qualified} LIMIT 1`,
+                [],
+                (err: any, result: any) => {
+                    if (err) {
+                        logger.info(err);
+                        return reject(err);
+                    }
+                    resolve((result?.length ?? 0) > 0);
+                }
+            );
+        });
+    };
+
     private _clearTrexSchemaCache = async (
         dialect: string
     ): Promise<boolean> => {

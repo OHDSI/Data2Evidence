@@ -387,7 +387,7 @@ export const i18n = {
     MRI_PA_BMK_NAME_LABEL: 'Name',
     MRI_PA_BMK_NAME_PLACEHOLDER: 'Enter Filter Name',
     MRI_PA_BMK_LIMIT_LABEL: 'Enter up to 40 characters',
-    MRI_PA_BMK_SHARED_BOOKMARK_TEXT: 'Allow sharing',
+    MRI_PA_BMK_SHARED_BOOKMARK_TEXT: 'Enable sharing',
     MRI_PA_BMK_SHARED_BOOKMARK_TITLE: 'Allow bookmark to be visible among other users',
     MRI_PA_BMK_SHARED_BOOKMARK_TOOLTIP:
       'When enabled, this cohort filter will be visible to other users. They will be able to view it on the cohort list and edit it.',
@@ -516,6 +516,11 @@ export const i18n = {
     MRI_PA_TOOLTIP_MATERIALIZE_DISABLED:
       'Cohort materialization is not available. This may be because the dataset does not support it, or the required cohort tables are not set up in the database schema.',
     MRI_PA_BUTTON_DISPLAY_OR_GENERATE_DATA_QUALITY: 'Display or generate data quality',
+    MRI_PA_DATA_QUALITY_CHECK_STARTED:
+      'Data quality check started successfully. This may take a while. Come back again later to view results.',
+    MRI_PA_DATA_QUALITY_CHECK_IN_PROGRESS:
+      "A data quality check is already in progress for this cohort. It'll be ready to view once it finishes.",
+    MRI_PA_DATA_QUALITY_CHECK_FAILED: 'Data quality check could not be started. Please try again.',
     MRI_PA_BUTTON_VIEW_COHORT: 'View Cohort',
     MRI_PA_BUTTON_IMPORT_COHORT: 'Import Cohort',
     MRI_PA_TOOLTIP_DELETE_BOOKMARK: 'Delete Saved Filter',
@@ -1503,7 +1508,7 @@ export const i18n = {
     MRI_PA_BMK_NAME_LABEL: 'Name',
     MRI_PA_BMK_NAME_PLACEHOLDER: 'Filtername eingeben',
     MRI_PA_BMK_LIMIT_LABEL: 'Geben Sie bis zu 40 Zeichen ein.',
-    MRI_PA_BMK_SHARED_BOOKMARK_TEXT: 'Freigabe zulassen',
+    MRI_PA_BMK_SHARED_BOOKMARK_TEXT: 'Freigabe aktivieren',
     MRI_PA_BMK_SHARED_BOOKMARK_TITLE: 'Lesezeichen für andere Benutzer sichtbar machen',
     MRI_PA_BMK_SHARED_BOOKMARK_TOOLTIP:
       'Wenn aktiviert, ist dieser Kohortenfilter für andere Benutzer sichtbar. Sie können ihn in der Kohortenliste ansehen und bearbeiten.',
@@ -1640,6 +1645,12 @@ export const i18n = {
     MRI_PA_BUTTON_COHORT_BUTTON_TOOLTIP: 'Kohorten',
     MRI_PA_BUTTON_ADD_TO_COLLECTION: 'Zu Kohorte hinzufügen',
     MRI_PA_BUTTON_DISPLAY_OR_GENERATE_DATA_QUALITY: 'Datenqualität anzeigen oder generieren',
+    MRI_PA_DATA_QUALITY_CHECK_STARTED:
+      'Datenqualitätsprüfung erfolgreich gestartet. Dies kann eine Weile dauern. Schauen Sie später wieder vorbei, um die Ergebnisse zu sehen.',
+    MRI_PA_DATA_QUALITY_CHECK_IN_PROGRESS:
+      'Für diese Kohorte läuft bereits eine Datenqualitätsprüfung. Sie kann angezeigt werden, sobald sie abgeschlossen ist.',
+    MRI_PA_DATA_QUALITY_CHECK_FAILED:
+      'Die Datenqualitätsprüfung konnte nicht gestartet werden. Bitte versuchen Sie es erneut.',
     MRI_PA_BUTTON_VIEW_COHORT: 'Kohorte anzeigen',
     MRI_PA_BUTTON_IMPORT_COHORT: 'Kohorte importieren',
     MRI_PA_TOOLTIP_DELETE_BOOKMARK: 'Gesicherten Filter löschen',
@@ -2607,7 +2618,7 @@ export const i18n = {
     MRI_PA_BMK_NAME_LABEL: '名称',
     MRI_PA_BMK_NAME_PLACEHOLDER: '请输入过滤器名称',
     MRI_PA_BMK_LIMIT_LABEL: '请输入至多 40 个字符',
-    MRI_PA_BMK_SHARED_BOOKMARK_TEXT: '允许共享',
+    MRI_PA_BMK_SHARED_BOOKMARK_TEXT: '启用共享',
     MRI_PA_BMK_SHARED_BOOKMARK_TITLE: '允许其他用户看到书签',
     MRI_PA_BMK_SHARED_BOOKMARK_TOOLTIP: '启用后，其他用户将可以看到此队列筛选器，并可在队列列表中查看和编辑它。',
     MRI_PA_TOOLTIP_BOOKMARK_NAME: '已保存的过滤器名称',
@@ -2733,6 +2744,9 @@ export const i18n = {
     MRI_PA_BUTTON_COHORT_BUTTON_TOOLTIP: '群',
     MRI_PA_BUTTON_ADD_TO_COLLECTION: '添加到群',
     MRI_PA_BUTTON_DISPLAY_OR_GENERATE_DATA_QUALITY: '显示或生成数据质量',
+    MRI_PA_DATA_QUALITY_CHECK_STARTED: '数据质量检查已成功启动。这可能需要一段时间，请稍后再回来查看结果。',
+    MRI_PA_DATA_QUALITY_CHECK_IN_PROGRESS: '该群的数据质量检查正在进行中。完成后即可查看。',
+    MRI_PA_DATA_QUALITY_CHECK_FAILED: '无法启动数据质量检查。请重试。',
     MRI_PA_BUTTON_VIEW_COHORT: '查看群',
     MRI_PA_BUTTON_IMPORT_COHORT: '导入群',
     MRI_PA_TOOLTIP_DELETE_BOOKMARK: '删除已保存的过滤器',

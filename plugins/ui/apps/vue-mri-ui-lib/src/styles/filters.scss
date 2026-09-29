@@ -8,7 +8,7 @@
     overflow-x: hidden;
   }
 
-  // The optional "Allow sharing" row adds 40px on top of the 64px action bar.
+  // The optional "Enable sharing" row adds 40px on top of the 64px action bar.
   &:has(.filters-footer__share) .filters-content {
     bottom: 104px;
   }

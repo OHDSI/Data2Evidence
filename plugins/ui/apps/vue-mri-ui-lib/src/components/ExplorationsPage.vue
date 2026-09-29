@@ -524,7 +524,18 @@ const loadError = computed(() => store.getters.getBookmarksLoadError)
  * application reloading.
  */
 const datasetReloading = computed<boolean>(() => Boolean(store.getters.getDatasetReloadInProgress))
-const showInitialLoader = computed(() => loading.value && allCards.value.length === 0 && !datasetReloading.value)
+/**
+ * Whether the owner key is settled.
+ *
+ * `allCards` filters on `portalContext.username`, so until it resolves every
+ * card belongs to somebody else and the grid is empty -- indistinguishable,
+ * without this, from a user who has saved nothing. The portal fetches the name
+ * from usermgmt (its `useMe`), so there is a real window on first paint.
+ */
+const usernamePending = computed(() => Boolean(portalContext.usernameLoading))
+const showInitialLoader = computed(
+  () => (loading.value || usernamePending.value) && allCards.value.length === 0 && !datasetReloading.value,
+)
 /** The active source's id. Still the select's value: the id is what every call
     downstream uses, and the label is only what the user reads. */
 const datasetId = computed(() => store.getters.getSelectedDataset?.id || portalContext.datasetId)
@@ -534,7 +545,17 @@ const datasetId = computed(() => store.getters.getSelectedDataset?.id || portalC
 const datasetName = computed(() => store.getters.getSelectedDatasetName || datasetId.value)
 
 /**
- * Switching the source is only possible in the native Atlas mount.
+ * Switching the source is only possible when Atlas is the host.
+ *
+ * VITE_ATLAS_HOSTED, not VITE_ATLAS_NATIVE. The two are not the same question
+ * and reusing the latter here was a bug: it is defined only by the native
+ * build, where it exists to scope the Vuetify theme stylesheet because that
+ * mount shares a document with Atlas3's own Vuetify (see plugins/vuetify.ts).
+ * The build that actually ships to /atlas is the iframe one, which leaves it
+ * undefined -- so this read false there, the switcher was compiled out, and
+ * Data Exploration in Atlas offered only the dataset it was handed, with no way
+ * to change it. Its own document means it must never take the scoping, so the
+ * two flags have to stay apart.
  *
  * In the portal the dataset arrives through customProps and nothing flows
  * back, so changing it here would desynchronise the app from the shell that
@@ -543,7 +564,7 @@ const datasetName = computed(() => store.getters.getSelectedDatasetName || datas
  * `portalContext.datasetId`, so setting that is the whole switch.
  */
 const canSwitchDataSource = computed(
-  () => import.meta.env.VITE_ATLAS_NATIVE === 'true' && dataSourceItems.value.length > 1,
+  () => import.meta.env.VITE_ATLAS_HOSTED === 'true' && dataSourceItems.value.length > 1,
 )
 
 /** Every source the user can read, for the switcher. */
@@ -1167,7 +1188,10 @@ const moreItems = (card: { source: BookmarkDisplay }) => {
   // Do not offer an action the user cannot perform: the same ownership guard
   // BookmarkItems applies to rename and delete.
   const owner = card.source.bookmark ?? card.source.atlasCohortDefinition ?? null
-  const disabled = !canModifyBookmark(owner, portalContext.username)
+  // Also while the name is pending: canModifyBookmark would answer "not yours"
+  // and the action would be offered as permanently disabled rather than as not
+  // yet known.
+  const disabled = usernamePending.value || !canModifyBookmark(owner, portalContext.username)
   // Rename has no path for an Atlas-backed record: the D2E branch dereferences
   // `bookmark.id` and the materialized branch renames the cohort rather than the
   // definition. Bookmarks.vue gated on the type for exactly this reason.

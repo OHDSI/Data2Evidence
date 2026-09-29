@@ -247,6 +247,18 @@ export class DatasetController {
     return await this.datasetCommandService.transformToWebApi(id);
   }
 
+  // Rewrites the dataset's WebAPI source from the dataset row, which is the only
+  // way to repair a source whose daimons WebAPI copied before the dataset was
+  // complete. A source missing its Results daimon answers 500 on inclusion-rule
+  // reports and cohort sampling while looking healthy everywhere else, and
+  // nothing else re-registers one: creation and transform-to-webapi are the only
+  // other writers, and an edit only re-syncs when it changes a daimon.
+  // Idempotent, so it is safe to run against a healthy source.
+  @Post(":id/sync-webapi-source")
+  async syncWebApiSource(@Param("id") id: string) {
+    return await this.datasetCommandService.syncWebApiSource(id);
+  }
+
   // Lightweight cache-readiness poll. Callers that need a hot cache before
   // dispatching downstream work (DQD, DC, demo setup) should hit this until
   // `ready === true` rather than blocking inside the dataset POST.

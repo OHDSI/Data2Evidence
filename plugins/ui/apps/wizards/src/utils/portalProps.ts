@@ -17,6 +17,27 @@ function getAtlasStoredDatasetId(): string | undefined {
 }
 
 /**
+ * The name Atlas signed in as, as usermgmt spells it.
+ *
+ * Written by the Atlas login bridge from usermgmt's own /me, which is the same
+ * endpoint bookmark-svc reads to set a bookmark's `user_id` — so this matches
+ * and `authContext.user.username` does not. That one comes from the ID token,
+ * which under trex's Better Auth provider carries no `username` claim at all
+ * and degrades to the synthesised <username>@d2e.local address; every
+ * wizard-owned bookmark is then rejected by parseCandidate and the wizard
+ * reports none of the user's own saved work.
+ */
+function getAtlasStoredUsername(): string | undefined {
+  if (typeof localStorage === "undefined") return undefined;
+
+  try {
+    return getNonEmptyString(localStorage.getItem("atlas_username"));
+  } catch {
+    return undefined;
+  }
+}
+
+/**
  * Normalize the host-specific context consumed by Wizards.
  *
  * The portal already supplies datasetId and username directly. D2E WebAPI exposes Atlas
@@ -35,7 +56,12 @@ export function normalizeWizardPortalProps(props: PortalProps): PortalProps {
 
   const resolvedDatasetId =
     datasetId ?? getNonEmptyString(props.hostContext?.sourceKey) ?? getAtlasStoredDatasetId();
-  const username = getNonEmptyString(props.username) ?? getNonEmptyString(props.authContext?.user?.username);
+  const username =
+    getNonEmptyString(props.username) ??
+    getAtlasStoredUsername() ??
+    // Last resort only. Kept so a host that stores nothing still names somebody,
+    // but it is the value that does not agree with the bookmark store.
+    getNonEmptyString(props.authContext?.user?.username);
 
   if (resolvedDatasetId === props.datasetId && username === props.username) return props;
 
