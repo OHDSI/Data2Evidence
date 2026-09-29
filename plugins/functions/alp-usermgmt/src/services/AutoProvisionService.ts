@@ -82,32 +82,52 @@ export class AutoProvisionService {
       return null
     }
 
-    // Connector resolution via Logto Management API. We look at social
-    // identities (the standard OIDC / OAuth connectors), then fall back to
-    // SSO identities (Enterprise SSO) for completeness. Username/password
-    // sign-up has no identities and is filtered out here.
-    let identities: Record<string, unknown>
-    try {
-      identities = await this.logtoApi.getUserSocialIdentities(idpUserId)
-      if (Object.keys(identities).length === 0) {
-        const sso = await this.logtoApi.getUserSsoIdentities(idpUserId)
-        identities = sso
-      }
-    } catch (err) {
-      this.logger.error(
-        `[AutoProvision] failed to fetch identities for idp user "${idpUserId}": ${err}`,
-      )
-      return null
-    }
+    // The provider the caller actually signed in through, when the token says
+    // so. trex stamps `idp_provider` on a federated session, and on such a
+    // deployment idpUserId is trex's own id — asking Logto about it returns no
+    // identities at all, so connector resolution found nothing, nobody was
+    // provisioned, and a first-time Entra / Entra External ID / PhysioNet
+    // sign-in landed back on the login page with no account behind it. Read
+    // the claim first; the Logto lookup stays for deployments that still
+    // authenticate through it.
+    let matched = this.providerFromToken(bearerToken)
 
-    const connectorIds = Object.keys(identities)
-    const matched = connectorIds.find(id => allowlist.includes(id))
-    if (!matched) {
-      this.logger.info(
-        `[AutoProvision] idp user "${idpUserId}" has connectors [${connectorIds.join(', ')}]; ` +
-        `none in allowlist [${allowlist.join(', ')}], skipping`,
-      )
-      return null
+    if (matched) {
+      if (!allowlist.includes(matched)) {
+        this.logger.info(
+          `[AutoProvision] idp user "${idpUserId}" signed in through "${matched}"; ` +
+          `not in allowlist [${allowlist.join(', ')}], skipping`,
+        )
+        return null
+      }
+    } else {
+      // Connector resolution via Logto Management API. We look at social
+      // identities (the standard OIDC / OAuth connectors), then fall back to
+      // SSO identities (Enterprise SSO) for completeness. Username/password
+      // sign-up has no identities and is filtered out here.
+      let identities: Record<string, unknown>
+      try {
+        identities = await this.logtoApi.getUserSocialIdentities(idpUserId)
+        if (Object.keys(identities).length === 0) {
+          const sso = await this.logtoApi.getUserSsoIdentities(idpUserId)
+          identities = sso
+        }
+      } catch (err) {
+        this.logger.error(
+          `[AutoProvision] failed to fetch identities for idp user "${idpUserId}": ${err}`,
+        )
+        return null
+      }
+
+      const connectorIds = Object.keys(identities)
+      matched = connectorIds.find(id => allowlist.includes(id))
+      if (!matched) {
+        this.logger.info(
+          `[AutoProvision] idp user "${idpUserId}" has connectors [${connectorIds.join(', ')}]; ` +
+          `none in allowlist [${allowlist.join(', ')}], skipping`,
+        )
+        return null
+      }
     }
 
     // Race guard: another concurrent request may have just created the user.
@@ -183,6 +203,28 @@ export class AutoProvisionService {
    * group must already exist (seeded by alp-usermgmt-init). If it doesn't,
    * log and continue — the user record is still useful even without a role.
    */
+  /**
+   * The upstream provider named by the caller's own token, or undefined.
+   *
+   * trex writes `idp_provider` for a federated session (and only then — a
+   * native password sign-in has no upstream identity to report), so its
+   * absence is the signal to fall back to asking Logto. Decoded, not verified:
+   * the request that carries it was already authenticated upstream of here,
+   * and a forged value could only name a provider the allowlist still has to
+   * contain.
+   */
+  private providerFromToken(bearerToken: string): string | undefined {
+    if (!bearerToken) return undefined
+    try {
+      const claims = jwt.decode(bearerToken) as jwt.JwtPayload | null
+      const provider = claims?.idp_provider
+      return typeof provider === 'string' && provider ? provider : undefined
+    } catch (err) {
+      this.logger.warn(`[AutoProvision] could not read idp_provider from the token: ${err}`)
+      return undefined
+    }
+  }
+
   private async runEntitlementsSync(userId: string, idpUserId: string, bearerToken: string): Promise<void> {
     try {
       const entitlementsSync = Container.get(EntitlementsSyncService)
