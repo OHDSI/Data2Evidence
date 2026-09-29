@@ -245,7 +245,8 @@ def runStrategus(json_graph, options):
     update_results_schema = options.get('updateResultsSchema', True)
     runTable1 = options.get('runTable1', False)
 
-    validate_token_study_code(token_study_code)
+    if token_study_code:
+        validate_token_study_code(token_study_code)
     if(not datasetId):
        raise Exception('DatasetId is missing')
     if(not database_code):
@@ -277,15 +278,15 @@ def runStrategus(json_graph, options):
     executionSettings = json_graph.get('executionSettings', defaultExecutionSettings)
 
     execute_r_strategus(analysisSpec, executionSettings, dbSettings)
-    # updateResultsSchema option will drop the existing schema before uploading new results
-    if(update_results_schema):
+    # updateResultsSchema and upload_results both require a tokenStudyCode to name the results schema
+    if(update_results_schema and token_study_code):
         drop_strategus_results({
             'databaseCode': Variable.get('trex_strategus_results_db_name', 'strategus_results'),
             'cacheId': cache_id,
             'tokenStudyCode': token_study_code
         })
 
-    if(upload_results):
+    if(upload_results and token_study_code):
         result_db_settings = {
             'database_code': Variable.get('trex_strategus_results_db_name', 'strategus_results'),
             'cache_id': cache_id,
@@ -295,13 +296,13 @@ def runStrategus(json_graph, options):
         upload_strategus_results(analysisSpec, path_to_results, result_db_settings)
 
     try:
-        result_name = options.get('notebookName') or f"{token_study_code} [{database_code}]"
+        result_name = options.get('notebookName') or (f"{token_study_code} [{database_code}]" if token_study_code else database_code)
         upload_results_to_api(
             path_to_results,
             result_name,
             {
                 "flowRunId": flow_run_id,
-                "tokenStudyCode": token_study_code,
+                "tokenStudyCode": token_study_code or "",
                 "databaseCode": database_code,
                 "datasetId": datasetId,
             },
