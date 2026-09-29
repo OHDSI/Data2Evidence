@@ -1,0 +1,50 @@
+# Standalone PoC: PostgreSQL 18 authenticating users with Logto access tokens.
+#   docker compose up -d --build
+#
+# Logto shares pg18's network namespace, so `localhost:3001` is the same Logto for
+# the browser, for PostgreSQL's validator and for psql. That keeps the OAuth issuer
+# identical everywhere, which the validator requires.
+name: pgoauth
+
+services:
+  pg18:
+    build: ./pg18
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-poc-superuser-change-me}
+      LOGTO_DB_PASSWORD: ${LOGTO_DB_PASSWORD:-poc-logto-change-me}
+    command:
+      - postgres
+      - -c
+      - hba_file=/etc/postgresql/pg_hba.conf
+      - -c
+      - ident_file=/etc/postgresql/pg_ident.conf
+      - -c
+      - oauth_validator_libraries=pg_oidc_validator
+      - -c
+      - log_connections=on
+    ports:
+      - "127.0.0.1:55432:5432"   # PostgreSQL
+      - "127.0.0.1:3001:3001"    # Logto
+      - "127.0.0.1:3002:3002"    # Logto admin console
+    volumes:
+      - pg18-data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 3s
+      retries: 30
+
+  logto:
+    image: svhd/logto:${LOGTO_TAG:-latest}
+    network_mode: service:pg18
+    depends_on:
+      pg18:
+        condition: service_healthy
+    entrypoint: ["sh", "-c", "npm run cli db seed -- --swe && npm start"]
+    environment:
+      TRUST_PROXY_HEADER: 1
+      DB_URL: postgres://logto:${LOGTO_DB_PASSWORD:-poc-logto-change-me}@localhost:5432/logto
+      ENDPOINT: http://localhost:3001
+      ADMIN_ENDPOINT: http://localhost:3002
+
+volumes:
+  pg18-data:
