@@ -105,6 +105,77 @@ describe('PatientListContainer busy-state lifecycle', () => {
     expect((wrapper.vm as any).isLoading).toBe(false)
   })
 
+  it('sets a load error, not an error message, when the request fails', async () => {
+    const { promise, reject } = createDeferred()
+    const fireQuery = vi.fn().mockReturnValue(promise)
+    const store = createStore({
+      state: { fireRequest: false },
+      actions: { ...actions, fireQuery },
+      getters: { ...getters, getFireRequest: (state: any) => state.fireRequest },
+    })
+    const wrapper = shallowMount(PatientListContainer as any, {
+      global: { plugins: [store, createPinia()] },
+      props: { busyEv: false, showLeftPane: true },
+    })
+
+    store.state.fireRequest = !store.state.fireRequest
+    await wrapper.vm.$nextTick()
+    reject({ response: { status: 500, data: { errorType: 'MRILoggedError', logId: 'log-1' } } })
+    await new Promise(r => setTimeout(r, 0))
+
+    expect((wrapper.vm as any).loadError).toEqual({ logId: 'log-1' })
+    expect((wrapper.vm as any).errorMessage).toBe('')
+  })
+
+  it('clears the load error when the next request starts', async () => {
+    const first = createDeferred()
+    const second = createDeferred()
+    const fireQuery = vi.fn().mockReturnValueOnce(first.promise).mockReturnValueOnce(second.promise)
+    const store = createStore({
+      state: { fireRequest: false },
+      actions: { ...actions, fireQuery },
+      getters: { ...getters, getFireRequest: (state: any) => state.fireRequest },
+    })
+    const wrapper = shallowMount(PatientListContainer as any, {
+      global: { plugins: [store, createPinia()] },
+      props: { busyEv: false, showLeftPane: true },
+    })
+
+    store.state.fireRequest = !store.state.fireRequest
+    await wrapper.vm.$nextTick()
+    first.reject(new Error('Network Error'))
+    await new Promise(r => setTimeout(r, 0))
+    expect((wrapper.vm as any).loadError).toEqual({ logId: null })
+
+    store.state.fireRequest = !store.state.fireRequest
+    await wrapper.vm.$nextTick()
+
+    expect((wrapper.vm as any).loadError).toBeNull()
+  })
+
+  it('resets to the default columns and reloads when the user resets columns', () => {
+    const initPLModel = vi.fn()
+    const setFireRequest = vi.fn()
+    const store = createStore({
+      state: { fireRequest: false },
+      actions: { ...actions, initPLModel, setFireRequest },
+      getters: { ...getters, getFireRequest: (state: any) => state.fireRequest },
+    })
+    const wrapper = shallowMount(PatientListContainer as any, {
+      global: { plugins: [store, createPinia()] },
+      props: { busyEv: false, showLeftPane: true },
+    })
+    const vm = wrapper.vm as any
+    initPLModel.mockClear()
+    setFireRequest.mockClear()
+
+    vm.resetColumns()
+
+    expect(initPLModel).toHaveBeenCalledTimes(1)
+    expect(initPLModel.mock.calls[0][1]).toEqual({ loadDefault: true })
+    expect(setFireRequest).toHaveBeenCalledTimes(1)
+  })
+
   it('ignores stale completion while the latest request is pending', async () => {
     const first = createDeferred()
     const second = createDeferred()
