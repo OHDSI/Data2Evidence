@@ -135,16 +135,14 @@ export default {
       this.downloadZIP({
         ...this.getPLRequestZIP,
       })
-        .then(responses => {
-          createZip(
-            {
-              responses,
-              cohortName: this.getActiveBookmark?.bookmarkname,
-            },
-            () => {
-              this.completeDownloadZIP()
-            }
-          )
+        .then(responses =>
+          createZip({
+            responses,
+            cohortName: this.getActiveBookmark?.bookmarkname,
+          })
+        )
+        .then(() => {
+          this.completeDownloadZIP()
         })
         .catch(err => {
           // A superseded/cancelled download is not a failure — don't surface an error toast
