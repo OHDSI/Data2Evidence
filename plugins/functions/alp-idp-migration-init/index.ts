@@ -35,7 +35,10 @@ try {
       clientId: env.LOGTO_UPSTREAM_CLIENT_ID,
       clientSecret: env.LOGTO_UPSTREAM_CLIENT_SECRET,
       publicOrigin: env.PUBLIC_ORIGIN,
-      userDomain: env.USER_DOMAIN
+      userDomain: env.USER_DOMAIN,
+      seedAdmin: env.INITIAL_USER_NAME
+        ? { username: env.INITIAL_USER_NAME, usermgmtId: env.INITIAL_USER_UUID || undefined }
+        : undefined
     },
     new KnexMigrationStore(k, logtoK),
     new HttpFederationAdmin({
