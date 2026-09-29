@@ -116,6 +116,53 @@ describe('PatientAnalytics cohort recalculation debounce', () => {
     expect(actions.invalidateCurrentPatientCount).toHaveBeenCalledTimes(1)
   })
 
+  it('shows the loading animation from the first edit, before the debounce elapses', async () => {
+    const { store, wrapper } = mountPA()
+
+    store.commit('editFilterValues', 1)
+    await wrapper.vm.$nextTick()
+
+    // Before debouncing the query, and its animation, went out on the edit itself. The
+    // chart's request lowers it once the response lands.
+    expect(actions.setFireRequest).not.toHaveBeenCalled()
+    expect((wrapper.vm as any).chartBusy).toBe(true)
+  })
+
+  it('does not show the loading animation for edits made while the fire request is held', async () => {
+    const { store, wrapper } = mountPA({ held: true })
+
+    store.commit('editFilterValues', 3)
+    await wrapper.vm.$nextTick()
+
+    expect((wrapper.vm as any).chartBusy).toBe(false)
+  })
+
+  it('lowers the loading animation when a hold drops the queued recalculation', async () => {
+    const { store, wrapper } = mountPA()
+
+    store.commit('editFilterValues', 2)
+    await wrapper.vm.$nextTick()
+    store.commit('setHeld', true)
+    await wrapper.vm.$nextTick()
+
+    // The dropped timer's query will never run, so nothing else would lower it. The
+    // holder's own fire raises it again through the chart's request if it queries.
+    expect((wrapper.vm as any).chartBusy).toBe(false)
+  })
+
+  it('lowers the loading animation when the IFR is emptied inside the window', async () => {
+    const { store, wrapper } = mountPA()
+
+    store.commit('editFilterValues', 2)
+    await wrapper.vm.$nextTick()
+    store.commit('clearFilters')
+    await wrapper.vm.$nextTick()
+
+    // The fire that lands now has nothing to query: the chart bails without a request,
+    // which is the only thing that would otherwise lower it.
+    expect((wrapper.vm as any).chartBusy).toBe(false)
+  })
+
   it('does not fire for edits made while the fire request is held', async () => {
     const { store, wrapper } = mountPA({ held: true })
     actions.setFireRequest.mockClear()

@@ -249,6 +249,9 @@ export default {
     // query), so latency degraded from ~180ms to ~60s and the pile-up made a
     // subsequent reset look like it never fired. Coalesce the burst into one query.
     this.fireCohortRecalculation = debounce(() => {
+      // From here the chart's own request owns the busy state: startRequest raises it and
+      // lowers it when the response lands.
+      this.busyRaisedForRecalculation = false
       if (this.getPLModel.currentPage !== 1) {
         this.changePage(1)
       } else {
@@ -292,6 +295,9 @@ export default {
       // Drop it as soon as the hold goes up rather than at the next watcher run.
       if (held) {
         this.fireCohortRecalculation?.cancel()
+        // The busy state raised for the dropped timer has nothing left to lower it. The
+        // holder's own fire raises it again if it queries.
+        this.lowerBusyRaisedForRecalculation()
       }
     },
     getBookmarkFromIFR(bm) {
@@ -310,8 +316,19 @@ export default {
       // empty IFR every chart component bails out without querying, so nothing would
       // ever call setCurrentPatientCount to lower the flag again and pa_get_cohort_result
       // would block for its full 60s timeout.
+      //
+      // The loading animation goes up at the same point, for the same reason: before
+      // debouncing, the query went out on the edit itself and so did the animation. Left
+      // down for the window, the old chart reads as the answer, and anything that waits on
+      // the animation to know the chart is current (the e2e specs) moves on too early.
+      // Same guard again: a chart that never queries never lowers it.
       if (Object.keys(this.getBookmarksData ?? {}).length > 0) {
         this.invalidateCurrentPatientCount()
+        this.chartBusy = true
+        this.busyRaisedForRecalculation = true
+      } else {
+        // An earlier edit in this window may have raised it, and this fire won't query.
+        this.lowerBusyRaisedForRecalculation()
       }
       // The fire itself is debounced; changePage vs setFireRequest is
       // decided when it lands, because the patient list's own changePage watcher already
@@ -587,6 +604,12 @@ export default {
     },
     setChartBusy(status: boolean) {
       this.chartBusy = status
+    },
+    lowerBusyRaisedForRecalculation() {
+      if (this.busyRaisedForRecalculation) {
+        this.busyRaisedForRecalculation = false
+        this.chartBusy = false
+      }
     },
     getActiveBookmarkName() {
       if (this.getActiveBookmark) {
