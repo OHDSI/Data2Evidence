@@ -84,6 +84,7 @@ export default {
       if (this.isFireRequestHeld) {
         return
       }
+      this.loadError = null
       if (Object.keys(this.getSelectedAttributes).length === 0) {
         this.errorMessage = this.getText('MRI_PA_PATIENT_LIT_NO_COLUMNS_SELECTED_MESSAGE')
         this.isLoading = false
@@ -92,7 +93,6 @@ export default {
         return
       }
       this.errorMessage = ''
-      this.loadError = null
 
       this.startRequest(
         ({ cancelToken }) =>

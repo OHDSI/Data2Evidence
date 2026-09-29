@@ -153,6 +153,38 @@ describe('PatientListContainer busy-state lifecycle', () => {
     expect((wrapper.vm as any).loadError).toBeNull()
   })
 
+  it('clears the load error and shows the no-columns message when every column is deselected', async () => {
+    const { promise, reject } = createDeferred()
+    const fireQuery = vi.fn().mockReturnValue(promise)
+    const store = createStore({
+      state: { fireRequest: false, selectedAttributes: { col1: {} } },
+      actions: { ...actions, fireQuery },
+      getters: {
+        ...getters,
+        getFireRequest: (state: any) => state.fireRequest,
+        getSelectedAttributes: (state: any) => state.selectedAttributes,
+      },
+    })
+    const wrapper = shallowMount(PatientListContainer as any, {
+      global: { plugins: [store, createPinia()] },
+      props: { busyEv: false, showLeftPane: true },
+    })
+
+    store.state.fireRequest = !store.state.fireRequest
+    await wrapper.vm.$nextTick()
+    reject({ response: { status: 500, data: { errorType: 'MRILoggedError', logId: 'log-1' } } })
+    await new Promise(r => setTimeout(r, 0))
+    expect((wrapper.vm as any).loadError).toEqual({ logId: 'log-1' })
+
+    store.state.selectedAttributes = {}
+    store.state.fireRequest = !store.state.fireRequest
+    await wrapper.vm.$nextTick()
+
+    expect((wrapper.vm as any).loadError).toBeNull()
+    expect((wrapper.vm as any).errorMessage).toBe('MRI_PA_PATIENT_LIT_NO_COLUMNS_SELECTED_MESSAGE')
+    expect(fireQuery).toHaveBeenCalledTimes(1)
+  })
+
   it('resets to the default columns and reloads when the user resets columns', () => {
     const initPLModel = vi.fn()
     const setFireRequest = vi.fn()
