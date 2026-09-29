@@ -50,7 +50,7 @@ def strategus_plugin(json_graph, options):
     trace_config = _options["trace_config"]
     tracemode = trace_config["trace_mode"]
     upload_results = _options.get('uploadResults', False)
-    update_results_schema = _options.get('updateResultsSchema', True)
+    update_results_schema = _options.get('updateResultsSchema', False)
     databaseCode = options.get('databaseCode', None)
     datasetId = options.get('datasetId', None)
     cacheId = options.get('cacheId', None)
@@ -126,7 +126,18 @@ def strategus_plugin(json_graph, options):
                 flow_run_id=flow_run_id,
             )
         except Exception:
-            logger.warning(f"Failed to upload results to API (non-fatal): {tb.format_exc()}")
+            error_details = tb.format_exc()
+            logger.warning(f"Failed to upload results to API (non-fatal): {error_details}")
+            create_markdown_artifact(
+                key="strategus-results-upload-failure",
+                markdown=(
+                    f"## Strategus results upload failed\n\n"
+                    f"Uploading results for `{result_name}` to the Strategus results API failed. "
+                    f"The flow run itself did not fail (this step is non-fatal), but no result "
+                    f"was recorded and none will appear in the results UI.\n\n"
+                    f"```\n{error_details}\n```"
+                ),
+            )
 
     except Exception as e:
         logger.error(f"Error executing Strategus analysis: {tb.format_exc()}")
@@ -245,7 +256,7 @@ def runStrategus(json_graph, options):
     cache_id = options.get('cacheId', None)
     schema_name = options.get('schemaName', None)
     upload_results = options.get('uploadResults', False)
-    update_results_schema = options.get('updateResultsSchema', True)
+    update_results_schema = options.get('updateResultsSchema', False)
     runTable1 = options.get('runTable1', False)
 
     if token_study_code:
@@ -315,7 +326,18 @@ def runStrategus(json_graph, options):
             flow_run_id=flow_run_id,
         )
     except Exception:
-        logger.warning(f"Failed to upload results to API (non-fatal): {tb.format_exc()}")
+        error_details = tb.format_exc()
+        logger.warning(f"Failed to upload results to API (non-fatal): {error_details}")
+        create_markdown_artifact(
+            key="strategus-results-upload-failure",
+            markdown=(
+                f"## Strategus results upload failed\n\n"
+                f"Uploading results for `{result_name}` to the Strategus results API failed. "
+                f"The flow run itself did not fail (this step is non-fatal), but no result "
+                f"was recorded and none will appear in the results UI.\n\n"
+                f"```\n{error_details}\n```"
+            ),
+        )
 
 
 def drop_strategus_results(options):
