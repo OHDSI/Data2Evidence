@@ -32,6 +32,10 @@ export const env = {
   IDP_ALP_ADMIN_CLIENT_SECRET: Deno.env.get("IDP__ALP_ADMIN__CLIENT_SECRET"),
   IDP_ALP_ADMIN_RESOURCE: Deno.env.get("IDP__ALP_ADMIN__RESOURCE"),
   TREX_ADMIN_URL: Deno.env.get("TREX__ADMIN_URL"),
+  // The federation admin mount, used to pre-link a federated identity to a
+  // trex user before its first sign-in. Already forwarded to this function by
+  // the deployment and the function manifest.
+  TREX_FEDERATION_ADMIN_URL: Deno.env.get("TREX__FEDERATION_ADMIN_URL"),
   // Account creation, as opposed to role assignment on TREX__ADMIN_URL.
   TREX_AUTH_URL: Deno.env.get("TREX__AUTH_URL"),
   // The identity provider identifies accounts by email; this turns a bare
