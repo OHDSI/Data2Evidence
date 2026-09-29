@@ -101,13 +101,16 @@ def strategus_plugin(json_graph, options):
             drop_strategus_results(results_db_settings)
 
         if(upload_results):
-            result_db_settings = {
-                'database_code': Variable.get('trex_strategus_results_db_name', 'strategus_results'),
-                'cache_id': cacheId,
-                "dataset_id": datasetId,
-                "token_study_code": tokenStudyCode
-            }
-            upload_strategus_results(study_analysis_result.data, f'/tmp/{flow_run_id}/results', result_db_settings)
+            try:
+                result_db_settings = {
+                    'database_code': Variable.get('trex_strategus_results_db_name', 'strategus_results'),
+                    'cache_id': cacheId,
+                    "dataset_id": datasetId,
+                    "token_study_code": tokenStudyCode
+                }
+                upload_strategus_results(study_analysis_result.data, f'/tmp/{flow_run_id}/results', result_db_settings)
+            except Exception:
+                logger.warning(f"Failed to upload strategus results to legacy DB (non-fatal): {tb.format_exc()}")
 
         try:
             result_name = f"{studyName} [{databaseCode}]" if studyName else f"{tokenStudyCode} [{databaseCode}]"
@@ -287,13 +290,16 @@ def runStrategus(json_graph, options):
         })
 
     if(upload_results and token_study_code):
-        result_db_settings = {
-            'database_code': Variable.get('trex_strategus_results_db_name', 'strategus_results'),
-            'cache_id': cache_id,
-            "dataset_id": datasetId,
-            "token_study_code": token_study_code
-        }
-        upload_strategus_results(analysisSpec, path_to_results, result_db_settings)
+        try:
+            result_db_settings = {
+                'database_code': Variable.get('trex_strategus_results_db_name', 'strategus_results'),
+                'cache_id': cache_id,
+                "dataset_id": datasetId,
+                "token_study_code": token_study_code
+            }
+            upload_strategus_results(analysisSpec, path_to_results, result_db_settings)
+        except Exception:
+            logger.warning(f"Failed to upload strategus results to legacy DB (non-fatal): {tb.format_exc()}")
 
     try:
         result_name = options.get('notebookName') or (f"{token_study_code} [{database_code}]" if token_study_code else database_code)
