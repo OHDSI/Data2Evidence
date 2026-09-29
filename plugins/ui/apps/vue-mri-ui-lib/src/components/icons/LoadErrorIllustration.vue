@@ -2,7 +2,8 @@
   <!--
     Figma node 1810-69308 (Illustration): 140x140 box with a 205.882x79.5455 leaf
     that intentionally overflows the box (inset 22.73% -23.53% 20.45%). The
-    positioning lives in bookmark.scss so the box keeps its designed geometry.
+    positioning lives in each caller's stylesheet (bookmark.scss,
+    patientListLoadError.scss) so the box keeps its designed geometry.
 
     The blob is Neutral/Lightest (#f2f0f1) in Figma, which is also the cohorts
     panel background, so it would render invisible. Neutral/Extra-lightest is
