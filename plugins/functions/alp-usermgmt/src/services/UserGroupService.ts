@@ -355,29 +355,9 @@ export class UserGroupService {
       // trex has no scope concept, so each name is stored in its own right.
       const names = canonicalRoleNames(role, scopes)
 
-      // idp_user_id identifies the CREDENTIAL, which on a federated deployment
-      // lives upstream — but trex roles are keyed by the trex user id, and
-      // trexdb.user_role has a foreign key to trexdb."user". Writing the
-      // upstream id straight in failed with
-      //   Key (userId)=(<upstream id>) is not present in table "user"
-      // and granted nothing. Resolve the trex id for the identity instead; the
-      // link is idempotent and returns the same id it was created with.
-      const credentialStore = resolveUserStore(
-        env.D2E_IDP_MODE,
-        env.TREX_NATIVE_PASSWORD_LOGIN_ENABLED,
-        env.IDP_ROLE_STORE
-      )
-      const roleUserId = store === 'trex' && credentialStore === 'logto'
-        ? await this.trexIdpAPI.linkFederatedIdentity(
-            FEDERATION_PROVIDER_ID,
-            user.idpUserId,
-            user.username,
-          )
-        : user.idpUserId
-
       if (action === 'assign') {
         if (store === 'trex') {
-          await this.trexIdpAPI.assignRolesToUser(roleUserId, names)
+          await this.trexIdpAPI.assignRolesToUser(user.idpUserId, names)
         } else {
           await this.logtoAPI.assignRoleToUser(user.idpUserId, role, scopes)
         }
@@ -388,7 +368,7 @@ export class UserGroupService {
             { role, scopes },
             await this.otherGroupExpansions(userId, groupId, trx)
           )
-          await this.trexIdpAPI.removeRolesFromUser(roleUserId, removable)
+          await this.trexIdpAPI.removeRolesFromUser(user.idpUserId, removable)
           this.logger.info(
             `Removed ${removable.length} of ${names.length} role(s) from user ${user.idpUserId} in ${store}; ` +
               `${names.length - removable.length} still granted by other groups`

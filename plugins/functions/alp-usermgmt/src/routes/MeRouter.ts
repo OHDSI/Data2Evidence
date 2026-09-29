@@ -5,7 +5,7 @@ import { MemberService, UserGroupService, UserService } from '../services'
 import { IAppRequest, UserDeleteRequest } from '../types'
 import { createLogger } from '../Logger'
 import { LogtoAPI, TrexIdpAPI, WebAPI } from '../api'
-import { resolveUserStore } from '../services/UserGroupService'
+import { resolveRoleStore, resolveUserStore } from '../services/UserGroupService'
 import { env } from '../env'
 import { mayRekeyExistingSubject, resolveIdpMode } from '@alp/idp/mode.ts'
 
@@ -46,7 +46,7 @@ export class MeRouter {
       /* fall through to Logto lookup */
     }
     try {
-      if (resolveUserStore(env.D2E_IDP_MODE, env.TREX_NATIVE_PASSWORD_LOGIN_ENABLED, env.IDP_ROLE_STORE) === 'trex') {
+      if (resolveRoleStore(env.IDP_ROLE_STORE) === 'trex') {
         return (await this.trexIdpAPI.getUser(idpUserId))?.email
       }
       const logtoUser = await this.logtoApi.getUser(idpUserId)
@@ -200,7 +200,15 @@ export class MeRouter {
           return res.sendStatus(204)
         }
 
-        await this.logtoApi.updatePassword(idpUserId, password, oldPassword)
+        // idp_user_id is the trex id; the password lives with the credential.
+        const upstream = await this.logtoApi.getUserByUsername(user.username!)
+        if (!upstream) {
+          this.logger.error(`No upstream account for ${user.username}`)
+          return res.status(400).send({
+            message: `No upstream account for ${user.username}; the password cannot be changed here.`,
+          })
+        }
+        await this.logtoApi.updatePassword(upstream.id, password, oldPassword)
         res.sendStatus(204)
       } catch (err) {
         if (err?.response?.status >= 400 && err?.response?.status < 500) {

@@ -8,7 +8,7 @@ import { UserGroupService } from './UserGroupService'
 import { UserField } from '../repositories'
 import { LogtoAPI, TrexIdpAPI, WebAPI } from '../api'
 import { env } from '../env'
-import { FEDERATION_PROVIDER_ID, resolveUserStore } from './UserGroupService'
+import { FEDERATION_PROVIDER_ID, resolveRoleStore, resolveUserStore } from './UserGroupService'
 
 @Service()
 export class MemberService {
@@ -73,16 +73,16 @@ export class MemberService {
         idpUserId = (await this.trexIdpAPI.createUser(username, password)).id
       } else {
         const upstream = await this.logtoApi.createUser(username, password)
-        idpUserId = upstream.id
-        // The credential is upstream, but the identity still has to exist in
-        // trex: roles are written to trexdb.user_role, which has a foreign key
-        // to trexdb."user". Creating only the upstream account left role
-        // assignment failing outright with
+        // The credential is upstream, but idp_user_id is the trex id, because
+        // that is the `sub` trex puts in the token and therefore what
+        // getUserByIdpUserId is asked for on every request. Storing the
+        // upstream id instead left the account unfindable after sign-in and
+        // its roles unassignable — trexdb.user_role references trexdb."user",
+        // so every grant failed with
         //   Key (userId)=(<upstream id>) is not present in table "user"
-        // so the account could neither hold a role nor be signed in to. Linking
-        // here rather than leaving it to the first sign-in means the roles
-        // granted alongside this call have somewhere to land.
-        await this.trexIdpAPI.linkFederatedIdentity(
+        // Pre-linking here, rather than leaving it to the first sign-in, is
+        // what makes that id exist in time for the roles granted alongside.
+        idpUserId = await this.trexIdpAPI.linkFederatedIdentity(
           FEDERATION_PROVIDER_ID,
           upstream.id,
           username,
@@ -126,7 +126,7 @@ export class MemberService {
     try {
       await this.userService.deleteUser(userId, trx)
       if (user.idpUserId) {
-        if (resolveUserStore(env.D2E_IDP_MODE, env.TREX_NATIVE_PASSWORD_LOGIN_ENABLED, env.IDP_ROLE_STORE) === 'trex') {
+        if (resolveRoleStore(env.IDP_ROLE_STORE) === 'trex') {
           await this.trexIdpAPI.deleteUser(user.idpUserId)
         } else {
           await this.logtoApi.deleteUser(user.idpUserId)
@@ -171,7 +171,7 @@ export class MemberService {
 
       await this.userService.touchAuthzChangedAt(userId, trx)
 
-      if (resolveUserStore(env.D2E_IDP_MODE, env.TREX_NATIVE_PASSWORD_LOGIN_ENABLED, env.IDP_ROLE_STORE) === 'trex') {
+      if (resolveRoleStore(env.IDP_ROLE_STORE) === 'trex') {
         await this.trexIdpAPI.setUserActive(user.idpUserId, active)
       } else {
         await this.logtoApi.activateUser(user.idpUserId, active)
