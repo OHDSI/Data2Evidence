@@ -151,6 +151,8 @@ export class UserRouter {
             return res.status(result.status).send({ message: result.message })
           }
         } else {
+          // The password lives with the credential, which on a federated
+          // deployment is upstream; idp_user_id names the account there too.
           await this.logtoApi.updatePassword(user.idpUserId, password)
         }
         return res.sendStatus(204)

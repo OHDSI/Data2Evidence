@@ -36,6 +36,14 @@ export function resolveRoleStore(raw: string | undefined): 'trex' | 'logto' {
 }
 
 /**
+ * The sso_provider row a federated deployment signs in through.
+ *
+ * One value because one provider is configured: docker-compose-logto-federation.yml
+ * registers Logto under this id, and the idp migration writes the same one.
+ */
+export const FEDERATION_PROVIDER_ID = 'logto'
+
+/**
  * Which provider a new account is created in, and has its password changed in.
  *
  * NOT the role store. Roles live in trex after the migration, and

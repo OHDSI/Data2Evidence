@@ -387,7 +387,7 @@ export const i18n = {
     MRI_PA_BMK_NAME_LABEL: 'Name',
     MRI_PA_BMK_NAME_PLACEHOLDER: 'Enter Filter Name',
     MRI_PA_BMK_LIMIT_LABEL: 'Enter up to 40 characters',
-    MRI_PA_BMK_SHARED_BOOKMARK_TEXT: 'Allow sharing',
+    MRI_PA_BMK_SHARED_BOOKMARK_TEXT: 'Enable sharing',
     MRI_PA_BMK_SHARED_BOOKMARK_TITLE: 'Allow bookmark to be visible among other users',
     MRI_PA_BMK_SHARED_BOOKMARK_TOOLTIP:
       'When enabled, this cohort filter will be visible to other users. They will be able to view it on the cohort list and edit it.',
@@ -1508,7 +1508,7 @@ export const i18n = {
     MRI_PA_BMK_NAME_LABEL: 'Name',
     MRI_PA_BMK_NAME_PLACEHOLDER: 'Filtername eingeben',
     MRI_PA_BMK_LIMIT_LABEL: 'Geben Sie bis zu 40 Zeichen ein.',
-    MRI_PA_BMK_SHARED_BOOKMARK_TEXT: 'Freigabe zulassen',
+    MRI_PA_BMK_SHARED_BOOKMARK_TEXT: 'Freigabe aktivieren',
     MRI_PA_BMK_SHARED_BOOKMARK_TITLE: 'Lesezeichen für andere Benutzer sichtbar machen',
     MRI_PA_BMK_SHARED_BOOKMARK_TOOLTIP:
       'Wenn aktiviert, ist dieser Kohortenfilter für andere Benutzer sichtbar. Sie können ihn in der Kohortenliste ansehen und bearbeiten.',
@@ -2618,7 +2618,7 @@ export const i18n = {
     MRI_PA_BMK_NAME_LABEL: '名称',
     MRI_PA_BMK_NAME_PLACEHOLDER: '请输入过滤器名称',
     MRI_PA_BMK_LIMIT_LABEL: '请输入至多 40 个字符',
-    MRI_PA_BMK_SHARED_BOOKMARK_TEXT: '允许共享',
+    MRI_PA_BMK_SHARED_BOOKMARK_TEXT: '启用共享',
     MRI_PA_BMK_SHARED_BOOKMARK_TITLE: '允许其他用户看到书签',
     MRI_PA_BMK_SHARED_BOOKMARK_TOOLTIP: '启用后，其他用户将可以看到此队列筛选器，并可在队列列表中查看和编辑它。',
     MRI_PA_TOOLTIP_BOOKMARK_NAME: '已保存的过滤器名称',
