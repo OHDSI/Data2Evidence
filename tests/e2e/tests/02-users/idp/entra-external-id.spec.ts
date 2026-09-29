@@ -26,7 +26,10 @@ import {
   loginViaConnector,
   loginViaUI,
   missingEnv,
+  prelinkLogtoConnectorUser,
   readAccessToken,
+  reenterAfterPrelink,
+  resetLogtoConnectorUser,
   resetSession,
   rolesFromToken,
   skipReason,
@@ -46,12 +49,19 @@ test('idp:entra-external-id', async ({ page, baseURL }) => {
     password: process.env.E2E_ENTRA_EXTID_PASSWORD as string
   }
 
-  await loginViaConnector(page, {
+  // trex won't provision a first-time federated connector user (Trex phase 5), so sign in once to
+  // create the Logto user, pre-link it into trex, then sign in again — trex now takes the link
+  // branch and issues tokens. See prelinkLogtoConnectorUser.
+  const connector = {
     target: 'entra-external-id-alp',
     // The connector metadata name.en is "Microsoft Entra External ID".
     connectorName: /Entra External ID/i,
     creds
-  })
+  }
+  await resetLogtoConnectorUser(api, base, { target: 'entra-external-id-alp' })
+  await loginViaConnector(page, connector)
+  await prelinkLogtoConnectorUser(api, base, { target: 'entra-external-id-alp' })
+  await reenterAfterPrelink(page, connector)
   const userToken = await readAccessToken(page)
 
   // Base claim contract (no group-derived roles for CIAM).
@@ -69,11 +79,10 @@ test('idp:entra-external-id', async ({ page, baseURL }) => {
 
   let downstreamToken = userToken
   for (let attempt = 1; attempt <= 3; attempt++) {
-    await resetSession(page)
-    await loginViaConnector(page, { target: 'entra-external-id-alp', connectorName: /Entra External ID/i, creds })
-    downstreamToken = await readAccessToken(page)
     if (rolesFromToken(downstreamToken).length > 0) break
-    console.log(`[assert] attempt ${attempt}: token carries no roles yet, retrying login`)
+    console.log(`[assert] attempt ${attempt}: token carries no roles yet, re-authing`)
+    await reenterAfterPrelink(page, connector)
+    downstreamToken = await readAccessToken(page)
   }
 
   await syncWebapiRoles(api, base, downstreamToken)

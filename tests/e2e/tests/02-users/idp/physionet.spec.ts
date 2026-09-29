@@ -22,7 +22,7 @@ import {
   missingEnv,
   prelinkLogtoConnectorUser,
   readAccessToken,
-  reauthViaLogtoSession,
+  reenterAfterPrelink,
   resetLogtoConnectorUser,
   resetSession,
   skipReason
@@ -62,12 +62,12 @@ test('idp:physionet', async ({ page, baseURL }) => {
   }
   const connector = { target: 'physionet', connectorName: /PhysioNet/i, creds }
 
-  // Clean slate, then: sign in (creates the Logto user), pre-link in trex, silently re-enter — trex
-  // now takes the link branch and issues tokens. See prelinkLogtoConnectorUser for the why.
-  await resetLogtoConnectorUser(page.request, base, { target: 'physionet', search: creds.username })
+  // Clean slate, then: sign in (creates the Logto user), pre-link it into trex, then sign in again
+  // — trex now takes the link branch and issues tokens. See prelinkLogtoConnectorUser for the why.
+  await resetLogtoConnectorUser(page.request, base, { target: 'physionet' })
   await loginViaConnector(page, connector)
-  await prelinkLogtoConnectorUser(page.request, base, { target: 'physionet', search: creds.username })
-  await reauthViaLogtoSession(page)
+  await prelinkLogtoConnectorUser(page.request, base, { target: 'physionet' })
+  await reenterAfterPrelink(page, connector)
   const userToken = await readAccessToken(page)
   const claims = assertClaimContract(userToken)
   const sub = String(claims.sub)
