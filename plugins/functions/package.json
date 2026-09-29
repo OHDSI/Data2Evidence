@@ -889,7 +889,9 @@
           "jobplugins.dqd.researcher.execute",
           "jobplugins.cohortDqd.researcher.execute",
           "jobplugins.analysisUi.researcher.execute",
-          "portal.dataset.read"
+          "portal.dataset.read",
+          "strategus.results.download",
+          "strategus.results.delete"
         ],
         "STUDY_RESULTS_READ_RESEARCHER": [],
         "ETL_MAPPING_CONTRIBUTOR": [
@@ -3073,7 +3075,7 @@
         {
           "path": "^/strategus/results/[a-zA-Z0-9-]+/download$",
           "scopes": [
-            "strategus.results.read"
+            "strategus.results.download"
           ],
           "httpMethods": [
             "GET"

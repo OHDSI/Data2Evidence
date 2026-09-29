@@ -173,17 +173,19 @@ routers in this plugin.
 ## Security
 
 Routes require a bearer token and nothing more, matching every sibling route in
-this plugin. The scopes `strategus.results.read`, `strategus.results.write` and
-`strategus.results.delete` already exist in the roles manifest; registration is
-new entries in `plugins/functions/package.json` (`trex.functions.scopes`) and
-`scopes_paths.csv`.
+this plugin. List/get use `strategus.results.read` (granted to `TENANT_VIEWER`);
+download and delete use their own scopes, `strategus.results.download` and
+`strategus.results.delete`, granted only to `STUDY_WRITE_DQD_RESEARCHER` — so a
+plain tenant viewer can no longer pull or remove result files, only see that
+they exist. Entries live in `plugins/functions/package.json`
+(`trex.functions.scopes`).
 
-**Known gap, accepted for this cycle:** any authenticated caller can read,
-or delete any result object. There is no per-tenant or per-dataset
-ownership check, because results are deliberately not tied to a study and no
-such check exists in this plugin today. This is recorded in the knowledge base
-as debt; closing it needs an ownership concept that this design does not
-introduce.
+**Known gap, accepted for this cycle:** there is still no per-tenant or
+per-dataset ownership check — any caller holding `STUDY_WRITE_DQD_RESEARCHER`
+can download or delete any result object by UUID, because results are
+deliberately not tied to a study and no such check exists in this plugin
+today. This is recorded in the knowledge base as debt; closing it needs an
+ownership concept that this design does not introduce.
 
 ## Testing
 
