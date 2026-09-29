@@ -174,11 +174,14 @@ routers in this plugin.
 
 Routes require a bearer token and nothing more, matching every sibling route in
 this plugin. List/get use `strategus.results.read` (granted to `TENANT_VIEWER`);
-download and delete use their own scopes, `strategus.results.download` and
-`strategus.results.delete`, granted only to `STUDY_WRITE_DQD_RESEARCHER` — so a
-plain tenant viewer can no longer pull or remove result files, only see that
-they exist. Entries live in `plugins/functions/package.json`
-(`trex.functions.scopes`).
+upload uses its own scope, `strategus.results.write`, granted to
+`STUDY_WRITE_DQD_RESEARCHER` and `ALP_SYSTEM_ADMIN` — this is the role flow
+runs execute as, so the token the flow forwards from the initiating user
+carries this scope; download and delete use their own scopes,
+`strategus.results.download` and `strategus.results.delete`, granted only to
+`STUDY_WRITE_DQD_RESEARCHER` — so a plain tenant viewer can no longer pull or
+remove result files, only see that they exist. Entries live in
+`plugins/functions/package.json` (`trex.functions.scopes`).
 
 **Known gap, accepted for this cycle:** there is still no per-tenant or
 per-dataset ownership check — any caller holding `STUDY_WRITE_DQD_RESEARCHER`
