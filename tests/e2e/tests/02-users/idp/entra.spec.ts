@@ -27,7 +27,10 @@ import {
   loginViaConnector,
   loginViaUI,
   missingEnv,
+  prelinkLogtoConnectorUser,
   readAccessToken,
+  reenterAfterPrelink,
+  resetLogtoConnectorUser,
   resetSession,
   rolesFromToken,
   skipReason,
@@ -48,12 +51,20 @@ test('idp:entra', async ({ page, baseURL }) => {
   }
   const expectedRole = process.env.E2E_ENTRA_EXPECTED_ROLE as string
 
-  await loginViaConnector(page, {
+  // trex won't provision a first-time federated connector user (Trex phase 5), so sign in once to
+  // create the Logto user, pre-link it into trex, then re-enter so trex takes the link branch and
+  // issues tokens. reenterAfterPrelink re-auths silently through the Entra session, so the
+  // interactive MFA is normally done once. See prelinkLogtoConnectorUser.
+  const connector = {
     target: 'azuread-alp',
     // The connector metadata name.en is "Data2Evidence".
     connectorName: /Data2Evidence|Azure|Entra|Microsoft/i,
     creds
-  })
+  }
+  await resetLogtoConnectorUser(api, base, { target: 'azuread-alp' })
+  await loginViaConnector(page, connector)
+  await prelinkLogtoConnectorUser(api, base, { target: 'azuread-alp' })
+  await reenterAfterPrelink(page, connector)
   const userToken = await readAccessToken(page)
 
   // Base contract + the Azure group -> role mapping (memberOf -> LOGTO_ROLES_AZ_GROUPS_MAPPING).
