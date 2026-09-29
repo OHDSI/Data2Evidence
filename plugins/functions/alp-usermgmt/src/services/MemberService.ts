@@ -8,7 +8,7 @@ import { UserGroupService } from './UserGroupService'
 import { UserField } from '../repositories'
 import { LogtoAPI, TrexIdpAPI, WebAPI } from '../api'
 import { env } from '../env'
-import { resolveUserStore } from './UserGroupService'
+import { FEDERATION_PROVIDER_ID, resolveUserStore } from './UserGroupService'
 
 @Service()
 export class MemberService {
@@ -58,10 +58,36 @@ export class MemberService {
       // in the previous one unconditionally, so on a deployment that has moved
       // the call went to a service that is no longer running and adding a user
       // failed with a DNS error naming a host nobody expects to exist.
-      const idpUserId =
-        resolveUserStore(env.D2E_IDP_MODE, env.TREX_NATIVE_PASSWORD_LOGIN_ENABLED, env.IDP_ROLE_STORE) === 'trex'
-          ? (await this.trexIdpAPI.createUser(username, password)).id
-          : (await this.logtoApi.createUser(username, password)).id
+      //
+      // Federated deployments need BOTH halves. The credential belongs in
+      // Logto, because trex refuses the password grant there and its sign-in
+      // page offers only the Logto button — an account created solely in trex
+      // can never be used. The identity still has to exist in trex, because
+      // that id is the token `sub` and the key trexdb.user_role references:
+      // storing the Logto id alone made role assignment fail outright with
+      // `Key (userId)=(...) is not present in table "user"`, leaving a user who
+      // could neither sign in nor hold a role. So create the credential
+      // upstream, pre-link it, and keep the trex id as the account's subject.
+      let idpUserId: string
+      if (resolveUserStore(env.D2E_IDP_MODE, env.TREX_NATIVE_PASSWORD_LOGIN_ENABLED, env.IDP_ROLE_STORE) === 'trex') {
+        idpUserId = (await this.trexIdpAPI.createUser(username, password)).id
+      } else {
+        const upstream = await this.logtoApi.createUser(username, password)
+        idpUserId = upstream.id
+        // The credential is upstream, but the identity still has to exist in
+        // trex: roles are written to trexdb.user_role, which has a foreign key
+        // to trexdb."user". Creating only the upstream account left role
+        // assignment failing outright with
+        //   Key (userId)=(<upstream id>) is not present in table "user"
+        // so the account could neither hold a role nor be signed in to. Linking
+        // here rather than leaving it to the first sign-in means the roles
+        // granted alongside this call have somewhere to land.
+        await this.trexIdpAPI.linkFederatedIdentity(
+          FEDERATION_PROVIDER_ID,
+          upstream.id,
+          username,
+        )
+      }
 
       this.logger.info('Update IDP user ID')
       const updateFields = { id: newUser.id, idp_user_id: idpUserId }

@@ -50,6 +50,57 @@ export class TrexIdpAPI {
   }
 
   /**
+   * The federation admin mount, a sibling of the roles one.
+   *
+   * Derived when unset so an existing deployment does not have to add a
+   * variable to keep creating users; TREX__ADMIN_URL has pointed at
+   * `.../trex/admin/roles` since the cutover.
+   */
+  private federationBase(): string {
+    return env.TREX_FEDERATION_URL ?? this.baseUrl.replace(/\/roles\/?$/, "/federation")
+  }
+
+  /**
+   * Attach an upstream identity to a trex user, creating that user if it is
+   * the identity's first appearance, and return the trex user id.
+   *
+   * Called at account creation rather than left to the first sign-in, because
+   * everything downstream keys off the trex id: roles are written to
+   * trexdb.user_role, which has a foreign key to trexdb."user", so a usermgmt
+   * row carrying an upstream id instead fails to grant any role at all.
+   */
+  async linkFederatedIdentity(
+    providerId: string,
+    accountId: string,
+    username: string,
+  ): Promise<string> {
+    const email = this.accountEmail(username)
+    const name = username
+    if (!this.serviceRoleKey) {
+      throw new Error(MISSING_KEY_MESSAGE)
+    }
+    const url = `${this.federationBase()}/links`
+    const res = await this.fetchImpl(url, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${this.serviceRoleKey}`,
+      },
+      body: JSON.stringify({ providerId, accountId, email, name, banned: false }),
+    })
+    if (!res.ok) {
+      throw new Error(
+        `trex federation link failed for ${providerId}/${accountId}: ${res.status} ${await res.text()}`,
+      )
+    }
+    const linked = await res.json()
+    if (typeof linked?.userId !== "string") {
+      throw new Error(`trex linked ${providerId}/${accountId} but returned no userId`)
+    }
+    return linked.userId
+  }
+
+  /**
    * Create an account and return the subject the provider gave it.
    *
    * The provider identifies accounts by email, so a bare username is qualified
