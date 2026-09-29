@@ -20,7 +20,11 @@
       <D2eButton variant="secondary" :disabled="isRenaming" data-testid="pa-save-dialog-cancel-btn" @click="close">
         {{ getText('MRI_PA_BUTTON_CANCEL') }}
       </D2eButton>
-      <D2eButton :disabled="hasExceededLength || isRenaming" data-testid="pa-save-dialog-save-btn" @click="confirm">
+      <D2eButton
+        :disabled="isNameEmpty || hasExceededLength || isRenaming"
+        data-testid="pa-save-dialog-save-btn"
+        @click="confirm"
+      >
         {{ getText('MRI_PA_BUTTON_RENAME') }}
       </D2eButton>
     </template>
@@ -53,7 +57,7 @@ export default {
       maxLength: 255,
       renamedBookmark: '',
       isRenaming: false,
-      cohortNameValidationState: 'valid' as 'invalid' | 'valid' | 'empty',
+      cohortNameValidationState: 'valid' as 'invalid' | 'valid',
     }
   },
   watch: {
@@ -75,12 +79,17 @@ export default {
     hasExceededLength() {
       return this.renamedBookmark.length > this.maxLength
     },
+    // Live, not set on confirm: the Rename button must be disabled and the
+    // field must show its error as soon as the name is cleared (#3122).
+    isNameEmpty(): boolean {
+      return !this.renamedBookmark.trim().length
+    },
     renameErrorMessages(): string[] {
       const errors: string[] = []
       if (this.cohortNameValidationState === 'invalid') {
         errors.push(this.getText('MRI_PA_INVALID_NAME_ERROR'))
       }
-      if (this.cohortNameValidationState === 'empty') {
+      if (this.isNameEmpty) {
         errors.push(this.getText('MRI_PA_BMK_EMPTY_NAME_ERROR'))
       }
       if (this.hasExceededLength) {
@@ -102,16 +111,12 @@ export default {
       this.$emit('update:modelValue', false)
     },
     async confirm() {
-      if (this.hasExceededLength || this.isRenaming) return
+      // Enter in the field reaches here without the button, so repeat its guard.
+      if (this.isNameEmpty || this.hasExceededLength || this.isRenaming) return
       const bookmarkDisplay = this.bookmarkDisplay
       if (!bookmarkDisplay) return
 
       this.renamedBookmark = this.renamedBookmark.trim()
-
-      if (!this.renamedBookmark.length) {
-        this.cohortNameValidationState = 'empty'
-        return
-      }
 
       const username = this.portalContext.username
       for (const bookmark of this.getBookmarks) {
