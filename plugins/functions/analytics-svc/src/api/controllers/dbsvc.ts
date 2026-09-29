@@ -66,12 +66,157 @@ export async function getCDMVersion(req, res, next) {
         res.status(200).json(cdmVersionValue);
     } catch (err) {
         logger.error(`Error retrieving CDM version: ${err}`);
+        // The reason, not a placeholder. The throws above name the schema, the
+        // dataset and the dialect they looked in, and a missing CDM_SOURCE
+        // arrives here from the query itself as "Catalog Error: Table with name
+        // CDM_SOURCE does not exist!" — all of which used to be replaced with
+        // "Something went wrong when retrieving data" and left in the log. Both
+        // callers surface the body, so a DQD run that cannot start now says
+        // which table it could not read instead of only which flow it was
+        // submitting.
         const httpResponse = {
             status: 500,
-            message: "Something went wrong when retrieving data",
+            message: err instanceof Error ? err.message : String(err),
             data: [],
         };
         res.status(500).json(httpResponse);
+    }
+}
+
+/**
+ * The tables DQD and data characterization need before they are worth running,
+ * and why each one matters.
+ *
+ * `requireRows` separates the two failure shapes. A missing or empty CDM_SOURCE
+ * stops a run outright, because the CDM version is read from it. An empty
+ * OBSERVATION_PERIOD is worse than an error: both analyses run to completion and
+ * report almost nothing, with no failure at any layer, so it is reported here
+ * rather than left to look like a finished run with no findings.
+ */
+const ANALYSIS_PREREQUISITES: {
+    table: string;
+    requireRows: boolean;
+    why: string;
+}[] = [
+    {
+        table: "cdm_source",
+        requireRows: true,
+        why: "the CDM version is read from it before a run can be submitted",
+    },
+    {
+        table: "observation_period",
+        requireRows: true,
+        why: "without it DQD and Achilles complete but report almost nothing",
+    },
+    { table: "person", requireRows: false, why: "every analysis reads from it" },
+];
+
+/**
+ * Whether a dataset has what an analysis needs, as a list of specific problems.
+ *
+ * A precondition that fails should say which precondition failed. Callers used
+ * to learn only that the version lookup returned 500, so a schema loaded by an
+ * ETL that creates only the tables it writes — a partial CDM, which is easy to
+ * reach unintentionally — surfaced as a broken flow rather than a missing table.
+ *
+ * Always 200 with `ok` and `problems` when the schema could be read: an
+ * incomplete dataset is an answer, not a server error. A 500 here means the
+ * schema itself could not be inspected.
+ */
+export async function getDatasetPrerequisites(req, res, next) {
+    const datasetId = req.query.datasetId;
+    const { dialect, schemaName, databaseCode, cacheId } =
+        await new PortalServerAPI().getStudy(datasetId);
+
+    try {
+        const { analyticsConnection } = req.dbConnections;
+        const dbDao = new DBDAO(analyticsConnection);
+        const trexAlias = cacheId ?? databaseCode;
+        // HANA holds schema names uppercased, and the table listing compares
+        // SYS.M_TABLES.SCHEMA_NAME as a bound parameter rather than as an
+        // identifier, so a mixed-case name from the portal record matches
+        // nothing and would report every prerequisite as missing. The request
+        // middleware uppercases only its own credential copy
+        // (StudyDbCredential.ts), not the name read here.
+        const effectiveSchema =
+            dialect === ANALYTICS_DB_DIALECTS.HANA
+                ? schemaName.toUpperCase()
+                : schemaName;
+
+        const tableNames = await dbDao.getSchemaTableNames(
+            trexAlias,
+            effectiveSchema,
+            dialect
+        );
+        const present = new Set(tableNames.map((t) => t.toLowerCase()));
+
+        const problems: {
+            code: string;
+            table: string;
+            schema: string;
+            message: string;
+        }[] = [];
+
+        for (const prerequisite of ANALYSIS_PREREQUISITES) {
+            const { table, requireRows, why } = prerequisite;
+            if (!present.has(table)) {
+                problems.push({
+                    code: "MISSING_TABLE",
+                    table,
+                    schema: effectiveSchema,
+                    message: `${table} is missing from ${trexAlias}.${effectiveSchema} — ${why}.`,
+                });
+                continue;
+            }
+            if (!requireRows) continue;
+
+            // Counted one table at a time so a single unreadable table is
+            // reported as that table rather than failing the whole check.
+            try {
+                const hasRows = await dbDao.tableHasRows(
+                    trexAlias,
+                    effectiveSchema,
+                    table,
+                    dialect
+                );
+                if (!hasRows) {
+                    problems.push({
+                        code: "EMPTY_TABLE",
+                        table,
+                        schema: effectiveSchema,
+                        message: `${table} in ${trexAlias}.${effectiveSchema} has no rows — ${why}.`,
+                    });
+                }
+            } catch (err) {
+                problems.push({
+                    code: "UNREADABLE_TABLE",
+                    table,
+                    schema: effectiveSchema,
+                    message:
+                        `${table} in ${trexAlias}.${effectiveSchema} could not be read — ${why}. ` +
+                        `Underlying error: ${err instanceof Error ? err.message : String(err)}`,
+                });
+            }
+        }
+
+        logger.info(
+            `Prerequisite check for dataset ${datasetId} (${trexAlias}.${effectiveSchema}): ` +
+                `${problems.length} problem(s)`
+        );
+        res.status(200).json({
+            ok: problems.length === 0,
+            datasetId,
+            databaseCode: trexAlias,
+            schemaName: effectiveSchema,
+            problems,
+        });
+    } catch (err) {
+        logger.error(`Error checking dataset prerequisites: ${err}`);
+        res.status(500).json({
+            status: 500,
+            message: err instanceof Error ? err.message : String(err),
+            data: [],
+        });
     }
 }
 

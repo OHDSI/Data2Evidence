@@ -25,22 +25,26 @@ d4l-button {
   /* Aliased to the design system. Change the token, not these lines.
    * 15 are within delta 12 of their token rather than exact; the shift is
    * sub-perceptual and the old value is noted inline. */
+  --color-black: var(--d2e-color-neutral-black);
   --color-cardinality-exactly: var(--d2e-color-neutral-black);
   --color-checkbox: var(--d2e-color-primary);
   --color-date-hover: var(--d2e-color-neutral-lighter); // was #d8d8d8
   --color-dialog-box-footer-btn-text-light: var(--d2e-color-white);
   --color-feedback-error: var(--d2e-color-danger);
+  --color-feedback-warning: var(--d2e-color-warning);
   --color-footer-border: var(--d2e-color-primary-xtra-lightest); // was #ebebeb
   --color-footer-button-text-light: var(--d2e-color-white);
   --color-mri-card-header-bg: var(--d2e-color-support-blue-lightest); // was #ebf2f9
   --color-mri-darker-border: var(--d2e-color-primary);
   --color-mri-dropdown-label-dark-text: var(--d2e-color-neutral-black);
   --color-mri-dropdown-list-item-selected: var(--d2e-color-support-blue-lightest); // was #ebf2f9
+  --color-mri-error-bg: var(--d2e-color-alarm-light);
   --color-mri-footer-container-bg: var(--d2e-color-support-blue-lightest); // was #edf2fa
   --color-mri-header-bg: var(--d2e-color-support-blue-light);
   --color-mri-lightest-text: var(--d2e-color-neutral-lighter); // was #e0e0e0
   --color-mri-select-list-item-hoverable-light: var(--d2e-color-neutral-lightest); // was #f0f0f0
   --color-mri-success-bg: var(--d2e-color-success-light);
+  --color-mri-warning-bg: var(--d2e-color-warning-light); // was #fff4e5
   --color-mri-valid-syntax-text: var(--d2e-color-white);
   --color-segmented-button-select-text: var(--d2e-color-white);
   --color-table-col-grip-hover: var(--d2e-color-support-blue-lightest); // was #e6f2f9

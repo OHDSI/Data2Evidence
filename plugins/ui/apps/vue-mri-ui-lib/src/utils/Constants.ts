@@ -261,6 +261,10 @@ const ChartColorway = {
 export const FONT_FAMILY =
   "'GT-America', 'IBM Plex Sans Variable', 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif"
 
+// Body text colour for Plotly canvas text. Mirrors $body-color ($gray-900) from
+// _mri-bootstrap-variables.scss
+export const BODY_TEXT_COLOR = '#212529'
+
 const PlotlyFont = {
   color: '#000080',
   family: FONT_FAMILY,
