@@ -1521,6 +1521,7 @@ def extract_zip(zip_path: str, extract_to: str) -> str:
 
 
 def upload_results_to_api(results_path: str, name: str, metadata: dict, flow_run_id: str = None):
+    logger = Logger()
     zip_path = f"{results_path}.zip"
     zip_directory(results_path, zip_path)
     try:
