@@ -61,6 +61,12 @@ describe('store - config: data sources', () => {
         throw new Error(`Unexpected URL ${url}`)
       })
 
+    const expectClearedThenCommitted = (commit: ReturnType<typeof vi.fn>, dataSources: unknown[]) =>
+      expect(commit.mock.calls).toEqual([
+        [types.SET_DATA_SOURCES, []],
+        [types.SET_DATA_SOURCES, dataSources],
+      ])
+
     it('commits the fetched list', async () => {
       const commit = vi.fn()
       const dispatch = dispatchWith(sources, { datasetRoles: [researcher('aaa-111'), researcher('bbb-222')] })
@@ -75,7 +81,25 @@ describe('store - config: data sources', () => {
         method: 'get',
         url: '/usermgmt/api/me/roles',
       })
-      expect(commit).toHaveBeenCalledWith(types.SET_DATA_SOURCES, sources)
+      expectClearedThenCommitted(commit, sources)
+    })
+
+    it('clears the list before the requests settle', async () => {
+      const commit = vi.fn()
+      let resolveSources: (value: unknown) => void = () => undefined
+      const dispatch = vi.fn().mockImplementation(async (_action: string, { url }: { url: string }) => {
+        if (url === '/d2e-webapi/source/sources') return new Promise(resolve => (resolveSources = resolve))
+        return { data: { datasetRoles: [researcher('aaa-111')] } }
+      })
+
+      const pending = configModule.actions.fireGetDataSources({ commit, dispatch } as never)
+
+      expect(commit.mock.calls).toEqual([[types.SET_DATA_SOURCES, []]])
+
+      resolveSources({ data: sources })
+      await pending
+
+      expectClearedThenCommitted(commit, [sources[0]])
     })
 
     it('keeps only the sources the user has researcher access to', async () => {
@@ -86,7 +110,7 @@ describe('store - config: data sources', () => {
 
       await configModule.actions.fireGetDataSources({ commit, dispatch } as never)
 
-      expect(commit).toHaveBeenCalledWith(types.SET_DATA_SOURCES, [sources[1]])
+      expectClearedThenCommitted(commit, [sources[1]])
     })
 
     it('commits an empty list when the user has no dataset roles', async () => {
@@ -95,7 +119,7 @@ describe('store - config: data sources', () => {
 
       await configModule.actions.fireGetDataSources({ commit, dispatch } as never)
 
-      expect(commit).toHaveBeenCalledWith(types.SET_DATA_SOURCES, [])
+      expectClearedThenCommitted(commit, [])
     })
 
     it('commits an empty list when the roles response is malformed', async () => {
@@ -104,7 +128,7 @@ describe('store - config: data sources', () => {
 
       await configModule.actions.fireGetDataSources({ commit, dispatch } as never)
 
-      expect(commit).toHaveBeenCalledWith(types.SET_DATA_SOURCES, [])
+      expectClearedThenCommitted(commit, [])
     })
 
     it('commits an empty list when the response is not an array', async () => {
@@ -113,7 +137,7 @@ describe('store - config: data sources', () => {
 
       await configModule.actions.fireGetDataSources({ commit, dispatch } as never)
 
-      expect(commit).toHaveBeenCalledWith(types.SET_DATA_SOURCES, [])
+      expectClearedThenCommitted(commit, [])
     })
 
     it('swallows a failure and clears the list', async () => {
@@ -124,7 +148,7 @@ describe('store - config: data sources', () => {
 
       await expect(configModule.actions.fireGetDataSources({ commit, dispatch } as never)).resolves.toBeUndefined()
 
-      expect(commit).toHaveBeenCalledWith(types.SET_DATA_SOURCES, [])
+      expectClearedThenCommitted(commit, [])
     })
 
     it('clears the list when only the roles request fails', async () => {
@@ -136,7 +160,7 @@ describe('store - config: data sources', () => {
 
       await expect(configModule.actions.fireGetDataSources({ commit, dispatch } as never)).resolves.toBeUndefined()
 
-      expect(commit).toHaveBeenCalledWith(types.SET_DATA_SOURCES, [])
+      expectClearedThenCommitted(commit, [])
     })
   })
 })

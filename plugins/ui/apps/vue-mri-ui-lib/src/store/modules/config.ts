@@ -210,6 +210,7 @@ const actions = {
    * Failure is not surfaced to the user. The getter falls back to the id.
    */
   async fireGetDataSources({ commit, dispatch }) {
+    commit(types.SET_DATA_SOURCES, [])
     try {
       const [sourcesResponse, rolesResponse] = await Promise.all([
         dispatch('ajaxAuth', { method: 'get', url: '/d2e-webapi/source/sources' }),
