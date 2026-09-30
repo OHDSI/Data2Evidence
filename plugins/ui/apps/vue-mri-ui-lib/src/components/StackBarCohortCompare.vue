@@ -105,6 +105,7 @@ export default {
       })
 
       this.$emit('busyEv', true)
+      this.$emit('response', null)
 
       this.ajaxAuth({
         method: 'get',
@@ -130,6 +131,11 @@ export default {
           this.setupPlotly()
           this.renderChart()
           this.requestCancel = null
+          // The PNG export reads this. Without it ImageExport falls back to the
+          // main chart's store response, which is `{}` when Compare is opened
+          // from the Data Exploration list, so the export gate sees no data and
+          // returns silently. KMCohortCompare already emits; this one did not.
+          this.$emit('response', data)
           this.$emit('busyEv', false)
         })
         .catch(({ response }) => {
@@ -152,6 +158,9 @@ export default {
 
           this.errorMessage = noDataReason
           this.requestCancel = null
+          // Clear it, so a failed refetch cannot leave the previous chart's data
+          // behind and let the export run against a chart that is not there.
+          this.$emit('response', null)
           this.$emit('busyEv', false)
         })
     },

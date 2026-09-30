@@ -2,62 +2,68 @@ import JSZip from 'jszip'
 
 import { scanForCharsToEscapeAndSurroundQuotes } from './shared'
 import { Zip, AsyncZipDeflate } from 'fflate'
-import streamSaver from 'streamsaver'
 import { generateDownloadFileName } from '../../utils/generateDownloadFileName'
+import { openSaveTargetStream, takePendingSaveTarget } from '../../utils/saveFile'
 
-export function createZip(
-  {
-    // resultSet,
-    // selectedAttributes,
-    // noValue,
-    responses,
-    cohortName,
-  }: {
-    // resultSet: any[]
-    // selectedAttributes: any[]
-    // noValue: string
-    responses: any
-    cohortName?: string
-  },
-  cb: any
-) {
+/**
+ * Streams the entity responses into a ZIP written to the save target chosen when the export was
+ * started (or a browser download when there is none).
+ * @returns resolves once the archive has been fully written and the file closed
+ */
+export async function createZip({ responses, cohortName }: { responses: any; cohortName?: string }): Promise<void> {
   const fileName = generateDownloadFileName(cohortName, 'patientlist', 'zip')
-  const fileStream = streamSaver.createWriteStream(fileName)
-
+  const fileStream = await openSaveTargetStream(takePendingSaveTarget('zip', fileName))
   const writer = fileStream.getWriter()
 
-  const zip = new Zip()
-  zip.ondata = (err, chunk, final) => {
-    if (err) {
-      writer.close()
-      throw err
-    }
-    writer.write(chunk)
-    if (final) {
-      writer.close()
-      cb() // End of Archiving
-    }
+  // With nothing to add, zip.end() is never reached and the archive would never finish
+  if (!responses?.length) {
+    const err = new Error('No patient list data to export')
+    await writer.abort(err).catch(() => undefined)
+    throw err
   }
 
-  responses.forEach((response, index) => {
-    const entityFile = new AsyncZipDeflate(response.filename)
-    zip.add(entityFile)
-    const reader = response.response.body.getReader()
-    const pump = () => {
-      reader.read().then(({ done, value }) => {
-        if (done) {
-          // If there is no more data to read
-          entityFile.push(new Uint8Array([]), done)
-          return
-        }
-        entityFile.push(value)
-        pump()
-      })
+  await new Promise<void>((resolve, reject) => {
+    const fail = err => {
+      writer.abort(err).catch(() => undefined)
+      reject(err)
     }
-    pump()
-    if (responses.length === index + 1) {
-      zip.end() // Must be called after all the files are added
+
+    const zip = new Zip()
+    zip.ondata = (err, chunk, final) => {
+      if (err) {
+        fail(err)
+        return
+      }
+      writer.write(chunk).catch(fail)
+      if (final) {
+        // close() resolves only after every queued chunk has been written
+        writer.close().then(resolve, fail)
+      }
     }
+
+    responses.forEach((response, index) => {
+      const entityFile = new AsyncZipDeflate(response.filename)
+      zip.add(entityFile)
+      const reader = response.response.body.getReader()
+      const pump = () => {
+        reader
+          .read()
+          .then(({ done, value }) => {
+            if (done) {
+              // If there is no more data to read
+              entityFile.push(new Uint8Array([]), done)
+              return
+            }
+            entityFile.push(value)
+            pump()
+          })
+          .catch(fail)
+      }
+      pump()
+      if (responses.length === index + 1) {
+        zip.end() // Must be called after all the files are added
+      }
+    })
   })
 }
 

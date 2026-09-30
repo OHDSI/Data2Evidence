@@ -1,9 +1,13 @@
 import { env } from "../env.ts";
+import { CohortCacheShapeError } from "../errors/CohortCacheErrors.ts";
 import {
   ICohortDefinition,
   IAnalyticsCohortDefinition,
   IFilterValue,
   IBaseMaterializedCohort,
+  CohortCacheLookupResponseSchema,
+  ICohortCacheLookupResponse,
+  ICohortCacheWriteEntry,
 } from "./types.ts";
 
 const materializableCohortDatasetIds = new Set<string>();
@@ -128,8 +132,18 @@ export class AnalyticsSvcAPI {
       const result = await this.analyticsapi.get(url.toString(), options);
       return result.data;
     } catch (error) {
+      // Same wrapping as jobplugins' AnalyticsAPI: the endpoint reads
+      // CDM_SOURCE, which is optional in the OMOP DDL, so a CDM loaded without
+      // it fails here. Rethrowing the bare error surfaced only the status, so
+      // the caller reported a failed request and nothing about the table.
       console.error(`Error while getting cdm version: ${error}`);
-      throw error;
+      const detail = error instanceof Error ? error.message : String(error);
+      throw new Error(
+        `Could not determine the CDM version for dataset ${datasetId}. ` +
+          `It is read from the CDM_SOURCE table in the dataset's CDM schema — check that ` +
+          `the table exists and holds a row with cdm_version set, and that the dataset's ` +
+          `cache has finished building. Underlying error: ${detail}`,
+      );
     }
   }
 
@@ -179,6 +193,69 @@ export class AnalyticsSvcAPI {
       console.error(
         `Error while checking if cohort can be materialized: ${error}`,
       );
+      throw error;
+    }
+  }
+
+  /**
+   * `POST /analytics-svc/api/services/cohort-cache/lookup`
+   *
+   * Returns, for every requested bookmark id, either an entry under `entries`
+   * or the id under `missing`. An entry whose `materializedCohort` is `null`
+   * is still a hit: it records that the bookmark has no materialized cohort.
+   *
+   * Throws `CohortCacheShapeError` when the body does not match the schema and
+   * rethrows transport failures; callers fall back to the uncached path.
+   */
+  async cohortCacheLookup(
+    datasetId: string,
+    bookmarkIds: string[],
+  ): Promise<ICohortCacheLookupResponse> {
+    try {
+      const url = `${this.baseURL}/cohort-cache/lookup`;
+      console.log(
+        `Calling ${url} to look up ${bookmarkIds.length} cohort cache entries`,
+      );
+      const options = this.getRequestConfig();
+      const result = await this.analyticsapi.post(
+        url,
+        { datasetId, bookmarkIds },
+        options,
+      );
+
+      const parsed = CohortCacheLookupResponseSchema.safeParse(result?.data);
+      if (!parsed.success) {
+        throw new CohortCacheShapeError(
+          `Cohort cache lookup returned an unexpected response shape: ${parsed.error.message}`,
+        );
+      }
+      return parsed.data as ICohortCacheLookupResponse;
+    } catch (error) {
+      console.error(`Error while looking up cohort cache: ${error}`);
+      throw error;
+    }
+  }
+
+  /**
+   * `PUT /analytics-svc/api/services/cohort-cache` → 204.
+   *
+   * Upserts one entry per bookmark. Pass `materializedCohort: null` to record
+   * a negative entry; those are read back as hits. `patientIds` is stripped
+   * server-side and is never stored. Callers treat this as fire-and-forget.
+   */
+  async cohortCacheWrite(
+    datasetId: string,
+    entries: ICohortCacheWriteEntry[],
+  ): Promise<void> {
+    try {
+      const url = `${this.baseURL}/cohort-cache`;
+      console.log(
+        `Calling ${url} to write ${entries.length} cohort cache entries`,
+      );
+      const options = this.getRequestConfig();
+      await this.analyticsapi.put(url, { datasetId, entries }, options);
+    } catch (error) {
+      console.error(`Error while writing cohort cache entries: ${error}`);
       throw error;
     }
   }

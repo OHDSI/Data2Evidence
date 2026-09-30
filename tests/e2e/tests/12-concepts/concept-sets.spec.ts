@@ -99,7 +99,7 @@ test(TEST_NAME, async ({ page }) => {
 
   // Cohort builder
   await page.getByRole('link', { name: 'Cohorts' }).click()
-  await page.getByRole('button', { name: 'D2E' }).click()
+  await page.getByTestId('explorations-new-btn').click()
   await page.getByTitle('Add Filter Card').getByRole('button').click()
   await page.getByRole('menuitem', { name: 'Condition Occurrence' }).click()
   await page.getByTitle('Add Filter Card').getByRole('button').click()

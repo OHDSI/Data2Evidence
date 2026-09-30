@@ -1,7 +1,12 @@
 <template>
   <div :class="['pa-component-wrapper']">
     <AtlasView v-if="atlasStore.showAtlas" />
-    <div :class="['fullHeight', 'pa-splitter', { 'right-pane-opened': rightPaneEverOpened }]">
+    <ExplorationsPage
+      v-if="displayCohorts"
+      @open-exploration="loadExploration"
+      @start-new-exploration="startNewExploration"
+    />
+    <div v-else :class="['fullHeight', 'pa-splitter', { 'right-pane-opened': rightPaneEverOpened }]">
       <splitpanes class="default-theme" @resize="onSplitterDrag($event)">
         <pane :size="paneSize" :min-size="hideLeftPane ? 0 : splitterMinWidth">
           <div id="pane-left" class="split" data-testid="pa-pane-left">
@@ -33,18 +38,7 @@
               </div>
             </div>
             <div class="pane-left-content">
-              <bookmarks
-                @unloadBookmarkEv="toggleCohorts"
-                @loadAtlasCohortDefinition="handleLoadAtlasCohortDefinition"
-                :init-bookmark-id="querystring.bmkId"
-                v-if="getMriFrontendConfig && displayCohorts"
-              ></bookmarks>
-
-              <filters
-                ref="filtersRef"
-                v-if="!showQueryFilter && !displayCohorts"
-                v-bind:class="{ hidden: displayCohorts }"
-              ></filters>
+              <filters ref="filtersRef" v-if="!showQueryFilter && !displayCohorts"></filters>
 
               <QueryFilter
                 v-else-if="showQueryFilter"
@@ -166,15 +160,19 @@
 declare var sap
 const myWindow: any = window
 
-import { mapActions, mapGetters } from 'vuex'
+import { mapActions, mapGetters, mapMutations } from 'vuex'
+// lodash, not the underscore debounce used elsewhere in this app: underscore caches
+// Date.now at import time, so its trailing call never elapses under vitest's fake
+// timers and the coalescing below could not be covered by a test.
+import { debounce } from 'lodash'
 import { registerPaTools } from '@/ai/webmcpServer'
 import { publishPaTools } from '@/ai/paToolBridge'
 import icon from '../lib/ui/app-icon.vue'
 import appButton from '../lib/ui/app-button.vue'
 import appIcon from '../lib/ui/app-icon.vue'
 import appLink from '../lib/ui/app-link.vue'
-import Bookmarks from './Bookmarks.vue'
-import ChartController from './ChartController.vue'
+import ExplorationsPage from './ExplorationsPage.vue'
+import { lazyComponent } from '../utils/lazyComponent'
 import ChartToolbar from './ChartToolbar.vue'
 import FilterCardSummary from './FilterCardSummary.vue'
 import filters from './Filters.vue'
@@ -186,7 +184,16 @@ import { Splitpanes, Pane } from 'splitpanes'
 import 'splitpanes/dist/splitpanes.css'
 import { QueryFilter } from '@/query-filter'
 import AtlasView from '../views/AtlasView.vue'
+import * as types from '../store/mutation-types'
 import { useAtlasStore } from '../stores/atlas'
+import { useUnsavedChanges } from '../composables/useUnsavedChanges'
+import { usePortalContext } from '../composables/usePortalContext'
+import { useNotificationStore } from '../stores/notifications'
+import { useExplorationsStore } from '../stores/explorations'
+
+// Loaded on demand so plotly.js stays out of the single-spa entry's static
+// dependency graph. See docs: the chart chunk was blocking mount.
+const ChartController = lazyComponent('ChartController', () => import('./ChartController.vue'))
 
 const PANE_SIZE = {
   FULL: 100,
@@ -198,8 +205,18 @@ const PANEL = {
   LEFT: 'left',
 }
 
+const COHORT_RECALCULATION_DEBOUNCE_MS = 500
+
 export default {
   name: 'patientanalytics',
+  setup() {
+    return {
+      unsavedChanges: useUnsavedChanges(),
+      portalContext: usePortalContext(),
+      notifications: useNotificationStore(),
+      explorations: useExplorationsStore(),
+    }
+  },
   data() {
     return {
       displayCohorts: true,
@@ -225,9 +242,36 @@ export default {
       atlasStore: useAtlasStore(),
     }
   },
-  created() {},
+  created() {
+    // Every filter-card value the user adds or removes rewrites the IFR, and each
+    // rewrite used to dispatch its own analytics query. analytics-svc runs
+    // every one of them to completion (client-side cancel aborts the XHR, not the
+    // query), so latency degraded from ~180ms to ~60s and the pile-up made a
+    // subsequent reset look like it never fired. Coalesce the burst into one query.
+    this.fireCohortRecalculation = debounce(() => {
+      // From here the chart's own request owns the busy state: startRequest raises it and
+      // lowers it when the response lands.
+      this.busyRaisedForRecalculation = false
+      if (this.getPLModel.currentPage !== 1) {
+        this.changePage(1)
+      } else {
+        this.setFireRequest()
+      }
+    }, COHORT_RECALCULATION_DEBOUNCE_MS)
+  },
   watch: {
+    'querystring.bmkId'(bmkId) {
+      // Restore the bookmark referenced by the URL (?bmkId=). This watch used to
+      // live in Bookmarks.vue, which is no longer mounted.
+      if (bmkId) {
+        this.loadExploration(bmkId)
+      }
+    },
     getActiveBookmark(newVal, oldVal) {
+      // The Analyze card action also sets the active bookmark (dashboardContext
+      // needs it), but it must not trigger this auto-switch: it would unmount
+      // ExplorationsPage, and the wizard modals mounted inside it, mid-click.
+      if (this.explorations.analyzeInProgress) return
       // Auto-switch to cohort view when a bookmark is loaded (e.g., from deep link)
       // Only trigger when going from no bookmark to having one
       if (newVal && !oldVal && this.displayCohorts) {
@@ -242,15 +286,54 @@ export default {
         this.resetToDefaultView()
       }
     },
-    getBookmarkFromIFR(bm) {
-      // In patient list, changePage is watched and already calls setFireRequest once
-      // It seems like if both are run, `setFireRequest` runs consecutively in the same tick,
-      // and the `getFireRequest` watcher is unable to pick up a diff, hence no api call is made
-      if (this.getPLModel.currentPage !== 1) {
-        this.changePage(1)
-      } else {
-        this.setFireRequest()
+    isFireRequestHeld(held) {
+      // The early return in getBookmarkFromIFR only stops NEW work being queued; a timer
+      // armed by a user edit moments earlier is still running. Every holder (bookmark
+      // load, the WebMCP cohort patch, resetChart, the dashboard wizard) ends the same
+      // way — releaseFireRequest then one explicit setFireRequest — so that surviving
+      // timer would land just after the release and fire a second, identical query.
+      // Drop it as soon as the hold goes up rather than at the next watcher run.
+      if (held) {
+        this.fireCohortRecalculation?.cancel()
+        // The busy state raised for the dropped timer has nothing left to lower it. The
+        // holder's own fire raises it again if it queries.
+        this.lowerBusyRaisedForRecalculation()
       }
+    },
+    getBookmarkFromIFR(bm) {
+      // Mirrors setFireRequest's own early return, but has to happen at schedule time:
+      // bookmark load and the WebMCP cohort patch hold, then release and fire once
+      // explicitly, so a call queued here would land after the release and duplicate it.
+      if (this.isFireRequestHeld) {
+        return
+      }
+      // Raise the staleness flag now, not when the debounced fire lands. setFireRequest
+      // does this itself, but debouncing it would leave the previous cohort's count on
+      // screen looking authoritative for the whole window. Idempotent, so the later
+      // dispatch from setFireRequest is fine.
+      //
+      // Guarded exactly as setFireRequest guards it (store/modules/chart.ts): with an
+      // empty IFR every chart component bails out without querying, so nothing would
+      // ever call setCurrentPatientCount to lower the flag again and pa_get_cohort_result
+      // would block for its full 60s timeout.
+      //
+      // The loading animation goes up at the same point, for the same reason: before
+      // debouncing, the query went out on the edit itself and so did the animation. Left
+      // down for the window, the old chart reads as the answer, and anything that waits on
+      // the animation to know the chart is current (the e2e specs) moves on too early.
+      // Same guard again: a chart that never queries never lowers it.
+      if (Object.keys(this.getBookmarksData ?? {}).length > 0) {
+        this.invalidateCurrentPatientCount()
+        this.chartBusy = true
+        this.busyRaisedForRecalculation = true
+      } else {
+        // An earlier edit in this window may have raised it, and this fire won't query.
+        this.lowerBusyRaisedForRecalculation()
+      }
+      // The fire itself is debounced; changePage vs setFireRequest is
+      // decided when it lands, because the patient list's own changePage watcher already
+      // calls setFireRequest once and two calls in a tick cancel the fireRequest toggle.
+      this.fireCohortRecalculation()
     },
     getActiveChart() {
       this.chartBusy = false
@@ -280,14 +363,33 @@ export default {
     // Two consumers, one tool set: an external browser agent via Chrome's
     // modelContext, and an in-page consumer via the window registry. Both wrap
     // the same createPaTools() array.
-    this._unregisterPaTools = registerPaTools(this.$store, paToolHooks)
+    //
+    // The in-page registry goes up first and the two are isolated on purpose.
+    // registerPaTools talks to an experimental browser API that can reject a
+    // call, and Vue swallows a throw out of a lifecycle hook — so sharing a fate
+    // with it meant a failed registration silently skipped publishPaTools, and
+    // the in-page consumer spent the rest of the session with no tools at all.
     this._unpublishPaTools = publishPaTools(this.$store, paToolHooks)
+    try {
+      this._unregisterPaTools = registerPaTools(this.$store, paToolHooks)
+    } catch (error) {
+      console.warn('[WebMCP] Browser tool registration failed; the in-page tools are unaffected', error)
+    }
     this.updateMinSplitterWidth()
     window.addEventListener('resize', this.updateMinSplitterWidth)
   },
   beforeUnmount() {
-    this._unregisterPaTools?.()
+    // Same isolation in reverse: a failed unregister must not leave the in-page
+    // registry published for a PA that is no longer on screen.
+    try {
+      this._unregisterPaTools?.()
+    } catch (error) {
+      console.warn('[WebMCP] Browser tool unregistration failed', error)
+    }
     this._unpublishPaTools?.()
+    // A queued recalculation would otherwise run a multi-second analytics query for a
+    // screen the user has left, and write its count into a torn-down chart.
+    this.fireCohortRecalculation?.cancel()
     window.removeEventListener('resize', this.updateMinSplitterWidth)
     this.chartBusy = false
   },
@@ -300,9 +402,12 @@ export default {
       'getChartSelection',
       'getAllChartConfigs',
       'getBookmarkFromIFR',
+      'getBookmarksData',
+      'isFireRequestHeld',
       'getActiveChart',
       'getPLModel',
       'getActiveBookmark',
+      'getBookmarks',
       'getBookmarkById',
       'getDatasetReloadInProgress',
     ]),
@@ -342,6 +447,7 @@ export default {
       'loadSharedBookmarkList',
       'queryGenomicsSettings',
       'setFireRequest',
+      'invalidateCurrentPatientCount',
       'setupChartDefaults',
       'setIFRState',
       'drilldown',
@@ -352,7 +458,9 @@ export default {
       'fireCheckIfDatasetCanMaterializeCohorts',
       'setRightPaneMounted',
       'loadValuesForAttributePath',
+      'resetChart',
     ]),
+    ...mapMutations([types.SET_ACTIVE_BOOKMARK, types.SET_ACTIVE_BOOKMARK_BASELINE]),
     loadDefaultFilters() {
       this.setIFRState({ ifr: this.getMriFrontendConfig.getInitialIFR() })
       this.setupChartDefaults()
@@ -391,6 +499,53 @@ export default {
     toggleQueryFilter(show) {
       this.showQueryFilter = show
       this.displayCohorts = !show
+    },
+    checkCohortName(bookmarkName, suffix = '') {
+      const username = this.portalContext.username
+      const uniqueName = bookmarkName + (suffix ? ` ${suffix}` : '')
+      for (const bookmark of this.getBookmarks || []) {
+        if (username === bookmark.user_id && bookmark.bookmarkname === uniqueName) {
+          return this.checkCohortName(bookmarkName, suffix ? parseInt(suffix) + 1 : 1)
+        }
+      }
+      return uniqueName
+    },
+    startNewExploration() {
+      // Moved from Bookmarks.addNewCohort, which no longer mounts. Opens the
+      // builder on a fresh, uniquely named cohort.
+      this.unsavedChanges.guard(async () => {
+        const cohortName = this.checkCohortName(this.getText('MRI_PA_EXPLORATIONS_NEW_NAME'))
+        this[types.SET_ACTIVE_BOOKMARK]({ bookmarkname: cohortName, isNew: true })
+        this.toggleCohorts(false)
+        await this.resetChart()
+        // Let chart defaults that are applied reactively after resetChart (axes /
+        // auto-default colorAxis via onChartDataReady) flush before snapshotting the
+        // baseline; otherwise it captures the previous cohort's not-yet-reset state.
+        await this.$nextTick()
+        this[types.SET_ACTIVE_BOOKMARK_BASELINE](this.$store.getters.getBookmarksData)
+      })
+    },
+    loadExploration(bmkId, chartType = null) {
+      // Mirrors Bookmarks.loadBookmarkCheck: reopening the exploration that is
+      // already active must not re-load it, or an in-progress edit is discarded
+      // and the unsaved-changes guard fires for a no-op.
+      if (this.getActiveBookmark && bmkId === this.getActiveBookmark.bmkId) {
+        this.toggleCohorts(false)
+        return
+      }
+      this.unsavedChanges.guard(() => {
+        this.loadbookmarkToState({ bmkId, chartType })
+          .then(() => this.toggleCohorts(false))
+          .catch(() => {
+            // The saved filter does not fit the active config. Bookmarks.vue
+            // showed a message box for this; without it the click looks dead.
+            this.notifications.setAlertMessage({
+              message: this.getText('MRI_PA_BMK_COMPATIBLE_ERROR'),
+              messageType: 'error',
+              title: this.getText('MRI_PA_NOTIFICATION_ERROR'),
+            })
+          })
+      })
     },
     toggleCohorts(isDisplayCohort, isPaAtlas = false) {
       if (isDisplayCohort) {
@@ -449,6 +604,12 @@ export default {
     },
     setChartBusy(status: boolean) {
       this.chartBusy = status
+    },
+    lowerBusyRaisedForRecalculation() {
+      if (this.busyRaisedForRecalculation) {
+        this.busyRaisedForRecalculation = false
+        this.chartBusy = false
+      }
     },
     getActiveBookmarkName() {
       if (this.getActiveBookmark) {
@@ -538,7 +699,7 @@ export default {
     icon,
     appButton,
     appLink,
-    Bookmarks,
+    ExplorationsPage,
     ChartToolbar,
     ChartController,
     filters,

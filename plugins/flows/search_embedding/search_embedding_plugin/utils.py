@@ -91,8 +91,18 @@ def build_concept_select_sql(schema_name: str) -> pg_sql.Composable:
     )
 
 def drop_embedding_index(dbdao: DBDao, schema_name: str, index_col: str)-> None:
-    """ 
-    Drop the existing GTE index on the concept table if it exists.
+    """
+    Drop the HNSW index on the concept embeddings if one exists.
+
+    There is deliberately no counterpart that creates it. DuckDB can only bind a
+    persisted HNSW index in a process that has loaded the vss extension, and
+    trexsql does not load it, so the first checkpoint after one exists fails
+    with "Cannot bind index ... unknown index type 'HNSW'" and invalidates the
+    entire cache database — every later query, including the catalog refresh,
+    then returns FATAL until trex is restarted.
+
+    Dropping is still worth doing on its own: it repairs a database that an
+    earlier run already indexed.
     """
     sql = pg_sql.SQL("DROP INDEX IF EXISTS {schema_name}.{index_col};").format(
         schema_name=pg_sql.Identifier(*schema_name.split(".")),
@@ -116,24 +126,19 @@ def update_concept_embedding(dbdao:DBDao, schema_name:str, emb_tmp_table:str, em
         )
     dbdao.execute_sql(sql)
     
-def create_embedding_index(dbdao, schema_name:str, embedding_table: str, embedding_col:str, index_col: str) -> None:
-    """ 
-    Create a GTE index on the embedding column of the concept embedding table.
-    """ 
-    sql = pg_sql.SQL("""
-                     SET hnsw_enable_experimental_persistence=TRUE;
-                     CREATE INDEX {index_col} ON {schema_name}.{embedding_table} USING HNSW ({embedding_col}) WITH (metric = 'cosine');
-                     """).format(
-        index_col=pg_sql.Identifier(index_col),
-        schema_name=pg_sql.Identifier(*schema_name.split(".")),
-        embedding_table=pg_sql.Identifier(embedding_table),
-        embedding_col=pg_sql.Identifier(embedding_col),
-        )   
-    dbdao.execute_sql(sql)
+# The cache volume as a flow's container sees it. Kept in step with
+# create_cachedb_file_plugin/paths.py, which writes the files this plugin reads.
+DEFAULT_DUCKDB_DATA_FOLDER = "/app/duckdb_data/cache"
 
-def resolve_duckdb_file_path(duckdb_database_name: str, folder_path: str) -> str:
+
+def resolve_duckdb_file_path(duckdb_database_name: str, folder_path) -> str:
     """
     Returns the full path to the DuckDB database file
     """
-    return str(Path(folder_path) / f"{duckdb_database_name}.db")
+    # `duckdb_data_folder` is seeded from DUCKDB__DATA_FOLDER, and a variable seeded
+    # from an unset env var exists with a null value, so Variable.get returns None
+    # rather than raising. Path(None) then kills the flow before it does any work.
+    if not (isinstance(folder_path, str) and folder_path.strip()):
+        folder_path = DEFAULT_DUCKDB_DATA_FOLDER
+    return str(Path(folder_path.strip()) / f"{duckdb_database_name}.db")
 

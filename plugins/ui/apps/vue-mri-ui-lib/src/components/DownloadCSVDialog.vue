@@ -1,24 +1,37 @@
 <template>
-  <messageBox @close="cancel" :busy="busy">
-    <template v-slot:header>{{ getText('MRI_PA_PATIENT_LIST_DOWNLOAD_AS_CSV') }}</template>
-    <template v-slot:body>
-      <div>
-        <div style="padding: 24px">{{ getText('MRI_PA_PATIENT_LIST_DOWNLOAD_AS_CSV_FULL') }}</div>
-      </div>
+  <D2eDialog
+    :model-value="true"
+    :busy="busy"
+    :title="getText('MRI_PA_PATIENT_LIST_DOWNLOAD_AS_CSV')"
+    data-testid="pa-modal-wrapper"
+    @close="cancel"
+  >
+    <p>{{ getText('MRI_PA_PATIENT_LIST_DOWNLOAD_AS_CSV_FULL') }}</p>
+    <template #actions>
+      <D2eButton
+        variant="secondary"
+        data-testid="pa-download-csv-cancel-btn"
+        @click="cancel"
+      >
+        {{ getText('MRI_PA_BUTTON_CANCEL') }}
+      </D2eButton>
+      <D2eButton
+        v-focus
+        :disabled="busy"
+        data-testid="pa-download-csv-download-btn"
+        @click="download"
+      >
+        {{ getText('MRI_PA_BUTTON_DOWNLOAD') }}
+      </D2eButton>
     </template>
-    <template v-slot:footer>
-      <div class="flex-spacer"></div>
-      <appButton :click="download" :text="getText('MRI_PA_BUTTON_DOWNLOAD')" :disabled="busy" v-focus></appButton>
-      <appButton :click="cancel" :text="getText('MRI_PA_BUTTON_CANCEL')"></appButton>
-    </template>
-  </messageBox>
+  </D2eDialog>
 </template>
 
 <script lang="ts">
 import { mapActions, mapGetters } from 'vuex'
-import appButton from '../lib/ui/app-button.vue'
-import LoadingAnimation from './LoadingAnimation.vue'
-import messageBox from './MessageBox.vue'
+import { D2eButton, D2eDialog } from '@d2e/ui'
+import { generateDownloadFileName } from '../utils/generateDownloadFileName'
+import { clearPendingSaveTarget, pickSaveTarget, setPendingSaveTarget } from '../utils/saveFile'
 
 export default {
   name: 'download-csv-dialog',
@@ -30,7 +43,13 @@ export default {
     }
   },
   computed: {
-    ...mapGetters(['getText', 'getCSVDownloadCompleted', 'getIsLargePatientData']),
+    ...mapGetters([
+      'getText',
+      'getCSVDownloadCompleted',
+      'getIsLargePatientData',
+      'getActiveBookmark',
+      'getActiveChart',
+    ]),
   },
   watch: {
     getCSVDownloadCompleted(val) {
@@ -41,9 +60,19 @@ export default {
   },
   methods: {
     ...mapActions(['setFireDownloadCSV', 'cancelDownloadCSV']),
-    download() {
+    async download() {
       this.busy = true
       this.cancelled = false
+      // Ask where to save now, while the click still counts as a user gesture; the CSV is
+      // written there once the backend responds.
+      const fileName = generateDownloadFileName(this.getActiveBookmark?.bookmarkname, this.getActiveChart, 'csv')
+      const target = await pickSaveTarget(fileName, 'csv')
+      if (!target) {
+        // Save picker dismissed: nothing was exported, leave the dialog open
+        this.busy = false
+        return
+      }
+      setPendingSaveTarget('csv', target)
       this.setFireDownloadCSV()
     },
     cancel() {
@@ -51,13 +80,13 @@ export default {
         this.cancelled = true
         this.cancelDownloadCSV()
       }
+      clearPendingSaveTarget('csv')
       this.$emit('closeEv', { success: false })
     },
   },
   components: {
-    messageBox,
-    LoadingAnimation,
-    appButton,
+    D2eButton,
+    D2eDialog,
   },
 }
 </script>

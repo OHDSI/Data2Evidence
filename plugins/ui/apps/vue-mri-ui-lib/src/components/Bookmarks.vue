@@ -6,87 +6,82 @@
       v-if="messageStrip.show"
       @closeEv="resetMessageStrip"
     />
-    <messageBox
-      dim="true"
-      dialogWidth="400px"
+    <VSnackbar
+      v-model="dqdSnackbarVisible"
+      location="top right"
+      :color="dqdSnackbarColor"
+      :timeout="dqdSnackbarTimeout"
+      max-width="380"
+      class="dqd-snackbar"
+      data-testid="pa-dqd-snackbar"
+    >
+      <span class="dqd-snackbar-content">
+        <v-icon :icon="dqdSnackbarIcon" size="22" class="dqd-snackbar-icon" :class="dqdSnackbarIconClass" />
+        {{ dqdSnackbar.text }}
+      </span>
+    </VSnackbar>
+    <D2eDialog
+      v-model="showRenameDialog"
       :busy="isRenamingBookmark"
-      v-if="showRenameDialog"
+      :title="getText('MRI_PA_EXPLORATION_RENAME_DIALOG_TITLE')"
+      data-testid="pa-modal-wrapper"
       @close="closeRenameBookmark"
     >
-      <template v-slot:header>{{ getText('MRI_PA_BOOKMARK_RENAME_DIALOG_TITLE') }}</template>
-      <template v-slot:body>
-        <div>
-          <div class="div-bookmark-dialog">
-            <span>{{ getText('MRI_PA_BOOKMARK_RENAME_DIALOG_TEXT') }}</span>
-            <div class="input-container">
-              <!-- maxLength for input is this.maxLength+1 to allow invalid-feedback to be shown -->
-              <input
-                class="form-control"
-                v-focus
-                required
-                :maxlength="this.maxLength + 1"
-                v-model="renamedBookmark"
-                @keydown.enter="confirmRenameBookmark"
-              />
-            </div>
-            <div class="invalid-feedback" v-bind:style="[cohortNameValidationState === 'invalid' && 'display: block;']">
-              {{ getText('MRI_PA_INVALID_NAME_ERROR') }}
-            </div>
-            <div class="invalid-feedback" v-bind:style="[hasExceededLength && 'display: block;']">
-              Filter name must not exceed 255 characters
-            </div>
-            <div class="invalid-feedback" v-bind:style="[cohortNameValidationState === 'empty' && 'display: block;']">
-              {{ getText('MRI_PA_BMK_EMPTY_NAME_ERROR') }}
-            </div>
-          </div>
-        </div>
-      </template>
-      <template v-slot:footer>
-        <div class="flex-spacer"></div>
-        <appButton
-          :click="confirmRenameBookmark"
-          :text="getText('MRI_PA_BUTTON_SAVE')"
-          :disabled="this.hasExceededLength || isRenamingBookmark"
-        ></appButton>
-        <appButton
-          :click="closeRenameBookmark"
-          :text="getText('MRI_PA_BUTTON_CANCEL')"
+      <D2eTextField
+        v-model="renamedBookmark"
+        :label="getText('MRI_PA_EXPLORATION_NAME_LABEL')"
+        required
+        :error-messages="renameErrorMessages"
+        :maxlength="maxLength + 1"
+        autofocus
+        @keydown.enter="confirmRenameBookmark"
+      />
+      <template #actions>
+        <D2eButton
+          variant="secondary"
           :disabled="isRenamingBookmark"
-        ></appButton>
+          data-testid="pa-save-dialog-cancel-btn"
+          @click="closeRenameBookmark"
+        >
+          {{ getText('MRI_PA_BUTTON_CANCEL') }}
+        </D2eButton>
+        <D2eButton
+          :disabled="hasExceededLength || isRenamingBookmark"
+          data-testid="pa-save-dialog-save-btn"
+          @click="confirmRenameBookmark"
+        >
+          {{ getText('MRI_PA_BUTTON_RENAME') }}
+        </D2eButton>
       </template>
-    </messageBox>
-    <messageBox
-      messageType="warning"
-      dim="true"
-      dialogWidth="400px"
+    </D2eDialog>
+    <D2eDialog
+      v-model="showDeleteDialog"
       :busy="isDeletingBookmark"
-      v-if="showDeleteDialog"
+      :title="getText('MRI_PA_EXPLORATION_DELETE_DIALOG_TITLE')"
+      data-testid="pa-modal-wrapper"
       @close="closeDeleteBookmark"
     >
-      <template v-slot:header>{{ getText('MRI_PA_BOOKMARK_DELETE_DIALOG_TITLE') }}</template>
-      <template v-slot:body>
-        <div>
-          <div class="div-bookmark-dialog">
-            <div>{{ getText('MRI_PA_BOOKMARK_DELETE_DIALOG_TEXT') }}</div>
-            <div>{{ getText('MRI_PA_BOOKMARK_DELETE_DIALOG_QUESTION_TEXT') }}</div>
-          </div>
-        </div>
-      </template>
-      <template v-slot:footer>
-        <div class="flex-spacer"></div>
-        <appButton
-          :click="confirmDeleteBookmark"
-          :text="getText('MRI_PA_BUTTON_DELETE')"
+      <p class="delete-dialog-text">{{ getText('MRI_PA_EXPLORATION_DELETE_DIALOG_TEXT') }}</p>
+      <template #actions>
+        <D2eButton
+          variant="secondary"
+          :disabled="isDeletingBookmark"
+          data-testid="pa-save-dialog-cancel-btn"
+          @click="closeDeleteBookmark"
+        >
+          {{ getText('MRI_PA_BUTTON_CANCEL') }}
+        </D2eButton>
+        <D2eButton
+          variant="danger"
           :disabled="isDeletingBookmark"
           v-focus
-        ></appButton>
-        <appButton
-          :click="closeDeleteBookmark"
-          :text="getText('MRI_PA_BUTTON_CANCEL')"
-          :disabled="isDeletingBookmark"
-        ></appButton>
+          data-testid="pa-save-dialog-save-btn"
+          @click="confirmDeleteBookmark"
+        >
+          {{ getText('MRI_PA_BUTTON_YES_DELETE') }}
+        </D2eButton>
       </template>
-    </messageBox>
+    </D2eDialog>
 
     <ImportAtlasCohortDefinitionDialog
       v-if="showImportAtlasCohortDefinition"
@@ -185,10 +180,9 @@
     </cohortListDialog>
 
     <addCohort
-      :openAddDialog="showAddCohortDialog"
+      v-model="showAddCohortDialog"
       :bookmarkId="this.selectedBookmark?.id"
       :bookmarkName="this.selectedBookmark?.name"
-      @closeEv="showAddCohortDialog = false"
       :cohortDefinitionType="cohortDefinitionType"
       :atlasCohortDefinitionId="atlasCohortDefinitionId"
     >
@@ -218,6 +212,7 @@
 <script lang="ts">
 declare var sap: any
 import { mapActions, mapGetters, mapMutations } from 'vuex'
+import { D2eButton, D2eDialog, D2eTextField } from '@d2e/ui'
 import appButton from '../lib/ui/app-button.vue'
 import appCheckbox from '../lib/ui/app-checkbox.vue'
 import cohortComparisonDialog from './CohortComparisonDialog.vue'
@@ -233,10 +228,19 @@ import Button from './Button.vue'
 import UsersIcon from './icons/UsersIcon.vue'
 import LoadErrorIllustration from './icons/LoadErrorIllustration.vue'
 import RefreshIcon from './icons/RefreshIcon.vue'
+import VSnackbar from './vuetify/VSnackbar.vue'
+import Constants from '../utils/Constants'
+import { isFlowRunCompleted, isFlowRunInProgress } from '../utils/FlowRunState'
+import { createInFlightGuard } from '../utils/InFlightGuard'
 import ImportAtlasCohortDefinitionDialog from './ImportAtlasCohortDefinitionDialog.vue'
 import { useAtlasStore } from '../stores/atlas'
 import { usePortalContext } from '../composables/usePortalContext'
 import { useUnsavedChanges } from '../composables/useUnsavedChanges'
+
+// Module scope, so one cohort cannot have two data quality jobs in flight at
+// once no matter which bookmark list the click came from.
+const runDqdExclusive = createInFlightGuard()
+
 export default {
   name: 'bookmark',
   props: ['unloadBookmarkEv', 'initBookmarkId'],
@@ -274,6 +278,8 @@ export default {
         message: '',
         messageType: '',
       },
+      // Feedback for the "display or generate data quality" cohort action.
+      dqdSnackbar: { visible: false, type: 'success' as 'success' | 'warning' | 'error', text: '' },
       cohortDefinitionType: '',
       atlasCohortDefinitionId: null,
       showImportAtlasCohortDefinition: false,
@@ -299,6 +305,40 @@ export default {
     },
   },
   computed: {
+    dqdSnackbarVisible: {
+      get() {
+        return this.dqdSnackbar.visible
+      },
+      set(val) {
+        this.dqdSnackbar.visible = val
+      },
+    },
+    dqdSnackbarColor() {
+      switch (this.dqdSnackbar.type) {
+        case 'warning':
+          return 'var(--color-mri-warning-bg)'
+        case 'error':
+          return 'var(--color-mri-error-bg)'
+        default:
+          return 'var(--color-mri-success-bg)'
+      }
+    },
+    dqdSnackbarIcon() {
+      switch (this.dqdSnackbar.type) {
+        case 'warning':
+          return 'mdi-alert-outline'
+        case 'error':
+          return 'mdi-alert-circle-outline'
+        default:
+          return 'mdi-check-circle-outline'
+      }
+    },
+    dqdSnackbarIconClass() {
+      return `dqd-snackbar-icon-${this.dqdSnackbar.type}`
+    },
+    dqdSnackbarTimeout() {
+      return Constants.SnackbarTimeout
+    },
     ...mapGetters([
       'getMriFrontendConfig',
       'getBookmarks',
@@ -334,6 +374,23 @@ export default {
     },
     hasExceededLength() {
       return this.renamedBookmark.length > this.maxLength
+    },
+    renameErrorMessages(): string[] {
+      // Accumulate rather than return the first match: a name can be both a
+      // duplicate and too long, and the Rename button is disabled on length,
+      // so showing only the duplicate error leaves the button dead with no
+      // explanation. Matches FiltersFooter.cohortNameErrors.
+      const errors: string[] = []
+      if (this.cohortNameValidationState === 'invalid') {
+        errors.push(this.getText('MRI_PA_INVALID_NAME_ERROR'))
+      }
+      if (this.cohortNameValidationState === 'empty') {
+        errors.push(this.getText('MRI_PA_BMK_EMPTY_NAME_ERROR'))
+      }
+      if (this.hasExceededLength) {
+        errors.push('Filter name must not exceed 255 characters')
+      }
+      return errors
     },
     isBookmarksLoading() {
       return this.bookmarksDisplay.length === 0 && this.getBookmarksLoading
@@ -580,9 +637,6 @@ export default {
         this.isDeletingBookmark = false
       }
     },
-    onChangeShared({ target }: { target: HTMLInputElement }) {
-      console.log(target.checked)
-    },
     closeIncompatibleMessage() {
       this.showIncompatibleMessage = false
     },
@@ -632,6 +686,13 @@ export default {
         messageType: '',
       }
     },
+    showDqdSnackbar(type: 'success' | 'warning' | 'error', text: string) {
+      // Re-trigger the enter transition when the same toast fires twice in a row.
+      this.dqdSnackbar = { visible: false, type, text }
+      this.$nextTick(() => {
+        this.dqdSnackbar.visible = true
+      })
+    },
     openDataQualityResultsDialog(flowRun) {
       const job = {
         flowRunId: flowRun.id,
@@ -657,16 +718,18 @@ export default {
       window.dispatchEvent(event)
     },
     async openDataQualityDialog(cohortDefinition) {
-      if (cohortDefinition?.id) {
+      if (!cohortDefinition?.id) {
+        return
+      }
+      // Reading the latest flow run and creating one are two round trips. A
+      // second click landing in between reads "nothing running" again and
+      // starts a duplicate job, so ignore it until this one settles.
+      await runDqdExclusive(String(cohortDefinition.id), async () => {
         const flowRun = await this.fetchDataQualityFlowRun({ cohortDefinitionId: cohortDefinition.id })
-        if (flowRun && flowRun?.state_name === 'Completed') {
+        if (isFlowRunCompleted(flowRun)) {
           this.openDataQualityResultsDialog(flowRun)
-        } else if (flowRun?.state_name === 'Pending' || flowRun?.state_name === 'RUNNING') {
-          this.messageStrip = {
-            show: true,
-            message: `Data Quality Check is already running`,
-            messageType: 'information',
-          }
+        } else if (isFlowRunInProgress(flowRun)) {
+          this.showDqdSnackbar('warning', this.getText('MRI_PA_DATA_QUALITY_CHECK_IN_PROGRESS'))
         } else {
           const GenerateDataQualityFlowRunParams = {
             datasetId: this.getSelectedDataset.id,
@@ -676,23 +739,15 @@ export default {
             vocabSchemaName: '',
           }
           await this.generateDataQualityFlowRun(GenerateDataQualityFlowRunParams)
-            .then(data => {
-              this.messageStrip = {
-                show: true,
-                message: `Data Quality Check created`,
-                messageType: 'success',
-              }
+            .then(() => {
+              this.showDqdSnackbar('success', this.getText('MRI_PA_DATA_QUALITY_CHECK_STARTED'))
             })
             .catch(err => {
-              this.messageStrip = {
-                show: true,
-                message: err,
-                messageType: 'error',
-              }
+              this.showDqdSnackbar('error', this.getText('MRI_PA_DATA_QUALITY_CHECK_FAILED'))
               return err
             })
         }
-      }
+      })
     },
     openAtlasLink() {
       if (this.useAtlasLite) {
@@ -788,6 +843,9 @@ export default {
     },
   },
   components: {
+    D2eDialog,
+    D2eButton,
+    D2eTextField,
     messageBox,
     appButton,
     appCheckbox,
@@ -802,6 +860,42 @@ export default {
     UsersIcon,
     LoadErrorIllustration,
     RefreshIcon,
+    VSnackbar,
   },
 }
 </script>
+
+<!-- Not scoped: Vuetify teleports the snackbar out of this component's tree. -->
+<style>
+.dqd-snackbar .v-snackbar__wrapper {
+  /* Figma <Alert>: 8px radius, card shadow #0000001A blur 10, no Vuetify min-width floor. */
+  min-width: auto;
+  border-radius: 8px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+.dqd-snackbar .dqd-snackbar-content {
+  display: flex;
+  align-items: flex-start;
+  color: var(--color-black);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.dqd-snackbar .dqd-snackbar-icon {
+  flex: none;
+  margin-right: 12px;
+}
+
+.dqd-snackbar .dqd-snackbar-icon-success {
+  color: var(--color-feedback-success);
+}
+
+.dqd-snackbar .dqd-snackbar-icon-warning {
+  color: var(--color-feedback-warning);
+}
+
+.dqd-snackbar .dqd-snackbar-icon-error {
+  color: var(--color-feedback-alarm);
+}
+</style>

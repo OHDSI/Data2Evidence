@@ -12,6 +12,7 @@ import {
   updateBookmarkSchema,
   createBookmarkSchema,
   deleteBookmarkSchema,
+  duplicateBookmarkSchema,
 } from '../types'
 @Service()
 export class BookmarkRouter {
@@ -36,6 +37,20 @@ export class BookmarkRouter {
         const { paConfigId, datasetId } = req.query
         const userName = req.userName
         const language = user.lang
+
+        // A missing datasetId is the caller's mistake, not ours, and it reached
+        // the query and came back as a 500 -- which the UI renders as an empty
+        // list. That is how an Atlas session with no dataset selected looked
+        // like "you have saved nothing" instead of "you have chosen nothing":
+        // the one fact that would have explained it was spent on a stack trace
+        // nobody sees. Say which parameter is missing, with a status that means
+        // what it says.
+        if (!datasetId) {
+          this.log.warn('Bookmark list requested without a datasetId')
+          return res.status(400).json({
+            error: 'datasetId is required to list bookmarks',
+          })
+        }
 
         const token = req.headers['authorization']
 
@@ -139,6 +154,35 @@ export class BookmarkRouter {
           })
         } catch (err) {
           this.log.error(`Failed to delete bookamark: ${JSON.stringify(err)}`)
+        }
+      }
+    )
+
+    this.router.post(
+      '/:bookmarkId/duplicate',
+      validate(duplicateBookmarkSchema),
+      async (req: IMRIRequest, res: Response, next: NextFunction) => {
+        this.log.info('Duplicate bookmark')
+
+        try {
+          const { configConnection } = req.dbConnections
+          const user = getUser(req)
+          const language = user.lang
+          const userName = req.userName
+          const token = req.headers['authorization']
+
+          req.body.cmd = 'duplicate'
+          req.body.bmkId = req.params.bookmarkId
+
+          queryBookmarks(req.body, userName, token, configConnection, (err, data) => {
+            if (err) {
+              return res.status(500).send(MRIEndpointErrorHandler({ err, language }))
+            } else {
+              res.status(200).json(data)
+            }
+          })
+        } catch (err) {
+          this.log.error(`Failed to duplicate bookmark: ${JSON.stringify(err)}`)
         }
       }
     )

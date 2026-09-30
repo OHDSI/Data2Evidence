@@ -61,7 +61,12 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByRole('textbox', { name: 'search terms' }).click()
   await page.getByRole('textbox', { name: 'search terms' }).fill('MALE')
   await page.getByRole('textbox', { name: 'search terms' }).press('Enter')
-  await expect(page.getByRole('cell', { name: '1377.7799' })).toBeVisible()
+  // 1000 (concept_name equals) + 100 (standard) + 400 * (0.5 * cosine + 0.5 * bm25/(bm25+5)).
+  // The relevance term reads the cache's FTS index, so the exact value depends on which
+  // build produced it: bao's cache POST scored 1377.7799, the Prefect cache flow this
+  // dataset now uses scores 1374.4577. The flow indexes every concept column, which is what
+  // CachedbDAO's avgDlConcept is calibrated against.
+  await expect(page.getByRole('cell', { name: '1374.4577' })).toBeVisible()
 
   // Disable hybrid search and save
   await page.getByRole('link', { name: 'Account' }).click()

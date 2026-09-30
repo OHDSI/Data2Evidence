@@ -17,7 +17,7 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByRole('link', { name: 'Cohorts' }).click()
   await expect(page.getByRole('status')).toBeVisible()
   await expect(page.getByRole('status')).toBeHidden()
-  await page.getByRole('button', { name: 'D2E' }).click()
+  await page.getByTestId('explorations-new-btn').click()
   await expect(page.locator('.loading-animation-component')).toBeVisible()
   await expect(page.locator('.loading-animation-component')).toBeHidden()
   await expect(page.getByText('2,694 / 2,694')).toBeVisible()

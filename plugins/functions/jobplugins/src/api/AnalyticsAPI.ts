@@ -107,6 +107,33 @@ export class AnalyticsSvcAPI {
     }
   }
 
+  /**
+   * The prerequisites a dataset is missing, or an empty list.
+   *
+   * Called before a run is submitted so a partial CDM is reported as the tables
+   * it lacks, instead of as whichever lookup happened to fail first. A failure
+   * of the check itself is not fatal: it must not stop a run that would
+   * otherwise have worked, so it degrades to "nothing to report" and leaves the
+   * existing errors to speak for themselves.
+   */
+  async getDatasetPrerequisiteProblems(
+    datasetId: string,
+  ): Promise<{ code: string; table: string; message: string }[]> {
+    try {
+      const url =
+        `${this.baseURL}/alpdb/dataset-prerequisites?datasetId=${datasetId}`;
+      console.log(`Calling ${url} to check dataset prerequisites`);
+      const result = await this.channel.get(url, this.getRequestConfig());
+      const problems = result.data?.problems;
+      return Array.isArray(problems) ? problems : [];
+    } catch (error) {
+      console.error(
+        `Could not check prerequisites for dataset ${datasetId}, continuing: ${error}`,
+      );
+      return [];
+    }
+  }
+
   // Fetch CDM version
   async getCdmVersion(datasetId: string) {
     try {
@@ -116,8 +143,22 @@ export class AnalyticsSvcAPI {
       const result = await this.channel.get(url, options);
       return result.data;
     } catch (error) {
+      // The endpoint runs `SELECT CDM_VERSION FROM <catalog>.<schema>.CDM_SOURCE`.
+      // cdm_source is optional in the OMOP DDL, so a CDM loaded without it -- or one
+      // whose cache has not finished building -- fails here with a bare 500. Both
+      // callers (DQD and data characterisation) already guard against an empty
+      // version but never reach that check, because this rejects first: the user
+      // was shown "Error creating DQD flow run: Request failed with status 500"
+      // with nothing pointing at the missing table. Keep the original error as the
+      // cause and say what to look at.
       console.error(`Error while getting cdm version: ${error}`);
-      throw error;
+      const detail = error instanceof Error ? error.message : String(error);
+      throw new Error(
+        `Could not determine the CDM version for dataset ${datasetId}. ` +
+          `It is read from the CDM_SOURCE table in the dataset's CDM schema — check that ` +
+          `the table exists and holds a row with cdm_version set, and that the dataset's ` +
+          `cache has finished building. Underlying error: ${detail}`,
+      );
     }
   }
 

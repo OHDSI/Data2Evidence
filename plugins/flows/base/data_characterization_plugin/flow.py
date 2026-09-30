@@ -4,7 +4,6 @@ import traceback
 
 from string import Template
 from functools import partial
-from sqlalchemy import text
 
 from rpy2 import robjects
 from rpy2.rinterface_lib.embedded import RRuntimeError
@@ -18,6 +17,7 @@ from prefect.artifacts import create_markdown_artifact
 from .utils import *
 from .types import DCOptionsType, AchillesParams
 
+from _shared_flow_utils.api.WebAPI import WebAPI
 from _shared_flow_utils.dao.DBDao import DBDao
 from _shared_flow_utils.create_dataset_tasks import *
 from _shared_flow_utils.types import UserType, SupportedDatabaseDialects
@@ -165,6 +165,7 @@ def data_characterization_plugin(options: DCOptionsType):
             execute_export_to_ares_wo(achilles_params, cdm_source)
 
             invalidate_trex_source_cache(options, dbdao.dialect, logger)
+            clear_webapi_results_cache(options, flow_run_id, logger)
 
         # Partial results were kept above; mark the flow failed without dropping them.
         if partial_failure:
@@ -173,6 +174,36 @@ def data_characterization_plugin(options: DCOptionsType):
                 f"partial results kept in schema '{achilles_params.resultsSchema}'. "
                 f"Failed analysis IDs: \"{partial_failure}\""
             )
+
+
+def clear_webapi_results_cache(options: DCOptionsType, flow_run_id: str, logger):
+    """
+    Drop the CDM results reports WebAPI cached for this dataset's source.
+
+    WebAPI caches each report (dashboard, person, data density, treemaps, ...) in
+    `webapi.achilles_cache` on first request and never expires it, so Atlas keeps
+    serving whatever was computed before this run - typically empty reports from
+    before the achilles tables held anything. Clearing them makes the results this
+    run just wrote the ones Atlas shows.
+
+    Like the trex cache invalidation, a failure here costs the reader fresh reports
+    but not the run, so it is logged rather than raised: the cache can also be
+    cleared from Atlas (Configuration -> Data sources -> Refresh cache).
+    """
+    source_key = webapi_cache_source_key(options.use_trex_connection, options.datasetId)
+    if source_key is None:
+        return
+    try:
+        WebAPI(flow_run_id).clear_cdmresults_cache(
+            cdmresults_clear_cache_path(source_key)
+        )
+        logger.info(f"Cleared the WebAPI cdm results cache for source '{source_key}'")
+    except Exception as e:
+        logger.warning(
+            f"Could not clear the WebAPI cdm results cache for source '{source_key}': {e}. "
+            "Atlas may keep showing the reports cached before this run until the cache is "
+            "cleared from Configuration -> Data sources -> Refresh cache."
+        )
 
 
 def invalidate_trex_source_cache(options: DCOptionsType, dialect: str, logger):
@@ -316,29 +347,20 @@ def execute_sql_script(sql_script: str, dbdao):
             logger.error(f"Failing script (first 1000 chars): {sql_script.strip()[:1000]}")
             raise
     else:
-        with dbdao.engine.begin() as conn:
-            try:
-                for statement in sql_script.strip().split(";"):
-                    if statement.strip():
-                        try:
-                            conn.execute(text(statement))
-                        except Exception as stmt_e:
-                            if (
-                                dbdao.dialect == SupportedDatabaseDialects.HANA
-                                and "index already exists" in str(stmt_e).lower()
-                            ):
-                                logger.debug(
-                                    "Ignoring 'index already exists' for statement: "
-                                    f"{statement.strip()[:200]}"
-                                )
-                                continue
-                            logger.error(
-                                f"SQL statement failed ({dbdao.dialect}): {stmt_e}"
-                            )
-                            logger.error(f"Failing statement: {statement.strip()[:500]}")
-                            raise
-            finally:
-                conn.close()
+        def is_ignorable_error(e: Exception) -> bool:
+            if (
+                dbdao.dialect == SupportedDatabaseDialects.HANA
+                and "index already exists" in str(e).lower()
+            ):
+                logger.debug(f"Ignoring 'index already exists': {e}")
+                return True
+            return False
+
+        try:
+            run_sql_statements(dbdao.engine, sql_script, is_ignorable_error)
+        except Exception as e:
+            logger.error(f"SQL statement failed ({dbdao.dialect}): {e}")
+            raise
 
 
 @task(log_prints=True)

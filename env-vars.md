@@ -44,8 +44,19 @@
 | `USERMGMT__ENTITLEMENTS_TIMEOUT_MS`             | number         | Entitlements fetch abort timeout in ms (default `10000`).                           |
 | `USERMGMT__ENTITLEMENTS_TOKEN_CLAIM`            | string         | JWT claim name carrying the upstream access token (default `physionet_access_token`). |
 | `USERMGMT__ENTITLEMENTS_DATASET_MAPPING`        | json           | Fallback map of `token_dataset_code` → PhysioNet `slug/version` used when the `portal.dataset` PhysioNet columns are absent, e.g. `{"mimic-iv":"mimiciv/2.2"}`. |
+| `IDP__GROUP_ROLE_MAPPING`                       | json           | Maps upstream IdP groups to d2e roles for federated logins, keyed by the token's `idp_provider`: `{"<provider>":{"<d2e scope>":"<upstream group id>"}}`, e.g. `{"entra":{"role.systemadmin":"1f0e...","role.researcher.demo":"9ab3..."}}`. The keys must be the scope strings the reconciliation already understands (`role.systemadmin`, `role.useradmin`, `role.dashboardviewer`, `role.researcher.<dataset_code>`), not human-readable role names. Unset/empty or malformed means no group maps to a role. |
 | `LOGTO__SOCIAL_SIGNIN_TARGETS`                  | csv            | Logto social-connector targets to enable on the sign-in screen. Defaults to the target of `LOGTO__CONNECTOR_CONFIG`. |
 | `LOGTO__ENABLE_REGISTRATION`                    | bool           | Show the self-service Register button on the sign-in screen (`SignInAndRegister`). Default `false` so connectors like Entra keep a pure sign-in screen; set `true` for self-registration (e.g. PhysioNet). |
+| `D2E_IDP_MODE`                                  | string         | `trex` (default) or `logto-federated`. `logto-federated` keeps Logto as an upstream sign-in option of the trex identity provider and migrates existing Logto users to trex on every start. Written once by `d2e init` / `d2e start`; see [`docs/logto-federation-upgrade.md`](docs/logto-federation-upgrade.md). |
+| `D2E__LOGTO_UPSTREAM__CLIENT_ID`                | string         | Logto application trex signs users in through (federated mode). Set from `LOGTO__D2E_APP__CLIENT_ID` by `docker-compose-logto-federation.yml`. |
+| `D2E__LOGTO_UPSTREAM__CLIENT_SECRET`            | password       | Secret of `D2E__LOGTO_UPSTREAM__CLIENT_ID`. |
+| `TREX_FEDERATION_ENABLED`                       | bool           | Enables trex's federated sign-in endpoints (`/trex/auth/v1/authorize`, `/callback`). Set by the federation overlay. |
+| `TREX_FEDERATION_REDIRECT_URI`                  | url            | Callback URI trex sends to upstream providers; must match the URI registered at the provider exactly. |
+| `TREX__FEDERATION_ADMIN_URL`                    | url            | trex federation admin API, used by the IdP migration to register providers and link identities. |
+| `D2E_IDP`                                       | string         | Identity provider d2e-compat and the setup scripts authenticate against. `trex`. |
+| `TREX__AUTH_URL`                                | url            | trex native auth API (`/trex/auth/v1`), used by usermgmt to create accounts. |
+| `D2E__SEED_USER`                                | json           | JSON `{username, initialPassword}` of the initial account created in trex on a new installation. Not added to installations upgraded from Logto. |
+| `TREX_OIDC_INTERNAL_BASE`                       | url            | Origin server-side OIDC calls use when the public FQDN does not resolve inside the container (local, CI). |
 
 ## Network federation (network-api)
 

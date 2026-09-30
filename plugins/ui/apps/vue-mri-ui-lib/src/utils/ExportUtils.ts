@@ -78,12 +78,16 @@ const appendXAxisTitle = (chartCanvas: HTMLCanvasElement, title: string): HTMLCa
 }
 
 /**
- * Reads the rendered StackBarChartLegend entries from the DOM.
+ * Reads the rendered StackBarChartLegend entries belonging to `chartId`.
  * The legend component is an HTML div outside the chart SVG so it must be
- * captured separately at export time.
+ * captured separately at export time. It sits beside the chart container inside
+ * `.stackbar-wrapper`, so the lookup is scoped to that wrapper: a document-wide
+ * query would pick up an unrelated chart's legend, such as the Patient Analytics
+ * chart still mounted behind the cohort-comparison dialog.
  */
-const readStackBarLegendFromDOM = (): IBarLegendItem[] => {
-  const container = document.querySelector('.stackbar-legend-container')
+export const readStackBarLegendFromDOM = (chartId: string): IBarLegendItem[] => {
+  const chartEl = chartId ? document.querySelector(chartId) : null
+  const container = chartEl?.closest('.stackbar-wrapper')?.querySelector('.stackbar-legend-container')
   if (!container) return []
 
   const items: IBarLegendItem[] = []
@@ -288,6 +292,44 @@ export const wrapTextByWidth = (ctx: CanvasRenderingContext2D, text: string, max
   }
   if (currentLine) lines.push(currentLine)
   return lines.length ? lines : ['']
+}
+
+export const ELLIPSIS = '...'
+
+/**
+ * Shortens `text` until it plus a trailing ellipsis fits within `maxWidth` pixels.
+ * Text that already fits is returned with the ellipsis appended, marking it as cut off.
+ */
+export const truncateTextToWidth = (
+  ctx: CanvasRenderingContext2D,
+  text: string,
+  maxWidth: number,
+  ellipsis: string = ELLIPSIS
+): string => {
+  const fits = (s: string) => ctx.measureText(s).width <= maxWidth
+  let cut = text
+  while (cut && !fits(cut + ellipsis)) cut = cut.slice(0, -1)
+  return cut.replace(/\s+$/, '') + ellipsis
+}
+
+/**
+ * Wraps `text` like `wrapTextByWidth`, but to at most `maxLines` lines. Whatever does not
+ * fit is dropped and the last kept line is truncated with an ellipsis, so the block never
+ * grows past `maxWidth` x `maxLines`.
+ */
+export const wrapTextToLineLimit = (
+  ctx: CanvasRenderingContext2D,
+  text: string,
+  maxWidth: number,
+  maxLines: number
+): string[] => {
+  if (maxLines < 1) return []
+  const lines = wrapTextByWidth(ctx, text, maxWidth)
+  if (lines.length <= maxLines) return lines
+
+  const kept = lines.slice(0, maxLines)
+  kept[maxLines - 1] = truncateTextToWidth(ctx, kept[maxLines - 1], maxWidth)
+  return kept
 }
 
 const cropCanvas = (canvas, width, height, dx = 0, dy = 0) => {
@@ -535,7 +577,7 @@ export const createChartCanvas = (
     if (xAxisTitle) {
       outputCanvas = appendXAxisTitle(outputCanvas, xAxisTitle)
     }
-    const barLegendItems = readStackBarLegendFromDOM()
+    const barLegendItems = readStackBarLegendFromDOM(chartId)
     if (barLegendItems.length > 0) {
       const legendCanvas = createBarLegendCanvas(barLegendItems)
       outputCanvas = combineCanvas(outputCanvas, legendCanvas)

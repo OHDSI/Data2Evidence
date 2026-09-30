@@ -5,8 +5,16 @@ from pathlib import Path
 from time import time
 
 from prefect.blocks.system import Secret
+from prefect.variables import Variable
 
 from _shared_flow_utils.types import SupportedDatabaseDialects
+
+# Re-exported so `from .utils import *` keeps handing callers resolve_duckdb_file_path.
+from .paths import (
+    DEFAULT_DUCKDB_DATA_FOLDER,
+    resolve_duckdb_data_folder,
+    resolve_duckdb_file_path,
+)
 
 
 DUCKDB_EXTENSIONS_FILEPATH = os.path.join(os.getcwd(), "duckdb_extensions")
@@ -79,6 +87,33 @@ def execute_statement(conn: any, statement: str):
     conn.execute(statement)
 
 
+def checkpoint_database(conn: any, database_name: str, logger=None) -> None:
+    """
+    Flush the DuckDB WAL for ``database_name`` to the database file.
+
+    DuckDB keeps committed writes in the WAL until a checkpoint. A session that
+    wrote them still sees them, but a *different* connection opening the file --
+    which is what DQD and DC do -- resolves against the on-disk state and reports
+    freshly created tables as missing. Checkpointing after the cache write makes
+    the schema visible to every later reader.
+    """
+    statement = f'CHECKPOINT "{database_name}";'
+    try:
+        conn.execute(statement)
+        if logger:
+            logger.info(f"Checkpointed database '{database_name}'.")
+    except Exception as e:
+        # A failed checkpoint costs durability of the just-written schema, not
+        # the data itself, so it must be visible rather than swallowed.
+        if logger:
+            logger.warning(
+                f"CHECKPOINT on '{database_name}' failed: {e}. Newly created "
+                "objects may not be visible to other connections until the next "
+                "checkpoint."
+            )
+        raise
+
+
 def get_document_identifier(table_name: str) -> str:
     """
     Returns the document identifier for a given table name based on the DUCKDB_FULLTEXT_SEARCH_CONFIG
@@ -122,8 +157,17 @@ def check_if_file_exists(file_path: str) -> bool:
     return Path(file_path).exists()
 
 
-def resolve_duckdb_file_path(duckdb_database_name: str, folder_path: str) -> str:
+def get_duckdb_data_folder(logger=None) -> str:
     """
-    Returns the full path to the DuckDB database file
+    Returns the folder cache files are written into, warning when the
+    `duckdb_data_folder` Prefect variable is not set and the default is used.
     """
-    return str(Path(folder_path) / f"{duckdb_database_name}.db")
+    configured = Variable.get("duckdb_data_folder")
+    folder = resolve_duckdb_data_folder(configured)
+    if configured != folder and logger:
+        logger.warning(
+            f"Prefect variable 'duckdb_data_folder' is not set (got {configured!r}); "
+            f"writing cache files to '{folder}'. Set DUCKDB__DATA_FOLDER in the "
+            "environment that runs alp-dataflow-gen-init to configure it."
+        )
+    return folder

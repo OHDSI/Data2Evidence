@@ -53,8 +53,17 @@ const installStubs = () => {
       return Promise.resolve()
     }
   }
+  // activateUser picks its provider from resolveRoleStore(env.IDP_ROLE_STORE),
+  // which defaults to trex. Both are stubbed onto the same recorder so a test
+  // asserts that the account was synced, not which client happened to do it.
   service.logtoApi = {
     activateUser: (idpUserId: string, active: boolean) => {
+      activateCalls.push({ idpUserId, active })
+      return Promise.resolve()
+    }
+  }
+  service.trexIdpAPI = {
+    setUserActive: (idpUserId: string, active: boolean) => {
       activateCalls.push({ idpUserId, active })
       return Promise.resolve()
     }
@@ -83,7 +92,7 @@ Deno.test('activateUser stamps authz_changed_at inside the transaction when acti
   assertEquals(stamped, [{ userId: USER_ID, trx }])
 })
 
-Deno.test('activateUser stamps before syncing to Logto, and updates the DB row first', async () => {
+Deno.test('activateUser stamps before syncing to the identity provider, and updates the DB row first', async () => {
   const { service, updates, stamped, activateCalls } = installStubs()
 
   await service.activateUser({ userId: USER_ID, active: false })

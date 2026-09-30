@@ -1,5 +1,13 @@
-import { describe, it, expect } from 'vitest'
-import { buildXAxisTitle, INTERACTIVE_SELECTORS, stripInteractiveSVG, wrapTextByWidth } from '../ExportUtils'
+import { afterEach, describe, it, expect } from 'vitest'
+import {
+  buildXAxisTitle,
+  readStackBarLegendFromDOM,
+  INTERACTIVE_SELECTORS,
+  stripInteractiveSVG,
+  truncateTextToWidth,
+  wrapTextByWidth,
+  wrapTextToLineLimit,
+} from '../ExportUtils'
 
 const SVG_NS = 'http://www.w3.org/2000/svg'
 
@@ -126,13 +134,13 @@ describe('buildXAxisTitle', () => {
   })
 })
 
-describe('wrapTextByWidth', () => {
-  // Stub context whose measured width equals the string's character count, so
-  // `maxWidth` behaves like a character limit and the assertions read naturally.
-  const charWidthCtx = {
-    measureText: (s: string) => ({ width: s.length }),
-  } as unknown as CanvasRenderingContext2D
+// Stub context whose measured width equals the string's character count, so
+// `maxWidth` behaves like a character limit and the assertions read naturally.
+const charWidthCtx = {
+  measureText: (s: string) => ({ width: s.length }),
+} as unknown as CanvasRenderingContext2D
 
+describe('wrapTextByWidth', () => {
   it('keeps short text on a single line', () => {
     expect(wrapTextByWidth(charWidthCtx, 'Short label', 80)).toEqual(['Short label'])
   })
@@ -172,5 +180,84 @@ describe('wrapTextByWidth', () => {
     const lines = wrapTextByWidth(wideCtx, 'aaa bbb ccc', 10)
     expect(lines).toEqual(['aaa', 'bbb', 'ccc'])
     lines.forEach(line => expect(line.length * 2).toBeLessThanOrEqual(10))
+  })
+})
+
+describe('truncateTextToWidth', () => {
+  it('shortens text until it fits alongside the ellipsis', () => {
+    expect(truncateTextToWidth(charWidthCtx, 'abcdefgh', 5)).toBe('ab...')
+  })
+
+  it('marks text that already fits as cut off', () => {
+    expect(truncateTextToWidth(charWidthCtx, 'ab', 10)).toBe('ab...')
+  })
+
+  it('drops the whitespace exposed by the cut', () => {
+    expect(truncateTextToWidth(charWidthCtx, 'abc def', 7)).toBe('abc...')
+  })
+
+  it('returns just the ellipsis when nothing else fits', () => {
+    expect(truncateTextToWidth(charWidthCtx, 'abc', 1)).toBe('...')
+  })
+})
+
+describe('wrapTextToLineLimit', () => {
+  it('leaves text that fits within the limit untouched', () => {
+    expect(wrapTextToLineLimit(charWidthCtx, 'one two three', 10, 3)).toEqual(['one two', 'three'])
+  })
+
+  it('caps the line count and ellipsises the last kept line', () => {
+    const lines = wrapTextToLineLimit(charWidthCtx, 'one two three four five six seven', 10, 3)
+    expect(lines).toEqual(['one two', 'three four', 'five si...'])
+    lines.forEach(line => expect(line.length).toBeLessThanOrEqual(10))
+  })
+
+  it('keeps a hard-broken long word within the line limit', () => {
+    const lines = wrapTextToLineLimit(charWidthCtx, 'x'.repeat(50), 10, 3)
+    expect(lines).toEqual(['xxxxxxxxxx', 'xxxxxxxxxx', 'xxxxxxx...'])
+  })
+
+  it('returns a single empty line for empty input', () => {
+    expect(wrapTextToLineLimit(charWidthCtx, '', 10, 3)).toEqual([''])
+  })
+})
+
+describe('readStackBarLegendFromDOM', () => {
+  const PA_CHART = `
+    <div class="stackbar-wrapper">
+      <div class="stackbar-chart-area">
+        <div class="stackbar-container" id="stacked-chart"></div>
+      </div>
+      <div class="stackbar-legend-container">
+        <div class="stackbar-legend-entry" data-full-name="Patient Analytics series">
+          <div class="stackbar-legend-entry-box"></div>
+          <span class="stackbar-legend-entry-text">Patient Analytics series</span>
+        </div>
+      </div>
+    </div>`
+
+  // The cohort-comparison chart renders no legend of its own.
+  const COMPARE_CHART = '<div class="stackbar-container" id="columnbar-chart"></div>'
+
+  afterEach(() => {
+    document.body.innerHTML = ''
+  })
+
+  it('reads the legend belonging to the exported chart', () => {
+    document.body.innerHTML = PA_CHART
+    const items = readStackBarLegendFromDOM('#stacked-chart')
+    expect(items.map(i => i.name)).toEqual(['Patient Analytics series'])
+  })
+
+  it('does not pick up another chart legend when the exported chart has none', () => {
+    // The cohort-comparison dialog renders over the Patient Analytics page, so that
+    // page's legend is still in the DOM while the comparison chart is exported.
+    document.body.innerHTML = PA_CHART + COMPARE_CHART
+    expect(readStackBarLegendFromDOM('#columnbar-chart')).toEqual([])
+  })
+
+  it('returns an empty list when the chart container is absent', () => {
+    document.body.innerHTML = ''
+    expect(readStackBarLegendFromDOM('#columnbar-chart')).toEqual([])
   })
 })

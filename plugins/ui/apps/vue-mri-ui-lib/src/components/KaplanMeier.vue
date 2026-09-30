@@ -158,6 +158,7 @@ import appLabel from '../lib/ui/app-label.vue'
 import Constants from '../utils/Constants'
 import DateUtils from '../utils/DateUtils'
 import processCSV from '../utils/ProcessCSV'
+import { isAbortError } from '../utils/saveFile'
 import { generateDownloadFileName } from '../utils/generateDownloadFileName'
 import chartErrorMessage from './ChartErrorMessage.vue'
 import ChartPopover from './ChartPopover.vue'
@@ -412,8 +413,12 @@ export default {
         kmEndEventOccurence,
       })
         .then(response => processCSV(response, this.csvFileName))
-        .catch(() => {
-          // do nothing
+        .catch(err => {
+          // The request failure is already flagged by the store; this also covers failing to save the file
+          // A cancelled request or save is not a failure
+          if (!axios.isCancel(err) && !isAbortError(err)) {
+            this.setCSVDownloadError(true)
+          }
         })
         .finally(() => {
           this.completeDownloadCSV()
@@ -469,20 +474,24 @@ export default {
         }
       }
 
-      this.$emit('busyEv', false)
       this.errorMessage = ''
       const bookmark = this.getBookmarksData
       if (Object.keys(bookmark).length !== 0 && bookmark) {
-        this.fireQuery({
-          url: '/analytics-svc/api/services/population/json/kaplanmeier',
-          params: { mriquery: JSON.stringify(bookmark) },
-        })
-          .then(callback)
-          .catch(({ message, response }) => {
-            if (message !== 'cancel') {
-              this.$emit('busyEv', false)
-            }
-
+        // Through startRequest, as every other chart does. It cancels the request
+        // still in flight and drops any response that lands after a newer one went
+        // out — without it, two quick edits both stayed alive and the slower (older)
+        // response wrote the count last, for a cohort no longer on screen. That write
+        // also clears the store's staleness flag, so a reader waiting for the new
+        // result (pa_get_cohort_result) stops waiting and takes the old number.
+        this.startRequest(
+          ({ cancelToken }) =>
+            this.fireQuery({
+              url: '/analytics-svc/api/services/population/json/kaplanmeier',
+              params: { mriquery: JSON.stringify(bookmark) },
+              cancelToken,
+            }),
+          callback,
+          ({ response }) => {
             if (response) {
               let noDataReason = this.getText('MRI_PA_CHART_NO_DATA_DEFAULT_MESSAGE')
 
@@ -502,8 +511,10 @@ export default {
                 noDataReason,
               })
             }
-          })
-        this.$emit('busyEv', true)
+          }
+        )
+      } else {
+        this.$emit('busyEv', false)
       }
     },
     getKMDisplayInfo() {
@@ -528,6 +539,7 @@ export default {
       'setKMLegends',
       'setKMFirstLoad',
       'completeDownloadCSV',
+      'setCSVDownloadError',
       'setChartPropertyValue',
     ]),
     buildRequest() {

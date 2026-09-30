@@ -115,26 +115,32 @@ export class CachedbDAO {
   //   syn_exact_score: scoreSynonymEquals if a synonym equals the query,
   //                    scoreSynonymPrefix on prefix, else 0.
   //   syn_bm25:        BM25 from the synonym FTS index.
+  // Scored over the synonym BM25 candidate set only. Previously the exact/prefix
+  // boosts were also evaluated on rows with no BM25 hit, which meant a LOWER()
+  // scan of every synonym row (6.2M on the KPMP vocabulary) on every keystroke.
+  // Restricting to BM25 candidates keeps the boosts identical for every concept
+  // the search can actually return, and drops the full scan.
+  //
+  // match_bm25 is evaluated once in the inner select and filtered on the alias:
+  // repeating the call in the WHERE makes DuckDB compute it twice.
   private readonly getSynonymScoresCTE = (): string => `
     synonym_scores as (
       select
         cs.concept_id,
         MAX(CASE
-          WHEN LOWER(cs.concept_synonym_name) = LOWER($1) THEN ${this.scoreSynonymEquals}
-          WHEN LOWER(cs.concept_synonym_name) LIKE LOWER($2) || '%' ESCAPE '\\' THEN ${this.scoreSynonymPrefix}
+          WHEN cs.synonym_name_lower = LOWER($1) THEN ${this.scoreSynonymEquals}
+          WHEN starts_with(cs.synonym_name_lower, LOWER($2)) THEN ${this.scoreSynonymPrefix}
           ELSE 0
         END) as syn_exact_score,
         MAX(cs.raw_bm25) as syn_bm25
       from (
         select
           concept_id,
-          concept_synonym_name,
+          LOWER(concept_synonym_name) as synonym_name_lower,
           ${this.fts_concept_synonym_identifier}.match_bm25(fts_document_identifier_id, $1) as raw_bm25
         from ${this.vocabSchemaName}.concept_synonym
       ) cs
       where cs.raw_bm25 IS NOT NULL
-         OR LOWER(cs.concept_synonym_name) = LOWER($1)
-         OR LOWER(cs.concept_synonym_name) LIKE LOWER($2) || '%' ESCAPE '\\'
       group by cs.concept_id
     )
   `;
@@ -593,16 +599,29 @@ export class CachedbDAO {
       const synonymCte = this.getSynonymScoresCTE();
       const escapedSearchText = this.escapeLike(searchText);
 
+      // Name-match tiers are scored over the candidate set (concepts with a
+      // concept BM25 hit, plus concepts reached through a synonym BM25 hit)
+      // rather than the whole vocabulary. Previously every one of the ~9.3M
+      // concept rows was run through three LOWER()/LIKE predicates -- including
+      // a LIKE '%term%' substring scan -- on every search.
+      //
+      // Trade-off: a concept whose name merely *contains* the term while the
+      // tokenizer produces no BM25 hit at all (hyphenated compounds such as
+      // "insulin-like growth factor" for the query "insulin") is no longer
+      // returned. Ranking is unchanged for everything that is returned: the
+      // tiers, boosts and ordering are identical, and the candidate set is a
+      // superset of every row that can reach the top of the result list.
       const conceptWithScores = `
         with ${synonymCte},
         concept_with_scores as (
           select
             ${columnsToSelect}${columns.length === 0 ? ", " : ""}
+            c.concept_bm25,
             -- Exact match scoring (highest priority)
             CASE
-              WHEN LOWER(concept_name) = LOWER($1) THEN ${this.scoreConceptNameEquals}
-              WHEN LOWER(concept_name) LIKE LOWER($2) || '%' ESCAPE '\\' THEN ${this.scoreConceptNamePrefix}
-              WHEN LOWER(concept_name) LIKE '%' || LOWER($2) || '%' ESCAPE '\\' THEN ${this.scoreConceptNameContains}
+              WHEN c.concept_name_lower = LOWER($1) THEN ${this.scoreConceptNameEquals}
+              WHEN starts_with(c.concept_name_lower, LOWER($2)) THEN ${this.scoreConceptNamePrefix}
+              WHEN contains(c.concept_name_lower, LOWER($2)) THEN ${this.scoreConceptNameContains}
               ELSE 0
             END as exact_match_score,
             -- Standard concept boost
@@ -610,8 +629,19 @@ export class CachedbDAO {
               WHEN standard_concept = 'S' THEN ${this.scoreStandardBoost}
               ELSE 0
             END as standard_boost
-          from
-            ${this.vocabSchemaName}.concept c
+          from (
+            select
+              ${columnsToSelect}${columns.length === 0 ? ", " : ""}
+              LOWER(concept_name) as concept_name_lower,
+              -- Kept from the candidate scan rather than recomputed by a
+              -- second CTE over the whole vocabulary: this scan already
+              -- evaluates match_bm25, so retaining the score removes a full
+              -- pass over all ~9.3M concept rows.
+              ${this.fts_concept_identifier}.match_bm25(c.concept_id, $1) as concept_bm25
+            from ${this.vocabSchemaName}.concept c
+            where ${this.fts_concept_identifier}.match_bm25(c.concept_id, $1) IS NOT NULL
+               or c.concept_id in (select concept_id from synonym_scores)
+          ) c
         ),
       `;
 
@@ -654,17 +684,11 @@ export class CachedbDAO {
         `;
         queryParams = [searchText, escapedSearchText, textEmbedding];
       } else {
-        // FTS-only: raw concept BM25 here; synonym BM25 is merged in the final
-        // select via getBestBm25Score, and syn_exact_score via LEFT JOIN.
-        searchScores = `
-          search_scores as (
-            select
-              ${columnsToSelect}${columns.length === 0 ? ", " : ""}
-              ${this.fts_concept_identifier}.match_bm25(concept_id, $1) as concept_bm25
-            from
-              ${this.vocabSchemaName}.concept c
-          )
-        `;
+        // FTS-only: the concept BM25 score already comes from
+        // concept_with_scores, so no second pass over the vocabulary is needed.
+        // Synonym BM25 is merged in the final select via getBestBm25Score, and
+        // syn_exact_score via LEFT JOIN.
+        searchScores = "";
         queryParams = [searchText, escapedSearchText];
       }
 
@@ -696,7 +720,7 @@ export class CachedbDAO {
           *,
           (
             COALESCE(${this.getBestBm25Score(
-              "ss.concept_bm25",
+              "c.concept_bm25",
               "sy.syn_bm25",
             )}, 0)
             + c.exact_match_score
@@ -705,12 +729,10 @@ export class CachedbDAO {
           ) as score
         from
           concept_with_scores c
-        join search_scores ss
-          on ss.concept_id = c.concept_id
         left join synonym_scores sy
           on sy.concept_id = c.concept_id
         WHERE (
-          ss.concept_bm25 IS NOT NULL
+          c.concept_bm25 IS NOT NULL
           OR sy.syn_bm25 IS NOT NULL
           OR c.exact_match_score > 0
           OR sy.syn_exact_score > 0
@@ -719,10 +741,18 @@ export class CachedbDAO {
         order by score desc
       `;
 
+      // conceptWithScores ends with a trailing comma so a following CTE can be
+      // appended. The FTS-only path has no following CTE, so the comma has to
+      // go -- otherwise the query reads `... ), select *` and DuckDB fails with
+      // `Parser Error: syntax error at or near "select"`.
+      const cteBlocks = [
+        conceptWithScores.trim().replace(/,$/, ""),
+        searchScores.trim(),
+      ].filter((block) => block.length > 0);
+
       const finalQuery = `
         with fts as (
-          ${conceptWithScores}
-          ${searchScores}
+          ${cteBlocks.join(",\n")}
           ${finalScores}
         )
       `;

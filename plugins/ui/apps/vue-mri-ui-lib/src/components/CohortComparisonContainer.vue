@@ -80,6 +80,7 @@
         <loadingAnimation v-if="chartBusy"></loadingAnimation>
         <StackBarCohortCompare
           v-if="activeChart === 'stacked'"
+          @response="setResponse"
           @busyEv="setChartBusy"
           :bookmarkList="bookmarkIds"
           :xAxes="axis"
@@ -118,14 +119,28 @@
     <imageExport
       v-if="showDownloadPNGDialog"
       :overrideResponse="response"
-      @closeEv="showDownloadPNGDialog = false"
+      :chartBusy="chartBusy"
+      @closeEv="onImageExported"
       :compareChartType="compareChartType"
     ></imageExport>
+    <VSnackbar
+      v-model="snackbar.visible"
+      location="top right"
+      :color="snackbarColor"
+      :timeout="snackbarTimeout"
+      :z-index="snackbarZIndex"
+      rounded="16px"
+    >
+      <span class="snackbar-content">
+        <appIcon :icon="snackbarIcon" :class="snackbarIconClass" />
+        {{ snackbar.text }}
+      </span>
+    </VSnackbar>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onBeforeUnmount, nextTick, watch } from 'vue'
+import { computed, ref, onMounted, onBeforeUnmount, nextTick, watch } from 'vue'
 import { useStore } from 'vuex'
 import BoxplotCohortCompare from './BoxplotCohortCompare.vue'
 import CohortCompareAxisButton from './CohortCompareAxisButton.vue'
@@ -138,7 +153,10 @@ import StackBarCohortCompare from './StackBarCohortCompare.vue'
 import KMInteractionList from './KMInteractionList.vue'
 import CohortCompareKMMenuButton from './CohortCompareKMMenuButton.vue'
 import appCheckbox from '../lib/ui/app-checkbox.vue'
+import appIcon from '../lib/ui/app-icon.vue'
 import appLabel from '../lib/ui/app-label.vue'
+import VSnackbar from './vuetify/VSnackbar.vue'
+import Constants from '../utils/Constants'
 
 // Props
 interface Props {
@@ -160,7 +178,7 @@ watch(
 
 const store = useStore()
 
-const getText = (key: string) => store?.getters?.getText?.(key) || key
+const getText = (key: string, param?: string | string[]) => store?.getters?.getText?.(key, param) || key
 
 // Reactive state
 const showCohortCompareDialog = ref(false)
@@ -187,6 +205,17 @@ const kmSeries = ref<any[]>([])
 const censoring = ref(false)
 const errorLines = ref(false)
 const response = ref<any>(null) // this data will be emitted from the charts
+const snackbar = ref({ visible: false, type: 'success', text: '' })
+
+const snackbarColor = computed(() => (snackbar.value.type === 'success' ? 'var(--color-mri-success-bg)' : '#FDEDED'))
+const snackbarIcon = computed(() => (snackbar.value.type === 'success' ? 'successCheck' : 'alertCircle'))
+const snackbarIconClass = computed(() =>
+  snackbar.value.type === 'success' ? 'snackbar-success-icon' : 'snackbar-error-icon'
+)
+const snackbarTimeout = computed(() => Constants.SnackbarTimeout)
+// The comparison dialog is a MessageBox overlay, which outranks Vuetify's default
+// snackbar z-index; without this the toast is hidden behind the dimming layer.
+const snackbarZIndex = Constants.SnackbarZIndex
 
 // Methods
 const setUpperAxisMenu = (menu: any) => {
@@ -229,6 +258,18 @@ const handleDownloadClick = () => {
     compareChartType.value = 'kmCompare'
   }
   downloadMenuOpened.value = false
+}
+
+const showExportToast = (type: 'success' | 'error') => {
+  const textKey = type === 'success' ? 'MRI_PA_EXPORT_SUCCESS' : 'MRI_PA_EXPORT_FAILED'
+  snackbar.value = { visible: true, type, text: getText(textKey, getText('MRI_PA_EXPORT_FILE_PNG')) }
+}
+
+const onImageExported = (payload: any) => {
+  showDownloadPNGDialog.value = false
+  // Save picker dismissed: nothing was exported, so nothing to report
+  if (payload?.cancelled) return
+  showExportToast(payload && payload.success ? 'success' : 'error')
 }
 
 const onSelectAttribute = (val: any) => {
@@ -290,3 +331,21 @@ onBeforeUnmount(() => {
   window.removeEventListener('click', closeSubMenu)
 })
 </script>
+
+<style scoped>
+.snackbar-content {
+  color: rgba(0, 0, 0, 0.87);
+  display: inline-flex;
+  align-items: center;
+}
+
+.snackbar-success-icon {
+  margin-right: 12px;
+  color: #00855f;
+}
+
+.snackbar-error-icon {
+  margin-right: 12px;
+  color: var(--color-feedback-alarm, #d53939);
+}
+</style>

@@ -18,6 +18,34 @@ const atlasDistDir = join(rootDir, 'node_modules', '@ohdsi', 'atlas3', 'dist');
 
 console.log('[postinstall] Setting up Atlas3 plugin resources...');
 
+// D2E sign-in page (served at /d2e-login): where trex's OIDC provider sends a
+// browser that has no session, since trex hosts no login UI of its own.
+//
+// Staged before the atlas3 check below, which exits on failure. This page is
+// what every unauthenticated browser is redirected to, and it does not depend on
+// atlas3 — leaving it after that exit meant a failed atlas3 fetch silently took
+// the login page with it, turning the redirect into a 404.
+const d2eLoginSrc = join(rootDir, 'd2e-login');
+const d2eLoginDest = join(rootDir, 'resources', 'd2e-login');
+if (existsSync(d2eLoginSrc)) {
+  rmSync(d2eLoginDest, { recursive: true, force: true });
+  mkdirSync(d2eLoginDest, { recursive: true });
+  // Deno test files live alongside the page's source; they have no business
+  // being served at /d2e-login, so exclude them from the copy.
+  cpSync(d2eLoginSrc, d2eLoginDest, { recursive: true, filter: (src) => !src.endsWith('.test.mjs') });
+
+  // The page's logo travels with it. Referencing it inside the atlas3 dist made
+  // the sign-in page depend on a separate application's build output, so the
+  // logo was simply missing wherever that dist was absent.
+  const logoSrc = join(rootDir, 'd2e2.svg');
+  if (existsSync(logoSrc)) {
+    copyFileSync(logoSrc, join(d2eLoginDest, 'd2e2.svg'));
+  } else {
+    console.warn('[postinstall] d2e2.svg not found; the sign-in page will render without its logo');
+  }
+  console.log('[postinstall] Copied D2E login page to resources/d2e-login');
+}
+
 if (!existsSync(atlasDistDir)) {
   console.error('[postinstall] ERROR: @ohdsi/atlas3 dist not found at', atlasDistDir);
   console.error('[postinstall] Did the GitHub Packages install succeed? Ensure GITHUB_TOKEN is set (see .npmrc).');
@@ -99,11 +127,15 @@ if (existsSync(landingImageSrc)) {
 }
 
 // Helper scripts injected into Atlas3's index.html:
-//  - login-guard.js: silent-SSO guard; runs first, blocks the WebAPI HS256 fallback.
+//  - landing-redirect.js: sends Atlas3's welcome route to Data Sources. First,
+//    because it publishes the landing route login-guard.js returns users to.
+//  - login-guard.js: silent-SSO guard; blocks the WebAPI HS256 fallback.
 //  - user-link.js: routes the navbar user menu to the d2e portal account page.
 //  - token-keeper.js: refreshes the Logto bearerToken before expiry.
 //  - analysis-default.js: opens the Wizard when entering the Analysis hub.
-const headScripts = ['login-guard.js', 'user-link.js', 'token-keeper.js', 'analysis-default.js'];
+// Injected in this order: each is appended before </head>, so the array order is
+// the execution order, and login-guard.js reads a global the first one sets.
+const headScripts = ['landing-redirect.js', 'login-guard.js', 'user-link.js', 'token-keeper.js', 'analysis-default.js'];
 let indexHtml = readFileSync(join(resourcesDir, 'index.html'), 'utf8');
 let indexChanged = false;
 for (const script of headScripts) {
@@ -117,9 +149,6 @@ for (const script of headScripts) {
 }
 if (indexChanged) writeFileSync(join(resourcesDir, 'index.html'), indexHtml);
 console.log('[postinstall] Injected helper scripts into Atlas3 index.html');
-
-// Portal resources directory (for the /atlas-portal iframe wrapper build).
-mkdirSync(join(rootDir, 'resources', 'portal'), { recursive: true });
 
 // Standalone login bridge (served at /atlas-login): copy the static page that
 // performs a Logto OIDC login and seeds localStorage.bearerToken for Atlas3.
@@ -151,6 +180,7 @@ const PLUGINS = [
   { pkg: '@ohdsi/notebook-plugin', id: 'notebook-plugin', repoints: [] },
   { pkg: '@ohdsi/network-plugin', id: 'network-plugin', repoints: [] },
   { pkg: '@ohdsi/studies-plugin', id: 'studies-plugin', repoints: [] },
+  { pkg: '@data2evidence/atlas-data-quality', id: 'data-quality', repoints: [] },
 ];
 
 for (const { pkg, id, repoints } of PLUGINS) {

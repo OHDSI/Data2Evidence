@@ -2,6 +2,7 @@ name: d2e-ui/portal components tests
 
 permissions:
   contents: read
+  packages: read
 
 on:
   pull_request:
@@ -64,6 +65,9 @@ jobs:
       # Run the step only with "portal_components_changed" equals "True"
       - name: Run unit tests if files have changed
         if: github.ref_name == 'develop' || github.event_name == 'merge_group' || steps.check_file_changed.outputs.portal_components_changed == 'true'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           bun install
           cd libs/portal-components

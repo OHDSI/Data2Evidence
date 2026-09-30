@@ -19,7 +19,6 @@ import DateUtils from '../../utils/DateUtils'
 import QueryString from '../../utils/QueryString'
 import { VariantValidator } from '../../utils/VariantValidator'
 import * as types from '../mutation-types'
-import Plotly from '../../lib/CustomPlotly'
 import moment from 'moment'
 
 const parseDrilldownDateValue = (value: unknown): Date | null => {
@@ -151,6 +150,11 @@ const state = {
   response: {},
   variantFilterCards: [],
   currentPatientCount: 0,
+  // Set the moment a new chart query is triggered, cleared when a count is written
+  // back. Nothing renders this flag; it exists so a reader that must not mistake a
+  // stale number for a result (the AI assistant's pa_get_cohort_result) can tell an
+  // in-flight query from a settled one.
+  currentPatientCountStale: false,
   totalPatientCount: 0,
   plotlyElement: null,
 }
@@ -339,6 +343,7 @@ const getters = {
   },
   getChartCover: modulestate => modulestate.chartCover,
   getCurrentPatientCount: modulestate => modulestate.currentPatientCount,
+  isCurrentPatientCountStale: modulestate => modulestate.currentPatientCountStale,
   getIsLargePatientData: (modulestate, moduleGetters) =>
     moduleGetters.getActiveChart === 'list' && modulestate.currentPatientCount >= 10000,
   getTotalPatientCount: modulestate => modulestate.totalPatientCount,
@@ -1087,7 +1092,14 @@ const actions = {
   setCurrentPatientCount({ commit }, { currentPatientCount }) {
     commit(types.SET_CURRENT_PATIENT_COUNT, { currentPatientCount })
   },
-  drilldown({ rootGetters, getters, dispatch }, { aSelectedData }) {
+  // Called by setFireRequest when a new query goes out. Marks the displayed count as
+  // no longer reflecting the cohort on screen WITHOUT touching the count itself.
+  invalidateCurrentPatientCount({ commit }) {
+    commit(types.SET_CURRENT_PATIENT_COUNT_STALE, { stale: true })
+  },
+  // `async` because this branch loads plotly through a dynamic import rather
+  // than a static one, to keep it out of the entry bundle.
+  async drilldown({ rootGetters, getters, dispatch }, { aSelectedData }) {
     try {
       const collectedConstraints = {}
       let collectedDateConstraints = {}
@@ -1211,6 +1223,10 @@ const actions = {
       const plotlyElement = getters.getPlotlyElement
       if (plotlyElement) {
         getters.getPlotlyElement.dispatchEvent?.(new CustomEvent('plotly_deselect'))
+        // Loaded on demand. A static import here would pull plotly.js into the
+        // store, and the store is built by lifecycles.ts, so the whole chart
+        // chunk would become a static dependency of the single-spa entry.
+        const { default: Plotly } = await import('../../lib/CustomPlotly')
         Plotly.update(plotlyElement, {}, { selections: [] })
       }
     } catch (e) {
@@ -1317,6 +1333,12 @@ const mutations = {
   },
   [types.SET_CURRENT_PATIENT_COUNT](modulestate, { currentPatientCount }) {
     modulestate.currentPatientCount = currentPatientCount
+    // Every writer here is a resolved query — a real number, '--' on failure, or a
+    // no-data result — so the count once again reflects the cohort on screen.
+    modulestate.currentPatientCountStale = false
+  },
+  [types.SET_CURRENT_PATIENT_COUNT_STALE](modulestate, { stale }) {
+    modulestate.currentPatientCountStale = stale
   },
   [types.SET_VARIANT_FILTER_CARDS](modulestate, { variantFilterCards }) {
     modulestate.variantFilterCards = variantFilterCards
