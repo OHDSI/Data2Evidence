@@ -12,7 +12,7 @@ div.patientlist-container {
     border: 1px solid var(--color-ui-lightest-bg);
   }
 
-  .dropdownmenu-container {
+  > .menu-button-wrapper .dropdownmenu-container {
     .menuWrapper {
       min-width: 250px;
       border: 0;
@@ -48,14 +48,17 @@ div.patientlist-container {
     .dropdownmenuitem-container:not(.toggleItem) {
       position: sticky;
       bottom: 0;
-      background-color: var(--color-ui-lightest-bg);
       display: flex;
       align-items: center;
       height: 44px;
       line-height: 16px;
       font-size: 16px;
       font-weight: 500;
-      color: var(--color-primary, #000080);
+
+      &:not(.hover-select) {
+        background-color: var(--color-ui-lightest-bg);
+        color: var(--color-primary, #000080);
+      }
 
       .leftMargin {
         width: 22px;
