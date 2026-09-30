@@ -57,7 +57,12 @@
         >
           {{ getText('MRI_PA_COMPARE_D2E_COHORT_TEXT') }}
         </D2eButton>
-        <D2eButton variant="danger" data-testid="explorations-bulk-delete" @click="openBulkDelete">
+        <D2eButton
+          variant="danger"
+          :disabled="!canBulkDelete"
+          data-testid="explorations-bulk-delete"
+          @click="openBulkDelete"
+        >
           {{ getText('MRI_PA_BUTTON_DELETE') }}
         </D2eButton>
       </div>
@@ -418,7 +423,7 @@ import {
 import { PAGE_SIZES, clampPage, pageSlice } from './helpers/explorationPaging'
 import { chartQueryFor } from './helpers/explorationSqlQuery'
 import { deleteExploration, type DeleteExplorationDeps } from './helpers/deleteExploration'
-import { runBulkDelete } from './helpers/bulkDeleteExplorations'
+import { canDeleteAll, runBulkDelete } from './helpers/bulkDeleteExplorations'
 import { canModifyBookmark, getBookmarkType } from '../utils/BookmarkUtils'
 import ExplorationMaterializeIcon from './icons/ExplorationMaterializeIcon.vue'
 import ExplorationDataQualityIcon from './icons/ExplorationDataQualityIcon.vue'
@@ -838,7 +843,11 @@ const openCompare = async (): Promise<void> => {
 
 const bulkDeleteOpen = ref(false)
 const bulkDeleting = ref(false)
+const canBulkDelete = computed(
+  () => !usernamePending.value && canDeleteAll(selectedRecords.value, portalContext.username),
+)
 const openBulkDelete = (): void => {
+  if (!canBulkDelete.value) return
   bulkDeleteOpen.value = true
 }
 const closeBulkDelete = (): void => {
@@ -888,6 +897,10 @@ const notifyBulkDeleteFailure = (failedNames: string[]): void => {
 
 const confirmBulkDelete = async (): Promise<void> => {
   if (bulkDeleting.value) return
+  if (!canBulkDelete.value) {
+    bulkDeleteOpen.value = false
+    return
+  }
   bulkDeleting.value = true
   try {
     await runBulkDelete(selectedRecords.value, {
