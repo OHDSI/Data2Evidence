@@ -8,6 +8,12 @@ from _shared_flow_utils.api.PortalServerAPI import PortalServerAPI
 from .types import OmopCDMPluginOptions, RELEASE_VERSION_MAPPING
 
 
+def sanitize_id_for_cache_id(dataset_id: str) -> str:
+    # Mirrors portal's sanitizeIdForCacheId (dataset.entity.ts).
+    cleaned = dataset_id.replace("-", "_")
+    return f"_{cleaned}" if cleaned[:1].isdigit() else cleaned
+
+
 def update_dataset_metadata_flow(options: OmopCDMPluginOptions):
     logger = get_run_logger()
     dataset_list = options.datasets
@@ -34,16 +40,20 @@ def get_and_update_attributes(dataset: dict):
         missing_key = ke.args[0]
         logger.error(f"'{missing_key} not found in dataset'")
     else:
-        if dataset.get("dialect") == SupportedDatabaseDialects.BIGQUERY:
-            error_msg = f"Database dialect 'bigquery' not supported for updating dataset metadata"
-            logger.error(error_msg)
-            portal_server_api = PortalServerAPI()
-            portal_server_api.update_dataset_attributes_table(dataset_id, "schema_version", error_msg)
-            portal_server_api.update_dataset_attributes_table(dataset_id, "latest_schema_version", error_msg)
-            return
+        is_bigquery = dataset.get("dialect") == SupportedDatabaseDialects.BIGQUERY
 
         try:
-            dbdao = DBDao(database_code=database_code, cache_id=cache_id)
+            if is_bigquery:
+                # BigQuery is read from the dataset's DuckDB cache through trex rather
+                # than queried live. The portal's Study payload carries no cacheId, so
+                # derive the catalog the same way the portal does (sanitizeIdForCacheId).
+                dbdao = DBDao(
+                    dialect=SupportedDatabaseDialects.TREX,
+                    database_code=database_code,
+                    cache_id=cache_id or sanitize_id_for_cache_id(dataset_id),
+                )
+            else:
+                dbdao = DBDao(database_code=database_code, cache_id=cache_id)
         except Exception as e:
             logger.error(e)
             return
@@ -53,7 +63,10 @@ def get_and_update_attributes(dataset: dict):
         # check if schema exists
         schema_exists = dbdao.check_schema_exists(schema_name)
         if schema_exists is False:
-            error_msg = f"Schema '{schema_name}' does not exist in db {database_code} for dataset id '{dataset_id}'"
+            if is_bigquery:
+                error_msg = f"Schema '{schema_name}' does not exist in cache for db {database_code} for dataset id '{dataset_id}'; refresh the dataset cache first"
+            else:
+                error_msg = f"Schema '{schema_name}' does not exist in db {database_code} for dataset id '{dataset_id}'"
             logger.error(error_msg)
             portal_server_api.update_dataset_attributes_table(dataset_id, "schema_version", error_msg)
             portal_server_api.update_dataset_attributes_table(dataset_id, "latest_schema_version", error_msg)
