@@ -116,7 +116,7 @@ describe('store - config: data sources', () => {
       expect(commit).toHaveBeenCalledWith(types.SET_DATA_SOURCES, [])
     })
 
-    it('swallows a failure and commits nothing', async () => {
+    it('swallows a failure and clears the list', async () => {
       // The name is decoration and the getter falls back to the id, so a
       // failure here must not reach the user or break the page.
       const commit = vi.fn()
@@ -124,10 +124,10 @@ describe('store - config: data sources', () => {
 
       await expect(configModule.actions.fireGetDataSources({ commit, dispatch } as never)).resolves.toBeUndefined()
 
-      expect(commit).not.toHaveBeenCalled()
+      expect(commit).toHaveBeenCalledWith(types.SET_DATA_SOURCES, [])
     })
 
-    it('commits nothing when only the roles request fails', async () => {
+    it('clears the list when only the roles request fails', async () => {
       const commit = vi.fn()
       const dispatch = vi.fn().mockImplementation(async (_action: string, { url }: { url: string }) => {
         if (url === '/d2e-webapi/source/sources') return { data: sources }
@@ -136,7 +136,7 @@ describe('store - config: data sources', () => {
 
       await expect(configModule.actions.fireGetDataSources({ commit, dispatch } as never)).resolves.toBeUndefined()
 
-      expect(commit).not.toHaveBeenCalled()
+      expect(commit).toHaveBeenCalledWith(types.SET_DATA_SOURCES, [])
     })
   })
 })

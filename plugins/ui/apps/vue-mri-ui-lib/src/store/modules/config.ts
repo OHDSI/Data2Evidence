@@ -223,6 +223,7 @@ const actions = {
       )
     } catch (error) {
       console.error('[config] Could not load the data sources; names fall back to ids', error)
+      commit(types.SET_DATA_SOURCES, [])
     }
   },
 }
