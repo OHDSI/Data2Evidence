@@ -77,14 +77,15 @@ services:
       # `notebook` schema (studies/notebooks) + its PostGraphile grants, applied
       # as a trex migrations plugin. trex runs it against _config (the alp
       # Postgres catalog) and tracks applied versions in
-      # notebook.refinery_schema_history. Already baked into the image; mounted
-      # so a source edit takes effect on restart without a rebuild.
+      # notebook.refinery_schema_history. The image does not ship it, so this
+      # mount is its only source; the CLI stages the files next to its embedded
+      # copy of this compose file.
       - ./services/trex/migrations/notebook:/usr/src/bundled-plugins/notebook-schema:ro
-      # d2e's DB provisioning (login users, supabase roles, schemas, grants),
-      # applied as a trex provision plugin BEFORE any other plugin loads.
-      # Already baked into the image; mounted so a source edit takes effect on
-      # restart without a rebuild.
-      - ./services/trex/provision/d2e-bootstrap:/usr/src/bundled-plugins/d2e-bootstrap:ro
+      # d2e's DB provisioning plugin (d2e-bootstrap) is baked into the image and
+      # deliberately NOT mounted here: the CLI runs this file on its own, and a
+      # mount whose source it has not staged makes Docker create an empty
+      # directory that hides the image's copy, so trex aborts at boot. The
+      # live-edit mount lives in docker-compose-local.yml.
       # WebAPI/Logto seeding SQL, applied by the d2e-compat atlas-db-init block
       # once webapi.sec_role and logto.users exist. Replaces the webapi-init
       # container, which ran the same files through psql.
@@ -351,11 +352,14 @@ services:
       # or a whole test run - shares the count.
       TREX_AUTH_RATE_LIMIT_MAX: ${TREX__AUTH_RATE_LIMIT_MAX:-2000}
       # The public origin: `iss` must name where the discovery document is
-      # served, and a deployment's FQDN resolves inside the network too. Where it
-      # does not -- local and CI, whose FQDN is `localhost` and therefore points
-      # back at this container -- docker-compose-ci.yml sets
-      # TREX_OIDC_INTERNAL_BASE so server-side fetches take a reachable route
-      # while `iss` stays put.
+      # served. Server-side OIDC calls (d2e-compat's JWKS fetch and /oauth/token
+      # proxy, trex-token) must not go through it: where the FQDN is `localhost`
+      # -- any CLI install, local, CI -- it resolves to this container's own
+      # loopback, nothing answers on 443, and every portal code exchange ends in
+      # `fetch failed`. TREX_OIDC_INTERNAL_BASE routes those calls to trex
+      # directly on the compose network, which works for every FQDN, while `iss`
+      # stays the public issuer.
+      TREX_OIDC_INTERNAL_BASE: "http://${PROJECT_NAME:-d2e}-trex:33001"
       TREX_OIDC_ISSUER: "https://${CADDY__D2E__PUBLIC_FQDN:-${CADDY__ALP__PUBLIC_FQDN:-localhost}}${D2E__PUBLIC_PORT_SUFFIX-${CADDY_PORT:+:${CADDY_PORT}}}"
       # trex ships no login UI; an unauthenticated /authorize lands here.
       TREX_OIDC_LOGIN_URL: "https://${CADDY__D2E__PUBLIC_FQDN:-${CADDY__ALP__PUBLIC_FQDN:-localhost}}:${CADDY_PORT:-${PORT:-443}}/d2e-login/"
