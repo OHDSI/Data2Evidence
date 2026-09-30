@@ -83,14 +83,14 @@
       </div>
 
       <VSwitch
-        :model-value="showShared"
+        :model-value="modelValue.showShared"
         color="primary"
         density="compact"
         hide-details
         class="filters-panel__shared"
         :label="getText('MRI_PA_EXPLORATIONS_FILTER_SHOW_SHARED')"
         data-testid="explorations-filter-show-shared"
-        @update:model-value="$emit('update:showShared', Boolean($event))"
+        @update:model-value="patch({ showShared: Boolean($event) })"
       />
     </div>
   </div>
@@ -108,14 +108,12 @@ interface Props {
   modelValue: ExplorationFilters
   /** Distinct owners across the whole loaded list, not the filtered one. */
   authors: string[]
-  showShared: boolean
 }
 
 const props = defineProps<Props>()
 
 const emit = defineEmits<{
   'update:modelValue': [value: ExplorationFilters]
-  'update:showShared': [value: boolean]
   clear: []
 }>()
 

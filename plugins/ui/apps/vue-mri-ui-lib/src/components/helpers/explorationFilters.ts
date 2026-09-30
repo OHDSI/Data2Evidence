@@ -9,6 +9,7 @@
  * `explorationList.ts` next door for the same reasoning.
  */
 
+import { canModifyBookmark } from '../../utils/BookmarkUtils'
 
 export type MaterializationStatus = 'materialized' | 'not-materialized'
 
@@ -23,6 +24,7 @@ export interface ExplorationFilters {
   created: DateRange
   lastUpdated: DateRange
   lastMaterialized: DateRange
+  showShared: boolean
 }
 
 const emptyRange = (): DateRange => ({ from: null, to: null })
@@ -34,6 +36,7 @@ export const emptyFilters = (): ExplorationFilters => ({
   created: emptyRange(),
   lastUpdated: emptyRange(),
   lastMaterialized: emptyRange(),
+  showShared: false,
 })
 
 /**
@@ -69,7 +72,8 @@ export function isEmpty(filters: ExplorationFilters): boolean {
     filters.statuses.length === 0 &&
     isEmptyRange(filters.created) &&
     isEmptyRange(filters.lastUpdated) &&
-    isEmptyRange(filters.lastMaterialized)
+    isEmptyRange(filters.lastMaterialized) &&
+    !filters.showShared
   )
 }
 
@@ -91,6 +95,19 @@ export function authorOptions(cards: readonly unknown[]): string[] {
 export function keepKnownAuthors(filters: ExplorationFilters, authors: readonly string[]): ExplorationFilters {
   const kept = filters.authors.filter(name => authors.includes(name))
   return kept.length === filters.authors.length ? filters : { ...filters, authors: kept }
+}
+
+const isOthersAtlasDefinition = (card: unknown, username: string): boolean => {
+  const record = card as any
+  return (
+    Boolean(record?.atlasCohortDefinition) &&
+    !record?.bookmark &&
+    !canModifyBookmark(record.atlasCohortDefinition, username)
+  )
+}
+
+export function visibleToUser<T>(cards: readonly T[], showShared: boolean, username: string): T[] {
+  return showShared ? [...cards] : cards.filter(card => !isOthersAtlasDefinition(card, username))
 }
 
 /**

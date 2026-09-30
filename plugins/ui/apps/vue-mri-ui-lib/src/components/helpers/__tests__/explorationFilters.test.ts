@@ -7,6 +7,7 @@ import {
   isEmpty,
   keepKnownAuthors,
   matchesFilters,
+  visibleToUser,
   type ExplorationFilters,
 } from '../explorationFilters'
 
@@ -15,6 +16,7 @@ const card = (over: Record<string, unknown> = {}) => ({ displayName: 'card', ...
 describe('emptyFilters / EMPTY_FILTERS', () => {
   it('emptyFilters() matches every card and isEmpty is true', () => {
     const filters = emptyFilters()
+    expect(filters.showShared).toBe(false)
     expect(isEmpty(filters)).toBe(true)
     expect(matchesFilters(card(), filters)).toBe(true)
     expect(matchesFilters(card({ bookmark: { username: 'alice' } }), filters)).toBe(true)
@@ -26,6 +28,7 @@ describe('emptyFilters / EMPTY_FILTERS', () => {
     expect(isEmpty({ ...emptyFilters(), created: { from: '2026-01-01', to: null } })).toBe(false)
     expect(isEmpty({ ...emptyFilters(), lastUpdated: { from: null, to: '2026-01-01' } })).toBe(false)
     expect(isEmpty({ ...emptyFilters(), lastMaterialized: { from: '2026-01-01', to: '2026-01-02' } })).toBe(false)
+    expect(isEmpty({ ...emptyFilters(), showShared: true })).toBe(false)
   })
 
   it('returns independent objects on every call', () => {
@@ -306,5 +309,33 @@ describe('keepKnownAuthors', () => {
     expect(filters.authors).toEqual(['alice', 'bob'])
     expect(next.authors).toEqual([])
     expect(next.statuses).toEqual(['materialized'])
+  })
+})
+
+describe('visibleToUser', () => {
+  const ownAtlas = card({ atlasCohortDefinition: { username: 'alice' } })
+  const otherAtlas = card({ atlasCohortDefinition: { username: 'bob' } })
+  const otherAtlasMaterialized = card({ atlasCohortDefinition: { username: 'bob' }, cohortDefinition: { id: 1 } })
+  const sharedBookmark = card({ bookmark: { username: 'bob', shared: true } })
+  const materializedOnly = card({ bookmark: null, cohortDefinition: { id: 2 } })
+
+  it("hides other users' Atlas definitions while shared is off", () => {
+    expect(visibleToUser([ownAtlas, otherAtlas, otherAtlasMaterialized], false, 'alice')).toEqual([ownAtlas])
+  })
+
+  it('shows every Atlas definition while shared is on', () => {
+    const cards = [ownAtlas, otherAtlas, otherAtlasMaterialized]
+    expect(visibleToUser(cards, true, 'alice')).toEqual(cards)
+  })
+
+  it('leaves bookmark rows and materialized-only rows to the store getter', () => {
+    expect(visibleToUser([sharedBookmark, materializedOnly], false, 'alice')).toEqual([
+      sharedBookmark,
+      materializedOnly,
+    ])
+  })
+
+  it('hides every Atlas definition while the username is unknown', () => {
+    expect(visibleToUser([ownAtlas, materializedOnly], false, '')).toEqual([materializedOnly])
   })
 })
