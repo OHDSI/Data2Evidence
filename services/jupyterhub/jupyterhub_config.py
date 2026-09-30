@@ -13,7 +13,8 @@ import json
 import os
 import secrets
 from datetime import datetime, timedelta, timezone
-from urllib.parse import quote
+from urllib.parse import quote, urlencode
+from urllib.request import Request, urlopen
 
 import psycopg
 from psycopg import sql
@@ -217,14 +218,51 @@ c.GenericOAuthenticator.custom_403_message = (
     "Your D2E account is valid, but it does not have the JupyterHub access role."
 )
 
+def refreshed_token_state(auth_state: dict) -> dict:
+    """Swap the stored refresh token for a fresh access token (and rotated refresh token)."""
+    refresh_token = auth_state.get("refresh_token")
+    if not refresh_token:
+        return auth_state
+    basic = base64.b64encode(
+        f"{quote(required_env('LOGTO_JUPYTERHUB_CLIENT_ID'))}:"
+        f"{quote(required_env('LOGTO_JUPYTERHUB_CLIENT_SECRET'))}".encode()
+    ).decode()
+    body = urlencode({
+        "grant_type": "refresh_token",
+        "refresh_token": refresh_token,
+        "resource": os.getenv("LOGTO_RESOURCE", "https://alp-default"),
+    }).encode()
+    request = Request(required_env("LOGTO_TOKEN_URL"), body, {
+        "authorization": f"Basic {basic}",
+        "content-type": "application/x-www-form-urlencoded",
+    })
+    with urlopen(request, timeout=15) as response:
+        tokens = json.loads(response.read())
+    return {
+        **auth_state,
+        "access_token": tokens["access_token"],
+        "refresh_token": tokens.get("refresh_token", refresh_token),
+    }
+
+
 # [flow 5] called by jupyterhub right before the notebook container is created
-def pass_user_credentials(spawner, auth_state):
+async def pass_user_credentials(spawner, auth_state):
     """Give a notebook only its short-lived, least-privilege DB credential."""
     if not auth_state:
         return
     if os.getenv("JUPYTER_DB_ENABLED", "false").lower() == "true":
         # PG* values become env vars of the notebook container; tokens are not passed
         spawner.environment.update(issue_database_credential(auth_state))
+    # PG18 OAuth PoC: hand the notebook a fresh Logto access token (never the refresh
+    # token or client secret) plus where to connect; pg_oauth.py in the notebook uses it
+    if os.getenv("JUPYTERHUB_PASS_ACCESS_TOKEN", "false").lower() == "true":
+        auth_state = refreshed_token_state(auth_state)
+        await spawner.user.save_auth_state(auth_state)  # keep the rotated refresh token
+        spawner.environment["LOGTO_ACCESS_TOKEN"] = auth_state["access_token"]
+        for name in ("PGHOST", "PGPORT", "PGDATABASE", "PG_OAUTH_ISSUER", "PG_OAUTH_CLIENT_ID"):
+            value = os.getenv(f"NOTEBOOK_{name}")
+            if value:
+                spawner.environment[name] = value
 
 
 # [flow 5] register the hook above

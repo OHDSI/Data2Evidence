@@ -1,9 +1,11 @@
-# Standalone PoC: PostgreSQL 18 authenticating users with Logto access tokens.
-#   docker compose up -d --build
+# Standalone PoC: PostgreSQL 18 authenticating users with Logto access tokens,
+# optionally with JupyterHub in front.
+#   docker compose up -d --build                                   # pg18 + logto
+#   docker compose --env-file .env.poc --profile hub up -d --build # + jupyterhub
 #
-# Logto shares pg18's network namespace, so `localhost:3001` is the same Logto for
-# the browser, for PostgreSQL's validator and for psql. That keeps the OAuth issuer
-# identical everywhere, which the validator requires.
+# Logto and JupyterHub share pg18's network namespace, so `localhost:3001` is the same
+# Logto for the browser, PostgreSQL's validator, psql and the hub. That keeps the OAuth
+# issuer identical everywhere, which the validator requires.
 name: pgoauth
 
 services:
@@ -26,8 +28,13 @@ services:
       - "127.0.0.1:55432:5432"   # PostgreSQL
       - "127.0.0.1:3001:3001"    # Logto
       - "127.0.0.1:3002:3002"    # Logto admin console
+      - "127.0.0.1:8000:8000"    # JupyterHub (profile hub)
     volumes:
       - pg18-data:/var/lib/postgresql
+    networks:
+      default:
+      # notebooks reach PostgreSQL and the hub (both at pg18) and nothing else
+      notebooks:
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 3s
@@ -46,5 +53,43 @@ services:
       ENDPOINT: http://localhost:3001
       ADMIN_ENDPOINT: http://localhost:3002
 
+  # the D2E PoC hub image and config, pointed at this Logto and PostgreSQL
+  jupyterhub:
+    profiles: [hub]
+    build: ../../services/jupyterhub
+    network_mode: service:pg18
+    depends_on:
+      - logto
+    environment:
+      DOCKER_HOST: unix:///var/run/docker.sock
+      LOGTO_JUPYTERHUB_CLIENT_ID: ${POC_HUB_CLIENT_ID:-}
+      LOGTO_JUPYTERHUB_CLIENT_SECRET: ${POC_HUB_CLIENT_SECRET:-}
+      JUPYTERHUB_CRYPT_KEY: ${POC_HUB_CRYPT_KEY:-}
+      JUPYTERHUB_OAUTH_CALLBACK_URL: http://localhost:8000/hub/oauth_callback
+      LOGTO_AUTHORIZE_URL: http://localhost:3001/oidc/auth
+      LOGTO_TOKEN_URL: http://localhost:3001/oidc/token
+      LOGTO_RESOURCE: https://pg.poc
+      # hub entry is its own scope; the db:* scopes decide which PG role the token opens
+      LOGTO_ALLOWED_ROLE: jupyter:hub
+      LOGTO_EXTRA_SCOPES: db:jupyter_test db:jupyter_test_b
+      JUPYTERHUB_HUB_CONNECT_URL: http://pg18:8081
+      DOCKER_NETWORK_NAME: pgoauth-notebooks
+      JUPYTERHUB_NOTEBOOK_IMAGE: pgoauth-notebook:local
+      JUPYTER_DB_ENABLED: "false"
+      JUPYTERHUB_PASS_ACCESS_TOKEN: "true"
+      NOTEBOOK_PGHOST: pg18
+      NOTEBOOK_PGDATABASE: poc
+      NOTEBOOK_PG_OAUTH_ISSUER: http://localhost:3001/oidc
+      NOTEBOOK_PG_OAUTH_CLIENT_ID: ${POC_DEVICE_CLIENT_ID:-}
+    volumes:
+      - jupyterhub-data:/srv/jupyterhub/data
+      - /var/run/docker.sock:/var/run/docker.sock
+
 volumes:
   pg18-data:
+  jupyterhub-data:
+
+networks:
+  notebooks:
+    name: pgoauth-notebooks
+    internal: true

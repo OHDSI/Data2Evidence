@@ -40,6 +40,18 @@ check "D2 alice reads secret.demo (other schema)" deny "$(run "$alice" "select *
 check "D3 alice inserts into allowed.demo" deny "$(run "$alice" "insert into allowed.demo values (9, 'x') returning id")"
 check "D4 alice creates a table" deny "$(run "$alice" "create table allowed.t(id int); select 1")"
 check "F  a made-up token is refused" deny "$(run "not-a-real-token" "select 1")"
+
+# the token decides the schema: carol holds jupyter-test-b, so only jupyter_test_b opens
+carol="$(token carol)"
+conn_b="host=localhost dbname=poc user=jupyter_test_b oauth_issuer=http://localhost:3001/oidc oauth_client_id=$POC_DEVICE_CLIENT_ID"
+run_b() {
+  out="$(docker compose exec -T -e PGOAUTHDEBUG=UNSAFE pg18 oauth_conn_test "$conn_b" "$2" "$1" 2>&1)"
+  printf '%s\n' "$out" | grep -m1 -i -E 'error|failed|denied' || printf '%s\n' "$out" | tail -1
+}
+check "H1 carol as jupyter_test_b reads schema_b.demo" ok "$(run_b "$carol" "select label from schema_b.demo")"
+check "H2 carol as jupyter_test_b reads allowed.demo" deny "$(run_b "$carol" "select * from allowed.demo")"
+check "H3 carol tries to log in as jupyter_test" deny "$(run "$carol" "select 1")"
+check "H4 alice tries to log in as jupyter_test_b" deny "$(run_b "$alice" "select 1")"
 check "F2 password login as jupyter_test is refused" deny "$(docker compose exec -T pg18 sh -c \
   "PGPASSWORD=x psql -h localhost -U jupyter_test -d poc -Atc 'select 1'" 2>&1 | tail -1)"
 

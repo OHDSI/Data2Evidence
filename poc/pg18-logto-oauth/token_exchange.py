@@ -4,7 +4,9 @@ import base64, json, os, sys, urllib.parse, urllib.request, urllib.error
 who, resource = sys.argv[1], (sys.argv[2] if len(sys.argv) > 2 else "")
 data = {"grant_type": "urn:ietf:params:oauth:grant-type:token-exchange",
         "subject_token": os.environ[f"POC_{who.upper()}_PAT"],
-        "subject_token_type": "urn:logto:token-type:personal_access_token", "scope": "db:jupyter_test"}
+        "subject_token_type": "urn:logto:token-type:personal_access_token",
+        # ask for every PoC scope; Logto grants only the ones the user holds
+        "scope": os.environ.get("POC_SCOPES", "jupyter:hub db:jupyter_test db:jupyter_test_b")}
 if resource: data["resource"] = resource
 basic = base64.b64encode(f"{os.environ['POC_TESTER_ID']}:{os.environ['POC_TESTER_SECRET']}".encode()).decode()
 req = urllib.request.Request("http://localhost:3001/oidc/token", urllib.parse.urlencode(data).encode(),

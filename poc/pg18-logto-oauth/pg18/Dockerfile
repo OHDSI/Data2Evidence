@@ -17,7 +17,9 @@ RUN make USE_PGXS=1 with_llvm=no -j"$(nproc)" \
     && make USE_PGXS=1 with_llvm=no install \
     && make USE_PGXS=1 with_llvm=no oauth_conn_test
 
-FROM postgres:18-alpine
+#[TODO] can we only use this as base img and nothing else more on top?
+# so we can only update Docker-compose in d2e only for 15 to 18
+FROM postgres:18-alpine 
 COPY --from=build /usr/local/lib/postgresql/pg_oidc_validator.so /usr/local/lib/postgresql/
 # test client: connects with a token given on the command line, no device flow
 COPY --from=build /src/oauth_conn_test /usr/local/bin/oauth_conn_test

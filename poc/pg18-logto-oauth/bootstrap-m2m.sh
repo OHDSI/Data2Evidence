@@ -33,7 +33,9 @@ SQL
 
 umask 077
 touch .env.poc
-grep -v -E '^LOGTO_M2M_(ID|SECRET)=' .env.poc > .env.poc.tmp || true
-{ cat .env.poc.tmp; echo "LOGTO_M2M_ID=$app_id"; echo "LOGTO_M2M_SECRET=$secret"; } > .env.poc
+crypt_key="$(grep '^POC_HUB_CRYPT_KEY=' .env.poc | cut -d= -f2- || true)"
+[ -n "$crypt_key" ] || crypt_key="$(openssl rand -hex 32)"  # JupyterHub auth_state key
+grep -v -E '^(LOGTO_M2M_(ID|SECRET)|POC_HUB_CRYPT_KEY)=' .env.poc > .env.poc.tmp || true
+{ cat .env.poc.tmp; echo "LOGTO_M2M_ID=$app_id"; echo "LOGTO_M2M_SECRET=$secret"; echo "POC_HUB_CRYPT_KEY=$crypt_key"; } > .env.poc
 rm -f .env.poc.tmp
 echo "ok: $app_id can call the Logto Management API; credentials in .env.poc"

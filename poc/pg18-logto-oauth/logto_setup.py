@@ -3,9 +3,13 @@
 Creates:
   - API resource https://pg.poc, set as Logto's default API, so a token request
     without `resource` (what psql's device flow sends) still gets a JWT for it
-  - scope db:jupyter_test on it, and user role `jupyter-test` carrying that scope
-  - users alice (has the role) and bob (does not)
+  - scopes and user roles on it:
+      role jupyterhub-user  -> scope jupyter:hub         (may log in to JupyterHub)
+      role jupyter-test     -> scope db:jupyter_test     (PG role jupyter_test, schema allowed)
+      role jupyter-test-b   -> scope db:jupyter_test_b   (PG role jupyter_test_b, schema schema_b)
+  - users: alice (hub + jupyter-test), carol (hub + jupyter-test-b), bob (no roles)
   - Native app `psql` with device flow, for interactive psql logins
+  - Traditional app `jupyterhub` for the hub's login (callback on localhost:8000)
   - Traditional app `poc-tester` allowed to do token exchange, plus a personal
     access token per user, so tests can get user tokens without a browser
 
@@ -22,10 +26,18 @@ import urllib.parse
 import urllib.request
 
 LOGTO = os.getenv("LOGTO_URL", "http://localhost:3001")
+HUB = os.getenv("HUB_URL", "http://localhost:8000")
 RESOURCE = "https://pg.poc"
-SCOPE = "db:jupyter_test"
-ROLE = "jupyter-test"
-USERS = {"alice": True, "bob": False}  # username -> holds ROLE
+ROLES = {  # role -> scope
+    "jupyterhub-user": "jupyter:hub",
+    "jupyter-test": "db:jupyter_test",
+    "jupyter-test-b": "db:jupyter_test_b",
+}
+USERS = {  # username -> roles
+    "alice": ["jupyterhub-user", "jupyter-test"],
+    "carol": ["jupyterhub-user", "jupyter-test-b"],
+    "bob": [],
+}
 PASSWORD = os.getenv("POC_USER_PASSWORD", "PocPassword-2026")
 
 
@@ -74,12 +86,34 @@ def log(msg):
     print(msg, file=sys.stderr)
 
 
+def find(items, **match):
+    return next((i for i in items if all(i.get(k) == v for k, v in match.items())), None)
+
+
+def app_secret(auth, app):
+    # Logto 1.4x keeps app secrets behind their own endpoint
+    secrets = must(call(f"/applications/{app['id']}/secrets", headers=auth), "list app secrets")
+    found = find(secrets, name="poc")
+    if found:
+        return found["value"]
+    return must(call(f"/applications/{app['id']}/secrets", {"name": "poc"},
+                     method="POST", headers=auth), "create app secret")["value"]
+
+
+def ensure_app(auth, apps, name, body):
+    app = find(apps, name=name)
+    if app is None:
+        app = must(call("/applications", {"name": name, **body}, method="POST", headers=auth),
+                   f"create app {name}")
+        log(f"created app {name}")
+    return app
+
+
 def main():
     auth = management_headers()
 
     # 1. API resource, default API
-    res = next((r for r in must(call("/resources", headers=auth), "list resources")
-                if r["indicator"] == RESOURCE), None)
+    res = find(must(call("/resources", headers=auth), "list resources"), indicator=RESOURCE)
     if res is None:
         res = must(call("/resources", {"name": "PostgreSQL PoC", "indicator": RESOURCE,
                                        "accessTokenTtl": 3600}, method="POST", headers=auth),
@@ -90,67 +124,67 @@ def main():
                   method="PATCH", headers=auth), "set default resource")
         log(f"{RESOURCE} is now the default API")
 
-    # 2. scope and role
-    scope = next((s for s in must(call(f"/resources/{res['id']}/scopes", headers=auth), "list scopes")
-                  if s["name"] == SCOPE), None)
-    if scope is None:
-        scope = must(call(f"/resources/{res['id']}/scopes",
-                          {"name": SCOPE, "description": "log in to the PoC database as jupyter_test"},
-                          method="POST", headers=auth), "create scope")
-        log(f"created scope {SCOPE}")
-    role = next((r for r in must(call("/roles", headers=auth), "list roles") if r["name"] == ROLE), None)
-    if role is None:
-        role = must(call("/roles", {"name": ROLE, "description": "PoC database access",
-                                    "type": "User", "scopeIds": [scope["id"]]},
-                         method="POST", headers=auth), "create role")
-        log(f"created role {ROLE}")
+    # 2. one scope per role, and the role carrying it
+    scopes = must(call(f"/resources/{res['id']}/scopes", headers=auth), "list scopes")
+    roles = must(call("/roles", headers=auth), "list roles")
+    role_ids = {}
+    for role_name, scope_name in ROLES.items():
+        scope = find(scopes, name=scope_name)
+        if scope is None:
+            scope = must(call(f"/resources/{res['id']}/scopes", {"name": scope_name},
+                              method="POST", headers=auth), f"create scope {scope_name}")
+            log(f"created scope {scope_name}")
+        role = find(roles, name=role_name)
+        if role is None:
+            role = must(call("/roles", {"name": role_name, "description": f"PoC: {scope_name}",
+                                        "type": "User", "scopeIds": [scope["id"]]},
+                             method="POST", headers=auth), f"create role {role_name}")
+            log(f"created role {role_name}")
+        role_ids[role_name] = role["id"]
 
-    # 3. users
+    # 3. users and their roles
     out = {}
-    for username, holds_role in USERS.items():
-        found = must(call(f"/users?search={username}", headers=auth), "search users")
-        user = next((u for u in found if u.get("username") == username), None)
+    for username, user_roles in USERS.items():
+        user = find(must(call(f"/users?search={username}", headers=auth), "search users"),
+                    username=username)
         if user is None:
             user = must(call("/users", {"username": username, "password": PASSWORD},
                              method="POST", headers=auth), f"create {username}")
             log(f"created user {username}")
-        if holds_role:
-            call(f"/users/{user['id']}/roles", {"roleIds": [role["id"]]}, method="POST", headers=auth)
+        if user_roles:
+            call(f"/users/{user['id']}/roles", {"roleIds": [role_ids[r] for r in user_roles]},
+                 method="POST", headers=auth)
         out[f"POC_{username.upper()}_ID"] = user["id"]
 
     # 4. apps
     apps = must(call("/applications", headers=auth), "list applications")
-    device = next((a for a in apps if a["name"] == "psql"), None)
-    if device is None:
-        device = must(call("/applications", {
-            "name": "psql", "type": "Native",
-            "oidcClientMetadata": {"redirectUris": [], "postLogoutRedirectUris": []},
-            "customClientMetadata": {"isDeviceFlow": True},
-        }, method="POST", headers=auth), "create device-flow app")
-        log("created device-flow app psql")
-    tester = next((a for a in apps if a["name"] == "poc-tester"), None)
-    if tester is None:
-        tester = must(call("/applications", {
-            "name": "poc-tester", "type": "Traditional",
-            "oidcClientMetadata": {"redirectUris": ["http://localhost/unused"], "postLogoutRedirectUris": []},
-            "customClientMetadata": {"allowTokenExchange": True},
-        }, method="POST", headers=auth), "create tester app")
-        log("created token-exchange app poc-tester")
-    # Logto 1.4x keeps app secrets behind their own endpoint
-    secrets = must(call(f"/applications/{tester['id']}/secrets", headers=auth), "list app secrets")
-    secret = next((s["value"] for s in secrets if s["name"] == "poc"), None)
-    if secret is None:
-        secret = must(call(f"/applications/{tester['id']}/secrets", {"name": "poc"},
-                           method="POST", headers=auth), "create app secret")["value"]
+    device = ensure_app(auth, apps, "psql", {
+        "type": "Native",
+        "oidcClientMetadata": {"redirectUris": [], "postLogoutRedirectUris": []},
+        "customClientMetadata": {"isDeviceFlow": True},
+    })
+    hub = ensure_app(auth, apps, "jupyterhub", {
+        "type": "Traditional",
+        "oidcClientMetadata": {"redirectUris": [f"{HUB}/hub/oauth_callback"],
+                               "postLogoutRedirectUris": [f"{HUB}/hub/login"]},
+        "customClientMetadata": {"alwaysIssueRefreshToken": True, "rotateRefreshToken": True},
+    })
+    tester = ensure_app(auth, apps, "poc-tester", {
+        "type": "Traditional",
+        "oidcClientMetadata": {"redirectUris": ["http://localhost/unused"], "postLogoutRedirectUris": []},
+        "customClientMetadata": {"allowTokenExchange": True},
+    })
     out["POC_DEVICE_CLIENT_ID"] = device["id"]
+    out["POC_HUB_CLIENT_ID"] = hub["id"]
+    out["POC_HUB_CLIENT_SECRET"] = app_secret(auth, hub)
     out["POC_TESTER_ID"] = tester["id"]
-    out["POC_TESTER_SECRET"] = secret
+    out["POC_TESTER_SECRET"] = app_secret(auth, tester)
 
     # 5. one personal access token per user, for browserless tests
     for username in USERS:
         uid = out[f"POC_{username.upper()}_ID"]
-        pats = must(call(f"/users/{uid}/personal-access-tokens", headers=auth), "list PATs")
-        pat = next((p for p in pats if p["name"] == "poc-test"), None)
+        pat = find(must(call(f"/users/{uid}/personal-access-tokens", headers=auth), "list PATs"),
+                   name="poc-test")
         if pat is None:
             pat = must(call(f"/users/{uid}/personal-access-tokens", {"name": "poc-test"},
                             method="POST", headers=auth), f"create PAT for {username}")
