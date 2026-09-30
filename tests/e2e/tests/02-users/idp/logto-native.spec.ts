@@ -1,13 +1,10 @@
 /**
- * IDP path: Logto native (username/password) — the CI-safe baseline.
+ * IDP path: Logto native (username/password) — the CI-safe baseline, runs on every PR.
  *
- * No upstream connector: a user provisioned through usermgmt logs in on the Logto sign-in
- * form, and we assert the auth-provider claim contract (roles, preferred_username/username,
- * email, iss/aud) plus the downstream usermgmt -> WebAPI role pipeline. This is the
- * regression baseline every later `D2E_IDP=trex` phase must re-pass unchanged.
- *
- * Runs on every PR. The other three paths (entra / entra-external-id / physionet) exercise
- * the same contract through their connectors and are gated on secrets.
+ * A usermgmt-provisioned user logs in on the Logto form; we assert the auth-provider claim
+ * contract (roles, preferred_username/username, email, iss/aud) plus the usermgmt -> WebAPI
+ * role pipeline. Every later `D2E_IDP=trex` phase must re-pass this unchanged. The entra /
+ * entra-external-id / physionet paths exercise the same contract through connectors, gated on secrets.
  */
 import { test, expect } from '../../fixtures'
 import type { APIRequestContext } from '@playwright/test'

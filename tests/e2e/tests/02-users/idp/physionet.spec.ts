@@ -1,13 +1,12 @@
 /**
  * IDP path: PhysioNet OIDC — connector `physionet-oidc` (target `physionet`).
  *
- * Covers the connector contract in logto-federated mode: sign in through Logto's PhysioNet
- * connector, auto-provision the usermgmt row, and assert identity linkage. The upstream-token
- * passthrough (`physionet_access_token`) and entitlements-derived roles are not reproduced by
- * trex yet (Trex phase 5), so they are out of scope here.
+ * logto-federated mode: sign in via Logto's PhysioNet connector, auto-provision the usermgmt
+ * row, assert identity linkage. Upstream-token passthrough (`physionet_access_token`) and
+ * entitlements-derived roles aren't reproduced by trex yet (Trex phase 5), so are out of scope.
  *
  * Gated on E2E_PHYSIONET_USERNAME / E2E_PHYSIONET_PASSWORD; ships a local PhysioNet stub
- * (localhost:8000), or set PHYSIONET_UPSTREAM=real to use a real physionet-build.
+ * (localhost:8000), or set PHYSIONET_UPSTREAM=real.
  */
 import { test } from '../../fixtures'
 import {
@@ -32,8 +31,8 @@ import { startMock } from '../../../mock/physionet-mock.mjs'
 
 const REQUIRED_ENV = ['E2E_PHYSIONET_USERNAME', 'E2E_PHYSIONET_PASSWORD']
 
-// Default to a mock upstream so the test needs no external physionet-build. Set
-// PHYSIONET_UPSTREAM=real to run against a real PhysioNet at the connector's configured address.
+// Default to a mock upstream so the test needs no external physionet-build;
+// PHYSIONET_UPSTREAM=real runs against a real PhysioNet at the connector's address.
 const USE_MOCK = (process.env.PHYSIONET_UPSTREAM ?? 'mock').toLowerCase() !== 'real'
 let mock: { stop: () => Promise<void>; port: number } | undefined
 

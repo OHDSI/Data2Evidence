@@ -1,10 +1,10 @@
 /**
  * Mock PhysioNet OIDC + dataset-access upstream for the e2e IDP harness.
  *
- * Impersonates the PhysioNet ("DataShare") identity provider at the address the Logto
- * `physionet-oidc` connector is configured to call (default :8000), so the e2e test can
- * exercise the full federated-login + entitlements-sync flow WITHOUT the real
- * `physionet-build` Django app. Enabled by default; `PHYSIONET_UPSTREAM=real` skips it.
+ * Impersonates the PhysioNet ("DataShare") IdP at the address the Logto `physionet-oidc`
+ * connector calls (default :8000), so the e2e test can exercise federated login +
+ * entitlements sync without the real `physionet-build` Django app. `PHYSIONET_UPSTREAM=real`
+ * skips it.
  *
  * Endpoints (mirroring the real connector config in .env.local):
  *   GET  /oauth/authorize/          - minimal login form -> redirect with ?code&state
@@ -12,8 +12,6 @@
  *   GET  /oauth/jwks/               - JWKS (public key) the connector verifies id_tokens against
  *   GET  /oauth/oidc/userinfo       - OIDC userinfo (Bearer)
  *   GET  /oauth/dataset-access/     - entitlements check -> { has_access: true } for demowave
- *
- * Pure Node built-ins (http + crypto) — no external dependencies.
  */
 import http from 'node:http'
 import crypto from 'node:crypto'
@@ -82,8 +80,8 @@ function loginPage(query) {
 }
 
 /**
- * Start the mock. Returns a handle with `.stop()` and `.port`.
- * Binds 0.0.0.0 so it is reachable from the browser (localhost:PORT) and from the
+ * Start the mock; resolves to a handle with `.stop()` and `.port`.
+ * Binds 0.0.0.0 so it is reachable both from the browser (localhost:PORT) and from the
  * Logto/usermgmt containers (host.docker.internal:PORT).
  */
 export function startMock({ port = 8000 } = {}) {
