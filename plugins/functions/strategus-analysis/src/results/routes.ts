@@ -37,12 +37,41 @@ export default class StrategusResultsRouter {
   }
 
   private registerRoutes() {
-    this.router.post("/", upload.single("file"), this.createResult.bind(this));
+    this.router.post(
+      "/",
+      (req: Request, res: Response, next) => {
+        upload.single("file")(req, res, (error: unknown) => {
+          if (!error) return next();
+          this.handleUploadMiddlewareError(error, res, next);
+        });
+      },
+      this.createResult.bind(this),
+    );
     this.router.get("/", this.listResults.bind(this));
     // Registered before "/:id" so the more specific path wins.
     this.router.get("/:id/download", this.downloadResult.bind(this));
     this.router.get("/:id", this.getResult.bind(this));
     this.router.delete("/:id", this.deleteResult.bind(this));
+  }
+
+  /**
+   * multer aborts the multipart parse (before createResult/validateUpload
+   * ever run) when the body exceeds MAX_FILE_SIZE_BYTES. Maps that specific
+   * failure to the same 400 the post-hoc size check documents; anything else
+   * is handed to the default Express error handler.
+   */
+  private handleUploadMiddlewareError(
+    error: unknown,
+    res: Response,
+    next: (error?: unknown) => void,
+  ) {
+    if (error instanceof multer.MulterError && error.code === "LIMIT_FILE_SIZE") {
+      res.status(400).json({
+        message: "File size exceeds maximum allowed size of 500MB",
+      });
+      return;
+    }
+    next(error);
   }
 
   private async createResult(req: Request, res: Response) {

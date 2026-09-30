@@ -1,5 +1,6 @@
 import "./_setup.ts";
 import { assertEquals } from "@std/assert";
+import multer from "multer";
 import {
   createMockRequest,
   createMockResponse,
@@ -162,6 +163,50 @@ Deno.test("POST / rejects an oversized upload", async () => {
   assertEquals(captured.body, {
     message: "File size exceeds maximum allowed size of 500MB",
   });
+});
+
+Deno.test("POST / maps a multer LIMIT_FILE_SIZE error to the documented 400", () => {
+  const instance = routerWithService({});
+  const { res, captured } = createMockResponse();
+  const nextCalls: unknown[] = [];
+  const next = (error?: unknown) => nextCalls.push(error);
+
+  (instance as unknown as {
+    handleUploadMiddlewareError: (
+      error: unknown,
+      res: unknown,
+      next: (error?: unknown) => void,
+    ) => void;
+  }).handleUploadMiddlewareError(
+    new multer.MulterError("LIMIT_FILE_SIZE"),
+    res,
+    next,
+  );
+
+  assertEquals(captured.statusCode, 400);
+  assertEquals(captured.body, {
+    message: "File size exceeds maximum allowed size of 500MB",
+  });
+  assertEquals(nextCalls.length, 0);
+});
+
+Deno.test("POST / forwards a non-size multer error to the default error handler", () => {
+  const instance = routerWithService({});
+  const { res, captured } = createMockResponse();
+  const nextCalls: unknown[] = [];
+  const next = (error?: unknown) => nextCalls.push(error);
+  const error = new multer.MulterError("LIMIT_UNEXPECTED_FILE");
+
+  (instance as unknown as {
+    handleUploadMiddlewareError: (
+      error: unknown,
+      res: unknown,
+      next: (error?: unknown) => void,
+    ) => void;
+  }).handleUploadMiddlewareError(error, res, next);
+
+  assertEquals(captured.statusCode, null);
+  assertEquals(nextCalls, [error]);
 });
 
 Deno.test("POST / rejects a path traversal attempt in the file name", async () => {
