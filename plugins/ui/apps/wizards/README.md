@@ -110,7 +110,7 @@ wizards/
 
 ## Architecture
 
-- **Single-SPA Integration**: Exports bootstrap, mount, unmount lifecycle functions
+- **Single-SPA Integration**: Exports bootstrap, mount, unmount and update lifecycle functions; update keeps the mount props (see `src/utils/parcelLifecycles.ts`)
 - **State Management**: React Context API
 - **Form Handling**: React Hook Form
 - **Authentication**: Handled by portal (OIDC)

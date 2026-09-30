@@ -4,6 +4,7 @@ import singleSpaReact from "single-spa-react";
 import App from "./App";
 import { PortalProps } from "./types/portal";
 import { normalizeWizardPortalProps } from "./utils/portalProps";
+import { keepMountPropsOnUpdate } from "./utils/parcelLifecycles";
 
 const lifecycles = singleSpaReact({
   React,
@@ -44,4 +45,4 @@ const lifecycles = singleSpaReact({
   },
 });
 
-export const { bootstrap, mount, unmount, update } = lifecycles;
+export const { bootstrap, mount, unmount, update } = keepMountPropsOnUpdate(lifecycles);
