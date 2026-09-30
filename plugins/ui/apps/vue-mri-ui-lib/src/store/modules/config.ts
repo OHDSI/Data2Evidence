@@ -9,6 +9,18 @@ let chartConfigServiceInstance
 // let mriFrontendConfigInstance;
 let configRequestPromise: Promise<any> | null = null
 const analyticsEndpoint = '/analytics-svc/pa/services/analytics.xsjs'
+const STUDY_RESEARCHER_ROLE = 'STUDY_RESEARCHER'
+
+const getResearcherDatasetIds = (roles: unknown): Set<string> => {
+  const datasetRoles = (roles as { datasetRoles?: unknown } | null)?.datasetRoles
+  if (!Array.isArray(datasetRoles)) return new Set()
+  return new Set(
+    datasetRoles
+      .filter(datasetRole => datasetRole?.role === STUDY_RESEARCHER_ROLE)
+      .map(datasetRole => datasetRole.datasetId)
+      .filter((datasetId): datasetId is string => typeof datasetId === 'string')
+  )
+}
 
 // initial state
 const state = {
@@ -200,11 +212,16 @@ const actions = {
    */
   async fireGetDataSources({ commit, dispatch }) {
     try {
-      const response = await dispatch('ajaxAuth', {
-        method: 'get',
-        url: '/d2e-webapi/source/sources',
-      })
-      commit(types.SET_DATA_SOURCES, Array.isArray(response?.data) ? response.data : [])
+      const [sourcesResponse, rolesResponse] = await Promise.all([
+        dispatch('ajaxAuth', { method: 'get', url: '/d2e-webapi/source/sources' }),
+        dispatch('ajaxAuth', { method: 'get', url: '/usermgmt/api/me/roles' }),
+      ])
+      const sources = Array.isArray(sourcesResponse?.data) ? sourcesResponse.data : []
+      const researcherDatasetIds = getResearcherDatasetIds(rolesResponse?.data)
+      commit(
+        types.SET_DATA_SOURCES,
+        sources.filter(source => researcherDatasetIds.has(source?.sourceKey))
+      )
     } catch (error) {
       console.error('[config] Could not load the data sources; names fall back to ids', error)
     }

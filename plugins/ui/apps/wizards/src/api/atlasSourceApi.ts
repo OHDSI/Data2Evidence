@@ -24,17 +24,36 @@ function isAtlasSource(value: unknown): value is AtlasSource {
   );
 }
 
+const STUDY_RESEARCHER_ROLE = "STUDY_RESEARCHER";
+
+function getResearcherDatasetIds(value: unknown): Set<string> {
+  const datasetRoles = (value as { datasetRoles?: unknown } | null)?.datasetRoles;
+  if (!Array.isArray(datasetRoles)) {
+    throw new Error("User management returned invalid user roles");
+  }
+
+  return new Set(
+    datasetRoles
+      .filter((datasetRole) => datasetRole?.role === STUDY_RESEARCHER_ROLE)
+      .map((datasetRole) => datasetRole.datasetId)
+      .filter((datasetId): datasetId is string => typeof datasetId === "string"),
+  );
+}
+
 export async function listAtlasSources(getToken?: () => Promise<string>): Promise<AtlasSource[]> {
   const token = await getToken?.();
-  const response = await client.get<unknown>("/WebAPI/source/sources", {
-    ...(token ? { headers: { Authorization: `Bearer ${token}` } } : {}),
-  });
+  const config = token ? { headers: { Authorization: `Bearer ${token}` } } : {};
+  const [sourcesResponse, rolesResponse] = await Promise.all([
+    client.get<unknown>("/WebAPI/source/sources", config),
+    client.get<unknown>("/usermgmt/api/me/roles", config),
+  ]);
 
-  if (!Array.isArray(response.data)) {
+  if (!Array.isArray(sourcesResponse.data)) {
     throw new Error("Atlas returned an invalid data-source list");
   }
 
-  return response.data.filter(isAtlasSource);
+  const researcherDatasetIds = getResearcherDatasetIds(rolesResponse.data);
+  return sourcesResponse.data.filter(isAtlasSource).filter((source) => researcherDatasetIds.has(source.sourceKey));
 }
 
 export function resolveAtlasSourceKey(sources: AtlasSource[], selectedSourceKey?: string): string | undefined {
