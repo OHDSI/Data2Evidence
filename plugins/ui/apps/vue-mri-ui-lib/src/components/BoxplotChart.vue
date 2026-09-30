@@ -42,6 +42,7 @@ import { mapActions, mapGetters } from 'vuex'
 import axios from 'axios'
 import Constants from '../utils/Constants'
 import processCSV from '../utils/ProcessCSV'
+import { isAbortError } from '../utils/saveFile'
 import { generateDownloadFileName } from '../utils/generateDownloadFileName'
 import boxplotInfo from './BoxplotInfo.vue'
 import chartErrorMessage from './ChartErrorMessage.vue'
@@ -201,7 +202,11 @@ export default {
       this.downloadCSV({ ...this.getBookmarksData })
         .then(response => processCSV(response, this.csvFileName))
         .catch(err => {
-          // do nothing
+          // The request failure is already flagged by the store; this also covers failing to save the file
+          // A cancelled request or save is not a failure
+          if (!axios.isCancel(err) && !isAbortError(err)) {
+            this.setCSVDownloadError(true)
+          }
         })
         .finally(() => {
           this.completeDownloadCSV()
@@ -219,6 +224,7 @@ export default {
       'setCurrentPatientCount',
       'setFireRequest',
       'completeDownloadCSV',
+      'setCSVDownloadError',
     ]),
     startRequest(fire, onSuccess, onError) {
       this.requestId += 1
