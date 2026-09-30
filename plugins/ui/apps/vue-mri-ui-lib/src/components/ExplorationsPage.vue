@@ -415,7 +415,7 @@ import {
   applyFilters,
   authorOptions,
   emptyFilters,
-  isEmpty,
+  hasNarrowingFilters,
   keepKnownAuthors,
   visibleToUser,
   type ExplorationFilters,
@@ -700,7 +700,7 @@ const emptyState = computed(() => {
   }
   // Filter takes precedence over search when both are active — it names the
   // control furthest from the user's attention.
-  if (!isEmpty(filters.value)) {
+  if (hasNarrowingFilters(filters.value)) {
     return {
       title: getText('MRI_PA_EXPLORATIONS_EMPTY_FILTER_TITLE'),
       body: getText('MRI_PA_EXPLORATIONS_EMPTY_FILTER_BODY'),

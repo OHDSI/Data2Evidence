@@ -4,6 +4,7 @@ import {
   applyFilters,
   authorOptions,
   emptyFilters,
+  hasNarrowingFilters,
   isEmpty,
   keepKnownAuthors,
   matchesFilters,
@@ -49,6 +50,25 @@ describe('emptyFilters / EMPTY_FILTERS', () => {
     expect(Object.isFrozen(EMPTY_FILTERS.lastMaterialized)).toBe(true)
     expect(Object.isFrozen(EMPTY_FILTERS.authors)).toBe(true)
     expect(Object.isFrozen(EMPTY_FILTERS.statuses)).toBe(true)
+  })
+})
+
+describe('hasNarrowingFilters', () => {
+  it('is false when nothing is set', () => {
+    expect(hasNarrowingFilters(emptyFilters())).toBe(false)
+  })
+
+  it('is false when only the show shared switch is on', () => {
+    expect(hasNarrowingFilters({ ...emptyFilters(), showShared: true })).toBe(false)
+  })
+
+  it('is true when an author, status or date range is set', () => {
+    expect(hasNarrowingFilters({ ...emptyFilters(), authors: ['alice'] })).toBe(true)
+    expect(hasNarrowingFilters({ ...emptyFilters(), statuses: ['materialized'] })).toBe(true)
+    expect(hasNarrowingFilters({ ...emptyFilters(), created: { from: '2026-01-01', to: null } })).toBe(true)
+    expect(hasNarrowingFilters({ ...emptyFilters(), lastUpdated: { from: null, to: '2026-01-01' } })).toBe(true)
+    expect(hasNarrowingFilters({ ...emptyFilters(), lastMaterialized: { from: '2026-01-01', to: null } })).toBe(true)
+    expect(hasNarrowingFilters({ ...emptyFilters(), showShared: true, authors: ['alice'] })).toBe(true)
   })
 })
 

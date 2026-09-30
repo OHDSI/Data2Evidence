@@ -77,6 +77,10 @@ export function isEmpty(filters: ExplorationFilters): boolean {
   )
 }
 
+export function hasNarrowingFilters(filters: ExplorationFilters): boolean {
+  return !isEmpty({ ...filters, showShared: false })
+}
+
 const author = (card: unknown): string | undefined =>
   (card as any)?.bookmark?.username ?? (card as any)?.atlasCohortDefinition?.username
 
