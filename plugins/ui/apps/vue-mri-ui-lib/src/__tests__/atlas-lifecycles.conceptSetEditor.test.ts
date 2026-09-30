@@ -51,7 +51,7 @@ describe('atlas-lifecycles: the Atlas3 concept set editor drawer', () => {
     vi.unstubAllGlobals()
   })
 
-  it('opens a new set for "+", and puts the saved set on the card', async () => {
+  it('opens a new set for "+", and puts the saved set on the card as a WebAPI ref', async () => {
     const request = vi.fn().mockResolvedValue({ conceptSetId: 12, name: 'Type 2 diabetes' })
     const onClose = vi.fn()
     await mountWithBus(request)
@@ -60,19 +60,57 @@ describe('atlas-lifecycles: the Atlas3 concept set editor drawer', () => {
     await vi.advanceTimersByTimeAsync(0)
 
     expect(request).toHaveBeenCalledWith('conceptSet:edit', {})
-    expect(onClose).toHaveBeenCalledWith({ currentConceptSet: { id: '12', name: 'Type 2 diabetes' } })
+    // A bare "12" would read as legacy set 12 (see query-filter/utils/conceptSetRef.ts).
+    expect(onClose).toHaveBeenCalledWith({ currentConceptSet: { id: 'webapi:12', name: 'Type 2 diabetes' } })
   })
 
-  it('opens the chosen set for its pencil', async () => {
+  it('sends Atlas3 the bare WebAPI id for a set picked from the dropdown', async () => {
     const request = vi.fn().mockResolvedValue({ conceptSetId: 7, name: 'Asthma (edited)' })
     const onClose = vi.fn()
     await mountWithBus(request)
 
-    open(onClose, { selectedConceptSetId: 7 })
+    open(onClose, { selectedConceptSetId: 'webapi:7' })
     await vi.advanceTimersByTimeAsync(0)
 
     expect(request).toHaveBeenCalledWith('conceptSet:edit', { conceptSetId: 7 })
-    expect(onClose).toHaveBeenCalledWith({ currentConceptSet: { id: '7', name: 'Asthma (edited)' } })
+    expect(onClose).toHaveBeenCalledWith({ currentConceptSet: { id: 'webapi:7', name: 'Asthma (edited)' } })
+  })
+
+  it('decodes an offset-encoded bare WebAPI id', async () => {
+    const request = vi.fn().mockResolvedValue(null)
+    await mountWithBus(request)
+
+    open(vi.fn(), { selectedConceptSetId: '1000000007' })
+    await vi.advanceTimersByTimeAsync(0)
+
+    expect(request).toHaveBeenCalledWith('conceptSet:edit', { conceptSetId: 7 })
+  })
+
+  it.each(['legacy:5', '5', 5])(
+    'does not ask Atlas3 to open legacy set %s, which is not in WebAPI',
+    async selectedConceptSetId => {
+      const request = vi.fn()
+      const onClose = vi.fn()
+      await mountWithBus(request)
+
+      open(onClose, { selectedConceptSetId })
+      await vi.advanceTimersByTimeAsync(0)
+
+      expect(request).not.toHaveBeenCalled()
+      expect(onClose).toHaveBeenCalledWith(undefined)
+    }
+  )
+
+  it('does not send an id it cannot parse', async () => {
+    const request = vi.fn()
+    const onClose = vi.fn()
+    await mountWithBus(request)
+
+    open(onClose, { selectedConceptSetId: 'foo:1' })
+    await vi.advanceTimersByTimeAsync(0)
+
+    expect(request).not.toHaveBeenCalled()
+    expect(onClose).toHaveBeenCalledWith(undefined)
   })
 
   it('treats an empty id as a new set', async () => {
@@ -107,7 +145,7 @@ describe('atlas-lifecycles: the Atlas3 concept set editor drawer', () => {
     reply.resolve({ conceptSetId: 3, name: 'Slow edit' })
     await vi.advanceTimersByTimeAsync(0)
 
-    expect(onClose).toHaveBeenCalledWith({ currentConceptSet: { id: '3', name: 'Slow edit' } })
+    expect(onClose).toHaveBeenCalledWith({ currentConceptSet: { id: 'webapi:3', name: 'Slow edit' } })
   })
 
   it('closes cleanly on an Atlas3 without the handler, which times the request out', async () => {

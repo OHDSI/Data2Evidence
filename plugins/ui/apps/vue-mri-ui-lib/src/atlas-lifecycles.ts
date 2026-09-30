@@ -29,6 +29,7 @@ import {
   unmount as portalUnmount,
   update as portalUpdate,
 } from './lifecycles'
+import { formatConceptSetRef, parseConceptSetRef } from './query-filter/utils/conceptSetRef'
 
 type AtlasProps = Record<string, any>
 
@@ -199,6 +200,25 @@ let removeTerminologyBridge: (() => void) | null = null
  */
 let currentMountGeneration = 0
 
+type AtlasConceptSetTarget = { kind: 'new' } | { kind: 'edit'; conceptSetId: number } | { kind: 'unsupported' }
+
+/**
+ * The card holds D2E concept set refs: "webapi:N", "legacy:N", or a bare number,
+ * where a bare number below 1_000_000_000 is a LEGACY set
+ * (query-filter/utils/conceptSetRef.ts). Atlas3 knows only bare WebAPI ids, and
+ * WebAPI answers "webapi:N" with a 500. A legacy set is not in WebAPI, so the
+ * Atlas3 editor cannot open it.
+ */
+const toAtlasConceptSetTarget = (ref: string | number | undefined): AtlasConceptSetTarget => {
+  if (ref === undefined || ref === '') return { kind: 'new' }
+  try {
+    const { source, externalId } = parseConceptSetRef(ref)
+    return source === 'webapi' ? { kind: 'edit', conceptSetId: externalId } : { kind: 'unsupported' }
+  } catch {
+    return { kind: 'unsupported' }
+  }
+}
+
 /**
  * Asks the host's editor drawer to create a set (no id) or to edit one, and
  * resolves null for a close without a save or for any failure. An Atlas3 older
@@ -207,9 +227,9 @@ let currentMountGeneration = 0
  */
 const requestConceptSetEdit = async (
   messageBus: MessageBus,
-  conceptSetId: string | number | undefined
+  conceptSetId: number | undefined
 ): Promise<ConceptSetChoice | null> => {
-  const payload = conceptSetId === undefined || conceptSetId === '' ? {} : { conceptSetId }
+  const payload = conceptSetId === undefined ? {} : { conceptSetId }
   try {
     return ((await messageBus.request(EDIT_REQUEST, payload)) as ConceptSetChoice) ?? null
   } catch {
@@ -230,7 +250,15 @@ const onTerminologyOpen =
     const bridgeAtRequestTime = removeTerminologyBridge
     const isCurrent = () => removeTerminologyBridge === bridgeAtRequestTime
 
-    void requestConceptSetEdit(messageBus, props.selectedConceptSetId).then(choice => {
+    const target = toAtlasConceptSetTarget(props.selectedConceptSetId)
+    if (target.kind === 'unsupported') {
+      console.warn('[atlas-lifecycles] The Atlas3 editor cannot open this concept set', props.selectedConceptSetId)
+      props.onClose?.(undefined)
+      return
+    }
+
+    const conceptSetId = target.kind === 'edit' ? target.conceptSetId : undefined
+    void requestConceptSetEdit(messageBus, conceptSetId).then(choice => {
       if (!isCurrent()) return
       if (!choice) {
         // Closed without a save, or failed. Report no change so the caller
@@ -238,7 +266,9 @@ const onTerminologyOpen =
         props.onClose?.(undefined)
         return
       }
-      props.onClose?.({ currentConceptSet: { id: String(choice.conceptSetId), name: choice.name } })
+      // Back to D2E's form: a bare id would read as a legacy set.
+      const id = formatConceptSetRef({ source: 'webapi', externalId: Number(choice.conceptSetId) })
+      props.onClose?.({ currentConceptSet: { id, name: choice.name } })
     })
   }
 
