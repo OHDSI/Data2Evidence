@@ -823,6 +823,8 @@
           "whiteRabbit.post",
           "demo.setup",
           "strategus.results.write",
+          "strategus.results.read",
+          "strategus.results.download",
           "strategus.results.delete",
           "strategus.results.admin.upload",
           "strategus.results.admin.delete",
@@ -854,7 +856,8 @@
           "codesuggestion.tenantview.read",
           "mcpchat.tenantview.read",
           "d2e.webapi.public",
-          "strategus.results.read"
+          "strategus.results.read",
+          "strategus.results.download"
         ],
         "RESEARCHER": [
           "PA.svc",
@@ -936,6 +939,7 @@
           "jobplugins.analysisUi.researcher.execute",
           "portal.dataset.read",
           "strategus.results.write",
+          "strategus.results.read",
           "strategus.results.download",
           "strategus.results.delete"
         ],
