@@ -51,11 +51,7 @@ export interface MigrationConfig {
   /** Public origin a browser uses, e.g. https://d2e.example:443 (TREX_OIDC_ISSUER). */
   publicOrigin: string
   userDomain: string
-  /**
-   * Whether the Logto provider may auto-provision a first-time federated user
-   * into trex. Off by default so migrated users keep the roles the migration
-   * gave them; on only where a connector is expected to create users on sign-in.
-   */
+  /** Let the Logto provider auto-provision a first-time federated user into trex. Off by default. */
   autoProvision?: boolean
 }
 

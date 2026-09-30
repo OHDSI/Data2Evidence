@@ -1,18 +1,16 @@
 /**
  * IDP path: Microsoft Entra External ID (CIAM) — connector `entra-external-id-alp`.
  *
- * The easiest connector to reason about: sign-in + auto-provision, no group->role mapping.
- * We drive the connector button on the Logto sign-in screen, complete the upstream CIAM
- * login, and assert the base claim contract plus that the federated user was auto-provisioned
- * into usermgmt. This is the behaviour Trex phase 3 (generic-OIDC federation) must reproduce.
+ * Sign-in + auto-provision, no group->role mapping. Asserts the base claim contract and that the
+ * federated user was auto-provisioned into usermgmt — the behaviour Trex phase 3 (generic-OIDC
+ * federation) must reproduce.
  *
  * Gated: needs a real CIAM tenant + test account (no self-hostable upstream), so it self-skips
- * with a logged reason unless its secrets are set. Runs as a nightly/manual job.
+ * unless its secrets are set. Runs as a nightly/manual job.
  *
- * Required env (see .env.e2e-idp.example):
- *   LOGTO__CONNECTOR_CONFIG (connectorId entra-external-id-alp) + LOGTO__SOCIAL_SIGNIN_TARGETS
- *   must already be applied to the running stack.
- *   E2E_ENTRA_EXTID_USERNAME / E2E_ENTRA_EXTID_PASSWORD — a CIAM test account.
+ * Required env (see .env.e2e-idp.example): LOGTO__CONNECTOR_CONFIG (connectorId
+ * entra-external-id-alp) + LOGTO__SOCIAL_SIGNIN_TARGETS applied to the stack, and
+ * E2E_ENTRA_EXTID_USERNAME / E2E_ENTRA_EXTID_PASSWORD — a CIAM test account.
  */
 import { test } from '../../fixtures'
 import type { APIRequestContext } from '@playwright/test'
@@ -49,12 +47,12 @@ test('idp:entra-external-id', async ({ page, baseURL }) => {
     password: process.env.E2E_ENTRA_EXTID_PASSWORD as string
   }
 
-  // trex won't provision a first-time federated connector user (Trex phase 5), so sign in once to
-  // create the Logto user, pre-link it into trex, then sign in again — trex now takes the link
-  // branch and issues tokens. See prelinkLogtoConnectorUser.
+  // trex won't provision a first-time federated connector user (Trex phase 5): sign in once to
+  // create the Logto user, pre-link it into trex, then sign in again so trex takes the link branch
+  // and issues tokens. See prelinkLogtoConnectorUser.
   const connector = {
     target: 'entra-external-id-alp',
-    // The connector metadata name.en is "Microsoft Entra External ID".
+    // Matches the connector metadata name.en "Microsoft Entra External ID".
     connectorName: /Entra External ID/i,
     creds
   }
@@ -66,7 +64,7 @@ test('idp:entra-external-id', async ({ page, baseURL }) => {
 
   // Base claim contract (no group-derived roles for CIAM).
   const claims = assertClaimContract(userToken)
-  // Never log the email/username — mask it so the diagnostic is useful without leaking PII.
+  // Mask the email so diagnostics don't leak PII.
   const email = String(claims.email ?? '').toLowerCase()
   const maskedEmail = email ? email.replace(/(.).*(@.*)/, '$1***$2') : '(none)'
   const sub = String(claims.sub)
@@ -91,7 +89,7 @@ test('idp:entra-external-id', async ({ page, baseURL }) => {
 
   // Identity linkage — the usermgmt row must be bound to the token subject by idp_user_id, not
   // merely share an email. Read as admin (the user's own token can't list users); poll, since
-  // provisioning happened on this first login.
+  // provisioning happened on this login.
   await resetSession(page)
   await loginViaUI(page, ADMIN_USERNAME, ADMIN_PASSWORD)
   const adminHeaders = authHeaders(await readAccessToken(page), base)
