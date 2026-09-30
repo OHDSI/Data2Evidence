@@ -15,9 +15,12 @@
  *
  * The `alp-terminology-open` DOM event is answered here via the host's
  * messageBus instead of the iframe postMessage relay in
- * utils/atlasTerminologyBridge.ts: the host's concept set chooser is requested
- * with `conceptSet:choose` and the choice is delivered through the event's own
- * onClose, so callers are unchanged.
+ * utils/atlasTerminologyBridge.ts. It is sent as `conceptSet:edit`, which
+ * Atlas3 answers with its own concept set editor drawer (OHDSI/Atlas3#363, in
+ * @ohdsi/atlas3 from 0.1.0-20260929021642-294c2d1): a new set from a card's "+",
+ * or the chosen set from its pencil. The saved set is delivered through the
+ * event's own onClose, so callers are unchanged. Picking an existing set is the
+ * card's own dropdown, and needs nothing from the host.
  */
 
 import {
@@ -152,6 +155,8 @@ type TerminologyCloseValues = {
 type TerminologyEventProps = {
   mode?: string
   title?: string
+  /** Set by a set's pencil; absent for "+", which creates a new set. */
+  selectedConceptSetId?: string | number
   onClose?: (values?: TerminologyCloseValues) => void
 }
 
@@ -162,22 +167,13 @@ type MessageBus = {
 }
 
 const OPEN_EVENT = 'alp-terminology-open'
-const CHOOSE_REQUEST = 'conceptSet:choose'
 /**
- * Short on purpose.
- *
- * Atlas3 has no `conceptSet:choose` handler — its host message bus answers five
- * types and logs everything else as unhandled — so this request does not fail,
- * it never resolves. The iframe path ends at the same call
- * (`atlas-iframe-parcel.ts` `chooseConceptSet`), so the concept-set picker has
- * never worked inside Atlas. The native mount did not break it.
- *
- * A minute of nothing reads as a hung application; a few seconds reads as a
- * control that did not do anything. Neither is good, and the short wait is
- * only the lesser evil until the host answers — at which point raise this
- * back, because a real chooser needs time for a human to choose.
+ * Atlas3 answers this with its own concept set editor drawer (OHDSI/Atlas3#363):
+ * no id opens a new set, an id opens that set. It replies with the saved set, or
+ * null when the drawer closes without a save, and it sets no time limit on the
+ * request, because a person is editing.
  */
-const REQUEST_TIMEOUT_MS = 4_000
+const EDIT_REQUEST = 'conceptSet:edit'
 
 /**
  * Removes the listener installed by the current mount, or null when none is
@@ -203,12 +199,22 @@ let removeTerminologyBridge: (() => void) | null = null
  */
 let currentMountGeneration = 0
 
-const requestConceptSetChoice = (messageBus: MessageBus, title?: string): Promise<ConceptSetChoice | null> => {
-  const timeout = new Promise<null>(resolve => setTimeout(() => resolve(null), REQUEST_TIMEOUT_MS))
-  const request = Promise.resolve(messageBus.request(CHOOSE_REQUEST, { title }))
-    .then(choice => (choice as ConceptSetChoice) ?? null)
-    .catch(() => null)
-  return Promise.race([request, timeout])
+/**
+ * Asks the host's editor drawer to create a set (no id) or to edit one, and
+ * resolves null for a close without a save or for any failure. An Atlas3 older
+ * than #363 has no handler and times the request out at 30 s, which lands here
+ * as a failure, so the control closes with no change.
+ */
+const requestConceptSetEdit = async (
+  messageBus: MessageBus,
+  conceptSetId: string | number | undefined
+): Promise<ConceptSetChoice | null> => {
+  const payload = conceptSetId === undefined || conceptSetId === '' ? {} : { conceptSetId }
+  try {
+    return ((await messageBus.request(EDIT_REQUEST, payload)) as ConceptSetChoice) ?? null
+  } catch {
+    return null
+  }
 }
 
 const onTerminologyOpen =
@@ -216,19 +222,19 @@ const onTerminologyOpen =
   (event: Event): void => {
     const props: TerminologyEventProps = (event as CustomEvent<{ props: TerminologyEventProps }>).detail?.props ?? {}
 
-    // CONCEPT_MULTI_SELECT wants a concept picker, which the host chooser is not.
+    // CONCEPT_MULTI_SELECT wants a concept picker, which the editor drawer is not.
     if (props.mode && props.mode !== 'CONCEPT_SET') return
 
-    // The bridge this handler belongs to. The request races a timeout, so it
-    // can resolve after the user has left the plugin; calling `onClose` then
-    // would reach into an unmounted app.
+    // The bridge this handler belongs to. The drawer can answer after the user
+    // has left the plugin; calling `onClose` then would reach into an unmounted app.
     const bridgeAtRequestTime = removeTerminologyBridge
+    const isCurrent = () => removeTerminologyBridge === bridgeAtRequestTime
 
-    void requestConceptSetChoice(messageBus, props.title).then(choice => {
-      if (removeTerminologyBridge !== bridgeAtRequestTime) return
+    void requestConceptSetEdit(messageBus, props.selectedConceptSetId).then(choice => {
+      if (!isCurrent()) return
       if (!choice) {
-        // Dismissed, or a host that does not serve the request. Report no
-        // change so the caller closes cleanly instead of waiting.
+        // Closed without a save, or failed. Report no change so the caller
+        // closes cleanly instead of waiting.
         props.onClose?.(undefined)
         return
       }
