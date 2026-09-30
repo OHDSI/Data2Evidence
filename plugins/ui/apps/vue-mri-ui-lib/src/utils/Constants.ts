@@ -261,6 +261,10 @@ const ChartColorway = {
 export const FONT_FAMILY =
   "'GT-America', 'IBM Plex Sans Variable', 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif"
 
+// Body text colour for Plotly canvas text. Mirrors $body-color ($gray-900) from
+// _mri-bootstrap-variables.scss
+export const BODY_TEXT_COLOR = '#212529'
+
 const PlotlyFont = {
   color: '#000080',
   family: FONT_FAMILY,
@@ -320,6 +324,11 @@ const XAxisLabelMaxLength = 30
 
 const SnackbarTimeout = 3000
 
+// Snackbars are teleported to <body> by Vuetify, so they compete with the modal
+// dialogs' own stacking. `.message-box` sits at 10001 (styles/messageBox.scss), and
+// Vuetify's default of 2000 would leave the toast behind the dimming overlay.
+const SnackbarZIndex = 10002
+
 export default {
   sap,
   events,
@@ -339,4 +348,5 @@ export default {
   CohortEntryExit,
   XAxisLabelMaxLength,
   SnackbarTimeout,
+  SnackbarZIndex,
 }
