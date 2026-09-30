@@ -29,7 +29,7 @@ export interface ExplorationFilters {
 
 const emptyRange = (): DateRange => ({ from: null, to: null })
 
-/** A fresh, fully-unconstrained filter set. Use this for every reset. */
+/** A fresh default filter set: nothing constrained, shared explorations hidden. Use this for every reset. */
 export const emptyFilters = (): ExplorationFilters => ({
   authors: [],
   statuses: [],
@@ -65,7 +65,7 @@ export const EMPTY_FILTERS: Readonly<ExplorationFilters> = (() => {
 
 const isEmptyRange = (range: DateRange): boolean => range.from == null && range.to == null
 
-/** True when nothing is constrained — drives the "Clear all" disabled state. */
+/** True when every filter, including the Show shared switch, is at its default — drives the "Clear all" disabled state. */
 export function isEmpty(filters: ExplorationFilters): boolean {
   return (
     filters.authors.length === 0 &&
