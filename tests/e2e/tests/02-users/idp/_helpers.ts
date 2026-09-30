@@ -1,13 +1,9 @@
 /**
  * Shared IDP test harness — the auth-provider contract every sign-in path must satisfy.
  *
- * This is a deliberate, folder-scoped exception to the suite's inline-helper convention
- * (see 02-users/user-roles-token.spec.ts): the four provider specs
- * (logto-native / entra-external-id / entra / physionet) would otherwise duplicate all of
- * login + token-read + claim assertion. The helpers here are lifted verbatim from
- * user-roles-token.spec.ts and extended with `loginViaConnector`, `decodeToken`,
- * `assertClaimContract`, and env gating so any future `D2E_IDP=trex` cutover re-runs the
- * exact same contract.
+ * Folder-scoped exception to the suite's inline-helper convention so the four provider specs
+ * (logto-native / entra-external-id / entra / physionet) share login + token-read + claim
+ * assertion, and a future `D2E_IDP=trex` cutover re-runs the exact same contract.
  */
 import { expect } from '../../fixtures'
 import type { APIRequestContext, Page } from '@playwright/test'
@@ -21,9 +17,8 @@ export const ADMIN_PASSWORD = process.env.E2E_ADMIN_PASSWORD ?? 'Updatepassword1
 // ---- env gating ---------------------------------------------------------------
 
 /**
- * Which of `names` are missing/blank from the environment. A gated spec calls this and
- * feeds the result to `test.skip` so a skip always names the vars that would unblock it —
- * never a silent pass. (See each connector spec's top-of-file `test.skip(...)`.)
+ * Which of `names` are missing/blank from the environment. Fed to `test.skip` so a skip always
+ * names the vars that would unblock it, never a silent pass.
  */
 export function missingEnv(names: string[]): string[] {
   return names.filter(n => !(process.env[n] ?? '').trim())
@@ -37,9 +32,8 @@ export function skipReason(names: string[]): string {
 // ---- login --------------------------------------------------------------------
 
 /**
- * Sign in with a username/password through Logto's own form, reached via trex's "Sign in with
- * Logto" (federated mode). The admin and every provisioned user authenticate at Logto, so this
- * never touches trex's native password form.
+ * Sign in with username/password through Logto's own form, reached via trex's "Sign in with
+ * Logto" (federated mode) — never trex's native password form.
  */
 export async function loginViaUI(page: Page, username: string, password: string): Promise<void> {
   // Portal 301-redirects to sign-in; ignore a goto abort from that redirect (the waits below gate readiness).
@@ -66,19 +60,16 @@ export interface UpstreamCreds {
 }
 
 /**
- * Sign in through a social/enterprise connector: click the connector button the Logto
- * sign-in screen renders for a `LOGTO__SOCIAL_SIGNIN_TARGETS` entry, then drive the
- * upstream IDP's own username/password form.
+ * Sign in through a social/enterprise connector, then drive the upstream IdP's own form.
  *
- * The click triggers a full-page redirect to the upstream IdP. We MUST wait for the browser
- * to actually leave the portal origin before touching any field — otherwise the selectors
+ * The connector click triggers a full-page redirect to the upstream IdP. We MUST wait for the
+ * browser to actually leave the portal origin before touching any field — otherwise the selectors
  * race the still-visible Logto sign-in page and match its native fields / social buttons.
- * Once on the upstream we branch: Microsoft (Entra/CIAM) splits identifier and password
- * across two screens; a generic OIDC provider (e.g. PhysioNet's Django app) uses a single
- * form and may show a separate consent/authorize page before redirecting back.
+ * Upstream branches: Microsoft (Entra/CIAM) splits identifier and password across two screens;
+ * a generic OIDC provider (e.g. PhysioNet's Django app) uses a single form and may show a
+ * consent/authorize page before redirecting back.
  *
- * `connectorName` is the visible button label on the Logto screen (the connector's metadata
- * `name.en`); `target` is used for logging.
+ * `connectorName` is the visible button label on the Logto screen; `target` is for logging.
  */
 export async function loginViaConnector(
   page: Page,
@@ -91,7 +82,7 @@ export async function loginViaConnector(
   // Origin from the page (not an env fallback) so it always matches the fixture's baseURL.
   const portalOrigin = new URL(page.url()).origin
 
-  // The connector button may render as a button or a link depending on the sign-in theme.
+  // May render as a button or a link depending on the sign-in theme.
   const connectorButton = page.getByRole('button', { name: connectorName }).or(
     page.getByRole('link', { name: connectorName })
   )
@@ -113,9 +104,8 @@ export async function loginViaConnector(
   console.log(`[login] clicking connector "${target}"`)
   await connectorButton.first().click()
 
-  // Wait until we've actually navigated to the upstream IdP (a different origin). A failure
-  // here means the connector button is missing or the upstream is unreachable — surface that
-  // plainly instead of letting a later selector time out on the wrong page.
+  // Wait until we've actually navigated to the upstream IdP (a different origin), so a missing
+  // button / unreachable upstream surfaces plainly instead of a later selector timing out.
   await page
     .waitForURL(url => url.origin !== portalOrigin, { timeout: MINUTE_1 })
     .catch(() => {
@@ -127,9 +117,8 @@ export async function loginViaConnector(
   const isMicrosoft = /microsoftonline|ciamlogin|live\.com|microsoft/i.test(upstreamHost)
   console.log(`[login] upstream IdP host: ${upstreamHost}${isMicrosoft ? ' (microsoft)' : ''}`)
 
-  // Interactive mode (E2E_MANUAL_LOGIN): for real accounts with MFA, the tester completes the
-  // whole sign-in (email, password, number-match) in the headed browser; we just wait for the
-  // redirect back to the portal. Avoids fighting the upstream's anti-automation SPA.
+  // Interactive mode (E2E_MANUAL_LOGIN): for real MFA accounts, the tester completes sign-in in
+  // the headed browser and we just wait for the redirect back — avoids fighting the upstream SPA.
   if ((process.env.E2E_MANUAL_LOGIN ?? '').trim()) {
     console.log(
       `[login] MANUAL mode — complete the sign-in (including MFA) in the browser window; ` +
@@ -156,8 +145,8 @@ export async function loginViaConnector(
   await identifier.waitFor({ state: 'visible', timeout: MINUTE_1 })
   await identifier.fill(creds.username)
 
-  // Microsoft splits identifier/password across two screens with a "Next" button; a generic
-  // single-form provider has no such step, so only take it on a Microsoft origin.
+  // Microsoft splits identifier/password across two screens with a "Next" button; generic
+  // single-form providers don't, so only take it on a Microsoft origin.
   if (isMicrosoft) {
     const next = page.getByRole('button', { name: /next|weiter|continue/i })
     if (await next.first().isVisible().catch(() => false)) {
@@ -165,9 +154,8 @@ export async function loginViaConnector(
     }
   }
 
-  // A rejected identifier (unknown user / wrong tenant) surfaces an error alert instead of
-  // the password screen. Race the two so a bad account fails fast with a clear, cred-free
-  // message rather than a 60s timeout on a field that will never appear.
+  // A rejected identifier (unknown user / wrong tenant) shows an error alert instead of the
+  // password screen. Race the two so a bad account fails fast rather than a 60s field timeout.
   const identifierError = page
     .getByRole('alert')
     .filter({ hasText: /incorrect|isn.?t correct|doesn.?t exist|couldn.?t find|can.?t find|no account|not found/i })
@@ -191,9 +179,8 @@ export async function loginViaConnector(
   const submit = page.getByRole('button', { name: /sign ?in|log ?in|anmelden/i })
   await submit.first().click()
 
-  // A wrong password surfaces an error alert instead of progressing. Race it against the
-  // signs of progress (return to the portal origin, or Microsoft's "stay signed in?" prompt)
-  // so a bad password fails fast & cred-free without delaying the success path.
+  // A wrong password shows an error alert instead of progressing. Race it against the signs of
+  // progress (portal-origin return, or Microsoft's "stay signed in?") so it fails fast.
   const passwordError = page
     .getByRole('alert')
     .filter({
@@ -227,8 +214,8 @@ export async function loginViaConnector(
 }
 
 /**
- * Clear the OIDC session (Logto SSO cookie + portal sessionStorage tokens) and return to
- * the sign-in form, so a spec can switch users without depending on nav selectors.
+ * Clear the OIDC session (Logto SSO cookie + portal storage tokens) and return to the sign-in
+ * form, so a spec can switch users without depending on nav selectors.
  */
 export async function resetSession(page: Page): Promise<void> {
   await page.context().clearCookies()
@@ -240,8 +227,7 @@ export async function resetSession(page: Page): Promise<void> {
   } catch {
     // context may be mid-navigation; storage still gets cleared on next load
   }
-  // The portal 301-redirects to the sign-in page; goto can ERR_ABORTED when that redirect
-  // supersedes the load. The waitFor below is the real readiness gate, so ignore the goto error.
+  // Portal 301-redirects to sign-in; goto can ERR_ABORTED. The waitFor below is the readiness gate.
   await page.goto('/d2e/portal').catch(() => {})
   await page.locator('input[name="identifier"]').waitFor({ state: 'visible', timeout: MINUTE_1 })
 }
@@ -287,9 +273,8 @@ async function listLogtoUsers(
 }
 
 /**
- * Logto users carrying a `target` connector identity. Keyed off the identity, not a username: the
- * Microsoft login UPN (E2E_ENTRA_USERNAME) can differ from the email claim Logto stores, so a
- * name/email search is unreliable — the connector identity key is the only stable handle.
+ * Logto users carrying a `target` connector identity. Keyed off the identity, not username/email:
+ * the Microsoft login UPN can differ from the email Logto stores, so only the identity key is stable.
  */
 async function usersWithConnectorIdentity(
   request: APIRequestContext,
@@ -301,8 +286,8 @@ async function usersWithConnectorIdentity(
 }
 
 /**
- * Delete every prior Logto user for this connector so each run starts fresh: after this, the first
- * connector sign-in produces exactly one user with the `target` identity (CI is clean anyway).
+ * Delete every prior Logto user for this connector so the next sign-in produces exactly one user
+ * with the `target` identity.
  */
 export async function resetLogtoConnectorUser(
   request: APIRequestContext,
@@ -317,11 +302,11 @@ export async function resetLogtoConnectorUser(
 }
 
 /**
- * trex's Logto provider maps the account email from the upstream `sub` claim, so a first-time
- * connector user is refused at provisioning (upstream_email_unusable) while an already-linked user
- * signs in fine (link branch never reads the address). Pre-create the link the way the IdP migration
- * does (trex's /admin/federation/links, keyed by the Logto user id). Remove once trex provisions
- * connector users directly (Trex phase 5).
+ * trex's Logto provider maps the account email from the upstream `sub`, so a first-time connector
+ * user is refused at provisioning (upstream_email_unusable) while an already-linked user signs in
+ * fine (link branch never reads the address). Pre-create the link the way the IdP migration does
+ * (trex's /admin/federation/links, keyed by Logto user id). Remove once trex provisions connector
+ * users directly (Trex phase 5).
  */
 export async function prelinkLogtoConnectorUser(
   request: APIRequestContext,
@@ -331,8 +316,8 @@ export async function prelinkLogtoConnectorUser(
   const serviceKey = requireEnv('TREX__SERVICE_ROLE_KEY')
   const mgmtToken = await logtoMgmtToken(request, base)
 
-  // The connector may not have written the identity the instant login returns; poll. resetLogto-
-  // ConnectorUser cleared prior ones, so the first (only) match is the user that just signed in.
+  // The identity may not be written the instant login returns; poll. Priors were cleared, so the
+  // first match is the user that just signed in.
   let user: LogtoUser | undefined
   for (let i = 0; i < 20 && !user; i++) {
     user = (await usersWithConnectorIdentity(request, base, mgmtToken, opts.target))[0]
@@ -365,9 +350,9 @@ export async function prelinkLogtoConnectorUser(
 // ---- token read + decode ------------------------------------------------------
 
 /**
- * Portal keeps the token in sessionStorage `oidc.default:*.tokens.accessToken`; Atlas (where a
- * researcher lands) stores the raw JWT in localStorage `bearerToken`. Read the portal key first,
- * fall back to Atlas's. Returns null (never throws) when neither is present yet.
+ * Portal keeps the token in sessionStorage `oidc.default:*.tokens.accessToken`; Atlas stores the
+ * raw JWT in localStorage `bearerToken`. Try portal first, fall back to Atlas. Returns null (never
+ * throws) when neither is present yet.
  */
 async function readTokenFromPage(page: Page): Promise<string | null> {
   try {
@@ -413,9 +398,8 @@ export async function tryReadAccessToken(page: Page, timeoutMs = SECOND_30): Pro
 
 /**
  * Re-enter trex after prelinking so the callback takes the link branch. Opening the portal
- * auto-starts the OIDC flow: when the upstream session is still valid (Entra) it silently re-auths
- * and lands a token — no second interactive login. A stateless upstream (the physionet mock) instead
- * shows the sign-in page, so fall back to a fresh connector login.
+ * auto-starts OIDC: a still-valid upstream session (Entra) silently re-auths and lands a token; a
+ * stateless upstream (the physionet mock) shows the sign-in page, so fall back to a fresh login.
  */
 export async function reenterAfterPrelink(
   page: Page,
@@ -474,10 +458,9 @@ export interface ClaimContractExpectations {
 }
 
 /**
- * The auth-provider contract WebAPI / Atlas3 / usermgmt depend on. Every path must satisfy
- * the base set; `expected.requiredClaims`/`roles` add the path-specific extras
- * (`physionet_access_token`, an Entra group-derived role, …). This is the single assertion
- * a `D2E_IDP=trex` cutover must keep green — a failing key here is a concrete Trex gap.
+ * The auth-provider contract WebAPI / Atlas3 / usermgmt depend on. Every path must satisfy the base
+ * set; `expected.requiredClaims`/`roles` add path-specific extras. A `D2E_IDP=trex` cutover must
+ * keep this green — a failing key here is a concrete Trex gap.
  */
 export function assertClaimContract(token: string, expected: ClaimContractExpectations = {}): TokenClaims {
   const claims = decodeToken(token)
