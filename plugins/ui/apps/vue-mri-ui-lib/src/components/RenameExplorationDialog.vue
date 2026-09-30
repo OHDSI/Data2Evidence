@@ -79,8 +79,6 @@ export default {
     hasExceededLength() {
       return this.renamedBookmark.length > this.maxLength
     },
-    // Live, not set on confirm: the Rename button must be disabled and the
-    // field must show its error as soon as the name is cleared (#3122).
     isNameEmpty(): boolean {
       return !this.renamedBookmark.trim().length
     },
@@ -111,7 +109,6 @@ export default {
       this.$emit('update:modelValue', false)
     },
     async confirm() {
-      // Enter in the field reaches here without the button, so repeat its guard.
       if (this.isNameEmpty || this.hasExceededLength || this.isRenaming) return
       const bookmarkDisplay = this.bookmarkDisplay
       if (!bookmarkDisplay) return
