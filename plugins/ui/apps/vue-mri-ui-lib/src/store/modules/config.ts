@@ -40,7 +40,7 @@ const state = {
   selectedDatasetId: {},
   selectedDatasetVersion: '',
   // The data sources this user can read, from /d2e-webapi/source/sources. Held
-  // only to turn a dataset id into a name for display: `setDataset` commits
+  // to turn a dataset id into a name for display: `setDataset` commits
   // `{ id }` and nothing else, so the id is all the app otherwise knows.
   dataSources: [],
 }
