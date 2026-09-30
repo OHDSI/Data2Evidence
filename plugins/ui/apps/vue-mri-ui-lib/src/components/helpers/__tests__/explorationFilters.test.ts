@@ -5,6 +5,7 @@ import {
   authorOptions,
   emptyFilters,
   isEmpty,
+  keepKnownAuthors,
   matchesFilters,
   type ExplorationFilters,
 } from '../explorationFilters'
@@ -281,5 +282,29 @@ describe('applyFilters', () => {
 
     expect(result.map((x: any) => x.displayName)).toEqual(['C', 'A', 'B'])
     expect(input.map((x: any) => x.displayName)).toEqual(['C', 'A', 'B'])
+  })
+})
+
+describe('keepKnownAuthors', () => {
+  it('drops selected authors who are no longer in the list', () => {
+    const filters = { ...emptyFilters(), authors: ['alice', 'bob'] }
+    expect(keepKnownAuthors(filters, ['alice']).authors).toEqual(['alice'])
+  })
+
+  it('returns the same object when every selected author is still known', () => {
+    const filters = { ...emptyFilters(), authors: ['alice'] }
+    expect(keepKnownAuthors(filters, ['alice', 'bob'])).toBe(filters)
+  })
+
+  it('does not mutate its input and keeps the other constraints', () => {
+    const filters: ExplorationFilters = {
+      ...emptyFilters(),
+      authors: ['alice', 'bob'],
+      statuses: ['materialized'],
+    }
+    const next = keepKnownAuthors(filters, [])
+    expect(filters.authors).toEqual(['alice', 'bob'])
+    expect(next.authors).toEqual([])
+    expect(next.statuses).toEqual(['materialized'])
   })
 })

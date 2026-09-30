@@ -94,6 +94,8 @@
           <ExplorationFiltersPanel
             v-model="filters"
             :authors="authorNames"
+            :show-shared="showShared"
+            @update:show-shared="onShowSharedChange"
             @clear="filters = emptyFilters()"
           />
         </D2eMenu>
@@ -405,7 +407,14 @@ import {
 } from './helpers/explorationAnalyze'
 import { filterAndSort, toCardId, type ExplorationSortKey } from './helpers/explorationList'
 import { allSelected, someSelected } from './helpers/explorationSelection'
-import { applyFilters, authorOptions, emptyFilters, isEmpty, type ExplorationFilters } from './helpers/explorationFilters'
+import {
+  applyFilters,
+  authorOptions,
+  emptyFilters,
+  isEmpty,
+  keepKnownAuthors,
+  type ExplorationFilters,
+} from './helpers/explorationFilters'
 import { PAGE_SIZES, clampPage, pageSlice } from './helpers/explorationPaging'
 import { chartQueryFor } from './helpers/explorationSqlQuery'
 import { deleteExploration, type DeleteExplorationDeps } from './helpers/deleteExploration'
@@ -485,6 +494,7 @@ const EMPTY_VALUE = '-'
 const searchQuery = ref('')
 const sortKey = ref<ExplorationSortKey>('lastUpdated')
 const filters = ref<ExplorationFilters>(emptyFilters())
+const showShared = ref(false)
 const filtersOpen = ref(false)
 const page = ref(1)
 const pageSize = ref<number>(PAGE_SIZES[0])
@@ -646,12 +656,17 @@ const onSortSelect = (value: string): void => {
 
 /** The raw list, before filtering. Both the filter panel's option list and
     the filter step read this, never the filtered result. */
-const allCards = computed(() => store.getters.getDisplayBookmarks(false, portalContext.username) || [])
+const allCards = computed(() => store.getters.getDisplayBookmarks(showShared.value, portalContext.username) || [])
 
 /** Every author in the dataset, not only the authors of the visible cards —
     otherwise selecting one author removes every other option and the filter
     cannot be widened again. */
 const authorNames = computed<string[]>(() => authorOptions(allCards.value))
+
+const onShowSharedChange = (value: boolean): void => {
+  showShared.value = value
+  filters.value = keepKnownAuthors(filters.value, authorNames.value)
+}
 
 /** After filter, search and sort, before paging. The pagination bar's count
     and the empty-state choice are both taken from here, never from `cards`. */
@@ -665,7 +680,7 @@ const matchedCards = computed(() => {
 // Reset to page 1 whenever the result set changes underneath it. Without
 // this, filtering from 43 rows to 5 while on page 3 would show an empty grid
 // that looks like a bug.
-watch([searchQuery, filters, sortKey], () => {
+watch([searchQuery, filters, sortKey, showShared], () => {
   page.value = 1
 })
 
@@ -688,7 +703,7 @@ const emptyState = computed(() => {
 })
 
 // Clamped, not `page` itself: the reset-on-change watcher only sees
-// searchQuery/filters/sortKey, so a list that shrinks through any other path
+// searchQuery/filters/sortKey/showShared, so a list that shrinks through any other path
 // (e.g. deleting the last card on a page) leaves `page` stale. Both the grid
 // and the pagination bar read this, or the bar would show a stranded page's
 // nonsensical range and backwards disabled state even though the grid itself
@@ -1478,7 +1493,7 @@ const onMoreSelect = (card: { source: BookmarkDisplay }, value: string): void =>
      `primary`; the frame outlines it in Primary/Light (Figma 2634:58660). */
   &__filters {
     min-width: 101px;
-    padding: var(--d2e-spacing-xs) var(--d2e-spacing-xs-s);
+    padding: 0 var(--d2e-spacing-xs-s);
 
     &.v-btn--variant-outlined {
       border-color: var(--d2e-color-primary-light);

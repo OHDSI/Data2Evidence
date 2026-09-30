@@ -88,6 +88,11 @@ export function authorOptions(cards: readonly unknown[]): string[] {
   return [...names].sort((a, b) => a.localeCompare(b))
 }
 
+export function keepKnownAuthors(filters: ExplorationFilters, authors: readonly string[]): ExplorationFilters {
+  const kept = filters.authors.filter(name => authors.includes(name))
+  return kept.length === filters.authors.length ? filters : { ...filters, authors: kept }
+}
+
 /**
  * Materialisation status. The canonical helper is `getBookmarkType()` in
  * `src/utils/BookmarkUtils.ts` — `'M'`, `'A+M'` and `'D+M'` are materialised,
