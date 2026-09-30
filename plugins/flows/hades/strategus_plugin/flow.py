@@ -80,6 +80,7 @@ def strategus_plugin(json_graph, options):
     n = execute_nodes_flow_wo(generated_nodes, sorted_nodes, testmode)  # flow
 
     study_analysis_result = None
+    results_upload_error = None
     try:
         study_analysis_result = execute_strategus_task(generated_nodes, n, options)
         logger.debug(f"Study analysis result: {study_analysis_result}")
@@ -127,17 +128,18 @@ def strategus_plugin(json_graph, options):
             )
         except Exception:
             error_details = tb.format_exc()
-            logger.warning(f"Failed to upload results to API (non-fatal): {error_details}")
+            logger.error(f"Failed to upload results to API: {error_details}")
             create_markdown_artifact(
                 key="strategus-results-upload-failure",
                 markdown=(
                     f"## Strategus results upload failed\n\n"
                     f"Uploading results for `{result_name}` to the Strategus results API failed. "
-                    f"The flow run itself did not fail (this step is non-fatal), but no result "
-                    f"was recorded and none will appear in the results UI.\n\n"
+                    f"This is now the only path results take, so the flow run is being marked as "
+                    f"failed: no result was recorded and none will appear in the results UI.\n\n"
                     f"```\n{error_details}\n```"
                 ),
             )
+            results_upload_error = error_details
 
     except Exception as e:
         logger.error(f"Error executing Strategus analysis: {tb.format_exc()}")
@@ -149,6 +151,9 @@ def strategus_plugin(json_graph, options):
                 logger.info(f"Successfully updated strategus analysis specification for study '{token_study_code}'")
         else:
             logger.warning("Skipping update_study_analysis: execute_strategus_task did not produce a result")
+
+    if results_upload_error is not None:
+        raise RuntimeError(f"Failed to upload results to API: {results_upload_error}")
 
 @task(task_run_name="execute-strategus-taskrun")
 def execute_strategus_task(generated_nodes, results, options):
@@ -327,17 +332,18 @@ def runStrategus(json_graph, options):
         )
     except Exception:
         error_details = tb.format_exc()
-        logger.warning(f"Failed to upload results to API (non-fatal): {error_details}")
+        logger.error(f"Failed to upload results to API: {error_details}")
         create_markdown_artifact(
             key="strategus-results-upload-failure",
             markdown=(
                 f"## Strategus results upload failed\n\n"
                 f"Uploading results for `{result_name}` to the Strategus results API failed. "
-                f"The flow run itself did not fail (this step is non-fatal), but no result "
-                f"was recorded and none will appear in the results UI.\n\n"
+                f"This is now the only path results take, so the flow run is being marked as "
+                f"failed: no result was recorded and none will appear in the results UI.\n\n"
                 f"```\n{error_details}\n```"
             ),
         )
+        raise
 
 
 def drop_strategus_results(options):
