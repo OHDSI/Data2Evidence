@@ -405,6 +405,7 @@ import { filterAndSort, toCardId, type ExplorationSortKey } from './helpers/expl
 import { allSelected, someSelected } from './helpers/explorationSelection'
 import { applyFilters, authorOptions, emptyFilters, isEmpty, type ExplorationFilters } from './helpers/explorationFilters'
 import { PAGE_SIZES, clampPage, pageSlice } from './helpers/explorationPaging'
+import { fallbackDatasetId } from './helpers/dataSourceSelection'
 import { chartQueryFor } from './helpers/explorationSqlQuery'
 import { deleteExploration, type DeleteExplorationDeps } from './helpers/deleteExploration'
 import { runBulkDelete } from './helpers/bulkDeleteExplorations'
@@ -571,9 +572,9 @@ const dataSourceItems = computed(() => {
 })
 
 /**
- * The select's items. Falls back to the active source alone, which is what the
- * portal always shows and what Atlas shows until the list arrives — a select
- * with no item matching its model value renders blank.
+ * The select's items. Falls back to the active source alone, which is what
+ * Atlas shows until the list arrives — a select with no item matching its
+ * model value renders blank.
  */
 const datasetItems = computed(() =>
   canSwitchDataSource.value ? dataSourceItems.value : [{ label: datasetName.value, value: datasetId.value }],
@@ -607,9 +608,21 @@ const onDataSourceSelect = (nextDatasetId: string): void => {
 
 // One fetch per mount is enough: the response is every source this user can
 // read, not something scoped to the active dataset. Nothing awaits it — the
-// label falls back to the id until it lands, and the action swallows failure,
-// so a missing list costs a nicer name and nothing else.
-if (isAtlasHosted) store.dispatch('fireGetDataSources')
+// label falls back to the id until it lands, and the action swallows failure.
+if (isAtlasHosted) {
+  store.dispatch('fireGetDataSources')
+  watch(
+    () =>
+      fallbackDatasetId(
+        datasetId.value,
+        dataSourceItems.value.map(item => item.value)
+      ),
+    nextDatasetId => {
+      if (nextDatasetId) onDataSourceSelect(nextDatasetId)
+    },
+    { immediate: true }
+  )
+}
 const canMaterialize = computed<boolean>(() => Boolean(store.getters.getCanDatasetMaterializeCohorts))
 
 // Matches ChartToolbar.vue's isWizardFeatureEnabled / canOpenDashboard.
