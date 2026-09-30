@@ -50,7 +50,7 @@ def strategus_plugin(json_graph, options):
     trace_config = _options["trace_config"]
     tracemode = trace_config["trace_mode"]
     upload_results = _options.get('uploadResults', False)
-    update_results_schema = _options.get('updateResultsSchema', False)
+    update_results_schema = _options.get('updateResultsSchema', upload_results)
     databaseCode = options.get('databaseCode', None)
     datasetId = options.get('datasetId', None)
     cacheId = options.get('cacheId', None)
@@ -256,7 +256,7 @@ def runStrategus(json_graph, options):
     cache_id = options.get('cacheId', None)
     schema_name = options.get('schemaName', None)
     upload_results = options.get('uploadResults', False)
-    update_results_schema = options.get('updateResultsSchema', False)
+    update_results_schema = options.get('updateResultsSchema', upload_results)
     runTable1 = options.get('runTable1', False)
 
     if token_study_code:
