@@ -174,3 +174,18 @@ Deno.test("listResults caps the page size at 200", async () => {
   assertEquals(seen.skip, 10);
   assertEquals(seen.order, { createdAt: "DESC" });
 });
+
+Deno.test("listResults escapes LIKE wildcards in the name filter", async () => {
+  let seen: Record<string, unknown> = {};
+  const service = serviceWith({
+    find: (opts: Record<string, unknown>) => {
+      seen = opts;
+      return Promise.resolve([]);
+    },
+  }, fakeStorage());
+
+  await service.listResults({ name: "50%_off\\sale" });
+
+  const nameFilter = (seen.where as Record<string, { value: string }>).name;
+  assertEquals(nameFilter.value, "%50\\%\\_off\\\\sale%");
+});

@@ -86,7 +86,9 @@ export default class StrategusResultsService {
       MAX_PAGE_SIZE,
     );
     return await this.strategusResultsRepository.find({
-      where: options.name ? { name: ILike(`%${options.name}%`) } : {},
+      where: options.name
+        ? { name: ILike(`%${this.escapeLikePattern(options.name)}%`) }
+        : {},
       order: { createdAt: "DESC" },
       take,
       skip: options.offset ?? 0,
@@ -115,6 +117,13 @@ export default class StrategusResultsService {
     await this.storage.delete(existing.bucket, existing.storagePath);
     await this.strategusResultsRepository.delete({ id });
     return existing;
+  }
+
+  // Postgres' default LIKE/ILIKE escape character is backslash, so escaping
+  // "\", "%" and "_" here is enough to stop caller-supplied name filters from
+  // being interpreted as wildcards.
+  private escapeLikePattern(value: string) {
+    return value.replace(/[\\%_]/g, (match) => `\\${match}`);
   }
 
   private checksum(buffer: Uint8Array) {
