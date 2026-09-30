@@ -15,12 +15,7 @@
  *
  * The `alp-terminology-open` DOM event is answered here via the host's
  * messageBus instead of the iframe postMessage relay in
- * utils/atlasTerminologyBridge.ts. It is sent as `conceptSet:edit`, which
- * Atlas3 answers with its own concept set editor drawer (OHDSI/Atlas3#363, in
- * @ohdsi/atlas3 from 0.1.0-20260929021642-294c2d1): a new set from a card's "+",
- * or the chosen set from its pencil. The saved set is delivered through the
- * event's own onClose, so callers are unchanged. Picking an existing set is the
- * card's own dropdown, and needs nothing from the host.
+ * utils/atlasTerminologyBridge.ts.
  */
 
 import {
@@ -156,7 +151,6 @@ type TerminologyCloseValues = {
 type TerminologyEventProps = {
   mode?: string
   title?: string
-  /** Set by a set's pencil; absent for "+", which creates a new set. */
   selectedConceptSetId?: string | number
   onClose?: (values?: TerminologyCloseValues) => void
 }
@@ -168,12 +162,6 @@ type MessageBus = {
 }
 
 const OPEN_EVENT = 'alp-terminology-open'
-/**
- * Atlas3 answers this with its own concept set editor drawer (OHDSI/Atlas3#363):
- * no id opens a new set, an id opens that set. It replies with the saved set, or
- * null when the drawer closes without a save, and it sets no time limit on the
- * request, because a person is editing.
- */
 const EDIT_REQUEST = 'conceptSet:edit'
 
 /**
@@ -202,13 +190,6 @@ let currentMountGeneration = 0
 
 type AtlasConceptSetTarget = { kind: 'new' } | { kind: 'edit'; conceptSetId: number } | { kind: 'unsupported' }
 
-/**
- * The card holds D2E concept set refs: "webapi:N", "legacy:N", or a bare number,
- * where a bare number below 1_000_000_000 is a LEGACY set
- * (query-filter/utils/conceptSetRef.ts). Atlas3 knows only bare WebAPI ids, and
- * WebAPI answers "webapi:N" with a 500. A legacy set is not in WebAPI, so the
- * Atlas3 editor cannot open it.
- */
 const toAtlasConceptSetTarget = (ref: string | number | undefined): AtlasConceptSetTarget => {
   if (ref === undefined || ref === '') return { kind: 'new' }
   try {
@@ -219,12 +200,6 @@ const toAtlasConceptSetTarget = (ref: string | number | undefined): AtlasConcept
   }
 }
 
-/**
- * Asks the host's editor drawer to create a set (no id) or to edit one, and
- * resolves null for a close without a save or for any failure. An Atlas3 older
- * than #363 has no handler and times the request out at 30 s, which lands here
- * as a failure, so the control closes with no change.
- */
 const requestConceptSetEdit = async (
   messageBus: MessageBus,
   conceptSetId: number | undefined
@@ -242,11 +217,8 @@ const onTerminologyOpen =
   (event: Event): void => {
     const props: TerminologyEventProps = (event as CustomEvent<{ props: TerminologyEventProps }>).detail?.props ?? {}
 
-    // CONCEPT_MULTI_SELECT wants a concept picker, which the editor drawer is not.
     if (props.mode && props.mode !== 'CONCEPT_SET') return
 
-    // The bridge this handler belongs to. The drawer can answer after the user
-    // has left the plugin; calling `onClose` then would reach into an unmounted app.
     const bridgeAtRequestTime = removeTerminologyBridge
     const isCurrent = () => removeTerminologyBridge === bridgeAtRequestTime
 
@@ -261,12 +233,9 @@ const onTerminologyOpen =
     void requestConceptSetEdit(messageBus, conceptSetId).then(choice => {
       if (!isCurrent()) return
       if (!choice) {
-        // Closed without a save, or failed. Report no change so the caller
-        // closes cleanly instead of waiting.
         props.onClose?.(undefined)
         return
       }
-      // Back to D2E's form: a bare id would read as a legacy set.
       const id = formatConceptSetRef({ source: 'webapi', externalId: Number(choice.conceptSetId) })
       props.onClose?.({ currentConceptSet: { id, name: choice.name } })
     })

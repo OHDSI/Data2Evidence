@@ -1,11 +1,5 @@
 import { vi, describe, expect, it, beforeEach, afterEach } from 'vitest'
 
-/**
- * Atlas3 answers `conceptSet:edit` with its own concept set editor drawer
- * (OHDSI/Atlas3#363): no id opens a new set, an id opens that set. It replies
- * with the saved set, or null when the drawer closes without a save, and it
- * puts no time limit on the request, because a person is editing.
- */
 vi.mock('../lifecycles', () => ({
   bootstrap: vi.fn(),
   mount: vi.fn().mockResolvedValue('mounted'),
@@ -30,7 +24,6 @@ const open = (
   { mode = 'CONCEPT_SET', selectedConceptSetId }: { mode?: string; selectedConceptSetId?: string | number } = {}
 ) => window.dispatchEvent(new CustomEvent(OPEN_EVENT, { detail: { props: { mode, selectedConceptSetId, onClose } } }))
 
-/** A request that settles only when the test says so. */
 const deferred = <T>() => {
   let resolve!: (value: T) => void
   const promise = new Promise<T>(res => {
@@ -60,7 +53,6 @@ describe('atlas-lifecycles: the Atlas3 concept set editor drawer', () => {
     await vi.advanceTimersByTimeAsync(0)
 
     expect(request).toHaveBeenCalledWith('conceptSet:edit', {})
-    // A bare "12" would read as legacy set 12 (see query-filter/utils/conceptSetRef.ts).
     expect(onClose).toHaveBeenCalledWith({ currentConceptSet: { id: 'webapi:12', name: 'Type 2 diabetes' } })
   })
 
