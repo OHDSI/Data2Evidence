@@ -1,16 +1,4 @@
 <template>
-  <!--
-    Figma node 1810-69308 (Illustration): 140x140 box with a 205.882x79.5455 leaf
-    that intentionally overflows the box (inset 22.73% -23.53% 20.45%). The
-    positioning lives in each caller's stylesheet (bookmark.scss,
-    patientListLoadError.scss) so the box keeps its designed geometry.
-
-    The blob is Neutral/Lightest (#f2f0f1) in Figma, which is also the cohorts
-    panel background, so it would render invisible. Neutral/Extra-lightest is
-    used until the panel vs illustration colour alignment is settled. A caller
-    on a white background sets --load-error-illustration-blob to use the
-    designed colour.
-  -->
   <span aria-hidden="true">
     <svg viewBox="0 0 205.882 79.5455" fill="none" xmlns="http://www.w3.org/2000/svg">
       <path

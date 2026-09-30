@@ -1,4 +1,3 @@
-// Patient List load error state, Figma node 2602-228379 (#3038).
 .patientlist-load-error {
   flex: 1;
   min-height: 0;
@@ -16,8 +15,6 @@
     width: 230px;
   }
 
-  // 200x200 icon box. The illustration leaf is wider than the box, so it is
-  // placed as LoadErrorIllustration's 140px geometry scaled by 200/140.
   .patientlist-load-error__illustration {
     --load-error-illustration-blob: var(--color-neutral-lightest);
     position: relative;
@@ -53,7 +50,6 @@
     white-space: pre-line;
   }
 
-  // Not in the Figma frame: keeps the backend log ID available for support.
   .patientlist-load-error__log-id {
     font-size: 12px;
     overflow-wrap: anywhere;

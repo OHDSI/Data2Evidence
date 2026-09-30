@@ -1,5 +1,4 @@
 <template>
-  <!-- Figma node 2602-228379: error state of the Patient List table area (#3038). -->
   <div class="patientlist-load-error" data-testid="pa-patient-list-load-error" role="alert">
     <div class="patientlist-load-error__illustration-box">
       <LoadErrorIllustration class="patientlist-load-error__illustration" />

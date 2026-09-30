@@ -1,5 +1,4 @@
 export interface PatientListLoadError {
-  // Backend log ID of a logged database error, kept so users can quote it to support.
   logId: string | null
 }
 
