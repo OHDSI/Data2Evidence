@@ -207,8 +207,7 @@ const actions = {
    * and it answers an unauthorised request with `200 []` rather than a 401 —
    * a silent empty list is a worse failure for a name lookup than a loud one.
    *
-   * Failure is not surfaced to the user. The name is decoration; the getter
-   * falls back to the id, and nothing else depends on this list.
+   * Failure is not surfaced to the user. The getter falls back to the id.
    */
   async fireGetDataSources({ commit, dispatch }) {
     try {
