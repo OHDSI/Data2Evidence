@@ -50,5 +50,10 @@ export class App {
 }
 
 let app = new App();
-await app.initialiseDataSource();
-app.start();
+try {
+  await app.initialiseDataSource();
+  await app.start();
+} catch (err) {
+  console.error("strategus-analysis failed to start:", err);
+  Deno.exit(1);
+}
