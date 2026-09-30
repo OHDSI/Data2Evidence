@@ -2,10 +2,21 @@ import { defineConfig } from '@playwright/test'
 import dotenv from 'dotenv'
 import { MINUTE_1, MINUTE_3, SECOND_20, SECOND_30 } from './tests/const'
 
+// Load an optional per-provider env file (E2E_ENV_FILE) first; dotenv won't override
+// already-set vars, so the files below only fill in the rest.
+if (process.env.E2E_ENV_FILE) {
+  dotenv.config({ path: process.env.E2E_ENV_FILE, quiet: true })
+}
 dotenv.config({ quiet: true })
+// Stack secrets (trex service-role key, Logto M2M) live in the repo-root env file, not tests/e2e.
+dotenv.config({ path: '../../.env', quiet: true })
+dotenv.config({ path: '../../.env.local', quiet: true })
 
 export default defineConfig({
   testDir: 'tests',
+  testIgnore: process.env.SKIP_IDP_SPECS
+    ? ['**/idp/physionet.spec.ts', '**/idp/entra-external-id.spec.ts']
+    : [],
   timeout: MINUTE_3, // 3 minutes per test
   expect: {
     timeout: SECOND_30 // 30 seconds for expect conditions
