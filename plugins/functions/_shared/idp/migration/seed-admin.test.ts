@@ -74,6 +74,39 @@ Deno.test('an account whose subject cannot be resolved is logged and left alone'
   assertEquals(logs.length, 1)
 })
 
+Deno.test('an account whose password changed is resolved from its usermgmt subject', async () => {
+  const admin = new FakeAdmin()
+  const lookedUp: string[] = []
+  const acc = accounts({ signIn: () => Promise.resolve(undefined), create: () => Promise.resolve('exists') })
+  const userId = await ensureSeedAdmin(
+    {
+      seedUser: SEED_USER,
+      userDomain: 'd2e.local',
+      storedSubject: email => {
+        lookedUp.push(email)
+        return Promise.resolve('sub-stored')
+      }
+    },
+    acc, admin, silent
+  )
+  assertEquals(userId, 'sub-stored')
+  assertEquals(lookedUp, ['admin@d2e.local'])
+  assertEquals(admin.assigned, SEED_ADMIN_ROLES.map(r => ['sub-stored', r]))
+})
+
+Deno.test('a usermgmt lookup that fails is logged rather than thrown', async () => {
+  const admin = new FakeAdmin()
+  const logs: string[] = []
+  const acc = accounts({ signIn: () => Promise.resolve(undefined), create: () => Promise.resolve('exists') })
+  const userId = await ensureSeedAdmin(
+    { seedUser: SEED_USER, userDomain: 'd2e.local', storedSubject: () => Promise.reject(new Error('db down')) },
+    acc, admin, m => logs.push(m)
+  )
+  assertEquals(userId, undefined)
+  assertEquals(admin.assigned, [])
+  assertEquals(logs.some(l => l.includes('db down')), true)
+})
+
 Deno.test('without a usable seed user nothing is called', async () => {
   for (const seedUser of [undefined, '', 'not json', JSON.stringify({ username: 'admin' })]) {
     const admin = new FakeAdmin()

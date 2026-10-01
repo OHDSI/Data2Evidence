@@ -27,6 +27,8 @@ const WEBAPI_SUPPORTED_DIALECTS = new Set([
   'synapse',
 ])
 
+type RefreshCacheResult = { success: boolean; databaseCode: string; flowRunId?: string; error?: string }
+
 @Injectable()
 export class WebApiSourceService {
   private readonly logger = createLogger(this.constructor.name)
@@ -35,6 +37,8 @@ export class WebApiSourceService {
   // loses it, and getCacheStatus then reports "no active job" rather than lying
   // about a build it cannot see. Callers re-trigger, which is idempotent.
   private readonly cacheFlowRuns = new Map<string, string>()
+  // dataset id -> a refreshCache start that has not settled yet.
+  private readonly cacheFlowStarts = new Map<string, Promise<RefreshCacheResult>>()
 
   constructor(
     private readonly webApiSourceApi: WebApiSourceApi,
@@ -104,12 +108,23 @@ export class WebApiSourceService {
   // from d2e; it remains in trex for standalone WebAPI.
   //
   // A run still in flight for the dataset is returned instead of starting
-  // another: two concurrent flows write the same cache catalog.
+  // another: two concurrent flows write the same cache catalog. Calls that
+  // overlap before the first run id is known share that first start.
   async refreshCache(
     datasetId: string,
     _schemaName: string,
     authToken?: string
-  ): Promise<{ success: boolean; databaseCode: string; flowRunId?: string; error?: string }> {
+  ): Promise<RefreshCacheResult> {
+    const pending = this.cacheFlowStarts.get(datasetId)
+    if (pending) return pending
+    const start = this.startCacheFlowRun(datasetId, authToken).finally(() =>
+      this.cacheFlowStarts.delete(datasetId)
+    )
+    this.cacheFlowStarts.set(datasetId, start)
+    return start
+  }
+
+  private async startCacheFlowRun(datasetId: string, authToken?: string): Promise<RefreshCacheResult> {
     const databaseCode = sanitizeIdForCacheId(datasetId)
     const activeRunId = await this.activeCacheFlowRun(datasetId, authToken)
     if (activeRunId) {
@@ -125,15 +140,21 @@ export class WebApiSourceService {
     }
   }
 
+  // Only a run known to be over frees the dataset for a new one. A state that
+  // cannot be read may belong to a run that is still writing, so it is kept.
   private async activeCacheFlowRun(datasetId: string, authToken?: string): Promise<string | undefined> {
     const flowRunId = this.cacheFlowRuns.get(datasetId)
     if (!flowRunId) return undefined
     try {
-      const { state } = await this.jobPluginsApi.getFlowRunState(flowRunId, authToken)
-      return state === 'RUNNING' ? flowRunId : undefined
+      const { state, pruned } = await this.jobPluginsApi.getFlowRunState(flowRunId, authToken)
+      if (state === 'COMPLETED' || state === 'FAILED' || pruned) return undefined
+      if (state === 'UNKNOWN') {
+        this.logger.warn(`Cache flow run ${flowRunId} state unreadable; treating it as still in flight`)
+      }
+      return flowRunId
     } catch (error) {
-      this.logger.warn(`Cache flow run ${flowRunId} state unreadable, starting a new one: ${error}`)
-      return undefined
+      this.logger.warn(`Cache flow run ${flowRunId} state unreadable; treating it as still in flight: ${error}`)
+      return flowRunId
     }
   }
 

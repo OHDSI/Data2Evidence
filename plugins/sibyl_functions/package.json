@@ -51,6 +51,7 @@
       ],
       "roles": {
         "ALP_SYSTEM_ADMIN": [
+          "sibyl.admin",
           "sibyl.network",
           "sibyl.hades",
           "sibyl.metadata.results"
@@ -62,6 +63,25 @@
         ]
       },
       "scopes": [
+        {
+          "path": "^/network-api(/.*)?/signup$",
+          "scopes": [
+            "sibyl.admin"
+          ],
+          "httpMethods": [
+            "POST"
+          ]
+        },
+        {
+          "path": "^/hades-api(/.*)?/envs(/[^/]+)?$",
+          "scopes": [
+            "sibyl.admin"
+          ],
+          "httpMethods": [
+            "POST",
+            "DELETE"
+          ]
+        },
         {
           "path": "^/network-api",
           "scopes": [

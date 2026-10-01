@@ -114,7 +114,16 @@ export class HttpSeedAccounts implements SeedAccounts {
  * retries. Returns the account's subject when the roles were attempted.
  */
 export async function ensureSeedAdmin(
-  cfg: { seedUser: string | undefined; userDomain: string },
+  cfg: {
+    seedUser: string | undefined
+    userDomain: string
+    /**
+     * The subject usermgmt already holds for the seed account. Used when the
+     * account exists but no longer accepts the seed password, which is the
+     * normal state of an install whose admin has changed it.
+     */
+    storedSubject?: (email: string) => Promise<string | undefined>
+  },
   accounts: SeedAccounts,
   admin: FederationAdmin,
   log: (msg: string) => void = msg => console.log(msg)
@@ -129,11 +138,16 @@ export async function ensureSeedAdmin(
     if (!userId) {
       const created = await accounts.create(email, seed.password)
       if (created === 'exists') {
-        log(`[seed-admin] ${email} exists but its subject could not be resolved with the seed password; roles not granted`)
-        return undefined
+        userId = await cfg.storedSubject?.(email)
+        if (!userId) {
+          log(`[seed-admin] ${email} exists but its subject could not be resolved with the seed password or from usermgmt; roles not granted`)
+          return undefined
+        }
+        log(`[seed-admin] ${email} resolved from its usermgmt subject`)
+      } else {
+        userId = created
+        log(`[seed-admin] created ${email}`)
       }
-      userId = created
-      log(`[seed-admin] created ${email}`)
     }
   } catch (err) {
     log(`[seed-admin] could not resolve ${email}; will retry on the next start: ${err}`)

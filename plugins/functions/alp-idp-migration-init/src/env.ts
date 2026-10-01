@@ -11,6 +11,10 @@ export const env = {
   USER_DOMAIN: Deno.env.get('IDP__INITIAL_USER__DOMAIN') ?? 'd2e.local',
   TREX_AUTH_URL: Deno.env.get('TREX__AUTH_URL') ?? '',
   SEED_USER: Deno.env.get('D2E__SEED_USER'),
+  // The seeded usermgmt row (alp-usermgmt-init's 01_user seed), whose subject
+  // resolves the seed account once its password has been changed.
+  INITIAL_USER_UUID: Deno.env.get('IDP__INITIAL_USER__UUID') ?? '',
+  INITIAL_USER_NAME: Deno.env.get('IDP__INITIAL_USER__NAME') ?? '',
   // Logto's own database role, which owns logto.users and so bypasses its
   // row-level policy; see KnexMigrationStore. Empty on a trex-mode install,
   // which has no Logto schema to read.

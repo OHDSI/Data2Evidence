@@ -287,7 +287,7 @@ try {
             console.log(`Setup in progress...`);
             await new Promise(resolve => setTimeout(resolve, 15000));
         } else if (progress_status == "completed") {
-            console.log(`Setup completed succcessfully after ${elapsed()}. Go to Job Runs to view the result.\n`);
+            console.log(`Setup completed successfully after ${elapsed()}. Go to Job Runs to view the result.\n`);
         }
         else {
             console.log(`Setup unsuccessful after ${elapsed()}. progress_status: ${progress_status}`);
