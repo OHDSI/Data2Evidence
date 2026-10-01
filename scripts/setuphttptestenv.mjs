@@ -254,18 +254,44 @@ console.log(resp_message);
 var progress_status = "inprogress";
 
 
+const MAX_PROGRESS_FAILURES = 5;
+const setupStartedAt = Date.now();
+const elapsed = () => `${Math.round((Date.now() - setupStartedAt) / 1000)}s`;
+let progressFailures = 0;
+
 try {
     while (progress_status == "inprogress") {
         var url = `https://${CADDY__D2E__PUBLIC_FQDN}/d2e/demo/progress/${progress_id}`;
-        var response = await fetch(url, {
-            method: "GET",
-            headers: {
-                "content-type": "application/x-www-form-urlencoded",
-                "Authorization": `Bearer ${BEARER_TOKEN}`
-            },
-            dispatcher: insecureAgent
-        });
-        const resp = await response.json();
+        let resp;
+        let failure;
+        try {
+            var response = await fetch(url, {
+                method: "GET",
+                headers: {
+                    "content-type": "application/x-www-form-urlencoded",
+                    "Authorization": `Bearer ${BEARER_TOKEN}`
+                },
+                dispatcher: insecureAgent
+            });
+            resp = await response.json().catch(() => undefined);
+            // The progress map is held in memory by the function worker, so a
+            // recycled worker answers 404 {"message":...} with no `steps`.
+            if (!Array.isArray(resp?.steps)) {
+                failure = `HTTP ${response.status}: ${JSON.stringify(resp)}`;
+            }
+        } catch (error) {
+            failure = error instanceof Error ? error.message : String(error);
+        }
+        if (failure) {
+            progressFailures++;
+            console.error(`Progress unavailable after ${elapsed()} (${progressFailures}/${MAX_PROGRESS_FAILURES}): ${failure}`);
+            if (progressFailures >= MAX_PROGRESS_FAILURES) {
+                throw new Error(`progress unavailable for ${MAX_PROGRESS_FAILURES} consecutive polls after ${elapsed()}`);
+            }
+            await new Promise(resolve => setTimeout(resolve, 15000));
+            continue;
+        }
+        progressFailures = 0;
         for (const step of resp.steps) {
             console.log(`${step.step ?? 'N/A'}. ${step.message}. Status: ${step.status}`);
         }
@@ -275,10 +301,10 @@ try {
             console.log(`Setup in progress...`);
             await new Promise(resolve => setTimeout(resolve, 15000));
         } else if (progress_status == "completed") {
-            console.log(`Setup completed succcessfully. Go to Job Runs to view the result.\n`);
+            console.log(`Setup completed succcessfully after ${elapsed()}. Go to Job Runs to view the result.\n`);
         }
         else {
-            console.log(`Setup unsuccessful. progress_status: ${progress_status}`);
+            console.log(`Setup unsuccessful after ${elapsed()}. progress_status: ${progress_status}`);
             process.exit(1);
         }
     }
