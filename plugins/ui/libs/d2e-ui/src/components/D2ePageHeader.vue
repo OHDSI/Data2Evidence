@@ -31,7 +31,7 @@ withDefaults(defineProps<Props>(), {
 .d2e-page-header {
   display: flex;
   align-items: flex-start;
-  gap: var(--d2e-spacing-m);
+  gap: var(--d2e-spacing-xl);
   font-family: var(--d2e-font-family);
 
   &__text {
@@ -69,7 +69,6 @@ withDefaults(defineProps<Props>(), {
   }
 
   &__subtitle {
-    max-width: 760px;
     margin: var(--d2e-spacing-xxs) 0 0;
     font-size: 13px;
     line-height: 1.5;
