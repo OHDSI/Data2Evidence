@@ -244,12 +244,12 @@ function onSelect(item: D2eMenuItem) {
 
 <style scoped lang="scss">
 // Values from design-system/menu-dropdown.md: container 330 (showcase width),
-// radius 8, padding 16/12, elevation/8; rows 40 px, Body 1/Subtitle 1.
+// radius 8, padding 12/0, elevation/8; rows 40 px and edge to edge, Body 1/Subtitle 1.
 // The width comes from the `width` prop as an inline style.
 .d2e-menu {
   display: flex;
   flex-direction: column;
-  padding: 12px 16px;
+  padding: 12px 0;
   background: var(--d2e-color-white);
   border-radius: 8px;
   box-shadow: var(--d2e-elevation-e8);
@@ -261,11 +261,11 @@ function onSelect(item: D2eMenuItem) {
     gap: 8px;
     width: 100%;
     height: 44px;
-    padding: 12px 24px 12px 16px;
+    padding: 12px 40px 12px 32px;
     color: var(--d2e-color-primary);
     background: transparent;
     border: 0;
-    border-radius: 4px;
+    border-radius: 0;
     font-size: var(--d2e-font-body1-size);
     font-weight: var(--d2e-font-body1-weight);
     line-height: var(--d2e-font-body1-line-height);
@@ -274,6 +274,16 @@ function onSelect(item: D2eMenuItem) {
 
     &:hover {
       background: var(--d2e-color-primary-xtra-lightest);
+    }
+
+    &:focus {
+      outline: none;
+    }
+
+    &:focus-visible {
+      background: var(--d2e-color-primary-xtra-lightest);
+      outline: var(--d2e-border-width-md) solid var(--d2e-color-primary-light);
+      outline-offset: calc(-1 * var(--d2e-border-width-md));
     }
 
     &--selected {
