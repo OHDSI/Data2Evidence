@@ -306,8 +306,6 @@ export default async (req: IMRIRequest, res, next) => {
                 getDefaultDbConnection();
             }
         } else {
-            // TODO: throw exact error for missing db metadata later on once mri sends in selected study entity value
-            // TODO: check for selected study is in user jwt token for authorisation
             let datasetId: string = getDatasetIdFromMriquery();
             // If datasetId is not found from mriquery, try and find datasetId from request query or body
             if (!datasetId) {
@@ -317,6 +315,13 @@ export default async (req: IMRIRequest, res, next) => {
                 req.studiesDbMetadata.studies.find(
                     (o) => o.id === datasetId || o.tokenStudyCode === datasetId
                 );
+            if (datasetId && !studyMetadata) {
+                const forbidden = new Error(
+                    "Unknown or inaccessible dataset"
+                ) as Error & { status: number };
+                forbidden.status = 403;
+                throw forbidden;
+            }
             // Set req.selectedstudyDbMetadata if it does not already exist
             if (!req.selectedstudyDbMetadata) {
                 req.selectedstudyDbMetadata = studyMetadata;
