@@ -411,6 +411,7 @@ import { chartQueryFor } from './helpers/explorationSqlQuery'
 import { deleteExploration, type DeleteExplorationDeps } from './helpers/deleteExploration'
 import { runBulkDelete } from './helpers/bulkDeleteExplorations'
 import { canModifyBookmark, getBookmarkType } from '../utils/BookmarkUtils'
+import DateUtils from '../utils/DateUtils'
 import ExplorationMaterializeIcon from './icons/ExplorationMaterializeIcon.vue'
 import ExplorationDataQualityIcon from './icons/ExplorationDataQualityIcon.vue'
 import ExplorationFilterSummaryIcon from './icons/ExplorationFilterSummaryIcon.vue'
@@ -727,7 +728,7 @@ const cards = computed(() => {
       metadata: [
         {
           label: getText('MRI_PA_EXPLORATIONS_LAST_MATERIALISED'),
-          value: cohortDefinition?.createdOnFormatted || EMPTY_VALUE,
+          value: DateUtils.displayExplorationDate(cohortDefinition?.createdOn) || EMPTY_VALUE,
         },
         // The frame's id row is the materialised cohort's id, so a card that has
         // never been materialised shows a dash (Figma 1798:192928).
@@ -744,7 +745,10 @@ const cards = computed(() => {
         },
         {
           label: getText('MRI_PA_EXPLORATIONS_LAST_UPDATED'),
-          value: bookmark?.dateModifiedFormatted || atlas?.updatedOnFormatted || EMPTY_VALUE,
+          value:
+            DateUtils.displayExplorationDate(bookmark?.dateModified) ||
+            DateUtils.displayExplorationDate(atlas?.updatedOn) ||
+            EMPTY_VALUE,
         },
         { label: getText('MRI_PA_EXPLORATIONS_VERSION'), value: bookmark?.version ?? EMPTY_VALUE },
       ],
