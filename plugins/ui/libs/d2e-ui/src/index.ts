@@ -2,6 +2,7 @@ export { default as D2eDialog } from "./components/D2eDialog.vue";
 export { DIALOG_SIZE_MAP, type D2eDialogSize } from "./components/dialogSizes";
 export { default as D2eButton } from "./components/D2eButton.vue";
 export { default as D2eTextField } from "./components/D2eTextField.vue";
+export { default as D2eSearchField } from "./components/D2eSearchField.vue";
 export { default as D2eStatusChip } from "./components/D2eStatusChip.vue";
 export { default as D2eIconButton } from "./components/D2eIconButton.vue";
 export { default as D2eMenu } from "./components/D2eMenu.vue";
