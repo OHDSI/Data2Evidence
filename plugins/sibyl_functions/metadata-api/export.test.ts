@@ -1,6 +1,6 @@
 // @ts-nocheck - Deno edge function (trex EdgeRuntime).
 import { assertEquals, assert } from "https://deno.land/std@0.224.0/assert/mod.ts";
-import { gzipBytes, findResultsDb } from "./export.ts";
+import { gzipBytes, findResultsDb, isSafeSegment } from "./export.ts";
 
 Deno.test("gzipBytes produces a gzip stream (magic bytes 1f 8b)", async () => {
   const out = await gzipBytes(new TextEncoder().encode("hello duckdb"));
@@ -41,4 +41,9 @@ Deno.test("findResultsDb returns null for a missing override", async () => {
 Deno.test("findResultsDb returns null when the dir does not exist", async () => {
   const found = await findResultsDb("/tmp/does-not-exist-" + "xyzzy-run");
   assert(found === null);
+});
+
+Deno.test("isSafeSegment accepts job ids and file names, rejects path traversal", () => {
+  for (const ok of ["0b4c1f2e-9d1a-4a77-8c55-0f6a2b1c3d4e", "results.duckdb", "run_1"]) assert(isSafeSegment(ok), ok);
+  for (const bad of ["", ".", "..", "../x", "a/b", "/etc/passwd", "a\\b", undefined, 42]) assert(!isSafeSegment(bad), String(bad));
 });
