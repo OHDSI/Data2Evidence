@@ -1282,6 +1282,7 @@ const onMoreSelect = (card: { source: BookmarkDisplay }, value: string): void =>
     overflow: hidden;
     background: var(--d2e-color-white);
     border-radius: var(--d2e-radius-lg);
+    box-shadow: var(--d2e-elevation-page);
   }
 
   &__header {
