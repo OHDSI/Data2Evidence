@@ -6,8 +6,26 @@ import type { Knex } from 'knex'
 import { resolveIdpMode } from '@alp/idp/mode.ts'
 import { HttpFederationAdmin } from '@alp/idp/migration/federation-admin.ts'
 import { runIdpMigration } from '@alp/idp/migration/run.ts'
+import { ensureSeedAdmin, HttpSeedAccounts } from '@alp/idp/migration/seed-admin.ts'
 import { env } from './src/env.ts'
 import { KnexMigrationStore } from './src/store.ts'
+
+const mode = resolveIdpMode(env.D2E_IDP_MODE)
+const admin = new HttpFederationAdmin({
+  federationUrl: env.TREX_FEDERATION_ADMIN_URL,
+  rolesUrl: env.TREX_ROLES_ADMIN_URL,
+  serviceRoleKey: env.SERVICE_ROLE_KEY
+})
+
+// In federated mode the seed admin is a Logto user whose roles the migration
+// below copies; only a trex install has to grant them here.
+if (mode === 'trex' && env.TREX_AUTH_URL) {
+  await ensureSeedAdmin(
+    { seedUser: env.SEED_USER, userDomain: env.USER_DOMAIN },
+    new HttpSeedAccounts({ authUrl: env.TREX_AUTH_URL, serviceRoleKey: env.SERVICE_ROLE_KEY }),
+    admin
+  )
+}
 
 // Built and torn down inside the try/finally below, not at module scope:
 // loading the sibling knexfile runs alp-usermgmt-init's own env module at
@@ -30,7 +48,7 @@ try {
   }
   await runIdpMigration(
     {
-      mode: resolveIdpMode(env.D2E_IDP_MODE),
+      mode,
       logtoIssuer: env.LOGTO_ISSUER,
       clientId: env.LOGTO_UPSTREAM_CLIENT_ID,
       clientSecret: env.LOGTO_UPSTREAM_CLIENT_SECRET,
@@ -38,11 +56,7 @@ try {
       userDomain: env.USER_DOMAIN
     },
     new KnexMigrationStore(k, logtoK),
-    new HttpFederationAdmin({
-      federationUrl: env.TREX_FEDERATION_ADMIN_URL,
-      rolesUrl: env.TREX_ROLES_ADMIN_URL,
-      serviceRoleKey: env.SERVICE_ROLE_KEY
-    })
+    admin
   )
 } catch (error) {
   // Never fatal: users already linked keep working, and the next boot retries.
