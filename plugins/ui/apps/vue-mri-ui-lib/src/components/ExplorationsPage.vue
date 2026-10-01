@@ -1446,16 +1446,20 @@ const onMoreSelect = (card: { source: BookmarkDisplay }, value: string): void =>
   }
 
   &__grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, 324px);
-    grid-auto-rows: min-content;
-    justify-content: start;
-    column-gap: 16px;
-    row-gap: 40px;
+    display: flex;
+    flex-wrap: wrap;
+    align-content: flex-start;
+    gap: var(--d2e-spacing-s);
     padding: 24px;
     flex: 1 1 auto;
     min-height: 0;
     overflow-y: auto;
+
+    > .d2e-exploration-card {
+      flex: 1 1 314px;
+      min-width: 314px;
+      max-width: 500px;
+    }
   }
 
   &__summary-panel {
