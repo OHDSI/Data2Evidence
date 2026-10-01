@@ -1,6 +1,8 @@
 import os
 import json
 import traceback
+from tempfile import mkdtemp
+from shutil import rmtree
 
 from string import Template
 from functools import partial
@@ -123,6 +125,12 @@ def data_characterization_plugin(options: DCOptionsType):
             dbdao.clear_pg_cache()
 
     if dc_schema:
+        # A fresh attempt directory prevents previous failures (including retries of
+        # the same flow run) from being mistaken for errors from this invocation.
+        os.makedirs(achilles_params.outputFolder, exist_ok=True)
+        output_folder = mkdtemp(prefix=f"{flow_run_id}-", dir=achilles_params.outputFolder)
+        achilles_params.outputFolder = output_folder
+        logger.info(f"Achilles output directory: {output_folder}")
         execute_achilles_wo = with_drop_schema_on_failure(
             execute_achilles, dbdao, achilles_params.resultsSchema, use_trex_connection
         )
@@ -174,6 +182,9 @@ def data_characterization_plugin(options: DCOptionsType):
                 f"partial results kept in schema '{achilles_params.resultsSchema}'. "
                 f"Failed analysis IDs: \"{partial_failure}\""
             )
+
+        # Reached only after successful processing; failures retain their reports.
+        rmtree(output_folder)
 
 
 def clear_webapi_results_cache(options: DCOptionsType, flow_run_id: str, logger):
