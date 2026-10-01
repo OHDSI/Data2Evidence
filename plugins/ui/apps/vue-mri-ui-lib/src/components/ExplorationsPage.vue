@@ -1314,7 +1314,7 @@ const onMoreSelect = (card: { source: BookmarkDisplay }, value: string): void =>
 .explorations-page {
   height: 100%;
   padding: 24px;
-  background: var(--d2e-color-neutral-xtra-lightest);
+  background: var(--atlas-color-surface-variant, var(--d2e-color-neutral-xtra-lightest));
   font-family: var(--d2e-font-family);
 
   &__card {
