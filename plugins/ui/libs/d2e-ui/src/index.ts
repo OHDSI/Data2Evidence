@@ -11,6 +11,8 @@ export { default as D2eExplorationCard } from "./components/D2eExplorationCard.v
 export { default as D2eSelect } from "./components/D2eSelect.vue";
 export { default as D2eCheckbox } from "./components/D2eCheckbox.vue";
 export { default as D2eDateField } from "./components/D2eDateField.vue";
+export { default as D2eTooltip } from "./components/D2eTooltip.vue";
+export { default as D2eTruncatedText } from "./components/D2eTruncatedText.vue";
 export { toIsoDate, fromIsoDate } from "./components/dateFieldFormat";
 export { VARIANT_MAP, SIZE_MAP } from "./components/buttonVariants";
 export type {
@@ -42,4 +44,4 @@ export type { D2eSelectSize, D2eSelectItem } from "./components/selectSizes";
 export { tokens } from "./tokens/tokens";
 export type { D2eTokens } from "./tokens/tokens";
 export { buildD2eVuetifyOptions } from "./tokens/theme";
-export { isTruncated, vTruncationTitle } from "./components/truncation";
+export { isTruncated } from "./components/truncation";

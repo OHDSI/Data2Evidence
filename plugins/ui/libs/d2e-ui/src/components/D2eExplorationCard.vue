@@ -13,7 +13,11 @@
   >
     <div class="d2e-exploration-card__head">
       <div class="d2e-exploration-card__title-row">
-        <h3 v-truncation-title class="d2e-exploration-card__title">{{ name }}</h3>
+        <D2eTruncatedText
+          tag="h3"
+          class="d2e-exploration-card__title"
+          :text="name"
+        />
         <v-checkbox
           class="d2e-exploration-card__checkbox"
           :model-value="selected"
@@ -55,9 +59,11 @@
             class="d2e-exploration-card__row"
           >
             <dt class="d2e-exploration-card__row-label">{{ row.label }}</dt>
-            <dd v-truncation-title class="d2e-exploration-card__row-value">
-              {{ row.value }}
-            </dd>
+            <D2eTruncatedText
+              tag="dd"
+              class="d2e-exploration-card__row-value"
+              :text="String(row.value)"
+            />
           </div>
         </dl>
       </div>
@@ -78,9 +84,11 @@
             class="d2e-exploration-card__row"
           >
             <dt class="d2e-exploration-card__row-label">{{ row.label }}</dt>
-            <dd v-truncation-title class="d2e-exploration-card__row-value">
-              {{ row.value }}
-            </dd>
+            <D2eTruncatedText
+              tag="dd"
+              class="d2e-exploration-card__row-value"
+              :text="String(row.value)"
+            />
           </div>
         </dl>
       </div>
@@ -103,7 +111,7 @@ import type {
 import { VCheckbox } from "vuetify/components";
 import { computed } from "vue";
 import D2eStatusChip from "./D2eStatusChip.vue";
-import { vTruncationTitle } from "./truncation";
+import D2eTruncatedText from "./D2eTruncatedText.vue";
 
 interface Props {
   name: string;
