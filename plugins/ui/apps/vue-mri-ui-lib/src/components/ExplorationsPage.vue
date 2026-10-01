@@ -1,33 +1,30 @@
 <template>
   <div class="explorations-page" data-testid="explorations-page">
     <div class="explorations-page__card">
-      <header class="explorations-page__header">
-      <div class="explorations-page__heading">
-        <p class="explorations-page__breadcrumb">
-          <span>D2E</span>
-          <span class="explorations-page__breadcrumb-dot">·</span>
-          <span>{{ getText('MRI_PA_EXPLORATIONS_TITLE') }}</span>
-          <span class="explorations-page__breadcrumb-rule" />
-        </p>
-        <h1 class="explorations-page__title">{{ getText('MRI_PA_EXPLORATIONS_TITLE') }}</h1>
-        <p class="explorations-page__description">{{ getText('MRI_PA_EXPLORATIONS_DESCRIPTION') }}</p>
-      </div>
-      <!-- Switching is only possible in the Atlas mount. In the portal the
-           dataset arrives through customProps and there is no channel back, so
-           the select stays a read-only label until #2956 settles that. -->
-      <D2eSelect
-        class="explorations-page__dataset"
-        size="sm"
-        :disabled="!canSwitchDataSource"
-        :label="getText('MRI_PA_EXPLORATIONS_DATASOURCE')"
-        :items="datasetItems"
-        :model-value="datasetId"
-        prepend-icon="mdi-database-outline"
-        hide-details
-        data-testid="explorations-datasource"
-        @update:model-value="onDataSourceSelect"
-      />
-    </header>
+      <D2ePageHeader
+        class="explorations-page__header"
+        :eyebrow="`D2E · ${getText('MRI_PA_EXPLORATIONS_TITLE')}`"
+        :title="getText('MRI_PA_EXPLORATIONS_TITLE')"
+        :subtitle="getText('MRI_PA_EXPLORATIONS_DESCRIPTION')"
+      >
+        <template #actions>
+          <!-- Switching is only possible in the Atlas mount. In the portal the
+               dataset arrives through customProps and there is no channel back, so
+               the select stays a read-only label until #2956 settles that. -->
+          <D2eSelect
+            class="explorations-page__dataset"
+            size="sm"
+            :disabled="!canSwitchDataSource"
+            :label="getText('MRI_PA_EXPLORATIONS_DATASOURCE')"
+            :items="datasetItems"
+            :model-value="datasetId"
+            prepend-icon="mdi-database-outline"
+            hide-details
+            data-testid="explorations-datasource"
+            @update:model-value="onDataSourceSelect"
+          />
+        </template>
+      </D2ePageHeader>
 
     <div v-if="explorations.hasSelection" class="explorations-page__bulk" data-testid="explorations-bulk-bar">
       <D2eCheckbox
@@ -389,7 +386,7 @@
 <script setup lang="ts">
 import { computed, nextTick, reactive, ref, watch } from 'vue'
 import { useStore } from 'vuex'
-import { D2eButton, D2eCheckbox, D2eDialog, D2eExplorationCard, D2eIconButton, D2eMenu, D2eSearchField, D2eSelect } from '@d2e/ui'
+import { D2eButton, D2eCheckbox, D2eDialog, D2eExplorationCard, D2eIconButton, D2eMenu, D2ePageHeader, D2eSearchField, D2eSelect } from '@d2e/ui'
 import { useExplorationsStore } from '../stores/explorations'
 import { useNotificationStore } from '../stores/notifications'
 import { useUnsavedChanges } from '@/composables/useUnsavedChanges'
@@ -1288,62 +1285,12 @@ const onMoreSelect = (card: { source: BookmarkDisplay }, value: string): void =>
   }
 
   &__header {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 24px;
     padding: 24px;
     // Never shrink: the card is now clamped to viewport height, and only
     // __status/__grid (both `min-height: 0`) are meant to absorb a shortfall
     // by scrolling. Without this, a very short viewport would squeeze the
     // header instead of the content that's actually built to give way.
     flex-shrink: 0;
-  }
-
-  /* 10px Medium, 1px tracking, closed by a 24x2 secondary rule
-     (Figma 1676:221313). */
-  &__breadcrumb {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin: 0 0 8px;
-    font-size: 10px;
-    font-weight: 500;
-    line-height: 1.5;
-    letter-spacing: 1px;
-    text-transform: uppercase;
-    color: var(--d2e-color-primary);
-  }
-
-  &__breadcrumb-dot {
-    font-size: 12px;
-    font-weight: 600;
-    letter-spacing: 1.2px;
-    color: var(--d2e-color-neutral-black);
-  }
-
-  &__breadcrumb-rule {
-    width: 24px;
-    height: 2px;
-    border-radius: 200px;
-    background: var(--d2e-color-secondary);
-  }
-
-  &__title {
-    margin: 0 0 8px;
-    font-size: 24px;
-    font-weight: 600;
-    line-height: 1.2;
-    letter-spacing: -2px;
-    color: var(--d2e-color-primary);
-  }
-
-  &__description {
-    max-width: 760px;
-    margin: 0;
-    font-size: 14px;
-    line-height: 1.5;
-    color: var(--d2e-color-neutral);
   }
 
   /* 208px in the frame. Read-only until #2956 settles the nav contract: the

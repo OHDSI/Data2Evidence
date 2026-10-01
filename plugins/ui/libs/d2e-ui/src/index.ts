@@ -8,6 +8,7 @@ export { default as D2eIconButton } from "./components/D2eIconButton.vue";
 export { default as D2eMenu } from "./components/D2eMenu.vue";
 export { default as D2eCard } from "./components/D2eCard.vue";
 export { default as D2eToolbar } from "./components/D2eToolbar.vue";
+export { default as D2ePageHeader } from "./components/D2ePageHeader.vue";
 export { default as D2eExplorationCard } from "./components/D2eExplorationCard.vue";
 export { default as D2eSelect } from "./components/D2eSelect.vue";
 export { default as D2eCheckbox } from "./components/D2eCheckbox.vue";
