@@ -1444,7 +1444,7 @@ const onMoreSelect = (card: { source: BookmarkDisplay }, value: string): void =>
      `primary`; the frame outlines it in Primary/Light (Figma 2634:58660). */
   &__filters {
     min-width: 101px;
-    padding: var(--d2e-spacing-xs) var(--d2e-spacing-xs-s);
+    padding: 0 var(--d2e-spacing-xs-s) 0 10px;
 
     &.v-btn--variant-outlined {
       border-color: var(--d2e-color-primary-light);
