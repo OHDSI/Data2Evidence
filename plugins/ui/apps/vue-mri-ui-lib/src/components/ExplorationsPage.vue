@@ -64,12 +64,10 @@
     </div>
     <div v-else class="explorations-page__toolbar">
       <div class="explorations-page__toolbar-left">
-        <D2eTextField
+        <D2eSearchField
           v-model="searchQuery"
           class="explorations-page__search"
           :placeholder="getText('MRI_PA_EXPLORATIONS_SEARCH')"
-          prepend-inner-icon="mdi-magnify"
-          :hide-details="true"
           data-testid="explorations-search"
         />
 
@@ -391,7 +389,7 @@
 <script setup lang="ts">
 import { computed, nextTick, reactive, ref, watch } from 'vue'
 import { useStore } from 'vuex'
-import { D2eButton, D2eCheckbox, D2eDialog, D2eExplorationCard, D2eIconButton, D2eMenu, D2eSelect, D2eTextField } from '@d2e/ui'
+import { D2eButton, D2eCheckbox, D2eDialog, D2eExplorationCard, D2eIconButton, D2eMenu, D2eSearchField, D2eSelect } from '@d2e/ui'
 import { useExplorationsStore } from '../stores/explorations'
 import { useNotificationStore } from '../stores/notifications'
 import { useUnsavedChanges } from '@/composables/useUnsavedChanges'
@@ -1437,45 +1435,9 @@ const onMoreSelect = (card: { source: BookmarkDisplay }, value: string): void =>
     color: var(--d2e-color-primary);
   }
 
-  /* Search is 466x44 with a 1px #ACABA8 border and a 4px radius
-     (Figma 1762:475284). Vuetify's own outlined field is 56px tall. */
   &__search {
     flex: 0 0 466px;
     max-width: 466px;
-
-    :deep(.v-field) {
-      border-radius: 4px;
-    }
-
-    :deep(.v-field__outline) {
-      --v-field-border-width: 1px;
-      color: var(--d2e-color-neutral-light);
-      opacity: 1;
-    }
-
-    /* 24px icon, 8px gap, then the placeholder. The field owns the 16px
-       inset; the input adds none, or the icon reads as a second slot. */
-    :deep(.v-field) {
-      padding-inline: 16px;
-    }
-
-    :deep(.v-field__input) {
-      min-height: 44px;
-      padding: 0;
-      font-size: 16px;
-    }
-
-    :deep(.v-field__prepend-inner) {
-      align-items: center;
-      padding: 0;
-      margin-inline-end: 8px;
-
-      .v-icon {
-        font-size: 24px;
-        opacity: 1;
-        color: var(--d2e-color-neutral-light);
-      }
-    }
   }
 
   /* 101x40, 8px radius, 8px gap. `secondary` is outlined in the theme
