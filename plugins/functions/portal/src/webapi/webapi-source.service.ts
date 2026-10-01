@@ -102,18 +102,38 @@ export class WebApiSourceService {
   // jobplugins resolves the dataset and derives the cache catalog itself, so the
   // dataset id is all we send. bao's POST /trexsql/{key}/cache is no longer called
   // from d2e; it remains in trex for standalone WebAPI.
+  //
+  // A run still in flight for the dataset is returned instead of starting
+  // another: two concurrent flows write the same cache catalog.
   async refreshCache(
     datasetId: string,
     _schemaName: string,
     authToken?: string
-  ): Promise<{ success: boolean; databaseCode: string; error?: string }> {
+  ): Promise<{ success: boolean; databaseCode: string; flowRunId?: string; error?: string }> {
     const databaseCode = sanitizeIdForCacheId(datasetId)
+    const activeRunId = await this.activeCacheFlowRun(datasetId, authToken)
+    if (activeRunId) {
+      this.logger.info(`Cache flow run ${activeRunId} for ${datasetId} is still in flight; not starting another`)
+      return { success: true, databaseCode, flowRunId: activeRunId }
+    }
     try {
       const { flowRunId } = await this.jobPluginsApi.createCacheFlowRun(datasetId, authToken)
       this.cacheFlowRuns.set(datasetId, flowRunId)
-      return { success: true, databaseCode }
+      return { success: true, databaseCode, flowRunId }
     } catch (error) {
       return { success: false, databaseCode, error: (error as Error).message }
+    }
+  }
+
+  private async activeCacheFlowRun(datasetId: string, authToken?: string): Promise<string | undefined> {
+    const flowRunId = this.cacheFlowRuns.get(datasetId)
+    if (!flowRunId) return undefined
+    try {
+      const { state } = await this.jobPluginsApi.getFlowRunState(flowRunId, authToken)
+      return state === 'RUNNING' ? flowRunId : undefined
+    } catch (error) {
+      this.logger.warn(`Cache flow run ${flowRunId} state unreadable, starting a new one: ${error}`)
+      return undefined
     }
   }
 

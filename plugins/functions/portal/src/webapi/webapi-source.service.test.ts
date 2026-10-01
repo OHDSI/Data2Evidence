@@ -192,6 +192,48 @@ describe('WebApiSourceService.refreshCache', () => {
     assertEquals(result.success, false)
     assertEquals(result.error, 'prefect down')
   })
+
+  function svcTracking(state: string) {
+    let created = 0
+    const jobPlugins = {
+      createCacheFlowRun: () => Promise.resolve({ flowRunId: `run-${++created}` }),
+      getFlowRunState: () => Promise.resolve({ state, endTime: null }),
+    }
+    // deno-lint-ignore no-explicit-any
+    const svc = new WebApiSourceService({} as any, jobPlugins as any)
+    return { svc, created: () => created }
+  }
+
+  it('does not start a second flow run while one is still in flight', async () => {
+    const { svc, created } = svcTracking('RUNNING')
+    await svc.refreshCache('a-b-c', 'cdm', 'tok')
+    const result = await svc.refreshCache('a-b-c', 'cdm', 'tok')
+    assertEquals(result, { success: true, databaseCode: 'a_b_c', flowRunId: 'run-1' })
+    assertEquals(created(), 1)
+  })
+
+  for (const state of ['COMPLETED', 'FAILED', 'UNKNOWN']) {
+    it(`starts a new flow run once the previous one is ${state}`, async () => {
+      const { svc, created } = svcTracking(state)
+      await svc.refreshCache('a-b-c', 'cdm', 'tok')
+      const result = await svc.refreshCache('a-b-c', 'cdm', 'tok')
+      assertEquals(result.flowRunId, 'run-2')
+      assertEquals(created(), 2)
+    })
+  }
+
+  it('starts a new flow run when the previous run state cannot be read', async () => {
+    let created = 0
+    const jobPlugins = {
+      createCacheFlowRun: () => Promise.resolve({ flowRunId: `run-${++created}` }),
+      getFlowRunState: () => Promise.reject(new Error('jobplugins down')),
+    }
+    // deno-lint-ignore no-explicit-any
+    const svc = new WebApiSourceService({} as any, jobPlugins as any)
+    await svc.refreshCache('a-b-c', 'cdm', 'tok')
+    await svc.refreshCache('a-b-c', 'cdm', 'tok')
+    assertEquals(created, 2)
+  })
 })
 
 describe('WebApiSourceService.deleteSourceForDataset', () => {
