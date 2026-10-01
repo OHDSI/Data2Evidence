@@ -1,8 +1,6 @@
 import os
 import json
 import traceback
-from tempfile import mkdtemp
-from shutil import rmtree
 
 from string import Template
 from functools import partial
@@ -18,6 +16,7 @@ from prefect.artifacts import create_markdown_artifact
 
 from .utils import *
 from .types import DCOptionsType, AchillesParams
+from .output import achilles_output, prune_failed_output
 
 from _shared_flow_utils.api.WebAPI import WebAPI
 from _shared_flow_utils.dao.DBDao import DBDao
@@ -93,6 +92,8 @@ def data_characterization_plugin(options: DCOptionsType):
     )
     # Resolve to absolute path so R uses the same directory regardless of its working directory
     achilles_params.outputFolder = os.path.abspath(achilles_params.outputFolder)
+    os.makedirs(achilles_params.outputFolder, exist_ok=True)
+    prune_failed_output(achilles_params.outputFolder, logger)
     # Direct-BigQuery runs need SqlRender temp-table emulation (BQ has no temp
     # tables); emulate into the results schema.
     if not use_trex_connection and dbdao.dialect == SupportedDatabaseDialects.BIGQUERY:
@@ -127,64 +128,60 @@ def data_characterization_plugin(options: DCOptionsType):
     if dc_schema:
         # A fresh attempt directory prevents previous failures (including retries of
         # the same flow run) from being mistaken for errors from this invocation.
-        os.makedirs(achilles_params.outputFolder, exist_ok=True)
-        output_folder = mkdtemp(prefix=f"{flow_run_id}-", dir=achilles_params.outputFolder)
-        achilles_params.outputFolder = output_folder
-        logger.info(f"Achilles output directory: {output_folder}")
-        execute_achilles_wo = with_drop_schema_on_failure(
-            execute_achilles, dbdao, achilles_params.resultsSchema, use_trex_connection
-        )
-
-        partial_failure = execute_achilles_wo(achilles_params, flow_run_id)
-
-        if options.executeConceptRecordCount:
-            execute_concept_record_count_wo = with_drop_schema_on_failure(
-                execute_concept_record_count,
-                dbdao,
-                achilles_params.resultsSchema,
-                use_trex_connection,
-            )
-            execute_concept_record_count_wo(
-                achilles_params.resultsSchema,
-                achilles_params.vocabSchemaName,
-                dbdao,
-                logger,
-                is_hana,
-            )
-        else:
-            logger.warning(
-                "Skipping concept record count step (executeConceptRecordCount="
-                f"{options.executeConceptRecordCount!r}): achilles_result_concept_count "
-                "will NOT be created, so conceptRecordCount queries return empty for "
-                f"results schema '{achilles_params.resultsSchema}'."
+        with achilles_output(achilles_params.outputFolder, str(flow_run_id), logger) as output_folder:
+            achilles_params.outputFolder = output_folder
+            logger.info(f"Achilles output directory: {output_folder}")
+            execute_achilles_wo = with_drop_schema_on_failure(
+                execute_achilles, dbdao, achilles_params.resultsSchema, use_trex_connection
             )
 
-        if not use_trex_connection:
-            # No drop-schema hook here by construction: this branch only runs in
-            # source-connection mode, where the results schema is the customer's live
-            # WebAPI Results schema.
-            execute_export_to_ares_wo = with_drop_schema_on_failure(
-                execute_export_to_ares,
-                dbdao,
-                achilles_params.resultsSchema,
-                use_trex_connection,
-            )
+            partial_failure = execute_achilles_wo(achilles_params, flow_run_id)
 
-            execute_export_to_ares_wo(achilles_params, cdm_source)
+            if options.executeConceptRecordCount:
+                execute_concept_record_count_wo = with_drop_schema_on_failure(
+                    execute_concept_record_count,
+                    dbdao,
+                    achilles_params.resultsSchema,
+                    use_trex_connection,
+                )
+                execute_concept_record_count_wo(
+                    achilles_params.resultsSchema,
+                    achilles_params.vocabSchemaName,
+                    dbdao,
+                    logger,
+                    is_hana,
+                )
+            else:
+                logger.warning(
+                    "Skipping concept record count step (executeConceptRecordCount="
+                    f"{options.executeConceptRecordCount!r}): achilles_result_concept_count "
+                    "will NOT be created, so conceptRecordCount queries return empty for "
+                    f"results schema '{achilles_params.resultsSchema}'."
+                )
 
-            invalidate_trex_source_cache(options, dbdao.dialect, logger)
-            clear_webapi_results_cache(options, flow_run_id, logger)
+            if not use_trex_connection:
+                # No drop-schema hook here by construction: this branch only runs in
+                # source-connection mode, where the results schema is the customer's live
+                # WebAPI Results schema.
+                execute_export_to_ares_wo = with_drop_schema_on_failure(
+                    execute_export_to_ares,
+                    dbdao,
+                    achilles_params.resultsSchema,
+                    use_trex_connection,
+                )
 
-        # Partial results were kept above; mark the flow failed without dropping them.
-        if partial_failure:
-            raise RuntimeError(
-                f"Data characterization for flow run {flow_run_id} completed with failed analyses; "
-                f"partial results kept in schema '{achilles_params.resultsSchema}'. "
-                f"Failed analysis IDs: \"{partial_failure}\""
-            )
+                execute_export_to_ares_wo(achilles_params, cdm_source)
 
-        # Reached only after successful processing; failures retain their reports.
-        rmtree(output_folder)
+                invalidate_trex_source_cache(options, dbdao.dialect, logger)
+                clear_webapi_results_cache(options, flow_run_id, logger)
+
+            # Partial results were kept above; mark the flow failed without dropping them.
+            if partial_failure:
+                raise RuntimeError(
+                    f"Data characterization for flow run {flow_run_id} completed with failed analyses; "
+                    f"partial results kept in schema '{achilles_params.resultsSchema}'. "
+                    f"Failed analysis IDs: \"{partial_failure}\""
+                )
 
 
 def clear_webapi_results_cache(options: DCOptionsType, flow_run_id: str, logger):
