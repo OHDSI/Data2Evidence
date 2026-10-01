@@ -1,6 +1,7 @@
-import { describe, it, expect } from 'vitest'
+import { afterEach, describe, it, expect } from 'vitest'
 import {
   buildXAxisTitle,
+  readStackBarLegendFromDOM,
   INTERACTIVE_SELECTORS,
   stripInteractiveSVG,
   truncateTextToWidth,
@@ -218,5 +219,45 @@ describe('wrapTextToLineLimit', () => {
 
   it('returns a single empty line for empty input', () => {
     expect(wrapTextToLineLimit(charWidthCtx, '', 10, 3)).toEqual([''])
+  })
+})
+
+describe('readStackBarLegendFromDOM', () => {
+  const PA_CHART = `
+    <div class="stackbar-wrapper">
+      <div class="stackbar-chart-area">
+        <div class="stackbar-container" id="stacked-chart"></div>
+      </div>
+      <div class="stackbar-legend-container">
+        <div class="stackbar-legend-entry" data-full-name="Patient Analytics series">
+          <div class="stackbar-legend-entry-box"></div>
+          <span class="stackbar-legend-entry-text">Patient Analytics series</span>
+        </div>
+      </div>
+    </div>`
+
+  // The cohort-comparison chart renders no legend of its own.
+  const COMPARE_CHART = '<div class="stackbar-container" id="columnbar-chart"></div>'
+
+  afterEach(() => {
+    document.body.innerHTML = ''
+  })
+
+  it('reads the legend belonging to the exported chart', () => {
+    document.body.innerHTML = PA_CHART
+    const items = readStackBarLegendFromDOM('#stacked-chart')
+    expect(items.map(i => i.name)).toEqual(['Patient Analytics series'])
+  })
+
+  it('does not pick up another chart legend when the exported chart has none', () => {
+    // The cohort-comparison dialog renders over the Patient Analytics page, so that
+    // page's legend is still in the DOM while the comparison chart is exported.
+    document.body.innerHTML = PA_CHART + COMPARE_CHART
+    expect(readStackBarLegendFromDOM('#columnbar-chart')).toEqual([])
+  })
+
+  it('returns an empty list when the chart container is absent', () => {
+    document.body.innerHTML = ''
+    expect(readStackBarLegendFromDOM('#columnbar-chart')).toEqual([])
   })
 })
