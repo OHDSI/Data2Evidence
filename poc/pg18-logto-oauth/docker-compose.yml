@@ -9,8 +9,10 @@
 name: pgoauth
 
 services:
+  # the official image, unchanged; everything extra is mounted below.
+  # Build the two files once first: docker build --output validator/out validator
   pg18:
-    build: ./pg18
+    image: postgres:18-alpine
     environment:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-poc-superuser-change-me}
       LOGTO_DB_PASSWORD: ${LOGTO_DB_PASSWORD:-poc-logto-change-me}
@@ -31,6 +33,14 @@ services:
       - "127.0.0.1:8000:8000"    # JupyterHub (profile hub)
     volumes:
       - pg18-data:/var/lib/postgresql
+      # the OAuth token validator; PostgreSQL 18 has the `oauth` method but no validator
+      - ./validator/out/pg_oidc_validator.so:/usr/local/lib/postgresql/pg_oidc_validator.so:ro
+      # test client used by test.sh only
+      - ./validator/out/oauth_conn_test:/usr/local/bin/oauth_conn_test:ro
+      # who may connect how, token user -> DB role, first-start SQL
+      - ./pg18/pg_hba.conf:/etc/postgresql/pg_hba.conf:ro
+      - ./pg18/pg_ident.conf:/etc/postgresql/pg_ident.conf:ro
+      - ./pg18/init:/docker-entrypoint-initdb.d:ro
     networks:
       default:
       # notebooks reach PostgreSQL and the hub (both at pg18) and nothing else

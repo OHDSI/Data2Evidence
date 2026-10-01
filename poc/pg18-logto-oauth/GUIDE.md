@@ -11,7 +11,7 @@ Everything is in `poc/pg18-logto-oauth/`. Nothing is committed.
 | File | What it does |
 | --- | --- |
 | `docker-compose.yml` | Two containers, `pg18` and `logto`. Logto shares pg18's network, so `localhost:3001` is the same Logto for the browser, the database and psql |
-| `pg18/Dockerfile` | Builds Percona's `pg_oidc_validator` into `postgres:18-alpine`. Also adds `oauth_conn_test`, a test client that connects with a given token |
+| `validator/Dockerfile` | Builds two files into `validator/out/`, no image: Percona's `pg_oidc_validator.so` and `oauth_conn_test`, a test client that connects with a given token. Compose mounts both into the official `postgres:18-alpine` |
 | `pg18/pg_hba.conf` | Who may connect and how. The `poc` database accepts only `jupyter_test`, only through OAuth, and only with the `db:jupyter_test` scope |
 | `pg18/pg_ident.conf` | Maps the token's user ID (`sub`) to the database role `jupyter_test` |
 | `pg18/init/10-poc.sh` | Runs once on first start. Creates Logto's database, the `poc` database, schemas `allowed` and `secret`, three tables, and the `jupyter_test` role with one grant |
@@ -46,7 +46,8 @@ Run from the repository root.
 
 ```sh
 cd poc/pg18-logto-oauth
-docker compose up -d --build
+docker build --output validator/out validator
+docker compose up -d
 sh bootstrap-m2m.sh
 set -a; . ./.env.poc; set +a
 docker run --rm --network container:pgoauth-pg18-1 -v "$PWD:/w:ro" \

@@ -19,10 +19,12 @@ notebook: pg_oauth.connect() ──(OAUTHBEARER, libpq 18 hook)──> PostgreSQ
 
 ## How it works
 
-- **PostgreSQL 18** has an `oauth` method in `pg_hba.conf` but ships no token validator.
-  `pg18/Dockerfile` builds [pg_oidc_validator](https://github.com/percona/pg_oidc_validator)
-  and loads it with `oauth_validator_libraries`. PostgreSQL itself is unmodified; one
-  extra shared library is required.
+- **PostgreSQL 18** runs on the official `postgres:18-alpine` image, unchanged. It has an
+  `oauth` method in `pg_hba.conf` but ships no token validator, so one file is added by a
+  compose mount: [pg_oidc_validator](https://github.com/percona/pg_oidc_validator)'s
+  `.so`, built once by `validator/Dockerfile` into `validator/out/` and loaded with
+  `oauth_validator_libraries`. `pg_hba.conf`, `pg_ident.conf` and `init/` are mounted too.
+  The `.so` must match PostgreSQL 18, musl (Alpine) and the CPU architecture.
 - **The validator** fetches Logto's discovery document and JWKS, verifies signature,
   issuer and expiry, and authorizes only if the token's `scope` contains every scope of
   the `pg_hba` line. It does not check `aud`.
@@ -48,7 +50,8 @@ notebook: pg_oauth.connect() ──(OAUTHBEARER, libpq 18 hook)──> PostgreSQ
 
 ```sh
 cd poc/pg18-logto-oauth
-docker compose up -d --build                          # pg18 + logto
+docker build --output validator/out validator          # once: validator .so + test client
+docker compose up -d                                  # pg18 (official image) + logto
 sh bootstrap-m2m.sh                                   # Management API access + hub crypt key
 set -a; . ./.env.poc; set +a
 docker run --rm --network container:pgoauth-pg18-1 -v "$PWD:/w:ro" \
