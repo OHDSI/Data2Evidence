@@ -18,9 +18,27 @@ export default async (req: IMRIRequest, res, next) => {
         const base64DecodedMriQueryJson = base64EncodedMriQuery
             ? convertZlibBase64ToJson(base64EncodedMriQuery.toString())
             : "";
-        return base64DecodedMriQueryJson
-            ? base64DecodedMriQueryJson.datasetId
-            : "";
+        if (base64DecodedMriQueryJson) {
+            return base64DecodedMriQueryJson.datasetId;
+        }
+        // createEndpointFromRequest also reads body.mriquery, so its dataset
+        // must pass the same check. Cohort POSTs send it as plain JSON.
+        const bodyMriQuery = req.body?.mriquery;
+        if (typeof bodyMriQuery !== "string" || !bodyMriQuery) {
+            return "";
+        }
+        for (const decode of [
+            convertZlibBase64ToJson,
+            (s: string) => JSON.parse(s),
+        ]) {
+            try {
+                const decoded = decode(bodyMriQuery);
+                if (decoded?.datasetId) return String(decoded.datasetId);
+            } catch {
+                // try the next encoding
+            }
+        }
+        return "";
     };
 
     const getDatasetIdFromRequest = (): string => {

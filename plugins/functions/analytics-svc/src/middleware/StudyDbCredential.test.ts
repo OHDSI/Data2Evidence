@@ -1,5 +1,9 @@
 import { assert, assertEquals, assertStringIncludes } from "@std/assert";
+import pako from "pako";
 import studyDbCredentialMiddleware from "./StudyDbCredential";
+
+const zlibBase64 = (o: unknown) =>
+    btoa(String.fromCharCode(...pako.deflate(JSON.stringify(o))));
 
 const defaultCredential = {
     dialect: "postgresql",
@@ -56,6 +60,34 @@ Deno.test(
     "rejects an unknown dataset carried in the request body",
     async () => {
         const req = makeReq({ body: { datasetId: "someone-elses-dataset" } });
+        const err = (await run(req)) as { status?: number };
+
+        assertEquals(err?.status, 403);
+        assertEquals(req.dbCredentials.studyAnalyticsCredential, undefined);
+    }
+);
+
+Deno.test(
+    "rejects an unknown dataset carried only in a zlib-encoded body mriquery",
+    async () => {
+        const req = makeReq({
+            body: { mriquery: zlibBase64({ datasetId: "someone-elses-dataset" }) },
+        });
+        const err = (await run(req)) as { status?: number };
+
+        assertEquals(err?.status, 403);
+        assertEquals(req.dbCredentials.studyAnalyticsCredential, undefined);
+    }
+);
+
+Deno.test(
+    "rejects an unknown dataset carried only in a plain-JSON body mriquery",
+    async () => {
+        const req = makeReq({
+            body: {
+                mriquery: JSON.stringify({ datasetId: "someone-elses-dataset" }),
+            },
+        });
         const err = (await run(req)) as { status?: number };
 
         assertEquals(err?.status, 403);
