@@ -115,11 +115,15 @@ const getText = (key: string): string => {
 /** The three date ranges, in the frame's order. Only CREATED is blocked. */
 type DateGroupKey = 'created' | 'lastUpdated' | 'lastMaterialized'
 
-const dateGroups: { key: DateGroupKey; labelKey: string; disabled: boolean }[] = [
+const ALL_DATE_GROUPS: { key: DateGroupKey; labelKey: string; disabled: boolean }[] = [
   { key: 'created', labelKey: 'MRI_PA_EXPLORATIONS_FILTER_CREATED', disabled: true },
   { key: 'lastUpdated', labelKey: 'MRI_PA_EXPLORATIONS_FILTER_LAST_UPDATED', disabled: false },
   { key: 'lastMaterialized', labelKey: 'MRI_PA_EXPLORATIONS_FILTER_LAST_MATERIALIZED', disabled: false },
 ]
+
+const SHOW_CREATED_FILTER = false
+
+const dateGroups = ALL_DATE_GROUPS.filter(group => SHOW_CREATED_FILTER || group.key !== 'created')
 
 const authorItems = computed<D2eSelectItem[]>(() => props.authors.map(name => ({ label: name, value: name })))
 
