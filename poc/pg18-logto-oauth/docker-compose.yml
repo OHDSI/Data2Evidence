@@ -66,7 +66,7 @@ services:
   # the D2E PoC hub image and config, pointed at this Logto and PostgreSQL
   jupyterhub:
     profiles: [hub]
-    build: ../../services/jupyterhub
+    build: ./hub
     network_mode: service:pg18
     depends_on:
       - logto
@@ -85,8 +85,6 @@ services:
       JUPYTERHUB_HUB_CONNECT_URL: http://pg18:8081
       DOCKER_NETWORK_NAME: pgoauth-notebooks
       JUPYTERHUB_NOTEBOOK_IMAGE: pgoauth-notebook:local
-      JUPYTER_DB_ENABLED: "false"
-      JUPYTERHUB_PASS_ACCESS_TOKEN: "true"
       NOTEBOOK_PGHOST: pg18
       NOTEBOOK_PGDATABASE: poc
       NOTEBOOK_PG_OAUTH_ISSUER: http://localhost:3001/oidc

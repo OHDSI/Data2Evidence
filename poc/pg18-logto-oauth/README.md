@@ -34,10 +34,10 @@ notebook: pg_oauth.connect() ──(OAUTHBEARER, libpq 18 hook)──> PostgreSQ
 - **The token decides the schema.** Each `pg_hba` line pairs one login role with one
   scope. `jupyter_test` can only `SELECT allowed.demo`; `jupyter_test_b` can only
   `SELECT schema_b.demo`. Neither has a password.
-- **JupyterHub** (the image and config from `services/jupyterhub/`) logs users in with
-  `resource=https://pg.poc`, gates on `jupyter:hub`, and with
-  `JUPYTERHUB_PASS_ACCESS_TOKEN=true` refreshes the token at spawn and gives the
-  notebook only the access token and connection settings (no refresh token, no secret).
+- **JupyterHub** (`hub/`: image and config) logs users in with
+  `resource=https://pg.poc`, gates on `jupyter:hub`, refreshes the token when a server
+  starts and gives the notebook only the access token and connection settings (no
+  refresh token, no secret).
 - **The notebook** (`notebook/Dockerfile`) has the system libpq 18 from PGDG and psycopg's
   pure-Python implementation. `pg_oauth.py` installs libpq's OAuth hook
   (`PQsetAuthDataHook`) with ctypes, because no released Python driver supports PG18
