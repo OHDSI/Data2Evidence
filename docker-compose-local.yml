@@ -80,6 +80,11 @@ services:
       - ${D2E_SIBYLFUNCTIONS:-./plugins/sibyl_functions}:/usr/src/plugins/sibyl
       - ./plugins/notebook_git:/usr/src/plugins/notebook-git
       - ./plugins/atlas:/usr/src/plugins/atlas  # Atlas UI plugin
+      # d2e's DB provisioning plugin, overlaid on the copy baked into the image so
+      # a source edit takes effect on restart without a rebuild. Local only: the
+      # CLI never stages this directory, so in docker-compose.yml the mount would
+      # hide the image's copy behind an empty one.
+      - ./services/trex/provision/d2e-bootstrap:/usr/src/bundled-plugins/d2e-bootstrap:ro
       - studio-edge-functions:/app/edge-functions  # shared with the studio sidecar (LOCAL ONLY)
       # - ./plugins/chat_functions:/usr/src/plugins/chat
       # - ./plugins/ui/package.json:/usr/src/plugins/d2e-ui/package.json # For local ui development only
@@ -93,17 +98,6 @@ services:
       - path: .env.claw
         required: false
     environment:
-      # The public FQDN here is `localhost`, which inside this container is its
-      # own loopback — glibc special-cases the name (RFC 6761), so the
-      # `extra_hosts: <FQDN>:host-gateway` entry docker-compose.yml adds cannot
-      # redirect it. Without this, d2e-compat builds BOTH its JWKS URL and its
-      # /oauth/token proxy target from the public issuer (d2e-compat/idp.ts:77-79,
-      # :99, :130) and every one of them fails with `fetch failed`: the portal's
-      # code exchange retries forever and every portal API call answers
-      # "Authentication Token not valid". `iss` is unaffected — only server-side
-      # fetches take this route. docker-compose.yml's own comment at
-      # TREX_OIDC_ISSUER already says local needs this; only CI had it set.
-      TREX_OIDC_INTERNAL_BASE: "http://${PROJECT_NAME:-d2e}-trex:33001"
       TREX_DX_ENABLED: "true"
       # Enable trex's native email/password IDP for local dev (off by default in
       # the engine). trex is the identity provider in every mode; this stays on.
