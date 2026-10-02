@@ -87,6 +87,7 @@ def create_omop_cdm_dataset_flow(options: OmopCDMPluginOptions, create_results_c
                 databaseCode=options.database_code,
                 cacheId=options.cache_id,
                 schemaName=options.schema_name,
+                vocabSchemaName=options.vocab_schema,
                 snapshotSchemaName=options.cache_schema_name
             )
             create_cache_flow(createCacheOptions)
