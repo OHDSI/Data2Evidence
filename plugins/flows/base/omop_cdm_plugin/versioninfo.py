@@ -77,6 +77,16 @@ def get_and_update_attributes(dataset: dict):
             logger.error(e)
             return
 
+        if is_bigquery and is_source:
+            # trex's __srcdb ATTACH caches the BigQuery catalog, so a schema created
+            # after the attach is invisible until cleared (as analytics-svc does
+            # before its schema check). A stale cache only risks a false "missing
+            # schema", so a failure here is logged, not raised.
+            try:
+                dbdao.execute_sql("CALL bigquery_clear_cache();")
+            except Exception as e:
+                logger.warning(f"Could not clear the trex BigQuery catalog cache: {e}")
+
         portal_server_api = PortalServerAPI()
         
         # check if schema exists
