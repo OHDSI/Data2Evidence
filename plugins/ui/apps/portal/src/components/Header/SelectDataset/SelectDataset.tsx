@@ -1,7 +1,7 @@
 import React, { FC, useCallback } from "react";
 import { Select, SelectChangeEvent, SelectProps } from "@portal/components";
 import { MenuItem } from "@mui/material";
-import { useDatasets, usePublicDatasets } from "../../../hooks";
+import { useAccessibleDatasets, usePublicDatasets } from "../../../hooks";
 import { useActiveDataset, useTranslation } from "../../../contexts";
 import { useGuardedChange } from "../../../hooks/useGuardedChange";
 import { UnsavedChangesDialog } from "../../UnsavedChangesDialog/UnsavedChangesDialog";
@@ -74,7 +74,7 @@ const SelectDatasetInternal: FC<SelectDatasetInternalProps> = ({ datasets, loadi
 interface SelectDatasetProps extends Omit<SelectDatasetInternalProps, "datasets" | "loading"> {}
 
 export const SelectDataset: FC<SelectDatasetProps> = (props) => {
-  const [datasets, loading] = useDatasets("researcher");
+  const [datasets, loading] = useAccessibleDatasets();
   return <SelectDatasetInternal datasets={datasets} loading={loading} {...props} />;
 };
 

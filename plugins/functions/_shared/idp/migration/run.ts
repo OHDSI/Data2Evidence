@@ -17,6 +17,8 @@ export interface MigrationStore {
   subjectHistory(): Promise<SubjectHistoryRow[]>
   groups(): Promise<GroupRow[]>
   rekey(usermgmtId: string, oldSub: string | null, newSub: string): Promise<void>
+  /** Set a usermgmt row's idp_user_id, but only while it holds none. */
+  adoptSubject(usermgmtId: string, logtoId: string): Promise<void>
   recordStep(step: StepName, status: StepStatus, counts: Record<string, number>, detail: unknown): Promise<void>
 }
 
@@ -51,6 +53,8 @@ export interface MigrationConfig {
   /** Public origin a browser uses, e.g. https://d2e.example:443 (TREX_OIDC_ISSUER). */
   publicOrigin: string
   userDomain: string
+  /** The configured initial admin, adopted into its Logto subject (see adoptSeedAdmin). */
+  seedAdmin?: { username: string; usermgmtId?: string }
 }
 
 export interface MigrationSummary {
@@ -86,6 +90,54 @@ async function safeRecordStep(
     await store.recordStep(step, status, counts, detail)
   } catch (err) {
     log(`[idp-migration] ${step}: failed to record step status: ${err}`)
+  }
+}
+
+/**
+ * Key the seeded admin row to its Logto subject so the link and role steps
+ * cover it. A federated install seeds the admin before Logto has minted its
+ * subject, leaving the row with no idp_user_id: planLinks would skip it as
+ * `notLogto`, and its first sign-in would be auto-provisioned and refused
+ * (trex's sub-as-email fallback is not an address). Scoped to exactly the
+ * configured initial user, best-effort, and a no-op once the row has a subject.
+ *
+ * On a fresh install Logto seeds this admin in its own service, concurrently
+ * with trex's boot, so the account can be absent from the first read here. The
+ * Logto identity is polled for on the same budget as the bookkeeping tables
+ * rather than deferred to the next boot, so one `clean && start` links the
+ * admin. A found row is pushed into `logto` so planLinks, which links off that
+ * same array, can build the account email for it.
+ */
+async function adoptSeedAdmin(
+  cfg: MigrationConfig, usermgmt: UsermgmtUserRow[], logto: LogtoUserRow[], store: MigrationStore, wait: TablesWait, log: (msg: string) => void
+): Promise<void> {
+  const wanted = cfg.seedAdmin?.username.trim().toLowerCase()
+  if (!wanted) return
+  const row = usermgmt.find(u =>
+    (cfg.seedAdmin!.usermgmtId && u.id === cfg.seedAdmin!.usermgmtId) || (u.username ?? '').toLowerCase() === wanted)
+  if (!row || row.idpUserId) return
+
+  const find = (rows: LogtoUserRow[]) => rows.find(l => (l.username ?? '').toLowerCase() === wanted)
+  let match = find(logto)
+  if (!match) {
+    const polls = Math.max(1, Math.ceil(wait.budgetMs / wait.intervalMs))
+    for (let i = 0; i < polls && !match; i++) {
+      await wait.sleep(wait.intervalMs)
+      const fresh = await store.logtoUsers().catch(() => [] as LogtoUserRow[])
+      match = find(fresh)
+      if (match) logto.push(match)
+    }
+  }
+  if (!match) {
+    log(`[idp-migration] seed admin '${cfg.seedAdmin!.username}': no Logto account of that username yet; the next boot retries`)
+    return
+  }
+  try {
+    await store.adoptSubject(row.id, match.id)
+    row.idpUserId = match.id
+    log(`[idp-migration] seed admin '${cfg.seedAdmin!.username}': adopted Logto subject ${match.id}`)
+  } catch (err) {
+    log(`[idp-migration] seed admin '${cfg.seedAdmin!.username}': could not adopt Logto subject, ${err}`)
   }
 }
 
@@ -231,6 +283,7 @@ export async function runIdpMigration(
       log(`[idp-migration] link: failed, ${reason}`)
       return summary
     }
+    await adoptSeedAdmin(cfg, usermgmt, logto, store, wait, log)
     plan = planLinks(usermgmt, logto, history, cfg.userDomain)
   } catch (err) {
     await safeRecordStep(store, 'link', 'failed', {}, { reason: String(err) }, log)

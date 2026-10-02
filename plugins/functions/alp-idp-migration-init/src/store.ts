@@ -93,6 +93,15 @@ export class KnexMigrationStore implements MigrationStore {
     })
   }
 
+  async adoptSubject(usermgmtId: string, logtoId: string): Promise<void> {
+    // Only while the row holds no subject: one already set (a sign-in, a prior
+    // run) must not be rewritten from a same-username Logto account behind it.
+    await this.knex.raw(
+      `update usermgmt."user" set idp_user_id = ? where id = ? and idp_user_id is null`,
+      [logtoId, usermgmtId]
+    )
+  }
+
   async recordStep(step: StepName, status: StepStatus, counts: Record<string, number>, detail: unknown): Promise<void> {
     await this.knex.raw(
       `insert into usermgmt.idp_migration (step, status, counts, detail, updated_at)

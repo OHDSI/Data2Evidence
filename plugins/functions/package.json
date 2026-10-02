@@ -5,6 +5,7 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
+    "prebuild": "cp package.json package.org.json",
     "build": "tbuild ."
   },
   "author": "",
@@ -265,7 +266,8 @@
           "source": "/demo",
           "function": "/demo",
           "env": "demo",
-          "imports": "/demo/deno.json"
+          "imports": "/demo/deno.json",
+          "workerTimeoutMs": 10800000
         },
         {
           "source": "/d2e-webapi",

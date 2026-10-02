@@ -316,6 +316,9 @@ const actions = {
     commit(types.CHART_ZIP_DOWNLOAD, Math.random())
     commit(types.CHART_COLUMNS_TO_INCLUDE, columnsToInclude)
   },
+  setCSVDownloadError({ commit }, csvDownloadError) {
+    commit(types.CSV_DOWNLOAD_ERROR, { csvDownloadError })
+  },
   setZIPDownloadError({ commit }, zipDownloadError) {
     commit(types.ZIP_DOWNLOAD_ERROR, { zipDownloadError })
   },
