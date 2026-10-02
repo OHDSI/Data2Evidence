@@ -12,6 +12,7 @@ from prefect.artifacts import create_markdown_artifact
 from .hooks import generate_nodes_flow_hook, execute_nodes_flow_hook, node_task_execution_hook
 from .flowutils import get_node_list, get_incoming_edges, install_r_packages_from_lockfile, validate_token_study_code
 from .nodes import generate_nodes_flow, execute_r_strategus, upload_strategus_results, drop_strategus_results_schema, get_strategus_node, getRCdmExecutionSettings, upload_results_from_storage, upload_results_to_api
+from .result_naming import resolve_result_name
 from _shared_flow_utils.logger.logger import Logger
 from _shared_flow_utils.api.StrategusAnalysisAPI import StrategusAnalysisAPI
 
@@ -318,7 +319,7 @@ def runStrategus(json_graph, options):
             logger.warning(f"Failed to upload strategus results to legacy DB (non-fatal): {tb.format_exc()}")
 
     try:
-        result_name = options.get('notebookName') or (f"{token_study_code} [{database_code}]" if token_study_code else database_code)
+        result_name = resolve_result_name(options, token_study_code, database_code)
         upload_results_to_api(
             path_to_results,
             result_name,
