@@ -35,5 +35,5 @@ test(TEST_NAME, async ({ page }) => {
   await expect(page.getByTestId('explorations-filters-btn')).toBeVisible()
   await expect(page.getByTestId('explorations-sort-btn')).toBeVisible()
   await expect(page.getByTestId('explorations-new-btn')).toBeVisible()
-  await expect(page.getByTestId('explorations-datasource')).toBeVisible()
+  await expect(page.getByTestId('explorations-datasource')).toHaveCount(0)
 })

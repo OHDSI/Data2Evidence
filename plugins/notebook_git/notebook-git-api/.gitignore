@@ -1,0 +1,8 @@
+# Local git working copies created at runtime by git.ts / templates.ts, and by
+# the tests that exercise them. Named from the configured repoDir, so they
+# appear next to the source rather than in a temp dir.
+/NotebookGitTest/
+/NotebookGitRepository/
+/NotebookTemplateRepository/
+/R/
+/node_modules/
