@@ -6,6 +6,7 @@ import { listAtlasSources, publishAtlasSourceSelection, resolveAtlasSourceKey } 
 import type { AtlasSource } from "../api/atlasSourceApi";
 import { DataSourceSelect } from "./DataSourceSelect";
 import { filterWizards } from "../utils/wizardSearch";
+import { sortByLabel } from "../utils/sortByLabel";
 import styles from "./StepSelection.module.css";
 
 type ViewMode = "tiles" | "list";
@@ -250,7 +251,9 @@ export function StepSelection() {
           {portalProps.isAtlas === true ? (
             <div className={styles.sourceField}>
               <DataSourceSelect
-                options={sources.map((source) => ({ value: source.sourceKey, label: source.sourceName }))}
+                options={sortByLabel(
+                  sources.map((source) => ({ value: source.sourceKey, label: source.sourceName })),
+                )}
                 value={portalProps.datasetId || ""}
                 placeholder={
                   sourcesLoading
