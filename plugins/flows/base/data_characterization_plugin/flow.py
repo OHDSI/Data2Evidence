@@ -16,7 +16,7 @@ from prefect.artifacts import create_markdown_artifact
 
 from .utils import *
 from .types import DCOptionsType, AchillesParams
-from .output import achilles_output, prune_failed_output
+from .output import achilles_output, prune_failed_output, retain_output
 
 from _shared_flow_utils.api.WebAPI import WebAPI
 from _shared_flow_utils.dao.DBDao import DBDao
@@ -128,7 +128,8 @@ def data_characterization_plugin(options: DCOptionsType):
     if dc_schema:
         # A fresh attempt directory prevents previous failures (including retries of
         # the same flow run) from being mistaken for errors from this invocation.
-        with achilles_output(achilles_params.outputFolder, str(flow_run_id), logger) as output_folder:
+        with achilles_output(achilles_params.outputFolder, str(flow_run_id), logger) as output_attempt:
+            output_folder = output_attempt.path
             achilles_params.outputFolder = output_folder
             logger.info(f"Achilles output directory: {output_folder}")
             execute_achilles_wo = with_drop_schema_on_failure(
@@ -170,7 +171,8 @@ def data_characterization_plugin(options: DCOptionsType):
                     use_trex_connection,
                 )
 
-                execute_export_to_ares_wo(achilles_params, cdm_source)
+                if not execute_export_to_ares_wo(achilles_params, cdm_source):
+                    retain_output(output_attempt, logger)
 
                 invalidate_trex_source_cache(options, dbdao.dialect, logger)
                 clear_webapi_results_cache(options, flow_run_id, logger)
@@ -605,7 +607,7 @@ def execute_export_to_ares(achilles_params: AchillesParams, cdm_source: str):
 
         error_message = (
             get_error_message(error_file_name, ares_output_path)
-            or get_error_message(error_file_name)
+            or get_error_message(error_file_name, None)
             or f"{error_file_name} does not exist at {ares_output_path} or current working directory."
         )
         logger.error(f"ARES export error detail: {error_message}")
@@ -626,6 +628,7 @@ def execute_export_to_ares(achilles_params: AchillesParams, cdm_source: str):
             ),
             description="Export to Ares FAILED (non-fatal; Achilles results retained)",
         )
+        return False
     else:
         ares_output_path = get_export_to_ares_output_path(
             achilles_params.outputFolder, cdm_source
@@ -640,6 +643,7 @@ def execute_export_to_ares(achilles_params: AchillesParams, cdm_source: str):
         logger.info(
             f"Export to Ares completed successfully for schema: {achilles_params.schemaName}"
         )
+        return True
 
 
 @task(log_prints=True)
