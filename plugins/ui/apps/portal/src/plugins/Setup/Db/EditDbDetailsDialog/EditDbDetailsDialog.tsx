@@ -170,8 +170,8 @@ export const EditDbDetailsDialog: FC<EditDbDialogProps> = ({ open, onClose, db }
   const isFormError = useCallback(() => {
     const isBigQuery = dialect === DB_DIALECTS.BIG_QUERY;
     const errors: FormError = {
-      name: !formData.name.trim(),
-      host: !formData.host.trim(),
+      name: !isBigQuery && !formData.name.trim(),
+      host: !isBigQuery && !formData.host.trim(),
       port: !isBigQuery && !formData.port,
       ca: (formData.sslmode === "verify-ca" || formData.sslmode === "verify-full") && !formData.ca,
     };
