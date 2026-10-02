@@ -55,7 +55,12 @@
         >
           {{ getText('MRI_PA_COMPARE_D2E_COHORT_TEXT') }}
         </D2eButton>
-        <D2eButton variant="danger" data-testid="explorations-bulk-delete" @click="openBulkDelete">
+        <D2eButton
+          variant="danger"
+          :disabled="!canBulkDelete"
+          data-testid="explorations-bulk-delete"
+          @click="openBulkDelete"
+        >
           {{ getText('MRI_PA_BUTTON_DELETE') }}
         </D2eButton>
       </div>
@@ -90,8 +95,9 @@
           </template>
 
           <ExplorationFiltersPanel
-            v-model="filters"
+            :model-value="filters"
             :authors="authorNames"
+            @update:model-value="onFiltersChange"
             @clear="filters = emptyFilters()"
           />
         </D2eMenu>
@@ -403,12 +409,20 @@ import {
 } from './helpers/explorationAnalyze'
 import { filterAndSort, toCardId, type ExplorationSortKey } from './helpers/explorationList'
 import { allSelected, someSelected } from './helpers/explorationSelection'
-import { applyFilters, authorOptions, emptyFilters, isEmpty, type ExplorationFilters } from './helpers/explorationFilters'
+import {
+  applyFilters,
+  authorOptions,
+  emptyFilters,
+  hasNarrowingFilters,
+  keepKnownAuthors,
+  visibleToUser,
+  type ExplorationFilters,
+} from './helpers/explorationFilters'
 import { PAGE_SIZES, clampPage, pageSlice } from './helpers/explorationPaging'
 import { fallbackDatasetId } from './helpers/dataSourceSelection'
 import { chartQueryFor } from './helpers/explorationSqlQuery'
 import { deleteExploration, type DeleteExplorationDeps } from './helpers/deleteExploration'
-import { runBulkDelete } from './helpers/bulkDeleteExplorations'
+import { canDeleteAll, runBulkDelete } from './helpers/bulkDeleteExplorations'
 import { canModifyBookmark, getBookmarkType } from '../utils/BookmarkUtils'
 import ExplorationMaterializeIcon from './icons/ExplorationMaterializeIcon.vue'
 import ExplorationDataQualityIcon from './icons/ExplorationDataQualityIcon.vue'
@@ -656,12 +670,23 @@ const onSortSelect = (value: string): void => {
 
 /** The raw list, before filtering. Both the filter panel's option list and
     the filter step read this, never the filtered result. */
-const allCards = computed(() => store.getters.getDisplayBookmarks(false, portalContext.username) || [])
+const allCards = computed(() =>
+  visibleToUser(
+    store.getters.getDisplayBookmarks(filters.value.showShared, portalContext.username) || [],
+    filters.value.showShared,
+    portalContext.username,
+  ),
+)
 
 /** Every author in the dataset, not only the authors of the visible cards —
     otherwise selecting one author removes every other option and the filter
     cannot be widened again. */
 const authorNames = computed<string[]>(() => authorOptions(allCards.value))
+
+const onFiltersChange = (next: ExplorationFilters): void => {
+  filters.value = next
+  filters.value = keepKnownAuthors(next, authorNames.value)
+}
 
 /** After filter, search and sort, before paging. The pagination bar's count
     and the empty-state choice are both taken from here, never from `cards`. */
@@ -685,7 +710,7 @@ const emptyState = computed(() => {
   }
   // Filter takes precedence over search when both are active — it names the
   // control furthest from the user's attention.
-  if (!isEmpty(filters.value)) {
+  if (hasNarrowingFilters(filters.value)) {
     return {
       title: getText('MRI_PA_EXPLORATIONS_EMPTY_FILTER_TITLE'),
       body: getText('MRI_PA_EXPLORATIONS_EMPTY_FILTER_BODY'),
@@ -833,7 +858,11 @@ const openCompare = async (): Promise<void> => {
 
 const bulkDeleteOpen = ref(false)
 const bulkDeleting = ref(false)
+const canBulkDelete = computed(
+  () => !usernamePending.value && canDeleteAll(selectedRecords.value, portalContext.username),
+)
 const openBulkDelete = (): void => {
+  if (!canBulkDelete.value) return
   bulkDeleteOpen.value = true
 }
 const closeBulkDelete = (): void => {
@@ -883,6 +912,10 @@ const notifyBulkDeleteFailure = (failedNames: string[]): void => {
 
 const confirmBulkDelete = async (): Promise<void> => {
   if (bulkDeleting.value) return
+  if (!canBulkDelete.value) {
+    bulkDeleteOpen.value = false
+    return
+  }
   bulkDeleting.value = true
   try {
     await runBulkDelete(selectedRecords.value, {
@@ -1488,7 +1521,7 @@ const onMoreSelect = (card: { source: BookmarkDisplay }, value: string): void =>
      `primary`; the frame outlines it in Primary/Light (Figma 2634:58660). */
   &__filters {
     min-width: 101px;
-    padding: var(--d2e-spacing-xs) var(--d2e-spacing-xs-s);
+    padding: 0 var(--d2e-spacing-xs-s);
 
     &.v-btn--variant-outlined {
       border-color: var(--d2e-color-primary-light);

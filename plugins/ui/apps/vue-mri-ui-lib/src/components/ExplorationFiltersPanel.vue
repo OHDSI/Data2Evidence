@@ -81,6 +81,17 @@
           {{ getText('MRI_PA_EXPLORATIONS_FILTER_CREATED_UNAVAILABLE') }}
         </p>
       </div>
+
+      <VSwitch
+        :model-value="modelValue.showShared"
+        color="primary"
+        density="compact"
+        hide-details
+        class="filters-panel__shared"
+        :label="getText('MRI_PA_EXPLORATIONS_FILTER_SHOW_SHARED')"
+        data-testid="explorations-filter-show-shared"
+        @update:model-value="patch({ showShared: Boolean($event) })"
+      />
     </div>
   </div>
 </template>
@@ -88,6 +99,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useStore } from 'vuex'
+import { VSwitch } from 'vuetify/components'
 import { D2eButton, D2eDateField, D2eSelect } from '@d2e/ui'
 import type { D2eSelectItem } from '@d2e/ui'
 import { isEmpty, type DateRange, type ExplorationFilters, type MaterializationStatus } from './helpers/explorationFilters'
@@ -232,6 +244,40 @@ const patchRange = (key: DateGroupKey, part: Partial<DateRange>): void => {
     font-size: var(--d2e-font-caption1-size);
     line-height: 1.4;
     color: var(--d2e-color-neutral-light);
+  }
+
+  &__shared {
+    flex: none;
+
+    :deep(.v-selection-control) {
+      height: 36px;
+      min-height: 36px;
+    }
+
+    :deep(.v-selection-control__wrapper) {
+      width: 58px;
+      height: 38px;
+    }
+
+    :deep(.v-switch__track) {
+      min-width: 34px;
+      width: 34px;
+    }
+
+    :deep(.v-selection-control--dirty .v-switch__track) {
+      opacity: 0.5;
+    }
+
+    :deep(.v-label) {
+      padding-inline-start: 0;
+      font-family: var(--d2e-font-family);
+      font-size: var(--d2e-font-body1-size);
+      font-weight: var(--d2e-font-body1-weight);
+      line-height: var(--d2e-font-body1-line-height);
+      letter-spacing: var(--d2e-font-body1-letter-spacing);
+      color: var(--d2e-color-neutral-black);
+      opacity: 1;
+    }
   }
 }
 </style>

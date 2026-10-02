@@ -4,8 +4,11 @@ import {
   applyFilters,
   authorOptions,
   emptyFilters,
+  hasNarrowingFilters,
   isEmpty,
+  keepKnownAuthors,
   matchesFilters,
+  visibleToUser,
   type ExplorationFilters,
 } from '../explorationFilters'
 
@@ -14,6 +17,7 @@ const card = (over: Record<string, unknown> = {}) => ({ displayName: 'card', ...
 describe('emptyFilters / EMPTY_FILTERS', () => {
   it('emptyFilters() matches every card and isEmpty is true', () => {
     const filters = emptyFilters()
+    expect(filters.showShared).toBe(false)
     expect(isEmpty(filters)).toBe(true)
     expect(matchesFilters(card(), filters)).toBe(true)
     expect(matchesFilters(card({ bookmark: { username: 'alice' } }), filters)).toBe(true)
@@ -25,6 +29,7 @@ describe('emptyFilters / EMPTY_FILTERS', () => {
     expect(isEmpty({ ...emptyFilters(), created: { from: '2026-01-01', to: null } })).toBe(false)
     expect(isEmpty({ ...emptyFilters(), lastUpdated: { from: null, to: '2026-01-01' } })).toBe(false)
     expect(isEmpty({ ...emptyFilters(), lastMaterialized: { from: '2026-01-01', to: '2026-01-02' } })).toBe(false)
+    expect(isEmpty({ ...emptyFilters(), showShared: true })).toBe(false)
   })
 
   it('returns independent objects on every call', () => {
@@ -45,6 +50,25 @@ describe('emptyFilters / EMPTY_FILTERS', () => {
     expect(Object.isFrozen(EMPTY_FILTERS.lastMaterialized)).toBe(true)
     expect(Object.isFrozen(EMPTY_FILTERS.authors)).toBe(true)
     expect(Object.isFrozen(EMPTY_FILTERS.statuses)).toBe(true)
+  })
+})
+
+describe('hasNarrowingFilters', () => {
+  it('is false when nothing is set', () => {
+    expect(hasNarrowingFilters(emptyFilters())).toBe(false)
+  })
+
+  it('is false when only the show shared switch is on', () => {
+    expect(hasNarrowingFilters({ ...emptyFilters(), showShared: true })).toBe(false)
+  })
+
+  it('is true when an author, status or date range is set', () => {
+    expect(hasNarrowingFilters({ ...emptyFilters(), authors: ['alice'] })).toBe(true)
+    expect(hasNarrowingFilters({ ...emptyFilters(), statuses: ['materialized'] })).toBe(true)
+    expect(hasNarrowingFilters({ ...emptyFilters(), created: { from: '2026-01-01', to: null } })).toBe(true)
+    expect(hasNarrowingFilters({ ...emptyFilters(), lastUpdated: { from: null, to: '2026-01-01' } })).toBe(true)
+    expect(hasNarrowingFilters({ ...emptyFilters(), lastMaterialized: { from: '2026-01-01', to: null } })).toBe(true)
+    expect(hasNarrowingFilters({ ...emptyFilters(), showShared: true, authors: ['alice'] })).toBe(true)
   })
 })
 
@@ -281,5 +305,57 @@ describe('applyFilters', () => {
 
     expect(result.map((x: any) => x.displayName)).toEqual(['C', 'A', 'B'])
     expect(input.map((x: any) => x.displayName)).toEqual(['C', 'A', 'B'])
+  })
+})
+
+describe('keepKnownAuthors', () => {
+  it('drops selected authors who are no longer in the list', () => {
+    const filters = { ...emptyFilters(), authors: ['alice', 'bob'] }
+    expect(keepKnownAuthors(filters, ['alice']).authors).toEqual(['alice'])
+  })
+
+  it('returns the same object when every selected author is still known', () => {
+    const filters = { ...emptyFilters(), authors: ['alice'] }
+    expect(keepKnownAuthors(filters, ['alice', 'bob'])).toBe(filters)
+  })
+
+  it('does not mutate its input and keeps the other constraints', () => {
+    const filters: ExplorationFilters = {
+      ...emptyFilters(),
+      authors: ['alice', 'bob'],
+      statuses: ['materialized'],
+    }
+    const next = keepKnownAuthors(filters, [])
+    expect(filters.authors).toEqual(['alice', 'bob'])
+    expect(next.authors).toEqual([])
+    expect(next.statuses).toEqual(['materialized'])
+  })
+})
+
+describe('visibleToUser', () => {
+  const ownAtlas = card({ atlasCohortDefinition: { username: 'alice' } })
+  const otherAtlas = card({ atlasCohortDefinition: { username: 'bob' } })
+  const otherAtlasMaterialized = card({ atlasCohortDefinition: { username: 'bob' }, cohortDefinition: { id: 1 } })
+  const sharedBookmark = card({ bookmark: { username: 'bob', shared: true } })
+  const materializedOnly = card({ bookmark: null, cohortDefinition: { id: 2 } })
+
+  it("hides other users' Atlas definitions while shared is off", () => {
+    expect(visibleToUser([ownAtlas, otherAtlas, otherAtlasMaterialized], false, 'alice')).toEqual([ownAtlas])
+  })
+
+  it('shows every Atlas definition while shared is on', () => {
+    const cards = [ownAtlas, otherAtlas, otherAtlasMaterialized]
+    expect(visibleToUser(cards, true, 'alice')).toEqual(cards)
+  })
+
+  it('leaves bookmark rows and materialized-only rows to the store getter', () => {
+    expect(visibleToUser([sharedBookmark, materializedOnly], false, 'alice')).toEqual([
+      sharedBookmark,
+      materializedOnly,
+    ])
+  })
+
+  it('hides every Atlas definition while the username is unknown', () => {
+    expect(visibleToUser([ownAtlas, materializedOnly], false, '')).toEqual([materializedOnly])
   })
 })
