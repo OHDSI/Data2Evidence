@@ -1,10 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import {
-  MIN_TABLE_HEIGHT,
-  TABLE_BOTTOM_GAP,
-  getAvailableTableHeight,
-} from "./tableHeight";
+import { TABLE_BOTTOM_GAP, getAvailableTableHeight } from "./tableHeight";
 
 describe("getAvailableTableHeight", () => {
   it("fills the viewport below the table top, less the bottom gap", () => {
@@ -13,11 +9,13 @@ describe("getAvailableTableHeight", () => {
     );
   });
 
-  it("never returns less than the minimum height on a short viewport", () => {
-    expect(getAvailableTableHeight(400, 300)).toBe(MIN_TABLE_HEIGHT);
+  it("stays inside a short viewport instead of overflowing it", () => {
+    expect(getAvailableTableHeight(465, 207)).toBe(
+      465 - 207 - TABLE_BOTTOM_GAP
+    );
   });
 
-  it("keeps the minimum when the table top is below the viewport", () => {
-    expect(getAvailableTableHeight(930, 1200)).toBe(MIN_TABLE_HEIGHT);
+  it("never returns a negative height when no space is left", () => {
+    expect(getAvailableTableHeight(930, 1200)).toBe(0);
   });
 });
