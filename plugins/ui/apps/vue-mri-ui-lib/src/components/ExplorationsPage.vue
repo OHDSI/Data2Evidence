@@ -12,10 +12,8 @@
         <h1 class="explorations-page__title">{{ getText('MRI_PA_EXPLORATIONS_TITLE') }}</h1>
         <p class="explorations-page__description">{{ getText('MRI_PA_EXPLORATIONS_DESCRIPTION') }}</p>
       </div>
-      <!-- Switching is only possible in the Atlas mount. In the portal the
-           dataset arrives through customProps and there is no channel back, so
-           the select stays a read-only label until #2956 settles that. -->
       <D2eSelect
+        v-if="isAtlasHosted"
         class="explorations-page__dataset"
         size="sm"
         :disabled="!canSwitchDataSource"
@@ -421,6 +419,7 @@ import {
   type ExplorationFilters,
 } from './helpers/explorationFilters'
 import { PAGE_SIZES, clampPage, pageSlice } from './helpers/explorationPaging'
+import { fallbackDatasetId } from './helpers/dataSourceSelection'
 import { chartQueryFor } from './helpers/explorationSqlQuery'
 import { deleteExploration, type DeleteExplorationDeps } from './helpers/deleteExploration'
 import { canDeleteAll, runBulkDelete } from './helpers/bulkDeleteExplorations'
@@ -577,9 +576,8 @@ const datasetName = computed(() => store.getters.getSelectedDatasetName || datas
  * the dataset-change watcher reloads config and bookmarks off
  * `portalContext.datasetId`, so setting that is the whole switch.
  */
-const canSwitchDataSource = computed(
-  () => import.meta.env.VITE_ATLAS_HOSTED === 'true' && dataSourceItems.value.length > 1,
-)
+const isAtlasHosted = import.meta.env.VITE_ATLAS_HOSTED === 'true'
+const canSwitchDataSource = computed(() => isAtlasHosted && dataSourceItems.value.length > 1)
 
 /** Every source the user can read, for the switcher. */
 const dataSourceItems = computed(() => {
@@ -588,9 +586,9 @@ const dataSourceItems = computed(() => {
 })
 
 /**
- * The select's items. Falls back to the active source alone, which is what the
- * portal always shows and what Atlas shows until the list arrives — a select
- * with no item matching its model value renders blank.
+ * The select's items. Falls back to the active source alone, which is what
+ * Atlas shows until the list arrives — a select with no item matching its
+ * model value renders blank.
  */
 const datasetItems = computed(() =>
   canSwitchDataSource.value ? dataSourceItems.value : [{ label: datasetName.value, value: datasetId.value }],
@@ -624,9 +622,21 @@ const onDataSourceSelect = (nextDatasetId: string): void => {
 
 // One fetch per mount is enough: the response is every source this user can
 // read, not something scoped to the active dataset. Nothing awaits it — the
-// label falls back to the id until it lands, and the action swallows failure,
-// so a missing list costs a nicer name and nothing else.
-store.dispatch('fireGetDataSources')
+// label falls back to the id until it lands, and the action swallows failure.
+if (isAtlasHosted) {
+  store.dispatch('fireGetDataSources')
+  watch(
+    () =>
+      fallbackDatasetId(
+        datasetId.value,
+        dataSourceItems.value.map(item => item.value)
+      ),
+    nextDatasetId => {
+      if (nextDatasetId) onDataSourceSelect(nextDatasetId)
+    },
+    { immediate: true }
+  )
+}
 const canMaterialize = computed<boolean>(() => Boolean(store.getters.getCanDatasetMaterializeCohorts))
 
 // Matches ChartToolbar.vue's isWizardFeatureEnabled / canOpenDashboard.

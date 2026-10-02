@@ -1,0 +1,77 @@
+.patientlist-load-error {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 16px;
+  text-align: center;
+
+  .patientlist-load-error__illustration-box {
+    display: flex;
+    justify-content: center;
+    width: 230px;
+  }
+
+  .patientlist-load-error__illustration {
+    --load-error-illustration-blob: var(--color-neutral-lightest);
+    position: relative;
+    display: block;
+    width: 200px;
+    height: 200px;
+    svg {
+      position: absolute;
+      left: -47.059px;
+      top: 45.455px;
+      width: 294.117px;
+      height: 113.637px;
+    }
+  }
+
+  .patientlist-load-error__text {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    width: 100%;
+    max-width: 498px;
+    color: var(--color-ui-light-text);
+    font-size: 16px;
+    line-height: 1.5;
+  }
+
+  .patientlist-load-error__title {
+    font-weight: 600;
+  }
+
+  .patientlist-load-error__body {
+    font-weight: normal;
+    white-space: pre-line;
+  }
+
+  .patientlist-load-error__log-id {
+    font-size: 12px;
+    overflow-wrap: anywhere;
+  }
+
+  .patientlist-load-error__reset {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8px 22px;
+    height: 44px;
+    border: 1px solid var(--color-primary-lightest);
+    border-radius: 8px;
+    background: transparent;
+    color: var(--color-text-button-secondary-default);
+    font-size: 16px;
+    font-weight: 500;
+    line-height: 16px;
+    cursor: pointer;
+  }
+
+  .patientlist-load-error__reset:hover {
+    background: var(--color-background-button-secondary-hover);
+  }
+}

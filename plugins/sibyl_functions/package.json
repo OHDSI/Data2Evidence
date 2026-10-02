@@ -49,6 +49,61 @@
           "env": "trex-token"
         }
       ],
+      "roles": {
+        "ALP_SYSTEM_ADMIN": [
+          "sibyl.admin",
+          "sibyl.network",
+          "sibyl.hades",
+          "sibyl.metadata.results"
+        ],
+        "RESEARCHER": [
+          "sibyl.network",
+          "sibyl.hades",
+          "sibyl.metadata.results"
+        ]
+      },
+      "scopes": [
+        {
+          "path": "^/network-api(/.*)?/signup$",
+          "scopes": [
+            "sibyl.admin"
+          ],
+          "httpMethods": [
+            "POST"
+          ]
+        },
+        {
+          "path": "^/hades-api(/.*)?/envs(/[^/]+)?$",
+          "scopes": [
+            "sibyl.admin"
+          ],
+          "httpMethods": [
+            "POST",
+            "DELETE"
+          ]
+        },
+        {
+          "path": "^/network-api",
+          "scopes": [
+            "sibyl.network"
+          ]
+        },
+        {
+          "path": "^/hades-api",
+          "scopes": [
+            "sibyl.hades"
+          ]
+        },
+        {
+          "path": "^/metadata-api/results/(publish|export-gz)$",
+          "scopes": [
+            "sibyl.metadata.results"
+          ],
+          "httpMethods": [
+            "POST"
+          ]
+        }
+      ],
       "env": {
         "_shared": {},
         "hades-api": {
