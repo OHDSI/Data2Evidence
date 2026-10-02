@@ -1,7 +1,7 @@
 {
   "name": "@data2evidence/sibyl",
   "version": "0.0.99",
-  "description": "Sibyl (Strategus/notebook) backend functions — hades-api, metadata-api, network-api, and their init/token functions.",
+  "description": "Sibyl (Strategus/notebook) backend functions \u2014 hades-api, metadata-api, network-api, and their init/token functions.",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
@@ -155,7 +155,16 @@
           "TREX_OIDC_INTERNAL_BASE": "${TREX_OIDC_INTERNAL_BASE}",
           "BASE_PATH": "${BASE_PATH}"
         }
-      }
+      },
+      "scopes": [
+        {
+          "path": "^/trex-token",
+          "scopes": [],
+          "httpMethods": [
+            "POST"
+          ]
+        }
+      ]
     }
   }
 }
