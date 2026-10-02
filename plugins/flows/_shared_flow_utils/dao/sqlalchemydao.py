@@ -98,12 +98,17 @@ class SqlAlchemyDao(DaoBase):
             views = self.inspector.get_view_names(schema=schema)
         else:
             views = []
+        names = tables + views
+        if self.dialect != SupportedDatabaseDialects.BIGQUERY:
+            return names
         # sqlalchemy-bigquery returns "<dataset>.<table>" when the engine has no
         # default dataset (a BigQuery database configured without one, so trex
         # attaches the whole project). Callers pass the schema separately, so
-        # return bare table names as every other dialect does.
+        # return bare table names as every other dialect does. Other dialects
+        # are left as-is: a quoted table literally named "<schema>.<table>" is
+        # a different object there.
         prefix = f"{schema}."
-        return [n[len(prefix):] if n.startswith(prefix) else n for n in tables + views]
+        return [n[len(prefix):] if n.startswith(prefix) else n for n in names]
 
     def get_indexes_for_table(self, schema: str, table: str) -> list[dict]:
         # Doesn't return indexes created on primary key
