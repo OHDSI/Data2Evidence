@@ -158,6 +158,12 @@ export default {
       return ''
     }
   },
+  displayExplorationDate: (s: string | undefined) => {
+    if (!isISOFormat(s)) {
+      return ''
+    }
+    return new Date(s).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+  },
   displayBookmarkTimeFormat: (s: string) => {
     if (isISOFormat(s)) {
       const timeString = s.split('T')[1]
