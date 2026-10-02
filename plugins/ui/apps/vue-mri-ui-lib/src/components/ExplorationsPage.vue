@@ -1404,6 +1404,10 @@ const onMoreSelect = (card: { source: BookmarkDisplay }, value: string): void =>
       display: none;
     }
 
+    :deep(.v-field) {
+      border-radius: var(--d2e-radius-sm);
+    }
+
     :deep(.v-field--disabled) {
       opacity: 1;
     }
