@@ -649,7 +649,9 @@
           "TREX__SQL__DBNAME": "${TREX__SQL__DBNAME:-postgres}",
           "TREX__STRATEGUS_RESULTS_DB_NAME": "${TREX__STRATEGUS_RESULTS_DB_NAME:-strategus_results}",
           "GIT_RESULT_VIEWER_TEMPLATE_REPO_URL": "${GIT_RESULT_VIEWER_TEMPLATE_REPO_URL:-https://github.com/data2evidence/result_viewer_templates.git}",
-          "GIT_RESULT_VIEWER_TEMPLATE_REPO_BRANCH": "${GIT_RESULT_VIEWER_TEMPLATE_REPO_BRANCH:-main}"
+          "GIT_RESULT_VIEWER_TEMPLATE_REPO_BRANCH": "${GIT_RESULT_VIEWER_TEMPLATE_REPO_BRANCH:-main}",
+          "SUPABASE_STORAGE_JWT_TOKEN": "${SUPABASE_STORAGE_JWT_TOKEN}",
+          "STRATEGUS_RESULTS_BUCKET": "strategus-results-store"
         }
       },
       "roles": {
@@ -822,6 +824,8 @@
           "whiteRabbit.post",
           "demo.setup",
           "strategus.results.write",
+          "strategus.results.read",
+          "strategus.results.download",
           "strategus.results.delete",
           "strategus.results.admin.upload",
           "strategus.results.admin.delete",
@@ -853,7 +857,8 @@
           "codesuggestion.tenantview.read",
           "mcpchat.tenantview.read",
           "d2e.webapi.public",
-          "strategus.results.read"
+          "strategus.results.read",
+          "strategus.results.download"
         ],
         "RESEARCHER": [
           "PA.svc",
@@ -933,7 +938,11 @@
           "jobplugins.dqd.researcher.execute",
           "jobplugins.cohortDqd.researcher.execute",
           "jobplugins.analysisUi.researcher.execute",
-          "portal.dataset.read"
+          "portal.dataset.read",
+          "strategus.results.write",
+          "strategus.results.read",
+          "strategus.results.download",
+          "strategus.results.delete"
         ],
         "STUDY_RESULTS_READ_RESEARCHER": [],
         "ETL_MAPPING_CONTRIBUTOR": [
@@ -3101,6 +3110,42 @@
           "path": "^/strategus/analysis/[a-zA-Z0-9_]+$",
           "scopes": [
             "strategus.analysis.write"
+          ],
+          "httpMethods": [
+            "DELETE"
+          ]
+        },
+        {
+          "path": "^/strategus/results",
+          "scopes": [
+            "strategus.results.write"
+          ],
+          "httpMethods": [
+            "POST"
+          ]
+        },
+        {
+          "path": "^/strategus/results/?[a-zA-Z0-9-]*$",
+          "scopes": [
+            "strategus.results.read"
+          ],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
+          "path": "^/strategus/results/[a-zA-Z0-9-]+/download$",
+          "scopes": [
+            "strategus.results.download"
+          ],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
+          "path": "^/strategus/results/[a-zA-Z0-9-]+$",
+          "scopes": [
+            "strategus.results.delete"
           ],
           "httpMethods": [
             "DELETE"
