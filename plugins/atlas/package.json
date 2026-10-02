@@ -15,7 +15,7 @@
   },
   "dependencies": {
     "@data2evidence/atlas-data-quality": "file:./subplugins/data-quality",
-    "@ohdsi/atlas3": "0.1.0-20260929021642-294c2d1",
+    "@ohdsi/atlas3": "0.1.0-20261001225119-e68bff9",
     "@ohdsi/network-plugin": "file:./trex-notebook/plugins/network",
     "@ohdsi/notebook-plugin": "file:./trex-notebook/plugins/notebook-plugin",
     "@ohdsi/pythia-plugin": "0.1.0-develop.18.g80bf4aa",

@@ -32,7 +32,8 @@
 
 /* Keep transitions aligned with the Wizard tab's visual first position. */
 :global(
-  .analysis-hub .v-window__container:has(.v-window-x-reverse-transition-leave-active .plugin-parcel-outlet)
+  .analysis-hub
+    .v-window__container:has(.v-window-x-reverse-transition-leave-active .plugin-parcel-outlet)
     .v-window-x-reverse-transition-enter-active
 ) {
   animation: atlasWizardEnterFromRight 300ms cubic-bezier(0.25, 0.8, 0.5, 1);
@@ -47,7 +48,8 @@
 }
 
 :global(
-  .analysis-hub .v-window__container:has(.v-window-x-transition-enter-active .plugin-parcel-outlet)
+  .analysis-hub
+    .v-window__container:has(.v-window-x-transition-enter-active .plugin-parcel-outlet)
     .v-window-x-transition-leave-to
 ) {
   transform: translateX(100%);
@@ -198,93 +200,6 @@
   display: flex;
   flex-direction: column;
   gap: 6px;
-}
-
-.sourceSelector {
-  position: relative;
-  display: flex;
-  align-items: center;
-  width: min(100%, 260px);
-  min-height: 48px;
-  border: 1px solid #b7b7b7;
-  border-radius: 8px;
-  background: #fff;
-  box-sizing: border-box;
-}
-
-.sourceSelector:focus-within {
-  border-color: #000080;
-  box-shadow: 0 0 0 1px #000080;
-}
-
-.sourceSelector:has(.sourceControl)::after {
-  position: absolute;
-  right: 16px;
-  width: 8px;
-  height: 8px;
-  border-right: 2px solid #595757;
-  border-bottom: 2px solid #595757;
-  content: "";
-  pointer-events: none;
-  transform: translateY(-2px) rotate(45deg);
-}
-
-.sourceLabel {
-  position: absolute;
-  top: -9px;
-  left: 42px;
-  padding: 0 6px;
-  background: #fff;
-  color: #666;
-  font-size: 12px;
-  line-height: 18px;
-}
-
-.sourceIcon {
-  flex: 0 0 auto;
-  width: 24px;
-  height: 24px;
-  margin-left: 14px;
-  fill: #666;
-  stroke: #666;
-  stroke-width: 1.2;
-}
-
-.sourceControl {
-  width: 100%;
-  min-width: 0;
-  height: 46px;
-  padding: 8px 38px 6px 10px;
-  border: 0;
-  outline: 0;
-  background: transparent;
-  color: #222;
-  font: inherit;
-  cursor: pointer;
-  appearance: none;
-}
-
-.sourceControl:disabled {
-  color: #777;
-  cursor: default;
-}
-
-.sourceSelectorReadOnly {
-  width: 220px;
-}
-
-.sourceValue {
-  display: flex;
-  flex: 1 1 auto;
-  min-width: 0;
-  height: 46px;
-  align-items: center;
-  padding: 8px 14px 6px 10px;
-  overflow: hidden;
-  color: #222;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-  box-sizing: border-box;
 }
 
 .sourceError {
