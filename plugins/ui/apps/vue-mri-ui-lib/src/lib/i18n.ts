@@ -662,6 +662,11 @@ export const i18n = {
     MRI_PA_EXPIRED_MESSAGE:
       'Failed to establish connection with the server. Do you want to reload the application and log on again?',
     MRI_PA_PATIENT_LIST_EDIT_COLUMNS: 'Add Interaction',
+    MRI_PA_PATIENT_LIST_LOAD_ERROR_TITLE: 'Unable to load data',
+    MRI_PA_PATIENT_LIST_LOAD_ERROR_TEXT:
+      'Something went wrong while loading data for this view.\nPlease try again or reset columns to default.',
+    MRI_PA_PATIENT_LIST_LOAD_ERROR_LOG_ID: 'Log ID: {0}',
+    MRI_PA_PATIENT_LIST_RESET_COLUMNS: 'Reset column',
     MRI_PA_PATIENT_LIST_ADD_ATTRIBUTE: 'Add Attribute',
     MRI_PA_TOOLTIP_PATIENT_LIST_EDIT_COLUMNS: 'Select Columns to Display',
     MRI_PA_PATIENT_LIST_RESTORE_DEFAULT: 'Show Default Columns',
@@ -1574,7 +1579,8 @@ export const i18n = {
     // TODO(i18n): de strings below need native review.
     MRI_PA_EXPLORATIONS_EMPTY_BODY: 'Ihre gespeicherte Datenexploration wird hier angezeigt.',
     MRI_PA_EXPLORATIONS_EMPTY_SEARCH_TITLE: 'Keine passenden Explorationen',
-    MRI_PA_EXPLORATIONS_EMPTY_SEARCH_BODY: 'Keine Exploration entspricht Ihrer Suche. Versuchen Sie einen anderen Begriff.',
+    MRI_PA_EXPLORATIONS_EMPTY_SEARCH_BODY:
+      'Keine Exploration entspricht Ihrer Suche. Versuchen Sie einen anderen Begriff.',
     MRI_PA_EXPLORATIONS_EMPTY_FILTER_TITLE: 'Keine passenden Explorationen',
     MRI_PA_EXPLORATIONS_EMPTY_FILTER_BODY:
       'Keine Exploration entspricht Ihren Filtern. Setzen Sie sie zurück, um alle Explorationen zu sehen.',
@@ -1795,6 +1801,11 @@ export const i18n = {
     MRI_PA_EXPIRED_MESSAGE:
       'Es konnte keine Verbindung zum Server hergestellt werden. Möchten Sie die Anwendung neu laden und sich erneut anmelden?',
     MRI_PA_PATIENT_LIST_EDIT_COLUMNS: 'Interaktion hinzufügen',
+    MRI_PA_PATIENT_LIST_LOAD_ERROR_TITLE: 'Daten konnten nicht geladen werden',
+    MRI_PA_PATIENT_LIST_LOAD_ERROR_TEXT:
+      'Beim Laden der Daten für diese Ansicht ist ein Fehler aufgetreten.\nBitte versuchen Sie es erneut oder setzen Sie die Spalten auf die Standardwerte zurück.',
+    MRI_PA_PATIENT_LIST_LOAD_ERROR_LOG_ID: 'Protokoll-ID: {0}',
+    MRI_PA_PATIENT_LIST_RESET_COLUMNS: 'Spalten zurücksetzen',
     MRI_PA_PATIENT_LIST_ADD_ATTRIBUTE: 'Attribut hinzufügen',
     MRI_PA_TOOLTIP_PATIENT_LIST_EDIT_COLUMNS: 'Anzuzeigende Spalten auswählen',
     MRI_PA_PATIENT_LIST_RESTORE_DEFAULT: 'Standardspalten anzeigen',
@@ -2724,7 +2735,8 @@ export const i18n = {
     MRI_PA_EXPLORATIONS_FILTER_LAST_MATERIALIZED: '最近物化',
     MRI_PA_EXPLORATIONS_FILTER_FROM: '从',
     MRI_PA_EXPLORATIONS_FILTER_TO: '到',
-    MRI_PA_EXPLORATIONS_FILTER_CREATED_UNAVAILABLE: '此范围已禁用。探索不记录创建日期，因此该筛选条件无法应用于每张卡片。',
+    MRI_PA_EXPLORATIONS_FILTER_CREATED_UNAVAILABLE:
+      '此范围已禁用。探索不记录创建日期，因此该筛选条件无法应用于每张卡片。',
     MRI_PA_BOOKMARK_NO_COHORT_DEFINITION: '没有可用的群组定义',
     MRI_PA_BOOKMARK_OVERWRITE_DIALOG_TITLE: '覆盖已保存的过滤器',
     MRI_PA_BOOKMARK_OVERWRITE_DIALOG_TEXT: '具有此名称的已保存的过滤器已存在。是否要覆盖？',
@@ -2881,6 +2893,10 @@ export const i18n = {
     MRI_PA_ERROR_TOO_MANY_RESULTS: '无法显示结果。结果集过大。',
     MRI_PA_EXPIRED_MESSAGE: '无法与服务器建立连接。是否要重新加载应用程序并再次登录？',
     MRI_PA_PATIENT_LIST_EDIT_COLUMNS: '添加交互',
+    MRI_PA_PATIENT_LIST_LOAD_ERROR_TITLE: '无法加载数据',
+    MRI_PA_PATIENT_LIST_LOAD_ERROR_TEXT: '加载此视图的数据时出现问题。\n请重试或将列重置为默认值。',
+    MRI_PA_PATIENT_LIST_LOAD_ERROR_LOG_ID: '日志标识：{0}',
+    MRI_PA_PATIENT_LIST_RESET_COLUMNS: '重置列',
     MRI_PA_PATIENT_LIST_ADD_ATTRIBUTE: '添加属性',
     MRI_PA_TOOLTIP_PATIENT_LIST_EDIT_COLUMNS: '选择要显示的列',
     MRI_PA_PATIENT_LIST_RESTORE_DEFAULT: '显示缺省列',
