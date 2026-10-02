@@ -273,6 +273,85 @@ Deno.test("POST / requires a name", async () => {
   assertEquals(captured.body, { message: "Missing required field: name" });
 });
 
+Deno.test("POST / stores the trimmed name", async () => {
+  let seenName: unknown;
+  const instance = routerWithService({
+    createResult: (_token: string, input: Record<string, unknown>) => {
+      seenName = input.name;
+      return Promise.resolve({ id: "r1", ...input });
+    },
+  });
+  const handler = findHandler(instance.router, "post", "/");
+  const { res, captured } = createMockResponse();
+
+  await handler(uploadRequest(zipFile, { name: "  Run A  " }), res);
+
+  assertEquals(captured.statusCode, 201);
+  assertEquals(seenName, "Run A");
+});
+
+Deno.test("POST / rejects a whitespace-only name", async () => {
+  const instance = routerWithService({});
+  const handler = findHandler(instance.router, "post", "/");
+  const { res, captured } = createMockResponse();
+
+  await handler(uploadRequest(zipFile, { name: "   " }), res);
+
+  assertEquals(captured.statusCode, 400);
+  assertEquals(captured.body, { message: "Invalid name: must not be blank" });
+});
+
+Deno.test("POST / rejects a non-string name", async () => {
+  const instance = routerWithService({});
+  const handler = findHandler(instance.router, "post", "/");
+  const { res, captured } = createMockResponse();
+
+  await handler(uploadRequest(zipFile, { name: ["a", "b"] }), res);
+
+  assertEquals(captured.statusCode, 400);
+  assertEquals(captured.body, { message: "Invalid name: must be a string" });
+});
+
+Deno.test("POST / rejects a name over 255 characters", async () => {
+  const instance = routerWithService({});
+  const handler = findHandler(instance.router, "post", "/");
+  const { res, captured } = createMockResponse();
+
+  await handler(uploadRequest(zipFile, { name: "a".repeat(256) }), res);
+
+  assertEquals(captured.statusCode, 400);
+  assertEquals(captured.body, {
+    message: "Invalid name: must be at most 255 characters",
+  });
+});
+
+Deno.test("POST / rejects a name with control characters", async () => {
+  const instance = routerWithService({});
+  const handler = findHandler(instance.router, "post", "/");
+  const { res, captured } = createMockResponse();
+
+  await handler(uploadRequest(zipFile, { name: "Run\nA" }), res);
+
+  assertEquals(captured.statusCode, 400);
+  assertEquals(captured.body, {
+    message: "Invalid name: must not contain control characters",
+  });
+});
+
+Deno.test("POST / counts name length in code points, not UTF-16 units", async () => {
+  const instance = routerWithService({
+    createResult: (_token: string, input: Record<string, unknown>) =>
+      Promise.resolve({ id: "r1", ...input }),
+  });
+  const handler = findHandler(instance.router, "post", "/");
+  const { res, captured } = createMockResponse();
+
+  // 255 astral-plane characters: 510 UTF-16 units, 255 code points.
+  await handler(uploadRequest(zipFile, { name: "😀".repeat(255) }), res);
+
+  assertEquals(captured.statusCode, 201);
+});
+
 Deno.test("POST / rejects metadata that is not valid JSON", async () => {
   const instance = routerWithService({});
   const handler = findHandler(instance.router, "post", "/");

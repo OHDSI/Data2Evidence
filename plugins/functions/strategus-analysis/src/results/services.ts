@@ -7,6 +7,7 @@ import { env } from "../env.ts";
 import { SupabaseStorageClient } from "../storage/SupabaseStorageClient.ts";
 
 export const MAX_FILE_SIZE_BYTES = 500 * 1024 * 1024;
+export const MAX_NAME_LENGTH = 255;
 const DEFAULT_PAGE_SIZE = 50;
 const MAX_PAGE_SIZE = 200;
 

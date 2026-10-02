@@ -3,6 +3,7 @@ import multer from "multer";
 import { Readable } from "stream";
 import StrategusResultsService, {
   MAX_FILE_SIZE_BYTES,
+  MAX_NAME_LENGTH,
 } from "./services.ts";
 import { StorageError } from "../storage/SupabaseStorageClient.ts";
 
@@ -281,9 +282,34 @@ export default class StrategusResultsRouter {
       return null;
     }
 
-    const name = req.body?.name;
-    if (!name) {
+    const rawName = req.body?.name;
+    if (rawName === undefined || rawName === null || rawName === "") {
       res.status(400).json({ message: "Missing required field: name" });
+      return null;
+    }
+    // multer yields an array when the field is repeated.
+    if (typeof rawName !== "string") {
+      res.status(400).json({ message: "Invalid name: must be a string" });
+      return null;
+    }
+    const name = rawName.trim();
+    if (!name) {
+      res.status(400).json({ message: "Invalid name: must not be blank" });
+      return null;
+    }
+    // deno-lint-ignore no-control-regex
+    if (/[\x00-\x1f\x7f]/.test(name)) {
+      res.status(400).json({
+        message: "Invalid name: must not contain control characters",
+      });
+      return null;
+    }
+    // Counted in code points, as rD2E (R nchar) and Postgres do, not UTF-16
+    // units, so a name rD2E accepted is never rejected here.
+    if (Array.from(name).length > MAX_NAME_LENGTH) {
+      res.status(400).json({
+        message: `Invalid name: must be at most ${MAX_NAME_LENGTH} characters`,
+      });
       return null;
     }
 
