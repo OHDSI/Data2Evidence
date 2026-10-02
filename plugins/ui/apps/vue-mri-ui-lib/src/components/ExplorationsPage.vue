@@ -386,7 +386,17 @@
 <script setup lang="ts">
 import { computed, nextTick, reactive, ref, watch } from 'vue'
 import { useStore } from 'vuex'
-import { D2eButton, D2eCheckbox, D2eDialog, D2eExplorationCard, D2eIconButton, D2eMenu, D2ePageHeader, D2eSearchField, D2eSelect } from '@d2e/ui'
+import {
+  D2eButton,
+  D2eCheckbox,
+  D2eDialog,
+  D2eExplorationCard,
+  D2eIconButton,
+  D2eMenu,
+  D2ePageHeader,
+  D2eSearchField,
+  D2eSelect,
+} from '@d2e/ui'
 import { useExplorationsStore } from '../stores/explorations'
 import { useNotificationStore } from '../stores/notifications'
 import { useUnsavedChanges } from '@/composables/useUnsavedChanges'
