@@ -1,6 +1,15 @@
 // @ts-nocheck - Deno edge function (trex EdgeRuntime).
 // Pure helpers for exporting a hades results DB as a gzipped object.
 
+/**
+ * True when `name` is a single path segment (a hades job id or a file name in
+ * its run dir). Callers join it under HADES_OUTPUT_BASE_DIR, so a "/" or ".."
+ * would read outside the run dir.
+ */
+export function isSafeSegment(name: unknown): boolean {
+  return typeof name === "string" && /^[A-Za-z0-9._-]+$/.test(name) && name !== "." && name !== "..";
+}
+
 /** Gzip-compress bytes using the platform CompressionStream. */
 export async function gzipBytes(data: Uint8Array): Promise<Uint8Array> {
   const stream = new Blob([data]).stream().pipeThrough(new CompressionStream("gzip"));

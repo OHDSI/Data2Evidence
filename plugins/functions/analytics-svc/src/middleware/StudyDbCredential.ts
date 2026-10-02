@@ -18,9 +18,27 @@ export default async (req: IMRIRequest, res, next) => {
         const base64DecodedMriQueryJson = base64EncodedMriQuery
             ? convertZlibBase64ToJson(base64EncodedMriQuery.toString())
             : "";
-        return base64DecodedMriQueryJson
-            ? base64DecodedMriQueryJson.datasetId
-            : "";
+        if (base64DecodedMriQueryJson) {
+            return base64DecodedMriQueryJson.datasetId;
+        }
+        // createEndpointFromRequest also reads body.mriquery, so its dataset
+        // must pass the same check. Cohort POSTs send it as plain JSON.
+        const bodyMriQuery = req.body?.mriquery;
+        if (typeof bodyMriQuery !== "string" || !bodyMriQuery) {
+            return "";
+        }
+        for (const decode of [
+            convertZlibBase64ToJson,
+            (s: string) => JSON.parse(s),
+        ]) {
+            try {
+                const decoded = decode(bodyMriQuery);
+                if (decoded?.datasetId) return String(decoded.datasetId);
+            } catch {
+                // try the next encoding
+            }
+        }
+        return "";
     };
 
     const getDatasetIdFromRequest = (): string => {
@@ -306,8 +324,6 @@ export default async (req: IMRIRequest, res, next) => {
                 getDefaultDbConnection();
             }
         } else {
-            // TODO: throw exact error for missing db metadata later on once mri sends in selected study entity value
-            // TODO: check for selected study is in user jwt token for authorisation
             let datasetId: string = getDatasetIdFromMriquery();
             // If datasetId is not found from mriquery, try and find datasetId from request query or body
             if (!datasetId) {
@@ -317,6 +333,13 @@ export default async (req: IMRIRequest, res, next) => {
                 req.studiesDbMetadata.studies.find(
                     (o) => o.id === datasetId || o.tokenStudyCode === datasetId
                 );
+            if (datasetId && !studyMetadata) {
+                const forbidden = new Error(
+                    "Unknown or inaccessible dataset"
+                ) as Error & { status: number };
+                forbidden.status = 403;
+                throw forbidden;
+            }
             // Set req.selectedstudyDbMetadata if it does not already exist
             if (!req.selectedstudyDbMetadata) {
                 req.selectedstudyDbMetadata = studyMetadata;

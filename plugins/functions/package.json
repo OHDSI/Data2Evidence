@@ -266,7 +266,8 @@
           "source": "/demo",
           "function": "/demo",
           "env": "demo",
-          "imports": "/demo/deno.json"
+          "imports": "/demo/deno.json",
+          "workerTimeoutMs": 10800000
         },
         {
           "source": "/d2e-webapi",

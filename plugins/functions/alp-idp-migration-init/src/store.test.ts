@@ -45,6 +45,7 @@ Deno.test('everything in usermgmt stays on the admin connection', async () => {
   await store.usermgmtUsers()
   await store.subjectHistory()
   await store.groups()
+  await store.adoptSubject('u1', 'l1')
   await store.recordStep('link', 'ok', {}, {})
 
   assertEquals(new Set(seen.map(s => s[0])), new Set(['admin']))
