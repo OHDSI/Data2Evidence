@@ -3,19 +3,24 @@
 Walks the same redirects a browser would: hub -> Logto sign-in (Experience API with
 username + password) -> hub callback. Then asks the hub to start the user's server.
     python3 hub_login.py alice
+    LOGTO_URL=https://localhost POC_INSECURE_TLS=1 python3 hub_login.py alice   # D2E Logto
 Prints the HTTP status of each step; exit code 0 when the server is running.
 """
 import http.cookiejar
 import json
 import os
+import ssl
 import sys
 import time
 import urllib.error
 import urllib.parse
 import urllib.request
 
-HUB = "http://localhost:8000"
-LOGTO = "http://localhost:3001"
+HUB = os.environ.get("HUB_URL", "http://localhost:8000")
+# browser-facing Logto: the standalone PoC's, or D2E's Caddy (LOGTO_URL=https://localhost)
+LOGTO = os.environ.get("LOGTO_URL", "http://localhost:3001")
+# D2E's Caddy uses a self-signed certificate; the browser shows a warning for it
+INSECURE = os.environ.get("POC_INSECURE_TLS") == "1"
 user = sys.argv[1]
 password = os.environ.get("POC_USER_PASSWORD", "PocPassword-2026")
 
@@ -26,7 +31,9 @@ class NoRedirect(urllib.request.HTTPRedirectHandler):
 
 
 jar = http.cookiejar.CookieJar()
-opener = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(jar), NoRedirect)
+tls = ssl._create_unverified_context() if INSECURE else ssl.create_default_context()
+opener = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(jar), NoRedirect,
+                                     urllib.request.HTTPSHandler(context=tls))
 
 
 def go(url, data=None, method=None, json_body=None):

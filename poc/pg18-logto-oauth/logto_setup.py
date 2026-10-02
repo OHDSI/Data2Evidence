@@ -55,7 +55,13 @@ def call(path, data=None, method=None, headers=None, form=False, base=None):
     try:
         r = urllib.request.urlopen(req, timeout=30)
         raw = r.read().decode()
-        return r.status, json.loads(raw) if raw.strip() else None
+        if not raw.strip():
+            return r.status, None
+        try:
+            return r.status, json.loads(raw)
+        except json.JSONDecodeError:
+            # older Logto (1.23, as in D2E) answers some writes with plain text, e.g. "Created"
+            return r.status, raw
     except urllib.error.HTTPError as e:
         raw = e.read().decode()
         try:
