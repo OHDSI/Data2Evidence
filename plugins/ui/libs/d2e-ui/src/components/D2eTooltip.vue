@@ -5,6 +5,7 @@
     :activator="activator"
     :disabled="disabled"
     :eager="false"
+    max-width="240"
     content-class="d2e-tooltip"
   >
     <template v-if="$slots.activator" #activator="slotProps">
@@ -36,7 +37,6 @@ withDefaults(defineProps<Props>(), {
 
 <style lang="scss">
 .v-overlay__content.d2e-tooltip {
-  max-width: 240px;
   padding: var(--d2e-spacing-xs) var(--d2e-spacing-xs-s);
   background: var(--d2e-color-white);
   color: var(--d2e-color-neutral);
