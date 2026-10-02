@@ -50,9 +50,19 @@ const buildConceptSetIdValues = (
   return values;
 };
 
+const CONCEPT_SET_ATTRIBUTE_PATTERN = /concept_?set$/i;
+
+const isConceptSetAttribute = (node: object): boolean => {
+  const configPath = (node as Record<string, unknown>).configPath;
+  return typeof configPath === "string" &&
+    CONCEPT_SET_ATTRIBUTE_PATTERN.test(configPath.split(".").pop() ?? "");
+};
+
 const bookmarkUsesConceptSet = (
   bookmark: unknown,
+  compoundId: string,
   matchingValues: Set<string | number>,
+  inConceptSetAttribute = false,
 ): boolean => {
   if (typeof bookmark !== "object" || bookmark === null) {
     return false;
@@ -60,16 +70,26 @@ const bookmarkUsesConceptSet = (
 
   if (Array.isArray(bookmark)) {
     return bookmark.some((item) =>
-      bookmarkUsesConceptSet(item, matchingValues)
+      bookmarkUsesConceptSet(
+        item,
+        compoundId,
+        matchingValues,
+        inConceptSetAttribute,
+      )
     );
   }
 
+  const isScoped = inConceptSetAttribute || isConceptSetAttribute(bookmark);
+
   for (const [key, value] of Object.entries(bookmark)) {
-    if (key === "value" && matchingValues.has(value)) {
+    if (
+      key === "value" &&
+      (value === compoundId || (isScoped && matchingValues.has(value)))
+    ) {
       return true;
     }
     if (typeof value === "object" && value !== null) {
-      if (bookmarkUsesConceptSet(value, matchingValues)) {
+      if (bookmarkUsesConceptSet(value, compoundId, matchingValues, isScoped)) {
         return true;
       }
     }
@@ -300,7 +320,11 @@ export const getConceptSetUsage = async (
     } catch {
       return false;
     }
-    return bookmarkUsesConceptSet(parsed, matchingValues);
+    return bookmarkUsesConceptSet(
+      parsed,
+      formatConceptSetRef(ref),
+      matchingValues,
+    );
   });
 
   return {
