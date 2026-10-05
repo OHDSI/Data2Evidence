@@ -70,13 +70,6 @@ Do not sign in at `https://localhost/d2e/portal` as a PoC user: the portal signs
 then immediately ends the session (she has no D2E portal access), which looks like an
 endless return to the sign-in page.
 
-Browserless:
-
-```sh
-python3 hub_login.py alice
-docker cp notebook_check.py jupyter-alice:/tmp/ && docker exec jupyter-alice python /tmp/notebook_check.py
-```
-
 ## Results
 
 | Test | Result |

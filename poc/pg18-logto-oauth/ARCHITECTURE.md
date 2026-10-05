@@ -106,12 +106,10 @@ conn.execute("select system_user, current_user").fetchone()  # ('oauth:<alice id
 More identity and privilege queries are in [Jupyter.md](Jupyter.md). The token lasts one hour; if
 `connect()` says "expired", restart the server from File > Hub Control Panel.
 
-Without a browser (steps 3–5):
+After alice has logged in and her server is running, the same checks can run from the host:
 
 ```sh
-python3 hub_login.py alice
 docker cp notebook_check.py jupyter-alice:/tmp/ && docker exec jupyter-alice python /tmp/notebook_check.py
-python3 hub_login.py bob      # hub refused the user (403): True
 ```
 
 Expected results:
@@ -137,5 +135,5 @@ docker logs pg18d2e-pg18 | grep -E 'method=oauth|scope mismatch'
 | SETUP | `logto_setup.py` |
 | RUN | `run.sh`, `docker-compose.yml` |
 | FLOW | `hub/jupyterhub_config.py`, `notebook/pg_oauth.py`, `pg18/pg_hba.conf`, `pg18/pg_ident.conf`, `pg18/init/10-poc.sh` |
-| TEST | `hub_login.py`, `notebook_check.py`, [Jupyter.md](Jupyter.md) |
+| TEST | `notebook_check.py`, [Jupyter.md](Jupyter.md) |
 | Docs | [README.md](README.md), [D2E-PERMISSIONS.md](D2E-PERMISSIONS.md) |
