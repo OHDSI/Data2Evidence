@@ -1,3 +1,4 @@
+# [BUILD-3] hub image, built by compose from hub/: JupyterHub + DockerSpawner + OAuthenticator + jupyterhub_config.py
 FROM quay.io/jupyterhub/jupyterhub:5.4.2
 
 # DockerSpawner: one container per user; OAuthenticator: login through Logto

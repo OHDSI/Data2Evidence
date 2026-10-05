@@ -1,3 +1,4 @@
+# [RUN d2e] pg18 (official image + mounts) and hub as separate containers on D2E's d2e_alp network + an internal notebook network
 # PoC against the real D2E stack: D2E Logto <-> JupyterHub <-> PostgreSQL 18,
 # three separate containers. D2E must already be running (d2e CLI).
 #   sh run.sh        # sets up Logto, writes .env.d2e, then runs this file

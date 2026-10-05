@@ -1,4 +1,5 @@
 #!/bin/sh
+# [RUN d2e] one command: d2e_setup.py -> .env.d2e -> build missing files -> start d2e/docker-compose.yml
 # Start the D2E variant of the PoC: D2E Logto <-> JupyterHub <-> PostgreSQL 18.
 # D2E must be running (d2e CLI). Safe to run again.
 #   sh run.sh            # set up and start
@@ -26,7 +27,13 @@ fi
 umask 077
 key="$(grep '^POC_HUB_CRYPT_KEY=' .env.d2e 2>/dev/null | cut -d= -f2- || true)"
 [ -n "$key" ] || key="$(openssl rand -hex 32)"
-{ setup; echo "POC_HUB_CRYPT_KEY=$key"; } > .env.d2e.new && mv .env.d2e.new .env.d2e
+{ setup; echo "POC_HUB_CRYPT_KEY=$key"; } > .env.d2e.new
+if ! grep -q '^POC_HUB_CLIENT_ID=' .env.d2e.new; then
+  rm -f .env.d2e.new
+  echo "D2E Logto setup failed (no hub client id); see the messages above" >&2
+  exit 1
+fi
+mv .env.d2e.new .env.d2e
 
 # 2. build what the plain images lack, once
 [ -f "$poc/validator/out/pg_oidc_validator.so" ] || docker build --output "$poc/validator/out" "$poc/validator"

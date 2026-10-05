@@ -1,3 +1,4 @@
+# [BUILD-1] compiles the PG18 token validator (pg_oidc_validator.so) + test client into validator/out/; pg18 mounts the .so
 #   docker build --output validator/out validator
 FROM postgres:18-alpine AS build
 

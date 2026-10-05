@@ -1,1 +1,2 @@
+# [BUILD-1] keep the compiled files in validator/out/ out of git
 out/

@@ -1,3 +1,4 @@
+# [BUILD-2] notebook image (pgoauth-notebook:local): system libpq 18 + pure-Python psycopg + pg_oauth.py; the hub starts it per user
 # Notebook image for the PG18 OAuth PoC.
 # Needs the system libpq 18 (PGDG) so pg_oauth.py can install libpq's OAuth hook,
 # and psycopg's pure-Python implementation so psycopg uses that same libpq.

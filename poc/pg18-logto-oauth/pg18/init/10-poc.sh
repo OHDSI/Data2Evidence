@@ -1,4 +1,5 @@
 #!/bin/sh
+# [FLOW-5] first start only: schemas allowed/secret/schema_b, login roles jupyter_test(_b) with one SELECT grant each
 # runs once on an empty data volume
 set -eu
 

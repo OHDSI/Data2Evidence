@@ -1,3 +1,4 @@
+# [RUN standalone] own Logto + pg18 + hub (profile hub) sharing pg18's network namespace; no D2E needed
 # Standalone PoC: PostgreSQL 18 authenticating users with Logto access tokens,
 # optionally with JupyterHub in front.
 #   docker compose up -d --build                                   # pg18 + logto

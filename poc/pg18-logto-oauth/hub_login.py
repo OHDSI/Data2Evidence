@@ -1,3 +1,4 @@
+# [TEST] browserless hub login through Logto's sign-in API, then starts the user's server (standalone or D2E Logto)
 """Log in to the PoC JupyterHub as a Logto user without a browser, and start the server.
 
 Walks the same redirects a browser would: hub -> Logto sign-in (Experience API with

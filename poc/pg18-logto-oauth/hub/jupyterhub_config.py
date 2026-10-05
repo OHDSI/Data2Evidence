@@ -1,3 +1,4 @@
+# [FLOW-1] hub: Logto login, gate on the hub scope, refresh the token at spawn and put it in the notebook env
 # JupyterHub for the PG18 OAuth PoC: log in with Logto, hand the notebook the Logto token.
 # Copied into the hub image (hub/Dockerfile), not mounted: rebuild after editing.
 #

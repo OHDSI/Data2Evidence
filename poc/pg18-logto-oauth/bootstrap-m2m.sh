@@ -1,4 +1,5 @@
 #!/bin/sh
+# [SETUP standalone] inserts a management app into the PoC Logto DB so logto_setup.py can call the Management API
 # One-time: give this PoC Management API access to Logto without the admin console.
 # Inserts a machine-to-machine app into Logto's `default` tenant and gives it the
 # seeded "Logto Management API access" role. Writes its credentials to .env.poc.

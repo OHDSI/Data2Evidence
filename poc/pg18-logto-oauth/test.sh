@@ -1,4 +1,5 @@
 #!/bin/sh
+# [TEST standalone] 13 browserless checks: real user tokens -> PG18, allowed vs denied
 # Browserless tests: get real Logto user tokens by exchanging each user's personal
 # access token, then connect to PostgreSQL with them through the validator.
 #   sh test.sh

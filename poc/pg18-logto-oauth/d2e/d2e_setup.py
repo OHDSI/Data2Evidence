@@ -1,3 +1,4 @@
+# [SETUP d2e] creates roles/scopes/users/hub app in D2E Logto (uses logto_setup.py helpers); prints .env.d2e values
 """Add the PoC roles, users and hub app to D2E's Logto, or remove them. Idempotent.
 
 On D2E's API resource https://alp-default:
@@ -42,8 +43,8 @@ def resource(auth):
 
 def setup(auth):
     res = resource(auth)
-    scopes = s.must(s.call(f"/resources/{res['id']}/scopes", headers=auth), "list scopes")
-    roles = s.must(s.call("/roles", headers=auth), "list roles")
+    scopes = s.list_all(f"/resources/{res['id']}/scopes", auth)
+    roles = s.list_all("/roles", auth)
     role_ids = {}
     for role_name, scope_name in ROLES.items():
         scope = s.find(scopes, name=scope_name)
@@ -60,7 +61,7 @@ def setup(auth):
         role_ids[role_name] = role["id"]
 
     for username, user_roles in USERS.items():
-        user = s.find(s.must(s.call(f"/users?search={username}", headers=auth), "search users"),
+        user = s.find(s.list_all(f"/users?search={username}", auth),
                       username=username)
         if user is None:
             user = s.must(s.call("/users", {"username": username, "password": s.PASSWORD},
@@ -71,12 +72,20 @@ def setup(auth):
                    method="POST", headers=auth)
 
     apps = s.must(s.call("/applications", headers=auth), "list applications")
-    hub = s.ensure_app(auth, apps, APP, {
-        "type": "Traditional",
-        "oidcClientMetadata": {"redirectUris": [f"{HUB}/hub/oauth_callback"],
-                               "postLogoutRedirectUris": [f"{HUB}/hub/login"]},
-        "customClientMetadata": {"alwaysIssueRefreshToken": True, "rotateRefreshToken": True},
-    })
+    hub = s.find(apps, name=APP)
+    if hub is None:
+        st, body = s.call("/applications", {
+            "name": APP, "type": "Traditional",
+            "oidcClientMetadata": {"redirectUris": [f"{HUB}/hub/oauth_callback"],
+                                   "postLogoutRedirectUris": [f"{HUB}/hub/login"]},
+            "customClientMetadata": {"alwaysIssueRefreshToken": True, "rotateRefreshToken": True},
+        }, method="POST", headers=auth)
+        # D2E Logto 1.23 answers 500 here: the app row is saved, storing the extra secret row
+        # fails (logto.check_application_type misses the schema). Use the saved app.
+        hub = s.find(s.must(s.call("/applications", headers=auth), "list applications"), name=APP)
+        if hub is None:
+            sys.exit(f"create app {APP} failed: {st} {body}")
+        s.log(f"created app {APP}" + ("" if st < 400 else f" (Logto answered {st}; app was saved)"))
     # Logto 1.23 returns the secret on the app; newer versions keep it behind /secrets
     secret = hub.get("secret") or s.app_secret(auth, hub)
     print(f"POC_HUB_CLIENT_ID={hub['id']}")
@@ -85,17 +94,17 @@ def setup(auth):
 
 def remove(auth):
     for username in USERS:
-        user = s.find(s.must(s.call(f"/users?search={username}", headers=auth), "search users"),
+        user = s.find(s.list_all(f"/users?search={username}", auth),
                       username=username)
         if user:
             s.call(f"/users/{user['id']}", method="DELETE", headers=auth)
             s.log(f"deleted user {username}")
-    for role in s.must(s.call("/roles", headers=auth), "list roles"):
+    for role in s.list_all("/roles", auth):
         if role["name"] in ROLES:
             s.call(f"/roles/{role['id']}", method="DELETE", headers=auth)
             s.log(f"deleted role {role['name']}")
     res = resource(auth)
-    for scope in s.must(s.call(f"/resources/{res['id']}/scopes", headers=auth), "list scopes"):
+    for scope in s.list_all(f"/resources/{res['id']}/scopes", auth):
         if scope["name"] in ROLES.values():
             s.call(f"/resources/{res['id']}/scopes/{scope['id']}", method="DELETE", headers=auth)
             s.log(f"deleted scope {scope['name']}")

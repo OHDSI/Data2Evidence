@@ -1,3 +1,4 @@
+# [TEST standalone] gets a real Logto user token by exchanging the user's personal access token (used by test.sh)
 """Print a Logto access token for a PoC user by exchanging their personal access token.
 usage: python3 token_exchange.py <alice|bob> [resource] [--claims]"""
 import base64, json, os, sys, urllib.parse, urllib.request, urllib.error

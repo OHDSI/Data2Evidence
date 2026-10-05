@@ -1,3 +1,4 @@
+# [TEST] run inside a notebook container: SELECT allowed, DROP / other schemas / other role denied
 """Run inside a PoC notebook container: what does this user's token open?
     docker cp notebook_check.py jupyter-alice:/tmp/ && docker exec jupyter-alice python /tmp/notebook_check.py
 """

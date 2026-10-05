@@ -1,3 +1,4 @@
+# [SETUP standalone] creates resource/roles/scopes/users/apps in the PoC's own Logto; its helpers are reused by d2e/d2e_setup.py
 """Configure Logto for the pg18 OAuth PoC through the Management API. Idempotent.
 
 Creates:
@@ -70,6 +71,18 @@ def call(path, data=None, method=None, headers=None, form=False, base=None):
             return e.code, raw
 
 
+def list_all(path, headers):
+    """Every item of a Logto list endpoint. /roles and /users page at 20 by default."""
+    items, page = [], 1
+    sep = "&" if "?" in path else "?"
+    while True:
+        batch = must(call(f"{path}{sep}page={page}&page_size=100", headers=headers), f"list {path}")
+        items += batch
+        if len(batch) < 100:
+            return items
+        page += 1
+
+
 def must(result, what):
     st, body = result
     if st >= 400:
@@ -132,7 +145,7 @@ def main():
 
     # 2. one scope per role, and the role carrying it
     scopes = must(call(f"/resources/{res['id']}/scopes", headers=auth), "list scopes")
-    roles = must(call("/roles", headers=auth), "list roles")
+    roles = list_all("/roles", auth)
     role_ids = {}
     for role_name, scope_name in ROLES.items():
         scope = find(scopes, name=scope_name)
@@ -151,7 +164,7 @@ def main():
     # 3. users and their roles
     out = {}
     for username, user_roles in USERS.items():
-        user = find(must(call(f"/users?search={username}", headers=auth), "search users"),
+        user = find(list_all(f"/users?search={username}", auth),
                     username=username)
         if user is None:
             user = must(call("/users", {"username": username, "password": PASSWORD},

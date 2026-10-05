@@ -1,3 +1,4 @@
+# [FLOW-2] in the notebook: picks the PG role from the token's db:* scope and hands the token to libpq 18 via its OAuth hook
 """Connect to PostgreSQL 18 with the Logto access token JupyterHub gave this notebook.
 
 No released Python driver speaks PostgreSQL 18's OAuth yet, so this installs libpq's
