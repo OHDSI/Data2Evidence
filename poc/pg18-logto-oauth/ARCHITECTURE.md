@@ -8,7 +8,7 @@ Goal: a user logs in to JupyterHub with D2E's Logto, and the same Logto access t
 them in to PostgreSQL 18, where they can read only the schema their Logto role allows.
 
 Every code file starts with a one-line header tag. The tags match the sections below:
-`[BUILD-n]`, `[SETUP]`, `[RUN]`, `[FLOW-n]`, `[TEST]`.
+`[BUILD-n]`, `[SETUP]`, `[RUN]`, `[FLOW-n]`.
 
 ## 1. Architecture
 
@@ -106,12 +106,6 @@ conn.execute("select system_user, current_user").fetchone()  # ('oauth:<alice id
 More identity and privilege queries are in [Jupyter.md](Jupyter.md). The token lasts one hour; if
 `connect()` says "expired", restart the server from File > Hub Control Panel.
 
-After alice has logged in and her server is running, the same checks can run from the host:
-
-```sh
-docker cp notebook_check.py jupyter-alice:/tmp/ && docker exec jupyter-alice python /tmp/notebook_check.py
-```
-
 Expected results:
 
 | User | Result |
@@ -135,5 +129,5 @@ docker logs pg18d2e-pg18 | grep -E 'method=oauth|scope mismatch'
 | SETUP | `logto_setup.py` |
 | RUN | `run.sh`, `docker-compose.yml` |
 | FLOW | `hub/jupyterhub_config.py`, `notebook/pg_oauth.py`, `pg18/pg_hba.conf`, `pg18/pg_ident.conf`, `pg18/init/10-poc.sh` |
-| TEST | `notebook_check.py`, [Jupyter.md](Jupyter.md) |
+| Browser test | [Jupyter.md](Jupyter.md) (cells to paste in a notebook) |
 | Docs | [README.md](README.md), [D2E-PERMISSIONS.md](D2E-PERMISSIONS.md) |

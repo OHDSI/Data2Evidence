@@ -19,7 +19,7 @@ Start here, then go to the document for what you need:
 | [D2E-PERMISSIONS.md](D2E-PERMISSIONS.md) | see how D2E grants database access today and how this PoC would map onto it | you plan the real D2E integration |
 
 Every code file starts with a one-line `#` header (`[BUILD-n]`, `[SETUP]`, `[RUN]`,
-`[FLOW-n]`, `[TEST]`); [ARCHITECTURE.md](ARCHITECTURE.md) lists them in order.
+`[FLOW-n]`); [ARCHITECTURE.md](ARCHITECTURE.md) lists them in order.
 
 ```text
 browser ── https://localhost (D2E Caddy) ──> d2e-logto-1           (D2E's own Logto)
