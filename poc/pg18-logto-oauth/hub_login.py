@@ -1,10 +1,9 @@
-# [TEST] browserless hub login through Logto's sign-in API, then starts the user's server (standalone or D2E Logto)
+# [TEST] browserless hub login through D2E Logto's sign-in API, then starts the user's server
 """Log in to the PoC JupyterHub as a Logto user without a browser, and start the server.
 
 Walks the same redirects a browser would: hub -> Logto sign-in (Experience API with
 username + password) -> hub callback. Then asks the hub to start the user's server.
     python3 hub_login.py alice
-    LOGTO_URL=https://localhost POC_INSECURE_TLS=1 python3 hub_login.py alice   # D2E Logto
 Prints the HTTP status of each step; exit code 0 when the server is running.
 """
 import http.cookiejar
@@ -18,10 +17,10 @@ import urllib.parse
 import urllib.request
 
 HUB = os.environ.get("HUB_URL", "http://localhost:8000")
-# browser-facing Logto: the standalone PoC's, or D2E's Caddy (LOGTO_URL=https://localhost)
-LOGTO = os.environ.get("LOGTO_URL", "http://localhost:3001")
+# browser-facing D2E Logto, through D2E's Caddy
+LOGTO = os.environ.get("LOGTO_URL", "https://localhost")
 # D2E's Caddy uses a self-signed certificate; the browser shows a warning for it
-INSECURE = os.environ.get("POC_INSECURE_TLS") == "1"
+INSECURE = os.environ.get("POC_INSECURE_TLS", "1") == "1"
 user = sys.argv[1]
 password = os.environ.get("POC_USER_PASSWORD", "PocPassword-2026")
 

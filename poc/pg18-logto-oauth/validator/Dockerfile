@@ -1,4 +1,4 @@
-# [BUILD-1] compiles the PG18 token validator (pg_oidc_validator.so) + test client into validator/out/; pg18 mounts the .so
+# [BUILD-1] compiles the PG18 token validator (pg_oidc_validator.so) into validator/out/; pg18 mounts it
 #   docker build --output validator/out validator
 FROM postgres:18-alpine AS build
 
@@ -13,8 +13,7 @@ RUN git init /src && cd /src \
     && git fetch --depth 1 origin "$PG_OIDC_VALIDATOR_REF" \
     && git checkout FETCH_HEAD
 WORKDIR /src
-RUN make USE_PGXS=1 with_llvm=no -j"$(nproc)" \
-    && make USE_PGXS=1 with_llvm=no oauth_conn_test
+RUN make USE_PGXS=1 with_llvm=no -j"$(nproc)"
 
 FROM scratch
-COPY --from=build /src/pg_oidc_validator.so /src/oauth_conn_test /
+COPY --from=build /src/pg_oidc_validator.so /

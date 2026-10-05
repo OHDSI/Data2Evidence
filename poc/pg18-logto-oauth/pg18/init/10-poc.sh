@@ -3,13 +3,7 @@
 # runs once on an empty data volume
 set -eu
 
-psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" \
-  --set=logto_password="$LOGTO_DB_PASSWORD" <<'SQL'
--- Logto's own storage
--- CREATEROLE: Logto's seed creates its own per-tenant roles
-CREATE ROLE logto LOGIN CREATEROLE PASSWORD :'logto_password';
-CREATE DATABASE logto OWNER logto;
-
+psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" <<'SQL'
 -- the PoC database
 CREATE DATABASE poc;
 REVOKE CONNECT ON DATABASE poc FROM PUBLIC;
