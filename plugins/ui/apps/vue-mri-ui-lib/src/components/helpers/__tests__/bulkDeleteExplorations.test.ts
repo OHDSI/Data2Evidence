@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { runBulkDelete } from '../bulkDeleteExplorations'
+import { canDeleteAll, runBulkDelete } from '../bulkDeleteExplorations'
 
 const record = (displayName: string): BookmarkDisplay => ({ displayName } as unknown as BookmarkDisplay)
 
@@ -149,5 +149,33 @@ describe('runBulkDelete', () => {
 
     // Promise.all would let all three run at once, so maxActive would be 3.
     expect(maxActive).toBe(1)
+  })
+})
+
+describe('canDeleteAll', () => {
+  const owned = (username: string): BookmarkDisplay =>
+    ({ displayName: 'd2e', bookmark: { username } } as unknown as BookmarkDisplay)
+  const ownedAtlas = (username: string): BookmarkDisplay =>
+    ({ displayName: 'atlas', atlasCohortDefinition: { username } } as unknown as BookmarkDisplay)
+
+  it('allows deleting when every selected record is owned by the user', () => {
+    expect(canDeleteAll([owned('alice'), ownedAtlas('alice')], 'alice')).toBe(true)
+  })
+
+  it('refuses when the selection mixes owned and shared records', () => {
+    expect(canDeleteAll([owned('alice'), owned('bob')], 'alice')).toBe(false)
+    expect(canDeleteAll([owned('alice'), ownedAtlas('bob')], 'alice')).toBe(false)
+  })
+
+  it('refuses when nothing is selected', () => {
+    expect(canDeleteAll([], 'alice')).toBe(false)
+  })
+
+  it('refuses while the username is still pending', () => {
+    expect(canDeleteAll([owned('alice')], '')).toBe(false)
+  })
+
+  it('refuses a record with no owner information', () => {
+    expect(canDeleteAll([{ displayName: 'orphan' } as unknown as BookmarkDisplay], 'alice')).toBe(false)
   })
 })

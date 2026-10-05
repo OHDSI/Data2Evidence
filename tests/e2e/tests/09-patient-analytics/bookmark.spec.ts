@@ -231,7 +231,7 @@ test(TEST_NAME, async ({ page }) => {
     await page.locator('#pane-left').getByRole('link', { name: 'Cohorts' }).click()
     await explorationMenuAction(page, NAME.savedFilters, 'Rename')
     await page.getByRole('textbox', { name: 'Exploration name' }).fill('')
-    await page.getByTestId('pa-save-dialog-save-btn').click()
+    await expect(page.getByTestId('pa-save-dialog-save-btn')).toBeDisabled()
     await expect(page.getByText('Please enter a name')).toBeVisible()
     await page.getByRole('textbox', { name: 'Exploration name' }).fill(NAME.renamedFilters)
     await page.getByTestId('pa-save-dialog-save-btn').click()

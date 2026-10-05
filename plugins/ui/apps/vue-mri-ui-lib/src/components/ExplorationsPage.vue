@@ -12,10 +12,8 @@
         <h1 class="explorations-page__title">{{ getText('MRI_PA_EXPLORATIONS_TITLE') }}</h1>
         <p class="explorations-page__description">{{ getText('MRI_PA_EXPLORATIONS_DESCRIPTION') }}</p>
       </div>
-      <!-- Switching is only possible in the Atlas mount. In the portal the
-           dataset arrives through customProps and there is no channel back, so
-           the select stays a read-only label until #2956 settles that. -->
       <D2eSelect
+        v-if="isAtlasHosted"
         class="explorations-page__dataset"
         size="sm"
         :disabled="!canSwitchDataSource"
@@ -57,7 +55,12 @@
         >
           {{ getText('MRI_PA_COMPARE_D2E_COHORT_TEXT') }}
         </D2eButton>
-        <D2eButton variant="danger" data-testid="explorations-bulk-delete" @click="openBulkDelete">
+        <D2eButton
+          variant="danger"
+          :disabled="!canBulkDelete"
+          data-testid="explorations-bulk-delete"
+          @click="openBulkDelete"
+        >
           {{ getText('MRI_PA_BUTTON_DELETE') }}
         </D2eButton>
       </div>
@@ -92,8 +95,9 @@
           </template>
 
           <ExplorationFiltersPanel
-            v-model="filters"
+            :model-value="filters"
             :authors="authorNames"
+            @update:model-value="onFiltersChange"
             @clear="filters = emptyFilters()"
           />
         </D2eMenu>
@@ -405,11 +409,20 @@ import {
 } from './helpers/explorationAnalyze'
 import { filterAndSort, toCardId, type ExplorationSortKey } from './helpers/explorationList'
 import { allSelected, someSelected } from './helpers/explorationSelection'
-import { applyFilters, authorOptions, emptyFilters, isEmpty, type ExplorationFilters } from './helpers/explorationFilters'
+import {
+  applyFilters,
+  authorOptions,
+  emptyFilters,
+  hasNarrowingFilters,
+  keepKnownAuthors,
+  visibleToUser,
+  type ExplorationFilters,
+} from './helpers/explorationFilters'
 import { PAGE_SIZES, clampPage, pageSlice } from './helpers/explorationPaging'
+import { fallbackDatasetId } from './helpers/dataSourceSelection'
 import { chartQueryFor } from './helpers/explorationSqlQuery'
 import { deleteExploration, type DeleteExplorationDeps } from './helpers/deleteExploration'
-import { runBulkDelete } from './helpers/bulkDeleteExplorations'
+import { canDeleteAll, runBulkDelete } from './helpers/bulkDeleteExplorations'
 import { canModifyBookmark, getBookmarkType } from '../utils/BookmarkUtils'
 import ExplorationMaterializeIcon from './icons/ExplorationMaterializeIcon.vue'
 import ExplorationDataQualityIcon from './icons/ExplorationDataQualityIcon.vue'
@@ -563,9 +576,8 @@ const datasetName = computed(() => store.getters.getSelectedDatasetName || datas
  * the dataset-change watcher reloads config and bookmarks off
  * `portalContext.datasetId`, so setting that is the whole switch.
  */
-const canSwitchDataSource = computed(
-  () => import.meta.env.VITE_ATLAS_HOSTED === 'true' && dataSourceItems.value.length > 1,
-)
+const isAtlasHosted = import.meta.env.VITE_ATLAS_HOSTED === 'true'
+const canSwitchDataSource = computed(() => isAtlasHosted && dataSourceItems.value.length > 1)
 
 /** Every source the user can read, for the switcher. */
 const dataSourceItems = computed(() => {
@@ -574,9 +586,9 @@ const dataSourceItems = computed(() => {
 })
 
 /**
- * The select's items. Falls back to the active source alone, which is what the
- * portal always shows and what Atlas shows until the list arrives — a select
- * with no item matching its model value renders blank.
+ * The select's items. Falls back to the active source alone, which is what
+ * Atlas shows until the list arrives — a select with no item matching its
+ * model value renders blank.
  */
 const datasetItems = computed(() =>
   canSwitchDataSource.value ? dataSourceItems.value : [{ label: datasetName.value, value: datasetId.value }],
@@ -610,9 +622,21 @@ const onDataSourceSelect = (nextDatasetId: string): void => {
 
 // One fetch per mount is enough: the response is every source this user can
 // read, not something scoped to the active dataset. Nothing awaits it — the
-// label falls back to the id until it lands, and the action swallows failure,
-// so a missing list costs a nicer name and nothing else.
-store.dispatch('fireGetDataSources')
+// label falls back to the id until it lands, and the action swallows failure.
+if (isAtlasHosted) {
+  store.dispatch('fireGetDataSources')
+  watch(
+    () =>
+      fallbackDatasetId(
+        datasetId.value,
+        dataSourceItems.value.map(item => item.value)
+      ),
+    nextDatasetId => {
+      if (nextDatasetId) onDataSourceSelect(nextDatasetId)
+    },
+    { immediate: true }
+  )
+}
 const canMaterialize = computed<boolean>(() => Boolean(store.getters.getCanDatasetMaterializeCohorts))
 
 // Matches ChartToolbar.vue's isWizardFeatureEnabled / canOpenDashboard.
@@ -646,12 +670,23 @@ const onSortSelect = (value: string): void => {
 
 /** The raw list, before filtering. Both the filter panel's option list and
     the filter step read this, never the filtered result. */
-const allCards = computed(() => store.getters.getDisplayBookmarks(false, portalContext.username) || [])
+const allCards = computed(() =>
+  visibleToUser(
+    store.getters.getDisplayBookmarks(filters.value.showShared, portalContext.username) || [],
+    filters.value.showShared,
+    portalContext.username,
+  ),
+)
 
 /** Every author in the dataset, not only the authors of the visible cards —
     otherwise selecting one author removes every other option and the filter
     cannot be widened again. */
 const authorNames = computed<string[]>(() => authorOptions(allCards.value))
+
+const onFiltersChange = (next: ExplorationFilters): void => {
+  filters.value = next
+  filters.value = keepKnownAuthors(next, authorNames.value)
+}
 
 /** After filter, search and sort, before paging. The pagination bar's count
     and the empty-state choice are both taken from here, never from `cards`. */
@@ -675,7 +710,7 @@ const emptyState = computed(() => {
   }
   // Filter takes precedence over search when both are active — it names the
   // control furthest from the user's attention.
-  if (!isEmpty(filters.value)) {
+  if (hasNarrowingFilters(filters.value)) {
     return {
       title: getText('MRI_PA_EXPLORATIONS_EMPTY_FILTER_TITLE'),
       body: getText('MRI_PA_EXPLORATIONS_EMPTY_FILTER_BODY'),
@@ -823,7 +858,11 @@ const openCompare = async (): Promise<void> => {
 
 const bulkDeleteOpen = ref(false)
 const bulkDeleting = ref(false)
+const canBulkDelete = computed(
+  () => !usernamePending.value && canDeleteAll(selectedRecords.value, portalContext.username),
+)
 const openBulkDelete = (): void => {
+  if (!canBulkDelete.value) return
   bulkDeleteOpen.value = true
 }
 const closeBulkDelete = (): void => {
@@ -873,6 +912,10 @@ const notifyBulkDeleteFailure = (failedNames: string[]): void => {
 
 const confirmBulkDelete = async (): Promise<void> => {
   if (bulkDeleting.value) return
+  if (!canBulkDelete.value) {
+    bulkDeleteOpen.value = false
+    return
+  }
   bulkDeleting.value = true
   try {
     await runBulkDelete(selectedRecords.value, {
@@ -1478,7 +1521,7 @@ const onMoreSelect = (card: { source: BookmarkDisplay }, value: string): void =>
      `primary`; the frame outlines it in Primary/Light (Figma 2634:58660). */
   &__filters {
     min-width: 101px;
-    padding: var(--d2e-spacing-xs) var(--d2e-spacing-xs-s);
+    padding: 0 var(--d2e-spacing-xs-s);
 
     &.v-btn--variant-outlined {
       border-color: var(--d2e-color-primary-light);

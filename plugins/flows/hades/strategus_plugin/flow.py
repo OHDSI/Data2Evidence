@@ -11,7 +11,8 @@ from prefect.artifacts import create_markdown_artifact
 
 from .hooks import generate_nodes_flow_hook, execute_nodes_flow_hook, node_task_execution_hook
 from .flowutils import get_node_list, get_incoming_edges, install_r_packages_from_lockfile, validate_token_study_code
-from .nodes import generate_nodes_flow, execute_r_strategus, upload_strategus_results, drop_strategus_results_schema, get_strategus_node, getRCdmExecutionSettings, upload_results_from_storage
+from .nodes import generate_nodes_flow, execute_r_strategus, upload_strategus_results, drop_strategus_results_schema, get_strategus_node, getRCdmExecutionSettings, upload_results_from_storage, upload_results_to_api
+from .result_naming import resolve_result_name
 from _shared_flow_utils.logger.logger import Logger
 from _shared_flow_utils.api.StrategusAnalysisAPI import StrategusAnalysisAPI
 
@@ -50,7 +51,7 @@ def strategus_plugin(json_graph, options):
     trace_config = _options["trace_config"]
     tracemode = trace_config["trace_mode"]
     upload_results = _options.get('uploadResults', False)
-    update_results_schema = _options.get('updateResultsSchema', True)
+    update_results_schema = _options.get('updateResultsSchema', upload_results)
     databaseCode = options.get('databaseCode', None)
     datasetId = options.get('datasetId', None)
     cacheId = options.get('cacheId', None)
@@ -80,6 +81,7 @@ def strategus_plugin(json_graph, options):
     n = execute_nodes_flow_wo(generated_nodes, sorted_nodes, testmode)  # flow
 
     study_analysis_result = None
+    results_upload_error = None
     try:
         study_analysis_result = execute_strategus_task(generated_nodes, n, options)
         logger.debug(f"Study analysis result: {study_analysis_result}")
@@ -101,13 +103,44 @@ def strategus_plugin(json_graph, options):
             drop_strategus_results(results_db_settings)
 
         if(upload_results):
-            result_db_settings = {
-                'database_code': Variable.get('trex_strategus_results_db_name', 'strategus_results'),
-                'cache_id': cacheId,
-                "dataset_id": datasetId,
-                "token_study_code": tokenStudyCode
-            }
-            upload_strategus_results(study_analysis_result.data, f'/tmp/{flow_run_id}/results', result_db_settings)
+            try:
+                result_db_settings = {
+                    'database_code': Variable.get('trex_strategus_results_db_name', 'strategus_results'),
+                    'cache_id': cacheId,
+                    "dataset_id": datasetId,
+                    "token_study_code": tokenStudyCode
+                }
+                upload_strategus_results(study_analysis_result.data, f'/tmp/{flow_run_id}/results', result_db_settings)
+            except Exception:
+                logger.warning(f"Failed to upload strategus results to legacy DB (non-fatal): {tb.format_exc()}")
+
+        try:
+            result_name = f"{studyName} [{databaseCode}]" if studyName else f"{tokenStudyCode} [{databaseCode}]"
+            upload_results_to_api(
+                f'/tmp/{flow_run_id}/results',
+                result_name,
+                {
+                    "flowRunId": flow_run_id,
+                    "tokenStudyCode": tokenStudyCode,
+                    "databaseCode": databaseCode,
+                    "datasetId": datasetId,
+                },
+                flow_run_id=flow_run_id,
+            )
+        except Exception:
+            error_details = tb.format_exc()
+            logger.error(f"Failed to upload results to API: {error_details}")
+            create_markdown_artifact(
+                key="strategus-results-upload-failure",
+                markdown=(
+                    f"## Strategus results upload failed\n\n"
+                    f"Uploading results for `{result_name}` to the Strategus results API failed. "
+                    f"This is now the only path results take, so the flow run is being marked as "
+                    f"failed: no result was recorded and none will appear in the results UI.\n\n"
+                    f"```\n{error_details}\n```"
+                ),
+            )
+            results_upload_error = error_details
 
     except Exception as e:
         logger.error(f"Error executing Strategus analysis: {tb.format_exc()}")
@@ -119,6 +152,9 @@ def strategus_plugin(json_graph, options):
                 logger.info(f"Successfully updated strategus analysis specification for study '{token_study_code}'")
         else:
             logger.warning("Skipping update_study_analysis: execute_strategus_task did not produce a result")
+
+    if results_upload_error is not None:
+        raise RuntimeError(f"Failed to upload results to API: {results_upload_error}")
 
 @task(task_run_name="execute-strategus-taskrun")
 def execute_strategus_task(generated_nodes, results, options):
@@ -226,10 +262,11 @@ def runStrategus(json_graph, options):
     cache_id = options.get('cacheId', None)
     schema_name = options.get('schemaName', None)
     upload_results = options.get('uploadResults', False)
-    update_results_schema = options.get('updateResultsSchema', True)
+    update_results_schema = options.get('updateResultsSchema', upload_results)
     runTable1 = options.get('runTable1', False)
 
-    validate_token_study_code(token_study_code)
+    if token_study_code:
+        validate_token_study_code(token_study_code)
     if(not datasetId):
        raise Exception('DatasetId is missing')
     if(not database_code):
@@ -261,22 +298,53 @@ def runStrategus(json_graph, options):
     executionSettings = json_graph.get('executionSettings', defaultExecutionSettings)
 
     execute_r_strategus(analysisSpec, executionSettings, dbSettings)
-    # updateResultsSchema option will drop the existing schema before uploading new results
-    if(update_results_schema):
+    # updateResultsSchema and upload_results both require a tokenStudyCode to name the results schema
+    if(update_results_schema and token_study_code):
         drop_strategus_results({
             'databaseCode': Variable.get('trex_strategus_results_db_name', 'strategus_results'),
             'cacheId': cache_id,
             'tokenStudyCode': token_study_code
         })
 
-    if(upload_results):
-        result_db_settings = {
-            'database_code': Variable.get('trex_strategus_results_db_name', 'strategus_results'),
-            'cache_id': cache_id,
-            "dataset_id": datasetId,
-            "token_study_code": token_study_code
-        }
-        upload_strategus_results(analysisSpec, path_to_results, result_db_settings)
+    if(upload_results and token_study_code):
+        try:
+            result_db_settings = {
+                'database_code': Variable.get('trex_strategus_results_db_name', 'strategus_results'),
+                'cache_id': cache_id,
+                "dataset_id": datasetId,
+                "token_study_code": token_study_code
+            }
+            upload_strategus_results(analysisSpec, path_to_results, result_db_settings)
+        except Exception:
+            logger.warning(f"Failed to upload strategus results to legacy DB (non-fatal): {tb.format_exc()}")
+
+    try:
+        result_name = resolve_result_name(options, token_study_code, database_code)
+        upload_results_to_api(
+            path_to_results,
+            result_name,
+            {
+                "flowRunId": flow_run_id,
+                "tokenStudyCode": token_study_code or "",
+                "databaseCode": database_code,
+                "datasetId": datasetId,
+            },
+            flow_run_id=flow_run_id,
+        )
+    except Exception:
+        error_details = tb.format_exc()
+        logger.error(f"Failed to upload results to API: {error_details}")
+        create_markdown_artifact(
+            key="strategus-results-upload-failure",
+            markdown=(
+                f"## Strategus results upload failed\n\n"
+                f"Uploading results for `{result_name}` to the Strategus results API failed. "
+                f"This is now the only path results take, so the flow run is being marked as "
+                f"failed: no result was recorded and none will appear in the results UI.\n\n"
+                f"```\n{error_details}\n```"
+            ),
+        )
+        raise
 
 
 def drop_strategus_results(options):

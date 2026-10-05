@@ -9,7 +9,10 @@
       ></menuButton>
       <div style="height: 14px; flex-shrink: 0"></div>
     </template>
-    <template v-if="errorMessage">
+    <template v-if="loadError">
+      <patientListLoadError :logId="loadError.logId" @reset="resetColumns"></patientListLoadError>
+    </template>
+    <template v-else-if="errorMessage">
       <chartErrorMessage :errorMessage="errorMessage"></chartErrorMessage>
     </template>
     <template v-else>
@@ -50,8 +53,10 @@ import menuButton from './MenuButton.vue'
 import Pager from './Pager.vue'
 import patientListControl from './PatientListControl.vue'
 import chartErrorMessage from './ChartErrorMessage.vue'
+import patientListLoadError from './PatientListLoadError.vue'
 import { postProcessPatientListData } from './helpers/postProcessPatientListData'
 import { createZip } from './helpers/createZip'
+import { toPatientListLoadError } from './helpers/patientListLoadError'
 
 export default {
   name: 'patientListChart',
@@ -59,6 +64,7 @@ export default {
   data() {
     return {
       errorMessage: '',
+      loadError: null,
       chartData: {
         data: [],
         totalPatientCount: 0,
@@ -78,6 +84,7 @@ export default {
       if (this.isFireRequestHeld) {
         return
       }
+      this.loadError = null
       if (Object.keys(this.getSelectedAttributes).length === 0) {
         this.errorMessage = this.getText('MRI_PA_PATIENT_LIT_NO_COLUMNS_SELECTED_MESSAGE')
         this.isLoading = false
@@ -110,21 +117,8 @@ export default {
             })
           }
         },
-        ({ response }) => {
-          if (response) {
-            let noDataReason = this.getText('MRI_PA_CHART_NO_DATA_DEFAULT_MESSAGE')
-
-            // For all handled errors from backend
-            if (response.status === 500) {
-              noDataReason = response.data.errorMessage
-              if (response.data.errorType === 'MRILoggedError') {
-                noDataReason = this.getText('MRI_DB_LOGGED_MESSAGE', response.data.logId)
-              }
-            }
-
-            this.errorMessage = noDataReason
-          }
-
+        error => {
+          this.loadError = toPatientListLoadError(error)
           this.setCurrentPatientCount({
             currentPatientCount: '--',
           })
@@ -280,6 +274,9 @@ export default {
       }
       this.setFireRequest()
     },
+    resetColumns() {
+      this.handleColumnMenuAction('RESET')
+    },
     toggleInteraction({ path, selected }) {
       this.setInteractionSelected({ configPath: path, selected })
       this.setFireRequest()
@@ -287,6 +284,7 @@ export default {
   },
   components: {
     chartErrorMessage,
+    patientListLoadError,
     menuButton,
     patientListControl,
     Pager,

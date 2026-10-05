@@ -1,0 +1,82 @@
+{
+  "name": "@ohdsi/notebook-git",
+  "version": "0.0.1",
+  "description": "Server-side git mirror and notebook templates for the Atlas notebook plugin. Published under @ohdsi so trex treats it as a first-party plugin: its routes mount at /plugins/ohdsi/ and are guarded by trex's own auth (authContext + pluginAuthz) rather than the legacy d2e Logto path, which is unusable when D2E_IDP_MODE=trex because no Logto is running to serve the JWKS.",
+  "trex": {
+    "functions": {
+      "api": [
+        {
+          "source": "/notebook-git-api",
+          "function": "/notebook-git-api",
+          "imports": "/notebook-git-api/deno.json",
+          "env": "notebook-git-api",
+          "allowHostFsAccess": true
+        }
+      ],
+      "env": {
+        "notebook-git-api": {
+          "NOTEBOOK_GIT_PAT": "${NOTEBOOK_GIT_PAT:-}",
+          "NOTEBOOK_TEMPLATE_REPO_URL": "${NOTEBOOK_TEMPLATE_REPO_URL:-https://github.com/data2evidence/templates.git}",
+          "NOTEBOOK_TEMPLATE_REPO_BRANCH": "${NOTEBOOK_TEMPLATE_REPO_BRANCH:-main}"
+        }
+      },
+      "scopes": [
+        {
+          "path": "^/plugins/ohdsi/notebook-git-api/overwrite-all-from-remote",
+          "scopes": [
+            "portal.notebook.systemAdmin.write"
+          ],
+          "httpMethods": [
+            "POST"
+          ]
+        },
+        {
+          "path": "^/plugins/ohdsi/notebook-git-api/templates(\\?|$)",
+          "scopes": [
+            "portal.notebook.read"
+          ],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
+          "path": "^/plugins/ohdsi/notebook-git-api/[^/?]+/remote-diff-check(\\?|$)",
+          "scopes": [
+            "portal.notebook.read"
+          ],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
+          "path": "^/plugins/ohdsi/notebook-git-api/[^/?]+/mirror(\\?|$)",
+          "scopes": [
+            "portal.notebook.update"
+          ],
+          "httpMethods": [
+            "POST"
+          ]
+        },
+        {
+          "path": "^/plugins/ohdsi/notebook-git-api/[^/?]+/overwrite-from-remote(\\?|$)",
+          "scopes": [
+            "portal.notebook.update"
+          ],
+          "httpMethods": [
+            "POST"
+          ]
+        },
+        {
+          "path": "^/plugins/ohdsi/notebook-git-api",
+          "scopes": [
+            "portal.notebook.systemAdmin.write"
+          ],
+          "httpMethods": [
+            "GET",
+            "POST"
+          ]
+        }
+      ]
+    }
+  }
+}

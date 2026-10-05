@@ -11,6 +11,7 @@ Deno.env.set(
   JSON.stringify({
     portal: "http://portal.test",
     portalServer: "http://portal-server.test",
+    supabaseStorage: "http://supabase-storage.test",
   }),
 );
 Deno.env.set("PG_HOST", "localhost");
@@ -20,5 +21,6 @@ Deno.env.set("PG_USER", "test-user");
 Deno.env.set("PG_PASSWORD", "test-password");
 Deno.env.set("PG_SCHEMA", "test_schema");
 Deno.env.set("NODE_ENV", "test");
+Deno.env.set("SUPABASE_STORAGE_JWT_TOKEN", "test-storage-token");
 
 installTrexGlobal();
