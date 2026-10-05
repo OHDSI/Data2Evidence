@@ -150,6 +150,7 @@ jobs:
               - "plugins/functions/**"
               - "plugins/fhir_functions/**"
               - "plugins/sibyl_functions/**"
+              - "plugins/notebook_git/**"
               - "services/trex/ext/**"
               - ".github/workflows/docker-build-push.yaml"
             http_tests:
@@ -361,6 +362,13 @@ jobs:
             RUNNER: ubuntu-24.04
           - PKGPATH: ./plugins/sibyl_functions/
             DESTPATH: /usr/src/data/plugins/@data2evidence/sibyl
+            RUNNER: ubuntu-24.04
+          # Scoped @ohdsi, not @data2evidence: trex derives a plugin's auth path
+          # from its npm scope, and this one has to be trusted. The Dockerfile
+          # extracts each tarball to /usr/src/bundled-plugins/<name-without-scope>,
+          # so this still lands at .../notebook-git.
+          - PKGPATH: ./plugins/notebook_git/
+            DESTPATH: /usr/src/data/plugins/@ohdsi/notebook-git
             RUNNER: ubuntu-24.04
     runs-on: ${{ matrix.RUNNER || needs.setup.outputs.random_runner }}
     env:
