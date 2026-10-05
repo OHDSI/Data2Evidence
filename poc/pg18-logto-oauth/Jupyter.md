@@ -1,3 +1,10 @@
+# Notebook test cells
+
+Paste these into a Python notebook after logging in to JupyterHub as alice (see
+[ARCHITECTURE.md](ARCHITECTURE.md) section 4). Expected results for alice are in the
+comments; carol should see only `schema_b`. ← [README.md](README.md)
+
+```python
 # 1. success
 import pg_oauth
 conn = pg_oauth.connect()
@@ -49,3 +56,4 @@ q("""select nspname,
           has_schema_privilege(nspname, 'USAGE')  as usage,
           has_schema_privilege(nspname, 'CREATE') as can_create
    from pg_namespace where nspname in ('public', 'allowed', 'secret', 'schema_b') order by 1""")
+```

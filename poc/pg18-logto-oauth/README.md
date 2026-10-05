@@ -7,8 +7,19 @@ JupyterHub and PostgreSQL are separate containers.
 Verified with D2E Logto 1.23.1 (d2e CLI stack), the official `postgres:18-alpine` (18.6)
 plus the mounted `pg_oidc_validator.so`, and the hub in `hub/`.
 
-Architecture, build order and the full test procedure, in English and Korean:
-[ARCHITECTURE-en.md](ARCHITECTURE-en.md), [ARCHITECTURE-ko.md](ARCHITECTURE-ko.md).
+## Where to look
+
+Start here, then go to the document for what you need:
+
+| Document | Read it to | Go there when |
+| --- | --- | --- |
+| [README.md](README.md) (this file) | get the idea, run it in one command, see the results and findings | first |
+| [ARCHITECTURE.md](ARCHITECTURE.md) | understand the containers, the runtime flow FLOW-1..5 file by file, the build order, and the full test procedure from zero | you want to change something or test step by step |
+| [Jupyter.md](Jupyter.md) | copy notebook cells: SELECT that must work, DROP that must fail, who am I, which tables and grants I have | you are logged in to JupyterHub and testing |
+| [D2E-PERMISSIONS.md](D2E-PERMISSIONS.md) | see how D2E grants database access today and how this PoC would map onto it | you plan the real D2E integration |
+
+Every code file starts with a one-line `#` header (`[BUILD-n]`, `[SETUP]`, `[RUN]`,
+`[FLOW-n]`, `[TEST]`); [ARCHITECTURE.md](ARCHITECTURE.md) lists them in order.
 
 ```text
 browser ── https://localhost (D2E Caddy) ──> d2e-logto-1           (D2E's own Logto)

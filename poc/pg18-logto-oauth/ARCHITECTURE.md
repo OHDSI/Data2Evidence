@@ -1,5 +1,9 @@
 # PG18 OAuth PoC: architecture, build order, testing
 
+← [README.md](README.md) (overview, one-command run, results) ·
+notebook cells: [Jupyter.md](Jupyter.md) ·
+D2E integration: [D2E-PERMISSIONS.md](D2E-PERMISSIONS.md)
+
 Goal: a user logs in to JupyterHub with D2E's Logto, and the same Logto access token logs
 them in to PostgreSQL 18, where they can read only the schema their Logto role allows.
 
@@ -99,7 +103,7 @@ conn.execute("select system_user, current_user").fetchone()  # ('oauth:<alice id
    gets a JupyterHub 403.
 6. **Clean up:** `sh run.sh --remove`.
 
-More identity and privilege queries are in `Jupyter.md`. The token lasts one hour; if
+More identity and privilege queries are in [Jupyter.md](Jupyter.md). The token lasts one hour; if
 `connect()` says "expired", restart the server from File > Hub Control Panel.
 
 Without a browser (steps 3–5):
@@ -133,5 +137,5 @@ docker logs pg18d2e-pg18 | grep -E 'method=oauth|scope mismatch'
 | SETUP | `logto_setup.py` |
 | RUN | `run.sh`, `docker-compose.yml` |
 | FLOW | `hub/jupyterhub_config.py`, `notebook/pg_oauth.py`, `pg18/pg_hba.conf`, `pg18/pg_ident.conf`, `pg18/init/10-poc.sh` |
-| TEST | `hub_login.py`, `notebook_check.py`, `Jupyter.md` |
-| Docs | `README.md`, `D2E-PERMISSIONS.md`, `VM-ESTIMATE.md` |
+| TEST | `hub_login.py`, `notebook_check.py`, [Jupyter.md](Jupyter.md) |
+| Docs | [README.md](README.md), [D2E-PERMISSIONS.md](D2E-PERMISSIONS.md) |

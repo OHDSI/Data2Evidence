@@ -1,5 +1,8 @@
 # How D2E grants database access today, and how PG18 OAuth would fit
 
+← [README.md](README.md) · the PoC this maps onto D2E: [ARCHITECTURE.md](ARCHITECTURE.md)
+(roles, scopes, `pg_hba` rules in section 2)
+
 Read from the code on 2026-09-30 (branch `feature/MIM-7-pr`). Paths are relative to the
 repository root.
 
