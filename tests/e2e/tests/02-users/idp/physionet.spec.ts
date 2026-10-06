@@ -1,9 +1,10 @@
 /**
  * IDP path: PhysioNet OIDC — connector `physionet-oidc` (target `physionet`).
  *
- * logto-federated mode: sign in via Logto's PhysioNet connector, auto-provision the usermgmt
- * row, assert identity linkage. Upstream-token passthrough (`physionet_access_token`) and
- * entitlements-derived roles aren't reproduced by trex yet (Trex phase 5), so are out of scope.
+ * logto-federated mode: sign in via Logto's PhysioNet connector — trex auto-provisions the user
+ * on first sign-in (no pre-link) — then provision the usermgmt row and assert identity linkage.
+ * Upstream-token passthrough (`physionet_access_token`) and entitlements-derived roles aren't
+ * reproduced by trex yet (Trex phase 5), so are out of scope.
  *
  * Gated on E2E_PHYSIONET_USERNAME / E2E_PHYSIONET_PASSWORD; ships a local PhysioNet stub
  * (localhost:8000), or set PHYSIONET_UPSTREAM=real.
@@ -19,9 +20,7 @@ import {
   loginViaConnector,
   loginViaUI,
   missingEnv,
-  prelinkLogtoConnectorUser,
   readAccessToken,
-  reenterAfterPrelink,
   resetLogtoConnectorUser,
   resetSession,
   skipReason
@@ -61,12 +60,10 @@ test('idp:physionet', async ({ page, baseURL }) => {
   }
   const connector = { target: 'physionet', connectorName: /PhysioNet/i, creds }
 
-  // Clean slate, then: sign in (creates the Logto user), pre-link it into trex, then sign in again
-  // — trex now takes the link branch and issues tokens. See prelinkLogtoConnectorUser for the why.
+  // Clean slate, then sign in once — trex auto-provisions the first-time connector user and
+  // issues tokens directly (resolve-user provisions on first sign-in; no pre-link needed).
   await resetLogtoConnectorUser(page.request, base, { target: 'physionet' })
   await loginViaConnector(page, connector)
-  await prelinkLogtoConnectorUser(page.request, base, { target: 'physionet' })
-  await reenterAfterPrelink(page, connector)
   const userToken = await readAccessToken(page)
   const claims = assertClaimContract(userToken)
   const sub = String(claims.sub)

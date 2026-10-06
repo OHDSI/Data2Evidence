@@ -24,7 +24,6 @@ import {
   loginViaConnector,
   loginViaUI,
   missingEnv,
-  prelinkLogtoConnectorUser,
   readAccessToken,
   reenterAfterPrelink,
   resetLogtoConnectorUser,
@@ -47,9 +46,8 @@ test('idp:entra-external-id', async ({ page, baseURL }) => {
     password: process.env.E2E_ENTRA_EXTID_PASSWORD as string
   }
 
-  // trex won't provision a first-time federated connector user (Trex phase 5): sign in once to
-  // create the Logto user, pre-link it into trex, then sign in again so trex takes the link branch
-  // and issues tokens. See prelinkLogtoConnectorUser.
+  // Sign in once — trex auto-provisions the first-time connector user and issues tokens directly
+  // (resolve-user provisions on first sign-in; no pre-link).
   const connector = {
     target: 'entra-external-id-alp',
     // Matches the connector metadata name.en "Microsoft Entra External ID".
@@ -58,8 +56,6 @@ test('idp:entra-external-id', async ({ page, baseURL }) => {
   }
   await resetLogtoConnectorUser(api, base, { target: 'entra-external-id-alp' })
   await loginViaConnector(page, connector)
-  await prelinkLogtoConnectorUser(api, base, { target: 'entra-external-id-alp' })
-  await reenterAfterPrelink(page, connector)
   const userToken = await readAccessToken(page)
 
   // Base claim contract (no group-derived roles for CIAM).
