@@ -25,9 +25,7 @@ import {
   loginViaConnector,
   loginViaUI,
   missingEnv,
-  prelinkLogtoConnectorUser,
   readAccessToken,
-  reenterAfterPrelink,
   resetLogtoConnectorUser,
   resetSession,
   rolesFromToken,
@@ -49,10 +47,8 @@ test('idp:entra', async ({ page, baseURL }) => {
   }
   const expectedRole = process.env.E2E_ENTRA_EXPECTED_ROLE as string
 
-  // trex won't provision a first-time federated connector user (Trex phase 5): sign in once to
-  // create the Logto user, pre-link it into trex, then re-enter so trex takes the link branch and
-  // issues tokens. reenterAfterPrelink re-auths silently through the Entra session, so interactive
-  // MFA is normally done once.
+  // Sign in once — trex auto-provisions the first-time connector user and issues tokens directly
+  // (resolve-user provisions on first sign-in; no pre-link). Interactive MFA is done once here.
   const connector = {
     target: 'azuread-alp',
     // Connector metadata name.en is "Data2Evidence".
@@ -61,25 +57,44 @@ test('idp:entra', async ({ page, baseURL }) => {
   }
   await resetLogtoConnectorUser(api, base, { target: 'azuread-alp' })
   await loginViaConnector(page, connector)
-  await prelinkLogtoConnectorUser(api, base, { target: 'azuread-alp' })
-  await reenterAfterPrelink(page, connector)
   const userToken = await readAccessToken(page)
 
-  // Base contract + the Azure group -> role mapping (memberOf -> LOGTO_ROLES_AZ_GROUPS_MAPPING).
+  // Base claim contract; group-derived roles are asserted after the sync below.
   const claims = assertClaimContract(userToken)
   const sub = String(claims.sub)
   console.log(`[assert] iss=${claims.iss} sub=${sub}`)
-  const tokenRoles = rolesFromToken(userToken)
-  console.log(`[assert] token roles: ${JSON.stringify(tokenRoles)}`)
-  await expectContainsAll(tokenRoles, [expectedRole], 'Entra group-derived roles')
 
-  // Trigger provisioning + prove WebAPI accepts the token downstream.
+  // trex carries the Azure groups as `idp_groups` but never maps them to roles (memberOf ->
+  // LOGTO_ROLES_AZ_GROUPS_MAPPING is resolved downstream): the usermgmt sync reads that claim and
+  // writes trexdb.user_role via trex /assign, so the role lands on the NEXT token. Trigger the sync,
+  // then re-auth (silently through the live Entra session) until the group-derived role appears.
   await api.post(`${base}${USERMGMT}/user-group/list`, {
     headers: authHeaders(userToken, base),
     data: { userId: sub, sync: true }
   })
-  await syncWebapiRoles(api, base, userToken)
-  const webApiId = await webapiUserId(api, base, userToken)
+
+  let downstreamToken = userToken
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    if (rolesFromToken(downstreamToken).length > 0) break
+    console.log(`[assert] attempt ${attempt}: token carries no roles yet, forcing a fresh token`)
+    // Drop ONLY the portal's cached OIDC token (keep the trex/Logto session cookies, so no re-MFA);
+    // re-entering the portal then auto-starts OIDC and mints a FRESH token reflecting the roles the
+    // sync just wrote. A plain re-enter can't be used — it returns the cached token without refreshing.
+    await page.evaluate(() =>
+      Object.keys(sessionStorage)
+        .filter((k) => k.startsWith('oidc.default:'))
+        .forEach((k) => sessionStorage.removeItem(k))
+    )
+    await page.goto('/d2e/portal').catch(() => {})
+    downstreamToken = await readAccessToken(page)
+  }
+  const tokenRoles = rolesFromToken(downstreamToken)
+  console.log(`[assert] token roles: ${JSON.stringify(tokenRoles)}`)
+  await expectContainsAll(tokenRoles, [expectedRole], 'Entra group-derived roles')
+
+  // Prove WebAPI accepts the token downstream.
+  await syncWebapiRoles(api, base, downstreamToken)
+  const webApiId = await webapiUserId(api, base, downstreamToken)
   console.log(`[assert] WebAPI accepted the token; user id ${webApiId}`)
 
   // Identity linkage: usermgmt row must be bound to the token subject by idp_user_id.
