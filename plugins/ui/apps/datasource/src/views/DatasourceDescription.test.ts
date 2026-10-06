@@ -147,21 +147,27 @@ describe('DatasourceDescription', () => {
     expect(heading).toBeTruthy()
   })
 
-  it('renders the title and Description heading with the exact Figma typography spec', async () => {
+  it('applies the D2E Design System text styles (#3499): Heading 6 name, Panel Title sections, Body 2 body', async () => {
     vi.spyOn(userMgmt, 'getUserGroupList').mockResolvedValue({ userId: 'u-1', alp_role_study_researcher: [] })
     vi.spyOn(userMgmt, 'getMyStudyAccessRequests').mockResolvedValue([])
 
     const wrapper = mountWith()
     await flushPromises()
 
+    // Data source name → Heading 6 (20px/500); navy color stays inline.
     const title = wrapper.find('h1')
-    const heading = wrapper.findAll('h2').find(h => h.text() === 'Description')!
-    for (const el of [title, heading]) {
-      const style = el.attributes('style') ?? ''
-      expect(style).toContain(hexToRgb('#000080'))
-      expect(style).toContain('18px')
-      expect(style).toContain('IBM Plex Sans')
+    expect(title.classes()).toContain('ds-text-heading-6')
+    expect(title.attributes('style') ?? '').toContain(hexToRgb('#000080'))
+
+    // Section titles → Panel Title (16px/600).
+    for (const name of ['Description', 'Metadata']) {
+      const heading = wrapper.findAll('h2').find(h => h.text() === name)!
+      expect(heading.classes()).toContain('ds-text-panel-title')
+      expect(heading.attributes('style') ?? '').toContain(hexToRgb('#000080'))
     }
+
+    // Description body text → Body 2 (14px/400).
+    expect(wrapper.find('.markdown-body').classes()).toContain('ds-text-body-2')
   })
 
   it('renders a Metadata table with a Dataset ID row, even with no attributes', async () => {

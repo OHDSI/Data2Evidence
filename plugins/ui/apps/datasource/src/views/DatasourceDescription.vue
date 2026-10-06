@@ -8,11 +8,11 @@
     <div v-else-if="!dataset">Unable to load this dataset.</div>
     <template v-else>
       <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; margin-bottom:24px;">
-        <!-- Exact Figma spec (Heading 5): IBM Plex Sans 600 18px/120%, color
-             #000080. Not rgb(var(--v-theme-primary)) — this plugin bundles
-             its own independent Vuetify theme (Atlas3's generic #1f425a),
-             which doesn't pick up d2e's branded primaryColor override. -->
-        <h1 style="margin:0; color:#000080; font-family:'IBM Plex Sans', sans-serif; font-weight:600; font-size:18px; line-height:120%;">{{ dataset.studyDetail?.name ?? 'Untitled' }}</h1>
+        <!-- Name: D2E Heading 6 (20px/500); navy #000080 stays inline. -->
+        <h1
+          class="ds-text-heading-6"
+          style="margin:0; color:#000080;"
+        >{{ dataset.studyDetail?.name ?? 'Untitled' }}</h1>
 
         <!-- Approved: no badge at all, matching the Figma "With access" state -->
 
@@ -103,19 +103,26 @@
       </div>
 
       <div style="display:flex; align-items:center; gap:8px; margin-bottom:16px;">
-        <!-- Exact Figma spec (Heading 5): IBM Plex Sans 600 18px/120%, color #000080. -->
-        <h2 style="margin:0; color:#000080; font-family:'IBM Plex Sans', sans-serif; font-weight:600; font-size:18px; line-height:120%; white-space:nowrap;">
+        <!-- Section title: D2E Panel Title (16px/600). -->
+        <h2
+          class="ds-text-panel-title"
+          style="margin:0; color:#000080; white-space:nowrap;"
+        >
           Description
         </h2>
         <div style="flex:1; height:1px; background: rgba(var(--v-theme-on-surface), 0.12);" />
       </div>
+      <!-- Body text: D2E Body 2 (14px/400). -->
       <div
-        class="markdown-body"
+        class="markdown-body ds-text-body-2"
         v-html="descriptionHtml"
       />
 
       <div style="display:flex; align-items:center; gap:8px; margin:24px 0 16px;">
-        <h2 style="margin:0; color:#000080; font-family:'IBM Plex Sans', sans-serif; font-weight:600; font-size:18px; line-height:120%; white-space:nowrap;">
+        <h2
+          class="ds-text-panel-title"
+          style="margin:0; color:#000080; white-space:nowrap;"
+        >
           Metadata
         </h2>
         <div style="flex:1; height:1px; background: rgba(var(--v-theme-on-surface), 0.12);" />
@@ -148,7 +155,10 @@
 
       <template v-if="resources.length > 0">
         <div style="display:flex; align-items:center; gap:8px; margin:24px 0 16px;">
-          <h2 style="margin:0; color:#000080; font-family:'IBM Plex Sans', sans-serif; font-weight:600; font-size:18px; line-height:120%; white-space:nowrap;">
+          <h2
+            class="ds-text-panel-title"
+            style="margin:0; color:#000080; white-space:nowrap;"
+          >
             Files
           </h2>
           <div style="flex:1; height:1px; background: rgba(var(--v-theme-on-surface), 0.12);" />
