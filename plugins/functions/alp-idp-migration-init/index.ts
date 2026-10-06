@@ -74,7 +74,7 @@ try {
       userDomain: env.USER_DOMAIN,
       seedAdmin: env.INITIAL_USER_NAME
         ? { username: env.INITIAL_USER_NAME, usermgmtId: env.INITIAL_USER_UUID || undefined }
-        : undefined
+        : undefined,
       autoProvision: env.AUTO_PROVISION_USERS
     },
     new KnexMigrationStore(k, logtoK),
