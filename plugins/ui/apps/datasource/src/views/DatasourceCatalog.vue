@@ -205,14 +205,17 @@ onUnmounted(() => document.removeEventListener('click', onDocClick))
   position: relative;
   white-space: nowrap;
 }
+/* Borderless text/ghost button (design system): no border or background at
+   rest. A subtle grey wash on hover and while the menu is open (the active/open
+   state), replacing the old outlined look. */
 .ds-sort__btn {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  padding: 9px 16px;
-  border: 1px solid #dcdfe6;
+  padding: 9px 12px;
+  border: none;
   border-radius: 8px;
-  background: #fff;
+  background: transparent;
   color: var(--ds-text, #595757);
   font-family: var(--ds-font-body);
   font-size: 15px;
@@ -220,34 +223,46 @@ onUnmounted(() => document.removeEventListener('click', onDocClick))
   cursor: pointer;
   white-space: nowrap;
 }
-.ds-sort__btn:hover { background: #f7f7fa; border-color: #cfd3dc; }
+.ds-sort__btn:hover,
+.ds-sort__btn[aria-expanded="true"] { background: var(--ds-lightest, #f2f0f1); }
+/* Design-system focus ring in place of the browser's dotted outline; stays
+   visible for keyboard users (matches the data-source card's focus style). */
+.ds-sort__btn:focus { outline: none; }
+.ds-sort__btn:focus-visible {
+  outline: 2px solid var(--ds-navy, #000080);
+  outline-offset: 2px;
+}
+/* Menu: 8px radius + design-system elevation, lined up under the button's right
+   edge. Vertical-only padding so the hover/selected highlight fills the full
+   width with no side gutter (same as the card action menu); overflow:hidden
+   clips the full-bleed rows to the rounded corners. */
 .ds-sort__menu {
   position: absolute;
   top: calc(100% + 6px);
   right: 0;
   z-index: 20;
-  min-width: 200px;
+  min-width: 180px;
   margin: 0;
-  padding: 6px;
+  padding: 8px 0;
   list-style: none;
   background: #fff;
-  border: 1px solid #ececf1;
-  border-radius: 10px;
-  box-shadow: 0 8px 24px rgba(16, 24, 40, 0.12);
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 5px 5px -3px rgba(0, 0, 0, 0.2), 0 8px 10px 1px rgba(0, 0, 0, 0.14),
+    0 3px 14px 2px rgba(0, 0, 0, 0.12);
 }
 .ds-sort__item {
-  padding: 9px 12px;
-  border-radius: 6px;
+  padding: 10px 16px;
   font-family: var(--ds-font-body);
   font-size: 14px;
-  color: #24243e;
+  color: var(--ds-navy, #000080);
   cursor: pointer;
 }
-.ds-sort__item:hover { background: #f4f4f7; }
+.ds-sort__item:hover { background: var(--ds-lightest, #f2f0f1); }
+/* Selected: muted light-grey row with dark-grey text, vs navy for the rest. */
 .ds-sort__item--active {
-  background: #ecebf9;
-  color: var(--ds-navy, #000080);
-  font-weight: 600;
+  background: var(--ds-lightest, #f2f0f1);
+  color: var(--ds-text, #595757);
 }
 .ds-grid {
   display: grid;
