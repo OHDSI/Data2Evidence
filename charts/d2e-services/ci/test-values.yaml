@@ -42,8 +42,8 @@ config:
   COHORT_CACHE_TTL_HOURS: "24"
   COHORT_CACHE_MAX_AGE_DAYS: "30"
   OMOP_RELATIONSHIPS_FOR_DESCENDANTS: "'Maps to','Subsumes'"
-  PLUGINS_API_VERSION: "~0.15.0"
-  PLUGINS_IMAGE_TAG: "0.15.0-beta"
+  PLUGINS_API_VERSION: "~0.19.0"
+  PLUGINS_IMAGE_TAG: "0.19.0-beta"
   PLUGINS_REGISTRY: ""
   PLUGINS_INFORMATION_URL: ""
   PLUGINS_FLOW_CUSTOM_REPO_IMAGE_CONFIG: '{"current": "ghcr.io/ohdsi/d2e", "new": "ghcr.io/ohdsi/d2e"}'
@@ -149,7 +149,7 @@ global:
   storageClassName: standard
   dockerRegistryUrl: "ghcr.io/ohdsi"
   image:
-    tag: "0.15.0-beta"
+    tag: "0.19.0-beta"
   images:
     materializeCohorts: "ghcr.io/ohdsi/d2e-materialize-cohorts"
   config:
