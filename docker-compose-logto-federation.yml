@@ -11,6 +11,10 @@ services:
       # Registered on the upstream app next to its existing redirect URIs.
       TREX_FEDERATION_REDIRECT_URI: "https://${CADDY__D2E__PUBLIC_FQDN:-${CADDY__ALP__PUBLIC_FQDN:-localhost}}${PORT:+:${PORT:-443}}/trex/auth/v1/callback"
       D2E__LOGTO_UPSTREAM__CLIENT_ID: ${LOGTO__D2E_APP__CLIENT_ID:-${LOGTO__ALP_APP__CLIENT_ID}}
+  alp-dataflow-gen:
+    depends_on:
+      alp-logto-post-init:
+        condition: service_completed_successfully
   trex:
     environment:
       D2E_IDP_MODE: logto-federated
