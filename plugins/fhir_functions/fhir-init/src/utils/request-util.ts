@@ -26,3 +26,7 @@ export const post = <T = any>(
 ) => {
   return axios.post<T>(url, data, config);
 };
+
+export const del = <T = any>(url: string, config?: AxiosRequestConfig) => {
+  return axios.delete<T>(url, config);
+};
