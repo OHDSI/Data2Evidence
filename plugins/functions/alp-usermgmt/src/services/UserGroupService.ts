@@ -36,6 +36,37 @@ export function resolveRoleStore(raw: string | undefined): 'trex' | 'logto' {
 }
 
 /**
+ * The sso_provider row a federated deployment signs in through.
+ *
+ * One value because one provider is configured: docker-compose-logto-federation.yml
+ * registers Logto under this id, and the idp migration writes the same one.
+ */
+export const FEDERATION_PROVIDER_ID = 'logto'
+
+/**
+ * Which provider a new account is created in, and has its password changed in.
+ *
+ * NOT the role store. Roles live in trex after the migration, and
+ * IDP__ROLE_STORE is pinned to `trex` in docker-compose.yml, but in
+ * logto-federated mode Logto is still where people authenticate: trex refuses
+ * the password grant and the sign-in page offers only the Logto button, so an
+ * account created in trex has no way to sign in at all. Create the credential
+ * where the credential will be checked.
+ *
+ * Re-enabling native password login means a trex-native account can sign in
+ * again, so that case stays with the role store — it is also the documented
+ * escape hatch for letting an admin in while Logto is unavailable.
+ */
+export function resolveUserStore(
+  idpMode: string | undefined,
+  nativePasswordLogin: string | undefined,
+  roleStore: string | undefined
+): 'trex' | 'logto' {
+  if (idpMode === 'logto-federated' && nativePasswordLogin !== 'true') return 'logto'
+  return resolveRoleStore(roleStore)
+}
+
+/**
  * The names to actually revoke when a group is removed.
  *
  * A group expands to several trex role names, and the WebAPI ones -

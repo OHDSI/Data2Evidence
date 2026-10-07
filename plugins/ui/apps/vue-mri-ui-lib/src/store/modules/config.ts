@@ -9,6 +9,18 @@ let chartConfigServiceInstance
 // let mriFrontendConfigInstance;
 let configRequestPromise: Promise<any> | null = null
 const analyticsEndpoint = '/analytics-svc/pa/services/analytics.xsjs'
+const STUDY_RESEARCHER_ROLE = 'STUDY_RESEARCHER'
+
+const getResearcherDatasetIds = (roles: unknown): Set<string> => {
+  const datasetRoles = (roles as { datasetRoles?: unknown } | null)?.datasetRoles
+  if (!Array.isArray(datasetRoles)) return new Set()
+  return new Set(
+    datasetRoles
+      .filter(datasetRole => datasetRole?.role === STUDY_RESEARCHER_ROLE)
+      .map(datasetRole => datasetRole.datasetId)
+      .filter((datasetId): datasetId is string => typeof datasetId === 'string')
+  )
+}
 
 // initial state
 const state = {
@@ -28,7 +40,7 @@ const state = {
   selectedDatasetId: {},
   selectedDatasetVersion: '',
   // The data sources this user can read, from /d2e-webapi/source/sources. Held
-  // only to turn a dataset id into a name for display: `setDataset` commits
+  // to turn a dataset id into a name for display: `setDataset` commits
   // `{ id }` and nothing else, so the id is all the app otherwise knows.
   dataSources: [],
 }
@@ -195,18 +207,24 @@ const actions = {
    * and it answers an unauthorised request with `200 []` rather than a 401 —
    * a silent empty list is a worse failure for a name lookup than a loud one.
    *
-   * Failure is not surfaced to the user. The name is decoration; the getter
-   * falls back to the id, and nothing else depends on this list.
+   * Failure is not surfaced to the user. The getter falls back to the id.
    */
   async fireGetDataSources({ commit, dispatch }) {
+    commit(types.SET_DATA_SOURCES, [])
     try {
-      const response = await dispatch('ajaxAuth', {
-        method: 'get',
-        url: '/d2e-webapi/source/sources',
-      })
-      commit(types.SET_DATA_SOURCES, Array.isArray(response?.data) ? response.data : [])
+      const [sourcesResponse, rolesResponse] = await Promise.all([
+        dispatch('ajaxAuth', { method: 'get', url: '/d2e-webapi/source/sources' }),
+        dispatch('ajaxAuth', { method: 'get', url: '/usermgmt/api/me/roles' }),
+      ])
+      const sources = Array.isArray(sourcesResponse?.data) ? sourcesResponse.data : []
+      const researcherDatasetIds = getResearcherDatasetIds(rolesResponse?.data)
+      commit(
+        types.SET_DATA_SOURCES,
+        sources.filter(source => researcherDatasetIds.has(source?.sourceKey))
+      )
     } catch (error) {
       console.error('[config] Could not load the data sources; names fall back to ids', error)
+      commit(types.SET_DATA_SOURCES, [])
     }
   },
 }

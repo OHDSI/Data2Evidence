@@ -90,15 +90,13 @@ export class PrefectController {
           .status(400)
           .send({ message: "Missing required fields: json_graph or options" });
       }
-      if (options["tokenStudyCode"] === undefined) {
-        return res
-          .status(400)
-          .send({ message: "Missing required field: tokenStudyCode in options" });
-      }
       // uncomment this line when notebookName is available in jupyter kernel
       // if(options['notebookName'] === undefined) {
       //   return res.status(400).send({ message: "Missing required field: notebookName in options" });
       // }
+      // uploadResults gates only the legacy DB-write results path; default to
+      // false so callers must opt in explicitly.
+      options.uploadResults = options.uploadResults ?? false;
 
       const flowrunId =
         await this.prefectService.createAnalaysisRunByJupyterKernel(token, {

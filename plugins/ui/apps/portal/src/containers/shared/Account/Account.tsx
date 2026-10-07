@@ -2,7 +2,7 @@ import React, { FC, useState, useCallback, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button, Card, Loader } from "@portal/components";
 import { PortalType, User } from "../../../types";
-import { useDialogHelper } from "../../../hooks";
+import { useDialogHelper, useMe } from "../../../hooks";
 import { useToken, useTranslation, useUser } from "../../../contexts";
 import env from "../../../env";
 import { config, FEATURE_ATLAS } from "../../../config";
@@ -13,7 +13,6 @@ import DeleteAccountDialog from "./DeleteAccountDialog/DeleteAccountDialog";
 import { ChangeLanguageDialog } from "./ChangeLanguageDialog/ChangeLanguageDialog";
 import { LegalCard } from "../Legal/LegalCard";
 import "./Account.scss";
-import { resolveIdTokenName } from "../../../utils/idTokenName";
 
 interface AccountProps {
   portalType: PortalType;
@@ -32,6 +31,7 @@ export const Account: FC<AccountProps> = ({ portalType }) => {
   const [showPwd, openPwdDialog, closePwdDialog] = useDialogHelper(false);
   const [showLanguage, openLanguageDialog, closeLanguageDialog] = useDialogHelper(false);
   const { user, setUserGroup } = useUser();
+  const [username] = useMe();
   const [loading, setLoading] = useState(false);
 
   const fetchUserGroups = useCallback(async () => {
@@ -41,15 +41,21 @@ export const Account: FC<AccountProps> = ({ portalType }) => {
     setLoading(false);
   }, [idTokenClaims, setUserGroup]);
 
+  // Split from the name below: group membership does not depend on it, and
+  // sharing one effect made resolving /me issue a second getUserGroupList.
   useEffect(() => {
-    if (idTokenClaims) {
-      fetchUserGroups();
-      setMyUser({
-        id: idTokenClaims[subProp],
-        name: resolveIdTokenName(idTokenClaims) ?? "",
-      });
-    }
+    if (idTokenClaims) fetchUserGroups();
   }, [idTokenClaims, fetchUserGroups]);
+
+  useEffect(() => {
+    if (!idTokenClaims) return;
+    setMyUser({
+      id: idTokenClaims[subProp],
+      // The same name the rest of the portal matches saved work against, so the
+      // account page cannot show one name while cohorts are filed under another.
+      name: username ?? "",
+    });
+  }, [idTokenClaims, username]);
 
   const handleSwitchToResearcher = useCallback(() => {
     navigate(config.ROUTES.researcher);

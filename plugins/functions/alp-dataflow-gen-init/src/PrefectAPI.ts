@@ -3,6 +3,50 @@ import { env } from "./env";
 import { BlockType } from "./types";
 import { PrefectVariable } from "./types";
 
+// `fetch` has no default timeout, and a seeding call that never settles consumes
+// trex's whole init budget: the worker is killed part-way through the loop, so
+// Prefect keeps whatever was created so far and every later flow fails on a
+// missing variable or block. Bound each call instead.
+const REQUEST_TIMEOUT_MS = 30_000;
+const TRANSPORT_ATTEMPTS = 3;
+const TRANSPORT_RETRY_DELAY_MS = 2_000;
+
+/**
+ * Retry a seeding call that failed before Prefect answered.
+ *
+ * Only transport-level failures are retried. An error carrying `response` means
+ * Prefect replied and the caller's own status handling applies — 409 in
+ * particular is how both callers detect "already exists", so retrying it here
+ * would turn an update into a spurious failure.
+ */
+async function retryTransport<T>(
+  label: string,
+  call: () => Promise<T>,
+): Promise<T> {
+  for (let attempt = 1; ; attempt++) {
+    try {
+      return await call();
+    } catch (error: any) {
+      if (error?.response !== undefined || attempt >= TRANSPORT_ATTEMPTS) throw error;
+      console.warn(
+        `[${error?.code ?? "no code"}] ${label} did not reach Prefect ` +
+          `(attempt ${attempt}/${TRANSPORT_ATTEMPTS}): ${error?.message ?? "no message"}`,
+      );
+      await new Promise((resolve) => setTimeout(resolve, TRANSPORT_RETRY_DELAY_MS));
+    }
+  }
+}
+
+/**
+ * How a failed call should be named in a log line.
+ *
+ * A transport failure has no status and no response body, so reporting only
+ * those (as this used to) printed `[undefined] ... undefined` and said nothing
+ * about what actually went wrong.
+ */
+const describeError = (error: any): string =>
+  error?.response?.status ?? error?.code ?? error?.message ?? "unknown error";
+
 export class PrefectAPI {
   private readonly baseURL: string;
 
@@ -17,6 +61,7 @@ export class PrefectAPI {
   private createOptions() {
     return {
       headers: { "Content-Type": "application/json" },
+      timeout: REQUEST_TIMEOUT_MS,
     };
   }
 
@@ -65,7 +110,10 @@ export class PrefectAPI {
     };
     const options = this.createOptions();
     try {
-      const result = await axios.post(url, variableOptions, options);
+      const result = await retryTransport(
+        `Prefect variable '${variableObj.name}'`,
+        () => axios.post(url, variableOptions, options),
+      );
       console.log(successMsg);
       return result.data.name;
     } catch (error) {
@@ -84,8 +132,8 @@ export class PrefectAPI {
         return variableObj.name;
       } else {
         console.error(
-          `[${status}] Failed to create/update Prefect variable ${variableObj.name}!`,
-          error.response?.data
+          `[${describeError(error)}] Failed to create/update Prefect variable ${variableObj.name}!`,
+          error.response?.data ?? error.message
         );
         throw error;
       }
@@ -113,7 +161,10 @@ export class PrefectAPI {
     const options = await this.createOptions();
 
     try {
-      const result = await axios.post(url, blockDocOptions, options);
+      const result = await retryTransport(
+        `Prefect ${blockType} block '${blockName}'`,
+        () => axios.post(url, blockDocOptions, options),
+      );
       console.log(successMsg);
       return result.data.id;
     } catch (error) {
@@ -148,8 +199,8 @@ export class PrefectAPI {
         return existingBlockId;
       } else {
         console.error(
-          `[${status}] Failed to create/update Prefect ${blockType} block '${blockName}'!`,
-          error.response?.data
+          `[${describeError(error)}] Failed to create/update Prefect ${blockType} block '${blockName}'!`,
+          error.response?.data ?? error.message
         );
         throw error;
       }

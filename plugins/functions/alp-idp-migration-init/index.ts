@@ -6,8 +6,44 @@ import type { Knex } from 'knex'
 import { resolveIdpMode } from '@alp/idp/mode.ts'
 import { HttpFederationAdmin } from '@alp/idp/migration/federation-admin.ts'
 import { runIdpMigration } from '@alp/idp/migration/run.ts'
+import { ensureSeedAdmin, HttpSeedAccounts } from '@alp/idp/migration/seed-admin.ts'
 import { env } from './src/env.ts'
 import { KnexMigrationStore } from './src/store.ts'
+
+const mode = resolveIdpMode(env.D2E_IDP_MODE)
+const admin = new HttpFederationAdmin({
+  federationUrl: env.TREX_FEDERATION_ADMIN_URL,
+  rolesUrl: env.TREX_ROLES_ADMIN_URL,
+  serviceRoleKey: env.SERVICE_ROLE_KEY
+})
+
+// The subject usermgmt holds for the seed account, matched the way its seed
+// matches the row: by id, then by the email, then by the configured name. Opens
+// its own short-lived pool, so a failure here costs only this lookup.
+async function seedSubjectFromUsermgmt(email: string): Promise<string | undefined> {
+  const { default: config } = await import('../alp-usermgmt-init/src/db/knexfile-admin.ts')
+  const db = knex(config)
+  try {
+    for (const where of [{ id: env.INITIAL_USER_UUID }, { username: email }, { username: env.INITIAL_USER_NAME }]) {
+      if (!Object.values(where)[0]) continue
+      const row = await db('user').withSchema('usermgmt').where(where).first('idp_user_id')
+      if (row?.idp_user_id) return row.idp_user_id
+    }
+    return undefined
+  } finally {
+    await db.destroy()
+  }
+}
+
+// In federated mode the seed admin is a Logto user whose roles the migration
+// below copies; only a trex install has to grant them here.
+if (mode === 'trex' && env.TREX_AUTH_URL) {
+  await ensureSeedAdmin(
+    { seedUser: env.SEED_USER, userDomain: env.USER_DOMAIN, storedSubject: seedSubjectFromUsermgmt },
+    new HttpSeedAccounts({ authUrl: env.TREX_AUTH_URL, serviceRoleKey: env.SERVICE_ROLE_KEY }),
+    admin
+  )
+}
 
 // Built and torn down inside the try/finally below, not at module scope:
 // loading the sibling knexfile runs alp-usermgmt-init's own env module at
@@ -30,19 +66,18 @@ try {
   }
   await runIdpMigration(
     {
-      mode: resolveIdpMode(env.D2E_IDP_MODE),
+      mode,
       logtoIssuer: env.LOGTO_ISSUER,
       clientId: env.LOGTO_UPSTREAM_CLIENT_ID,
       clientSecret: env.LOGTO_UPSTREAM_CLIENT_SECRET,
       publicOrigin: env.PUBLIC_ORIGIN,
-      userDomain: env.USER_DOMAIN
+      userDomain: env.USER_DOMAIN,
+      seedAdmin: env.INITIAL_USER_NAME
+        ? { username: env.INITIAL_USER_NAME, usermgmtId: env.INITIAL_USER_UUID || undefined }
+        : undefined
     },
     new KnexMigrationStore(k, logtoK),
-    new HttpFederationAdmin({
-      federationUrl: env.TREX_FEDERATION_ADMIN_URL,
-      rolesUrl: env.TREX_ROLES_ADMIN_URL,
-      serviceRoleKey: env.SERVICE_ROLE_KEY
-    })
+    admin
   )
 } catch (error) {
   // Never fatal: users already linked keep working, and the next boot retries.

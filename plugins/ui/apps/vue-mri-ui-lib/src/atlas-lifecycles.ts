@@ -15,9 +15,7 @@
  *
  * The `alp-terminology-open` DOM event is answered here via the host's
  * messageBus instead of the iframe postMessage relay in
- * utils/atlasTerminologyBridge.ts: the host's concept set chooser is requested
- * with `conceptSet:choose` and the choice is delivered through the event's own
- * onClose, so callers are unchanged.
+ * utils/atlasTerminologyBridge.ts.
  */
 
 import {
@@ -26,10 +24,12 @@ import {
   unmount as portalUnmount,
   update as portalUpdate,
 } from './lifecycles'
+import { formatConceptSetRef, parseConceptSetRef } from './query-filter/utils/conceptSetRef'
 
 type AtlasProps = Record<string, any>
 
 const FEATURE_LIST_URL = '/system-portal/feature/list'
+const ME_URL = '/usermgmt/api/me'
 
 /**
  * Atlas3 passes no `features`, and several things in this app are gated on
@@ -60,6 +60,41 @@ const fetchFeatures = async (props: AtlasProps): Promise<unknown[]> => {
 }
 
 /**
+ * The caller's usermgmt account name, which is the owner key for saved work.
+ *
+ * Every ownership test in this app compares it to a stored `user_id` that
+ * bookmark-svc wrote from its own GET /me, so a value from anywhere else reads
+ * as "owned by nobody" and a user's own saved cohorts are reported as none.
+ *
+ * WHAT THE HOST SENDS IS NOT USABLE, which is why this ignores `props.username`
+ * rather than preferring it. Atlas3 passes `authContext.user?.username`, and
+ * trex's provider emits no `username` claim at all — the OIDC user falls back
+ * to `name`, which for a user whose upstream record carried no display name is
+ * the synthesised address `<username>@d2e.local`. Against a `user_id` of
+ * `brandan` that matches nothing, and the list is silently empty. `useMe`
+ * documents the same drift on the portal side and resolves it the same way:
+ * read the owner key from the system that owns it.
+ *
+ * `undefined` on failure, never a substitute: showing one user another's saved
+ * work is worse than showing none, and `usernameLoading` below keeps consumers
+ * from reading the gap as an empty account.
+ */
+const fetchUsername = async (props: AtlasProps): Promise<string | undefined> => {
+  try {
+    const token = typeof props.getToken === 'function' ? await props.getToken() : null
+    const response = await fetch(ME_URL, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    })
+    if (!response.ok) throw new Error(`${response.status}`)
+    const { username } = await response.json()
+    return typeof username === 'string' && username ? username : undefined
+  } catch (error) {
+    console.error('[atlas-lifecycles] Could not resolve the current username; saved work stays hidden', error)
+    return undefined
+  }
+}
+
+/**
  * Normalize the host's props for the portal contract.
  *
  * `features` and `releaseId` are passed through as given, including
@@ -67,18 +102,25 @@ const fetchFeatures = async (props: AtlasProps): Promise<unknown[]> => {
  * `applyProps` skips `undefined` values, so leaving a field undefined on
  * `update` means "keep what is already there".
  *
- * That matters for both. Atlas3 never sends a feature list, so re-deriving one
- * on update would overwrite what `mount` fetched with an empty array and turn
- * Analyze back off after a source switch. And `releaseId` had a hard `?? ''`
+ * That matters for all three. Atlas3 never sends a feature list, so re-deriving
+ * one on update would overwrite what `mount` fetched with an empty array and
+ * turn Analyze back off after a source switch; `username` is resolved once at
+ * mount for the same reason, and re-reading it here would blank the owner key
+ * on the first update and hide the user's saved work again. And `releaseId` had a hard `?? ''`
  * fallback, so any update that omitted it — a token refresh, a locale change —
  * would clear release scoping, because `''` is not `undefined` and
  * `applyProps` would happily write it.
  */
-const normalizeProps = (props: AtlasProps, defaults?: { features: unknown[]; releaseId: string }): AtlasProps => ({
+const normalizeProps = (
+  props: AtlasProps,
+  defaults?: { features: unknown[]; username: string | undefined; releaseId: string }
+): AtlasProps => ({
   ...props,
   qeSvcUrl: window.location.origin,
   features: defaults?.features,
   featuresLoading: false,
+  username: defaults?.username,
+  usernameLoading: false,
   releaseId: defaults ? props.releaseId ?? defaults.releaseId : props.releaseId,
 })
 
@@ -109,6 +151,7 @@ type TerminologyCloseValues = {
 type TerminologyEventProps = {
   mode?: string
   title?: string
+  selectedConceptSetId?: string | number
   onClose?: (values?: TerminologyCloseValues) => void
 }
 
@@ -119,22 +162,7 @@ type MessageBus = {
 }
 
 const OPEN_EVENT = 'alp-terminology-open'
-const CHOOSE_REQUEST = 'conceptSet:choose'
-/**
- * Short on purpose.
- *
- * Atlas3 has no `conceptSet:choose` handler — its host message bus answers five
- * types and logs everything else as unhandled — so this request does not fail,
- * it never resolves. The iframe path ends at the same call
- * (`atlas-iframe-parcel.ts` `chooseConceptSet`), so the concept-set picker has
- * never worked inside Atlas. The native mount did not break it.
- *
- * A minute of nothing reads as a hung application; a few seconds reads as a
- * control that did not do anything. Neither is good, and the short wait is
- * only the lesser evil until the host answers — at which point raise this
- * back, because a real chooser needs time for a human to choose.
- */
-const REQUEST_TIMEOUT_MS = 4_000
+const EDIT_REQUEST = 'conceptSet:edit'
 
 /**
  * Removes the listener installed by the current mount, or null when none is
@@ -160,12 +188,28 @@ let removeTerminologyBridge: (() => void) | null = null
  */
 let currentMountGeneration = 0
 
-const requestConceptSetChoice = (messageBus: MessageBus, title?: string): Promise<ConceptSetChoice | null> => {
-  const timeout = new Promise<null>(resolve => setTimeout(() => resolve(null), REQUEST_TIMEOUT_MS))
-  const request = Promise.resolve(messageBus.request(CHOOSE_REQUEST, { title }))
-    .then(choice => (choice as ConceptSetChoice) ?? null)
-    .catch(() => null)
-  return Promise.race([request, timeout])
+type AtlasConceptSetTarget = { kind: 'new' } | { kind: 'edit'; conceptSetId: number } | { kind: 'unsupported' }
+
+const toAtlasConceptSetTarget = (ref: string | number | undefined): AtlasConceptSetTarget => {
+  if (ref === undefined || ref === '') return { kind: 'new' }
+  try {
+    const { source, externalId } = parseConceptSetRef(ref)
+    return source === 'webapi' ? { kind: 'edit', conceptSetId: externalId } : { kind: 'unsupported' }
+  } catch {
+    return { kind: 'unsupported' }
+  }
+}
+
+const requestConceptSetEdit = async (
+  messageBus: MessageBus,
+  conceptSetId: number | undefined
+): Promise<ConceptSetChoice | null> => {
+  const payload = conceptSetId === undefined ? {} : { conceptSetId }
+  try {
+    return ((await messageBus.request(EDIT_REQUEST, payload)) as ConceptSetChoice) ?? null
+  } catch {
+    return null
+  }
 }
 
 const onTerminologyOpen =
@@ -173,23 +217,27 @@ const onTerminologyOpen =
   (event: Event): void => {
     const props: TerminologyEventProps = (event as CustomEvent<{ props: TerminologyEventProps }>).detail?.props ?? {}
 
-    // CONCEPT_MULTI_SELECT wants a concept picker, which the host chooser is not.
     if (props.mode && props.mode !== 'CONCEPT_SET') return
 
-    // The bridge this handler belongs to. The request races a timeout, so it
-    // can resolve after the user has left the plugin; calling `onClose` then
-    // would reach into an unmounted app.
     const bridgeAtRequestTime = removeTerminologyBridge
+    const isCurrent = () => removeTerminologyBridge === bridgeAtRequestTime
 
-    void requestConceptSetChoice(messageBus, props.title).then(choice => {
-      if (removeTerminologyBridge !== bridgeAtRequestTime) return
+    const target = toAtlasConceptSetTarget(props.selectedConceptSetId)
+    if (target.kind === 'unsupported') {
+      console.warn('[atlas-lifecycles] The Atlas3 editor cannot open this concept set', props.selectedConceptSetId)
+      props.onClose?.(undefined)
+      return
+    }
+
+    const conceptSetId = target.kind === 'edit' ? target.conceptSetId : undefined
+    void requestConceptSetEdit(messageBus, conceptSetId).then(choice => {
+      if (!isCurrent()) return
       if (!choice) {
-        // Dismissed, or a host that does not serve the request. Report no
-        // change so the caller closes cleanly instead of waiting.
         props.onClose?.(undefined)
         return
       }
-      props.onClose?.({ currentConceptSet: { id: String(choice.conceptSetId), name: choice.name } })
+      const id = formatConceptSetRef({ source: 'webapi', externalId: Number(choice.conceptSetId) })
+      props.onClose?.({ currentConceptSet: { id, name: choice.name } })
     })
   }
 
@@ -222,8 +270,13 @@ export const unmount = async (props: AtlasProps) => {
 
 export const mount = async (props: AtlasProps) => {
   const mountGeneration = ++currentMountGeneration
+  const [features, username] = await Promise.all([
+    fetchFeatures(props ?? {}),
+    fetchUsername(props ?? {}),
+  ])
   const normalizedProps = normalizeProps(props ?? {}, {
-    features: await fetchFeatures(props ?? {}),
+    features,
+    username,
     releaseId: '',
   })
   const domElement = await resolveDomElement(normalizedProps)

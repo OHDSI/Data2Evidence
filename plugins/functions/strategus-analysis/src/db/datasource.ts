@@ -3,6 +3,7 @@ import { DataSource, DataSourceOptions, LogLevel } from "typeorm";
 
 import { env } from "../env.ts";
 import StrategusAnalysis from "../analysis/entities/StrategusAnalysis.ts";
+import StrategusResult from "../results/entities/StrategusResult.ts";
 
 export const getLogLevels = (): LogLevel[] => {
   if (env.NODE_ENV === "production") {
@@ -29,7 +30,7 @@ export const dataSourceOptions: DataSourceOptions = {
   schema: env.PG_SCHEMA,
   ssl,
   logging: getLogLevels(),
-  entities: [StrategusAnalysis],
+  entities: [StrategusAnalysis, StrategusResult],
   extra: {
     max: parseInt(Deno.env.get("PG__MAX_POOL") || "") || 10,
     min: parseInt(Deno.env.get("PG__MIN_POOL") || "") || 0,

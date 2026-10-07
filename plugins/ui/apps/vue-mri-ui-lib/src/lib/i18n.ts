@@ -387,7 +387,7 @@ export const i18n = {
     MRI_PA_BMK_NAME_LABEL: 'Name',
     MRI_PA_BMK_NAME_PLACEHOLDER: 'Enter Filter Name',
     MRI_PA_BMK_LIMIT_LABEL: 'Enter up to 40 characters',
-    MRI_PA_BMK_SHARED_BOOKMARK_TEXT: 'Allow sharing',
+    MRI_PA_BMK_SHARED_BOOKMARK_TEXT: 'Enable sharing',
     MRI_PA_BMK_SHARED_BOOKMARK_TITLE: 'Allow bookmark to be visible among other users',
     MRI_PA_BMK_SHARED_BOOKMARK_TOOLTIP:
       'When enabled, this cohort filter will be visible to other users. They will be able to view it on the cohort list and edit it.',
@@ -493,6 +493,7 @@ export const i18n = {
     MRI_PA_EXPLORATIONS_FILTER_TO: 'To',
     MRI_PA_EXPLORATIONS_FILTER_CREATED_UNAVAILABLE:
       'This range is disabled. An exploration does not record a creation date, so the filter cannot apply to every card.',
+    MRI_PA_EXPLORATIONS_FILTER_SHOW_SHARED: 'Show shared exploration',
     MRI_PA_BOOKMARK_NO_COHORT_DEFINITION: 'No cohort definition available',
     MRI_PA_BOOKMARK_OVERWRITE_DIALOG_TITLE: 'Overwrite Saved Filter',
     MRI_PA_BOOKMARK_OVERWRITE_DIALOG_TEXT: 'A saved filter with this name already exists. Do you want to overwrite it?',
@@ -516,6 +517,11 @@ export const i18n = {
     MRI_PA_TOOLTIP_MATERIALIZE_DISABLED:
       'Cohort materialization is not available. This may be because the dataset does not support it, or the required cohort tables are not set up in the database schema.',
     MRI_PA_BUTTON_DISPLAY_OR_GENERATE_DATA_QUALITY: 'Display or generate data quality',
+    MRI_PA_DATA_QUALITY_CHECK_STARTED:
+      'Data quality check started successfully. This may take a while. Come back again later to view results.',
+    MRI_PA_DATA_QUALITY_CHECK_IN_PROGRESS:
+      "A data quality check is already in progress for this cohort. It'll be ready to view once it finishes.",
+    MRI_PA_DATA_QUALITY_CHECK_FAILED: 'Data quality check could not be started. Please try again.',
     MRI_PA_BUTTON_VIEW_COHORT: 'View Cohort',
     MRI_PA_BUTTON_IMPORT_COHORT: 'Import Cohort',
     MRI_PA_TOOLTIP_DELETE_BOOKMARK: 'Delete Saved Filter',
@@ -657,6 +663,11 @@ export const i18n = {
     MRI_PA_EXPIRED_MESSAGE:
       'Failed to establish connection with the server. Do you want to reload the application and log on again?',
     MRI_PA_PATIENT_LIST_EDIT_COLUMNS: 'Add Interaction',
+    MRI_PA_PATIENT_LIST_LOAD_ERROR_TITLE: 'Unable to load data',
+    MRI_PA_PATIENT_LIST_LOAD_ERROR_TEXT:
+      'Something went wrong while loading data for this view.\nPlease try again or reset columns to default.',
+    MRI_PA_PATIENT_LIST_LOAD_ERROR_LOG_ID: 'Log ID: {0}',
+    MRI_PA_PATIENT_LIST_RESET_COLUMNS: 'Reset column',
     MRI_PA_PATIENT_LIST_ADD_ATTRIBUTE: 'Add Attribute',
     MRI_PA_TOOLTIP_PATIENT_LIST_EDIT_COLUMNS: 'Select Columns to Display',
     MRI_PA_PATIENT_LIST_RESTORE_DEFAULT: 'Show Default Columns',
@@ -1503,7 +1514,7 @@ export const i18n = {
     MRI_PA_BMK_NAME_LABEL: 'Name',
     MRI_PA_BMK_NAME_PLACEHOLDER: 'Filtername eingeben',
     MRI_PA_BMK_LIMIT_LABEL: 'Geben Sie bis zu 40 Zeichen ein.',
-    MRI_PA_BMK_SHARED_BOOKMARK_TEXT: 'Freigabe zulassen',
+    MRI_PA_BMK_SHARED_BOOKMARK_TEXT: 'Freigabe aktivieren',
     MRI_PA_BMK_SHARED_BOOKMARK_TITLE: 'Lesezeichen für andere Benutzer sichtbar machen',
     MRI_PA_BMK_SHARED_BOOKMARK_TOOLTIP:
       'Wenn aktiviert, ist dieser Kohortenfilter für andere Benutzer sichtbar. Sie können ihn in der Kohortenliste ansehen und bearbeiten.',
@@ -1569,7 +1580,8 @@ export const i18n = {
     // TODO(i18n): de strings below need native review.
     MRI_PA_EXPLORATIONS_EMPTY_BODY: 'Ihre gespeicherte Datenexploration wird hier angezeigt.',
     MRI_PA_EXPLORATIONS_EMPTY_SEARCH_TITLE: 'Keine passenden Explorationen',
-    MRI_PA_EXPLORATIONS_EMPTY_SEARCH_BODY: 'Keine Exploration entspricht Ihrer Suche. Versuchen Sie einen anderen Begriff.',
+    MRI_PA_EXPLORATIONS_EMPTY_SEARCH_BODY:
+      'Keine Exploration entspricht Ihrer Suche. Versuchen Sie einen anderen Begriff.',
     MRI_PA_EXPLORATIONS_EMPTY_FILTER_TITLE: 'Keine passenden Explorationen',
     MRI_PA_EXPLORATIONS_EMPTY_FILTER_BODY:
       'Keine Exploration entspricht Ihren Filtern. Setzen Sie sie zurück, um alle Explorationen zu sehen.',
@@ -1618,6 +1630,7 @@ export const i18n = {
     MRI_PA_EXPLORATIONS_FILTER_TO: 'Bis',
     MRI_PA_EXPLORATIONS_FILTER_CREATED_UNAVAILABLE:
       'Dieser Bereich ist deaktiviert. Eine Exploration speichert kein Erstellungsdatum, daher kann der Filter nicht auf jede Karte angewendet werden.',
+    MRI_PA_EXPLORATIONS_FILTER_SHOW_SHARED: 'Geteilte Exploration anzeigen',
     MRI_PA_BOOKMARK_NO_COHORT_DEFINITION: 'Keine Kohortendefinition verfügbar',
     MRI_PA_BOOKMARK_OVERWRITE_DIALOG_TITLE: 'Gesicherten Filter überschreiben',
     MRI_PA_BOOKMARK_OVERWRITE_DIALOG_TEXT:
@@ -1640,6 +1653,12 @@ export const i18n = {
     MRI_PA_BUTTON_COHORT_BUTTON_TOOLTIP: 'Kohorten',
     MRI_PA_BUTTON_ADD_TO_COLLECTION: 'Zu Kohorte hinzufügen',
     MRI_PA_BUTTON_DISPLAY_OR_GENERATE_DATA_QUALITY: 'Datenqualität anzeigen oder generieren',
+    MRI_PA_DATA_QUALITY_CHECK_STARTED:
+      'Datenqualitätsprüfung erfolgreich gestartet. Dies kann eine Weile dauern. Schauen Sie später wieder vorbei, um die Ergebnisse zu sehen.',
+    MRI_PA_DATA_QUALITY_CHECK_IN_PROGRESS:
+      'Für diese Kohorte läuft bereits eine Datenqualitätsprüfung. Sie kann angezeigt werden, sobald sie abgeschlossen ist.',
+    MRI_PA_DATA_QUALITY_CHECK_FAILED:
+      'Die Datenqualitätsprüfung konnte nicht gestartet werden. Bitte versuchen Sie es erneut.',
     MRI_PA_BUTTON_VIEW_COHORT: 'Kohorte anzeigen',
     MRI_PA_BUTTON_IMPORT_COHORT: 'Kohorte importieren',
     MRI_PA_TOOLTIP_DELETE_BOOKMARK: 'Gesicherten Filter löschen',
@@ -1784,6 +1803,11 @@ export const i18n = {
     MRI_PA_EXPIRED_MESSAGE:
       'Es konnte keine Verbindung zum Server hergestellt werden. Möchten Sie die Anwendung neu laden und sich erneut anmelden?',
     MRI_PA_PATIENT_LIST_EDIT_COLUMNS: 'Interaktion hinzufügen',
+    MRI_PA_PATIENT_LIST_LOAD_ERROR_TITLE: 'Daten konnten nicht geladen werden',
+    MRI_PA_PATIENT_LIST_LOAD_ERROR_TEXT:
+      'Beim Laden der Daten für diese Ansicht ist ein Fehler aufgetreten.\nBitte versuchen Sie es erneut oder setzen Sie die Spalten auf die Standardwerte zurück.',
+    MRI_PA_PATIENT_LIST_LOAD_ERROR_LOG_ID: 'Protokoll-ID: {0}',
+    MRI_PA_PATIENT_LIST_RESET_COLUMNS: 'Spalten zurücksetzen',
     MRI_PA_PATIENT_LIST_ADD_ATTRIBUTE: 'Attribut hinzufügen',
     MRI_PA_TOOLTIP_PATIENT_LIST_EDIT_COLUMNS: 'Anzuzeigende Spalten auswählen',
     MRI_PA_PATIENT_LIST_RESTORE_DEFAULT: 'Standardspalten anzeigen',
@@ -2607,7 +2631,7 @@ export const i18n = {
     MRI_PA_BMK_NAME_LABEL: '名称',
     MRI_PA_BMK_NAME_PLACEHOLDER: '请输入过滤器名称',
     MRI_PA_BMK_LIMIT_LABEL: '请输入至多 40 个字符',
-    MRI_PA_BMK_SHARED_BOOKMARK_TEXT: '允许共享',
+    MRI_PA_BMK_SHARED_BOOKMARK_TEXT: '启用共享',
     MRI_PA_BMK_SHARED_BOOKMARK_TITLE: '允许其他用户看到书签',
     MRI_PA_BMK_SHARED_BOOKMARK_TOOLTIP: '启用后，其他用户将可以看到此队列筛选器，并可在队列列表中查看和编辑它。',
     MRI_PA_TOOLTIP_BOOKMARK_NAME: '已保存的过滤器名称',
@@ -2713,7 +2737,9 @@ export const i18n = {
     MRI_PA_EXPLORATIONS_FILTER_LAST_MATERIALIZED: '最近物化',
     MRI_PA_EXPLORATIONS_FILTER_FROM: '从',
     MRI_PA_EXPLORATIONS_FILTER_TO: '到',
-    MRI_PA_EXPLORATIONS_FILTER_CREATED_UNAVAILABLE: '此范围已禁用。探索不记录创建日期，因此该筛选条件无法应用于每张卡片。',
+    MRI_PA_EXPLORATIONS_FILTER_CREATED_UNAVAILABLE:
+      '此范围已禁用。探索不记录创建日期，因此该筛选条件无法应用于每张卡片。',
+    MRI_PA_EXPLORATIONS_FILTER_SHOW_SHARED: '显示共享探索',
     MRI_PA_BOOKMARK_NO_COHORT_DEFINITION: '没有可用的群组定义',
     MRI_PA_BOOKMARK_OVERWRITE_DIALOG_TITLE: '覆盖已保存的过滤器',
     MRI_PA_BOOKMARK_OVERWRITE_DIALOG_TEXT: '具有此名称的已保存的过滤器已存在。是否要覆盖？',
@@ -2733,6 +2759,9 @@ export const i18n = {
     MRI_PA_BUTTON_COHORT_BUTTON_TOOLTIP: '群',
     MRI_PA_BUTTON_ADD_TO_COLLECTION: '添加到群',
     MRI_PA_BUTTON_DISPLAY_OR_GENERATE_DATA_QUALITY: '显示或生成数据质量',
+    MRI_PA_DATA_QUALITY_CHECK_STARTED: '数据质量检查已成功启动。这可能需要一段时间，请稍后再回来查看结果。',
+    MRI_PA_DATA_QUALITY_CHECK_IN_PROGRESS: '该群的数据质量检查正在进行中。完成后即可查看。',
+    MRI_PA_DATA_QUALITY_CHECK_FAILED: '无法启动数据质量检查。请重试。',
     MRI_PA_BUTTON_VIEW_COHORT: '查看群',
     MRI_PA_BUTTON_IMPORT_COHORT: '导入群',
     MRI_PA_TOOLTIP_DELETE_BOOKMARK: '删除已保存的过滤器',
@@ -2867,6 +2896,10 @@ export const i18n = {
     MRI_PA_ERROR_TOO_MANY_RESULTS: '无法显示结果。结果集过大。',
     MRI_PA_EXPIRED_MESSAGE: '无法与服务器建立连接。是否要重新加载应用程序并再次登录？',
     MRI_PA_PATIENT_LIST_EDIT_COLUMNS: '添加交互',
+    MRI_PA_PATIENT_LIST_LOAD_ERROR_TITLE: '无法加载数据',
+    MRI_PA_PATIENT_LIST_LOAD_ERROR_TEXT: '加载此视图的数据时出现问题。\n请重试或将列重置为默认值。',
+    MRI_PA_PATIENT_LIST_LOAD_ERROR_LOG_ID: '日志标识：{0}',
+    MRI_PA_PATIENT_LIST_RESET_COLUMNS: '重置列',
     MRI_PA_PATIENT_LIST_ADD_ATTRIBUTE: '添加属性',
     MRI_PA_TOOLTIP_PATIENT_LIST_EDIT_COLUMNS: '选择要显示的列',
     MRI_PA_PATIENT_LIST_RESTORE_DEFAULT: '显示缺省列',

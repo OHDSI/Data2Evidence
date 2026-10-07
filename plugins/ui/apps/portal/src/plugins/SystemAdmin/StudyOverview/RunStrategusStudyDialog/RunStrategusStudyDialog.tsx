@@ -50,7 +50,7 @@ const RunStrategusStudyDialog: FC<RunStrategusStudyDialogProps> = ({ study, open
           datasetId: selectedDatasetId,
           studyId: study.studyId,
           tokenStudyCode: study.tokenStudyCode,
-          uploadResults: true,
+          uploadResults: false,
         },
       };
       const response = await api.dataflow.createStudyAnalysisRun(requestData);

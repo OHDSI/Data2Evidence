@@ -74,7 +74,7 @@ export const StudyCard: FC<StudyCardProps> = ({
             mode: "kernel",
             datasetId: selectedDatasetId,
             tokenStudyCode: study.tokenDatasetCode,
-            uploadResults: true,
+            uploadResults: false,
           },
         };
         const response = await api.dataflow.createStudyAnalysisRun(requestData);

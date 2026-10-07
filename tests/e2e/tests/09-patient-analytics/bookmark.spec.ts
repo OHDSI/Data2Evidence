@@ -163,6 +163,15 @@ test(TEST_NAME, async ({ page }) => {
     await page.getByTestId('pa-save-dialog-save-btn').click()
     await expect(page.getByText('Filters saved.')).toBeVisible()
   })
+  //Verify the new bookmark is listed on the Data Exploration page
+  await test.step('Verify the new bookmark on the Data Exploration page', async () => {
+    await page.locator('#pane-left').getByRole('link', { name: 'Cohorts' }).click()
+    await expect(explorationBookmarkCard(page, NAME.savedFilters)).toBeVisible()
+    // Open it again, so the steps below continue on the saved cohort.
+    await explorationBookmarkCard(page, NAME.savedFilters).click()
+    await expect(page.getByText('325 / 2,694')).toBeVisible()
+    await expect(page.locator('.loading-animation-component')).not.toBeVisible()
+  })
   //Reset x1 selection to avoid displaying errors
   await test.step('Reset the x1 attributes', async () => {
     await page
@@ -170,7 +179,9 @@ test(TEST_NAME, async ({ page }) => {
       .last()
       .getByRole('button', { name: 'A - Condition Occurrence Condition concept Name ◢' })
       .click()
-    await page.getByText('Reset Selection').click()
+    // The reopened bookmark has a colour axis selected, and its closed menu also has a
+    // 'Reset Selection' item. Scope to the x1 menu.
+    await page.getByTestId('pa-dropdown-menu-x1').getByText('Reset Selection').click()
     await expect(page.locator('.loading-animation-component')).not.toBeVisible()
     await page.getByRole('button', { name: 'Basic Data Month of Birth ◢' }).click()
     await page.getByRole('listitem').filter({ hasText: 'Reset Selection' }).waitFor({ state: 'visible' })
@@ -220,7 +231,7 @@ test(TEST_NAME, async ({ page }) => {
     await page.locator('#pane-left').getByRole('link', { name: 'Cohorts' }).click()
     await explorationMenuAction(page, NAME.savedFilters, 'Rename')
     await page.getByRole('textbox', { name: 'Exploration name' }).fill('')
-    await page.getByTestId('pa-save-dialog-save-btn').click()
+    await expect(page.getByTestId('pa-save-dialog-save-btn')).toBeDisabled()
     await expect(page.getByText('Please enter a name')).toBeVisible()
     await page.getByRole('textbox', { name: 'Exploration name' }).fill(NAME.renamedFilters)
     await page.getByTestId('pa-save-dialog-save-btn').click()
