@@ -33,23 +33,3 @@ def update_schema_hook(task, task_run, state, db: str, schema: str):
     elif state.type == StateType.FAILED:
         msg = ""
         logger.info(msg)
-
-
-def rollback_count_hook(task, task_run, state, db: str, schema: str):
-    logger = task_run_logger(task_run, task)
-    if state.type == StateType.COMPLETED:
-        msg = ""
-        logger.info(msg)
-    elif state.type == StateType.FAILED:
-        msg = ""
-        logger.info(msg)
-
-
-def rollback_tag_hook(task, task_run, state, db: str, schema: str):
-    logger = task_run_logger(task_run, task)
-    if state.type == StateType.COMPLETED:
-        msg = ""
-        logger.info(msg)
-    elif state.type == StateType.FAILED:
-        msg = ""
-        logger.info(msg)

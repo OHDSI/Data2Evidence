@@ -7,7 +7,6 @@ from .versioninfo import *
 from .const import get_db_dialect
 from .types import DataModelType, FlowActionType
 
-from _shared_flow_utils.create_dataset_tasks import get_plugin_classpath
 import os
 os.environ['plugin_name'] = 'data_management_plugin'
 
@@ -19,10 +18,6 @@ def data_management_plugin(options: DataModelType):
             create_datamodel_flow(options, logger)
         case FlowActionType.UPDATE_DATA_MODEL | FlowActionType.CHANGELOG_SYNC:
             update_datamodel_flow(options, logger)
-        case FlowActionType.ROLLBACK_COUNT:
-            rollback_count_flow(options, logger)
-        case FlowActionType.ROLLBACK_TAG:
-            rollback_tag_flow(options, logger)
         case FlowActionType.GET_VERSION_INFO:
             get_version_info_flow(options, logger)
         case FlowActionType.CREATE_CDMSCHEMA:
@@ -31,8 +26,8 @@ def data_management_plugin(options: DataModelType):
             error_msg = f"Flow action type '{options.flow_action_type}' not supported, only '{[action.value for action in FlowActionType]}'"
             logger.error(error_msg)
             raise ValueError(error_msg)
-            
-            
+
+
 def create_cdm_schema(options: CreateSchemaType, logger):
     logger.info(f"Flow parameters received: {options.json()}")
     db_dialect = get_db_dialect(options)
@@ -42,9 +37,6 @@ def create_cdm_schema(options: CreateSchemaType, logger):
             data_model=options.data_model,
             schema_name=options.schema_name,
             vocab_schema=options.vocab_schema,
-            changelog_file=options.changelog_filepath_list.get(
-                options.data_model),
-            plugin_classpath=get_plugin_classpath(options.flow_name),
             dialect=db_dialect
         )
     except Exception as e:
@@ -61,10 +53,7 @@ def create_datamodel_flow(options: CreateDataModelType, logger):
             data_model=options.data_model,
             schema_name=options.schema_name,
             vocab_schema=options.vocab_schema,
-            changelog_file=options.changelog_filepath_list.get(
-                options.data_model),
             count=options.update_count,
-            plugin_classpath=get_plugin_classpath(options.flow_name),
             dialect=db_dialect
         )
     except Exception as e:
@@ -83,9 +72,6 @@ def update_datamodel_flow(options: UpdateDataModelType, logger):
             data_model=options.data_model,
             schema_name=options.schema_name,
             vocab_schema=options.vocab_schema,
-            changelog_file=options.changelog_filepath_list.get(
-                options.data_model),
-            plugin_classpath=get_plugin_classpath(options.flow_name),
             dialect=db_dialect
         )
     except Exception as e:
@@ -96,54 +82,8 @@ def update_datamodel_flow(options: UpdateDataModelType, logger):
 def get_version_info_flow(options: GetVersionInfoType, logger):
     try:
         get_version_info_tasks(
-            changelog_filepath_list=options.changelog_filepath_list,
-            plugin_classpath=get_plugin_classpath(options.flow_name),
             dataset_list=options.datasets,
             cache_id=options.cache_id,
-        )
-    except Exception as e:
-        logger.error(e)
-        raise e
-
-
-def rollback_count_flow(options: RollbackCountType, logger):
-    logger.info(f"Flow parameters received: {options.json()}")
-    try:
-        db_dialect = get_db_dialect(options)
-
-        rollback_count_task(
-            database_code=options.database_code,
-            cache_id=options.cache_id,
-            data_model=options.data_model,
-            schema_name=options.schema_name,
-            vocab_schema=options.vocab_schema,
-            changelog_file=options.changelog_filepath_list.get(
-                options.data_model),
-            plugin_classpath=get_plugin_classpath(options.flow_name),
-            dialect=db_dialect,
-            rollback_count=options.rollback_count
-        )
-    except Exception as e:
-        logger.error(e)
-        raise e
-
-
-def rollback_tag_flow(options: RollbackTagType, logger):
-    logger.info(f"Flow parameters received: {options.json()}")
-    try:
-        db_dialect = get_db_dialect(options)
-
-        rollback_tag_task(
-            database_code=options.database_code,
-            cache_id=options.cache_id,
-            data_model=options.data_model,
-            schema_name=options.schema_name,
-            vocab_schema=options.vocab_schema,
-            changelog_file=options.changelog_filepath_list.get(
-                options.data_model),
-            plugin_classpath=get_plugin_classpath(options.flow_name),
-            dialect=db_dialect,
-            rollback_tag=options.rollback_tag
         )
     except Exception as e:
         logger.error(e)
