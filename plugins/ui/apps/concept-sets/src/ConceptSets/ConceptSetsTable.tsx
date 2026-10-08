@@ -1,4 +1,4 @@
-import { FC, useCallback, useEffect, useMemo, useState } from "react";
+import { FC, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import SearchBar from "../components/SearchBar/SearchBar";
 import {
   MaterialReactTable,
@@ -15,6 +15,7 @@ import {
 import DeleteIcon from "@mui/icons-material/Delete";
 import { ConceptSet } from "../Terminology/utils/types";
 import { useTranslation } from "../hooks";
+import { useAvailableHeight } from "../hooks/use-available-height";
 import { i18nKeys } from "../context/state/translation-state";
 import "./ConceptSets.scss";
 
@@ -36,6 +37,8 @@ export const ConceptSetsTable: FC<ConceptSetsTableProps> = ({
   const { getText } = useTranslation();
   const [searchText, setSearchText] = useState<string>("");
   const [sorting, setSorting] = useState<MRT_SortingState>([]);
+  const tableWrapperRef = useRef<HTMLDivElement>(null);
+  const tableHeight = useAvailableHeight(tableWrapperRef);
 
   const filteredData = useMemo(
     () =>
@@ -68,14 +71,16 @@ export const ConceptSetsTable: FC<ConceptSetsTableProps> = ({
         accessorKey: "name",
         header: getText(i18nKeys.CONCEPT_SETS__Name),
         size: 260,
-        Cell: ({ row }) => (
-          <>
-            {row.original.name}
-            {row.original.shared
-              ? ` (${getText(i18nKeys.CONCEPT_SETS__SHARED)})`
-              : ""}
-          </>
-        ),
+        Cell: ({ row }) => {
+          const label = row.original.shared
+            ? `${row.original.name} (${getText(i18nKeys.CONCEPT_SETS__SHARED)})`
+            : row.original.name;
+          return (
+            <span className="concept-sets__name" title={label}>
+              {label}
+            </span>
+          );
+        },
       },
       {
         accessorKey: "createdDate",
@@ -174,7 +179,16 @@ export const ConceptSetsTable: FC<ConceptSetsTableProps> = ({
         padding: "6px",
       },
     },
-    muiTableContainerProps: { sx: { overflowY: "auto" } },
+    muiTablePaperProps: {
+      sx: {
+        display: "flex",
+        flexDirection: "column",
+        maxHeight: tableHeight,
+      },
+    },
+    muiTableContainerProps: {
+      sx: { flex: 1, minHeight: 0, maxHeight: "none", overflowY: "auto" },
+    },
     muiCircularProgressProps: {
       sx: { color: "var(--color-primary, #000080)" },
     },
@@ -209,7 +223,7 @@ export const ConceptSetsTable: FC<ConceptSetsTableProps> = ({
           text={getText(i18nKeys.CONCEPT_SETS__ADD_CONCEPT_SET)}
         />
       </div>
-      <div className="concept-sets__table">
+      <div className="concept-sets__table" ref={tableWrapperRef}>
         <MaterialReactTable table={table} />
       </div>
     </div>
