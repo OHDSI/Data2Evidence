@@ -348,11 +348,19 @@ def execute_sql_script(sql_script: str, dbdao):
             raise
     else:
         def is_ignorable_error(e: Exception) -> bool:
-            if (
-                dbdao.dialect == SupportedDatabaseDialects.HANA
-                and "index already exists" in str(e).lower()
+            # The results-schema DDL is idempotent for postgres (CREATE TABLE IF
+            # NOT EXISTS) but not for HANA, which has no such syntax. A
+            # source-connection run writes into an existing results schema whose
+            # Atlas-owned tables are deliberately kept by tables_to_drop(), so
+            # re-creating them raises HANA 288 and aborts the whole flow. The
+            # script is pure DDL and the DC-owned tables were dropped a step
+            # earlier, so an already-present object is safe to skip.
+            message = str(e).lower()
+            if dbdao.dialect == SupportedDatabaseDialects.HANA and (
+                "index already exists" in message
+                or "cannot use duplicate table name" in message
             ):
-                logger.debug(f"Ignoring 'index already exists': {e}")
+                logger.debug(f"Ignoring existing-object error: {e}")
                 return True
             return False
 
@@ -403,6 +411,13 @@ def execute_achilles(achilles_params: AchillesParams, flow_run_id: str):
         r_script_path = os.path.join(os.path.dirname(__file__), "execute_achilles.R")
 
         os.makedirs(achilles_params.outputFolder, exist_ok=True)
+
+        stale_reports = clear_stale_error_reports(achilles_params.outputFolder)
+        if stale_reports:
+            logger.info(
+                f"Removed {len(stale_reports)} error report(s) from a previous run in "
+                f"'{achilles_params.outputFolder}': {stale_reports}"
+            )
 
         with robjects.conversion.localconverter(robjects.default_converter):
             robjects.r(f"source('{r_script_path}')")
@@ -597,7 +612,13 @@ def execute_export_to_ares(achilles_params: AchillesParams, cdm_source: str):
 
         error_message = (
             get_error_message(error_file_name, ares_output_path)
-            or get_error_message(error_file_name)
+            # `error_path=None` makes get_error_message look in the cwd, which is
+            # where DatabaseConnector writes errorReportSql.txt when the export
+            # fails before the per-source ARES folder exists. The argument is not
+            # optional, and omitting it raised a TypeError from inside this very
+            # handler -- turning a deliberately non-fatal export failure into a
+            # flow crash that also hid the SQL error text.
+            or get_error_message(error_file_name, None)
             or f"{error_file_name} does not exist at {ares_output_path} or current working directory."
         )
         logger.error(f"ARES export error detail: {error_message}")
