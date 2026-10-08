@@ -348,11 +348,19 @@ def execute_sql_script(sql_script: str, dbdao):
             raise
     else:
         def is_ignorable_error(e: Exception) -> bool:
-            if (
-                dbdao.dialect == SupportedDatabaseDialects.HANA
-                and "index already exists" in str(e).lower()
+            # The results-schema DDL is idempotent for postgres (CREATE TABLE IF
+            # NOT EXISTS) but not for HANA, which has no such syntax. A
+            # source-connection run writes into an existing results schema whose
+            # Atlas-owned tables are deliberately kept by tables_to_drop(), so
+            # re-creating them raises HANA 288 and aborts the whole flow. The
+            # script is pure DDL and the DC-owned tables were dropped a step
+            # earlier, so an already-present object is safe to skip.
+            message = str(e).lower()
+            if dbdao.dialect == SupportedDatabaseDialects.HANA and (
+                "index already exists" in message
+                or "cannot use duplicate table name" in message
             ):
-                logger.debug(f"Ignoring 'index already exists': {e}")
+                logger.debug(f"Ignoring existing-object error: {e}")
                 return True
             return False
 
