@@ -412,6 +412,13 @@ def execute_achilles(achilles_params: AchillesParams, flow_run_id: str):
 
         os.makedirs(achilles_params.outputFolder, exist_ok=True)
 
+        stale_reports = clear_stale_error_reports(achilles_params.outputFolder)
+        if stale_reports:
+            logger.info(
+                f"Removed {len(stale_reports)} error report(s) from a previous run in "
+                f"'{achilles_params.outputFolder}': {stale_reports}"
+            )
+
         with robjects.conversion.localconverter(robjects.default_converter):
             robjects.r(f"source('{r_script_path}')")
             r_execute_achilles = robjects.r["execute_achilles"]

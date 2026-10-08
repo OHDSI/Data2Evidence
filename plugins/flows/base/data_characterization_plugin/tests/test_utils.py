@@ -4,6 +4,8 @@ import sqlalchemy as sa
 from data_characterization_plugin.utils import (
     RESULTS_SCHEMA_TABLES,
     cdmresults_clear_cache_path,
+    clear_stale_error_reports,
+    get_failed_analysis_ids,
     run_sql_statements,
     tables_to_drop,
     webapi_cache_source_key,
@@ -117,3 +119,37 @@ def test_an_ignorable_error_skips_the_statement_and_keeps_the_rest(tmp_path):
     )
 
     assert _row_count(engine, "concept_hierarchy") == 1
+
+
+def test_stale_error_reports_are_cleared_before_a_run(tmp_path):
+    (tmp_path / "achillesError_1818.txt").write_text("memory limit reached")
+    (tmp_path / "achillesError_401.txt").write_text("boom")
+    (tmp_path / "errorReportR.txt").write_text("boom")
+
+    removed = clear_stale_error_reports(str(tmp_path))
+
+    assert sorted(removed) == [
+        "achillesError_1818.txt",
+        "achillesError_401.txt",
+        "errorReportR.txt",
+    ]
+    # The whole point: a previous run's failure must not be attributed to this one.
+    assert get_failed_analysis_ids(str(tmp_path)) is None
+
+
+def test_clearing_reports_leaves_the_rest_of_the_output_folder_alone(tmp_path):
+    (tmp_path / "log_achilles.txt").write_text("log")
+    (tmp_path / "achillesError_1818.txt").write_text("boom")
+    results = tmp_path / "CDMDEID"
+    results.mkdir()
+    (results / "achilles_results.csv").write_text("a,b")
+
+    clear_stale_error_reports(str(tmp_path))
+
+    assert (tmp_path / "log_achilles.txt").is_file()
+    assert (results / "achilles_results.csv").is_file()
+    assert not (tmp_path / "achillesError_1818.txt").exists()
+
+
+def test_clearing_reports_tolerates_a_missing_output_folder(tmp_path):
+    assert clear_stale_error_reports(str(tmp_path / "does-not-exist")) == []

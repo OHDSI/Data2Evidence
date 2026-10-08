@@ -16,6 +16,39 @@ def get_failed_analysis_ids(output_folder: str) -> list[int] | None:
     return sorted_failed_ids if sorted_failed_ids else None
 
 
+def clear_stale_error_reports(output_folder: str) -> list[str]:
+    """
+    Delete error reports left in `output_folder` by earlier runs.
+
+    outputFolder resolves to the same absolute path on every run and lives in a
+    long-running worker container, so nothing clears it between flow runs.
+    get_failed_analysis_ids() just globs achillesError_*.txt there, which means a
+    single failed analysis made every later run report that same analysis as
+    failed -- even after it was added to exclude_analysis_ids and never executed.
+    Achilles re-creates these files whenever an analysis fails again, so dropping
+    them before the run costs nothing and keeps the report about this run only.
+    """
+    folder = Path(output_folder)
+    if not folder.is_dir():
+        return []
+
+    stale = list(folder.glob("achillesError_*.txt"))
+    report = folder / "errorReportR.txt"
+    if report.is_file():
+        stale.append(report)
+
+    removed = []
+    for error_file in stale:
+        try:
+            error_file.unlink()
+            removed.append(error_file.name)
+        except OSError:
+            # A report we cannot remove is reported as a stale failure, which is
+            # the bug this guards against, but it must not abort the run.
+            pass
+    return removed
+
+
 def failed_analysis_ids_to_str(failed_ids: list[int]) -> str:
     """
     Convert the list of failed analysis IDs to a comma separated string.
