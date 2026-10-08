@@ -605,7 +605,13 @@ def execute_export_to_ares(achilles_params: AchillesParams, cdm_source: str):
 
         error_message = (
             get_error_message(error_file_name, ares_output_path)
-            or get_error_message(error_file_name)
+            # `error_path=None` makes get_error_message look in the cwd, which is
+            # where DatabaseConnector writes errorReportSql.txt when the export
+            # fails before the per-source ARES folder exists. The argument is not
+            # optional, and omitting it raised a TypeError from inside this very
+            # handler -- turning a deliberately non-fatal export failure into a
+            # flow crash that also hid the SQL error text.
+            or get_error_message(error_file_name, None)
             or f"{error_file_name} does not exist at {ares_output_path} or current working directory."
         )
         logger.error(f"ARES export error detail: {error_message}")
