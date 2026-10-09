@@ -1,7 +1,11 @@
 import { describe, it, expect } from 'vitest'
 import { mount } from '@vue/test-utils'
+import { createVuetify } from 'vuetify'
+import { buildVuetifyOptions } from '@ohdsi/atlas-ui'
 import DataSourceCard from './DataSourceCard.vue'
 import type { DatasourceCardVM } from '../composables/useDatasourceCatalog'
+
+const vuetify = createVuetify(buildVuetifyOptions())
 
 const vm: DatasourceCardVM = {
   id: 'a',
@@ -16,7 +20,7 @@ const vm: DatasourceCardVM = {
 }
 
 const mountCard = (over: Partial<DatasourceCardVM> = {}) =>
-  mount(DataSourceCard, { props: { source: { ...vm, ...over } } })
+  mount(DataSourceCard, { props: { source: { ...vm, ...over } }, global: { plugins: [vuetify] } })
 
 describe('DataSourceCard', () => {
   it('renders name, footer fields, public chip and access label', () => {
@@ -33,8 +37,8 @@ describe('DataSourceCard', () => {
   it('shows Pending access', () => {
     expect(mountCard({ access: 'pending' }).get('[data-testid="ds-access"]').text()).toBe('Pending access')
   })
-  it('renders restricted as No access', () => {
-    expect(mountCard({ access: 'restricted', isPublic: false }).get('[data-testid="ds-access"]').text()).toBe('No access')
+  it('renders restricted as Restricted', () => {
+    expect(mountCard({ access: 'restricted', isPublic: false }).get('[data-testid="ds-access"]').text()).toBe('Restricted')
   })
   it('emits select with the id on click', async () => {
     const w = mountCard()
