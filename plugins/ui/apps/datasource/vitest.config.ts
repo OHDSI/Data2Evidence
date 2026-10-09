@@ -1,6 +1,7 @@
 import { defineConfig } from "vitest/config";
 import vue from "@vitejs/plugin-vue";
 import path from "path";
+import { vuetifyDir } from "./vite.resolve-deps";
 
 export default defineConfig({
   plugins: [vue()],
@@ -16,6 +17,12 @@ export default defineConfig({
       {
         find: "@d2e/ui",
         replacement: path.resolve(__dirname, "../../libs/d2e-ui/src/index.ts"),
+      },
+      // Match vite.config: resolve @d2e/ui's bare `vuetify/components` imports
+      // to the installed copy (hoisted or app-local).
+      {
+        find: /^vuetify\/(components|directives)(\/(.+))?$/,
+        replacement: path.join(vuetifyDir, "lib/$1$2"),
       },
     ],
   },
