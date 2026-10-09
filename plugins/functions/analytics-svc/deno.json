@@ -4,7 +4,7 @@
     "allowScripts": [],
     "tasks": {
         "test": "deno test --allow-read --allow-env --no-check",
-        "test:ci": "deno test --allow-read --allow-env --no-check src/middleware/StudyDbCredential.test.ts src/utils/CdmSqlAuditLogger_test.ts src/utils/cohortCacheKey_test.ts src/utils/cohortCacheMaintenance_test.ts src/utils/cohortCacheTtl_test.ts src/utils/conceptSetRef.test.ts src/utils/dcResultsSchema.test.ts"
+        "test:ci": "deno test --allow-read --allow-env --no-check src/middleware/StudyDbCredential.test.ts src/utils/CdmSqlAuditLogger_test.ts src/utils/cohortCacheKey_test.ts src/utils/cohortCacheMaintenance_test.ts src/utils/cohortCacheTtl_test.ts src/utils/conceptSetRef.test.ts src/utils/dcResultsSchema.test.ts src/mri/endpoint/InclusionReportEndpoint_test.ts"
     },
     "compilerOptions": {
         "lib": ["deno.window"],

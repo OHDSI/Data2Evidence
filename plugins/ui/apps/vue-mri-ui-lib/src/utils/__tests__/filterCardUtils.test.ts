@@ -28,7 +28,10 @@ const makeExclusionWrapper = (card: any) => ({
 
 const makeContainer = (...entries: any[]) => ({ content: entries })
 
-const makeBasicDataContainer = (attrs: any[]) => makeContainer(makeCard('Basic Data', attrs))
+// The Basic Data card is the patient-level card: configPath 'patient'. Its name is translated text.
+const makeBasicDataCard = (attrs: any[], name = 'Basic Data') => ({ ...makeCard(name, attrs), configPath: 'patient' })
+
+const makeBasicDataContainer = (attrs: any[], name = 'Basic Data') => makeContainer(makeBasicDataCard(attrs, name))
 
 const noopAttrName = (path: string) => path
 const noopAdvTime = (_: any) => 'advance-time'
@@ -191,12 +194,39 @@ describe('getInclusionReportFilterCardDetails – Basic Data splitting', () => {
   })
 
   it('handles excluded Basic Data wrapped in NOT', () => {
-    const inner = makeCard('Basic Data', [makeAttr('p.attr.gender', [makeConstraint('=', 'Male')])])
+    const inner = makeBasicDataCard([makeAttr('p.attr.gender', [makeConstraint('=', 'Male')])])
     const excluded = makeExclusionWrapper(inner)
     const bc = makeContainer(excluded)
     const rules = getInclusionReportFilterCardDetails([bc], noopAttrName, noopAdvTime)
     expect(rules).toHaveLength(1)
     expect(rules[0][0].name).toBe('Basic Data')
+  })
+
+  it('recognises Basic Data by its configPath whatever the card is called, e.g. in German', () => {
+    const bc = makeBasicDataContainer(
+      [
+        makeAttr('p.attr.gender', [makeConstraint('=', 'Female')]),
+        makeAttr('p.attr.age', [makeConstraint('>=', '18')]),
+      ],
+      'Grunddaten'
+    )
+    const rules = getInclusionReportFilterCardDetails([bc], noopAttrName, noopAdvTime)
+    expect(rules).toHaveLength(2)
+    expect(rules.map(r => r[0].isBasicData)).toEqual([true, true])
+    expect(rules.map(r => r[0].visibleAttributes[0].name)).toEqual(['p.attr.gender', 'p.attr.age'])
+  })
+
+  it('does not treat a non-patient card as Basic Data just because of its name', () => {
+    const bc = makeContainer({
+      ...makeCard('Basic Data', [
+        makeAttr('p.attr.a', [makeConstraint('=', '1')]),
+        makeAttr('p.attr.b', [makeConstraint('=', '2')]),
+      ]),
+      configPath: 'patient.interactions.conditionoccurrence',
+    })
+    const rules = getInclusionReportFilterCardDetails([bc], noopAttrName, noopAdvTime)
+    expect(rules).toHaveLength(1)
+    expect(rules[0][0].isBasicData).toBe(false)
   })
 })
 
@@ -318,12 +348,44 @@ describe('getRuleNameParts / getRuleDisplayName', () => {
   })
 
   it('falls back to the rule name when a Basic Data card has no attributes', () => {
-    const bare = { name: 'Basic Data', visibleAttributes: [], visibleAdvanceTime: [], isExcluded: false, isBasicData: true }
+    const bare = {
+      name: 'Basic Data',
+      visibleAttributes: [],
+      visibleAdvanceTime: [],
+      isExcluded: false,
+      isBasicData: true,
+    }
     expect(getRuleDisplayName('Basic Data', [bare])).toBe('Basic Data')
   })
 
   it('returns the original name unchanged when no details are supplied', () => {
     expect(getRuleDisplayName('Death A')).toBe('Death A')
     expect(getRuleDisplayName('Cond A OR Cond B')).toBe('Cond A OR Cond B')
+    expect(getRuleDisplayName('Cond A OR Cond B', [])).toBe('Cond A OR Cond B')
+  })
+
+  it('pairs each card with its own name when a card name contains the word OR', () => {
+    const surgery = detail('Surgery OR Procedure A', 'Procedure concept set', false)
+    const condition = detail('Condition A', 'Condition concept set', false)
+    const name = 'Surgery OR Procedure A OR Condition A'
+
+    const parts = getRuleNameParts(name, [surgery, condition])
+    expect(parts.map(p => p.text)).toEqual(['Surgery OR Procedure A', 'OR', 'Condition A'])
+    expect(parts.map(p => p.isOr)).toEqual([false, true, false])
+    expect(parts[0].fc).toBe(surgery)
+    expect(parts[2].fc).toBe(condition)
+    expect(getRuleDisplayName(name, [surgery, condition])).toBe(name)
+  })
+
+  it('keeps a single card whose name contains the word OR as one part', () => {
+    const surgery = detail('Surgery OR Procedure A', 'Procedure concept set', false)
+    const parts = getRuleNameParts('Surgery OR Procedure A', [surgery])
+    expect(parts).toHaveLength(1)
+    expect(parts[0]).toMatchObject({ text: 'Surgery OR Procedure A', isOr: false, fc: surgery })
+  })
+
+  it('titles a Basic Data rule by its attribute name in any language', () => {
+    const parts = getRuleNameParts('gender', [detail('Grunddaten', 'Geschlecht', true)])
+    expect(parts.map(p => p.text)).toEqual(['Geschlecht'])
   })
 })

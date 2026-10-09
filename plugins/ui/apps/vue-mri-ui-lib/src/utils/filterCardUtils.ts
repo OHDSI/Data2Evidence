@@ -10,6 +10,9 @@ type GetAttributeNameFn = (configPath: string) => string
 /** Callback to format an advance time filter object into an HTML string */
 type GetAdvanceTimeFilterFormattedFn = (filter: any) => string
 
+/** Config path of the patient-level Basic Data card */
+const BASIC_DATA_CONFIG_PATH = 'patient'
+
 /**
  * Resolves an attribute configPath to a human-readable display name.
  * @param type - pass 'list' to skip path shortening (used by FilterCardSummary)
@@ -158,21 +161,28 @@ export interface RuleNamePart {
 }
 
 /**
- * Splits a rule name on its OR separators and pairs each part with its filter card detail.
+ * Breaks a rule into one part per filter card, with an OR part between each pair.
+ *
+ * The parts are built from the rule's filter card details, not by parsing `statName`: the backend
+ * joins the same card names with " OR ", and a card name can contain the word OR itself.
+ * Without details (e.g. before they load) the whole `statName` is a single part.
  *
  * Basic Data rules are split per attribute, so the attribute name — not the shared
  * "Basic Data" card name — is the part's real title.
  */
 export function getRuleNameParts(statName: string, ruleDetails?: RuleFilterCardDetails): RuleNamePart[] {
-  let fcIndex = 0
-  return statName.split(/\b(OR)\b/).map(part => {
-    if (part === 'OR') {
-      return { text: part, isOr: true, fc: undefined, isBasicData: false }
+  if (!ruleDetails?.length) {
+    return [{ text: statName, isOr: false, fc: undefined, isBasicData: false }]
+  }
+  return ruleDetails.flatMap((fc, i) => {
+    const attributeName = fc.visibleAttributes[0]?.name
+    const part: RuleNamePart = {
+      text: fc.isBasicData && attributeName ? attributeName : fc.name,
+      isOr: false,
+      fc,
+      isBasicData: fc.isBasicData,
     }
-    const fc = ruleDetails?.[fcIndex++]
-    const isBasicData = !!fc?.isBasicData
-    const attributeName = fc?.visibleAttributes[0]?.name
-    return { text: isBasicData && attributeName ? attributeName : part, isOr: false, fc, isBasicData }
+    return i === 0 ? [part] : [{ text: 'OR', isOr: true, fc: undefined, isBasicData: false }, part]
   })
 }
 
@@ -205,8 +215,10 @@ export function getInclusionReportFilterCardDetails(
     extractFilterCardDetail(entry, getAttributeName, getAdvanceTimeFilterFormatted, isBasicData)
 
   // --- Basic Data ---
+  // Recognised by config path, matching the backend: the card's name is translated text.
   const isBasicDataContainer = (bc: any) =>
-    bc.content?.[0]?.name === 'Basic Data' || bc.content?.[0]?.content?.[0]?.name === 'Basic Data'
+    bc.content?.[0]?.configPath === BASIC_DATA_CONFIG_PATH ||
+    bc.content?.[0]?.content?.[0]?.configPath === BASIC_DATA_CONFIG_PATH
 
   const basicDataContainer = boolContainers.find(isBasicDataContainer)
 
