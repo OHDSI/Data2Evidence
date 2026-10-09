@@ -4,11 +4,12 @@
       :items="items"
       location="bottom end"
       width="max-content"
+      content-class="ds-sort__menu"
       @select="onSelect"
     >
-      <template #activator="{ props: menuProps }">
+      <template #activator="activatorProps">
         <AtlasButton
-          v-bind="menuProps"
+          v-bind="activatorProps"
           variant="ghost"
           data-testid="ds-sort"
           class="ds-sort-btn"
@@ -81,5 +82,17 @@ function onSelect(value: string): void {
 }
 .ds-sort-btn :deep(.v-btn__overlay) {
   display: none !important;
+}
+</style>
+
+<!--
+  D2eMenu teleports its panel into a Vuetify overlay (content-class is forwarded
+  to VMenu), so this lives outside the scoped block and keys on that class. With
+  the panel at width:max-content, min-width floors it while still letting it grow
+  to fit a longer label.
+-->
+<style>
+.ds-sort__menu .d2e-menu {
+  min-width: 200px;
 }
 </style>
