@@ -1,0 +1,6 @@
+:root {
+  --ds-primary: var(--d2e-color-primary);
+  --ds-text: var(--d2e-color-neutral);
+  --ds-font-body: var(--d2e-font-family);
+  --ds-sort-active-bg: var(--d2e-color-primary-xtra-lightest);
+}

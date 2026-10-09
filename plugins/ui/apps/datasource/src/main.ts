@@ -3,6 +3,8 @@ import singleSpaVue from 'single-spa-vue'
 import { createVuetify } from 'vuetify'
 import { buildVuetifyOptions } from '@ohdsi/atlas-ui'
 import '@ohdsi/atlas-ui/style.css'
+import '@d2e/ui/tokens.css'
+import './styles/style.css'
 import App from './App.vue'
 
 export interface PluginProps {
