@@ -23,9 +23,9 @@ declare global {
 
 type ClientToolFrameWindow = Window & { __d2ePaTools?: ClientToolRegistry }
 
-/** Expose a same-origin PA iframe's registry to Pythia in the Atlas window. */
-export function publishPaClientToolProxy(frame: HTMLIFrameElement): () => void {
-  const paTools = () => (frame.contentWindow as ClientToolFrameWindow | null)?.__d2ePaTools
+/** Expose the native PA registry to Pythia in the same window. */
+export function publishPaClientToolProxy(): () => void {
+  const paTools = () => (window as ClientToolFrameWindow).__d2ePaTools
   const proxy: ClientToolRegistry = {
     version: 1,
     list: () => paTools()?.list() ?? [],
