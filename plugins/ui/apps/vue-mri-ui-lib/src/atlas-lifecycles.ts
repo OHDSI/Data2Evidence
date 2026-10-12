@@ -18,6 +18,8 @@
  * utils/atlasTerminologyBridge.ts.
  */
 
+import { publishPaClientToolProxy } from './atlas-parcel/clientToolProxy'
+
 import {
   bootstrap as portalBootstrap,
   mount as portalMount,
@@ -259,7 +261,11 @@ const installTerminologyBridge = (props: AtlasProps): void => {
 
 export const bootstrap = portalBootstrap
 
+let unpublishPaClientTools: (() => void) | null = null
+
 export const unmount = async (props: AtlasProps) => {
+  unpublishPaClientTools?.()
+  unpublishPaClientTools = null
   // Before delegating, so a failure inside portalUnmount cannot leave the
   // listener attached to a realm this app has left.
   removeTerminologyBridge?.()
@@ -290,6 +296,10 @@ export const mount = async (props: AtlasProps) => {
   // sets up the portal-context store; install the bridge right after, with
   // the messageBus captured from the same props.
   const result = await (portalMount as (p: AtlasProps) => Promise<unknown>)(normalizedProps)
+  if (mountGeneration !== currentMountGeneration) return result
+
+  unpublishPaClientTools?.()
+  unpublishPaClientTools = publishPaClientToolProxy()
   installTerminologyBridge(normalizedProps)
   return result
 }

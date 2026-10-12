@@ -10,7 +10,6 @@
  */
 
 // Keep this module's entire import graph browser-native and runtime-dependency-free.
-import { publishPaClientToolProxy } from './atlas-parcel/clientToolProxy'
 
 type AtlasPluginProps = {
   domElement?: HTMLElement
@@ -42,7 +41,6 @@ let iframe: HTMLIFrameElement | null = null
 let tokenTimer: ReturnType<typeof setInterval> | null = null
 let readyListener: ((event: MessageEvent) => void) | null = null
 let propsListener: ((event: Event) => void) | null = null
-let unpublishPaClientTools: (() => void) | null = null
 
 const resolveAppUrl = (): string => {
   // import.meta.url is the SystemJS module URL of index.system.js, i.e.
@@ -106,8 +104,6 @@ export const mount = async (props: AtlasPluginProps) => {
   iframe.style.height = '100%'
   iframe.style.border = '0'
   iframe.style.display = 'block'
-
-  unpublishPaClientTools = publishPaClientToolProxy(iframe)
 
   const postContext = async () => {
     let token = ''
@@ -191,8 +187,6 @@ export const mount = async (props: AtlasPluginProps) => {
 }
 
 export const unmount = async () => {
-  unpublishPaClientTools?.()
-  unpublishPaClientTools = null
   if (tokenTimer !== null) {
     clearInterval(tokenTimer)
     tokenTimer = null
