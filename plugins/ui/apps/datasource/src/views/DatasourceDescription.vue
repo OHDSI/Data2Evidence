@@ -136,6 +136,10 @@
             <td>Dataset ID</td>
             <td>{{ dataset.id }}</td>
           </tr>
+          <tr>
+            <td>Token dataset code</td>
+            <td>{{ dataset.tokenStudyCode }}</td>
+          </tr>
           <tr
             v-for="attribute in dataset.attributes"
             :key="attribute.attributeId"
