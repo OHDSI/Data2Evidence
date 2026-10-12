@@ -1,4 +1,3 @@
-import json
 from typing import List, Dict, Optional
 
 from prefect import task
@@ -9,13 +8,11 @@ from .types import PortalDatasetType, ExtractDatasetSchemaType
 from .const import OMOP_DATA_MODELS, check_table_case, convert_case
 
 from _shared_flow_utils.dao.DBDao import DBDao
-from _shared_flow_utils.types import EntityCountDistributionType
 from _shared_flow_utils.api.PortalServerAPI import PortalServerAPI
 from _shared_flow_utils.update_dataset_metadata import (extract_version,
                                                   OMOP_NON_PERSON_ENTITIES,
                                                   update_entity_value,
                                                   update_entity_count,
-                                                  update_entity_count_distribution,
                                                   update_total_entity_count,
                                                   update_metadata_last_fetched_date)
 
@@ -107,7 +104,6 @@ def get_and_update_attributes(dataset: PortalDatasetType,
             updated_date = None
             current_schema_version = None
             latest_available_schema_version = None
-            entity_count_distribution = None
 
             try:
                 # update with data model last updated date
@@ -155,23 +151,14 @@ def get_and_update_attributes(dataset: PortalDatasetType,
                     logger=logger
                     )
 
-                try:
-                    # update with entity distribution json string
-                    entity_count_distribution = get_entity_count_distribution(
-                        dataset_dao, schema_name, is_lower_case)
-                    portal_server_api.update_dataset_attributes_table(dataset_id, "entity_count_distribution", json.dumps(entity_count_distribution))
-                except Exception as e:
-                    logger.error(
-                        f"Failed to update attribute 'entity_count_distribution' for dataset id '{dataset_id}' : {e}")
-                else:
-                    logger.info(
-                        f"Updated attribute 'entity_count_distribution' for dataset id '{dataset_id}'  with value '{entity_count_distribution}'")
+                # entity counts per table, used for total_entity_count
+                entity_counts = get_entity_counts(dataset_dao, schema_name, is_lower_case)
 
                 # update total_entity_count or error msg
                 update_total_entity_count(
                     portal_server_api=portal_server_api,
                     dataset_id=dataset_id,
-                    entity_count_distribution=entity_count_distribution,
+                    entity_counts=entity_counts,
                     logger=logger
                 )
 
@@ -241,22 +228,18 @@ def get_updated_date(dao_obj: DBDao, schema_name: str) -> str:
     return updated_date
 
 
-def get_entity_count_distribution(dao_obj: DBDao, schema_name: str, is_lower_case: bool) -> EntityCountDistributionType:
-    entity_count_distribution = {}
-    # retrieve count for each entity table
+def get_entity_counts(dao_obj: DBDao, schema_name: str, is_lower_case: bool) -> dict[str, int]:
+    entity_counts = {}
+    # retrieve count for each entity table, skipping tables that fail
     for table, unique_id_column in OMOP_NON_PERSON_ENTITIES.items():
         try:
             if is_lower_case:
-                entity_count = dao_obj.get_distinct_count(
+                entity_counts[table] = dao_obj.get_distinct_count(
                     schema_name, table, unique_id_column)
             else:
-                entity_count = dao_obj.get_distinct_count(
+                entity_counts[table] = dao_obj.get_distinct_count(
                     schema_name, table.upper(), unique_id_column.upper())
         except Exception as e:
             get_run_logger().error(
                 f"Error retrieving entity count for {table}: {e}")
-            entity_count = "error"
-        entity_count_key = table.replace("_", " ").title() + " Count"
-        if entity_count != "error":
-            entity_count_distribution[entity_count_key] = str(entity_count)
-    return entity_count_distribution
+    return entity_counts
