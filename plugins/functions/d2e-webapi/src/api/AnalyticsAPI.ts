@@ -132,8 +132,18 @@ export class AnalyticsSvcAPI {
       const result = await this.analyticsapi.get(url.toString(), options);
       return result.data;
     } catch (error) {
+      // Same wrapping as jobplugins' AnalyticsAPI: the endpoint reads
+      // CDM_SOURCE, which is optional in the OMOP DDL, so a CDM loaded without
+      // it fails here. Rethrowing the bare error surfaced only the status, so
+      // the caller reported a failed request and nothing about the table.
       console.error(`Error while getting cdm version: ${error}`);
-      throw error;
+      const detail = error instanceof Error ? error.message : String(error);
+      throw new Error(
+        `Could not determine the CDM version for dataset ${datasetId}. ` +
+          `It is read from the CDM_SOURCE table in the dataset's CDM schema — check that ` +
+          `the table exists and holds a row with cdm_version set, and that the dataset's ` +
+          `cache has finished building. Underlying error: ${detail}`,
+      );
     }
   }
 

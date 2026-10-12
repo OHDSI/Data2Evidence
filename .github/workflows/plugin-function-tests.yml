@@ -37,6 +37,19 @@ jobs:
         working-directory: plugins/functions/${{ matrix.plugin }}
         run: deno task test
 
+  deno-test-analytics-svc:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      # test:ci lists the unit tests that pass today; the rest of the suite
+      # (spec/, and some src/ tests) is stale and fails on its own.
+      - name: analytics-svc tests
+        working-directory: plugins/functions/analytics-svc
+        run: deno task test:ci
+
   deno-test-idp-misc:
     runs-on: ubuntu-latest
     steps:

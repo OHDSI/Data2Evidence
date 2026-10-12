@@ -30,6 +30,8 @@
 <script lang="ts">
 import { mapActions, mapGetters } from 'vuex'
 import { D2eButton, D2eDialog } from '@d2e/ui'
+import { generateDownloadFileName } from '../utils/generateDownloadFileName'
+import { clearPendingSaveTarget, pickSaveTarget, setPendingSaveTarget } from '../utils/saveFile'
 
 export default {
   name: 'download-csv-dialog',
@@ -41,7 +43,13 @@ export default {
     }
   },
   computed: {
-    ...mapGetters(['getText', 'getCSVDownloadCompleted', 'getIsLargePatientData']),
+    ...mapGetters([
+      'getText',
+      'getCSVDownloadCompleted',
+      'getIsLargePatientData',
+      'getActiveBookmark',
+      'getActiveChart',
+    ]),
   },
   watch: {
     getCSVDownloadCompleted(val) {
@@ -52,9 +60,19 @@ export default {
   },
   methods: {
     ...mapActions(['setFireDownloadCSV', 'cancelDownloadCSV']),
-    download() {
+    async download() {
       this.busy = true
       this.cancelled = false
+      // Ask where to save now, while the click still counts as a user gesture; the CSV is
+      // written there once the backend responds.
+      const fileName = generateDownloadFileName(this.getActiveBookmark?.bookmarkname, this.getActiveChart, 'csv')
+      const target = await pickSaveTarget(fileName, 'csv')
+      if (!target) {
+        // Save picker dismissed: nothing was exported, leave the dialog open
+        this.busy = false
+        return
+      }
+      setPendingSaveTarget('csv', target)
       this.setFireDownloadCSV()
     },
     cancel() {
@@ -62,6 +80,7 @@ export default {
         this.cancelled = true
         this.cancelDownloadCSV()
       }
+      clearPendingSaveTarget('csv')
       this.$emit('closeEv', { success: false })
     },
   },

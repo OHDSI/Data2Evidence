@@ -12,6 +12,7 @@ import {
   DataCharacterizationOptions,
 } from "../types.ts";
 import { parseCdmVersionForOhdsi } from "../utils/OhdsiParser.ts";
+import { assertDatasetPrerequisites } from "../utils/datasetPrerequisites.ts";
 import {
   DC_DIRECT_DIALECTS_USE_TREX_VARIABLE,
   isTruthyVariable,
@@ -180,6 +181,14 @@ export class DataCharacterizationService {
     const releaseDate = (await this.getReleaseDate(releaseId, token)).split(
       "T"
     )[0];
+
+    // Before the version lookup, so a partial CDM is reported as the tables it
+    // lacks rather than as whichever read failed first.
+    await assertDatasetPrerequisites(
+      analyticsSvcApi,
+      "Data characterization",
+      datasetId,
+    );
 
     const cdmVersionNumber = await analyticsSvcApi.getCdmVersion(datasetId);
     // Handle case where CDM version is not found for the dataset, as CDM version is required to run DC flow

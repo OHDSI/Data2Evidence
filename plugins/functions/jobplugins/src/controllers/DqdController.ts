@@ -272,7 +272,21 @@ export class DqdController {
       res.send(result);
     } catch (error) {
       console.error(`Error creating DQD flow run: ${error}`);
-      res.status(500).send("Error occurred while creating DQD flow run");
+      // Same convention as the data characterization controller: a service tags
+      // a client error with statusCode, and only those messages are forwarded.
+      // A missing prerequisite is the whole point of saying which one — the
+      // generic text below named the flow and hid the table.
+      const status =
+        typeof (error as { statusCode?: number })?.statusCode === "number"
+          ? (error as { statusCode: number }).statusCode
+          : 500;
+      res
+        .status(status)
+        .send(
+          status === 500
+            ? "Error occurred while creating DQD flow run"
+            : { message: (error as Error).message }
+        );
     }
   }
 

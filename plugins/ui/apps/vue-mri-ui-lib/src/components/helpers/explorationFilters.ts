@@ -9,6 +9,7 @@
  * `explorationList.ts` next door for the same reasoning.
  */
 
+import { canModifyBookmark } from '../../utils/BookmarkUtils'
 
 export type MaterializationStatus = 'materialized' | 'not-materialized'
 
@@ -23,17 +24,19 @@ export interface ExplorationFilters {
   created: DateRange
   lastUpdated: DateRange
   lastMaterialized: DateRange
+  showShared: boolean
 }
 
 const emptyRange = (): DateRange => ({ from: null, to: null })
 
-/** A fresh, fully-unconstrained filter set. Use this for every reset. */
+/** A fresh default filter set: nothing constrained, shared explorations hidden. Use this for every reset. */
 export const emptyFilters = (): ExplorationFilters => ({
   authors: [],
   statuses: [],
   created: emptyRange(),
   lastUpdated: emptyRange(),
   lastMaterialized: emptyRange(),
+  showShared: false,
 })
 
 /**
@@ -62,15 +65,20 @@ export const EMPTY_FILTERS: Readonly<ExplorationFilters> = (() => {
 
 const isEmptyRange = (range: DateRange): boolean => range.from == null && range.to == null
 
-/** True when nothing is constrained — drives the "Clear all" disabled state. */
+/** True when every filter, including the Show shared switch, is at its default — drives the "Clear all" disabled state. */
 export function isEmpty(filters: ExplorationFilters): boolean {
   return (
     filters.authors.length === 0 &&
     filters.statuses.length === 0 &&
     isEmptyRange(filters.created) &&
     isEmptyRange(filters.lastUpdated) &&
-    isEmptyRange(filters.lastMaterialized)
+    isEmptyRange(filters.lastMaterialized) &&
+    !filters.showShared
   )
+}
+
+export function hasNarrowingFilters(filters: ExplorationFilters): boolean {
+  return !isEmpty({ ...filters, showShared: false })
 }
 
 const author = (card: unknown): string | undefined =>
@@ -86,6 +94,24 @@ export function authorOptions(cards: readonly unknown[]): string[] {
     }
   }
   return [...names].sort((a, b) => a.localeCompare(b))
+}
+
+export function keepKnownAuthors(filters: ExplorationFilters, authors: readonly string[]): ExplorationFilters {
+  const kept = filters.authors.filter(name => authors.includes(name))
+  return kept.length === filters.authors.length ? filters : { ...filters, authors: kept }
+}
+
+const isOthersAtlasDefinition = (card: unknown, username: string): boolean => {
+  const record = card as any
+  return (
+    Boolean(record?.atlasCohortDefinition) &&
+    !record?.bookmark &&
+    !canModifyBookmark(record.atlasCohortDefinition, username)
+  )
+}
+
+export function visibleToUser<T>(cards: readonly T[], showShared: boolean, username: string): T[] {
+  return showShared ? [...cards] : cards.filter(card => !isOthersAtlasDefinition(card, username))
 }
 
 /**

@@ -21,6 +21,13 @@ export const test = base.extend<{
       ignoreHTTPSErrors: true
     })
 
+    // Headless Chromium exposes showSaveFilePicker but has no dialog to show, so the picker rejects
+    // like a user cancel and the export silently stops. Hide it so exports take the browser-download
+    // fallback, which Playwright can observe via the 'download' event.
+    await context.addInitScript(() => {
+      Object.defineProperty(window, 'showSaveFilePicker', { value: undefined, configurable: true })
+    })
+
     await use(context)
 
     // Close context to finalize HAR file

@@ -58,7 +58,19 @@ export class ResearcherController {
       return res.status(201).send(result);
     } catch (error) {
       console.error("Error in researcher createDqdFlowRun: ", error);
-      return res.status(500).send({ message: "Internal Server Error" });
+      // A service-tagged client error (e.g. a dataset missing a prerequisite
+      // table) carries the message worth showing; anything else stays generic.
+      const status =
+        typeof (error as { statusCode?: number })?.statusCode === "number"
+          ? (error as { statusCode: number }).statusCode
+          : 500;
+      return res
+        .status(status)
+        .send({
+          message: status === 500
+            ? "Internal Server Error"
+            : (error as Error).message,
+        });
     }
   }
 
@@ -68,7 +80,19 @@ export class ResearcherController {
       return res.status(201).send(result);
     } catch (error) {
       console.error("Error in researcher createCohortDqdFlowRun: ", error);
-      return res.status(500).send({ message: "Internal Server Error" });
+      // A service-tagged client error (e.g. a dataset missing a prerequisite
+      // table) carries the message worth showing; anything else stays generic.
+      const status =
+        typeof (error as { statusCode?: number })?.statusCode === "number"
+          ? (error as { statusCode: number }).statusCode
+          : 500;
+      return res
+        .status(status)
+        .send({
+          message: status === 500
+            ? "Internal Server Error"
+            : (error as Error).message,
+        });
     }
   }
 

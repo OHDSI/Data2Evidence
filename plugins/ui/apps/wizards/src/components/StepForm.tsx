@@ -20,7 +20,7 @@ import type { ResolvedWizardFieldGroup } from "../utils/wizardSections";
 import { resolveWizardFormNote } from "../config/wizardDefinitions";
 import { validateNumericExpression } from "../utils/numericExpression";
 import styles from "./StepForm.module.css";
-import sourceStyles from "./StepSelection.module.css";
+import { DataSourceField } from "./DataSourceSelect";
 
 // Keep the legacy Cohort Builder action available for a one-line re-enable.
 // Standalone Wizards currently exposes only the direct dashboard action.
@@ -607,19 +607,7 @@ export function StepForm() {
           <h2>{selectedWizard.name}</h2>
         </div>
         {portalProps.isAtlas === true ? (
-          <div
-            className={`${sourceStyles.sourceSelector} ${sourceStyles.sourceSelectorReadOnly}`}
-            aria-label="Data source"
-          >
-            <span className={sourceStyles.sourceLabel}>Data source</span>
-            <svg className={sourceStyles.sourceIcon} viewBox="0 0 24 24" aria-hidden="true">
-              <ellipse cx="12" cy="5" rx="8" ry="3" />
-              <path d="M4 5v5c0 1.7 3.6 3 8 3s8-1.3 8-3V5" />
-              <path d="M4 10v5c0 1.7 3.6 3 8 3s8-1.3 8-3v-5" />
-              <path d="M4 15v4c0 1.7 3.6 3 8 3s8-1.3 8-3v-4" />
-            </svg>
-            <span className={sourceStyles.sourceValue}>{atlasSourceName || "Loading data source..."}</span>
-          </div>
+          <DataSourceField sourceName={atlasSourceName || "Loading data source..."} />
         ) : null}
       </div>
 

@@ -856,6 +856,7 @@ export const i18nDefault = {
     OVERVIEW_TABLE__VALIDATION: "Validation",
     OVERVIEW_TABLE__VERIFICATION: "Verification",
     OVERVIEW__NO_DATASET: "No dataset available",
+    PASSWORD__MIN_LENGTH_ERROR: "Password must be at least {0} characters",
     PERMISSIONS_DIALOG__ACCESS: "Access",
     PERMISSIONS_DIALOG__CLOSE: "Close",
     PERMISSIONS_DIALOG__ERROR: "Error while saving. {0}",

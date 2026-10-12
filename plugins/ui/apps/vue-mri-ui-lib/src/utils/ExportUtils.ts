@@ -78,12 +78,16 @@ const appendXAxisTitle = (chartCanvas: HTMLCanvasElement, title: string): HTMLCa
 }
 
 /**
- * Reads the rendered StackBarChartLegend entries from the DOM.
+ * Reads the rendered StackBarChartLegend entries belonging to `chartId`.
  * The legend component is an HTML div outside the chart SVG so it must be
- * captured separately at export time.
+ * captured separately at export time. It sits beside the chart container inside
+ * `.stackbar-wrapper`, so the lookup is scoped to that wrapper: a document-wide
+ * query would pick up an unrelated chart's legend, such as the Patient Analytics
+ * chart still mounted behind the cohort-comparison dialog.
  */
-const readStackBarLegendFromDOM = (): IBarLegendItem[] => {
-  const container = document.querySelector('.stackbar-legend-container')
+export const readStackBarLegendFromDOM = (chartId: string): IBarLegendItem[] => {
+  const chartEl = chartId ? document.querySelector(chartId) : null
+  const container = chartEl?.closest('.stackbar-wrapper')?.querySelector('.stackbar-legend-container')
   if (!container) return []
 
   const items: IBarLegendItem[] = []
@@ -573,7 +577,7 @@ export const createChartCanvas = (
     if (xAxisTitle) {
       outputCanvas = appendXAxisTitle(outputCanvas, xAxisTitle)
     }
-    const barLegendItems = readStackBarLegendFromDOM()
+    const barLegendItems = readStackBarLegendFromDOM(chartId)
     if (barLegendItems.length > 0) {
       const legendCanvas = createBarLegendCanvas(barLegendItems)
       outputCanvas = combineCanvas(outputCanvas, legendCanvas)

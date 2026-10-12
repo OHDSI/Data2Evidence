@@ -9,7 +9,7 @@
 // SQL transport is isolated in sql.ts (the DuckDB→Postgres `_config` attach).
 import { query, lit } from "./sql.ts";
 import { encryptSecret } from "./crypto.ts";
-import { gzipBytes, findResultsDb, putToUrl } from "./export.ts";
+import { gzipBytes, findResultsDb, putToUrl, isSafeSegment } from "./export.ts";
 // `zip` is NOT present in the trexsql image (verified: command -v zip -> absent;
 // only unzip/gzip/tar exist), so we zip in-process with the JSR zip-js lib instead
 // of Deno.Command("zip", ...). Pure-Deno, no native binary needed.
@@ -74,7 +74,7 @@ Deno.serve(async (req: Request) => {
     // POST /results/publish  { jobId, definitionId?, cdmConnectionId? }
     if (path === "/results/publish" && req.method === "POST") {
       const b = await req.json();
-      if (!b.jobId) return json({ error: "BAD_REQUEST" }, 400);
+      if (!isSafeSegment(b.jobId)) return json({ error: "BAD_REQUEST" }, 400);
       const runDir = `${OUTPUT_BASE}/${b.jobId}`;
       const bucket = "analysis-results";
       const key = `${b.definitionId ?? b.jobId}/${b.jobId}.zip`;
@@ -108,7 +108,8 @@ Deno.serve(async (req: Request) => {
     // Gzip the run's results DB and PUT it to a central presigned S3 URL.
     if (path === "/results/export-gz" && req.method === "POST") {
       const b = await req.json();
-      if (!b.jobId || !b.uploadUrl) return json({ error: "BAD_REQUEST" }, 400);
+      if (!isSafeSegment(b.jobId) || !b.uploadUrl) return json({ error: "BAD_REQUEST" }, 400);
+      if (b.dbFilename !== undefined && !isSafeSegment(b.dbFilename)) return json({ error: "BAD_REQUEST" }, 400);
       if (!OUTPUT_BASE) return json({ error: "NOT_CONFIGURED" }, 503);
       const runDir = `${OUTPUT_BASE}/${b.jobId}`;
       const dbPath = await findResultsDb(runDir, b.dbFilename);

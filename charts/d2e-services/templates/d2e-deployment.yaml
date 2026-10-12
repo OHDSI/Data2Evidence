@@ -167,6 +167,11 @@ spec:
                 configMapKeyRef:
                   name: "{{ .Release.Name }}-{{ .Chart.Name }}"
                   key: LOGTO__DISABLE_BASIC_AUTH
+            - name: LOGTO__ENABLE_REGISTRATION
+              valueFrom:
+                configMapKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: LOGTO__ENABLE_REGISTRATION
             - name: PG__HOST
               valueFrom:
                 secretKeyRef:

@@ -1,3 +1,5 @@
+import { canModifyBookmark } from '../../utils/BookmarkUtils'
+
 /**
  * The bulk-delete loop for the Data Exploration page. Kept as a pure,
  * dependency-injected function so it is testable without mounting
@@ -63,4 +65,9 @@ export async function runBulkDelete(targets: readonly BookmarkDisplay[], deps: R
   if (failed.size) {
     deps.notifyFailure([...failed].map(record => record?.displayName))
   }
+}
+
+export function canDeleteAll(records: readonly BookmarkDisplay[], username: string): boolean {
+  if (records.length === 0) return false
+  return records.every(record => canModifyBookmark(record.bookmark ?? record.atlasCohortDefinition ?? null, username))
 }

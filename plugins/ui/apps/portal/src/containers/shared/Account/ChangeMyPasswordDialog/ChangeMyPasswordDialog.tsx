@@ -10,7 +10,7 @@ import {
   VisibilityOffIcon,
   VisibilityOnIcon,
 } from "@portal/components";
-import { generateRandom } from "../../../../utils";
+import { generateRandom, isPasswordLongEnough, isPasswordTooShort, MIN_PASSWORD_LENGTH } from "../../../../utils";
 import { useFeedback, useTranslation } from "../../../../contexts";
 import { api } from "../../../../axios/api";
 
@@ -56,6 +56,7 @@ export const ChangeMyPasswordDialog: FC<ChangeMyPasswordDialogProps> = ({ open, 
   }, []);
 
   const handleUpdate = useCallback(async () => {
+    if (!formData.oldPassword || !isPasswordLongEnough(formData.password)) return;
     try {
       setLoading(true);
       await api.userMgmt.changeMyPassword(formData.oldPassword, formData.password);
@@ -71,12 +72,14 @@ export const ChangeMyPasswordDialog: FC<ChangeMyPasswordDialogProps> = ({ open, 
       setDialogFeedback({
         type: "error",
         title: getText(i18nKeys.CHANGE_MY_PASSWORD_DIALOG__PASSWORD_UPDATED_ERROR_MESSAGE),
-        message: getText(i18nKeys.CHANGE_MY_PASSWORD_DIALOG__PASSWORD_UPDATED_ERROR_DESCRIPTION),
+        message: err?.data?.message ?? getText(i18nKeys.CHANGE_MY_PASSWORD_DIALOG__PASSWORD_UPDATED_ERROR_DESCRIPTION),
       });
     } finally {
       setLoading(false);
     }
   }, [formData.oldPassword, formData.password, getText, setFeedback, onClose, i18nKeys]);
+
+  const passwordTooShort = isPasswordTooShort(formData.password);
 
   return (
     <Dialog
@@ -101,6 +104,7 @@ export const ChangeMyPasswordDialog: FC<ChangeMyPasswordDialogProps> = ({ open, 
             text={getText(i18nKeys.CHANGE_MY_PASSWORD_DIALOG__BUTTON_UPDATE)}
             onClick={handleUpdate}
             loading={loading}
+            disabled={!formData.oldPassword || !isPasswordLongEnough(formData.password)}
           />
         ),
       }}
@@ -130,6 +134,12 @@ export const ChangeMyPasswordDialog: FC<ChangeMyPasswordDialogProps> = ({ open, 
               label={getText(i18nKeys.CHANGE_MY_PASSWORD_DIALOG__DIALOG_TEXT_FIELD_LABEL_2)}
               value={formData.password}
               onChange={(event) => setFormData((formData) => ({ ...formData, password: event.target.value }))}
+              error={passwordTooShort}
+              helperText={
+                passwordTooShort
+                  ? getText(i18nKeys.PASSWORD__MIN_LENGTH_ERROR, [String(MIN_PASSWORD_LENGTH)])
+                  : undefined
+              }
             />
             <Tooltip
               title={

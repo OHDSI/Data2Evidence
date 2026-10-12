@@ -10,11 +10,14 @@ const cfg: MigrationConfig = {
 
 function fakes(opts: {
   users?: UsermgmtUserRow[]; logto?: LogtoUserRow[]; groups?: GroupRow[]
+  /** Overrides `logto` per call, to model Logto seeding its admin after boot. */
+  logtoUsersByCall?: LogtoUserRow[][]
   history?: SubjectHistoryRow[]
   /** Defaults to a trex that honours the requested user id and creates the user. */
   logtoAvailable?: boolean; link?: (email: string, req: LinkRequest) => LinkOutcome
   assignRole?: (userId: string, role: string) => void
   rekey?: (id: string, from: string | null, to: string) => void
+  adoptSubject?: (usermgmtId: string, logtoId: string) => void
   logtoAvailableThrows?: Error
   groupsThrows?: Error
   upsertProviderThrows?: Error
@@ -24,6 +27,8 @@ function fakes(opts: {
 }) {
   const steps: Array<[string, string, Record<string, number>, unknown]> = []
   const rekeys: Array<[string, string | null, string]> = []
+  const adopted: Array<[string, string]> = []
+  let logtoReads = 0
   const roles: Array<[string, string]> = []
   const providers: Array<[string, unknown]> = []
   const enabled: Array<[string, boolean]> = []
@@ -38,7 +43,11 @@ function fakes(opts: {
     },
     logtoAvailable: () => opts.logtoAvailableThrows ? Promise.reject(opts.logtoAvailableThrows) : Promise.resolve(opts.logtoAvailable ?? true),
     usermgmtUsers: () => Promise.resolve(opts.users ?? []),
-    logtoUsers: () => Promise.resolve(opts.logto ?? []),
+    logtoUsers: () => {
+      const seq = opts.logtoUsersByCall
+      if (seq) return Promise.resolve(seq[Math.min(logtoReads++, seq.length - 1)])
+      return Promise.resolve(opts.logto ?? [])
+    },
     subjectHistory: () => Promise.resolve(opts.history ?? []),
     groups: () => opts.groupsThrows ? Promise.reject(opts.groupsThrows) : Promise.resolve(opts.groups ?? []),
     rekey: (id, from, to) => {
@@ -48,6 +57,17 @@ function fakes(opts: {
         return Promise.reject(err)
       }
       rekeys.push([id, from, to])
+      return Promise.resolve()
+    },
+    adoptSubject: (usermgmtId, logtoId) => {
+      try {
+        opts.adoptSubject?.(usermgmtId, logtoId)
+      } catch (err) {
+        return Promise.reject(err)
+      }
+      adopted.push([usermgmtId, logtoId])
+      const row = (opts.users ?? []).find(u => u.id === usermgmtId)
+      if (row) row.idpUserId = logtoId
       return Promise.resolve()
     },
     recordStep: (step, status, counts, detail) => { steps.push([step, status, counts, detail]); return Promise.resolve() }
@@ -81,7 +101,7 @@ function fakes(opts: {
       return Promise.resolve()
     }
   }
-  return { store, admin, steps, rekeys, roles, providers, enabled, links }
+  return { store, admin, steps, rekeys, adopted, roles, providers, enabled, links }
 }
 
 Deno.test('trex mode only disables the Logto provider', async () => {
@@ -153,6 +173,32 @@ Deno.test('a user trex keeps under their Logto id gets their roles, and their su
   assertEquals(f.steps.map(s => [s[0], s[1]]), [['provider', 'ok'], ['link', 'ok'], ['roles', 'ok'], ['rekey', 'ok']])
   assertEquals(f.steps.find(s => s[0] === 'rekey')?.[2], { rekeyed: 0, failed: 0 })
   assertEquals(messages.some(m => m === '[idp-migration] rekey: aligned 0 usermgmt users with their trex user id (1 already matched), failed 0'), true)
+})
+
+Deno.test('the seed admin, seeded before Logto minted its subject, is adopted and then linked', async () => {
+  const f = fakes({
+    users: [{ id: 'u-admin', username: 'admin', idpUserId: null }],
+    logto: [{ id: 'lg-admin', username: 'admin', primaryEmail: null, name: null, isSuspended: false }],
+    groups: [{ userId: 'u-admin', role: 'ALP_SYSTEM_ADMIN', studyId: null, tokenDatasetCode: null, datasetType: null }]
+  })
+  const summary = await runIdpMigration(
+    { ...cfg, seedAdmin: { username: 'admin', usermgmtId: 'u-admin' } }, f.store, f.admin, () => {}
+  )
+  assertEquals(f.adopted, [['u-admin', 'lg-admin']])
+  assertEquals(f.links, [
+    { providerId: 'logto', accountId: 'lg-admin', userId: 'lg-admin', email: 'admin@d2e.local', name: null, banned: false }
+  ])
+  assertEquals(f.roles, [['lg-admin', 'role.systemadmin'], ['lg-admin', 'admin']])
+  assertEquals([summary.created, summary.rolesAssigned], [1, 2])
+})
+
+Deno.test('the seed admin is left alone when its row already carries a subject', async () => {
+  const f = fakes({
+    users: [{ id: 'u-admin', username: 'admin', idpUserId: 'lg-admin' }],
+    logto: [{ id: 'lg-admin', username: 'admin', primaryEmail: null, name: null, isSuspended: false }]
+  })
+  await runIdpMigration({ ...cfg, seedAdmin: { username: 'admin', usermgmtId: 'u-admin' } }, f.store, f.admin, () => {})
+  assertEquals(f.adopted, [])
 })
 
 Deno.test('a trex that answers with a different user id does not count as linked', async () => {
@@ -426,6 +472,24 @@ Deno.test('a run that links nobody because no subject is a Logto identity says s
 // in polls rather than elapsed time and the tests stay deterministic.
 const fastWait = (sleeps: number[]): TablesWait => ({
   budgetMs: 10, intervalMs: 2, sleep: ms => { sleeps.push(ms); return Promise.resolve() }
+})
+
+Deno.test('the seed admin is adopted even when Logto seeds it only after boot', async () => {
+  const lg = { id: 'lg-admin', username: 'admin', primaryEmail: null, name: null, isSuspended: false }
+  const f = fakes({
+    users: [{ id: 'u-admin', username: 'admin', idpUserId: null }],
+    // The link step's read is empty; Logto has seeded its admin by the next poll.
+    logtoUsersByCall: [[], [lg]],
+    groups: [{ userId: 'u-admin', role: 'ALP_SYSTEM_ADMIN', studyId: null, tokenDatasetCode: null, datasetType: null }]
+  })
+  const sleeps: number[] = []
+  const summary = await runIdpMigration(
+    { ...cfg, seedAdmin: { username: 'admin', usermgmtId: 'u-admin' } }, f.store, f.admin, () => {}, fastWait(sleeps)
+  )
+  assertEquals(f.adopted, [['u-admin', 'lg-admin']])
+  assertEquals(f.links.map(l => [l.accountId, l.email]), [['lg-admin', 'admin@d2e.local']])
+  assertEquals([summary.created, summary.rolesAssigned], [1, 2])
+  assertEquals(sleeps.length >= 1, true)
 })
 
 Deno.test('the bookkeeping tables never appearing aborts the run before the first step', async () => {

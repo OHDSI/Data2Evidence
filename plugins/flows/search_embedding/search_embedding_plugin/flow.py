@@ -105,8 +105,9 @@ def create_embeddings_hana(dbdao_hana, database_code, schema_name, chunksize):
             cache_dao, db_schema, embedding_table, embedding_cols,
         )
 
+    # Dropped, never recreated: a persisted HNSW index invalidates the cache
+    # database on trexsql's next checkpoint. See drop_embedding_index.
     drop_embedding_index(cache_dao, db_schema, index_col)
-    create_embedding_index(cache_dao, db_schema, embedding_table, embedding_col_name, index_col)
     logger.info("***************** HANA embedding cache complete *****************")
 
 
@@ -139,8 +140,9 @@ def create_embeddings_cache(dbdao, schema_name, chunksize):
         dbdao, schema_name, embedding_table, embedding_cols,
     )
 
+    # Dropped, never recreated: a persisted HNSW index invalidates the cache
+    # database on trexsql's next checkpoint. See drop_embedding_index.
     drop_embedding_index(dbdao, schema_name, index_col)
-    create_embedding_index(dbdao, schema_name, embedding_table, embedding_col_name, index_col)
     logger.info("***************** Cache embedding complete *****************")
 
     
@@ -190,9 +192,6 @@ def create_embeddings_duckdb(conn, schema_name, chunksize, tmp_embedding_table='
         """)
 
     conn.execute(f"DROP TABLE \"{schema_name}\".\"{tmp_embedding_table}\";")
-
-    conn.execute("SET hnsw_enable_experimental_persistence=TRUE;")
-    conn.execute(f"CREATE INDEX {index_col} ON \"{schema_name}\".concept USING HNSW ({embedding_col_name}) WITH (metric = 'cosine')")
 
 def batch_embedding_concept_table(batch_iter, total_rows, tokenizer, model, device, dbdao, schema_name, embedding_table, embedding_cols):
     """

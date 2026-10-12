@@ -192,6 +192,99 @@ describe('WebApiSourceService.refreshCache', () => {
     assertEquals(result.success, false)
     assertEquals(result.error, 'prefect down')
   })
+
+  function svcTracking(state: string, pruned?: boolean) {
+    let created = 0
+    const jobPlugins = {
+      createCacheFlowRun: () => Promise.resolve({ flowRunId: `run-${++created}` }),
+      getFlowRunState: () => Promise.resolve({ state, endTime: null, pruned }),
+    }
+    // deno-lint-ignore no-explicit-any
+    const svc = new WebApiSourceService({} as any, jobPlugins as any)
+    return { svc, created: () => created }
+  }
+
+  it('does not start a second flow run while one is still in flight', async () => {
+    const { svc, created } = svcTracking('RUNNING')
+    await svc.refreshCache('a-b-c', 'cdm', 'tok')
+    const result = await svc.refreshCache('a-b-c', 'cdm', 'tok')
+    assertEquals(result, { success: true, databaseCode: 'a_b_c', flowRunId: 'run-1' })
+    assertEquals(created(), 1)
+  })
+
+  for (const state of ['COMPLETED', 'FAILED']) {
+    it(`starts a new flow run once the previous one is ${state}`, async () => {
+      const { svc, created } = svcTracking(state)
+      await svc.refreshCache('a-b-c', 'cdm', 'tok')
+      const result = await svc.refreshCache('a-b-c', 'cdm', 'tok')
+      assertEquals(result.flowRunId, 'run-2')
+      assertEquals(created(), 2)
+    })
+  }
+
+  it('starts a new flow run once the previous one has been pruned from Prefect', async () => {
+    const { svc, created } = svcTracking('UNKNOWN', true)
+    await svc.refreshCache('a-b-c', 'cdm', 'tok')
+    const result = await svc.refreshCache('a-b-c', 'cdm', 'tok')
+    assertEquals(result.flowRunId, 'run-2')
+    assertEquals(created(), 2)
+  })
+
+  it('keeps the previous flow run when its state is unknown', async () => {
+    const { svc, created } = svcTracking('UNKNOWN')
+    await svc.refreshCache('a-b-c', 'cdm', 'tok')
+    const result = await svc.refreshCache('a-b-c', 'cdm', 'tok')
+    assertEquals(result.flowRunId, 'run-1')
+    assertEquals(created(), 1)
+  })
+
+  it('keeps the previous flow run when its state cannot be read', async () => {
+    let created = 0
+    const jobPlugins = {
+      createCacheFlowRun: () => Promise.resolve({ flowRunId: `run-${++created}` }),
+      getFlowRunState: () => Promise.reject(new Error('jobplugins down')),
+    }
+    // deno-lint-ignore no-explicit-any
+    const svc = new WebApiSourceService({} as any, jobPlugins as any)
+    await svc.refreshCache('a-b-c', 'cdm', 'tok')
+    const result = await svc.refreshCache('a-b-c', 'cdm', 'tok')
+    assertEquals(result.flowRunId, 'run-1')
+    assertEquals(created, 1)
+  })
+
+  it('starts one flow run for overlapping calls', async () => {
+    let created = 0
+    let release!: () => void
+    const gate = new Promise<void>((resolve) => (release = resolve))
+    const jobPlugins = {
+      createCacheFlowRun: async () => {
+        created++
+        await gate
+        return { flowRunId: `run-${created}` }
+      },
+      getFlowRunState: () => Promise.resolve({ state: 'RUNNING', endTime: null }),
+    }
+    // deno-lint-ignore no-explicit-any
+    const svc = new WebApiSourceService({} as any, jobPlugins as any)
+    const first = svc.refreshCache('a-b-c', 'cdm', 'tok')
+    const second = svc.refreshCache('a-b-c', 'cdm', 'tok')
+    release()
+    assertEquals((await first).flowRunId, 'run-1')
+    assertEquals((await second).flowRunId, 'run-1')
+    assertEquals(created, 1)
+  })
+
+  it('starts again after a failed start', async () => {
+    let calls = 0
+    const jobPlugins = {
+      createCacheFlowRun: () =>
+        ++calls === 1 ? Promise.reject(new Error('prefect down')) : Promise.resolve({ flowRunId: 'run-2' }),
+    }
+    // deno-lint-ignore no-explicit-any
+    const svc = new WebApiSourceService({} as any, jobPlugins as any)
+    assertEquals((await svc.refreshCache('a-b-c', 'cdm', 'tok')).success, false)
+    assertEquals((await svc.refreshCache('a-b-c', 'cdm', 'tok')).flowRunId, 'run-2')
+  })
 })
 
 describe('WebApiSourceService.deleteSourceForDataset', () => {

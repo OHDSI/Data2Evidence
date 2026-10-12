@@ -13,33 +13,77 @@ describe("Atlas source API", () => {
     vi.clearAllMocks();
   });
 
+  const source = (sourceId: number, sourceKey: string) => ({
+    sourceId,
+    sourceKey,
+    sourceName: `Dataset ${sourceId}`,
+    sourceDialect: "postgresql",
+  });
+
+  const mockResponses = (sources: unknown, roles: unknown) => {
+    mockedGet.mockImplementation(async (url: string) => {
+      if (url === "/WebAPI/source/sources") return { data: sources };
+      if (url === "/usermgmt/api/me/roles") return { data: roles };
+      throw new Error(`Unexpected URL ${url}`);
+    });
+  };
+
   it("lists valid Atlas data sources with the host token", async () => {
-    mockedGet.mockResolvedValue({
-      data: [
-        {
-          sourceId: 17,
-          sourceKey: "dataset-1",
-          sourceName: "Demo dataset",
-          sourceDialect: "postgresql",
-        },
-      ],
+    mockResponses([source(17, "dataset-1")], {
+      datasetRoles: [{ datasetId: "dataset-1", role: "STUDY_RESEARCHER" }],
     });
 
-    await expect(listAtlasSources(async () => "token-1")).resolves.toEqual([
-      {
-        sourceId: 17,
-        sourceKey: "dataset-1",
-        sourceName: "Demo dataset",
-        sourceDialect: "postgresql",
-      },
-    ]);
+    await expect(listAtlasSources(async () => "token-1")).resolves.toEqual([source(17, "dataset-1")]);
     expect(mockedGet).toHaveBeenCalledWith("/WebAPI/source/sources", {
+      headers: { Authorization: "Bearer token-1" },
+    });
+    expect(mockedGet).toHaveBeenCalledWith("/usermgmt/api/me/roles", {
       headers: { Authorization: "Bearer token-1" },
     });
   });
 
+  it("lists only the data sources the user has researcher access to", async () => {
+    mockResponses([source(1, "dataset-1"), source(2, "dataset-2"), source(3, "dataset-3")], {
+      datasetRoles: [
+        { datasetId: "dataset-1", role: "STUDY_RESEARCHER" },
+        { datasetId: "dataset-3", role: "STUDY_RESEARCHER" },
+      ],
+    });
+
+    await expect(listAtlasSources()).resolves.toEqual([source(1, "dataset-1"), source(3, "dataset-3")]);
+  });
+
+  it("ignores dataset roles other than researcher", async () => {
+    mockResponses([source(1, "dataset-1")], {
+      datasetRoles: [{ datasetId: "dataset-1", role: "SOMETHING_ELSE" }],
+    });
+
+    await expect(listAtlasSources()).resolves.toEqual([]);
+  });
+
+  it("lists no data sources when the user has no dataset roles", async () => {
+    mockResponses([source(1, "dataset-1")], { datasetRoles: [] });
+
+    await expect(listAtlasSources()).resolves.toEqual([]);
+  });
+
+  it("rejects when the user roles cannot be loaded", async () => {
+    mockedGet.mockImplementation(async (url: string) => {
+      if (url === "/WebAPI/source/sources") return { data: [source(1, "dataset-1")] };
+      throw new Error("403");
+    });
+
+    await expect(listAtlasSources()).rejects.toThrow("403");
+  });
+
+  it("rejects a malformed user roles response", async () => {
+    mockResponses([source(1, "dataset-1")], { roles: [] });
+
+    await expect(listAtlasSources()).rejects.toThrow("invalid user roles");
+  });
+
   it("rejects a malformed Atlas source response", async () => {
-    mockedGet.mockResolvedValue({ data: { sourceKey: "dataset-1" } });
+    mockResponses({ sourceKey: "dataset-1" }, { datasetRoles: [] });
 
     await expect(listAtlasSources()).rejects.toThrow("invalid data-source list");
   });

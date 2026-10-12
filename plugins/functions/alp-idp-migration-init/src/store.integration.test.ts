@@ -75,6 +75,14 @@ Deno.test({
         { userId: USER_ID, oldSub: 'trex-2', newSub: 'l1' }
       ])
 
+      // adoptSubject only writes a row that holds no subject: the row above
+      // still carries 'l1', so this is a no-op; once cleared, it takes.
+      await store.adoptSubject(USER_ID, 'adopted-1')
+      assertEquals((await k.raw(`select idp_user_id from usermgmt."user" where id=?`, [USER_ID])).rows[0].idp_user_id, 'l1')
+      await k.raw(`update usermgmt."user" set idp_user_id = null where id = ?`, [USER_ID])
+      await store.adoptSubject(USER_ID, 'adopted-1')
+      assertEquals((await k.raw(`select idp_user_id from usermgmt."user" where id=?`, [USER_ID])).rows[0].idp_user_id, 'adopted-1')
+
       await store.recordStep('link', 'ok', { linked: 1 }, {})
       await store.recordStep('link', 'partial', { linked: 0 }, { skipped: [] })
       const steps = (await k.raw(`select step, status, counts from usermgmt.idp_migration`)).rows

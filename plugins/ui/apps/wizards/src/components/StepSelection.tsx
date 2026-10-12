@@ -4,6 +4,7 @@ import { useWizardContext } from "../context/WizardContext";
 import type { WizardDefinition } from "../types/wizard";
 import { listAtlasSources, publishAtlasSourceSelection, resolveAtlasSourceKey } from "../api/atlasSourceApi";
 import type { AtlasSource } from "../api/atlasSourceApi";
+import { DataSourceSelect } from "./DataSourceSelect";
 import { filterWizards } from "../utils/wizardSearch";
 import styles from "./StepSelection.module.css";
 
@@ -91,7 +92,7 @@ export function StepSelection() {
 
   useEffect(() => {
     loadWizards();
-  }, [portalProps.datasetId]);
+  }, [portalProps.datasetId, portalProps.isAtlas]);
 
   const handleWizardSelect = async (wizardId: string) => {
     try {
@@ -248,35 +249,19 @@ export function StepSelection() {
           </div>
           {portalProps.isAtlas === true ? (
             <div className={styles.sourceField}>
-              <label className={styles.sourceSelector}>
-                <span className={styles.sourceLabel}>Data source</span>
-                <svg className={styles.sourceIcon} viewBox="0 0 24 24" aria-hidden="true">
-                  <ellipse cx="12" cy="5" rx="8" ry="3" />
-                  <path d="M4 5v5c0 1.7 3.6 3 8 3s8-1.3 8-3V5" />
-                  <path d="M4 10v5c0 1.7 3.6 3 8 3s8-1.3 8-3v-5" />
-                  <path d="M4 15v4c0 1.7 3.6 3 8 3s8-1.3 8-3v-4" />
-                </svg>
-                <select
-                  className={styles.sourceControl}
-                  value={portalProps.datasetId || ""}
-                  disabled={sourcesLoading || sources.length === 0}
-                  onChange={(event) => selectSource(event.target.value)}
-                  aria-label="Data source"
-                >
-                  <option value="" disabled>
-                    {sourcesLoading
-                      ? "Loading data sources..."
-                      : sources.length > 0
-                        ? "Select a data source"
-                        : "No data sources available"}
-                  </option>
-                  {sources.map((source) => (
-                    <option key={source.sourceKey} value={source.sourceKey}>
-                      {source.sourceName}
-                    </option>
-                  ))}
-                </select>
-              </label>
+              <DataSourceSelect
+                options={sources.map((source) => ({ value: source.sourceKey, label: source.sourceName }))}
+                value={portalProps.datasetId || ""}
+                placeholder={
+                  sourcesLoading
+                    ? "Loading data sources..."
+                    : sources.length > 0
+                      ? "Select a data source"
+                      : "No data sources available"
+                }
+                disabled={sourcesLoading || sources.length === 0}
+                onChange={selectSource}
+              />
               {sourcesError ? <span className={styles.sourceError}>{sourcesError}</span> : null}
             </div>
           ) : null}

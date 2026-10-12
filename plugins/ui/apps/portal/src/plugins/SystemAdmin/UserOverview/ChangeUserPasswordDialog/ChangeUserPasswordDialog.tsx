@@ -10,7 +10,7 @@ import {
   VisibilityOffIcon,
   VisibilityOnIcon,
 } from "@portal/components";
-import { generateRandom } from "../../../../utils";
+import { generateRandom, isPasswordLongEnough, isPasswordTooShort, MIN_PASSWORD_LENGTH } from "../../../../utils";
 import { api } from "../../../../axios/api";
 import { useFeedback, useTranslation } from "../../../../contexts";
 
@@ -57,7 +57,7 @@ export const ChangeUserPasswordDialog: FC<ChangeUserPasswordDialogProps> = ({ us
   }, []);
 
   const handleUpdate = useCallback(async () => {
-    if (!userId) return;
+    if (!userId || !isPasswordLongEnough(formData.password)) return;
 
     try {
       setLoading(true);
@@ -74,12 +74,14 @@ export const ChangeUserPasswordDialog: FC<ChangeUserPasswordDialogProps> = ({ us
       setDialogFeedback({
         type: "error",
         title: getText(i18nKeys.CHANGE_USER_PASSWORD_DIALOG__ERROR),
-        message: getText(i18nKeys.CHANGE_USER_PASSWORD_DIALOG__ERROR_DESCRIPTION),
+        message: err?.data?.message ?? getText(i18nKeys.CHANGE_USER_PASSWORD_DIALOG__ERROR_DESCRIPTION),
       });
     } finally {
       setLoading(false);
     }
   }, [userId, userName, formData.password, getText, setFeedback, onClose, i18nKeys]);
+
+  const passwordTooShort = isPasswordTooShort(formData.password);
 
   return (
     <Dialog
@@ -104,6 +106,7 @@ export const ChangeUserPasswordDialog: FC<ChangeUserPasswordDialogProps> = ({ us
             text={getText(i18nKeys.CHANGE_USER_PASSWORD_DIALOG__UPDATE)}
             onClick={handleUpdate}
             loading={loading}
+            disabled={!isPasswordLongEnough(formData.password)}
           />
         ),
       }}
@@ -118,6 +121,12 @@ export const ChangeUserPasswordDialog: FC<ChangeUserPasswordDialogProps> = ({ us
               label={getText(i18nKeys.CHANGE_USER_PASSWORD_DIALOG__PASSWORD)}
               value={formData.password}
               onChange={(event) => setFormData((formData) => ({ ...formData, password: event.target.value }))}
+              error={passwordTooShort}
+              helperText={
+                passwordTooShort
+                  ? getText(i18nKeys.PASSWORD__MIN_LENGTH_ERROR, [String(MIN_PASSWORD_LENGTH)])
+                  : undefined
+              }
               autoFocus
             />
             <Tooltip

@@ -252,9 +252,9 @@ export class DemoService {
     let triggered = true;
     let asked = false;
     const startingStatus = await portalAPI.getCacheStatus(dataset.id).catch(() => undefined);
-    if (startingStatus?.cacheExists) {
+    if (startingStatus?.cacheExists || startingStatus?.activeJobStatus === "RUNNING") {
       this.logger.info(
-        `A cache already exists for ${dataset.id}; waiting for it rather than asking for another.`,
+        `A cache already exists or is being built for ${dataset.id}; waiting for it rather than asking for another.`,
       );
     } else {
       asked = true;

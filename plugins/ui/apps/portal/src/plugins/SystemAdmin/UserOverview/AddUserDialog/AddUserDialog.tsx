@@ -14,7 +14,7 @@ import {
 } from "@portal/components";
 import { CloseDialogType } from "../../../../types";
 import { api } from "../../../../axios/api";
-import { generateRandom } from "../../../../utils";
+import { generateRandom, isPasswordLongEnough, isPasswordTooShort, MIN_PASSWORD_LENGTH } from "../../../../utils";
 import "./AddUserDialog.scss";
 import { useTranslation } from "../../../../contexts";
 
@@ -35,6 +35,7 @@ interface FormError {
   };
   password: {
     required: boolean;
+    minLength: boolean;
   };
 }
 
@@ -47,6 +48,7 @@ const EMPTY_FORM_ERROR: FormError = {
   },
   password: {
     required: false,
+    minLength: false,
   },
 };
 
@@ -72,7 +74,9 @@ const AddUserDialog: FC<AddUserDialogProps> = ({ open, onClose }) => {
     }
 
     if (!password) {
-      formError = { ...formError, password: { required: true } };
+      formError = { ...formError, password: { required: true, minLength: false } };
+    } else if (!isPasswordLongEnough(password)) {
+      formError = { ...formError, password: { required: false, minLength: true } };
     }
 
     if (Object.keys(formError).length > 0) {
@@ -104,8 +108,8 @@ const AddUserDialog: FC<AddUserDialogProps> = ({ open, onClose }) => {
       await api.userMgmt.addUser(formData.username, formData.password);
       handleClose("success");
     } catch (err: any) {
-      if (err.data?.message) {
-        setFeedback({ type: "error", message: err.data?.message });
+      if (err?.data?.message) {
+        setFeedback({ type: "error", message: err.data.message });
       } else {
         setFeedback({
           type: "error",
@@ -143,6 +147,8 @@ const AddUserDialog: FC<AddUserDialogProps> = ({ open, onClose }) => {
     [handleAdd]
   );
 
+  const passwordTooShort = isPasswordTooShort(formData.password);
+
   return (
     <Dialog
       className="add-user-dialog"
@@ -178,7 +184,7 @@ const AddUserDialog: FC<AddUserDialogProps> = ({ open, onClose }) => {
                 label={getText(i18nKeys.ADD_USER_DIALOG__PASSWORD)}
                 value={formData.password}
                 onChange={(event) => setFormData((formData) => ({ ...formData, password: event.target.value }))}
-                error={formError.password.required}
+                error={formError.password.required || passwordTooShort}
               />
               <Tooltip
                 title={
@@ -202,6 +208,11 @@ const AddUserDialog: FC<AddUserDialogProps> = ({ open, onClose }) => {
           {formError.password.required && (
             <FormHelperText error={true}>{getText(i18nKeys.ADD_USER_DIALOG__REQUIRED)}</FormHelperText>
           )}
+          {passwordTooShort && (
+            <FormHelperText error={true}>
+              {getText(i18nKeys.PASSWORD__MIN_LENGTH_ERROR, [String(MIN_PASSWORD_LENGTH)])}
+            </FormHelperText>
+          )}
         </div>
         </div>
         <Divider />
@@ -213,7 +224,14 @@ const AddUserDialog: FC<AddUserDialogProps> = ({ open, onClose }) => {
             block
             disabled={loading}
           />
-          <Button text={getText(i18nKeys.ADD_USER_DIALOG__ADD)} onClick={handleAdd} block loading={loading} type="submit" />
+          <Button
+            text={getText(i18nKeys.ADD_USER_DIALOG__ADD)}
+            onClick={handleAdd}
+            block
+            loading={loading}
+            type="submit"
+            disabled={!formData.username || !isPasswordLongEnough(formData.password)}
+          />
         </div>
       </form>
     </Dialog>

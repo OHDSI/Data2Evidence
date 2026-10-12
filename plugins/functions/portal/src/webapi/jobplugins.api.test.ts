@@ -218,6 +218,7 @@ describe('JobPluginsApi', () => {
 
       assertEquals(result.state, 'UNKNOWN')
       assertEquals(result.endTime, null)
+      assertEquals(result.pruned, true)
     })
 
     it('returns UNKNOWN (does not throw) on a 200 with an unparseable body', async () => {

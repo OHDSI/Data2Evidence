@@ -52,9 +52,24 @@ describe('store - config: data sources', () => {
   })
 
   describe('fireGetDataSources', () => {
+    const researcher = (datasetId: string) => ({ datasetId, role: 'STUDY_RESEARCHER' })
+
+    const dispatchWith = (sourcesData: unknown, rolesData: unknown) =>
+      vi.fn().mockImplementation(async (_action: string, { url }: { url: string }) => {
+        if (url === '/d2e-webapi/source/sources') return { data: sourcesData }
+        if (url === '/usermgmt/api/me/roles') return { data: rolesData }
+        throw new Error(`Unexpected URL ${url}`)
+      })
+
+    const expectClearedThenCommitted = (commit: ReturnType<typeof vi.fn>, dataSources: unknown[]) =>
+      expect(commit.mock.calls).toEqual([
+        [types.SET_DATA_SOURCES, []],
+        [types.SET_DATA_SOURCES, dataSources],
+      ])
+
     it('commits the fetched list', async () => {
       const commit = vi.fn()
-      const dispatch = vi.fn().mockResolvedValue({ data: sources })
+      const dispatch = dispatchWith(sources, { datasetRoles: [researcher('aaa-111'), researcher('bbb-222')] })
 
       await configModule.actions.fireGetDataSources({ commit, dispatch } as never)
 
@@ -62,19 +77,70 @@ describe('store - config: data sources', () => {
         method: 'get',
         url: '/d2e-webapi/source/sources',
       })
-      expect(commit).toHaveBeenCalledWith(types.SET_DATA_SOURCES, sources)
+      expect(dispatch).toHaveBeenCalledWith('ajaxAuth', {
+        method: 'get',
+        url: '/usermgmt/api/me/roles',
+      })
+      expectClearedThenCommitted(commit, sources)
+    })
+
+    it('clears the list before the requests settle', async () => {
+      const commit = vi.fn()
+      let resolveSources: (value: unknown) => void = () => undefined
+      const dispatch = vi.fn().mockImplementation(async (_action: string, { url }: { url: string }) => {
+        if (url === '/d2e-webapi/source/sources') return new Promise(resolve => (resolveSources = resolve))
+        return { data: { datasetRoles: [researcher('aaa-111')] } }
+      })
+
+      const pending = configModule.actions.fireGetDataSources({ commit, dispatch } as never)
+
+      expect(commit.mock.calls).toEqual([[types.SET_DATA_SOURCES, []]])
+
+      resolveSources({ data: sources })
+      await pending
+
+      expectClearedThenCommitted(commit, [sources[0]])
+    })
+
+    it('keeps only the sources the user has researcher access to', async () => {
+      const commit = vi.fn()
+      const dispatch = dispatchWith(sources, {
+        datasetRoles: [researcher('bbb-222'), { datasetId: 'aaa-111', role: 'SOMETHING_ELSE' }],
+      })
+
+      await configModule.actions.fireGetDataSources({ commit, dispatch } as never)
+
+      expectClearedThenCommitted(commit, [sources[1]])
+    })
+
+    it('commits an empty list when the user has no dataset roles', async () => {
+      const commit = vi.fn()
+      const dispatch = dispatchWith(sources, { datasetRoles: [] })
+
+      await configModule.actions.fireGetDataSources({ commit, dispatch } as never)
+
+      expectClearedThenCommitted(commit, [])
+    })
+
+    it('commits an empty list when the roles response is malformed', async () => {
+      const commit = vi.fn()
+      const dispatch = dispatchWith(sources, { roles: [] })
+
+      await configModule.actions.fireGetDataSources({ commit, dispatch } as never)
+
+      expectClearedThenCommitted(commit, [])
     })
 
     it('commits an empty list when the response is not an array', async () => {
       const commit = vi.fn()
-      const dispatch = vi.fn().mockResolvedValue({ data: { error: 'nope' } })
+      const dispatch = dispatchWith({ error: 'nope' }, { datasetRoles: [researcher('aaa-111')] })
 
       await configModule.actions.fireGetDataSources({ commit, dispatch } as never)
 
-      expect(commit).toHaveBeenCalledWith(types.SET_DATA_SOURCES, [])
+      expectClearedThenCommitted(commit, [])
     })
 
-    it('swallows a failure and commits nothing', async () => {
+    it('swallows a failure and clears the list', async () => {
       // The name is decoration and the getter falls back to the id, so a
       // failure here must not reach the user or break the page.
       const commit = vi.fn()
@@ -82,7 +148,19 @@ describe('store - config: data sources', () => {
 
       await expect(configModule.actions.fireGetDataSources({ commit, dispatch } as never)).resolves.toBeUndefined()
 
-      expect(commit).not.toHaveBeenCalled()
+      expectClearedThenCommitted(commit, [])
+    })
+
+    it('clears the list when only the roles request fails', async () => {
+      const commit = vi.fn()
+      const dispatch = vi.fn().mockImplementation(async (_action: string, { url }: { url: string }) => {
+        if (url === '/d2e-webapi/source/sources') return { data: sources }
+        throw new Error('403')
+      })
+
+      await expect(configModule.actions.fireGetDataSources({ commit, dispatch } as never)).resolves.toBeUndefined()
+
+      expectClearedThenCommitted(commit, [])
     })
   })
 })

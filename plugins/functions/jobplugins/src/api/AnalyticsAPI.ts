@@ -107,6 +107,33 @@ export class AnalyticsSvcAPI {
     }
   }
 
+  /**
+   * The prerequisites a dataset is missing, or an empty list.
+   *
+   * Called before a run is submitted so a partial CDM is reported as the tables
+   * it lacks, instead of as whichever lookup happened to fail first. A failure
+   * of the check itself is not fatal: it must not stop a run that would
+   * otherwise have worked, so it degrades to "nothing to report" and leaves the
+   * existing errors to speak for themselves.
+   */
+  async getDatasetPrerequisiteProblems(
+    datasetId: string,
+  ): Promise<{ code: string; table: string; message: string }[]> {
+    try {
+      const url =
+        `${this.baseURL}/alpdb/dataset-prerequisites?datasetId=${datasetId}`;
+      console.log(`Calling ${url} to check dataset prerequisites`);
+      const result = await this.channel.get(url, this.getRequestConfig());
+      const problems = result.data?.problems;
+      return Array.isArray(problems) ? problems : [];
+    } catch (error) {
+      console.error(
+        `Could not check prerequisites for dataset ${datasetId}, continuing: ${error}`,
+      );
+      return [];
+    }
+  }
+
   // Fetch CDM version
   async getCdmVersion(datasetId: string) {
     try {

@@ -74,7 +74,7 @@ export class JobPluginsApi {
   async getFlowRunState(
     flowRunId: string,
     authToken?: string,
-  ): Promise<{ state: CacheFlowState; endTime: number | null }> {
+  ): Promise<{ state: CacheFlowState; endTime: number | null; pruned?: boolean }> {
     const url = `${this.baseUrl}/cachedb/results/${flowRunId}`
     const res = await fetch(url, { method: 'GET', headers: this.headers(authToken) })
     if (!res.ok) {
@@ -84,11 +84,12 @@ export class JobPluginsApi {
     // jobplugins' getFlowRunResults returns Prefect's result[0], which is undefined when
     // the run has been pruned from Prefect's history — express then sends a 200 with an
     // EMPTY body, and res.json() throws a SyntaxError on it. Read as text first so an
-    // empty/unparseable body degrades to UNKNOWN instead of throwing.
+    // empty/unparseable body degrades to UNKNOWN instead of throwing. An empty body
+    // is flagged as pruned: unlike a failed read, that run is known to be gone.
     const text = await res.text()
     if (!text) {
       this.logger.warn(`Flow run ${flowRunId} state unreadable: empty response body`)
-      return { state: 'UNKNOWN', endTime: null }
+      return { state: 'UNKNOWN', endTime: null, pruned: true }
     }
     let flowRun: unknown
     try {

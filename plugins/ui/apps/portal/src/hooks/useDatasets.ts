@@ -1,5 +1,7 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { api } from "../axios/api";
+import { useUser } from "../contexts";
+import { UserState } from "../contexts/app-context/states";
 import { Study, AppError, DatasetQueryRole } from "../types";
 
 export const useDatasets = (
@@ -37,4 +39,22 @@ export const useDatasets = (
   }, [fetchDatasets]);
 
   return [datasets, loading, error];
+};
+
+export const filterAccessibleDatasets = (
+  datasets: Study[],
+  user: Pick<UserState, "isSystemAdmin" | "isDatasetResearcher">
+): Study[] => {
+  if (user.isSystemAdmin) return datasets;
+  return datasets.filter((dataset) => Boolean(user.isDatasetResearcher?.[dataset.id]));
+};
+
+export const useAccessibleDatasets = (): [Study[], boolean, AppError | undefined] => {
+  const [datasets, loading, error] = useDatasets("researcher");
+  const { user } = useUser();
+  const accessibleDatasets = useMemo(
+    () => filterAccessibleDatasets(datasets, user),
+    [datasets, user.isSystemAdmin, user.isDatasetResearcher]
+  );
+  return [accessibleDatasets, loading, error];
 };

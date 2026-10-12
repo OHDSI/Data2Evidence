@@ -1,4 +1,4 @@
-// Height of the optional "Allow sharing" row. Kept in sync with the
+// Height of the optional "Enable sharing" row. Kept in sync with the
 // `.filters-content` bottom offset in filters.scss.
 $share-row-height: 40px;
 
@@ -160,7 +160,7 @@ $share-row-height: 40px;
   }
 }
 
-// Vuetify teleports overlay content to the document root, so the "Allow sharing"
+// Vuetify teleports overlay content to the document root, so the "Enable sharing"
 // tooltip is styled globally. Figma: white surface, Neutral/Default text,
 // Caption 1 type, 12px padding, 4px radius. The `.v-tooltip >` prefix is needed
 // to outrank Vuetify's own dark-surface tooltip rule.
