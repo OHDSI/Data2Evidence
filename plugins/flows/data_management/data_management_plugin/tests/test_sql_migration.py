@@ -79,6 +79,19 @@ def test_parse_changeset_plain_file_can_turn_off_statement_splitting():
     assert "splitStatements" not in body
 
 
+def test_parse_sql_precondition_reads_expected_result_and_mark_ran():
+    raw = (
+        "--liquibase formatted sql\n"
+        "--changeset alp:V1\n"
+        "-- preconditions onFail:MARK_RAN\n"
+        "-- precondition-sql-check expectedResult:1 SELECT 1\n"
+        "SELECT 2;"
+    )
+    assert sm._parse_sql_precondition(raw) == sm.SqlPrecondition(
+        expected_result="1", sql="SELECT 1", on_fail_mark_ran=True
+    )
+
+
 # --- _split_sql_statements ---
 
 def test_split_sql_statements_drops_blank_and_comment_only_fragments():
@@ -368,6 +381,50 @@ def test_apply_changeset_does_not_validate_vocab_schema_when_placeholder_unused(
     sm.apply_changeset(dbdao, "my_schema", "postgres", _changeset(SIMPLE_CHANGESET), "not a plain identifier", MagicMock())
 
     trans.commit.assert_called_once()
+
+
+@patch("data_management_plugin.sql_migration._record_changeset")
+def test_apply_changeset_skips_sql_when_mark_ran_precondition_fails(record_mock):
+    dbdao, connection, trans = _make_dbdao_mock()
+    raw = (
+        "--liquibase formatted sql\n"
+        "--changeset alp:V1\n"
+        "-- preconditions onFail:MARK_RAN\n"
+        "-- precondition-sql-check expectedResult:1 SELECT 0\n\n"
+        "CREATE TABLE foo(id integer);"
+    )
+    precondition_result = MagicMock()
+    precondition_result.scalar.return_value = 0
+    connection.execute.side_effect = [None, precondition_result]
+
+    sm.apply_changeset(dbdao, "my_schema", "postgres", _changeset(raw), "my_vocab_schema", MagicMock())
+
+    executed_sql = [c.args[0].text for c in connection.execute.call_args_list]
+    assert executed_sql == ['SET LOCAL search_path TO "my_schema"', "SELECT 0"]
+    record_mock.assert_called_once()
+    trans.commit.assert_called_once()
+    trans.rollback.assert_not_called()
+
+
+@patch("data_management_plugin.sql_migration._record_changeset")
+def test_apply_changeset_raises_when_precondition_fails_without_mark_ran(record_mock):
+    dbdao, connection, trans = _make_dbdao_mock()
+    raw = (
+        "--liquibase formatted sql\n"
+        "--changeset alp:V1\n"
+        "-- precondition-sql-check expectedResult:1 SELECT 0\n\n"
+        "CREATE TABLE foo(id integer);"
+    )
+    precondition_result = MagicMock()
+    precondition_result.scalar.return_value = 0
+    connection.execute.side_effect = [None, precondition_result]
+
+    with pytest.raises(ValueError, match="Precondition failed"):
+        sm.apply_changeset(dbdao, "my_schema", "postgres", _changeset(raw), "my_vocab_schema", MagicMock())
+
+    record_mock.assert_not_called()
+    trans.rollback.assert_called_once()
+    trans.commit.assert_not_called()
 
 
 # --- _record_changeset / ensure_changelog_table (real SQLAlchemy, sqlite) ---

@@ -33,6 +33,11 @@ LOCK_WAIT_INTERVAL_SECONDS = 1
 SPLIT_STATEMENTS_FALSE_REGEX = re.compile(r"splitStatements:false", re.IGNORECASE)
 CHANGESET_HEADER_REGEX = re.compile(r"^--changeset\s+([^:\s]+):(\S+)")
 SPLIT_STATEMENTS_FALSE_LINE_REGEX = re.compile(r"^--\s*splitStatements:false\b", re.IGNORECASE)
+PRECONDITIONS_LINE_REGEX = re.compile(r"^--\s*preconditions\b(.*)$", re.IGNORECASE)
+PRECONDITION_SQL_CHECK_REGEX = re.compile(
+    r"^--\s*precondition-sql-check\s+expectedResult:(\S+)\s+(.+)$", re.IGNORECASE
+)
+ON_FAIL_MARK_RAN_REGEX = re.compile(r"\bonFail:MARK_RAN\b", re.IGNORECASE)
 DEFAULT_AUTHOR = "d2e"
 # fits Liquibase's md5sum column (35 chars); marks checksums this runner wrote, since
 # Liquibase's own can't be recomputed
@@ -80,6 +85,12 @@ class AppliedChangeset(NamedTuple):
     md5sum: Optional[str]
 
 
+class SqlPrecondition(NamedTuple):
+    expected_result: str
+    sql: str
+    on_fail_mark_ran: bool
+
+
 def _parse_changeset(raw_text: str) -> tuple[bool, str]:
     split_statements = True
     body_lines = []
@@ -116,6 +127,35 @@ def _parse_changeset_header(raw_text: str, filename: str) -> tuple[str, str]:
         if match:
             return match.group(1), match.group(2)
     return DEFAULT_AUTHOR, Path(filename).stem
+
+
+def _parse_sql_precondition(raw_text: str) -> Optional[SqlPrecondition]:
+    on_fail_mark_ran = False
+    sql_check: Optional[tuple[str, str]] = None
+
+    for line in raw_text.splitlines():
+        stripped = line.strip()
+        preconditions_match = PRECONDITIONS_LINE_REGEX.match(stripped)
+        if preconditions_match:
+            if ON_FAIL_MARK_RAN_REGEX.search(preconditions_match.group(1) or ""):
+                on_fail_mark_ran = True
+            continue
+
+        sql_check_match = PRECONDITION_SQL_CHECK_REGEX.match(stripped)
+        if sql_check_match:
+            if sql_check is not None:
+                raise ValueError("Found multiple '-- precondition-sql-check' lines, expected at most 1 per file")
+            sql_check = (sql_check_match.group(1).strip(), sql_check_match.group(2).strip())
+
+    if sql_check is None:
+        return None
+    return SqlPrecondition(expected_result=sql_check[0], sql=sql_check[1], on_fail_mark_ran=on_fail_mark_ran)
+
+
+def _evaluate_sql_precondition(connection, precondition: SqlPrecondition) -> tuple[str, bool]:
+    actual = connection.execute(_to_text(precondition.sql)).scalar()
+    actual_result = "" if actual is None else str(actual).strip()
+    return actual_result, actual_result == precondition.expected_result
 
 
 def _split_sql_statements(sql_body: str) -> List[str]:
@@ -368,8 +408,10 @@ def apply_changeset(dbdao: DaoBase, schema_name: str, dialect: str,
     raw_text = changeset.path.read_text()
     author, changeset_id = _parse_changeset_header(raw_text, changeset.relative_path.rsplit("/", 1)[-1])
     statements: List[str] = []
+    precondition: Optional[SqlPrecondition] = None
     if not record_only:
         split_statements, sql_body = _parse_changeset(raw_text)
+        precondition = _parse_sql_precondition(raw_text)
         if VOCAB_SCHEMA_PLACEHOLDER in sql_body:
             if not SAFE_IDENTIFIER_REGEX.match(vocab_schema):
                 raise ValueError(f"Vocab schema name '{vocab_schema}' is not a plain identifier")
@@ -382,6 +424,20 @@ def apply_changeset(dbdao: DaoBase, schema_name: str, dialect: str,
         try:
             if not record_only:
                 connection.execute(text(_set_current_schema_statement(dialect, schema_name)))
+                if precondition is not None:
+                    actual_result, precondition_passed = _evaluate_sql_precondition(connection, precondition)
+                    if not precondition_passed:
+                        if precondition.on_fail_mark_ran:
+                            logger.info(
+                                f"Skipping SQL for changeset '{changeset.relative_path}': "
+                                f"precondition expected '{precondition.expected_result}', got '{actual_result}'"
+                            )
+                            statements = []
+                        else:
+                            raise ValueError(
+                                f"Precondition failed for changeset '{changeset.relative_path}': "
+                                f"expected '{precondition.expected_result}', got '{actual_result}'"
+                            )
             for statement in statements:
                 connection.execute(_to_text(statement))
             _record_changeset(connection, schema_name, changeset, author, changeset_id, _checksum(raw_text))
