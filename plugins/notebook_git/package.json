@@ -2,6 +2,13 @@
   "name": "@ohdsi/notebook-git",
   "version": "0.0.1",
   "description": "Server-side git mirror and notebook templates for the Atlas notebook plugin. Published under @ohdsi so trex treats it as a first-party plugin: its routes mount at /plugins/ohdsi/ and are guarded by trex's own auth (authContext + pluginAuthz) rather than the legacy d2e Logto path, which is unusable when D2E_IDP_MODE=trex because no Logto is running to serve the JWKS.",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "tbuild ."
+  },
+  "devDependencies": {
+    "@trex/cli": "latest"
+  },
   "trex": {
     "functions": {
       "api": [
