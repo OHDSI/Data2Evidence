@@ -102,6 +102,10 @@
             <td class="text-body-2">Dataset ID</td>
             <td class="text-body-2">{{ dataset.id }}</td>
           </tr>
+          <tr>
+            <td class="text-body-2">Token dataset code</td>
+            <td class="text-body-2">{{ dataset.tokenStudyCode }}</td>
+          </tr>
           <tr
             v-for="attribute in dataset.attributes"
             :key="attribute.attributeId"
