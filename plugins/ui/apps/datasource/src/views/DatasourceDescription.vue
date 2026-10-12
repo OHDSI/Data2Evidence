@@ -22,7 +22,7 @@
           <template v-if="accessState === 'no-access'">
             <AtlasTooltip
               v-if="accessLookupFailed"
-              :text="ACCESS_LOOKUP_FAILED_TOOLTIP"
+              text="Unable to check your access right now. Try again shortly."
               location="bottom end"
               max-width="220"
             >
@@ -51,7 +51,7 @@
 
           <AtlasTooltip
             v-else-if="accessState === 'restricted'"
-            :text="RESTRICTED_TOOLTIP"
+            text="Access to this dataset is restricted. Contact your administrator to gain access."
             location="bottom end"
             max-width="220"
           >
@@ -171,9 +171,6 @@ import AccessChip from '../components/AccessChip.vue'
 import { useDatasourceAccess } from '../composables/useDatasourceAccess'
 import { useDatasourceResources } from '../composables/useDatasourceResources'
 import { formatNumber } from '../utils/formatNumber'
-
-const ACCESS_LOOKUP_FAILED_TOOLTIP = 'Unable to check your access right now. Try again shortly.'
-const RESTRICTED_TOOLTIP = 'Access to this dataset is restricted. Contact your administrator to gain access.'
 
 const props = defineProps<{ sourceKey: string; token: string | null }>()
 
