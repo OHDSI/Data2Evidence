@@ -172,12 +172,7 @@ import appButton from '../lib/ui/app-button.vue'
 import appIcon from '../lib/ui/app-icon.vue'
 import appLink from '../lib/ui/app-link.vue'
 import ExplorationsPage from './ExplorationsPage.vue'
-import {
-  isBuilderEntry,
-  isSyntheticPopState,
-  leaveBuilderEntry,
-  pushBuilderEntry,
-} from './helpers/explorationHistory'
+import { isBuilderEntry, isSyntheticPopState, leaveBuilderEntry, pushBuilderEntry } from './helpers/explorationHistory'
 import { lazyComponent } from '../utils/lazyComponent'
 import ChartToolbar from './ChartToolbar.vue'
 import FilterCardSummary from './FilterCardSummary.vue'
