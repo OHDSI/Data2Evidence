@@ -10,9 +10,9 @@
       <section class="ds-panel">
         <div class="ds-toolbar">
           <div class="ds-search">
-            <Icon
-              name="search"
-              :size="20"
+            <AtlasIcon
+              icon="mdi-magnify"
+              size="20"
               class="ds-search__icon"
             />
             <input
@@ -23,42 +23,10 @@
               class="ds-search__input"
             >
           </div>
-          <div
-            ref="sortRef"
-            class="ds-sort"
-          >
-            <button
-              type="button"
-              class="ds-sort__btn"
-              data-testid="ds-sort"
-              :aria-expanded="sortOpen"
-              aria-haspopup="listbox"
-              @click="sortOpen = !sortOpen"
-            >
-              <Icon
-                name="sort"
-                :size="18"
-              />
-              <span>Sort by: {{ sortLabel }}</span>
-            </button>
-            <ul
-              v-if="sortOpen"
-              class="ds-sort__menu"
-              role="listbox"
-            >
-              <li
-                v-for="opt in sortOptions"
-                :key="opt.value"
-                role="option"
-                :aria-selected="cat.sortMode.value === opt.value"
-                class="ds-sort__item"
-                :class="{ 'ds-sort__item--active': cat.sortMode.value === opt.value }"
-                @click="selectSort(opt.value)"
-              >
-                {{ opt.label }}
-              </li>
-            </ul>
-          </div>
+          <SortMenu
+            v-model="cat.sortMode.value"
+            :is-logged-in="cat.isLoggedIn.value"
+          />
         </div>
 
         <div
@@ -103,46 +71,19 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue'
-import { useDatasourceCatalog, type SortMode } from '../composables/useDatasourceCatalog'
-import Icon from '../components/Icon.vue'
+import { AtlasIcon } from '@ohdsi/atlas-ui'
+import { useDatasourceCatalog } from '../composables/useDatasourceCatalog'
 import DataSourceCard from '../components/DataSourceCard.vue'
 import DataSourceBanner from '../components/DataSourceBanner.vue'
 import DataSourceFooter from '../components/DataSourceFooter.vue'
+import SortMenu from '../components/SortMenu.vue'
 
 const props = defineProps<{ token: string | null; onSelect: (id: string) => void }>()
 const cat = useDatasourceCatalog(() => props.token)
-
-// Sort-by dropdown (Figma "Sort by" menu).
-const sortOpen = ref(false)
-const sortRef = ref<HTMLElement | null>(null)
-const SORT_LABELS: Record<SortMode, string> = {
-  access: 'Access', 'name-asc': 'Name A-Z', 'name-desc': 'Name Z-A',
-}
-const sortLabel = computed(() => SORT_LABELS[cat.sortMode.value])
-const sortOptions = computed(() => {
-  const names = [
-    { value: 'name-asc' as SortMode, label: 'Name A-Z' },
-    { value: 'name-desc' as SortMode, label: 'Name Z-A' },
-  ]
-  // Access sort is only available to logged-in users.
-  return cat.isLoggedIn.value ? [{ value: 'access' as SortMode, label: 'Access' }, ...names] : names
-})
-function selectSort(mode: SortMode): void {
-  cat.sortMode.value = mode
-  sortOpen.value = false
-}
-function onDocClick(e: MouseEvent): void {
-  if (sortRef.value && !sortRef.value.contains(e.target as Node)) sortOpen.value = false
-}
-onMounted(() => document.addEventListener('click', onDocClick))
-onUnmounted(() => document.removeEventListener('click', onDocClick))
 </script>
 
 <style scoped>
 .ds-page {
-  /* Figma tokens — inherit to child components via CSS custom properties. */
-  --ds-navy: #000080;
   --ds-text: #595757;
   --ds-text-strong: #101111;
   --ds-light: #acaba8;
@@ -152,8 +93,6 @@ onUnmounted(() => document.removeEventListener('click', onDocClick))
   --ds-hero-bg: #fafafd;
   --ds-font-heading: 'GT America', 'GT-America', 'IBM Plex Sans', 'IBM Plex Sans Variable',
     -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  --ds-font-body: 'IBM Plex Sans', 'IBM Plex Sans Variable', -apple-system, BlinkMacSystemFont,
-    'Segoe UI', Roboto, sans-serif;
 
   min-height: 100%;
   background: #faf8f8;
@@ -199,56 +138,16 @@ onUnmounted(() => document.removeEventListener('click', onDocClick))
   background: #fff;
   outline: none;
 }
-.ds-search__input::placeholder { color: var(--ds-light, #acaba8); }
-.ds-search__input:focus { border-color: var(--ds-navy, #000080); }
-.ds-sort {
-  position: relative;
-  white-space: nowrap;
-}
-.ds-sort__btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 9px 16px;
-  border: 1px solid #dcdfe6;
-  border-radius: 8px;
-  background: #fff;
-  color: var(--ds-text, #595757);
+.ds-search__input::placeholder {
   font-family: var(--ds-font-body);
-  font-size: 15px;
-  font-weight: 500;
-  cursor: pointer;
-  white-space: nowrap;
+  font-weight: 400;
+  font-size: 16px;
+  line-height: 1.5;
+  letter-spacing: 0.0312em;
+  color: var(--ds-light, #acaba8);
+  opacity: 1;
 }
-.ds-sort__btn:hover { background: #f7f7fa; border-color: #cfd3dc; }
-.ds-sort__menu {
-  position: absolute;
-  top: calc(100% + 6px);
-  right: 0;
-  z-index: 20;
-  min-width: 200px;
-  margin: 0;
-  padding: 6px;
-  list-style: none;
-  background: #fff;
-  border: 1px solid #ececf1;
-  border-radius: 10px;
-  box-shadow: 0 8px 24px rgba(16, 24, 40, 0.12);
-}
-.ds-sort__item {
-  padding: 9px 12px;
-  border-radius: 6px;
-  font-family: var(--ds-font-body);
-  font-size: 14px;
-  color: #24243e;
-  cursor: pointer;
-}
-.ds-sort__item:hover { background: #f4f4f7; }
-.ds-sort__item--active {
-  background: #ecebf9;
-  color: var(--ds-navy, #000080);
-  font-weight: 600;
-}
+.ds-search__input:focus { border-color: var(--ds-primary, #000080); }
 .ds-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
