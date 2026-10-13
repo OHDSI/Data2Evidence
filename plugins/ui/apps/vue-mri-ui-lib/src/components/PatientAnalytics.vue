@@ -24,7 +24,7 @@
               </div>
               <div class="flex-grow-1 nav-container">
                 <ul class="nav nav-justified">
-                  <li class="nav-item" @click="toggleCohorts(true)">
+                  <li class="nav-item" @click="showExplorationList">
                     <a class="nav-link" :class="{ active: displayCohorts }" href="javascript:void(0)">{{
                       getText('MRI_PA_VIEW_COHORT_TITLE')
                     }}</a>
@@ -172,6 +172,7 @@ import appButton from '../lib/ui/app-button.vue'
 import appIcon from '../lib/ui/app-icon.vue'
 import appLink from '../lib/ui/app-link.vue'
 import ExplorationsPage from './ExplorationsPage.vue'
+import { isBuilderEntry, leaveBuilderEntry, pushBuilderEntry } from './helpers/explorationHistory'
 import { lazyComponent } from '../utils/lazyComponent'
 import ChartToolbar from './ChartToolbar.vue'
 import FilterCardSummary from './FilterCardSummary.vue'
@@ -377,6 +378,7 @@ export default {
     }
     this.updateMinSplitterWidth()
     window.addEventListener('resize', this.updateMinSplitterWidth)
+    window.addEventListener('popstate', this.onHistoryPop)
   },
   beforeUnmount() {
     // Same isolation in reverse: a failed unregister must not leave the in-page
@@ -391,6 +393,7 @@ export default {
     // screen the user has left, and write its count into a torn-down chart.
     this.fireCohortRecalculation?.cancel()
     window.removeEventListener('resize', this.updateMinSplitterWidth)
+    window.removeEventListener('popstate', this.onHistoryPop)
     this.chartBusy = false
   },
   computed: {
@@ -547,7 +550,10 @@ export default {
           })
       })
     },
-    toggleCohorts(isDisplayCohort, isPaAtlas = false) {
+    toggleCohorts(isDisplayCohort, isPaAtlas = false, fromHistory = false) {
+      if (!isDisplayCohort && this.displayCohorts && !fromHistory) {
+        pushBuilderEntry(window.history)
+      }
       if (isDisplayCohort) {
         this.toggleQueryFilter(false)
       } else {
@@ -560,6 +566,17 @@ export default {
         }
       }
       this.displayCohorts = isDisplayCohort
+    },
+    showExplorationList() {
+      if (!leaveBuilderEntry(window.history)) this.toggleCohorts(true)
+    },
+    onHistoryPop(event) {
+      const toBuilder = isBuilderEntry(event.state)
+      if (!toBuilder && !this.displayCohorts) {
+        this.toggleCohorts(true, false, true)
+      } else if (toBuilder && this.displayCohorts && this.hasActiveBookmark) {
+        this.toggleCohorts(false, this.isAtlasBookmark, true)
+      }
     },
     toggleFilterCardSummary(displayFilterCardSummary) {
       this.displayFilterCardSummary = displayFilterCardSummary

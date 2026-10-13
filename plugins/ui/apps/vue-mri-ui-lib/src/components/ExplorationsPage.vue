@@ -428,7 +428,7 @@ import {
   visibleToUser,
   type ExplorationFilters,
 } from './helpers/explorationFilters'
-import { PAGE_SIZES, clampPage, pageSlice } from './helpers/explorationPaging'
+import { clampPage, pageSlice } from './helpers/explorationPaging'
 import { fallbackDatasetId } from './helpers/dataSourceSelection'
 import { chartQueryFor } from './helpers/explorationSqlQuery'
 import { deleteExploration, type DeleteExplorationDeps } from './helpers/deleteExploration'
@@ -506,12 +506,12 @@ const ALL_ACTION_PLACEHOLDERS = [
 const ACTION_PLACEHOLDERS = SHOW_DATA_QUALITY ? ALL_ACTION_PLACEHOLDERS : []
 const EMPTY_VALUE = '-'
 
-const searchQuery = ref('')
-const sortKey = ref<ExplorationSortKey>('lastUpdated')
-const filters = ref<ExplorationFilters>(emptyFilters())
+const searchQuery = ref(explorations.listView.searchQuery)
+const sortKey = ref<ExplorationSortKey>(explorations.listView.sortKey)
+const filters = ref<ExplorationFilters>(explorations.listView.filters)
 const filtersOpen = ref(false)
-const page = ref(1)
-const pageSize = ref<number>(PAGE_SIZES[0])
+const page = ref(explorations.listView.page)
+const pageSize = ref<number>(explorations.listView.pageSize)
 const filterSummaryOpen = ref(false)
 /** True while the panel's SQL query is in flight; feeds its `chartBusy` prop. */
 const summaryBusy = ref(false)
@@ -713,6 +713,16 @@ const matchedCards = computed(() => {
 // that looks like a bug.
 watch([searchQuery, filters, sortKey], () => {
   page.value = 1
+})
+
+watch([searchQuery, sortKey, filters, page, pageSize], () => {
+  explorations.saveListView({
+    searchQuery: searchQuery.value,
+    sortKey: sortKey.value,
+    filters: filters.value,
+    page: page.value,
+    pageSize: pageSize.value,
+  })
 })
 
 const emptyState = computed(() => {
