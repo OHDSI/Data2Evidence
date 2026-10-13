@@ -20,27 +20,23 @@ test(TEST_NAME, async ({ page }) => {
     await page.getByRole('link', { name: 'Datasets' }).click()
     await page.getByRole('button', { name: 'Update dataset metadata' }).click()
 
-    // Make sure the dqd and dc jobs are completed before switching to Researcher portal
+    // Update dataset metadata only triggers get_version_info runs: one per source dataset plugin
+    // and one for cache datasets. Match on the run name, as earlier specs also run these flows.
     await page.getByRole('link', { name: 'Jobs' }).click()
     await expect(page.locator('a:has-text("Job Runs")')).toBeVisible()
-    const dqd_entry = page
-      .locator('.flow-run-list-item')
-      .filter({ has: page.locator('a:has-text("dqd_plugin")') })
-      .first()
-    const dc_entry = page
-      .locator('.flow-run-list-item')
-      .filter({ has: page.locator('a:text("data_characterization_plugin")') })
-      .first()
     const omop_entry = page
       .locator('.flow-run-list-item')
       .filter({ has: page.locator('a:text("omop_cdm_plugin")') })
+      .filter({ hasText: 'omop_cdm_plugin-get_version_info' })
       .first()
-    // Find the closest state badge to this entry (adjust the selector as needed)
-    const dqd_state = dqd_entry.locator('.state-badge')
-    await expect(dqd_state).toHaveText('Completed', { timeout: MINUTE_5 })
-    const dc_state = dc_entry.locator('.state-badge')
-    await expect(dc_state).toHaveText('Completed', { timeout: MINUTE_5 })
+    const cache_entry = page
+      .locator('.flow-run-list-item')
+      .filter({ has: page.locator('a:text("create_cachedb_file_plugin")') })
+      .filter({ hasText: 'cache-get_version_info' })
+      .first()
     const omop_state = omop_entry.locator('.state-badge')
     await expect(omop_state).toHaveText('Completed', { timeout: MINUTE_5 })
+    const cache_state = cache_entry.locator('.state-badge')
+    await expect(cache_state).toHaveText('Completed', { timeout: MINUTE_5 })
   })
 })
