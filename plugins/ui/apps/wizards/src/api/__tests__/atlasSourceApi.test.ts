@@ -107,6 +107,17 @@ describe("Atlas source API", () => {
     expect(resolveAtlasSourceKey(sources, "missing-dataset")).toBe("dataset-1");
   });
 
+  it("falls back to the first Atlas source A to Z by name, not in API order", () => {
+    const sources = [
+      { sourceId: 1, sourceKey: "demo", sourceName: "Demo dataset", sourceDialect: "postgresql" },
+      { sourceId: 2, sourceKey: "aws", sourceName: "AWS", sourceDialect: "postgresql" },
+    ];
+
+    expect(resolveAtlasSourceKey(sources)).toBe("aws");
+    expect(resolveAtlasSourceKey(sources, "missing-dataset")).toBe("aws");
+    expect(resolveAtlasSourceKey(sources, "demo")).toBe("demo");
+  });
+
   it("publishes sourceKey as the Wizard dataset id", () => {
     const setStoredSourceKey = vi.fn();
     const dispatchPropsChange = vi.fn();
