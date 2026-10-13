@@ -84,7 +84,7 @@ export const tokens = {
     body2: { size: 14, weight: 400, lineHeight: 1.5, letterSpacing: "0" },
     caption1: { size: 12, weight: 400, lineHeight: 1.4, letterSpacing: "0" },
     caption2: { size: 10, weight: 400, lineHeight: 1.4, letterSpacing: "0" },
-    button: { size: 16, weight: 500, lineHeight: "16px", letterSpacing: "0" },
+    button: { size: 14, weight: 500, lineHeight: "16px", letterSpacing: "0" },
   },
   // Figma variables Modal/S, Modal/L, Modal/XL. There is no Modal/M, and 600
   // is not a size in the design system — an earlier extraction invented it.

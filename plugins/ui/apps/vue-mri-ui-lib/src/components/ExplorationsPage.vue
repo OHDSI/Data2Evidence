@@ -1413,10 +1413,9 @@ const onMoreSelect = (card: { source: BookmarkDisplay }, value: string): void =>
     border-top: var(--d2e-border-width-sm) solid var(--d2e-color-neutral-lighter);
     border-bottom: var(--d2e-border-width-sm) solid var(--d2e-color-neutral-lighter);
 
-    // D2eButton has no height/padding/shadow prop; its own border-radius
+    // D2eButton has no padding/shadow prop; its own border-radius
     // already defaults to --d2e-radius-md (8px), which matches the frame.
     :deep(.d2e-button) {
-      height: 36px;
       padding: var(--d2e-spacing-xs) 22px;
       box-shadow: var(--d2e-elevation-e2);
     }
@@ -1455,14 +1454,10 @@ const onMoreSelect = (card: { source: BookmarkDisplay }, value: string): void =>
     }
   }
 
-  /* Text button: 22px icon, 8px gap, 16px Medium neutral label, no box
+  /* Text button: 22px icon, 8px gap, neutral label, no box
      (Figma 2634:58663). */
   &__sort {
     :deep(.v-btn__content) {
-      font-size: 16px;
-      font-weight: 500;
-      letter-spacing: normal;
-      text-transform: none;
       color: var(--d2e-color-neutral);
     }
 
