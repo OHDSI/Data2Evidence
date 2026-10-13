@@ -5,7 +5,7 @@
     exactly as it did before the popover was added, so no existing consumer
     can regress.
   -->
-  <component :is="wrapper" v-bind="wrapperProps">
+  <component :is="wrapper" ref="wrapperRef" v-bind="wrapperProps">
     <template v-if="$slots.activator" #activator="{ props: activatorProps }">
       <slot name="activator" v-bind="activatorProps" />
     </template>
@@ -18,6 +18,7 @@
     <slot>
       <div
         class="d2e-menu"
+        :class="{ 'd2e-menu--select': variant === 'select' }"
         role="menu"
         :style="{ width: resolvedWidth }"
         @keydown="onKeydown"
@@ -47,7 +48,7 @@
           />
           <span class="d2e-menu__item-label">{{ item.label }}</span>
           <v-icon
-            v-if="item.selected"
+            v-if="item.selected && variant === 'action'"
             icon="mdi-check"
             size="20"
             class="d2e-menu__item-check"
@@ -89,12 +90,14 @@ interface Props {
   items: D2eMenuItem[];
   /** Open state. Leave it unbound to let the menu own its open state. */
   modelValue?: boolean;
-  /** Panel width. A number becomes px. A string passes through. */
+  /** Panel width. A number becomes px. "activator" matches the activator. */
   width?: number | string;
   /** Vuetify location string for the popover anchor. */
   location?: string;
   /** Close the popover after a select. */
   closeOnSelect?: boolean;
+  /** "action" for a list of commands, "select" for a list of choices. */
+  variant?: "action" | "select";
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -102,6 +105,7 @@ const props = withDefaults(defineProps<Props>(), {
   width: 330,
   location: "bottom end",
   closeOnSelect: true,
+  variant: "action",
 });
 
 const emit = defineEmits<{
@@ -120,9 +124,15 @@ const PassThrough = defineComponent({
   },
 });
 
-const resolvedWidth = computed(() =>
-  typeof props.width === "number" ? `${props.width}px` : props.width,
-);
+const wrapperRef = ref<{ activatorEl?: HTMLElement } | null>(null);
+const activatorWidth = ref<number>();
+
+const resolvedWidth = computed(() => {
+  if (props.width === "activator") {
+    return activatorWidth.value ? `${activatorWidth.value}px` : undefined;
+  }
+  return typeof props.width === "number" ? `${props.width}px` : props.width;
+});
 
 // When `modelValue` is not bound, the menu keeps its own open state. An
 // activator then works without the caller wiring `v-model`.
@@ -130,6 +140,12 @@ const internalOpen = ref(false);
 const isOpen = computed(() =>
   props.modelValue === undefined ? internalOpen.value : props.modelValue,
 );
+
+watch(isOpen, (open) => {
+  if (open && props.width === "activator") {
+    activatorWidth.value = wrapperRef.value?.activatorEl?.offsetWidth;
+  }
+});
 
 function setOpen(value: boolean) {
   internalOpen.value = value;
@@ -144,6 +160,7 @@ const wrapperProps = computed(() =>
         modelValue: isOpen.value,
         location: props.location,
         closeOnContentClick: false,
+        offset: props.variant === "select" ? 4 : undefined,
         "onUpdate:modelValue": setOpen,
       }
     : {},
@@ -300,6 +317,32 @@ function onSelect(item: D2eMenuItem) {
     // Delete reads in the alarm colour (Figma 1801:215950).
     &--danger:not(.d2e-menu__item--disabled) {
       color: var(--d2e-color-alarm);
+    }
+  }
+
+  &--select {
+    padding: var(--d2e-spacing-xs) 0;
+  }
+
+  &--select &__item {
+    height: 40px;
+    padding: 0 var(--d2e-spacing-s);
+    color: rgba(0, 0, 0, 0.87);
+
+    &:hover,
+    &:focus-visible {
+      background: rgba(0, 0, 0, 0.035);
+    }
+  }
+
+  &--select &__item--selected {
+    font-weight: var(--d2e-font-body1-weight);
+    color: rgba(0, 0, 0, 0.87);
+    background: rgba(0, 0, 0, 0.104);
+
+    &:hover,
+    &:focus-visible {
+      background: rgba(0, 0, 0, 0.139);
     }
   }
 

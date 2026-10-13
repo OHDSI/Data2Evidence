@@ -97,7 +97,13 @@
         </D2eMenu>
       </div>
       <div class="explorations-page__toolbar-right">
-        <D2eMenu :width="220" location="bottom end" :items="sortItems" @select="onSortSelect">
+        <D2eMenu
+          variant="select"
+          width="activator"
+          location="bottom end"
+          :items="sortItems"
+          @select="onSortSelect"
+        >
           <template #activator="activatorProps">
             <D2eButton
               v-bind="activatorProps"
@@ -1464,6 +1470,27 @@ const onMoreSelect = (card: { source: BookmarkDisplay }, value: string): void =>
     :deep(.v-btn__prepend) {
       margin-inline: 0 8px;
       color: var(--d2e-color-neutral);
+    }
+
+    &:focus {
+      outline: none;
+    }
+
+    &:focus-visible {
+      outline: var(--d2e-border-width-md) solid var(--d2e-color-primary-light);
+      outline-offset: 2px;
+    }
+
+    &[aria-expanded='true'] {
+      --v-activated-opacity: 0;
+      --v-focus-opacity: 0;
+      --v-hover-opacity: 0;
+      background: var(--d2e-color-primary-xtra-lightest);
+
+      :deep(.v-btn__content),
+      :deep(.v-btn__prepend) {
+        color: var(--d2e-color-primary);
+      }
     }
   }
 
