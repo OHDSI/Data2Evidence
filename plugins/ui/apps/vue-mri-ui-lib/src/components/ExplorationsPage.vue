@@ -1530,9 +1530,10 @@ const onMoreSelect = (card: { source: BookmarkDisplay }, value: string): void =>
   }
 
   &__grid {
-    display: flex;
-    flex-wrap: wrap;
-    align-content: flex-start;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(314px, 1fr));
+    grid-auto-rows: min-content;
+    align-content: start;
     gap: var(--d2e-spacing-s);
     padding: 24px;
     flex: 1 1 auto;
@@ -1540,8 +1541,6 @@ const onMoreSelect = (card: { source: BookmarkDisplay }, value: string): void =>
     overflow-y: auto;
 
     > .d2e-exploration-card {
-      flex: 1 1 314px;
-      min-width: 314px;
       max-width: 500px;
     }
   }
