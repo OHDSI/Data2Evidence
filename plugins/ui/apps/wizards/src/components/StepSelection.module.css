@@ -9,7 +9,7 @@
 .atlasContainer {
   max-width: none;
   margin: 0;
-  padding: 20px 32px 32px;
+  padding: 0;
 }
 
 /* Atlas currently appends analysis plugin tabs after its built-in tabs. */
