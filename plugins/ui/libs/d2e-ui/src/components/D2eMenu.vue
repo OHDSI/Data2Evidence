@@ -96,7 +96,6 @@ interface Props {
   location?: string;
   /** Close the popover after a select. */
   closeOnSelect?: boolean;
-  /** "action" for a list of commands, "select" for a list of choices. */
   variant?: "action" | "select";
 }
 

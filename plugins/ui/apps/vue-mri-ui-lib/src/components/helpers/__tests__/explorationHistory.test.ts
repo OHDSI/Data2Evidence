@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest'
-import { BUILDER_ENTRY_KEY, isBuilderEntry, leaveBuilderEntry, pushBuilderEntry } from '../explorationHistory'
+import {
+  BUILDER_ENTRY_KEY,
+  isBuilderEntry,
+  isSyntheticPopState,
+  leaveBuilderEntry,
+  pushBuilderEntry,
+} from '../explorationHistory'
 
 const fakeHistory = (state: unknown) => {
   const calls: string[] = []
@@ -61,5 +67,16 @@ describe('explorationHistory', () => {
 
     expect(leaveBuilderEntry(history)).toBe(false)
     expect(calls).toEqual([])
+  })
+
+  it('treats a popstate that single-spa dispatched as synthetic', () => {
+    const event = Object.assign(new PopStateEvent('popstate', { state: {} }), { singleSpa: true })
+
+    expect(isSyntheticPopState(event)).toBe(true)
+  })
+
+  it('treats a browser Back or Forward popstate as real', () => {
+    expect(isSyntheticPopState(new PopStateEvent('popstate', { state: { [BUILDER_ENTRY_KEY]: true } }))).toBe(false)
+    expect(isSyntheticPopState(Object.assign(new PopStateEvent('popstate'), { singleSpa: 'yes' }))).toBe(false)
   })
 })

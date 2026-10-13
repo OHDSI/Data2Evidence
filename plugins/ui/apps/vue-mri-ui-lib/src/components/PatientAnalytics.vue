@@ -172,7 +172,12 @@ import appButton from '../lib/ui/app-button.vue'
 import appIcon from '../lib/ui/app-icon.vue'
 import appLink from '../lib/ui/app-link.vue'
 import ExplorationsPage from './ExplorationsPage.vue'
-import { isBuilderEntry, leaveBuilderEntry, pushBuilderEntry } from './helpers/explorationHistory'
+import {
+  isBuilderEntry,
+  isSyntheticPopState,
+  leaveBuilderEntry,
+  pushBuilderEntry,
+} from './helpers/explorationHistory'
 import { lazyComponent } from '../utils/lazyComponent'
 import ChartToolbar from './ChartToolbar.vue'
 import FilterCardSummary from './FilterCardSummary.vue'
@@ -571,6 +576,7 @@ export default {
       if (!leaveBuilderEntry(window.history)) this.toggleCohorts(true)
     },
     onHistoryPop(event) {
+      if (isSyntheticPopState(event)) return
       const toBuilder = isBuilderEntry(event.state)
       if (!toBuilder && !this.displayCohorts) {
         this.toggleCohorts(true, false, true)
