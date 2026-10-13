@@ -109,8 +109,10 @@ test(TEST_NAME, async ({ page, context }) => {
   await page.waitForTimeout(5000)
   await page.locator('li#logs.p-tab.p-tab__active').waitFor({ state: 'visible' })
   await page.locator('li#logs.p-tab.p-tab__active').click()
-  const logsPage = await page.locator('pre')
-  await logsPage.scrollIntoViewIfNeeded()
+  // The logs view only renders 50-row blocks near the viewport, and the worker
+  // line is in the first block; scrollIntoViewIfNeeded on a log taller than the
+  // viewport scrolls that block out (DQD logs ~20k "Target dialect" lines).
+  await page.locator('pre').evaluate((el) => el.scrollIntoView({ block: 'start' }))
   // Pool-agnostic: the worker is prefect-process-worker on the pixi process
   // pool and prefect-docker-worker under the docker-pool rollback.
   await expect(page.getByText("Worker 'prefect-").first()).toBeVisible()
