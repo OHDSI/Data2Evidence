@@ -78,10 +78,6 @@ defineEmits<{
 
 const sizeSpec = computed(() => SELECT_SIZE_MAP[props.size]);
 
-// `mergeProps` special-cases `class`, `style` and `on*` only, so a
-// `contentClass` in `menuProps` REPLACES the one the component sets rather
-// than merging with it. Carry Vuetify's own class through by hand, or the
-// menu loses the layout rules that hang off it.
 const ITEM_COLOR = "rgba(0, 0, 0, 0.87)";
 
 const MENU_FONT = `${tokens.font.body1.weight} ${tokens.font.body1.size}px ${tokens.font.family}`;
@@ -100,9 +96,14 @@ const menuWidth = computed(() =>
   selectMenuWidth(
     props.items.map((item) => item.label),
     measureLabel,
+    props.multiple,
   ),
 );
 
+// `mergeProps` special-cases `class`, `style` and `on*` only, so a
+// `contentClass` in `menuProps` REPLACES the one the component sets rather
+// than merging with it. Carry Vuetify's own class through by hand, or the
+// menu loses the layout rules that hang off it.
 const menuContentClass = computed(() =>
   props.searchable
     ? "v-autocomplete__content d2e-select__menu"
