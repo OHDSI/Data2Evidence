@@ -141,6 +141,11 @@ for a real dataset.
    `filterCardDetails[stat.id]` relies on this order. If you change one side, change the other
    too, or the rule names and constraints will attach to the wrong rows.
 
+   **Both sides recognise the Basic Data card by `configPath === "patient"`**
+   (`BASIC_DATA_CONFIG_PATH` in `InclusionReportEndpoint.ts` and in `filterCardUtils.ts`). Never use
+   its name. vue-mri sends that name in the UI language (`MRI_PA_FILTERCARD_TITLE_BASIC_DATA`:
+   `Basic Data`, `Grunddaten`, `基本数据`), so a check on the name only works in English.
+
 2. **`stat.id` is the original rule index, even after a reorder.** When the backend receives a
    `ruleOrder`, it renumbers ids to their new positions. `useRuleManagement.fetchAndUpdateAttritionStats`
    puts the original ids back (`stat.id = ruleOrder[idx]`). Without that step, the detail lookup in
@@ -148,14 +153,21 @@ for a real dataset.
    for this reason.
 
 3. **There is one source of truth for display names.** The table, the funnel labels and the CSV all
-   go through `getRuleNameParts` / `getRuleDisplayName`. Basic Data rules are labelled with
-   their attribute name (`+ Gender`, not `+ Basic Data`). That label comes from the
-   `isBasicData` flag, which is set **only** in the extractor and never inferred from the name.
-   Call `extract` with exactly one argument (`.map(e => extract(e))`). Passing it directly to `.map`
-   would hand over the array index as `isBasicData`.
+   go through `getRuleNameParts` / `getRuleDisplayName`.
+   - **Names are built from the card details, not parsed.** The backend's rule name
+     (`stat.name`) is its cards' names joined with `" OR "`. `getRuleNameParts` does not split that
+     string. It makes one part per card in `filterCardDetails[stat.id]` (using `FilterCardDetail.name`,
+     the same IFR card name the backend joins) and puts an `OR` part between each pair. A card
+     name that itself contains the word `OR` can therefore no longer shift the pairing.
+   - **Without details, `stat.name` is shown as one part.** That happens before the details load,
+     and in hosts that pass no `filter-card-details` (the retired `ExecuteSidePanel`).
+   - Basic Data rules are labelled with their attribute name (`+ Gender`, not `+ Basic Data`).
+     That label comes from the `isBasicData` flag, which is set **only** in the extractor and never
+     inferred from the name. Call `extract` with exactly one argument (`.map(e => extract(e))`).
+     Passing it directly to `.map` would hand over the array index as `isBasicData`.
 
 4. **Funnel y labels must be unique.** Plotly's categorical axis merges equal labels into one
-   tick. Duplicates are made unique by appending zero-width spaces (`​`). The same pass builds
+   tick. Duplicates are made unique by appending zero-width spaces (`\u200B`). The same pass builds
    `labelPoints` (label → point index), which the label-hover handlers use.
 
 5. **The funnel is plotted as trace 0 (`FUNNEL_TRACE_INDEX`).** The legend placeholder traces come
@@ -203,9 +215,14 @@ These are worth knowing before you pick up tickets. None of them is fixed on `de
 - **The backend caps selective masks at 20 rules** (`MAX_FILTERCARDS` in `getSelectiveBitmapMasks`)
   and silently drops anything beyond that. A `ruleOrder` whose length does not match the rule
   count is also ignored without an error.
-- **Rule names are split on `/\b(OR)\b/`.** A card name that contains the standalone word `OR`
-  would put every following part out of step with its filter-card detail.
-- **Basic Data is detected by the literal name `"Basic Data"`** on both sides.
+- **Frontend and backend pair rules with card details by position.** Invariant 1 is the only
+  thing keeping names and constraints on the right rows. A sturdier fix would be for the backend to
+  return each rule's cards (for example `cards: [{ instanceID, name }]`) so the frontend can match
+  details by `instanceID`. That is an API contract change, so it was left out of #3526.
+- **A Basic Data card wrapped in `NOT` is handled differently on each side.** The frontend still
+  treats it as Basic Data and splits it per attribute. The backend treats it as an ordinary
+  exclusion rule. The UI can't produce one today (the patient card has `allowExcludeOption: false`),
+  so this is a trap only if Basic Data ever becomes excludable.
 - **Some strings are hard-coded in English and not i18n'd:** funnel `Total`, `Count:` and
   `Percent:`; `FUNNEL_LEGEND_LABELS`; `TREEMAP_LEGEND_ITEMS`; the treemap tooltip text; the
   `"Attrition Plot"` dialog title in ChartToolbar.
@@ -227,7 +244,21 @@ Unit tests are in `__tests__/`, with related specs under `src/utils/__tests__/`.
 npx vitest run src/query-filter/components/InclusionReport src/utils/__tests__/filterCardUtils.test.ts src/utils/__tests__/ExportUtils.test.ts
 ```
 
-At handover, all 155 tests in 8 files pass.
+With #3526, all 160 tests in 8 files pass. `filterCardUtils.test.ts` covers Basic Data under a
+translated card name and card names that contain the word `OR`.
+
+**Backend:** `plugins/functions/analytics-svc/src/mri/endpoint/InclusionReportEndpoint_test.ts`
+(added in #3526) checks that Basic Data is split per attribute whatever its card is called, and
+that a non-patient card is never treated as Basic Data. CI runs only the files listed in the
+`test:ci` task of `analytics-svc/deno.json`, so add any new test file there. The host has no Deno.
+Run the tests inside `d2e-trex`, where `plugins/functions` is mounted at `/usr/src/plugins/d2ef`:
+
+```bash
+docker exec -w /usr/src/plugins/d2ef/analytics-svc d2e-trex deno test --allow-read --allow-env --no-check src/mri/endpoint/InclusionReportEndpoint_test.ts
+```
+
+Keep `--no-check`. `deno check` reports type errors in `_shared/alp-base-utils` and other code these
+tests import.
 
 `__tests__/useFunnelChart.test.ts` mocks `@/lib/CustomPlotly` and uses a `drawTicks` helper that
 imitates plotly's tick DOM, **including its merging of duplicate labels**. Keep that behaviour
@@ -251,5 +282,6 @@ new visual baselines are linux-only, and they halt the CI suite.
 | #2748 | Moved to a Vuetify dialog |
 | #3252 | Basic Data display names, label wrapping and truncation, label hover, unique labels (squash of branch `43-attrition-plot-improvements`) |
 | #3375 | Funnel font colour and size constants |
+| #3526 | Basic Data recognised by `configPath` instead of its translated name, so it is split per attribute in every UI language. Rule names built from card details instead of being split on the word `OR`. First analytics-svc tests for `InclusionReportEndpoint`. |
 
 Use `git log -- plugins/ui/apps/vue-mri-ui-lib/src/query-filter/components/InclusionReport` for the full history.
