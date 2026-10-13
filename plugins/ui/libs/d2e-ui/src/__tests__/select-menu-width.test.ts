@@ -21,7 +21,9 @@ describe("selectMenuWidth", () => {
 
   it("leaves room for the checkbox on a multiple select", () => {
     expect(selectMenuWidth(["Jane Doe"], byLength, true)).toBe(
-      Math.ceil(80 + spacing("Jane Doe") + ROW_CHROME + SELECT_MENU_CHECKBOX_WIDTH)
+      Math.ceil(
+        80 + spacing("Jane Doe") + ROW_CHROME + SELECT_MENU_CHECKBOX_WIDTH
+      )
     );
   });
 
