@@ -251,9 +251,7 @@ export function StepSelection() {
           {portalProps.isAtlas === true ? (
             <div className={styles.sourceField}>
               <DataSourceSelect
-                options={sortByLabel(
-                  sources.map((source) => ({ value: source.sourceKey, label: source.sourceName })),
-                )}
+                options={sortByLabel(sources.map((source) => ({ value: source.sourceKey, label: source.sourceName })))}
                 value={portalProps.datasetId || ""}
                 placeholder={
                   sourcesLoading
