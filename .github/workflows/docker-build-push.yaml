@@ -366,6 +366,7 @@ jobs:
           - PKGPATH: ./plugins/notebook_git/
             DESTPATH: /usr/src/data/plugins/@ohdsi/notebook-git
             RUNNER: ubuntu-24.04
+            SKIP_PUBLISH: true
     runs-on: ${{ matrix.RUNNER || needs.setup.outputs.random_runner }}
     env:
       NPM_ARTIFACT_TYPE: ${{ github.event.inputs.artifacttype || 'OSS-develop'}}
@@ -556,6 +557,7 @@ jobs:
         env:
           CI: ${{ matrix.NPM != 'bun' }}
           SHOULD_PUBLISH: ${{ needs.setup.outputs.is_publish_push == 'true' || github.event_name == 'workflow_dispatch' }}
+          SKIP_PUBLISH: ${{ matrix.SKIP_PUBLISH }}
           NODE_AUTH_TOKEN: ${{ secrets.NPM_PROJECT_TOKEN }}
         run: |
           cd ${{ matrix.DESTPATH || matrix.PKGPATH }}
@@ -581,7 +583,12 @@ jobs:
             fi
           done
           [ $FAILED -eq 0 ] || exit $FAILED
-          if [[ $SHOULD_PUBLISH == true ]]; then
+          # setup-node maps the feed to @data2evidence only, so a package in
+          # another scope falls back to npmjs.org and fails ENEEDAUTH. Plugins
+          # consumed from the tarball artifact rather than a registry opt out;
+          # pack still runs, and the artifact upload below is what the image
+          # build reads.
+          if [[ $SHOULD_PUBLISH == true && "${SKIP_PUBLISH:-}" != "true" ]]; then
             for PACK_FILE in "${TGZ_FILES[@]}"; do
               npm publish "$PACK_FILE"
             done
