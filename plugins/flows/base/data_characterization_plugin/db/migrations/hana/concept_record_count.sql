@@ -27,6 +27,10 @@ concept_id,
 FROM
 counts
 ) WITH NO DATA;
+-- The helper tables are only dropped at the end of this script, and execute_sql_script ignores
+-- HANA's duplicate-table error. On a retry after a mid-script failure the CREATE is skipped and
+-- the INSERT would append to the previous attempt's rows, so clear each helper before filling it.
+TRUNCATE TABLE ${DATA_CHARACTERIZATION_SCHEMA}.tmp_counts;
 INSERT INTO ${DATA_CHARACTERIZATION_SCHEMA}.tmp_counts
 WITH counts AS (
    SELECT stratum_1 AS concept_id, MAX (count_value) AS agg_count_value
@@ -59,6 +63,7 @@ concept_id,
   agg_count_value
 FROM
 counts_person) WITH NO DATA;
+TRUNCATE TABLE ${DATA_CHARACTERIZATION_SCHEMA}.tmp_counts_person;
 INSERT INTO ${DATA_CHARACTERIZATION_SCHEMA}.tmp_counts_person
 WITH counts_person AS (
    SELECT stratum_1 AS concept_id, MAX (count_value) AS agg_count_value
@@ -91,6 +96,7 @@ ancestor_id,
   descendant_id
 FROM
 concepts) WITH NO DATA;
+TRUNCATE TABLE ${DATA_CHARACTERIZATION_SCHEMA}.tmp_concepts;
 -- Fill tmp_concepts the lean way for HANA's in-memory engine (#1898). The small side
 -- (tmp_counts) is cast to INTEGER once so the joins run on concept_ancestor's own integer
 -- columns instead of casting the largest vocabulary table to varchar. Only descendants that

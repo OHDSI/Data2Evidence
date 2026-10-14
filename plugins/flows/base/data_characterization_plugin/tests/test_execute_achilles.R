@@ -13,7 +13,7 @@ plugin_file <- file.path(test_dir, "..", "execute_achilles.R")
 
 # execute_achilles.R attaches Achilles at the top, so pull out just the function definitions.
 exprs <- parse(plugin_file)
-wanted <- c("PERCENTILE_SELF_JOIN", "count_percentile_self_joins", "rewrite_percentile_self_join", "drop_failed_from_merge_args")
+wanted <- c("PERCENTILE_SELF_JOIN", "count_percentile_self_joins", "rewrite_percentile_self_join", "drop_failed_from_merge_args", "merge_has_survivors", "empty_merge_sql")
 for (e in exprs) {
     if (is.call(e) && as.character(e[[1]]) %in% c("<-", "=") && as.character(e[[2]]) %in% wanted) eval(e)
 }
@@ -150,6 +150,12 @@ cross <- modifyList(merge_args, list(analysisIds = c(0L, 1L, 103L, 107L, 706L, 1
 out <- drop_failed_from_merge_args(cross, data.frame(analysisId = c(0L, 1L, 103L, 107L, 706L, 1815L)), warn)
 check("merge: failures of the other result type are ignored", identical(out, cross))
 
+# No survivors: every distribution analysis failed while the count analyses (0, 1) completed.
+none_left <- drop_failed_from_merge_args(merge_args, data.frame(analysisId = c(0L, 1L)), warn)
+check("merge: no survivors leaves only the other table's ids", identical(sort(none_left$analysisIds), c(0L, 1L)))
+check("merge_has_survivors: FALSE when this table's ids are all gone", !merge_has_survivors(none_left))
+check("merge_has_survivors: TRUE with one survivor", merge_has_survivors(out))
+
 # --- Every installed Achilles analysis renders to HANA with no self-join left ---------------
 if (requireNamespace("Achilles", quietly = TRUE) && requireNamespace("SqlRender", quietly = TRUE)) {
     dir <- system.file("sql/sql_server/analyses", package = "Achilles")
@@ -171,6 +177,23 @@ if (requireNamespace("Achilles", quietly = TRUE) && requireNamespace("SqlRender"
     check("Achilles: at least one distribution analysis found", had_join > 0L)
     check(sprintf("Achilles: no analysis keeps a self-join (left: %s)", paste(left, collapse = ",")), length(left) == 0L)
     cat(sprintf("Achilles %s: %d analyses with the pattern, all rewritten\n", packageVersion("Achilles"), had_join))
+
+    # empty_merge_sql renders a valid, typed, empty merge for the dialects D2E runs on.
+    dist_schema <- utils::read.csv(system.file("csv", "schemas", "schema_achilles_results_dist.csv", package = "Achilles"))
+    empty_args <- list(
+        resultsTable = list(detailType = "results_dist", tablePrefix = "tmpach_dist", schema = dist_schema, analysisIds = c(103L, 706L)),
+        analysisIds = c(0L, 1L), createTable = TRUE, resultsDatabaseSchema = "RES", tempEmulationSchema = NULL,
+        smallCellCount = 5, connectionDetails = list(dbms = "hana")
+    )
+    for (dbms in c("hana", "postgresql", "bigquery")) {
+        empty_args$connectionDetails$dbms <- dbms
+        sql <- squash(suppressMessages(empty_merge_sql(empty_args)))
+        check(sprintf("empty merge (%s): targets achilles_results_dist", dbms), grepl("res.achilles_results_dist", sql, fixed = TRUE))
+        check(sprintf("empty merge (%s): placeholder count_value is -1", dbms), grepl("cast(-1 as", sql, fixed = TRUE))
+        check(sprintf("empty merge (%s): placeholder row is filtered out", dbms), grepl("where count_value > 0", sql, fixed = TRUE))
+        check(sprintf("empty merge (%s): no empty FROM ( ) Q", dbms), !grepl("from ( ) q", sql, fixed = TRUE))
+    }
+    check("empty merge (hana): FROM-less select gets FROM DUMMY", grepl("from dummy", squash(suppressMessages(empty_merge_sql(modifyList(empty_args, list(connectionDetails = list(dbms = "hana")))))), fixed = TRUE))
 } else {
     cat("Achilles not installed: skipping the full-analysis render check\n")
 }

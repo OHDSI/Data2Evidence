@@ -97,6 +97,42 @@ drop_failed_from_merge_args <- function(args, logs, log_warn = function(msg) Par
     args
 }
 
+#' Does any analysis of this result table remain in the merge?
+#' @param args Named argument list of the .mergeAchillesScratchTables call
+#' @return FALSE when every analysis of `args$resultsTable` was dropped
+merge_has_survivors <- function(args) {
+    any(as.integer(args$resultsTable$analysisIds) %in% as.integer(args$analysisIds))
+}
+
+#' Merge SQL for a result table none of whose analyses completed
+#'
+#' Achilles renders the merge as `select … from (<detailSqls>) Q`; with no surviving analysis
+#' that is `from ( ) Q`, which fails and, in single-threaded mode, also stops the other result
+#' table's merge. Render the same statement over one typed placeholder row instead, with
+#' count_value = -1 so the merge's own `where count_value > @smallCellCount` keeps no row: the
+#' table is created (or left) empty with the right columns, and later steps still find it.
+#' @param args Named argument list of the .mergeAchillesScratchTables call
+#' @return Translated merge SQL
+empty_merge_sql <- function(args) {
+    schema <- args$resultsTable$schema
+    placeholder <- sprintf("cast(NULL as %s) as %s", schema$FIELD_TYPE, schema$FIELD_NAME)
+    is_count <- tolower(schema$FIELD_NAME) == "count_value"
+    placeholder[is_count] <- sprintf("cast(-1 as %s) as %s", schema$FIELD_TYPE[is_count], schema$FIELD_NAME[is_count])
+    SqlRender::loadRenderTranslateSql(
+        sqlFilename = "analyses/merge_achilles_tables.sql",
+        packageName = "Achilles",
+        dbms = args$connectionDetails$dbms,
+        warnOnMissingParameters = FALSE,
+        createTable = args$createTable,
+        resultsDatabaseSchema = args$resultsDatabaseSchema,
+        tempEmulationSchema = args$tempEmulationSchema,
+        detailType = args$resultsTable$detailType,
+        detailSqls = paste("select", paste(placeholder, collapse = ", ")),
+        fieldNames = paste(schema$FIELD_NAME, collapse = ", "),
+        smallCellCount = 0 # the only row is the -1 placeholder; always filter it out
+    )
+}
+
 #' Execute Achilles analysis
 #' @param cdmVersion Version of the CDM
 #' @param cdmDatabaseSchema Name of the CDM schema
@@ -307,7 +343,14 @@ execute_achilles <- function(
         if (!isTRUE(args$sqlOnly) && !is.null(args$outputFolder)) {
             logs <- get(".parseLogs", envir = .ns_achilles)(args$outputFolder)
         }
-        do.call(.orig_merge, drop_failed_from_merge_args(args, logs))
+        args <- drop_failed_from_merge_args(args, logs)
+        if (!merge_has_survivors(args)) {
+            ParallelLogger::logWarn(sprintf(
+                "No analysis of %s completed; creating it empty", args$resultsTable$detailType
+            ))
+            return(empty_merge_sql(args))
+        }
+        do.call(.orig_merge, args)
     }, ns = "Achilles")
     on.exit(assignInNamespace(".mergeAchillesScratchTables", .orig_merge, ns = "Achilles"), add = TRUE)
 
