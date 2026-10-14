@@ -583,11 +583,6 @@ jobs:
             fi
           done
           [ $FAILED -eq 0 ] || exit $FAILED
-          # setup-node maps the feed to @data2evidence only, so a package in
-          # another scope falls back to npmjs.org and fails ENEEDAUTH. Plugins
-          # consumed from the tarball artifact rather than a registry opt out;
-          # pack still runs, and the artifact upload below is what the image
-          # build reads.
           if [[ $SHOULD_PUBLISH == true && "${SKIP_PUBLISH:-}" != "true" ]]; then
             for PACK_FILE in "${TGZ_FILES[@]}"; do
               npm publish "$PACK_FILE"
