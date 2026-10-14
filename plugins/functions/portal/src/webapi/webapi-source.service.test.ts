@@ -65,7 +65,9 @@ describe('WebApiSourceService.syncSourceForDataset', () => {
     }
     assertEquals(request.dialect, 'postgresql')
     assertEquals(request.daimons.map((d) => d.daimonType), ['CDM', 'Vocabulary', 'Results'])
-    assertEquals(request.daimons.map((d) => d.priority), [1, 1, 1])
+    // CDM/Vocabulary go in at 0 so WebAPI keeps any default an admin already
+    // chose; WebAPI raises them to 1 itself when no other source has one.
+    assertEquals(request.daimons.map((d) => d.priority), [0, 0, 1])
   })
 
   // Regression: BigQuery datasets got no WebAPI source at all — the credential
@@ -147,6 +149,48 @@ describe('WebApiSourceService.syncSourceForDataset', () => {
 
     assertEquals(methods().includes('updateSource'), true)
     assertEquals(methods().includes('createSource'), false)
+  })
+
+  // Regression: a re-sync sent priority 1 for every daimon, so after an admin
+  // made another source the default vocabulary, re-syncing this dataset
+  // silently took the default back.
+  it('keeps the priorities WebAPI already has when updating a source', async () => {
+    const { api, jobPlugins, calls } = createApiStub({
+      sourceId: 42,
+      sourceKey: 'ds-1',
+      daimons: [
+        { sourceDaimonId: 1, daimonType: 'CDM', tableQualifier: 'cdm', priority: 1 },
+        { sourceDaimonId: 2, daimonType: 'Vocabulary', tableQualifier: 'vocab', priority: 0 },
+        { sourceDaimonId: 3, daimonType: 'Results', tableQualifier: 'results', priority: 0 },
+      ],
+    })
+    const service = new WebApiSourceService(api as never, jobPlugins as never)
+
+    await service.syncSourceForDataset(datasetWithDialect('postgres'), detail, credentials)
+
+    const updated = calls.find((c) => c.method === 'updateSource')!
+    const request = updated.args[1] as { daimons: { daimonType: string; priority: number }[] }
+    assertEquals(
+      request.daimons.map((d) => [d.daimonType, d.priority]),
+      [['CDM', 1], ['Vocabulary', 0], ['Results', 0]],
+    )
+  })
+
+  it('uses the create defaults for a daimon the existing source does not have yet', async () => {
+    const { api, jobPlugins, calls } = createApiStub({
+      sourceId: 42,
+      sourceKey: 'ds-1',
+      daimons: [
+        { sourceDaimonId: 1, daimonType: 'CDM', tableQualifier: 'cdm', priority: 1 },
+      ],
+    })
+    const service = new WebApiSourceService(api as never, jobPlugins as never)
+
+    await service.syncSourceForDataset(datasetWithDialect('postgres'), detail, credentials)
+
+    const updated = calls.find((c) => c.method === 'updateSource')!
+    const request = updated.args[1] as { daimons: { daimonType: string; priority: number }[] }
+    assertEquals(request.daimons.map((d) => d.priority), [1, 0, 1])
   })
 
   // HANA has no DuckDB cache on any dataset type (it is queried directly), so a build
