@@ -204,9 +204,11 @@ These are worth knowing before you pick up tickets. None of them is fixed on `de
     Vuetify unmounts its content after it closes. Every open remounts the report and fetches again
     in `onMounted`. The dialog is modal and `persistent`, so the bookmark and dataset can't change
     while it is open. `generationStatus` is hard-coded to `"complete"`. ChartToolbar's
-    `cache-key` prop therefore has no effect. ChartToolbar's own per-mriquery cache in
-    `fetchInclusionReport` is what avoids repeat requests. If you ever add `eager` to that dialog,
-    or keep the report mounted some other way, this turns into a stale-data bug.
+    `cache-key` prop therefore has no effect. With the intersect view on, ChartToolbar's
+    per-mriquery cache in `fetchInclusionReport` avoids refetching an unchanged query. The default
+    selective path (`fetchSelectiveInclusionReport`) has no cache, so every open sends its n + 1
+    queries again. If you ever add `eager` to that dialog, or keep the report mounted some other
+    way, this turns into a stale-data bug.
   - **In the retired `ExecuteSidePanel` this could be an issue.** When generation is
     pending or failed, the `v-if` chain unmounts the report, so `generationStatus` changes are
     fine. But if the user switches between two datasets that are both generated, Vue keeps the
@@ -244,8 +246,8 @@ Unit tests are in `__tests__/`, with related specs under `src/utils/__tests__/`.
 npx vitest run src/query-filter/components/InclusionReport src/utils/__tests__/filterCardUtils.test.ts src/utils/__tests__/ExportUtils.test.ts
 ```
 
-With #3526, all 160 tests in 8 files pass. `filterCardUtils.test.ts` covers Basic Data under a
-translated card name and card names that contain the word `OR`.
+`filterCardUtils.test.ts` covers Basic Data under a translated card name and card names that
+contain the word `OR`.
 
 **Backend:** `plugins/functions/analytics-svc/src/mri/endpoint/InclusionReportEndpoint_test.ts`
 (added in #3526) checks that Basic Data is split per attribute whatever its card is called, and
