@@ -72,7 +72,7 @@ withDefaults(defineProps<Props>(), {
     margin: var(--d2e-spacing-xxs) 0 0;
     font-size: 13px;
     line-height: 1.5;
-    color: var(--d2e-color-text-secondary);
+    color: var(--d2e-color-neutral-black);
   }
 
   &__actions {
