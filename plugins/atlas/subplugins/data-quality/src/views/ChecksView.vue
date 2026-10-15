@@ -20,9 +20,9 @@ import {
   D2eDataTableDetail,
   D2eIconButton,
   D2eMenu,
+  D2eSearchField,
   D2eSplitButton,
   D2eStatusChip,
-  D2eTextField,
   type D2eSortItem,
 } from '@d2e/ui';
 import ChecksColumnMenu from '../components/ChecksColumnMenu.vue';
@@ -133,12 +133,10 @@ const pageLabels = computed(() => ({
     <template v-else>
       <div class="dq-checks__toolbar">
         <div class="dq-checks__toolbar-left">
-          <D2eTextField
+          <D2eSearchField
             v-model="query"
             class="dq-checks__search"
-            prepend-inner-icon="mdi-magnify"
             :placeholder="t('plugins.dataQuality.checks.search', 'Search')"
-            hide-details
             data-testid="dq-checks-search"
           />
           <D2eMenu location="bottom start" :items="[]">
