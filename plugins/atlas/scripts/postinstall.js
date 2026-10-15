@@ -132,10 +132,13 @@ if (existsSync(landingImageSrc)) {
 //  - login-guard.js: silent-SSO guard; blocks the WebAPI HS256 fallback.
 //  - user-link.js: routes the navbar user menu to the d2e portal account page.
 //  - token-keeper.js: refreshes the Logto bearerToken before expiry.
+//  - stale-token-guard.js: reactively refreshes when usermgmt reports the token
+//    predates a role change (AUTHZ_STALE_TOKEN); must follow token-keeper.js,
+//    whose window.__atlasTokenKeeper.refresh it calls.
 //  - analysis-default.js: opens the Wizard when entering the Analysis hub.
 // Injected in this order: each is appended before </head>, so the array order is
 // the execution order, and login-guard.js reads a global the first one sets.
-const headScripts = ['landing-redirect.js', 'login-guard.js', 'user-link.js', 'token-keeper.js', 'analysis-default.js'];
+const headScripts = ['landing-redirect.js', 'login-guard.js', 'user-link.js', 'token-keeper.js', 'stale-token-guard.js', 'analysis-default.js'];
 let indexHtml = readFileSync(join(resourcesDir, 'index.html'), 'utf8');
 let indexChanged = false;
 for (const script of headScripts) {

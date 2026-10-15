@@ -41,15 +41,29 @@ class OpenIdAPI:
             'grant_type': "client_credentials",
             'client_id': self.client_id.get(),
             'client_secret': self.client_secret.get(),
-            'scope': 'openid'
         }
 
-        result = requests.post(
-            f"{self.url}token",
-            headers=self.get_options(),
-            verify=self.get_verify_value(),
-            json=params
-        )
+        trex_url = (Variable.get("service_routes") or {}).get("trex")
+        if trex_url:
+            # The proxy selects the active IdP, its client authentication method
+            # and resource/audience. Logto may only be an upstream login provider.
+            # Omit user scopes such as openid: service clients use their registered
+            # defaults, and Trex rejects openid for client_credentials.
+            result = requests.post(
+                f"{trex_url.rstrip('/')}/oauth/token",
+                headers={"Content-Type": "application/x-www-form-urlencoded"},
+                verify=self.get_verify_value(),
+                data=params
+            )
+        else:
+            # Older deployments may not expose a Trex service route.
+            params['scope'] = 'openid'
+            result = requests.post(
+                f"{self.url}token",
+                headers=self.get_options(),
+                verify=self.get_verify_value(),
+                json=params
+            )
 
         if ((result.status_code >= 400) and (result.status_code < 600)):
             raise Exception(
