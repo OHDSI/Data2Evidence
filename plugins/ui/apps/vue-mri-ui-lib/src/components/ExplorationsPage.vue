@@ -261,7 +261,8 @@
           </v-tooltip>
 
           <D2eMenu
-            :width="220"
+            width="max-content"
+            density="compact"
             location="bottom end"
             :items="moreItems(card)"
             @select="onMoreSelect(card, $event)"
@@ -1267,7 +1268,7 @@ const moreItems = (card: { source: BookmarkDisplay }) => {
     {
       label: getText('MRI_PA_BUTTON_RENAME'),
       value: 'rename',
-      icon: 'mdi-pencil-outline',
+      icon: 'mdi-square-edit-outline',
       disabled: renameDisabled,
     },
     // #3123. Duplicate copies the bookmark's filters, so it needs a D2E

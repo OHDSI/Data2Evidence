@@ -18,7 +18,10 @@
     <slot>
       <div
         class="d2e-menu"
-        :class="{ 'd2e-menu--select': variant === 'select' }"
+        :class="{
+          'd2e-menu--select': variant === 'select',
+          'd2e-menu--compact': density === 'compact',
+        }"
         role="menu"
         :style="{ width: resolvedWidth }"
         @keydown="onKeydown"
@@ -43,7 +46,7 @@
           <v-icon
             v-if="item.icon"
             :icon="item.icon"
-            size="20"
+            :size="density === 'compact' ? 18 : 20"
             class="d2e-menu__item-icon"
           />
           <span class="d2e-menu__item-label">{{ item.label }}</span>
@@ -97,6 +100,7 @@ interface Props {
   /** Close the popover after a select. */
   closeOnSelect?: boolean;
   variant?: "action" | "select";
+  density?: "default" | "compact";
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -105,6 +109,7 @@ const props = withDefaults(defineProps<Props>(), {
   location: "bottom end",
   closeOnSelect: true,
   variant: "action",
+  density: "default",
 });
 
 const emit = defineEmits<{
@@ -321,6 +326,18 @@ function onSelect(item: D2eMenuItem) {
 
   &--select {
     padding: var(--d2e-spacing-xs) 0;
+  }
+
+  &--compact {
+    padding: var(--d2e-spacing-xs) 0;
+  }
+
+  &--compact &__item {
+    height: 40px;
+    padding: 0 var(--d2e-spacing-s);
+    font-size: var(--d2e-font-body2-size);
+    font-weight: var(--d2e-font-body2-weight);
+    line-height: var(--d2e-font-body2-line-height);
   }
 
   &--select &__item {
