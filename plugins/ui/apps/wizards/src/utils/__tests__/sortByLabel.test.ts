@@ -29,6 +29,16 @@ describe("sortByLabel", () => {
     expect(sortByLabel(items).map((item) => item.value)).toEqual(["3", "20", "1408"]);
   });
 
+  it("puts labels that start with a digit before labels that start with a letter", () => {
+    const items = [
+      { label: "brantest_tokends", value: "b" },
+      { label: "20260930 AWS Dataset for Testing", value: "20260930" },
+      { label: "Arrow", value: "a" },
+      { label: "3 site cohort", value: "3" },
+    ];
+    expect(sortByLabel(items).map((item) => item.value)).toEqual(["3", "20260930", "a", "b"]);
+  });
+
   it("returns a new array and leaves the input unchanged", () => {
     const items = [
       { label: "B", value: "b" },
