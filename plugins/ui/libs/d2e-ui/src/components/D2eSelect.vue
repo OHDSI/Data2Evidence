@@ -96,8 +96,8 @@ const menuWidth = computed(() =>
   selectMenuWidth(
     props.items.map((item) => item.label),
     measureLabel,
-    props.multiple,
-  ),
+    props.multiple
+  )
 );
 
 // `mergeProps` special-cases `class`, `style` and `on*` only, so a
