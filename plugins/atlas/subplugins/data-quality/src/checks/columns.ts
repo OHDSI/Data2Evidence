@@ -1,3 +1,4 @@
+import { formatSeverity, formatViolatedPercent } from './format';
 import { statusLabel } from './status';
 import type { DqdCheckRow } from './types';
 
@@ -6,18 +7,29 @@ export interface CheckColumn {
   titleKey: string;
   fallback: string;
   defaultVisible: boolean;
-  /** The cell's value for search, sort and export. '' when the row has none. */
+  /** The cell's value for sort, and for search and export when there is no `display`. '' when the row has none. */
   value: (row: DqdCheckRow) => string | number;
+  display?: (row: DqdCheckRow) => string;
 }
+
+export const displayValue = (column: CheckColumn, row: DqdCheckRow): string | number =>
+  column.display ? column.display(row) : column.value(row);
 
 const text = (value: string | undefined): string => value ?? '';
 
 /**
- * The table's columns. The first six are the design's (Figma 1801:210534); the
+ * The table's columns. The first seven are the design's (Figma 1801:210534); the
  * rest are the portal DQD table's, hidden until the column menu shows them.
  */
 export const COLUMNS: CheckColumn[] = [
   { key: 'category', titleKey: 'category', fallback: 'Category', defaultVisible: true, value: (r) => r.category },
+  {
+    key: 'severity',
+    titleKey: 'severity',
+    fallback: 'Severity',
+    defaultVisible: true,
+    value: (r) => formatSeverity(r.severity),
+  },
   { key: 'checkName', titleKey: 'checkName', fallback: 'Check name', defaultVisible: true, value: (r) => r.checkName },
   {
     key: 'cdmTableName',
@@ -57,6 +69,7 @@ export const COLUMNS: CheckColumn[] = [
     fallback: '% violated rows',
     defaultVisible: false,
     value: (r) => (typeof r.pctViolatedRows === 'number' ? r.pctViolatedRows : ''),
+    display: (r) => formatViolatedPercent(r.pctViolatedRows),
   },
 ];
 

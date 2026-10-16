@@ -1,4 +1,4 @@
-import { COLUMNS } from './columns';
+import { COLUMNS, displayValue } from './columns';
 import type { DqdCheckRow } from './types';
 
 interface CsvColumn {
@@ -18,7 +18,11 @@ const field = (key: keyof DqdCheckRow) => (row: DqdCheckRow) => {
  * in a spreadsheet; the JSON export keeps it.
  */
 export const CSV_COLUMNS: CsvColumn[] = [
-  ...COLUMNS.map((column) => ({ key: column.key, title: column.fallback, value: column.value })),
+  ...COLUMNS.map((column) => ({
+    key: column.key,
+    title: column.fallback,
+    value: (row: DqdCheckRow) => displayValue(column, row),
+  })),
   { key: 'checkId', title: 'Check ID', value: field('checkId') },
   { key: 'conceptId', title: 'Concept ID', value: field('conceptId') },
   { key: 'unitConceptId', title: 'Unit concept ID', value: field('unitConceptId') },

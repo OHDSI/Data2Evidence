@@ -26,6 +26,16 @@ describe('applyFilters', () => {
       '3',
     ]);
   });
+
+  it('keeps only passed checks for the Passed status, and only failed ones for Failed', () => {
+    expect(applyFilters(rows, { ...emptyFilters(), status: ['passed'] }).every((r) => r.failed === 0)).toBe(true);
+    expect(applyFilters(rows, { ...emptyFilters(), status: ['failed'] }).map((r) => r.key)).toEqual(['1']);
+  });
+
+  it('filters on the severity', () => {
+    const graded = [row({ key: 'a', severity: 'fatal' }), row({ key: 'b', severity: 'convention' })];
+    expect(applyFilters(graded, { ...emptyFilters(), severity: ['fatal'] }).map((r) => r.key)).toEqual(['a']);
+  });
 });
 
 describe('filterOptions', () => {
@@ -37,6 +47,11 @@ describe('filterOptions', () => {
 
   it('lists the statuses present, in chip order', () => {
     expect(filterOptions(rows).status).toEqual(['failed', 'passed']);
+  });
+
+  it('lists the severities present', () => {
+    const graded = [row({ severity: 'fatal' }), row({ severity: 'convention' }), row({ severity: undefined })];
+    expect(filterOptions(graded).severity).toEqual(['convention', 'fatal']);
   });
 });
 

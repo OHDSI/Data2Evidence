@@ -40,10 +40,10 @@ const rows = computed(() =>
     cells: CONTEXTS.flatMap(({ key: context }) => {
       const cell = props.data[context][key];
       return [
-        formatNumber(cell.pass),
-        formatNumber(cell.fail),
-        formatNumber(cell.total),
-        formatPercent(cell.percentPass),
+        { text: formatNumber(cell.pass), isFail: false },
+        { text: formatNumber(cell.fail), isFail: true },
+        { text: formatNumber(cell.total), isFail: false },
+        { text: formatPercent(cell.percentPass), isFail: false },
       ];
     }),
   })),
@@ -98,9 +98,12 @@ const rows = computed(() =>
             v-for="(cell, index) in row.cells"
             :key="index"
             class="dq-matrix__cell"
-            :class="{ 'dq-matrix__cell--emphasis': index === row.cells.length - 1 }"
+            :class="{
+              'dq-matrix__cell--emphasis': index === row.cells.length - 1,
+              'dq-matrix__cell--fail': cell.isFail,
+            }"
           >
-            {{ cell }}
+            {{ cell.text }}
           </td>
         </tr>
       </tbody>
@@ -199,5 +202,9 @@ const rows = computed(() =>
 
 .dq-matrix__cell--emphasis {
   font-weight: 600;
+}
+
+.dq-matrix__cell--fail {
+  color: var(--d2e-color-alarm);
 }
 </style>

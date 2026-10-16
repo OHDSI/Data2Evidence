@@ -7,6 +7,7 @@
 import { computed } from 'vue';
 import { D2eButton, D2eSelect } from '@d2e/ui';
 import { emptyFilters, type CheckFilters } from '../checks/filters';
+import { formatSeverity } from '../checks/format';
 import { STATUS_CHIP } from '../checks/status';
 import type { Translate } from '../checks/types';
 
@@ -22,6 +23,7 @@ type Field = keyof CheckFilters;
 
 const FIELDS: { field: Field; key: string; fallback: string }[] = [
   { field: 'category', key: 'category', fallback: 'Category' },
+  { field: 'severity', key: 'severity', fallback: 'Severity' },
   { field: 'subcategory', key: 'subcategory', fallback: 'Subcategory' },
   { field: 'context', key: 'context', fallback: 'Context' },
   { field: 'cdmTableName', key: 'table', fallback: 'Table' },
@@ -38,7 +40,9 @@ const items = computed(() =>
         label:
           field === 'status'
             ? props.t(STATUS_CHIP[value as keyof typeof STATUS_CHIP].key, STATUS_CHIP[value as keyof typeof STATUS_CHIP].fallback)
-            : value,
+            : field === 'severity'
+              ? formatSeverity(value)
+              : value,
       })),
     ]),
   ) as Record<Field, { value: string; label: string }[]>,

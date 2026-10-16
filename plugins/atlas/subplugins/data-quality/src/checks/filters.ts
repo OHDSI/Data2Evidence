@@ -8,11 +8,12 @@ export interface CheckFilters {
   context: string[];
   cdmTableName: string[];
   checkLevel: string[];
+  severity: string[];
   status: CheckStatus[];
 }
 
 type TextField = Exclude<keyof CheckFilters, 'status'>;
-const TEXT_FIELDS: TextField[] = ['category', 'subcategory', 'context', 'cdmTableName', 'checkLevel'];
+const TEXT_FIELDS: TextField[] = ['category', 'subcategory', 'context', 'cdmTableName', 'checkLevel', 'severity'];
 
 export const emptyFilters = (): CheckFilters => ({
   category: [],
@@ -20,6 +21,7 @@ export const emptyFilters = (): CheckFilters => ({
   context: [],
   cdmTableName: [],
   checkLevel: [],
+  severity: [],
   status: [],
 });
 
@@ -45,6 +47,7 @@ export function filterOptions(rows: readonly DqdCheckRow[]): CheckFilters {
     context: unique('context'),
     cdmTableName: unique('cdmTableName'),
     checkLevel: unique('checkLevel'),
+    severity: unique('severity'),
     status: STATUS_ORDER.filter((status) => statuses.has(status)),
   };
 }

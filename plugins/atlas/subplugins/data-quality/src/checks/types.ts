@@ -9,6 +9,7 @@ export interface DqdCheckRow {
   checkId?: string;
   checkName: string;
   checkLevel?: string;
+  severity?: string;
   checkDescription?: string;
   category: string;
   subcategory?: string;
