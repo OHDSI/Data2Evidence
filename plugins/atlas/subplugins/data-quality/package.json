@@ -21,7 +21,9 @@
   },
   "dependencies": {
     "@ohdsi/atlas-ui": "^0.1.0-20260721210553-c51900d",
+    "echarts": "^6.0.0",
     "vue": "^3.4.0",
+    "vue-echarts": "^8.0.1",
     "vuetify": "^3.5.0"
   },
   "devDependencies": {
