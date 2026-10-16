@@ -1,0 +1,43 @@
+.d2e-switch.d2e-switch {
+  // White knob + elevation/1 shadow in every state (Figma).
+  .MuiSwitch-switchBase {
+    color: var(--d2e-color-white);
+  }
+
+  .MuiSwitch-thumb {
+    box-shadow: var(--d2e-elevation-e1);
+  }
+
+  // Unchecked track: black @ 38% (MUI default, restated for clarity).
+  .MuiSwitch-track {
+    background-color: #000;
+    opacity: 0.38;
+  }
+
+  // Checked track: navy @ 50%.
+  .MuiSwitch-switchBase.Mui-checked {
+    color: var(--d2e-color-white);
+  }
+
+  .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track {
+    background-color: var(--d2e-color-primary);
+    opacity: 0.5;
+  }
+
+  // Disabled track: neutral-lighter (#DEDCDA).
+  .MuiSwitch-switchBase.Mui-disabled + .MuiSwitch-track {
+    background-color: var(--d2e-color-neutral-lighter);
+    opacity: 1;
+  }
+}
+
+// Large size: scale the medium switch up to the Figma L footprint.
+.d2e-switch--lg {
+  transform: scale(1.25);
+  transform-origin: center;
+}
+
+.d2e-switch__label-wrap .MuiFormControlLabel-label {
+  font-family: var(--d2e-font-family);
+  color: var(--d2e-color-neutral-black);
+}

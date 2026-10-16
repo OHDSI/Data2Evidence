@@ -1,0 +1,48 @@
+.d2e-select {
+  .MuiOutlinedInput-root {
+    min-height: var(--d2e-select-height);
+  }
+
+  .MuiSelect-select {
+    display: flex;
+    align-items: center;
+    min-height: var(--d2e-select-height);
+    padding-block: 0;
+    padding-inline: 0;
+  }
+
+  &__adornment .MuiSvgIcon-root {
+    font-size: 24px;
+    color: var(--d2e-color-neutral);
+  }
+
+  &__chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    overflow: hidden;
+
+    .MuiChip-root {
+      height: 28px;
+      font-family: var(--d2e-font-family);
+    }
+  }
+}
+
+// Searchable renders a MUI Autocomplete. Doubled class outranks MUI's emotion
+// rules so the field matches the select's height and 14px left inset.
+.d2e-select.d2e-select {
+  .MuiAutocomplete-inputRoot {
+    padding-top: 0;
+    padding-bottom: 0;
+    padding-left: 16px;
+    flex-wrap: nowrap;
+
+    .MuiAutocomplete-input {
+      padding-top: 0;
+      padding-bottom: 0;
+      padding-left: 0;
+      min-width: 0;
+    }
+  }
+}
