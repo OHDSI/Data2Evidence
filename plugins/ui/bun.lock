@@ -615,6 +615,8 @@
         "vitest": "^4.0.18",
       },
       "peerDependencies": {
+        "@emotion/react": "^11.9.0",
+        "@emotion/styled": "^11.8.1",
         "@mui/icons-material": "^5.8.3",
         "@mui/material": "^5.8.3",
         "@mui/x-date-pickers": "^6.19.2",
