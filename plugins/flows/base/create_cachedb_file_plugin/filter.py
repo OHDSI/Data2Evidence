@@ -61,6 +61,16 @@ CDM_COLUMN_FILTER_MAP = {
 }
 
 CHUNK_COLUMN_INFO_MAP = {
+    # Results schema (Achilles / Heracles). These tables have no primary key, so
+    # without an entry a large one has nothing to chunk on -- on BigQuery at
+    # all, on Postgres until plan_table falls back to pg_stats. analysis_id is
+    # skewed (a few analyses hold most rows); plan_table detects that and tries
+    # another column, keeping this one only if nothing better exists.
+    "achilles_result_concept_count": {"column_name": "concept_id"},
+    "achilles_results": {"column_name": "analysis_id"},
+    "achilles_results_dist": {"column_name": "analysis_id"},
+    "heracles_results": {"column_name": "analysis_id"},
+    "heracles_results_dist": {"column_name": "analysis_id"},
     "care_site": {
         "column_name": "care_site_id"
     },

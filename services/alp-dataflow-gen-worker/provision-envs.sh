@@ -28,16 +28,23 @@ install_hana() { # $1 = plugin dir
   local manifest="$1/pyproject.toml"
   grep -q 'sqlalchemy-hana' "$manifest" || return 0
   pixi run --frozen --manifest-path "$manifest" \
-    pip install --quiet "sqlalchemy-hana==${SQLALCHEMY_HANA_VERSION:-2.2.0}"
+    pip install --quiet --retries 1 --timeout 15 \
+    "sqlalchemy-hana==${SQLALCHEMY_HANA_VERSION:-2.2.0}"
+}
+
+# Warn-and-continue like install_hana_drivers.sh: the driver comes from PyPI,
+# so an offline / air-gapped install must not fail flow runs that never touch
+# HANA. Returns 1 so the caller leaves the :hana stamp off and retries later.
+try_install_hana() { # $1 = plugin dir
+  install_hana "$1" && return 0
+  log "WARNING: sqlalchemy-hana install failed for $1 (no PyPI access?); continuing without HANA support"
+  return 1
 }
 
 install_env() { # $1 = plugin dir
   local dir="$1" manifest="$1/pyproject.toml"
   [ -f "$manifest" ] || { log "no pyproject.toml in $dir"; return 1; }
   pixi install --frozen --manifest-path "$manifest" || return 1
-  if [ "${INSTALL_SQLALCHEMY_HANA:-false}" = "true" ]; then
-    install_hana "$dir" || return 1
-  fi
   # Additional named environments some plugins declare (e.g. the NER stack's
   # self-contained env in data_transformation).
   if grep -qE '^ner *= \{' "$manifest"; then
@@ -84,13 +91,18 @@ provision_dir() { # $1 = extracted plugin dir, $2 = marker value
   # build strips out of the baked envs (see slim-envs.sh).
   if [ "${stamp%:hana}" != "$stamp" ] && [ "$have" = "${stamp%:hana}" ]; then
     log "adding HANA driver to $dir"
-    install_hana "$dir" || return 1
+    try_install_hana "$dir" || return 0
     printf '%s' "$stamp" > "$dir/.d2e-env-ready"
     log "ready: $dir"
     return 0
   fi
   log "provisioning $dir"
   install_env "$dir" || return 1
+  # A failed driver install still leaves a usable env: stamp it without :hana
+  # so the next run retries only the top-up.
+  if [ "${stamp%:hana}" != "$stamp" ] && ! try_install_hana "$dir"; then
+    stamp="${stamp%:hana}"
+  fi
   printf '%s' "$stamp" > "$dir/.d2e-env-ready"
   log "ready: $dir"
 }

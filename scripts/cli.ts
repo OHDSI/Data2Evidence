@@ -60,7 +60,7 @@ export function publicPortSuffix(port: string | undefined): string {
 
 class D2ECli {
   version: string;
-  LATEST_DOCKER_TAG_NAME: string = "0.19.3-beta"; // Update this as needed
+  LATEST_DOCKER_TAG_NAME: string = "0.19.4-beta"; // Update this as needed
   default_version: string = "0.19.0"; // Update this as needed default/base version
   CADDY__CONFIG: string;
   ENV_TYPE: string;
