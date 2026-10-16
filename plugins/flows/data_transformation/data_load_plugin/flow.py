@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING
 import math
 
 from prefect import flow, task
+from sqlalchemy import text
 from prefect.logging import get_run_logger
 
 from .types import DataloadOptions, FileType
@@ -73,6 +74,25 @@ def etl_task(dbdao: DaoBase, schema: str, file: FileType, escapechar: str, heade
         transformed_df = format_vocab_synpuf_data(dbdao, data, file.table_name, logger)
 
         load_data(dbdao, schema, transformed_df, header, file, chunksize, i, total_chunks, logger)
+
+    analyze_table(dbdao, schema, file.table_name, logger)
+
+
+def analyze_table(dbdao: DaoBase, schema: str, table: str, logger):
+    """Refresh planner statistics after a bulk load. Postgres only analyses a table in the
+    background once enough changes are counted since the last analyse; if those counters were
+    reset (crash, restore), freshly loaded tables keep no statistics and cohort queries get
+    plans built for empty tables. A failure here is logged, not raised: the data is loaded."""
+    if dbdao.dialect != SupportedDatabaseDialects.POSTGRES:
+        return
+    try:
+        with dbdao.engine.connect() as connection:
+            connection.execute(text(f'ANALYZE "{schema}"."{table}"'))
+            connection.commit()
+    except Exception as e:
+        logger.warning(f"ANALYZE of '{schema}.{table}' failed: {e}")
+    else:
+        logger.info(f"Analyzed table '{schema}.{table}'")
 
 
 def load_data(dbdao: DaoBase, schema: str, df: pd.DataFrame, header: bool|None,
