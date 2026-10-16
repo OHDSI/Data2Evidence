@@ -227,3 +227,133 @@ def test_a_small_table_never_pays_for_the_null_scan():
 
     assert stats.null_count is None, "nothing was measured, and nothing needed to be"
     assert not any("IS NULL" in s for s in adapter.statements)
+
+
+# ---------------------------------------------------------------------------
+# plan_table: another chunk column when the first is rejected or skewed
+# ---------------------------------------------------------------------------
+#
+# Issue 3576: one bad column choice failed the whole cache build, although the
+# table had a perfectly good column to chunk on. These drive plan_table through
+# the real collect/plan_chunks path with canned catalogue answers.
+
+import re
+
+from create_cachedb_file_plugin.source_stats import plan_table
+
+RESULTS_TABLE = "achilles_results"
+RESULTS_ROWS = 900_000_000
+RESULTS_CONFIG = ChunkConfig(target_chunk_rows=5_000_000, small_table_threshold=500_000)
+
+#: pg_stats rows: (name, type, nullable, n_distinct, null_frac, top_freq).
+RESULTS_STATS = [
+    ("analysis_id", "integer", False, 300, 0.0, 0.4),
+    ("stratum_1", "character varying", True, -0.5, 0.05, 0.001),
+    ("count_value", "bigint", False, -0.2, 0.0, 0.02),
+]
+
+
+def _skewed_cuts(n=181, repeated=100):
+    """Quantile cuts where one value fills ``repeated`` of them."""
+    return list(range(n - repeated)) + [n] * repeated
+
+
+class StubColumnAwareAdapter(PostgresSourceAdapter):
+    """Postgres stub whose quantile cuts depend on the column asked for."""
+
+    def __init__(self, cuts_by_column, stats_rows=(), row_count=RESULTS_ROWS):
+        super().__init__(read_conn=None)
+        self.cuts_by_column = cuts_by_column
+        self.stats_rows = list(stats_rows)
+        self.row_count = row_count
+        self.boundary_columns = []
+
+    def _scalar(self, statement):
+        if "reltuples" in statement:
+            return self.row_count
+        if "IS NULL" in statement:
+            return 0
+        raise AssertionError(f"unexpected scalar statement: {statement}")
+
+    def _rows(self, statement):
+        if "indisprimary" in statement:
+            return []  # results tables have no primary key
+        if "pg_stats" in statement:
+            return self.stats_rows
+        if "percentile_disc" in statement:
+            column = re.search(r'ORDER BY "([^"]+)"', statement).group(1)
+            self.boundary_columns.append(column)
+            return [(value,) for value in self.cuts_by_column[column]]
+        if "pg_attribute" in statement:
+            return [("integer", False)]  # the mapped column's metadata
+        raise AssertionError(f"unexpected row statement: {statement}")
+
+
+def test_a_rejected_mapped_column_falls_back_to_a_statistics_column():
+    adapter = StubColumnAwareAdapter(
+        {"analysis_id": [1] * 90 + [2] * 91, "count_value": list(range(181))},
+        RESULTS_STATS,
+    )
+
+    stats, plan = plan_table(
+        adapter, "postgres", SCHEMA, RESULTS_TABLE, RESULTS_CONFIG, LOGGER
+    )
+
+    assert adapter.boundary_columns == ["analysis_id", "count_value"]
+    assert plan.strategy is ChunkStrategy.CHUNKED
+    assert plan.column_name == "count_value"
+    assert stats.column.kind.value == "STATISTICS"
+
+
+def test_a_skewed_plan_is_replaced_when_another_column_plans_evenly():
+    adapter = StubColumnAwareAdapter(
+        {"analysis_id": _skewed_cuts(), "count_value": list(range(181))},
+        RESULTS_STATS,
+    )
+
+    _, plan = plan_table(adapter, "postgres", SCHEMA, RESULTS_TABLE, RESULTS_CONFIG, LOGGER)
+
+    assert plan.column_name == "count_value"
+    assert not plan.is_skewed
+
+
+def test_a_skewed_plan_is_kept_when_nothing_better_exists():
+    """Never worse than before: the plan today's copy would run still runs."""
+    adapter = StubColumnAwareAdapter({"analysis_id": _skewed_cuts()}, stats_rows=())
+
+    _, plan = plan_table(adapter, "postgres", SCHEMA, RESULTS_TABLE, RESULTS_CONFIG, LOGGER)
+
+    assert plan.column_name == "analysis_id"
+    assert plan.is_skewed
+
+
+def test_with_no_alternative_the_first_rejection_is_what_is_raised():
+    adapter = StubColumnAwareAdapter({"analysis_id": [1] * 90 + [2] * 91}, stats_rows=())
+
+    with pytest.raises(PlannerError, match="analysis_id"):
+        plan_table(adapter, "postgres", SCHEMA, RESULTS_TABLE, RESULTS_CONFIG, LOGGER)
+
+
+def test_plan_table_stops_after_the_attempt_limit():
+    """Each attempt is a boundary query on the source, so the retries are capped."""
+    low = [1] * 90 + [2] * 91
+    adapter = StubColumnAwareAdapter(
+        {"analysis_id": low, "count_value": low, "stratum_1": low},
+        RESULTS_STATS,
+    )
+
+    with pytest.raises(PlannerError):
+        plan_table(
+            adapter, "postgres", SCHEMA, RESULTS_TABLE, RESULTS_CONFIG, LOGGER, max_attempts=2
+        )
+
+    assert len(adapter.boundary_columns) == 2
+
+
+def test_a_table_that_plans_first_time_costs_one_boundary_query():
+    adapter = StubColumnAwareAdapter({"analysis_id": list(range(181))}, RESULTS_STATS)
+
+    _, plan = plan_table(adapter, "postgres", SCHEMA, RESULTS_TABLE, RESULTS_CONFIG, LOGGER)
+
+    assert plan.column_name == "analysis_id"
+    assert adapter.boundary_columns == ["analysis_id"]
