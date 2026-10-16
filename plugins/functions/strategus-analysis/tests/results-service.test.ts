@@ -189,3 +189,32 @@ Deno.test("listResults escapes LIKE wildcards in the name filter", async () => {
   const nameFilter = (seen.where as Record<string, { value: string }>).name;
   assertEquals(nameFilter.value, "%50\\%\\_off\\\\sale%");
 });
+
+Deno.test("createResult retries the bucket after a failed startup attempt", async () => {
+  let attempts = 0;
+  const storage = fakeStorage({
+    createBucket: () => {
+      attempts++;
+      return attempts === 1
+        ? Promise.reject(new Error("502 Bad Gateway"))
+        : Promise.resolve();
+    },
+  });
+  const service = serviceWith({
+    save: (row: Record<string, unknown>) => Promise.resolve(row),
+  }, storage);
+
+  await assertRejects(() => service.ensureBucket(), Error, "502 Bad Gateway");
+
+  const input = {
+    name: "Run A",
+    fileName: "results.zip",
+    buffer: ZIP,
+    mimetype: "application/zip",
+  };
+  await service.createResult("Bearer test-token", input);
+  await service.createResult("Bearer test-token", input);
+
+  assertEquals(attempts, 2);
+  assertEquals(storage.calls.map((c) => c.method), ["upload", "upload"]);
+});

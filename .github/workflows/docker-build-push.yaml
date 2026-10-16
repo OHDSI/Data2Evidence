@@ -585,6 +585,18 @@ jobs:
           [ $FAILED -eq 0 ] || exit $FAILED
           if [[ $SHOULD_PUBLISH == true && "${SKIP_PUBLISH:-}" != "true" ]]; then
             for PACK_FILE in "${TGZ_FILES[@]}"; do
+              # A release re-run (same release_tag) would otherwise fail here on
+              # every plugin the first run already published -- the feeds refuse
+              # to overwrite a version -- and a failed plugin job skips
+              # build_trex_image. Skip what is already there; the tarball is
+              # still uploaded below for the trex image. A failed lookup (auth,
+              # network) is treated as "not published", so it publishes as before.
+              PKG_JSON="$(tar -xzOf "$PACK_FILE" package/package.json)"
+              PKG_ID="$(printf '%s' "$PKG_JSON" | jq -r '.name + "@" + .version')"
+              if npm view "$PKG_ID" version >/dev/null 2>&1; then
+                echo "::warning::$PKG_ID is already published; skipping npm publish."
+                continue
+              fi
               npm publish "$PACK_FILE"
             done
           fi
@@ -694,7 +706,7 @@ jobs:
             GIT_COMMIT_ARG=${{ github.sha }}
             BUILD_TYPE=OSS
             PLUGINS_FEED=${{ needs.setup.outputs.is_release_push == 'true' && 'stable' || 'd2e' }}
-            PLUGINS_FROM_REGISTRY=@ohdsi/pythia-agent@0.1.0-develop.19.g626b405
+            PLUGINS_FROM_REGISTRY=@ohdsi/pythia-agent@0.1.0-develop.21.g24eb709
           secrets: |
             "PLUGINS_REGISTRY=${{ secrets.PLUGINS_REGISTRY }}"
             "github_token=${{ secrets.GITHUB_TOKEN }}"
@@ -716,8 +728,8 @@ jobs:
             GIT_COMMIT_ARG=${{ github.sha }}
             BUILD_TYPE=OSS
             PLUGINS_FEED=${{ needs.setup.outputs.is_release_push == 'true' && 'stable' || 'd2e' }}
-            PLUGINS_FROM_REGISTRY=@ohdsi/pythia-agent@0.1.0-develop.19.g626b405
-            TREXSQL_REF=sha-f74ad199e943fee31dd9c264d6c63f796e081286@sha256:b2ff156a79d44f09776385fb92e499dc99bdafdbd72ce033d753212114053b68
+            PLUGINS_FROM_REGISTRY=@ohdsi/pythia-agent@0.1.0-develop.21.g24eb709
+            TREXSQL_REF=sha-fb95427fdea5b8a6639a8d57ec1cee73b54989d5@sha256:f865edfba94ae7c4cee1bba0146a655fc753601fe04aba05bb2370af7e4476ad
           secrets: |
             "PLUGINS_REGISTRY=${{ secrets.PLUGINS_REGISTRY }}"
             "github_token=${{ secrets.GITHUB_TOKEN }}"

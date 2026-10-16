@@ -11,6 +11,9 @@ import {
 } from "../type.d.ts";
 import { post, get } from "./request-util.ts";
 
+// Longer than jobplugins' own wait for the flow run (PrefectAPI.pollFlowRunCompletion).
+const DQD_OVERVIEW_TIMEOUT_MS = 15 * 60 * 1000;
+
 export class JobPluginsAPI {
   private readonly baseURL: string;
   private readonly httpsAgent: any;
@@ -96,7 +99,10 @@ export class JobPluginsAPI {
 
       const options = await this.getRequestConfig();
       const url = `${this.baseURL}/dqd/data-quality/flow-run/${dto.flowRunId}/overview?datasetId=${dto.datasetId}`;
-      const result = await get(url, options);
+      // jobplugins holds this request open until the flow run finishes, polling
+      // Prefect for up to 10 minutes. The 5 minute default timeout gave up on DQD
+      // runs that take ~4-5 minutes and failed the whole demo setup.
+      const result = await get(url, { ...options, timeout: DQD_OVERVIEW_TIMEOUT_MS });
       return result.data;
     } catch (error: any) {
       const status = error.status || error.response?.status;
