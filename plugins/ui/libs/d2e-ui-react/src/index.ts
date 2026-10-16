@@ -100,3 +100,5 @@ export { tokens } from "./tokens/tokens";
 export type { D2eTokens } from "./tokens/tokens";
 export { buildD2eMuiTheme, buildD2eColors } from "./tokens/theme";
 export { isTruncated, useTruncationTitle } from "./components/truncation";
+export { TruncatingText } from "./components/internal/TruncatingText";
+export type { TruncatingTextProps } from "./components/internal/TruncatingText";
