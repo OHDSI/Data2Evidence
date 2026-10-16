@@ -11,6 +11,7 @@
   font-family: var(--d2e-font-family);
 
   &__item {
+    box-sizing: border-box;
     display: flex;
     align-items: center;
     gap: 8px;

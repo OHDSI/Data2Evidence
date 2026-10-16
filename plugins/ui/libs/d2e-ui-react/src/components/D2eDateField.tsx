@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import IconButton from "@mui/material/IconButton";
 import InputAdornment from "@mui/material/InputAdornment";
 import Popover from "@mui/material/Popover";
@@ -114,6 +114,11 @@ export function D2eDateField({
       ? [errorMessages]
       : [];
 
+  // Close the picker if the field becomes disabled while it is open.
+  useEffect(() => {
+    if (disabled) setOpen(false);
+  }, [disabled]);
+
   const openPicker = () => {
     if (!disabled) setOpen(true);
   };
@@ -148,7 +153,9 @@ export function D2eDateField({
         inputProps={{ readOnly: true, "aria-label": ariaLabel }}
         onClick={openPicker}
         onKeyDown={(event) => {
-          if (event.key === "Enter") {
+          // Only the input opens the picker on Enter; let Enter on the clear
+          // button (or other adornments) trigger its own native activation.
+          if (event.key === "Enter" && event.target instanceof HTMLInputElement) {
             event.preventDefault();
             event.stopPropagation();
             openPicker();
@@ -158,7 +165,12 @@ export function D2eDateField({
           endAdornment:
             clearable && value ? (
               <InputAdornment position="end">
-                <IconButton size="small" aria-label="Clear date" onClick={clear}>
+                <IconButton
+                  size="small"
+                  aria-label="Clear date"
+                  disabled={disabled}
+                  onClick={clear}
+                >
                   <CloseIcon fontSize="small" />
                 </IconButton>
               </InputAdornment>
@@ -175,6 +187,7 @@ export function D2eDateField({
         <LocalizationProvider dateAdapter={AdapterDateFns}>
           <DateCalendar
             value={fromIsoDate(value)}
+            disabled={disabled}
             minDate={fromIsoDate(min) ?? undefined}
             maxDate={fromIsoDate(max) ?? undefined}
             views={["year", "month", "day"]}
