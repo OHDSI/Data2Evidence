@@ -124,9 +124,14 @@ export function D2eDateField({
     setOpen(false);
   };
 
-  const pick = (date: Date | null) => {
+  // DateCalendar fires onChange for intermediate year/month picks too; only the
+  // final day selection ("finish") should dismiss the picker.
+  const pick = (
+    date: Date | null,
+    selectionState?: "partial" | "shallow" | "finish",
+  ) => {
     onChange?.(toIsoDate(date));
-    setOpen(false);
+    if (selectionState === "finish") setOpen(false);
   };
 
   return (

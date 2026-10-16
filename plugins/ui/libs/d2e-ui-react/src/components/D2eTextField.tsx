@@ -30,7 +30,7 @@ export interface D2eTextFieldProps extends ForwardedProps {
 }
 
 export function D2eTextField({
-  value = "",
+  value,
   onChange,
   label,
   required = false,
@@ -48,7 +48,9 @@ export function D2eTextField({
     : errorMessages
       ? [errorMessages]
       : [];
-  const helperText = hideDetails === false ? undefined : messages[0];
+  // true hides the details area; false / "auto" show messages[0] (which is
+  // undefined when there is no error, so "auto" only shows on error).
+  const helperText = hideDetails === true ? undefined : messages[0];
 
   return (
     <TextField

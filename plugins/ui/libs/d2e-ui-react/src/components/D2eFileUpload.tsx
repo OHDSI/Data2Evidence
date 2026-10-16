@@ -42,7 +42,10 @@ export function D2eFileUpload({
 
   const emit = (fileList: FileList | null) => {
     if (!fileList || !fileList.length) return;
-    onFilesSelected?.(Array.from(fileList));
+    // Dropped files bypass the input's `multiple` restriction, so enforce the
+    // single-file limit here too — one shared rule for drop and browse.
+    const files = Array.from(fileList);
+    onFilesSelected?.(multiple ? files : files.slice(0, 1));
   };
 
   const openBrowse = () => {
@@ -71,16 +74,20 @@ export function D2eFileUpload({
           "d2e-file-upload--dragging": dragging,
           "d2e-file-upload--disabled": disabled,
         })}
-        role="button"
-        tabIndex={disabled ? undefined : 0}
+        role={compact ? undefined : "button"}
+        tabIndex={!compact && !disabled ? 0 : undefined}
         aria-disabled={disabled || undefined}
         onClick={compact ? undefined : openBrowse}
-        onKeyDown={(event) => {
-          if (!compact && (event.key === "Enter" || event.key === " ")) {
-            event.preventDefault();
-            openBrowse();
-          }
-        }}
+        onKeyDown={
+          compact
+            ? undefined
+            : (event) => {
+                if (event.key === "Enter" || event.key === " ") {
+                  event.preventDefault();
+                  openBrowse();
+                }
+              }
+        }
         onDragOver={onDragOver}
         onDragLeave={() => setDragging(false)}
         onDrop={onDrop}
@@ -92,7 +99,11 @@ export function D2eFileUpload({
           multiple={multiple}
           disabled={disabled}
           className="d2e-file-upload__input"
-          onChange={(event) => emit(event.target.files)}
+          onChange={(event) => {
+            emit(event.target.files);
+            // Reset so selecting the same file again still fires onChange.
+            event.target.value = "";
+          }}
         />
 
         <CloudUploadOutlinedIcon className="d2e-file-upload__icon" />

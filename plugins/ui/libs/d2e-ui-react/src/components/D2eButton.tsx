@@ -38,6 +38,7 @@ export const D2eButton = forwardRef<HTMLButtonElement, D2eButtonProps>(
       appendIcon,
       type = "button",
       className,
+      style,
       onClick,
       children,
       ...rest
@@ -68,6 +69,7 @@ export const D2eButton = forwardRef<HTMLButtonElement, D2eButtonProps>(
           height: `${spec.height}px`,
           minWidth: `${spec.minWidth}px`,
           fontSize: `${spec.font}px`,
+          ...style,
         }}
         startIcon={loading ? undefined : resolveIcon(prependIcon, { fontSize: spec.icon })}
         endIcon={loading ? undefined : resolveIcon(appendIcon, { fontSize: spec.icon })}

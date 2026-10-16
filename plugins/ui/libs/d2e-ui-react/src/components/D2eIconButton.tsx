@@ -32,6 +32,7 @@ export const D2eIconButton = forwardRef<HTMLButtonElement, D2eIconButtonProps>(
       ariaLabel,
       disabled = false,
       className,
+      style,
       onClick,
       children,
       ...rest
@@ -50,7 +51,7 @@ export const D2eIconButton = forwardRef<HTMLButtonElement, D2eIconButtonProps>(
           `d2e-icon-button--${size}`,
           className,
         )}
-        style={{ width: `${spec.container}px`, height: `${spec.container}px` }}
+        style={{ width: `${spec.container}px`, height: `${spec.container}px`, ...style }}
         aria-label={ariaLabel}
         disabled={disabled}
         focusRipple

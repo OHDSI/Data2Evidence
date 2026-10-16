@@ -1,4 +1,4 @@
-import { useId, useState, type ReactNode } from "react";
+import { useEffect, useId, useState, type ReactNode } from "react";
 import Dialog from "@mui/material/Dialog";
 import IconButton from "@mui/material/IconButton";
 import CircularProgress from "@mui/material/CircularProgress";
@@ -54,6 +54,12 @@ export function D2eDialog({
   const titleId = useId();
   const resolvedMaxWidth = maxWidth ?? DIALOG_SIZE_MAP[size];
   const [confirming, setConfirming] = useState(false);
+
+  // When the parent dialog is closed externally, drop any pending confirm so the
+  // discard dialog can't linger or carry stale state into the next open.
+  useEffect(() => {
+    if (!open) setConfirming(false);
+  }, [open]);
 
   // A dismissal attempt: confirm first when requested, otherwise close outright.
   const requestClose = () => {
