@@ -1,3 +1,4 @@
+import { formatViolatedPercent } from './format';
 import type { DqdCheckRow, Translate } from './types';
 
 const EMPTY = '-';
@@ -25,7 +26,7 @@ export function detailRows(row: DqdCheckRow, t: Translate): { label: string; val
     ['notApplicable', 'Not applicable', flag(row.notApplicable)],
     ['checkId', 'Check ID', text(row.checkId)],
     ['violatedRows', 'Violated rows', text(row.numViolatedRows)],
-    ['pctViolatedRows', '% violated rows', text(row.pctViolatedRows)],
+    ['pctViolatedRows', '% violated rows', text(formatViolatedPercent(row.pctViolatedRows))],
     ['denominatorRows', 'Denominator rows', text(row.numDenominatorRows)],
     ['executionTime', 'Execution time', text(row.executionTime)],
     ['isError', 'Is error', flag(row.isError)],

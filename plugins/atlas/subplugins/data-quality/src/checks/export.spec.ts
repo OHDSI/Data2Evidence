@@ -21,6 +21,13 @@ describe('toCsv', () => {
     const csv = toCsv([row({ failed: 1 })]);
     expect(csv.split('\r\n')[1]).toContain(',Failed,');
   });
+
+  it('writes the severity label and % violated rows as a percentage', () => {
+    const [header, line] = toCsv([row({ severity: 'fatal', pctViolatedRows: 0.5003 })]).split('\r\n');
+    const cell = (title: string) => line.split(',')[header.split(',').indexOf(title)];
+    expect(cell('Severity')).toBe('Fatal');
+    expect(cell('% violated rows')).toBe('50.03%');
+  });
 });
 
 describe('toJson', () => {
@@ -29,6 +36,13 @@ describe('toJson', () => {
     expect(parsed).toHaveLength(1);
     expect(parsed[0]).not.toHaveProperty('key');
     expect(parsed[0].queryText).toBe('SELECT 1');
+  });
+
+  it('keeps the raw values the backend sent', () => {
+    const [parsed] = JSON.parse(toJson([row({ severity: 'fatal', pctViolatedRows: 0.5003, failed: 1 })]));
+    expect(parsed.severity).toBe('fatal');
+    expect(parsed.pctViolatedRows).toBe(0.5003);
+    expect(parsed.failed).toBe(1);
   });
 });
 

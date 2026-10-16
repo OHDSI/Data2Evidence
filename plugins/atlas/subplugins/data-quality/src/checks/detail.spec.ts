@@ -38,6 +38,13 @@ describe('detailRows', () => {
     expect(detail['Check name']).toBe('plausibleValueLow');
   });
 
+  it('shows % violated rows as a percentage, and a dash when it is missing', () => {
+    const value = (pctViolatedRows?: number) =>
+      detailRows(row({ pctViolatedRows }), t).find((d) => d.label === '% violated rows')?.value;
+    expect(value(0.5003)).toBe('50.03%');
+    expect(value(undefined)).toBe('-');
+  });
+
   it('translates labels through the host', () => {
     const [first] = detailRows(row(), (key) => `T:${key}`);
     expect(first.label).toBe('T:plugins.dataQuality.checks.detail.checkName');

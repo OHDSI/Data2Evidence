@@ -28,7 +28,7 @@ import {
 import ChecksColumnMenu from '../components/ChecksColumnMenu.vue';
 import ChecksFiltersPanel from '../components/ChecksFiltersPanel.vue';
 import RunState from '../components/RunState.vue';
-import { COLUMNS, DEFAULT_VISIBLE_KEYS } from '../checks/columns';
+import { COLUMN_BY_KEY, COLUMNS, DEFAULT_VISIBLE_KEYS, displayValue } from '../checks/columns';
 import { detailRows } from '../checks/detail';
 import { downloadText, exportFileName, toCsv, toJson } from '../checks/export';
 import { activeFilterCount, emptyFilters, filterOptions, type CheckFilters } from '../checks/filters';
@@ -201,6 +201,8 @@ const pageLabels = computed(() => ({
         <template #item.status="{ item }">
           <D2eStatusChip v-bind="statusChip(item)" />
         </template>
+        <template #item.severity="{ item }">{{ displayValue(COLUMN_BY_KEY.severity, item) }}</template>
+        <template #item.pctViolatedRows="{ item }">{{ displayValue(COLUMN_BY_KEY.pctViolatedRows, item) }}</template>
         <template #expanded-row="{ item }">
           <D2eDataTableDetail :rows="detailRows(item, t)" />
         </template>

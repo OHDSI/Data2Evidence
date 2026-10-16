@@ -23,4 +23,9 @@ describe('matchesSearch', () => {
     expect(matchesSearch(row({ failed: 1 }), 'failed', visible)).toBe(true);
     expect(matchesSearch(row({ failed: 0 }), 'failed', visible)).toBe(false);
   });
+
+  it('matches the severity and % violated rows as they are displayed', () => {
+    expect(matchesSearch(row({ severity: 'fatal' }), 'Fatal', [...visible, 'severity'])).toBe(true);
+    expect(matchesSearch(row({ pctViolatedRows: 0.5003 }), '50.03%', [...visible, 'pctViolatedRows'])).toBe(true);
+  });
 });
