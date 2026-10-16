@@ -86,7 +86,10 @@ CHUNK_COLUMN_INFO_MAP = {
     "drug_strength": {"column_name": "drug_concept_id"},
     "episode": {"column_name": "episode_id"},
     "episode_event": {"column_name": "episode_id"},
-    "fact_relationship": {"column_name": "domain_concept_id_1"},
+    # Not domain_concept_id_1: it holds the domain of the first fact, so it has
+    # only a handful of distinct values and a large table cannot be chunked on
+    # it (issue 3576). fact_id_1 is NOT NULL and spreads across the table.
+    "fact_relationship": {"column_name": "fact_id_1"},
     "location": {"column_name": "location_id"},
     "measurement": {"column_name": "measurement_id"},
     "metadata": {"column_name": "metadata_id"},

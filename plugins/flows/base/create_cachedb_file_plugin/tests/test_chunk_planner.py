@@ -628,8 +628,9 @@ def test_a_small_table_is_never_failed_by_its_null_count():
 # The interval_count < 2 guard only catches a plan that collapsed all the way
 # to one predicate. Three distinct values give two chunks, one of them holding
 # most of the table, and that passed every guard and was logged as CHUNKED.
-# CHUNK_COLUMN_MAP has real examples -- fact_relationship -> domain_concept_id_1
-# (2-4 distinct values), drug_strength -> drug_concept_id -- and on BigQuery
+# CHUNK_COLUMN_MAP has had real examples -- fact_relationship ->
+# domain_concept_id_1 (2-4 distinct values, since moved to fact_id_1),
+# drug_strength -> drug_concept_id -- and on BigQuery
 # pick_bq_candidate actively *prefers* the partition column, so a table
 # partitioned on a handful of dates has exactly this shape.
 
@@ -646,6 +647,18 @@ def test_a_three_valued_chunk_column_is_rejected():
     assert "3 distinct" in message, "and the distinct boundary count"
     assert "450,000,000" in message, "and the per-chunk estimate"
     assert "5,000,000" in message, "and the target it is measured against"
+
+
+def test_fact_relationship_is_not_mapped_to_its_domain_column():
+    """A large fact_relationship failed planning on domain_concept_id_1 (issue 3576).
+
+    That column holds the domain of the first fact, so a CDM has only a few
+    distinct values in it and every table over small_table_threshold collapsed
+    to a single interval. fact_id_1 points at individual records instead.
+    """
+    from create_cachedb_file_plugin.filter import CHUNK_COLUMN_MAP
+
+    assert CHUNK_COLUMN_MAP["fact_relationship"] == "fact_id_1"
 
 
 def test_a_handful_of_partition_dates_is_rejected():
