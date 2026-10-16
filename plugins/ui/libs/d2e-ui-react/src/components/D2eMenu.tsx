@@ -57,7 +57,12 @@ function MenuList({
   const [activeIndex, setActiveIndex] = useState(-1);
 
   const tabbableIndex = useMemo(() => {
-    if (activeIndex >= 0 && !items[activeIndex]?.disabled) return activeIndex;
+    if (
+      activeIndex >= 0 &&
+      activeIndex < items.length &&
+      !items[activeIndex]?.disabled
+    )
+      return activeIndex;
     const selected = items.findIndex((item) => item.selected && !item.disabled);
     return selected >= 0 ? selected : firstEnabledIndex(items);
   }, [activeIndex, items]);

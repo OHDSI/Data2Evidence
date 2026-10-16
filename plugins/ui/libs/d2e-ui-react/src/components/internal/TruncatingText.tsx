@@ -1,10 +1,12 @@
-import { createElement, type ReactNode } from "react";
+import * as React from "react";
 import { useTruncationTitle } from "../truncation";
 
 export interface TruncatingTextProps {
-  as?: keyof JSX.IntrinsicElements;
+  // React 19's types drop the global `JSX` namespace; use the React-scoped one
+  // so emitted declarations resolve for both React 18 and 19 consumers.
+  as?: keyof React.JSX.IntrinsicElements;
   className?: string;
-  children?: ReactNode;
+  children?: React.ReactNode;
 }
 
 export function TruncatingText({
@@ -13,7 +15,7 @@ export function TruncatingText({
   children,
 }: TruncatingTextProps) {
   const ref = useTruncationTitle<HTMLElement>();
-  return createElement(as, { ref, className }, children);
+  return React.createElement(as, { ref, className }, children);
 }
 
 export default TruncatingText;
