@@ -350,6 +350,14 @@ def test_a_column_with_too_few_distinct_values_is_never_picked():
     assert pick_pg_stats_candidate(rows, row_count=1_000_000) is None
 
 
+def test_a_column_name_the_sql_builders_refuse_is_never_picked():
+    rows = [
+        ("site-id", "bigint", False, -1, 0.0, 0.000001),
+        ("fact_id_1", "bigint", False, -0.3, 0.0, 0.0001),
+    ]
+    assert pick_pg_stats_candidate(rows, row_count=1_000_000).name == "fact_id_1"
+
+
 def test_a_table_without_statistics_has_no_stats_candidate():
     assert pick_pg_stats_candidate([], row_count=1_000_000) is None
 

@@ -67,7 +67,8 @@ export class WebApiSourceService {
 
     try {
       const existing = await this.webApiSourceApi.getSourceByKey(dataset.id, authToken)
-      const sourceRequest = this.buildSourceRequest(dataset, datasetDetail, dbCredentials, existing)
+      const defaultTypes = await this.findDefaultDaimonTypes(dataset, existing, authToken)
+      const sourceRequest = this.buildSourceRequest(dataset, datasetDetail, dbCredentials, existing, defaultTypes)
 
       if (existing) {
         await this.webApiSourceApi.updateSource(existing.sourceId, sourceRequest, authToken)
@@ -253,11 +254,41 @@ export class WebApiSourceService {
     }
   }
 
+  // Daimon types another source already holds the default (priority > 0) for.
+  // Only asked when this sync adds a CDM or Vocabulary daimon. If the lookup
+  // fails the answer is null, and new daimons go in at 0 so an admin's choice
+  // is never overridden.
+  private async findDefaultDaimonTypes(
+    dataset: Dataset,
+    existing: ISourceInfo | null,
+    authToken?: string
+  ): Promise<Set<string> | null> {
+    const adds = (daimonType: string, schema?: string) =>
+      !!schema && !existing?.daimons?.some((d) => d.daimonType === daimonType)
+    if (!adds('CDM', dataset.schemaName) && !adds('Vocabulary', dataset.vocabSchemaName)) {
+      return new Set()
+    }
+    try {
+      const sources = await this.webApiSourceApi.getSources(authToken)
+      return new Set(
+        sources
+          .filter((s) => s.sourceKey !== dataset.id)
+          .flatMap((s) => s.daimons ?? [])
+          .filter((d) => d.priority > 0)
+          .map((d) => d.daimonType)
+      )
+    } catch (error) {
+      this.logger.warn(`Could not read WebAPI sources to pick daimon priorities for ${dataset.id}: ${error}`)
+      return null
+    }
+  }
+
   private buildSourceRequest(
     dataset: Dataset,
     detail: DatasetDetail,
     creds: IDbCredentials,
-    existing: ISourceInfo | null
+    existing: ISourceInfo | null,
+    defaultTypes: Set<string> | null
   ): ISourceRequest {
     return {
       key: dataset.id,
@@ -266,7 +297,7 @@ export class WebApiSourceService {
       connectionString: this.buildJdbcUrl(creds),
       username: creds.username,
       password: creds.password,
-      daimons: this.buildDaimons(dataset, existing),
+      daimons: this.buildDaimons(dataset, existing, defaultTypes),
       krbAuthMethod: 'DEFAULT',
     }
   }
@@ -313,18 +344,26 @@ export class WebApiSourceService {
   // on every create or re-sync would put several sources at 1 and silently move
   // that default, so:
   // - an existing daimon keeps the priority WebAPI already has;
-  // - a new CDM/Vocabulary daimon is sent as 0, and WebAPI's createSource raises
-  //   it to 1 only when no other source has a default of that type yet;
+  // - a new CDM/Vocabulary daimon becomes the default (1) only when no other
+  //   source has one of that type yet, and is 0 otherwise. WebAPI's createSource
+  //   stores priorities as sent, so without the 1 a fresh install has no default;
   // - a new Results daimon stays at 1: WebAPI only warms the Achilles cache for
   //   results daimons with priority > 0 unless warming is enabled globally.
-  private buildDaimons(dataset: Dataset, existing: ISourceInfo | null): IDaimonRequest[] {
+  private buildDaimons(
+    dataset: Dataset,
+    existing: ISourceInfo | null,
+    defaultTypes: Set<string> | null
+  ): IDaimonRequest[] {
     const daimons: IDaimonRequest[] = []
     const priorityFor = (daimonType: IDaimonRequest['daimonType']): number => {
       const current = existing?.daimons?.find((d) => d.daimonType === daimonType)
       if (current && current.priority >= 0) {
         return current.priority
       }
-      return daimonType === 'Results' ? 1 : 0
+      if (daimonType === 'Results') {
+        return 1
+      }
+      return defaultTypes && !defaultTypes.has(daimonType) ? 1 : 0
     }
 
     if (dataset.schemaName) {

@@ -487,6 +487,11 @@ def pick_pg_stats_candidate(
         name, data_type, nullable, n_distinct, null_frac, top_freq = row[:6]
         if not is_orderable_pg_type(data_type):
             continue
+        # The boundary and predicate SQL only accept plain identifiers. A
+        # quoted name such as "site-id" would win here and then raise inside
+        # collect(), outside plan_table's retry, failing the whole build.
+        if not isinstance(name, str) or not _IDENTIFIER_RE.match(name):
+            continue
         if not _is_allowed(name, allowed) or str(name).lower() in excluded:
             continue
         n_distinct = float(n_distinct or 0)
