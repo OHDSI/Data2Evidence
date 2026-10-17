@@ -21,7 +21,7 @@ export interface ProviderBody {
   authorizationEndpoint: string
   scopes: string
   groupsSource: 'none'
-  autoProvision: false
+  autoProvision: boolean
   enabled: true
 }
 
