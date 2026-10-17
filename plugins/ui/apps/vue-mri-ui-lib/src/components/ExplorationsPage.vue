@@ -1,31 +1,27 @@
 <template>
   <div class="explorations-page" data-testid="explorations-page">
     <div class="explorations-page__card">
-      <header class="explorations-page__header">
-      <div class="explorations-page__heading">
-        <p class="explorations-page__breadcrumb">
-          <span>D2E</span>
-          <span class="explorations-page__breadcrumb-dot">·</span>
-          <span>{{ getText('MRI_PA_EXPLORATIONS_TITLE') }}</span>
-          <span class="explorations-page__breadcrumb-rule" />
-        </p>
-        <h1 class="explorations-page__title">{{ getText('MRI_PA_EXPLORATIONS_TITLE') }}</h1>
-        <p class="explorations-page__description">{{ getText('MRI_PA_EXPLORATIONS_DESCRIPTION') }}</p>
-      </div>
-      <D2eSelect
-        v-if="isAtlasHosted"
-        class="explorations-page__dataset"
-        size="sm"
-        :disabled="!canSwitchDataSource"
-        :label="getText('MRI_PA_EXPLORATIONS_DATASOURCE')"
-        :items="datasetItems"
-        :model-value="datasetId"
-        prepend-icon="mdi-database-outline"
-        hide-details
-        data-testid="explorations-datasource"
-        @update:model-value="onDataSourceSelect"
-      />
-    </header>
+      <D2ePageHeader
+        class="explorations-page__header"
+        :eyebrow="`D2E · ${getText('MRI_PA_EXPLORATIONS_TITLE')}`"
+        :title="getText('MRI_PA_EXPLORATIONS_TITLE')"
+        :subtitle="getText('MRI_PA_EXPLORATIONS_DESCRIPTION')"
+      >
+        <template v-if="isAtlasHosted" #actions>
+          <D2eSelect
+            class="explorations-page__dataset"
+            size="sm"
+            :disabled="!canSwitchDataSource"
+            :label="getText('MRI_PA_EXPLORATIONS_DATASOURCE')"
+            :items="datasetItems"
+            :model-value="datasetId"
+            prepend-icon="mdi-database-outline"
+            hide-details
+            data-testid="explorations-datasource"
+            @update:model-value="onDataSourceSelect"
+          />
+        </template>
+      </D2ePageHeader>
 
     <div v-if="explorations.hasSelection" class="explorations-page__bulk" data-testid="explorations-bulk-bar">
       <D2eCheckbox
@@ -67,12 +63,10 @@
     </div>
     <div v-else class="explorations-page__toolbar">
       <div class="explorations-page__toolbar-left">
-        <D2eTextField
+        <D2eSearchField
           v-model="searchQuery"
           class="explorations-page__search"
           :placeholder="getText('MRI_PA_EXPLORATIONS_SEARCH')"
-          prepend-inner-icon="mdi-magnify"
-          :hide-details="true"
           data-testid="explorations-search"
         />
 
@@ -103,7 +97,13 @@
         </D2eMenu>
       </div>
       <div class="explorations-page__toolbar-right">
-        <D2eMenu :width="220" location="bottom end" :items="sortItems" @select="onSortSelect">
+        <D2eMenu
+          variant="select"
+          width="activator"
+          location="bottom end"
+          :items="sortItems"
+          @select="onSortSelect"
+        >
           <template #activator="activatorProps">
             <D2eButton
               v-bind="activatorProps"
@@ -261,7 +261,8 @@
           </v-tooltip>
 
           <D2eMenu
-            :width="220"
+            width="max-content"
+            density="compact"
             location="bottom end"
             :items="moreItems(card)"
             @select="onMoreSelect(card, $event)"
@@ -395,7 +396,17 @@
 <script setup lang="ts">
 import { computed, nextTick, reactive, ref, watch } from 'vue'
 import { useStore } from 'vuex'
-import { D2eButton, D2eCheckbox, D2eDialog, D2eExplorationCard, D2eIconButton, D2eMenu, D2eSelect, D2eTextField } from '@d2e/ui'
+import {
+  D2eButton,
+  D2eCheckbox,
+  D2eDialog,
+  D2eExplorationCard,
+  D2eIconButton,
+  D2eMenu,
+  D2ePageHeader,
+  D2eSearchField,
+  D2eSelect,
+} from '@d2e/ui'
 import { useExplorationsStore } from '../stores/explorations'
 import { useNotificationStore } from '../stores/notifications'
 import { useUnsavedChanges } from '@/composables/useUnsavedChanges'
@@ -418,12 +429,13 @@ import {
   visibleToUser,
   type ExplorationFilters,
 } from './helpers/explorationFilters'
-import { PAGE_SIZES, clampPage, pageSlice } from './helpers/explorationPaging'
+import { clampPage, pageSlice } from './helpers/explorationPaging'
 import { fallbackDatasetId } from './helpers/dataSourceSelection'
 import { chartQueryFor } from './helpers/explorationSqlQuery'
 import { deleteExploration, type DeleteExplorationDeps } from './helpers/deleteExploration'
 import { canDeleteAll, runBulkDelete } from './helpers/bulkDeleteExplorations'
 import { canModifyBookmark, getBookmarkType } from '../utils/BookmarkUtils'
+import DateUtils from '../utils/DateUtils'
 import ExplorationMaterializeIcon from './icons/ExplorationMaterializeIcon.vue'
 import ExplorationDataQualityIcon from './icons/ExplorationDataQualityIcon.vue'
 import ExplorationFilterSummaryIcon from './icons/ExplorationFilterSummaryIcon.vue'
@@ -495,12 +507,12 @@ const ALL_ACTION_PLACEHOLDERS = [
 const ACTION_PLACEHOLDERS = SHOW_DATA_QUALITY ? ALL_ACTION_PLACEHOLDERS : []
 const EMPTY_VALUE = '-'
 
-const searchQuery = ref('')
-const sortKey = ref<ExplorationSortKey>('lastUpdated')
-const filters = ref<ExplorationFilters>(emptyFilters())
+const searchQuery = ref(explorations.listView.searchQuery)
+const sortKey = ref<ExplorationSortKey>(explorations.listView.sortKey)
+const filters = ref<ExplorationFilters>(explorations.listView.filters)
 const filtersOpen = ref(false)
-const page = ref(1)
-const pageSize = ref<number>(PAGE_SIZES[0])
+const page = ref(explorations.listView.page)
+const pageSize = ref<number>(explorations.listView.pageSize)
 const filterSummaryOpen = ref(false)
 /** True while the panel's SQL query is in flight; feeds its `chartBusy` prop. */
 const summaryBusy = ref(false)
@@ -704,6 +716,16 @@ watch([searchQuery, filters, sortKey], () => {
   page.value = 1
 })
 
+watch([searchQuery, sortKey, filters, page, pageSize], () => {
+  explorations.saveListView({
+    searchQuery: searchQuery.value,
+    sortKey: sortKey.value,
+    filters: filters.value,
+    page: page.value,
+    pageSize: pageSize.value,
+  })
+})
+
 const emptyState = computed(() => {
   if (allCards.value.length === 0) {
     return { title: getText('MRI_PA_EXPLORATIONS_EMPTY'), body: getText('MRI_PA_EXPLORATIONS_EMPTY_BODY') }
@@ -762,7 +784,7 @@ const cards = computed(() => {
       metadata: [
         {
           label: getText('MRI_PA_EXPLORATIONS_LAST_MATERIALISED'),
-          value: cohortDefinition?.createdOnFormatted || EMPTY_VALUE,
+          value: DateUtils.displayExplorationDate(cohortDefinition?.createdOn) || EMPTY_VALUE,
         },
         // The frame's id row is the materialised cohort's id, so a card that has
         // never been materialised shows a dash (Figma 1798:192928).
@@ -779,7 +801,10 @@ const cards = computed(() => {
         },
         {
           label: getText('MRI_PA_EXPLORATIONS_LAST_UPDATED'),
-          value: bookmark?.dateModifiedFormatted || atlas?.updatedOnFormatted || EMPTY_VALUE,
+          value:
+            DateUtils.displayExplorationDate(bookmark?.dateModified) ||
+            DateUtils.displayExplorationDate(atlas?.updatedOn) ||
+            EMPTY_VALUE,
         },
         { label: getText('MRI_PA_EXPLORATIONS_VERSION'), value: bookmark?.version ?? EMPTY_VALUE },
       ],
@@ -1243,7 +1268,7 @@ const moreItems = (card: { source: BookmarkDisplay }) => {
     {
       label: getText('MRI_PA_BUTTON_RENAME'),
       value: 'rename',
-      icon: 'mdi-pencil-outline',
+      icon: 'mdi-square-edit-outline',
       disabled: renameDisabled,
     },
     // #3123. Duplicate copies the bookmark's filters, so it needs a D2E
@@ -1316,7 +1341,7 @@ const onMoreSelect = (card: { source: BookmarkDisplay }, value: string): void =>
 .explorations-page {
   height: 100%;
   padding: 24px;
-  background: var(--d2e-color-neutral-xtra-lightest);
+  background: var(--atlas-color-surface-variant, var(--d2e-color-neutral-xtra-lightest));
   font-family: var(--d2e-font-family);
 
   &__card {
@@ -1326,65 +1351,16 @@ const onMoreSelect = (card: { source: BookmarkDisplay }, value: string): void =>
     overflow: hidden;
     background: var(--d2e-color-white);
     border-radius: var(--d2e-radius-lg);
+    box-shadow: var(--d2e-elevation-page);
   }
 
   &__header {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 24px;
     padding: 24px;
     // Never shrink: the card is now clamped to viewport height, and only
     // __status/__grid (both `min-height: 0`) are meant to absorb a shortfall
     // by scrolling. Without this, a very short viewport would squeeze the
     // header instead of the content that's actually built to give way.
     flex-shrink: 0;
-  }
-
-  /* 10px Medium, 1px tracking, closed by a 24x2 secondary rule
-     (Figma 1676:221313). */
-  &__breadcrumb {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin: 0 0 8px;
-    font-size: 10px;
-    font-weight: 500;
-    line-height: 1.5;
-    letter-spacing: 1px;
-    text-transform: uppercase;
-    color: var(--d2e-color-primary);
-  }
-
-  &__breadcrumb-dot {
-    font-size: 12px;
-    font-weight: 600;
-    letter-spacing: 1.2px;
-    color: var(--d2e-color-neutral-black);
-  }
-
-  &__breadcrumb-rule {
-    width: 24px;
-    height: 2px;
-    border-radius: 200px;
-    background: var(--d2e-color-secondary);
-  }
-
-  &__title {
-    margin: 0 0 8px;
-    font-size: 24px;
-    font-weight: 600;
-    line-height: 1.2;
-    letter-spacing: -2px;
-    color: var(--d2e-color-primary);
-  }
-
-  &__description {
-    max-width: 760px;
-    margin: 0;
-    font-size: 14px;
-    line-height: 1.5;
-    color: var(--d2e-color-neutral);
   }
 
   /* 208px in the frame. Read-only until #2956 settles the nav contract: the
@@ -1454,10 +1430,9 @@ const onMoreSelect = (card: { source: BookmarkDisplay }, value: string): void =>
     border-top: var(--d2e-border-width-sm) solid var(--d2e-color-neutral-lighter);
     border-bottom: var(--d2e-border-width-sm) solid var(--d2e-color-neutral-lighter);
 
-    // D2eButton has no height/padding/shadow prop; its own border-radius
+    // D2eButton has no padding/shadow prop; its own border-radius
     // already defaults to --d2e-radius-md (8px), which matches the frame.
     :deep(.d2e-button) {
-      height: 36px;
       padding: var(--d2e-spacing-xs) 22px;
       box-shadow: var(--d2e-elevation-e2);
     }
@@ -1476,52 +1451,16 @@ const onMoreSelect = (card: { source: BookmarkDisplay }, value: string): void =>
     color: var(--d2e-color-primary);
   }
 
-  /* Search is 466x44 with a 1px #ACABA8 border and a 4px radius
-     (Figma 1762:475284). Vuetify's own outlined field is 56px tall. */
   &__search {
     flex: 0 0 466px;
     max-width: 466px;
-
-    :deep(.v-field) {
-      border-radius: 4px;
-    }
-
-    :deep(.v-field__outline) {
-      --v-field-border-width: 1px;
-      color: var(--d2e-color-neutral-light);
-      opacity: 1;
-    }
-
-    /* 24px icon, 8px gap, then the placeholder. The field owns the 16px
-       inset; the input adds none, or the icon reads as a second slot. */
-    :deep(.v-field) {
-      padding-inline: 16px;
-    }
-
-    :deep(.v-field__input) {
-      min-height: 44px;
-      padding: 0;
-      font-size: 16px;
-    }
-
-    :deep(.v-field__prepend-inner) {
-      align-items: center;
-      padding: 0;
-      margin-inline-end: 8px;
-
-      .v-icon {
-        font-size: 24px;
-        opacity: 1;
-        color: var(--d2e-color-neutral-light);
-      }
-    }
   }
 
   /* 101x40, 8px radius, 8px gap. `secondary` is outlined in the theme
      `primary`; the frame outlines it in Primary/Light (Figma 2634:58660). */
   &__filters {
     min-width: 101px;
-    padding: 0 var(--d2e-spacing-xs-s);
+    padding: 0 var(--d2e-spacing-xs-s) 0 10px;
 
     &.v-btn--variant-outlined {
       border-color: var(--d2e-color-primary-light);
@@ -1532,20 +1471,37 @@ const onMoreSelect = (card: { source: BookmarkDisplay }, value: string): void =>
     }
   }
 
-  /* Text button: 22px icon, 8px gap, 16px Medium neutral label, no box
+  /* Text button: 22px icon, 8px gap, neutral label, no box
      (Figma 2634:58663). */
   &__sort {
     :deep(.v-btn__content) {
-      font-size: 16px;
-      font-weight: 500;
-      letter-spacing: normal;
-      text-transform: none;
       color: var(--d2e-color-neutral);
     }
 
     :deep(.v-btn__prepend) {
       margin-inline: 0 8px;
       color: var(--d2e-color-neutral);
+    }
+
+    &:focus {
+      outline: none;
+    }
+
+    &:focus-visible {
+      outline: var(--d2e-border-width-md) solid var(--d2e-color-primary-light);
+      outline-offset: 2px;
+    }
+
+    &[aria-expanded='true'] {
+      --v-activated-opacity: 0;
+      --v-focus-opacity: 0;
+      --v-hover-opacity: 0;
+      background: var(--d2e-color-primary-xtra-lightest);
+
+      :deep(.v-btn__content),
+      :deep(.v-btn__prepend) {
+        color: var(--d2e-color-primary);
+      }
     }
   }
 
@@ -1576,15 +1532,18 @@ const onMoreSelect = (card: { source: BookmarkDisplay }, value: string): void =>
 
   &__grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, 324px);
+    grid-template-columns: repeat(auto-fill, minmax(314px, 1fr));
     grid-auto-rows: min-content;
-    justify-content: start;
-    column-gap: 16px;
-    row-gap: 40px;
+    align-content: start;
+    gap: var(--d2e-spacing-s);
     padding: 24px;
     flex: 1 1 auto;
     min-height: 0;
     overflow-y: auto;
+
+    > .d2e-exploration-card {
+      max-width: 500px;
+    }
   }
 
   &__summary-panel {

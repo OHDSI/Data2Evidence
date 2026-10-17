@@ -130,7 +130,7 @@ export function useDeepLink(dispatch: any, options?: { guard?: (action: () => vo
           cleanUrl.searchParams.delete('linkType')
           cleanUrl.searchParams.delete('query')
           cleanUrl.searchParams.delete('wizards')
-          window.history.replaceState({}, '', cleanUrl.toString())
+          window.history.replaceState(window.history.state, '', cleanUrl.toString())
 
           // Show success message, enhanced if wizard config has conditions/years
           let successMessage = 'Cohort definition loaded successfully from shared link.'
