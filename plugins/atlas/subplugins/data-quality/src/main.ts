@@ -18,6 +18,8 @@
  * docs/atlas-plugin-report-type-flash.md.
  */
 import "./style.css";
+// The D2E design tokens (--d2e-*) the @d2e/ui components in the checks view paint from.
+import "@d2e/ui/tokens.css";
 import { h, createApp, ref } from "vue";
 import { createVuetify } from "vuetify";
 import { aliases, mdi } from "vuetify/iconsets/mdi";
@@ -26,6 +28,10 @@ import DataQualityApp from "./DataQualityApp.vue";
 import {
   DQ_HOST_CTX,
   resolveSourceKey,
+  resolveCohortDefinitionId,
+  resolveSurface,
+  resolveView,
+  type DataQualityView,
   type DqHostCtx,
   type PluginProps,
 } from "./types";
@@ -36,6 +42,23 @@ import {
  * instance, and Atlas mounts at most one instance of a given plugin at a time.
  */
 const selectedSourceKey = ref("");
+
+/**
+ * Scopes the report to one cohort when the host asked for one. Module-scoped
+ * for the same reason as `selectedSourceKey`: `update()` receives props but no
+ * handle to the Vue instance, and Atlas mounts at most one instance of a given
+ * plugin at a time.
+ */
+const selectedCohortDefinitionId = ref<string | undefined>(undefined);
+
+/**
+ * The view the host asked for, and the surface it asked from. Module-scoped for
+ * the same reason as `selectedSourceKey`: Atlas moves between its "Data quality
+ * dashboard" and "Data quality checks" sidebar entries with `update()`, not with
+ * a remount, because both entries belong to this one plugin.
+ */
+const selectedView = ref<DataQualityView>("dashboard");
+const selectedSurface = ref("");
 
 const CSS_LINK_ID = "data-quality-plugin-styles";
 
@@ -136,6 +159,7 @@ const vueLifecycles = singleSpaVue({
       // As a parcel it calls update({ hostContext }); as a routed app it fires a
       // `custom-props-changed` window event (see useHostContext).
       datasetId: selectedSourceKey,
+      cohortDefinitionId: selectedCohortDefinitionId,
       appId: pluginProps.appId,
       t:
         pluginProps.t ??
@@ -146,6 +170,8 @@ const vueLifecycles = singleSpaVue({
       // useHostContext needs it to know whether the shell's
       // `custom-props-changed` broadcast is about us.
       isRoutedApp: Boolean(pluginProps.uiFilesUrl),
+      view: selectedView,
+      surface: selectedSurface,
     };
     app.provide(DQ_HOST_CTX, hostCtx);
   },
@@ -164,12 +190,16 @@ export const bootstrap = async (props: PluginProps) => {
 
 export const mount = async (props: PluginProps) => {
   selectedSourceKey.value = resolveSourceKey(props);
+  selectedCohortDefinitionId.value = resolveCohortDefinitionId(props);
+  selectedView.value = resolveView(props);
+  selectedSurface.value = resolveSurface(props);
   return vueLifecycles.mount(props);
 };
 
 /**
  * Called by PluginParcelOutlet whenever its `hostContext` computed changes —
- * i.e. when the user picks a different data source. Declaring it is what makes
+ * i.e. when the user picks a different data source, or moves between this
+ * plugin's two sidebar entries. Declaring it is what makes
  * `parcel.update` exist at all; without it the outlet silently skips updates and
  * the page would keep showing the previous source's results.
  *
@@ -180,10 +210,16 @@ export const mount = async (props: PluginProps) => {
  */
 export const update = async (props: PluginProps) => {
   selectedSourceKey.value = resolveSourceKey(props);
+  selectedCohortDefinitionId.value = resolveCohortDefinitionId(props);
+  selectedView.value = resolveView(props);
+  selectedSurface.value = resolveSurface(props);
 };
 
 export const unmount = async (props: PluginProps) => {
   const result = await vueLifecycles.unmount(props);
   selectedSourceKey.value = "";
+  selectedCohortDefinitionId.value = undefined;
+  selectedView.value = "dashboard";
+  selectedSurface.value = "";
   return result;
 };

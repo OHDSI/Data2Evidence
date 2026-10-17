@@ -14,6 +14,12 @@ export interface PluginHostContext {
   permissions: string[];
   /** WebAPI sourceKey of the source selected in the Data Sources header. */
   sourceKey?: string;
+  /**
+   * Scope the report to one cohort definition rather than the whole source.
+   * Sent by hosts that open the dashboard for a cohort - the Patient Analytics
+   * exploration card does. Absent for the datasource-sidebar mount.
+   */
+  cohortDefinitionId?: string;
 }
 
 // Props Atlas3 passes to a plugin. Two shapes, because Atlas mounts plugins two
@@ -84,6 +90,11 @@ export interface DqHostCtx {
    * `custom-props-changed` window event as a routed app.
    */
   datasetId: Ref<string>;
+  /**
+   * Reactive for the same reason `datasetId` is: a host may swap the cohort
+   * through `parcel.update` rather than remounting us.
+   */
+  cohortDefinitionId: Ref<string | undefined>;
   appId: string;
   locale: string;
   uiFilesUrl: string;
@@ -97,6 +108,17 @@ export interface DqHostCtx {
    * (see useHostContext).
    */
   isRoutedApp: boolean;
+  /**
+   * Which view to render, from `hostContext.itemId` (resolveView). Reactive:
+   * Atlas switches between its two sidebar entries through `parcel.update`,
+   * without a remount, and the vue-mri dialog's tabs do the same.
+   */
+  view: Ref<DataQualityView>;
+  /**
+   * The host surface, e.g. 'datasource-sidebar'. The checks view shows its own
+   * heading only there; the vue-mri dialog already titles the tab.
+   */
+  surface: Ref<string>;
 }
 
 /**
@@ -118,4 +140,33 @@ export const DQ_HOST_CTX = 'dqHostCtx';
  */
 export function resolveSourceKey(props: PluginProps): string {
   return props.hostContext?.sourceKey ?? props.datasetId ?? '';
+}
+
+/**
+ * The cohort to scope the report to, if the host asked for one.
+ *
+ * Parcel-only, like `sourceKey`. Returns `undefined` rather than `''` so a
+ * blank value from a host cannot be mistaken for a real id and send the
+ * request to the cohort route with an empty path segment.
+ */
+export function resolveCohortDefinitionId(props: PluginProps): string | undefined {
+  return props.hostContext?.cohortDefinitionId || undefined;
+}
+
+/** The two views this plugin renders. */
+export type DataQualityView = 'dashboard' | 'checks';
+
+/**
+ * The view the host asked for. Only 'checks' selects the checks view; every
+ * other value - 'dashboard', the 'data-quality-dashboard' the first vue-mri
+ * dialog sent, a missing host context in routed mode, anything unknown - is the
+ * dashboard, so no existing host changes what it sees.
+ */
+export function resolveView(props: PluginProps): DataQualityView {
+  return props.hostContext?.itemId === 'checks' ? 'checks' : 'dashboard';
+}
+
+/** The mount surface, or '' when there is no host context (routed mode). */
+export function resolveSurface(props: PluginProps): string {
+  return props.hostContext?.surface ?? '';
 }
