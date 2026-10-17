@@ -1,0 +1,67 @@
+.d2e-icon-button.d2e-icon-button {
+  flex: none;
+  padding: 0;
+  font-family: var(--d2e-font-family);
+  color: var(--d2e-color-primary);
+  background: transparent;
+  box-shadow: none;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  text-transform: none;
+
+  &--sm .MuiSvgIcon-root {
+    font-size: 18px;
+  }
+
+  &--md .MuiSvgIcon-root,
+  &--lg .MuiSvgIcon-root {
+    font-size: 24px;
+  }
+
+  &--no-stroke {
+    border-color: transparent;
+
+    &:hover {
+      background: var(--d2e-color-primary-xtra-lightest);
+    }
+
+    &:active {
+      background: var(--d2e-color-primary-lightest);
+    }
+  }
+
+  &--secondary {
+    border-color: var(--d2e-color-primary-lighter);
+
+    &:hover {
+      background: var(--d2e-color-primary-xtra-lightest);
+    }
+
+    &:active {
+      background: var(--d2e-color-primary-lightest);
+    }
+  }
+
+  &--primary {
+    color: var(--d2e-color-white);
+    background: var(--d2e-color-primary);
+
+    &:hover {
+      background: var(--d2e-color-primary-light);
+    }
+
+    &:active {
+      background: var(--d2e-color-primary);
+    }
+  }
+
+  &--primary:disabled {
+    background: #e0e0e0;
+    color: rgba(0, 0, 0, 0.26);
+  }
+
+  &--secondary:disabled,
+  &--no-stroke:disabled {
+    opacity: 0.26;
+  }
+}

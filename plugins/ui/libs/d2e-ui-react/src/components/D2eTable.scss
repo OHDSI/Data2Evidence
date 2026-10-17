@@ -1,0 +1,99 @@
+// Doubled class outranks MUI's emotion rules.
+.d2e-table.d2e-table {
+  .MuiTableCell-root {
+    font-family: var(--d2e-font-family);
+    font-size: 14px;
+    line-height: 1.5;
+    letter-spacing: 0;
+    color: var(--d2e-color-neutral-black);
+    border-bottom: 1px solid var(--d2e-color-neutral-lighter);
+    padding: 10px 16px;
+  }
+
+  // Table Header: Medium 14 (Figma ATLAS Table Header).
+  .MuiTableCell-head {
+    font-weight: 500;
+    color: var(--d2e-color-neutral-black);
+  }
+
+  .MuiTableRow-hover:hover {
+    background-color: var(--d2e-color-neutral-xtra-lightest);
+  }
+
+  .MuiTableRow-root.Mui-selected,
+  .MuiTableRow-root.Mui-selected:hover {
+    background-color: var(--d2e-color-primary-x-x-lightest);
+  }
+
+  .d2e-table__cell--numeric {
+    text-align: right;
+  }
+
+  .d2e-table__cell--checkbox {
+    width: 48px;
+    padding: 0;
+    text-align: center;
+  }
+
+  // Selected-with-checkbox rows get a left rule (Figma #999FCB).
+  .d2e-table__row--accent .MuiTableCell-root:first-of-type {
+    border-left: 4px solid var(--d2e-color-primary-lighter);
+  }
+
+  // Sub-rows carry no divider; the group separator comes from the parent row.
+  .d2e-table__subrow .MuiTableCell-root {
+    border-bottom: none;
+  }
+
+  // Section-header row inside the expanded panel: shaded + Medium text.
+  .d2e-table__subrow--header .MuiTableCell-root {
+    background-color: var(--d2e-color-neutral-xtra-lightest);
+    font-weight: 500;
+  }
+
+  // Tree connector gutter: a vertical line at x=24px with a 16px tick into the
+  // row centre; the last child's line stops at the tick (└).
+  .d2e-table__connector {
+    position: relative;
+
+    &::before {
+      content: "";
+      position: absolute;
+      left: 24px;
+      top: 0;
+      bottom: 0;
+      border-left: 1px solid var(--d2e-color-neutral-lighter);
+    }
+
+    &::after {
+      content: "";
+      position: absolute;
+      left: 24px;
+      top: 50%;
+      width: 16px;
+      border-top: 1px solid var(--d2e-color-neutral-lighter);
+    }
+
+    &--last::before {
+      bottom: 50%;
+    }
+
+    // Section-header connector: vertical line passes through, no tick.
+    &--notick::after {
+      display: none;
+    }
+  }
+}
+
+.d2e-table__sort {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  user-select: none;
+
+  .MuiSvgIcon-root {
+    font-size: 16px;
+    color: var(--d2e-color-neutral);
+  }
+}
