@@ -173,15 +173,18 @@ export interface TableSubRowProps extends TableRowProps {
   last?: boolean;
   /**
    * Section-header row inside the expanded panel (e.g. "Cache data source"):
-   * shaded, Medium text, and the connector line passes through without a tick.
+   * a full-width shaded band with no connector gutter (Figma). Pass a single
+   * cell spanning every column (`colSpan`); its label aligns to the table's
+   * left edge like the column headers, not to the sub-rows' connector gutter.
    */
   header?: boolean;
   /** The data cells rendered after the connector gutter. */
   children: ReactNode;
 }
 
-// A nested row under an expandable parent. Its first cell is a connector gutter
-// drawing the tree line/tick; remaining cells align to the parent's columns.
+// A nested row under an expandable parent. Data sub-rows lead with a connector
+// gutter drawing the tree line/tick; the section header is a full-width band
+// with no gutter, so its label aligns left with the column headers.
 export const TableSubRow = forwardRef<HTMLTableRowElement, TableSubRowProps>(
   function TableSubRow({ last = false, header = false, className, children, ...rest }, ref) {
     return (
@@ -194,15 +197,16 @@ export const TableSubRow = forwardRef<HTMLTableRowElement, TableSubRowProps>(
         )}
         {...rest}
       >
-        <TableCell
-          checkbox
-          aria-hidden="true"
-          className={clsx(
-            "d2e-table__connector",
-            last && "d2e-table__connector--last",
-            header && "d2e-table__connector--notick",
-          )}
-        />
+        {!header && (
+          <TableCell
+            checkbox
+            aria-hidden="true"
+            className={clsx(
+              "d2e-table__connector",
+              last && "d2e-table__connector--last",
+            )}
+          />
+        )}
         {children}
       </TableRow>
     );
