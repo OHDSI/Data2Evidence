@@ -181,7 +181,7 @@ export const Expandable: Story = {
                 {open[group.id] && (
                   <>
                     <TableSubRow header>
-                      <TableCell colSpan={2}>Cache data source</TableCell>
+                      <TableCell colSpan={3}>Cache data source</TableCell>
                     </TableSubRow>
                     {group.children.map((child, i) => (
                       <TableSubRow

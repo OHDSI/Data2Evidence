@@ -45,10 +45,14 @@
     border-bottom: none;
   }
 
-  // Section-header row inside the expanded panel: shaded + Medium text.
+  // Section-header row inside the expanded panel ("Cache data sources"): a thin
+  // shaded band, not a full data row. Figma Caption 1 (12px / 1.4, regular) in a
+  // ~24px band — reduced vertical padding keeps it shorter than the data rows.
   .d2e-table__subrow--header .MuiTableCell-root {
     background-color: var(--d2e-color-neutral-xtra-lightest);
-    font-weight: 500;
+    font-size: 12px;
+    line-height: 1.4;
+    padding-block: 4px;
   }
 
   // Tree connector gutter: a vertical line at x=24px with a 16px tick into the
@@ -76,11 +80,6 @@
 
     &--last::before {
       bottom: 50%;
-    }
-
-    // Section-header connector: vertical line passes through, no tick.
-    &--notick::after {
-      display: none;
     }
   }
 }

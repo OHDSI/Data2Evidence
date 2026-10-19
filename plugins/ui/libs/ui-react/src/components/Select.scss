@@ -11,6 +11,15 @@
     padding-inline: 0;
   }
 
+  // Multi-select chips wrap onto several rows; give the value box vertical
+  // padding so wrapped chips keep breathing room instead of sitting flush
+  // against the field edges. border-box keeps the single-row height unchanged.
+  .MuiSelect-select.MuiSelect-multiple {
+    box-sizing: border-box;
+    align-items: flex-start;
+    padding-block: 6px;
+  }
+
   &__adornment .MuiSvgIcon-root {
     font-size: 24px;
     color: var(--d2e-color-neutral);
