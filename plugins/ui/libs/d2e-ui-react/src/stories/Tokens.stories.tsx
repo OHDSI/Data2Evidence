@@ -24,6 +24,37 @@ const mono = {
   color: "var(--d2e-color-neutral)",
 } as const;
 
+const h3sub = {
+  margin: "0 0 10px",
+  textTransform: "uppercase",
+  font: "600 12px/1.2 var(--d2e-font-family)",
+  color: "var(--d2e-color-neutral)",
+} as const;
+
+// Bucket the colour tokens by prefix; an "Other" catch-all guarantees any new
+// token still appears even if it matches no group.
+const COLOR_GROUPS: { label: string; match: (k: string) => boolean }[] = [
+  { label: "Primary", match: (k) => k.startsWith("primary") && k !== "primaryHover" && k !== "primaryInfo" },
+  { label: "Secondary & Tertiary", match: (k) => k.startsWith("secondary") || k === "tertiary" },
+  { label: "Neutral", match: (k) => k.startsWith("neutral") || k === "white" || k === "textSecondary" },
+  { label: "Functional", match: (k) => /^(success|warning|alarm|danger)/.test(k) },
+  { label: "Support", match: (k) => k.startsWith("supportBlue") },
+  { label: "Legacy", match: (k) => k === "primaryHover" || k === "primaryInfo" },
+];
+
+const groupedColors = (() => {
+  const entries = Object.entries(tokens.color);
+  const assigned = new Set<string>();
+  const groups = COLOR_GROUPS.map((g) => {
+    const items = entries.filter(([k]) => !assigned.has(k) && g.match(k));
+    items.forEach(([k]) => assigned.add(k));
+    return { label: g.label, items };
+  }).filter((g) => g.items.length > 0);
+  const other = entries.filter(([k]) => !assigned.has(k));
+  if (other.length) groups.push({ label: "Other", items: other });
+  return groups;
+})();
+
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <section style={{ marginBottom: 40 }}>
@@ -37,22 +68,27 @@ export const Tokens: Story = {
   render: () => (
     <div style={{ maxWidth: 900, fontFamily: "var(--d2e-font-family)" }}>
       <Section title="Colors">
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, 150px)", gap: 16 }}>
-          {Object.entries(tokens.color).map(([name, value]) => (
-            <div key={name}>
-              <div
-                style={{
-                  height: 56,
-                  borderRadius: 8,
-                  background: value,
-                  border: "1px solid rgba(0,0,0,0.1)",
-                }}
-              />
-              <div style={{ ...label, marginTop: 6 }}>{name}</div>
-              <div style={mono}>{value}</div>
+        {groupedColors.map((group) => (
+          <div key={group.label} style={{ marginBottom: 24 }}>
+            <h3 style={h3sub}>{group.label}</h3>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, 150px)", gap: 16 }}>
+              {group.items.map(([name, value]) => (
+                <div key={name}>
+                  <div
+                    style={{
+                      height: 56,
+                      borderRadius: 8,
+                      background: value,
+                      border: "1px solid rgba(0,0,0,0.1)",
+                    }}
+                  />
+                  <div style={{ ...label, marginTop: 6 }}>{name}</div>
+                  <div style={mono}>{value}</div>
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
+          </div>
+        ))}
       </Section>
 
       <Section title="Typography">
