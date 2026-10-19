@@ -19,6 +19,8 @@ export { PageHeader } from "./components/PageHeader";
 export type { PageHeaderProps } from "./components/PageHeader";
 export { Navbar, NavItem } from "./components/Navbar";
 export type { NavbarProps, NavbarVariant, NavItemProps } from "./components/Navbar";
+export { Logo } from "./components/Logo";
+export type { LogoProps } from "./components/Logo";
 export { Select } from "./components/Select";
 export type { SelectProps } from "./components/Select";
 export { Checkbox } from "./components/Checkbox";

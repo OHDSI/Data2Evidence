@@ -98,12 +98,6 @@ const SELECT_ITEMS = [
   { label: "Beta", value: "b" },
 ];
 
-const logo = (
-  <span style={{ font: "700 18px/1 var(--d2e-font-family)", color: "var(--d2e-color-primary)", letterSpacing: "0.5px" }}>
-    D2E <span style={{ fontWeight: 400, fontSize: 12 }}>DATA2EVIDENCE</span>
-  </span>
-);
-
 export const Overview: Story = {
   render: () => {
     const [checked, setChecked] = useState(true);
@@ -122,7 +116,7 @@ export const Overview: Story = {
           fontFamily: "var(--d2e-font-family)",
         }}
       >
-        <Navbar variant="next" logo={logo} end={<NavItem>john.doe_researcher</NavItem>}>
+        <Navbar variant="next" end={<NavItem>john.doe_researcher</NavItem>}>
           {["Overview", "Components", "Tokens"].map((label) => (
             <NavItem
               key={label}
