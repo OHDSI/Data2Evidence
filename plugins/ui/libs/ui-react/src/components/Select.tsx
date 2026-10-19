@@ -5,6 +5,7 @@ import InputAdornment from "@mui/material/InputAdornment";
 import ListItemText from "@mui/material/ListItemText";
 import MenuItem from "@mui/material/MenuItem";
 import TextField from "@mui/material/TextField";
+import CheckIcon from "@mui/icons-material/Check";
 import clsx from "clsx";
 import { SELECT_SIZE_MAP } from "./selectSizes";
 import type { SelectItem, SelectSize } from "./selectSizes";
@@ -92,6 +93,33 @@ export function Select({
             onChange?.((next as SelectItem | null)?.value ?? null);
           }
         }}
+        // Match the plain Select's option rows: a checkbox when multiple, a
+        // trailing navy checkmark when a single value is selected (Figma).
+        renderOption={(props, option, { selected }) => {
+          const o = option as SelectItem;
+          return (
+            <li {...props} key={o.value}>
+              {multiple ? (
+                <>
+                  <Checkbox
+                    checked={selected}
+                    color="primary"
+                    size="small"
+                    sx={{ marginInlineStart: "-6px", marginInlineEnd: "4px" }}
+                  />
+                  <ListItemText primary={o.label} sx={{ my: 0 }} />
+                </>
+              ) : (
+                <>
+                  <span className="d2e-select__option-label">{o.label}</span>
+                  {selected ? (
+                    <CheckIcon className="d2e-select__check" fontSize="small" />
+                  ) : null}
+                </>
+              )}
+            </li>
+          );
+        }}
         renderInput={(params) => (
           <TextField
             {...params}
@@ -168,6 +196,7 @@ export function Select({
       {items.map((item) => {
         const checked =
           multiple && Array.isArray(value) && value.includes(item.value);
+        const selected = !multiple && value === item.value;
         return (
           <MenuItem key={item.value} value={item.value} disabled={item.disabled}>
             {multiple ? (
@@ -181,7 +210,12 @@ export function Select({
                 <ListItemText primary={item.label} sx={{ my: 0 }} />
               </>
             ) : (
-              item.label
+              <>
+                <span className="d2e-select__option-label">{item.label}</span>
+                {selected ? (
+                  <CheckIcon className="d2e-select__check" fontSize="small" />
+                ) : null}
+              </>
             )}
           </MenuItem>
         );

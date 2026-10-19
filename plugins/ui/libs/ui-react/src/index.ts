@@ -19,8 +19,13 @@ export { Toolbar } from "./components/Toolbar";
 export type { ToolbarProps } from "./components/Toolbar";
 export { PageHeader } from "./components/PageHeader";
 export type { PageHeaderProps } from "./components/PageHeader";
-export { Navbar, NavItem } from "./components/Navbar";
-export type { NavbarProps, NavbarVariant, NavItemProps } from "./components/Navbar";
+export { Navbar, NavItem, NavUser } from "./components/Navbar";
+export type {
+  NavbarProps,
+  NavbarVariant,
+  NavItemProps,
+  NavUserProps,
+} from "./components/Navbar";
 export { Logo } from "./components/Logo";
 export type { LogoProps } from "./components/Logo";
 export { Select } from "./components/Select";

@@ -1,4 +1,6 @@
 import type { MouseEvent, ReactNode } from "react";
+import AccountCircleIcon from "@mui/icons-material/AccountCircle";
+import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 import clsx from "clsx";
 import { Logo } from "./Logo";
 import "./Navbar.scss";
@@ -88,6 +90,39 @@ export function NavItem({
       onClick={onClick}
     >
       {label}
+    </button>
+  );
+}
+
+export interface NavUserProps {
+  /** The signed-in user's display name. */
+  name: ReactNode;
+  /** Avatar node; defaults to a filled user-circle icon. */
+  avatar?: ReactNode;
+  /** Controls the chevron direction (▾ closed / ▴ open). */
+  open?: boolean;
+  onClick?: (event: MouseEvent<HTMLButtonElement>) => void;
+  className?: string;
+}
+
+// The navbar's right-side profile control (Figma "Right menu"): avatar + name +
+// chevron. Use it in the Navbar's `end` slot; wire onClick to open an account Menu.
+export function NavUser({ name, avatar, open = false, onClick, className }: NavUserProps) {
+  return (
+    <button
+      type="button"
+      className={clsx("d2e-nav-user", className)}
+      aria-haspopup="menu"
+      aria-expanded={open}
+      onClick={onClick}
+    >
+      <span className="d2e-nav-user__avatar">
+        {avatar ?? <AccountCircleIcon />}
+      </span>
+      <span className="d2e-nav-user__name">{name}</span>
+      <KeyboardArrowDownIcon
+        className={clsx("d2e-nav-user__chevron", open && "d2e-nav-user__chevron--open")}
+      />
     </button>
   );
 }
