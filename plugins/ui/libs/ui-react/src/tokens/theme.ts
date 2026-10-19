@@ -131,21 +131,15 @@ export function buildMuiTheme(): Theme {
       },
       MuiAutocomplete: {
         styleOverrides: {
+          // Text/size only. MUI tints the selected option navy via a rule that
+          // Autocomplete's `option` styleOverrides can't reach, so the hover /
+          // selected greys are pinned in Select.scss instead.
           option: {
             fontFamily: f.family,
             fontSize: f.body1.size,
             letterSpacing: "0.15px",
             minHeight: 40,
             color: tokens.color.neutralBlack,
-            // MUI tints a selected option with primary (navy → lavender) and its
-            // selected+focused rule out-specifies a single-state override, so
-            // pin every selected/focused combination to the grey overlays.
-            "&.Mui-focused": {
-              backgroundColor: "rgba(0,0,0,0.04)",
-            },
-            '&[aria-selected="true"], &[aria-selected="true"].Mui-focused': {
-              backgroundColor: "rgba(0,0,0,0.12)",
-            },
           },
         },
       },
