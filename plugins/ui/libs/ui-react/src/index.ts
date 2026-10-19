@@ -5,6 +5,8 @@ export type { DialogProps } from "./components/Dialog";
 export { DIALOG_SIZE_MAP, type DialogSize } from "./components/dialogSizes";
 export { Button } from "./components/Button";
 export type { ButtonProps } from "./components/Button";
+export { SplitButton } from "./components/SplitButton";
+export type { SplitButtonProps, SplitButtonVariant } from "./components/SplitButton";
 export { TextField } from "./components/TextField";
 export type { TextFieldProps } from "./components/TextField";
 export { StatusChip } from "./components/StatusChip";

@@ -5,6 +5,7 @@ import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import AddIcon from "@mui/icons-material/Add";
 import { Button } from "../components/Button";
+import { SplitButton } from "../components/SplitButton";
 import { IconButton } from "../components/IconButton";
 import { StatusChip } from "../components/StatusChip";
 import { Checkbox } from "../components/Checkbox";
@@ -107,6 +108,7 @@ export const Overview: Story = {
     const [sel, setSel] = useState<string | null>("a");
     const [dialog, setDialog] = useState(false);
     const [navItem, setNavItem] = useState("Overview");
+    const [splitOpen, setSplitOpen] = useState(false);
 
     return (
       <div
@@ -146,6 +148,16 @@ export const Overview: Story = {
                 <Button variant="primary">Primary</Button>
                 <Button variant="secondary">Secondary</Button>
                 <Button variant="danger">Danger</Button>
+              </Tile>
+
+              <Tile name="Split button">
+                <SplitButton
+                  open={splitOpen}
+                  onToggle={() => setSplitOpen((o) => !o)}
+                >
+                  Save
+                </SplitButton>
+                <SplitButton variant="secondary">Export</SplitButton>
               </Tile>
 
               <Tile name="Icon button">
