@@ -1,0 +1,153 @@
+.d2e-navbar {
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  height: 64px;
+  padding: 0 var(--d2e-spacing-m);
+  background: var(--d2e-color-white);
+  font-family: var(--d2e-font-family);
+
+  &__logo {
+    display: flex;
+    flex-shrink: 0;
+    align-items: center;
+  }
+
+  &__nav {
+    display: flex;
+    align-items: stretch;
+    height: 100%;
+  }
+
+  &__end {
+    display: flex;
+    flex-shrink: 0;
+    align-items: center;
+    gap: var(--d2e-spacing-s);
+    margin-inline-start: auto;
+  }
+}
+
+.d2e-nav-item {
+  box-sizing: border-box;
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  height: 100%;
+  margin: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  white-space: nowrap;
+  text-decoration: none;
+  font-family: inherit;
+
+  &--disabled {
+    pointer-events: none;
+  }
+
+  &:focus-visible {
+    outline: 1px dashed var(--d2e-color-primary);
+    outline-offset: -3px;
+    border-radius: 2px;
+  }
+
+  // The label reserves its selected (heavier) width via a hidden copy, so
+  // toggling selected changes the weight without reflowing the row.
+  &__label {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+
+    &::after {
+      content: attr(data-text);
+      height: 0;
+      overflow: hidden;
+      visibility: hidden;
+      pointer-events: none;
+      user-select: none;
+    }
+  }
+}
+
+// Next (Aug-2026): IBM Plex 14 navy; selected = Bold + 2px coral underline;
+// hover = navy 4% tint. Logo→nav 40, between items 24, item inset 4 (Figma).
+.d2e-navbar--next {
+  gap: var(--d2e-spacing-xl);
+  border-bottom: 1px solid var(--d2e-color-neutral);
+
+  .d2e-navbar__nav {
+    gap: var(--d2e-spacing-m);
+  }
+
+  .d2e-nav-item {
+    padding: 0 var(--d2e-spacing-xxs);
+    font-size: 14px;
+    font-weight: 500;
+    line-height: 1.5;
+    color: var(--d2e-color-primary);
+
+    &:hover {
+      background: rgba(0, 0, 128, 0.04);
+    }
+
+    &--selected {
+      font-weight: 700;
+      box-shadow: inset 0 -2px 0 var(--d2e-color-secondary);
+    }
+
+    &--disabled {
+      opacity: 0.38;
+    }
+
+    .d2e-nav-item__label::after {
+      font-weight: 700;
+    }
+  }
+}
+
+// Classic (current portal): grey 16 links; active = navy Medium + an 8px navy
+// bar; hover tints navy-light. Logo→nav 16, between items 4, item inset 16
+// (Figma). Deprecated next phase.
+.d2e-navbar--classic {
+  gap: var(--d2e-spacing-s);
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+
+  .d2e-navbar__nav {
+    gap: var(--d2e-spacing-xxs);
+  }
+
+  .d2e-nav-item {
+    padding: 0 var(--d2e-spacing-s);
+    font-size: 16px;
+    font-weight: 400;
+    color: var(--d2e-color-neutral);
+
+    &:hover {
+      color: var(--d2e-color-primary-light);
+    }
+
+    &--selected {
+      font-weight: 500;
+      color: var(--d2e-color-primary);
+    }
+
+    &--selected::after {
+      content: "";
+      position: absolute;
+      inset-inline: 8%;
+      bottom: 0;
+      height: 8px;
+      border-radius: var(--d2e-spacing-xs) var(--d2e-spacing-xs) 0 0;
+      background: var(--d2e-color-primary);
+    }
+
+    &--disabled {
+      color: var(--d2e-color-neutral-light);
+    }
+
+    .d2e-nav-item__label::after {
+      font-weight: 500;
+    }
+  }
+}

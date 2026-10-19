@@ -1,4 +1,4 @@
-import { Fragment, useMemo, useState } from "react";
+import { Fragment, useMemo, useState, type ReactNode } from "react";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import Skeleton from "@mui/material/Skeleton";
 import {
@@ -20,6 +20,23 @@ const meta = {
 
 export default meta;
 type Story = StoryObj<typeof meta>;
+
+function Section({ title, children }: { title: string; children: ReactNode }) {
+  return (
+    <section style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+      <h3
+        style={{
+          margin: 0,
+          font: "600 16px/1.2 var(--d2e-font-family)",
+          color: "var(--d2e-color-primary)",
+        }}
+      >
+        {title}
+      </h3>
+      {children}
+    </section>
+  );
+}
 
 interface Row {
   id: string;
@@ -43,25 +60,23 @@ const STATUS_LABEL: Record<Row["status"], string> = {
 
 // Full table: sortable header, selectable checkbox column, hyperlink, number,
 // chip and a skeleton loading row — exercising TableRow/Cell states.
-export const Showcase: Story = {
-  render: () => {
-    const [dir, setDir] = useState<"asc" | "desc">("asc");
-    const [selected, setSelected] = useState<Record<string, boolean>>({ b: true });
+function DataTable() {
+  const [dir, setDir] = useState<"asc" | "desc">("asc");
+  const [selected, setSelected] = useState<Record<string, boolean>>({ b: true });
 
-    const rows = useMemo(
-      () =>
-        [...ROWS].sort((x, y) =>
-          dir === "asc" ? x.name.localeCompare(y.name) : y.name.localeCompare(x.name),
-        ),
-      [dir],
-    );
+  const rows = useMemo(
+    () =>
+      [...ROWS].sort((x, y) =>
+        dir === "asc" ? x.name.localeCompare(y.name) : y.name.localeCompare(x.name),
+      ),
+    [dir],
+  );
 
-    const toggle = (id: string) =>
-      setSelected((s) => ({ ...s, [id]: !s[id] }));
+  const toggle = (id: string) => setSelected((s) => ({ ...s, [id]: !s[id] }));
 
-    return (
-      <div style={{ maxWidth: 820 }}>
-        <Table>
+  return (
+    <div style={{ maxWidth: 820 }}>
+      <Table>
           <TableHead>
             <TableRow>
               <TableCell header checkbox />
@@ -118,9 +133,8 @@ export const Showcase: Story = {
           </TableBody>
         </Table>
       </div>
-    );
-  },
-};
+  );
+}
 
 interface Group {
   id: string;
@@ -153,12 +167,11 @@ const GROUPS: Group[] = [
 
 // Expandable rows with the tree connector gutter. Toggle a parent to reveal its
 // sub-rows; the last child's connector becomes an └.
-export const Expandable: Story = {
-  render: () => {
-    const [open, setOpen] = useState<Record<string, boolean>>({ g1: true });
-    return (
-      <div style={{ maxWidth: 720 }}>
-        <Table>
+function ExpandableTable() {
+  const [open, setOpen] = useState<Record<string, boolean>>({ g1: true });
+  return (
+    <div style={{ maxWidth: 720 }}>
+      <Table>
           <TableHead>
             <TableRow>
               <TableCell header checkbox />
@@ -199,8 +212,22 @@ export const Expandable: Story = {
           </TableBody>
         </Table>
       </div>
-    );
-  },
+  );
+}
+
+// Consolidated reference: the data table and the expandable tree table, each
+// labelled.
+export const Showcase: Story = {
+  render: () => (
+    <div style={{ display: "flex", flexDirection: "column", gap: 40 }}>
+      <Section title="Data table">
+        <DataTable />
+      </Section>
+      <Section title="Expandable rows">
+        <ExpandableTable />
+      </Section>
+    </div>
+  ),
 };
 
 export const Playground: Story = {
