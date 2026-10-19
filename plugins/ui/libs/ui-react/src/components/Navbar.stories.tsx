@@ -15,12 +15,6 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-const logo = (
-  <span style={{ font: "700 18px/1 var(--d2e-font-family)", color: "var(--d2e-color-primary)", letterSpacing: "0.5px" }}>
-    D2E <span style={{ fontWeight: 400, fontSize: 12 }}>DATA2EVIDENCE</span>
-  </span>
-);
-
 const NEXT_LINKS = [
   "Data Sources",
   "Concepts",
@@ -65,7 +59,7 @@ function NavbarDemo({
 }) {
   const [active, setActive] = useState(links[0]);
   return (
-    <Navbar variant={variant} logo={logo} end={<NavItem>{endLabel}</NavItem>}>
+    <Navbar variant={variant} end={<NavItem>{endLabel}</NavItem>}>
       {links.map((label) => (
         <NavItem
           key={label}

@@ -1,5 +1,6 @@
 import type { MouseEvent, ReactNode } from "react";
 import clsx from "clsx";
+import { Logo } from "./Logo";
 import "./Navbar.scss";
 
 /**
@@ -11,7 +12,7 @@ export type NavbarVariant = "classic" | "next";
 
 export interface NavbarProps {
   variant?: NavbarVariant;
-  /** Left slot — the product logo. */
+  /** Left slot — the product logo. Defaults to the D2E <Logo/>; pass null to omit. */
   logo?: ReactNode;
   /** Right slot — e.g. a dataset selector, icons, or the account menu. */
   end?: ReactNode;
@@ -21,9 +22,10 @@ export interface NavbarProps {
 }
 
 export function Navbar({ variant = "next", logo, end, children, className }: NavbarProps) {
+  const resolvedLogo = logo === undefined ? <Logo /> : logo;
   return (
     <nav className={clsx("d2e-navbar", `d2e-navbar--${variant}`, className)}>
-      {logo != null && <div className="d2e-navbar__logo">{logo}</div>}
+      {resolvedLogo != null && <div className="d2e-navbar__logo">{resolvedLogo}</div>}
       <div className="d2e-navbar__nav">{children}</div>
       {end != null && <div className="d2e-navbar__end">{end}</div>}
     </nav>
