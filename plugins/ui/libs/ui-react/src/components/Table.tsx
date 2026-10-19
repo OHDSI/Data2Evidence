@@ -155,6 +155,7 @@ export const TableExpandableRow = forwardRef<
     <TableRow ref={ref} {...rest}>
       <TableCell checkbox>
         <IconButton
+          className="d2e-table__expand"
           size="sm"
           ariaLabel={expandLabel}
           aria-expanded={expanded}

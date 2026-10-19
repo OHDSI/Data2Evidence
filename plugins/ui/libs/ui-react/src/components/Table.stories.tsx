@@ -111,9 +111,7 @@ function DataTable() {
                   />
                 </TableCell>
                 <TableCell>
-                  <a href="#" style={{ color: "var(--d2e-color-primary)" }}>
-                    {row.name}
-                  </a>
+                  <a href="#">{row.name}</a>
                 </TableCell>
                 <TableCell>{row.owner}</TableCell>
                 <TableCell>
