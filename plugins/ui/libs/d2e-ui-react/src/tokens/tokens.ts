@@ -6,7 +6,11 @@ export const tokens = {
     primaryLightest: "#CCCFE5",
     primaryXtraLightest: "#E5E6F2",
     primaryXXLightest: "#F8F8FF",
+    primaryDarken: "#000066",
     secondary: "#FF5E59",
+    secondaryDark: "#E75248",
+    secondaryLight: "#FFA19D",
+    tertiary: "#FFD2C3",
     neutralBlack: "#000000",
     neutral: "#595757",
     neutralLight: "#ACABA8",
@@ -29,6 +33,10 @@ export const tokens = {
     // feedback-error value in the app Vuetify theme. Replace once design
     // supplies an official danger token.
     danger: "#A3293D",
+    // Legacy Vuetify link/info blues carried from the Vue theme (not part of the
+    // D2E navy scale); kept as tokens so buildD2eColors stays fully token-backed.
+    primaryHover: "#007EBA",
+    primaryInfo: "#007CC0",
     textSecondary: "#00000099",
     white: "#FFFFFF",
   },

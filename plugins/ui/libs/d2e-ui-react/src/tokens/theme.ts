@@ -4,42 +4,46 @@ import { tokens } from "./tokens";
 // The flat `d2e` colour map, carried verbatim from the Vue library's Vuetify
 // theme and attached to the MUI theme as `theme.d2e.colors`. Values reference
 // `tokens` where one exists, else keep the existing literal.
+// Vuetify-style colour map exposed as `theme.d2e.colors`. Every value derives
+// from `tokens` (single source of truth) — semantics use the D2E functional
+// palette, surfaces/borders use D2E neutrals.
 export function buildD2eColors(): Record<string, string> {
+  const c = tokens.color;
   return {
-    // Primary colors
-    primary: tokens.color.primary,
-    "primary-darken-1": "#000066",
-    "primary-lighten-1": tokens.color.primaryLight,
-    // Secondary colors
-    secondary: tokens.color.secondary,
-    "secondary-darken-1": "#e75248",
-    "secondary-lighten-1": "#ffa19d",
-    tertiary: "#ffd2c3",
-    // Semantic colors matching Bootstrap variables
-    success: "#28a745",
-    info: "#17a2b8",
-    warning: "#ffc107",
-    error: "#dc3545",
-    // Feedback colors
-    "feedback-success": tokens.color.success,
-    "feedback-warning": tokens.color.warning,
-    "feedback-error": tokens.color.danger,
-    "feedback-alarm": "#d53939",
-    // Neutral colors
-    background: tokens.color.white,
-    surface: "#f9f9f9",
-    "surface-variant": "#e5e5e5",
-    // Text colors
-    "on-primary": tokens.color.white,
-    "on-secondary": tokens.color.white,
-    "on-background": tokens.color.primary,
-    "on-surface": tokens.color.primary,
-    "primary-hover": "#007eba",
-    "primary-info": "#007cc0",
-    // Border colors (Bootstrap gray scale)
-    "border-color": "#dee2e6",
-    "border-light": "#dddddd",
-    "border-medium": "#cccccc",
+    // Primary
+    primary: c.primary,
+    "primary-darken-1": c.primaryDarken,
+    "primary-lighten-1": c.primaryLight,
+    // Secondary
+    secondary: c.secondary,
+    "secondary-darken-1": c.secondaryDark,
+    "secondary-lighten-1": c.secondaryLight,
+    tertiary: c.tertiary,
+    // Semantic (D2E functional palette; D2E has no distinct info, so info = navy)
+    success: c.success,
+    info: c.primary,
+    warning: c.warning,
+    error: c.alarm,
+    // Feedback
+    "feedback-success": c.success,
+    "feedback-warning": c.warning,
+    "feedback-error": c.danger,
+    "feedback-alarm": c.alarm,
+    // Surfaces
+    background: c.white,
+    surface: c.white,
+    "surface-variant": c.neutralLighter,
+    // Text
+    "on-primary": c.white,
+    "on-secondary": c.white,
+    "on-background": c.primary,
+    "on-surface": c.primary,
+    "primary-hover": c.primaryHover,
+    "primary-info": c.primaryInfo,
+    // Borders (D2E neutrals)
+    "border-color": c.neutralLighter,
+    "border-light": c.neutralLighter,
+    "border-medium": c.neutralLight,
   };
 }
 
@@ -65,10 +69,14 @@ export function buildD2eMuiTheme(): Theme {
         light: colors["secondary-lighten-1"],
         contrastText: colors["on-secondary"],
       },
-      success: { main: colors.success },
-      info: { main: colors.info },
-      warning: { main: colors.warning },
-      error: { main: colors.error },
+      // MUI semantic colors map to the D2E functional palette (not the Vuetify
+      // Bootstrap compat values in `colors`), so palette-driven bits like field
+      // error text / `color="error|success|warning"` are on-brand. D2E has no
+      // distinct info colour, so info uses primary (navy).
+      success: { main: tokens.color.success },
+      info: { main: tokens.color.primary },
+      warning: { main: tokens.color.warning },
+      error: { main: tokens.color.alarm },
       background: {
         default: colors.background,
         paper: colors.surface,

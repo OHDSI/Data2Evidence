@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { buildD2eColors, buildD2eMuiTheme } from "../tokens/theme";
 
-// The flat `d2e` colour map carried verbatim from the Vue library's Vuetify
-// theme. Values are unchanged; these assertions guard against silent drops and
-// accidental drift.
+// The flat `d2e` colour map, now fully derived from `tokens` (single source of
+// truth): semantics use the D2E functional palette, surfaces/borders use D2E
+// neutrals. These assertions guard against silent drops and accidental drift.
 const EXPECTED_COLORS = {
   primary: "#000080",
   "primary-darken-1": "#000066",
@@ -12,26 +12,26 @@ const EXPECTED_COLORS = {
   "secondary-darken-1": "#e75248",
   "secondary-lighten-1": "#ffa19d",
   tertiary: "#ffd2c3",
-  success: "#28a745",
-  info: "#17a2b8",
-  warning: "#ffc107",
-  error: "#dc3545",
+  success: "#00855f",
+  info: "#000080",
+  warning: "#f89c0e",
+  error: "#d53939",
   "feedback-success": "#00855f",
   "feedback-warning": "#f89c0e",
   "feedback-error": "#a3293d",
   "feedback-alarm": "#d53939",
   background: "#ffffff",
-  surface: "#f9f9f9",
-  "surface-variant": "#e5e5e5",
+  surface: "#ffffff",
+  "surface-variant": "#dedcda",
   "on-primary": "#ffffff",
   "on-secondary": "#ffffff",
   "on-background": "#000080",
   "on-surface": "#000080",
   "primary-hover": "#007eba",
   "primary-info": "#007cc0",
-  "border-color": "#dee2e6",
-  "border-light": "#dddddd",
-  "border-medium": "#cccccc",
+  "border-color": "#dedcda",
+  "border-light": "#dedcda",
+  "border-medium": "#acaba8",
 } as const;
 
 function normalizeHex(color: string): string {
