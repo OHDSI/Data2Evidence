@@ -32,8 +32,10 @@
     text-align: left;
     cursor: pointer;
 
+    // Hover = 4% of the item's tone (navy), not a grey — so it reads distinctly
+    // from the grey "selected" fill (Figma "Menu action item" Hover).
     &:hover {
-      background: rgba(0, 0, 0, 0.04);
+      background: rgba(0, 0, 128, 0.04);
     }
 
     &--selected {
@@ -47,6 +49,11 @@
 
     &--danger:not(.d2e-menu__item--disabled) {
       color: var(--d2e-color-alarm);
+
+      // Danger hover tone = 4% red.
+      &:hover {
+        background: rgba(213, 57, 57, 0.04);
+      }
     }
   }
 
