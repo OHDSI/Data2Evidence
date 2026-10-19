@@ -54,6 +54,26 @@
   color: var(--d2e-color-primary);
 }
 
+// MUI tints a selected Autocomplete option with primary (navy → lavender) via a
+// rule that `option` styleOverrides can't override. Pin the menu-item greys here
+// with doubled-class specificity (the popup renders in a portal, so this is a
+// top-level global rule): hover/focus = 4% black, selected = 12% black.
+.MuiAutocomplete-option.MuiAutocomplete-option {
+  &.Mui-focused {
+    background-color: rgba(0, 0, 0, 0.04);
+  }
+
+  // MUI's selected rule (`.<listbox> .option[aria-selected].Mui-focused`) ties
+  // this on specificity and wins on source order, so !important is required to
+  // pin the grey overlay over MUI's navy tint.
+  &[aria-selected="true"],
+  &[aria-selected="true"]:hover,
+  &[aria-selected="true"].Mui-focused,
+  &[aria-selected="true"].Mui-focusVisible {
+    background-color: rgba(0, 0, 0, 0.12) !important;
+  }
+}
+
 // Searchable renders a MUI Autocomplete. Doubled class outranks MUI's emotion
 // rules so the field matches the select's height and 14px left inset.
 .d2e-select.d2e-select {
