@@ -224,12 +224,7 @@ export function StepSelection() {
           />
         </label>
         <div className={styles.toolbarActions}>
-          <ViewToggle
-            value={viewMode}
-            options={VIEW_OPTIONS}
-            ariaLabel="Wizard view"
-            onChange={setViewMode}
-          />
+          <ViewToggle value={viewMode} options={VIEW_OPTIONS} ariaLabel="Wizard view" onChange={setViewMode} />
           {portalProps.isAtlas === true ? (
             <div className={styles.sourceField}>
               <DataSourceSelect
