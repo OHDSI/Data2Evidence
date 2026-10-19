@@ -29,6 +29,16 @@
     text-align: right;
   }
 
+  // Hyperlink cell: navy, underlined only on hover (Figma Hyperlink hover).
+  .d2e-table__cell a {
+    color: var(--d2e-color-primary);
+    text-decoration: none;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+
   .d2e-table__cell--checkbox {
     width: 48px;
     padding: 0;
@@ -82,6 +92,11 @@
       bottom: 50%;
     }
   }
+}
+
+// Expandable-row chevron is neutral grey, not the IconButton's navy (Figma).
+.d2e-table .d2e-table__expand.d2e-table__expand {
+  color: var(--d2e-color-neutral);
 }
 
 .d2e-table__sort {
