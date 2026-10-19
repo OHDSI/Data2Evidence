@@ -110,6 +110,8 @@ export function buildMuiTheme(): Theme {
           root: { textTransform: "none" },
         },
       },
+      // Menu-item rows (Figma "Menu item"): black text, hover = 4% black
+      // overlay, selected = 12% black overlay — never a navy/primary tint.
       MuiMenuItem: {
         styleOverrides: {
           root: {
@@ -117,7 +119,11 @@ export function buildMuiTheme(): Theme {
             fontSize: f.body1.size,
             letterSpacing: "0.15px",
             minHeight: 40,
-            "&.Mui-selected, &.Mui-selected:hover": {
+            color: tokens.color.neutralBlack,
+            "&:hover, &.Mui-focusVisible": {
+              backgroundColor: "rgba(0,0,0,0.04)",
+            },
+            "&.Mui-selected, &.Mui-selected:hover, &.Mui-selected.Mui-focusVisible": {
               backgroundColor: "rgba(0,0,0,0.12)",
             },
           },
@@ -130,6 +136,16 @@ export function buildMuiTheme(): Theme {
             fontSize: f.body1.size,
             letterSpacing: "0.15px",
             minHeight: 40,
+            color: tokens.color.neutralBlack,
+            // MUI tints a selected option with primary (navy → lavender) and its
+            // selected+focused rule out-specifies a single-state override, so
+            // pin every selected/focused combination to the grey overlays.
+            "&.Mui-focused": {
+              backgroundColor: "rgba(0,0,0,0.04)",
+            },
+            '&[aria-selected="true"], &[aria-selected="true"].Mui-focused': {
+              backgroundColor: "rgba(0,0,0,0.12)",
+            },
           },
         },
       },

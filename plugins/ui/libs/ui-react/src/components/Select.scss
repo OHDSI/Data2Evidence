@@ -31,11 +31,27 @@
     gap: 4px;
     overflow: hidden;
 
+    // Figma chip: grey (8% black) fill, black label; the delete × inherits the
+    // label colour at 26% → a grey circle.
     .MuiChip-root {
       height: 28px;
       font-family: var(--d2e-font-family);
+      color: var(--d2e-color-neutral-black);
     }
   }
+}
+
+// Single-select option rows render in a portal (outside .d2e-select): label
+// fills the row, the selected checkmark sits right in the navy accent (Figma).
+.d2e-select__option-label {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.d2e-select__check {
+  flex-shrink: 0;
+  margin-inline-start: var(--d2e-spacing-m);
+  color: var(--d2e-color-primary);
 }
 
 // Searchable renders a MUI Autocomplete. Doubled class outranks MUI's emotion
@@ -53,5 +69,10 @@
       padding-left: 0;
       min-width: 0;
     }
+  }
+
+  // Field clear (×) is navy in Figma, not the MUI default grey.
+  .MuiAutocomplete-clearIndicator {
+    color: var(--d2e-color-primary);
   }
 }

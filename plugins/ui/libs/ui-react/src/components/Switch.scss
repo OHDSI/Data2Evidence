@@ -14,9 +14,9 @@
     opacity: 0.38;
   }
 
-  // Checked track: navy @ 50%.
+  // Checked: navy thumb (Figma knob fill #000080) on a navy @ 50% track.
   .MuiSwitch-switchBase.Mui-checked {
-    color: var(--d2e-color-white);
+    color: var(--d2e-color-primary);
   }
 
   .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track {
@@ -28,6 +28,11 @@
   .MuiSwitch-switchBase.Mui-disabled + .MuiSwitch-track {
     background-color: var(--d2e-color-neutral-lighter);
     opacity: 1;
+  }
+
+  // Disabled thumb stays white in both states (Figma uses the same white knob).
+  .MuiSwitch-switchBase.Mui-checked.Mui-disabled {
+    color: var(--d2e-color-white);
   }
 }
 

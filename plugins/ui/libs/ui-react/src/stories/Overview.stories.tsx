@@ -22,7 +22,7 @@ import { Menu } from "../components/Menu";
 import { Toolbar } from "../components/Toolbar";
 import { Dialog } from "../components/Dialog";
 import { PageHeader } from "../components/PageHeader";
-import { Navbar, NavItem } from "../components/Navbar";
+import { Navbar, NavItem, NavUser } from "../components/Navbar";
 import {
   Table,
   TableHead,
@@ -118,7 +118,7 @@ export const Overview: Story = {
           fontFamily: "var(--d2e-font-family)",
         }}
       >
-        <Navbar variant="next" end={<NavItem>john.doe_researcher</NavItem>}>
+        <Navbar variant="next" end={<NavUser name="john.doe_researcher" />}>
           {["Overview", "Components", "Tokens"].map((label) => (
             <NavItem
               key={label}

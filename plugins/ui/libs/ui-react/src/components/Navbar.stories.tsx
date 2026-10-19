@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from "react";
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { Navbar, NavItem, type NavbarVariant } from "./Navbar";
+import { Navbar, NavItem, NavUser, type NavbarVariant } from "./Navbar";
 
 const meta = {
   title: "Layout/Navbar",
@@ -58,8 +58,10 @@ function NavbarDemo({
   disabledItem?: string;
 }) {
   const [active, setActive] = useState(links[0]);
+  const end =
+    variant === "next" ? <NavUser name={endLabel} /> : <NavItem>{endLabel}</NavItem>;
   return (
-    <Navbar variant={variant} end={<NavItem>{endLabel}</NavItem>}>
+    <Navbar variant={variant} end={end}>
       {links.map((label) => (
         <NavItem
           key={label}

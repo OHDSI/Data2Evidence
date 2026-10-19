@@ -28,6 +28,54 @@
   }
 }
 
+// Right-side profile control (Figma "Right menu"): avatar + navy name + chevron.
+.d2e-nav-user {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--d2e-spacing-xxs);
+  padding: var(--d2e-spacing-xs);
+  margin: 0;
+  border: 0;
+  border-radius: var(--d2e-radius-md);
+  background: transparent;
+  cursor: pointer;
+  color: var(--d2e-color-primary);
+  font-family: inherit;
+
+  &:hover {
+    background: rgba(0, 0, 128, 0.04);
+  }
+
+  &:focus-visible {
+    outline: 1px dashed var(--d2e-color-primary);
+    outline-offset: -2px;
+  }
+
+  &__avatar {
+    display: inline-flex;
+
+    .MuiSvgIcon-root {
+      font-size: 20px;
+    }
+  }
+
+  &__name {
+    font-size: 14px;
+    font-weight: 500;
+    line-height: 1.5;
+    white-space: nowrap;
+  }
+
+  &__chevron.MuiSvgIcon-root {
+    font-size: 20px;
+    transition: transform 0.15s ease;
+  }
+
+  &__chevron--open.MuiSvgIcon-root {
+    transform: rotate(180deg);
+  }
+}
+
 .d2e-nav-item {
   box-sizing: border-box;
   position: relative;
@@ -93,7 +141,17 @@
 
     &--selected {
       font-weight: 700;
-      box-shadow: inset 0 -2px 0 var(--d2e-color-secondary);
+    }
+
+    // The coral indicator sits just below the navbar's bottom divider line, so
+    // the grey rule stays unbroken and the orange bar hangs under it (Figma).
+    &--selected::after {
+      content: "";
+      position: absolute;
+      inset-inline: 0;
+      top: calc(100% + 1px);
+      height: 2px;
+      background: var(--d2e-color-secondary);
     }
 
     &--disabled {
