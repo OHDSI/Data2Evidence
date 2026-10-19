@@ -3,8 +3,9 @@ import { ICON_BUTTON_SIZE_MAP } from "../components/iconButtonSizes";
 
 describe("IconButton size map", () => {
   it("maps sizes to the Figma container and icon dimensions", () => {
-    expect(ICON_BUTTON_SIZE_MAP.sm).toEqual({ container: 40, icon: 18, padding: 11 });
-    expect(ICON_BUTTON_SIZE_MAP.md).toEqual({ container: 48, icon: 24, padding: 12 });
-    expect(ICON_BUTTON_SIZE_MAP.lg).toEqual({ container: 56, icon: 24, padding: 16 });
+    expect(ICON_BUTTON_SIZE_MAP.xs).toEqual({ container: 20, icon: 13 });
+    expect(ICON_BUTTON_SIZE_MAP.sm).toEqual({ container: 28, icon: 15 });
+    expect(ICON_BUTTON_SIZE_MAP.md).toEqual({ container: 36, icon: 18 });
+    expect(ICON_BUTTON_SIZE_MAP.lg).toEqual({ container: 44, icon: 21 });
   });
 });

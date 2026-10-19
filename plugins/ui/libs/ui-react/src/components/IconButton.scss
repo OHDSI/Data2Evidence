@@ -9,13 +9,20 @@
   border-radius: 8px;
   text-transform: none;
 
+  &--xs .MuiSvgIcon-root {
+    font-size: 13px;
+  }
+
   &--sm .MuiSvgIcon-root {
+    font-size: 15px;
+  }
+
+  &--md .MuiSvgIcon-root {
     font-size: 18px;
   }
 
-  &--md .MuiSvgIcon-root,
   &--lg .MuiSvgIcon-root {
-    font-size: 24px;
+    font-size: 21px;
   }
 
   &--no-stroke {
