@@ -29,6 +29,11 @@
   box-shadow: none;
 }
 
+.atlasSelectionShell {
+  height: auto;
+  overflow-y: visible;
+}
+
 :global(.page-card:has(.v-window-item--active [data-atlas-wizard-step]) .page-header),
 :global(.page-card:has(.v-window-item--active [data-atlas-wizard-step]) .analysis-hub__tabs-rail) {
   display: none;
