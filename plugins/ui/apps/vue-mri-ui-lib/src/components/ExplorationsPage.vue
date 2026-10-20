@@ -1048,6 +1048,12 @@ const dqExplorationName = ref('')
  * a completed one opens the dialog; otherwise useDataQualityRun starts or
  * follows a run and reports when it ends. The state is learned on click only.
  */
+const NOTIFICATION_TITLE_KEYS = {
+  success: 'MRI_PA_NOTIFICATION_SUCCESS',
+  warning: 'MRI_PA_NOTIFICATION_WARNING',
+  error: 'MRI_PA_NOTIFICATION_ERROR',
+} as const
+
 const dqRun = useDataQualityRun({
   datasetId: () => datasetId.value,
   fetchLatest: (cohortDefinitionId, id) =>
@@ -1061,7 +1067,7 @@ const dqRun = useDataQualityRun({
     notifications.setAlertMessage({
       message: getText(key, name),
       messageType: kind,
-      title: getText(kind === 'success' ? 'MRI_PA_NOTIFICATION_SUCCESS' : 'MRI_PA_NOTIFICATION_ERROR'),
+      title: getText(NOTIFICATION_TITLE_KEYS[kind]),
     })
   },
 })

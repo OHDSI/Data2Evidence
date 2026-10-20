@@ -32,7 +32,7 @@ export interface DataQualityRunDeps {
   /** The cohort's latest run; null when it has none (a 404). Throws otherwise. */
   fetchLatest: (cohortDefinitionId: string, datasetId: string) => Promise<LatestFlowRun | null>
   startRun: (cohortDefinitionId: string, datasetId: string) => Promise<{ flowRunId: string }>
-  notify: (notification: { kind: 'success' | 'error'; key: string; name: string }) => void
+  notify: (notification: { kind: 'success' | 'warning' | 'error'; key: string; name: string }) => void
   /** The portal's DQD dialogs re-read every 10s; so does this. */
   pollIntervalMs?: number
   /**
@@ -172,6 +172,7 @@ export function useDataQualityRun(deps: DataQualityRunDeps) {
     }
     if (latest && group === 'running') {
       follow(id, latest.id)
+      deps.notify({ kind: 'warning', key: 'MRI_PA_DATA_QUALITY_CHECK_IN_PROGRESS', name: explorationName })
       return 'running'
     }
 
@@ -181,6 +182,7 @@ export function useDataQualityRun(deps: DataQualityRunDeps) {
       const { flowRunId } = await deps.startRun(id, deps.datasetId())
       if (disposed) return 'error'
       follow(id, flowRunId)
+      deps.notify({ kind: 'success', key: 'MRI_PA_DATA_QUALITY_CHECK_STARTED', name: explorationName })
       return 'started'
     } catch (error) {
       if (disposed) return 'error'
