@@ -79,6 +79,9 @@
     display: flex;
   }
 }
+.chartToolbar-main-container--data-source {
+  height: 56px;
+}
 .chartToolbar-main-container {
   min-width: map.get($mriScreen, min-chart-width);
   justify-content: space-between;

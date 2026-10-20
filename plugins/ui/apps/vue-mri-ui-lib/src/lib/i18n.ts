@@ -438,6 +438,9 @@ export const i18n = {
     MRI_PA_EXPLORATIONS_DESCRIPTION:
       'Get quick insights about your data source, an easy way to validate whether a cohort is possible before defining it further for your study. Save your exploration filter and reuse it across the site, then materialize it against different data sources.',
     MRI_PA_EXPLORATIONS_DATASOURCE: 'Data source',
+    MRI_PA_BUILDER_DATASOURCE_DIALOG_TITLE: 'Change data source?',
+    MRI_PA_BUILDER_DATASOURCE_DIALOG_TEXT: 'This closes the exploration and shows the explorations for {0}.',
+    MRI_PA_BUTTON_CHANGE_DATASOURCE: 'Change data source',
     MRI_PA_EXPLORATIONS_SEARCH: 'Search',
     MRI_PA_EXPLORATIONS_SELECT: 'Select exploration',
     MRI_PA_EXPLORATIONS_SELECT_ALL: 'Select all',
@@ -1566,6 +1569,10 @@ export const i18n = {
     MRI_PA_EXPLORATIONS_DESCRIPTION:
       'Erhalten Sie schnelle Einblicke in Ihre Datenquelle und prüfen Sie auf einfache Weise, ob eine Kohorte möglich ist, bevor Sie sie für Ihre Studie weiter definieren. Speichern Sie Ihren Explorationsfilter und verwenden Sie ihn auf der gesamten Website wieder, um ihn dann gegen verschiedene Datenquellen zu materialisieren.',
     MRI_PA_EXPLORATIONS_DATASOURCE: 'Datenquelle',
+    MRI_PA_BUILDER_DATASOURCE_DIALOG_TITLE: 'Datenquelle ändern?',
+    MRI_PA_BUILDER_DATASOURCE_DIALOG_TEXT:
+      'Dadurch wird die Erkundung geschlossen und die Erkundungen für {0} werden angezeigt.',
+    MRI_PA_BUTTON_CHANGE_DATASOURCE: 'Datenquelle ändern',
     MRI_PA_EXPLORATIONS_SEARCH: 'Suchen',
     MRI_PA_EXPLORATIONS_SELECT: 'Exploration auswählen',
     // TODO(i18n): needs native review.
@@ -2677,6 +2684,9 @@ export const i18n = {
     MRI_PA_EXPLORATIONS_DESCRIPTION:
       '快速了解您的数据源，轻松验证群组是否可行，然后再为您的研究进一步定义。保存您的探索过滤器并在整个站点中重复使用，然后针对不同的数据源进行物化。',
     MRI_PA_EXPLORATIONS_DATASOURCE: '数据源',
+    MRI_PA_BUILDER_DATASOURCE_DIALOG_TITLE: '更改数据源？',
+    MRI_PA_BUILDER_DATASOURCE_DIALOG_TEXT: '此操作将关闭当前探索，并显示 {0} 的探索。',
+    MRI_PA_BUTTON_CHANGE_DATASOURCE: '更改数据源',
     MRI_PA_EXPLORATIONS_SEARCH: '搜索',
     MRI_PA_EXPLORATIONS_SELECT: '选择探索',
     // TODO(i18n): needs native review.

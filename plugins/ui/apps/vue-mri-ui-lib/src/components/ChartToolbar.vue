@@ -1,5 +1,5 @@
 <template>
-  <div class="chartToolbar-main-container">
+  <div class="chartToolbar-main-container" :class="{ 'chartToolbar-main-container--data-source': isAtlasHosted }">
     <div class="d-flex">
       <button
         v-if="!showUnHideFilters"
@@ -17,6 +17,7 @@
       >
         <span class="icon" style="font-family: app-icons">{{ unHideIcon }}</span>
       </button>
+      <BuilderDataSourceSelect />
     </div>
     <div class="actionButtonGroup">
       <div
@@ -156,6 +157,8 @@ import appIcon from '../lib/ui/app-icon.vue'
 import DownloadMenu from './DownloadMenu.vue'
 import DashboardFlowModals from './DashboardFlowModals.vue'
 import Button from './Button.vue'
+import BuilderDataSourceSelect from './BuilderDataSourceSelect.vue'
+import { isAtlasHosted } from '../composables/useDataSourceSelection'
 import CohortDefinitionIcon from './icons/CohortDefinitionIcon.vue'
 import { useDashboardFlow } from '../composables/useDashboardFlow'
 import { usePortalContext } from '../composables/usePortalContext'
@@ -199,6 +202,7 @@ export default {
     const dashboardFlow = useDashboardFlow(store.dispatch, store.getters)
 
     return {
+      isAtlasHosted,
       portalContext: usePortalContext(),
       chartConfig: [],
       disableCensoring: true,
@@ -527,6 +531,7 @@ export default {
     DownloadMenu,
     DashboardFlowModals,
     Button,
+    BuilderDataSourceSelect,
     VButton,
     VDialog,
     InclusionReport,
