@@ -12,6 +12,14 @@ import { PatientCountEndpoint } from "./PatientCountEndpoint";
 
 const log = Logger.CreateLogger("analytics-log");
 
+/**
+ * The Basic Data card is the patient-level card. Its name is translated text, so it is
+ * recognised by its config path instead.
+ */
+const BASIC_DATA_CONFIG_PATH = "patient";
+const isBasicDataFiltercard = (filtercard) =>
+    filtercard.content[0].configPath === BASIC_DATA_CONFIG_PATH;
+
 const TOTAL_PATIENT_COUNT_BOOKMARK_STR = JSON.stringify({
     filter: {
         configMetadata: {
@@ -535,9 +543,7 @@ export class InclusionReportEndpoint extends BaseQueryEngineEndpoint {
     }
 
     private splitBasicDataIntoDistinctFiltercards(filtercards) {
-        const basicDataFiltercard = filtercards.find(
-            (e) => e.content[0].name === "Basic Data"
-        );
+        const basicDataFiltercard = filtercards.find(isBasicDataFiltercard);
         if (!basicDataFiltercard) {
             return [];
         }
@@ -587,7 +593,7 @@ export class InclusionReportEndpoint extends BaseQueryEngineEndpoint {
 
     private parseNonBasicDataFilters(filtercards) {
         let nonBasicDataFilters = filtercards.filter(
-            (e) => e.content[0].name !== "Basic Data"
+            (e) => !isBasicDataFiltercard(e)
         );
 
         // Treat explicit exclusions from mriquery as inclusion filter
