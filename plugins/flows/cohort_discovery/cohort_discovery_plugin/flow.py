@@ -1,5 +1,6 @@
 import os, json, subprocess
 from datetime import datetime, timezone
+from pathlib import Path
 
 from prefect import flow
 from prefect.logging import get_run_logger
@@ -9,6 +10,11 @@ from .types import CohortDiscoveryOptions, ChildResult, ArtifactEnvelope
 from .bunny_config import build_bunny_env
 
 os.environ["plugin_name"] = "cohort_discovery_plugin"
+
+# Directory containing this package. In the staged/baked layout the package sits
+# under `flows/`, below the cwd run-flow.sh uses, so `python -m` from cwd alone
+# cannot import it; the child gets this prepended to PYTHONPATH.
+_PKG_PARENT = str(Path(__file__).resolve().parents[1])
 
 def _resolve_credentials(options: CohortDiscoveryOptions):
     """Resolve creds via DBDao; returns (creds, schema, database).
@@ -31,9 +37,12 @@ def _resolve_credentials(options: CohortDiscoveryOptions):
 
 def _run_child(env: dict[str, str]) -> str:
     """Invoke the Bunny child in its isolated 3.13 pixi env; return its stdout (last JSON line)."""
+    child_env = {**os.environ, **env}
+    child_env["PYTHONPATH"] = os.pathsep.join(
+        p for p in (_PKG_PARENT, child_env.get("PYTHONPATH")) if p)
     proc = subprocess.run(
         ["pixi", "run", "--frozen", "-e", "bunny", "python", "-m", "cohort_discovery_plugin.bunny_runner"],
-        env={**os.environ, **env}, capture_output=True, text=True,
+        env=child_env, capture_output=True, text=True,
     )
     if proc.returncode != 0 and not proc.stdout.strip():
         raise RuntimeError(f"Bunny child failed (exit {proc.returncode}): {proc.stderr[-2000:]}")
