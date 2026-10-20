@@ -7,6 +7,8 @@ import { useDataQualityRun, type DataQualityRunDeps, type LatestFlowRun } from '
  */
 const POLL_MS = 10_000
 const run = (id: string, type: string): LatestFlowRun => ({ id, state: { type } })
+const STARTED = { kind: 'success', key: 'MRI_PA_DATA_QUALITY_CHECK_STARTED', name: 'SNRI' }
+const IN_PROGRESS = { kind: 'warning', key: 'MRI_PA_DATA_QUALITY_CHECK_IN_PROGRESS', name: 'SNRI' }
 
 let fetchLatest: ReturnType<typeof vi.fn>
 let startRun: ReturnType<typeof vi.fn>
@@ -44,6 +46,7 @@ describe('useDataQualityRun', () => {
     expect(dq.phaseOf('7')).toBe('ready')
     expect(startRun).not.toHaveBeenCalled()
     expect(fetchLatest).toHaveBeenCalledWith('7', 'ds-1')
+    expect(notify).not.toHaveBeenCalled()
   })
 
   it('starts a run when there is none, then reports it ready once the poll sees it complete', async () => {
@@ -52,6 +55,7 @@ describe('useDataQualityRun', () => {
     await expect(dq.activate('7', 'SNRI')).resolves.toBe('started')
     expect(startRun).toHaveBeenCalledWith('7', 'ds-1')
     expect(dq.phaseOf('7')).toBe('running')
+    expect(notify.mock.calls).toEqual([[STARTED]])
 
     fetchLatest.mockResolvedValueOnce(run('new-run', 'RUNNING'))
     await tick()
@@ -60,8 +64,8 @@ describe('useDataQualityRun', () => {
     fetchLatest.mockResolvedValueOnce(run('new-run', 'COMPLETED'))
     await tick()
     expect(dq.phaseOf('7')).toBe('ready')
-    expect(notify).toHaveBeenCalledTimes(1)
-    expect(notify).toHaveBeenCalledWith({ kind: 'success', key: 'MRI_PA_DATA_QUALITY_READY', name: 'SNRI' })
+    expect(notify).toHaveBeenCalledTimes(2)
+    expect(notify).toHaveBeenLastCalledWith({ kind: 'success', key: 'MRI_PA_DATA_QUALITY_READY', name: 'SNRI' })
 
     await tick()
     expect(fetchLatest).toHaveBeenCalledTimes(3)
@@ -74,11 +78,12 @@ describe('useDataQualityRun', () => {
     expect(startRun).toHaveBeenCalledTimes(1)
   })
 
-  it('adopts a run already in progress instead of starting one', async () => {
+  it('adopts a run already in progress instead of starting one, and warns', async () => {
     fetchLatest.mockResolvedValueOnce(run('elsewhere', 'PENDING'))
     const dq = make()
     await expect(dq.activate('7', 'SNRI')).resolves.toBe('running')
     expect(startRun).not.toHaveBeenCalled()
+    expect(notify.mock.calls).toEqual([[IN_PROGRESS]])
 
     fetchLatest.mockResolvedValueOnce(run('elsewhere', 'COMPLETED'))
     await tick()
@@ -107,7 +112,7 @@ describe('useDataQualityRun', () => {
     expect(dq.phaseOf('7')).toBe('running')
     await tick()
     expect(dq.phaseOf('7')).toBe('idle')
-    expect(notify).not.toHaveBeenCalled()
+    expect(notify.mock.calls).toEqual([[STARTED]])
     const polls = fetchLatest.mock.calls.length
     await tick()
     expect(fetchLatest.mock.calls.length).toBe(polls)
@@ -156,7 +161,7 @@ describe('useDataQualityRun', () => {
     fetchLatest.mockResolvedValueOnce(run('new-run', 'CANCELLED'))
     await tick()
     expect(dq.phaseOf('7')).toBe('idle')
-    expect(notify).not.toHaveBeenCalled()
+    expect(notify.mock.calls).toEqual([[STARTED]])
   })
 
   it('reports a failed lookup and goes back to idle', async () => {
@@ -173,7 +178,7 @@ describe('useDataQualityRun', () => {
     const dq = make()
     await expect(dq.activate('7', 'SNRI')).resolves.toBe('error')
     expect(dq.phaseOf('7')).toBe('idle')
-    expect(notify).toHaveBeenCalledWith({ kind: 'error', key: 'MRI_PA_DATA_QUALITY_START_FAILED', name: 'SNRI' })
+    expect(notify.mock.calls).toEqual([[{ kind: 'error', key: 'MRI_PA_DATA_QUALITY_START_FAILED', name: 'SNRI' }]])
   })
 
   it('keeps each cohort apart', async () => {
@@ -198,7 +203,7 @@ describe('useDataQualityRun', () => {
     answer(run('new-run', 'COMPLETED'))
     await tick(POLL_MS * 3)
     expect(dq.phaseOf('7')).toBe('running')
-    expect(notify).not.toHaveBeenCalled()
+    expect(notify.mock.calls).toEqual([[STARTED]])
     expect(fetchLatest).toHaveBeenCalledTimes(2)
   })
 })

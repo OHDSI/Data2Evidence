@@ -534,7 +534,7 @@ export const i18n = {
       'Cohort materialization is not available. This may be because the dataset does not support it, or the required cohort tables are not set up in the database schema.',
     MRI_PA_BUTTON_DISPLAY_OR_GENERATE_DATA_QUALITY: 'Display or generate data quality',
     MRI_PA_DATA_QUALITY_CHECK_STARTED:
-      'Data quality check started successfully. This may take a while. Come back again later to view results.',
+      'Data quality check started successfully. This can take a few minutes. Come back and click the icon again to view results.',
     MRI_PA_DATA_QUALITY_CHECK_IN_PROGRESS:
       "A data quality check is already in progress for this cohort. It'll be ready to view once it finishes.",
     MRI_PA_DATA_QUALITY_CHECK_FAILED: 'Data quality check could not be started. Please try again.',
@@ -676,6 +676,7 @@ export const i18n = {
     MRI_PA_NO_INTERACTIONS_TITLE: 'No interactions available for display.',
     MRI_PA_NOTIFICATION_ERROR: 'Error',
     MRI_PA_NOTIFICATION_SUCCESS: 'Success',
+    MRI_PA_NOTIFICATION_WARNING: 'Warning',
     MRI_PA_ERROR_TOO_MANY_RESULTS: "Can't display result. Result set is too large.",
     MRI_PA_EXPIRED_MESSAGE:
       'Failed to establish connection with the server. Do you want to reload the application and log on again?',
@@ -1689,7 +1690,7 @@ export const i18n = {
     MRI_PA_BUTTON_ADD_TO_COLLECTION: 'Zu Kohorte hinzufügen',
     MRI_PA_BUTTON_DISPLAY_OR_GENERATE_DATA_QUALITY: 'Datenqualität anzeigen oder generieren',
     MRI_PA_DATA_QUALITY_CHECK_STARTED:
-      'Datenqualitätsprüfung erfolgreich gestartet. Dies kann eine Weile dauern. Schauen Sie später wieder vorbei, um die Ergebnisse zu sehen.',
+      'Datenqualitätsprüfung erfolgreich gestartet. Dies kann einige Minuten dauern. Klicken Sie später erneut auf das Symbol, um die Ergebnisse zu sehen.',
     MRI_PA_DATA_QUALITY_CHECK_IN_PROGRESS:
       'Für diese Kohorte läuft bereits eine Datenqualitätsprüfung. Sie kann angezeigt werden, sobald sie abgeschlossen ist.',
     MRI_PA_DATA_QUALITY_CHECK_FAILED:
@@ -1835,6 +1836,7 @@ export const i18n = {
     MRI_PA_NO_INTERACTIONS_TITLE: 'Keine Interaktionen zum Anzeigen verfügbar.',
     MRI_PA_NOTIFICATION_ERROR: 'Fehler',
     MRI_PA_NOTIFICATION_SUCCESS: 'Erfolg',
+    MRI_PA_NOTIFICATION_WARNING: 'Warnung',
     MRI_PA_ERROR_TOO_MANY_RESULTS: 'Ergebnis kann nicht angezeigt werden. Ergebnismenge ist zu groß.',
     MRI_PA_EXPIRED_MESSAGE:
       'Es konnte keine Verbindung zum Server hergestellt werden. Möchten Sie die Anwendung neu laden und sich erneut anmelden?',
@@ -2811,7 +2813,7 @@ export const i18n = {
     MRI_PA_BUTTON_COHORT_BUTTON_TOOLTIP: '群',
     MRI_PA_BUTTON_ADD_TO_COLLECTION: '添加到群',
     MRI_PA_BUTTON_DISPLAY_OR_GENERATE_DATA_QUALITY: '显示或生成数据质量',
-    MRI_PA_DATA_QUALITY_CHECK_STARTED: '数据质量检查已成功启动。这可能需要一段时间，请稍后再回来查看结果。',
+    MRI_PA_DATA_QUALITY_CHECK_STARTED: '数据质量检查已成功启动。这可能需要几分钟，请稍后再次点击该图标查看结果。',
     MRI_PA_DATA_QUALITY_CHECK_IN_PROGRESS: '该群的数据质量检查正在进行中。完成后即可查看。',
     MRI_PA_DATA_QUALITY_CHECK_FAILED: '无法启动数据质量检查。请重试。',
     MRI_PA_BUTTON_VIEW_COHORT: '查看群',
@@ -2946,6 +2948,7 @@ export const i18n = {
     MRI_PA_NO_INTERACTIONS_TITLE: '没有可显示的交互。',
     MRI_PA_NOTIFICATION_ERROR: '错误',
     MRI_PA_NOTIFICATION_SUCCESS: '成功',
+    MRI_PA_NOTIFICATION_WARNING: '警告',
     MRI_PA_ERROR_TOO_MANY_RESULTS: '无法显示结果。结果集过大。',
     MRI_PA_EXPIRED_MESSAGE: '无法与服务器建立连接。是否要重新加载应用程序并再次登录？',
     MRI_PA_PATIENT_LIST_EDIT_COLUMNS: '添加交互',
