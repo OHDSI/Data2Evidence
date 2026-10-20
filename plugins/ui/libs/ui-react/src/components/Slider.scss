@@ -1,0 +1,33 @@
+// Navy slider (Figma): rail navy @ 38%, solid navy track, navy thumb with
+// elevation/2. MUI's color="primary" already uses navy; restated for clarity.
+.d2e-slider.d2e-slider {
+  color: var(--d2e-color-primary);
+
+  .MuiSlider-rail {
+    background-color: var(--d2e-color-primary);
+    opacity: 0.38;
+  }
+
+  .MuiSlider-track {
+    border: none;
+    background-color: var(--d2e-color-primary);
+  }
+
+  .MuiSlider-thumb {
+    background-color: var(--d2e-color-primary);
+    box-shadow: var(--d2e-elevation-e2);
+  }
+
+  .MuiSlider-mark {
+    background-color: var(--d2e-color-white);
+  }
+
+  .MuiSlider-markLabel,
+  .MuiSlider-valueLabel {
+    font-family: var(--d2e-font-family);
+  }
+
+  .MuiSlider-valueLabel {
+    background-color: var(--d2e-color-primary);
+  }
+}

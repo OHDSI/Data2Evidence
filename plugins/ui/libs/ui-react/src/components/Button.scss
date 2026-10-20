@@ -1,0 +1,96 @@
+.d2e-button.d2e-button {
+  padding-inline: 16px;
+  border-radius: var(--d2e-radius-md);
+  font-family: var(--d2e-font-family);
+  font-weight: var(--d2e-font-button-weight);
+  line-height: normal;
+  letter-spacing: 0;
+  text-transform: none;
+  box-shadow: none;
+
+  &--xs .MuiButton-startIcon .MuiSvgIcon-root,
+  &--xs .MuiButton-endIcon .MuiSvgIcon-root {
+    font-size: 13px;
+  }
+
+  &--sm .MuiButton-startIcon .MuiSvgIcon-root,
+  &--sm .MuiButton-endIcon .MuiSvgIcon-root {
+    font-size: 15px;
+  }
+
+  &--md .MuiButton-startIcon .MuiSvgIcon-root,
+  &--md .MuiButton-endIcon .MuiSvgIcon-root {
+    font-size: 18px;
+  }
+
+  &--lg .MuiButton-startIcon .MuiSvgIcon-root,
+  &--lg .MuiButton-endIcon .MuiSvgIcon-root {
+    font-size: 21px;
+  }
+
+  &--primary {
+    color: var(--d2e-color-neutral-xtra-lightest);
+    box-shadow: var(--d2e-elevation-e2);
+
+    &:hover {
+      background: var(--d2e-color-primary-light);
+      box-shadow: var(--d2e-elevation-e4);
+    }
+
+    &:active,
+    &.Mui-focusVisible {
+      background: var(--d2e-color-primary);
+      box-shadow: var(--d2e-elevation-e6);
+    }
+
+    &:disabled {
+      background: #e0e0e0;
+      color: rgba(0, 0, 0, 0.26);
+      box-shadow: none;
+    }
+  }
+
+  &--secondary:hover,
+  &--ghost:hover {
+    background: var(--d2e-color-primary-x-x-lightest);
+  }
+
+  // Destructive tone (Figma): text button with red label, no fill.
+  &--danger {
+    color: var(--d2e-color-alarm);
+
+    &:hover {
+      background: var(--d2e-color-alarm-light);
+    }
+  }
+
+  // Positive tone (Figma): text button with green label, no fill.
+  &--positive {
+    color: var(--d2e-color-success);
+
+    &:hover {
+      background: var(--d2e-color-success-light);
+    }
+  }
+
+  &--secondary:disabled,
+  &--danger:disabled,
+  &--positive:disabled,
+  &--ghost:disabled {
+    opacity: 0.26;
+  }
+
+  // Figma loading = disabled-looking button with a centred spinner overlaid.
+  &--loading {
+    position: relative;
+  }
+}
+
+.d2e-button .d2e-button__spinner {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(0, 0, 0, 0.26);
+}
