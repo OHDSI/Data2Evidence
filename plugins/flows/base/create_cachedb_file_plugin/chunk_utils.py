@@ -40,9 +40,10 @@ MAX_NULL_CHUNK_MULTIPLE = 3
 #: ``interval_count < 2`` only catches a plan that collapsed all the way to one
 #: predicate. Three distinct values give two chunks, one of them holding most
 #: of the table, and that passed every other guard while being logged as
-#: CHUNKED. ``CHUNK_COLUMN_MAP`` has real examples -- ``fact_relationship`` ->
-#: ``domain_concept_id_1`` (2-4 distinct values), ``drug_strength`` ->
-#: ``drug_concept_id`` -- and ``pick_bq_candidate`` prefers a BigQuery
+#: CHUNKED. ``CHUNK_COLUMN_MAP`` has had real examples -- ``fact_relationship``
+#: -> ``domain_concept_id_1`` (2-4 distinct values, since moved to
+#: ``fact_id_1``), ``drug_strength`` -> ``drug_concept_id`` -- and
+#: ``pick_bq_candidate`` prefers a BigQuery
 #: partition column, so a table partitioned on a handful of dates has the same
 #: shape.
 #:
