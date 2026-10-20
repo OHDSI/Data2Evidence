@@ -420,6 +420,7 @@ import {
 } from './helpers/explorationFilters'
 import { PAGE_SIZES, clampPage, pageSlice } from './helpers/explorationPaging'
 import { fallbackDatasetId } from './helpers/dataSourceSelection'
+import { sortByLabel } from './helpers/sortByLabel'
 import { chartQueryFor } from './helpers/explorationSqlQuery'
 import { deleteExploration, type DeleteExplorationDeps } from './helpers/deleteExploration'
 import { canDeleteAll, runBulkDelete } from './helpers/bulkDeleteExplorations'
@@ -582,7 +583,7 @@ const canSwitchDataSource = computed(() => isAtlasHosted && dataSourceItems.valu
 /** Every source the user can read, for the switcher. */
 const dataSourceItems = computed(() => {
   const sources = (store.getters.getDataSources || []) as Array<{ sourceKey: string; sourceName?: string }>
-  return sources.map(source => ({ label: source.sourceName || source.sourceKey, value: source.sourceKey }))
+  return sortByLabel(sources.map(source => ({ label: source.sourceName || source.sourceKey, value: source.sourceKey })))
 })
 
 /**
@@ -1401,6 +1402,10 @@ const onMoreSelect = (card: { source: BookmarkDisplay }, value: string): void =>
     // renders as a stray line under the field.
     :deep(.v-input__details) {
       display: none;
+    }
+
+    :deep(.v-field) {
+      border-radius: var(--d2e-radius-sm);
     }
 
     :deep(.v-field--disabled) {

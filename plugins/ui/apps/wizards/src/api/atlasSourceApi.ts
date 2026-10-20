@@ -1,4 +1,5 @@
 import client from "../axios/request";
+import { sortByLabel } from "../utils/sortByLabel";
 
 export interface AtlasSource {
   sourceId: number;
@@ -58,7 +59,8 @@ export async function listAtlasSources(getToken?: () => Promise<string>): Promis
 
 export function resolveAtlasSourceKey(sources: AtlasSource[], selectedSourceKey?: string): string | undefined {
   const selectedSourceExists = sources.some((source) => source.sourceKey === selectedSourceKey);
-  return selectedSourceExists ? selectedSourceKey : sources[0]?.sourceKey;
+  if (selectedSourceExists) return selectedSourceKey;
+  return sortByLabel(sources.map((source) => ({ label: source.sourceName, value: source.sourceKey })))[0]?.value;
 }
 
 function getBrowserSelectionRuntime(): AtlasSourceSelectionRuntime | undefined {
