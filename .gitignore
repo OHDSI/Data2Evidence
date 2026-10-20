@@ -24,6 +24,9 @@ run_ssh.sh
 !plugins/functions/package-lock.json
 !plugins/fhir_functions/package-lock.json
 !plugins/sibyl_functions/package-lock.json
+# Pinned so CI's npm 10 never re-resolves vuetify's optional peers into the
+# vitest 4/5 @vitest/browser-* peer cycle it crashes on ("edgesOut").
+!plugins/atlas/subplugins/data-quality/package-lock.json
 
 pkg/*.tgz
 target

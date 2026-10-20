@@ -15,10 +15,10 @@
   },
   "dependencies": {
     "@data2evidence/atlas-data-quality": "file:./subplugins/data-quality",
-    "@ohdsi/atlas3": "0.1.0-20261014152526-2f1159a",
+    "@ohdsi/atlas3": "0.1.0",
     "@ohdsi/network-plugin": "file:./trex-notebook/plugins/network",
     "@ohdsi/notebook-plugin": "file:./trex-notebook/plugins/notebook-plugin",
-    "@ohdsi/pythia-plugin": "0.1.0-develop.19.g626b405",
+    "@ohdsi/pythia-plugin": "0.1.0-develop.21.g24eb709",
     "@ohdsi/results-viewer": "0.2.0-20261014133145.g242febe",
     "@ohdsi/strategus-plugin": "file:./trex-notebook/plugins/strategus",
     "@ohdsi/studies-plugin": "file:./trex-notebook/plugins/studies",

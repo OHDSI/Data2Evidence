@@ -226,6 +226,31 @@ def _thin_boundaries(values: Sequence, max_values: int) -> list:
     return seen
 
 
+def estimate_largest_chunk_rows(raw_boundaries: Iterable, row_count: int) -> int:
+    """Rows in the biggest chunk, judged from the quantile cuts before de-duplication.
+
+    The adapter returns ``m`` quantiles, so each step between neighbouring cuts
+    holds about ``row_count / (m - 1)`` rows. A value that appears ``r`` times
+    in a row spans at least ``r - 1`` steps on its own, and every row with that
+    value lands in one chunk, because a predicate cannot split equal values.
+    The lower bound is used on purpose: two neighbouring equal cuts are normal
+    for an ordinary high-cardinality column, and must not read as skew.
+    """
+    try:
+        cuts = sorted(value for value in raw_boundaries if value is not None)
+    except TypeError:
+        # normalise_boundaries reports unorderable values; nothing to add here.
+        return 0
+    if len(cuts) < 2 or row_count <= 0:
+        return row_count
+    longest = run = 1
+    for previous, current in zip(cuts, cuts[1:]):
+        run = run + 1 if current == previous else 1
+        longest = max(longest, run)
+    steps = max(1, longest - 1)
+    return -(-steps * row_count // (len(cuts) - 1))  # ceil division
+
+
 def planned_chunk_rows(row_count: int, chunk_count: int, config: ChunkConfig) -> int:
     """Rows per chunk the planner asked for, after its own caps.
 
@@ -363,6 +388,11 @@ def plan_chunks(
         predicates=predicates,
         estimated_rows_per_chunk=estimated_rows_per_chunk,
         includes_null_chunk=stats.column.nullable,
+        estimated_largest_chunk_rows=max(
+            estimated_rows_per_chunk,
+            estimate_largest_chunk_rows(stats.boundaries, stats.row_count),
+        ),
+        max_chunk_rows=size_limit,
     )
 
 

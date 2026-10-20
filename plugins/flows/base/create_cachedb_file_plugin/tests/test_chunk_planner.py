@@ -772,3 +772,48 @@ def test_chunk_progress_reports_a_zero_row_chunk_as_zero():
     line = describe_chunk_progress("measurement", 0, 4, 0, 0.2)
     assert "0 rows" in line
     assert "unknown" not in line.lower()
+
+
+# ---------------------------------------------------------------------------
+# Skew: one value holding more rows than a chunk may
+# ---------------------------------------------------------------------------
+
+from create_cachedb_file_plugin.chunk_utils import estimate_largest_chunk_rows
+
+
+def test_distinct_cuts_estimate_the_average_chunk():
+    assert estimate_largest_chunk_rows(range(11), 1_000) == 100
+
+
+def test_two_equal_neighbouring_cuts_are_not_skew():
+    """Normal for a high-cardinality column; must not read as one heavy value."""
+    assert estimate_largest_chunk_rows([0, 1, 2, 2, 3, 4], 500) == 100
+
+
+def test_a_value_filling_most_cuts_is_estimated_as_one_huge_chunk():
+    cuts = [1, 2, 3] + [4] * 8
+    # 8 equal cuts span 7 of the 10 steps.
+    assert estimate_largest_chunk_rows(cuts, 1_000) == 700
+
+
+def test_a_skewed_column_plans_but_is_flagged():
+    """plan_chunks keeps the plan (it is what runs today); plan_table looks for better."""
+    config = ChunkConfig(target_chunk_rows=5_000_000)
+    stats = _stats(900_000_000, list(range(81)) + [500] * 100)
+    plan = plan_chunks("postgres", "cdm", "achilles_results", stats, config)
+    assert plan.strategy is ChunkStrategy.CHUNKED
+    assert plan.is_skewed
+    assert plan.estimated_largest_chunk_rows > plan.max_chunk_rows
+
+
+def test_an_evenly_spread_column_is_not_flagged():
+    config = ChunkConfig(target_chunk_rows=5_000_000)
+    plan = plan_chunks("postgres", "cdm", "measurement", _stats(900_000_000, range(181)), config)
+    assert not plan.is_skewed
+
+
+def test_a_single_statement_plan_is_never_skewed():
+    config = ChunkConfig(target_chunk_rows=5_000_000)
+    plan = plan_chunks("postgres", "cdm", "measurement", _stats(1_000, (1, 1, 1)), config)
+    assert plan.strategy is ChunkStrategy.SINGLE_STATEMENT
+    assert not plan.is_skewed
