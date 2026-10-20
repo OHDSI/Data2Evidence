@@ -11,6 +11,7 @@ export { default as D2eExplorationCard } from "./components/D2eExplorationCard.v
 export { default as D2eSelect } from "./components/D2eSelect.vue";
 export { default as D2eCheckbox } from "./components/D2eCheckbox.vue";
 export { default as D2eDateField } from "./components/D2eDateField.vue";
+export { default as D2eViewToggle } from "./components/D2eViewToggle.vue";
 export { toIsoDate, fromIsoDate } from "./components/dateFieldFormat";
 export { VARIANT_MAP, SIZE_MAP } from "./components/buttonVariants";
 export type {
@@ -27,6 +28,7 @@ export type {
   D2eIconButtonCategory,
 } from "./components/iconButtonSizes";
 export type { D2eMenuItem } from "./components/D2eMenu.vue";
+export type { D2eViewToggleOption } from "./components/D2eViewToggle.vue";
 export {
   nextEnabledIndex,
   firstEnabledIndex,
