@@ -99,7 +99,6 @@ COPY \
 COPY \
     plugins/flows/data_management/pyproject.toml \
     plugins/flows/data_management/pixi.lock \
-    plugins/flows/data_management/setup_assets.sh \
     /staged/data-management-flow/baked/
 # search-embedding-flow
 COPY \
