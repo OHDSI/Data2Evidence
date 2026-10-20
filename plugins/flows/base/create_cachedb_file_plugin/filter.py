@@ -61,6 +61,13 @@ CDM_COLUMN_FILTER_MAP = {
 }
 
 CHUNK_COLUMN_INFO_MAP = {
+    # Results schema (Achilles / Heracles). These tables have no primary key, so
+    # without an entry here a large one is refused by the chunk planner.
+    "achilles_result_concept_count": {"column_name": "concept_id"},
+    "achilles_results": {"column_name": "analysis_id"},
+    "achilles_results_dist": {"column_name": "analysis_id"},
+    "heracles_results": {"column_name": "analysis_id"},
+    "heracles_results_dist": {"column_name": "analysis_id"},
     "care_site": {
         "column_name": "care_site_id"
     },
@@ -115,7 +122,7 @@ CHUNK_COLUMN_MAP = {
 
 TABLES_TO_EXCLUDE = [
     r"\b\w+(\.\w+)*_history\b",
-    # Liquibase tables
+    # Schema-migration tracking table (Liquibase's, and data_management_plugin's sql_migration)
     r"^databasechangelog$",
     r"^DATABASECHANGELOG$",
     # Postgres system tables

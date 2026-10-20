@@ -46,7 +46,7 @@ services:
         # See docs/trex-oidc-provider-cutover.md.
         TREXSQL_REF: ${TREXSQL_REF:-sha-f74ad199e943fee31dd9c264d6c63f796e081286@sha256:b2ff156a79d44f09776385fb92e499dc99bdafdbd72ce033d753212114053b68}
         # Local builds pull published plugins from the feed; CI uses plugin-artifacts/.
-        PLUGINS_FROM_REGISTRY: ${PLUGINS_FROM_REGISTRY:-@data2evidence/d2e-ui @data2evidence/d2e-functions @data2evidence/fhir @data2evidence/sibyl @data2evidence/d2e-flows @data2evidence/i2b2-flow @data2evidence/search-embedding-flow @data2evidence/data-management-flow @data2evidence/hades-flow @data2evidence/loyalty-score-flow @data2evidence/eq5d5l-index-calculation-flow @data2evidence/data-transformation-flow @ohdsi/pythia-agent@0.1.0-develop.19.g626b405}
+        PLUGINS_FROM_REGISTRY: ${PLUGINS_FROM_REGISTRY:-@data2evidence/d2e-ui @data2evidence/d2e-functions @data2evidence/fhir @data2evidence/sibyl @data2evidence/d2e-flows @data2evidence/i2b2-flow @data2evidence/search-embedding-flow @data2evidence/data-management-flow @data2evidence/hades-flow @data2evidence/loyalty-score-flow @data2evidence/cohort-discovery-flow @data2evidence/eq5d5l-index-calculation-flow @data2evidence/data-transformation-flow @ohdsi/pythia-agent@0.1.0-develop.19.g626b405}
         # Keep in sync with the `docker build --build-arg WITH_R=true` used to
         # produce the d2e-trex:withr tag above — `docker compose build trex`
         # must also bake R or it silently reverts to an R-less image.

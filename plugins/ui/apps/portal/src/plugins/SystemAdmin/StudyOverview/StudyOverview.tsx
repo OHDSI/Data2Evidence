@@ -558,7 +558,8 @@ const StudyOverview: FC = () => {
         item.type === "source" ||
         item.type === "hana__omop" ||
         item.type === "hana__non_omop" ||
-        item.type === "webapi"
+        item.type === "webapi" ||
+        item.type === "i2b2"
       ) {
         if (!datasetsByFlow[flowName]) {
           datasetsByFlow[flowName] = [];
