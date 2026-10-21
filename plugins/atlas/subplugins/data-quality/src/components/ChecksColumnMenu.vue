@@ -21,6 +21,11 @@ function toggle(key: string, shown: boolean): void {
   else if (key !== ALWAYS_SHOWN) next.delete(key);
   emit('update:modelValue', inOrder(next));
 }
+
+const ALL_KEYS = COLUMNS.map((c) => c.key);
+
+const showAll = (): void => emit('update:modelValue', ALL_KEYS);
+const hideAll = (): void => emit('update:modelValue', [ALWAYS_SHOWN]);
 </script>
 
 <template>
@@ -30,7 +35,8 @@ function toggle(key: string, shown: boolean): void {
         variant="ghost"
         size="sm"
         data-testid="dq-checks-columns-show-all"
-        @click="emit('update:modelValue', COLUMNS.map((c) => c.key))"
+        @click="showAll"
+        @keydown.enter.prevent.stop="showAll"
       >
         {{ t('plugins.dataQuality.checks.showAll', 'Show all') }}
       </D2eButton>
@@ -38,7 +44,8 @@ function toggle(key: string, shown: boolean): void {
         variant="ghost"
         size="sm"
         data-testid="dq-checks-columns-hide-all"
-        @click="emit('update:modelValue', [ALWAYS_SHOWN])"
+        @click="hideAll"
+        @keydown.enter.prevent.stop="hideAll"
       >
         {{ t('plugins.dataQuality.checks.hideAll', 'Hide all') }}
       </D2eButton>
