@@ -15,6 +15,9 @@ class DCOptionsType(BaseModel):
     # webapi-typed datasets run DC directly on the source database (postgres/
     # bigquery) so Achilles results land in the WebAPI Results daimon schema.
     useSourceConnection: Optional[bool] = False
+    # The WebAPI source registered for this dataset (its id), set by jobplugins for
+    # webapi datasets. Its cached CDM results reports are cleared after the run.
+    webapiSourceKey: Optional[str] = None
 
     @property
     def use_trex_connection(self) -> bool:
