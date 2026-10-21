@@ -68,3 +68,16 @@ export function resolveDcTarget(
   // The DTO override is deliberately ignored for webapi datasets.
   return { useSourceConnection: true, resultsSchema: dataset.resultsSchemaName };
 }
+
+/**
+ * The WebAPI source whose cached CDM results reports a DC run must invalidate.
+ *
+ * WebAPI keeps every report (dashboard, person, data density, ...) per source in
+ * `webapi.achilles_cache` with no expiry. A webapi dataset is registered as a
+ * source under its own id, so any DC run for one can leave Atlas serving reports
+ * computed before it -- whichever connection the run used. Other datasets have
+ * no WebAPI source to clear.
+ */
+export function webapiCacheSourceKey(dataset: DcTargetDataset): string | undefined {
+  return dataset.type === "webapi" && dataset.id ? dataset.id : undefined;
+}

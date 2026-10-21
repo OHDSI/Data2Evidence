@@ -62,6 +62,27 @@ def test_a_run_without_a_dataset_id_has_no_webapi_source_to_clear():
     assert webapi_cache_source_key(use_trex_connection=False, dataset_id="") is None
 
 
+# Regression: a webapi dataset's run that went through trex wrote into the results
+# schema its WebAPI source reads, but the cache was only cleared for
+# source-connection runs, so Atlas kept serving the empty reports cached before it.
+def test_a_named_webapi_source_is_cleared_even_for_a_trex_run():
+    assert (
+        webapi_cache_source_key(
+            use_trex_connection=True, dataset_id="ds-1", webapi_source_key="ds-1"
+        )
+        == "ds-1"
+    )
+
+
+def test_a_named_webapi_source_wins_over_the_dataset_id():
+    assert (
+        webapi_cache_source_key(
+            use_trex_connection=False, dataset_id="ds-1", webapi_source_key="src-9"
+        )
+        == "src-9"
+    )
+
+
 def test_clear_cache_path_is_the_cdmresults_endpoint_for_the_source():
     assert cdmresults_clear_cache_path("ds-1") == "cdmresults/ds-1/clearCache"
 
