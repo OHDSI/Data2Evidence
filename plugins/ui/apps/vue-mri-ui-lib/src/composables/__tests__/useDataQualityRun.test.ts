@@ -192,6 +192,32 @@ describe('useDataQualityRun', () => {
     expect(dq.phaseOf(null)).toBe('idle')
   })
 
+  it('keeps the data source the click was made on, for the start and every poll', async () => {
+    let current = 'ds-1'
+    fetchLatest.mockImplementationOnce(async () => {
+      current = 'ds-2'
+      return null
+    })
+    const dq = make({ datasetId: () => current })
+    await expect(dq.activate('7', 'SNRI')).resolves.toBe('started')
+    expect(startRun).toHaveBeenCalledWith('7', 'ds-1')
+    fetchLatest.mockResolvedValueOnce(run('new-run', 'RUNNING'))
+    await tick()
+    expect(fetchLatest).toHaveBeenLastCalledWith('7', 'ds-1')
+  })
+
+  it('keeps the same cohort id on two data sources apart', async () => {
+    let current = 'ds-1'
+    fetchLatest.mockResolvedValueOnce(null)
+    const dq = make({ datasetId: () => current })
+    await dq.activate('7', 'SNRI')
+    expect(dq.phaseOf('7')).toBe('running')
+    current = 'ds-2'
+    expect(dq.phaseOf('7')).toBe('idle')
+    current = 'ds-1'
+    expect(dq.phaseOf('7')).toBe('running')
+  })
+
   it('stops polling on dispose, and a late answer writes nothing', async () => {
     fetchLatest.mockResolvedValueOnce(null)
     const dq = make()

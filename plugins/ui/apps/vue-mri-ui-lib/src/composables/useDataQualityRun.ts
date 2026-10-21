@@ -51,6 +51,8 @@ export type ActivateResult = 'open' | 'started' | 'running' | 'busy' | 'error'
 interface Entry {
   phase: DataQualityPhase
   name: string
+  cohortDefinitionId: string
+  datasetId: string
   flowRunId?: string
   unmatched: number
   failures: number
@@ -65,12 +67,21 @@ export function useDataQualityRun(deps: DataQualityRunDeps) {
   const timers = new Map<string, ReturnType<typeof setTimeout>>()
   let disposed = false
 
+  const keyOf = (datasetId: string, cohortDefinitionId: string): string => `${datasetId}\u0000${cohortDefinitionId}`
+
   const phaseOf = (cohortDefinitionId: string | null): DataQualityPhase =>
-    (cohortDefinitionId && entries.get(cohortDefinitionId)?.phase) || 'idle'
+    (cohortDefinitionId && entries.get(keyOf(deps.datasetId(), cohortDefinitionId))?.phase) || 'idle'
 
   // Every change is a new entry object, never an edit of the current one.
   const set = (id: string, next: Partial<Entry>): Entry => {
-    const current = entries.get(id) ?? { phase: 'idle', name: '', unmatched: 0, failures: 0 }
+    const current = entries.get(id) ?? {
+      phase: 'idle',
+      name: '',
+      cohortDefinitionId: '',
+      datasetId: '',
+      unmatched: 0,
+      failures: 0,
+    }
     const entry = { ...current, ...next }
     entries.set(id, entry)
     return entry
@@ -105,7 +116,7 @@ export function useDataQualityRun(deps: DataQualityRunDeps) {
 
     let latest: LatestFlowRun | null
     try {
-      latest = await deps.fetchLatest(id, deps.datasetId())
+      latest = await deps.fetchLatest(entry.cohortDefinitionId, entry.datasetId)
     } catch (error) {
       if (disposed) return
       const failures = entry.failures + 1
@@ -149,13 +160,14 @@ export function useDataQualityRun(deps: DataQualityRunDeps) {
   }
 
   async function activate(cohortDefinitionId: string, explorationName: string): Promise<ActivateResult> {
-    const id = cohortDefinitionId
-    if (isDataQualityBusy(phaseOf(id))) return 'busy'
-    set(id, { phase: 'checking', name: explorationName })
+    const datasetId = deps.datasetId()
+    const id = keyOf(datasetId, cohortDefinitionId)
+    if (isDataQualityBusy(entries.get(id)?.phase ?? 'idle')) return 'busy'
+    set(id, { phase: 'checking', name: explorationName, cohortDefinitionId, datasetId })
 
     let latest: LatestFlowRun | null
     try {
-      latest = await deps.fetchLatest(id, deps.datasetId())
+      latest = await deps.fetchLatest(cohortDefinitionId, datasetId)
     } catch (error) {
       if (disposed) return 'error'
       console.error('[data-quality] could not read the latest run', error)
@@ -179,7 +191,7 @@ export function useDataQualityRun(deps: DataQualityRunDeps) {
     // No run, or the last one failed or was cancelled: start a fresh one.
     set(id, { phase: 'starting' })
     try {
-      const { flowRunId } = await deps.startRun(id, deps.datasetId())
+      const { flowRunId } = await deps.startRun(cohortDefinitionId, datasetId)
       if (disposed) return 'error'
       follow(id, flowRunId)
       deps.notify({ kind: 'success', key: 'MRI_PA_DATA_QUALITY_CHECK_STARTED', name: explorationName })

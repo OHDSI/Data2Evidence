@@ -1085,7 +1085,9 @@ const openDataQuality = async (card: { name: string; cohortDefinitionId: string 
   // programmatic callers that do not go through it.
   if (!card.cohortDefinitionId) return
   const id = String(card.cohortDefinitionId)
+  const clickedDatasetId = datasetId.value
   if ((await dqRun.activate(id, card.name)) !== 'open') return
+  if (datasetId.value !== clickedDatasetId) return
   dqCohortDefinitionId.value = id
   dqExplorationName.value = card.name
   dqOpen.value = true
