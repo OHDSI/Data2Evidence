@@ -155,15 +155,6 @@ export default class DatasetAttributeConfigSeeder implements Seeder {
         createdBy: "system",
         modifiedBy: "system",
       },
-      {
-        id: "entity_count_distribution",
-        name: "Entity Count Distribution",
-        category: ATTRIBUTE_CONFIG_CATEGORIES.DATASET,
-        dataType: ATTRIBUTE_CONFIG_DATA_TYPES.STRING,
-        isDisplayed: false,
-        createdBy: "system",
-        modifiedBy: "system",
-      },
     ]);
     await repository.save(entities);
   }
