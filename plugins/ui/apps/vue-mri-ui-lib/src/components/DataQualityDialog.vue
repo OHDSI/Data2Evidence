@@ -134,7 +134,7 @@ watch(
       return
     }
     await parcel.unmount()
-    showHost.value = false
+    if (!props.modelValue) showHost.value = false
   }
 )
 

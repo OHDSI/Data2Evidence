@@ -127,14 +127,13 @@ export function useAtlasParcel(options: AtlasParcelOptions): UseAtlasParcel {
   const error = ref<Error | null>(null)
 
   let handle: ParcelHandle | null = null
-  let inFlight: Promise<void> | null = null
-  /**
-   * Bumped by every mount and every unmount, so a mount still resolving when
-   * its unmount lands is orphaned rather than left standing. Same idiom as
-   * `currentMountGeneration` in src/atlas-lifecycles.ts, and the reason
-   * open -> close -> open cannot leave two parcels behind.
-   */
-  let generation = 0
+  let queue: Promise<void> = Promise.resolve()
+
+  const enqueue = (operation: () => Promise<void>): Promise<void> => {
+    const next = queue.then(operation)
+    queue = next.catch(() => undefined)
+    return next
+  }
 
   const baseUrl = (): string => resolveAtlasPluginBaseUrl(pluginId, portalContext.uiFilesUrl)
 
@@ -150,7 +149,6 @@ export function useAtlasParcel(options: AtlasParcelOptions): UseAtlasParcel {
   }
 
   const run = async (): Promise<void> => {
-    const mine = ++generation
     status.value = 'loading'
     error.value = null
     try {
@@ -188,64 +186,34 @@ export function useAtlasParcel(options: AtlasParcelOptions): UseAtlasParcel {
 
       const next = mountRootParcel(mod as never, parcelProps as never) as unknown as ParcelHandle
       await next.mountPromise
-
-      if (mine !== generation) {
-        // An unmount landed while this was loading. Do not publish it.
-        await teardown(next)
-        return
-      }
-
       handle = next
       status.value = 'mounted'
     } catch (err) {
       const wrapped = err instanceof Error ? err : new Error(String(err))
       console.error(`[useAtlasParcel] Could not mount ${pluginId}`, wrapped)
-      if (mine === generation) {
-        error.value = wrapped
-        status.value = 'error'
-      }
+      error.value = wrapped
+      status.value = 'error'
     }
   }
 
-  const mount = async (): Promise<void> => {
-    // A second mount while one is in flight resolves to the first rather than
-    // racing it into two parcels on the same element.
-    if (inFlight) return inFlight
-    if (status.value === 'mounted') return
-    inFlight = run().finally(() => {
-      inFlight = null
+  const mount = (): Promise<void> =>
+    enqueue(async () => {
+      if (status.value !== 'mounted') await run()
     })
-    return inFlight
-  }
 
-  const unmount = async (): Promise<void> => {
-    generation += 1
-    if (inFlight) {
-      // Let the in-flight mount finish and orphan itself against the new
-      // generation, rather than tearing down a half-built parcel.
-      try {
-        await inFlight
-      } catch {
-        /* already reported by run() */
-      }
-    }
-    const target = handle
-    handle = null
-    await teardown(target)
-    status.value = 'idle'
-    error.value = null
-  }
+  const unmount = (): Promise<void> =>
+    enqueue(async () => {
+      const target = handle
+      handle = null
+      await teardown(target)
+      status.value = 'idle'
+      error.value = null
+    })
 
   const update = async (next: Record<string, unknown>): Promise<void> => {
     // A tab switch can land while the bundle is still loading, before there is
     // a handle. Apply it once the mount settles rather than dropping it.
-    if (inFlight) {
-      try {
-        await inFlight
-      } catch {
-        /* already reported by run() */
-      }
-    }
+    await queue
     if (!handle || typeof handle.update !== 'function') return
     try {
       await handle.update(next)

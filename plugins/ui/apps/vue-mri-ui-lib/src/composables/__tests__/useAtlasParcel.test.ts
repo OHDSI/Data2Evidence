@@ -154,6 +154,21 @@ describe('useAtlasParcel', () => {
     expect(parcels.every(p => p.getStatus() !== 'MOUNTED')).toBe(true)
   })
 
+  it('open -> close -> open during a slow load ends with one parcel mounted', async () => {
+    let release: () => void = () => {}
+    systemImport.mockImplementationOnce(() => new Promise(resolve => (release = () => resolve(makeLifecycles()))))
+    const { parcel } = makeParcel()
+    const opening = parcel.mount()
+    const closing = parcel.unmount()
+    const reopening = parcel.mount()
+    await settleStylesheet()
+    await vi.waitFor(() => expect(systemImport).toHaveBeenCalledTimes(1))
+    release()
+    await Promise.all([opening, closing, reopening])
+    expect(parcel.status.value).toBe('mounted')
+    expect(parcels.filter(p => p.getStatus() === 'MOUNTED')).toHaveLength(1)
+  })
+
   it('reports an error state when the bundle fails to load, without throwing', async () => {
     setSystem(async () => {
       throw new Error('404')
