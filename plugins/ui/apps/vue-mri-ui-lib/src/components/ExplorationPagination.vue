@@ -1,8 +1,8 @@
 <template>
-  <!-- Figma node 2976:388124: a 48px bar under the grid, white with a top
-       rule (docs/projects/vue-mri-ui/pr12/01-pagination.md). -->
+  <!-- Figma D2E Design System 2755:6060: right-aligned items per page,
+       range, then first / previous / next / last. -->
   <div class="exploration-pagination" data-testid="explorations-pagination">
-    <div class="exploration-pagination__left">
+    <div class="exploration-pagination__size-group">
       <span id="exploration-pagination-size-label" class="exploration-pagination__label">
         {{ getText('MRI_PA_EXPLORATIONS_ROWS_PER_PAGE') }}
       </span>
@@ -16,13 +16,13 @@
         >
           <option v-for="size in PAGE_SIZES" :key="size" :value="size">{{ size }}</option>
         </select>
-        <v-icon icon="mdi-menu-down" size="32" class="exploration-pagination__size-arrow" />
+        <v-icon icon="mdi-menu-down" size="24" class="exploration-pagination__size-arrow" />
       </div>
     </div>
 
-    <div class="exploration-pagination__right">
-      <span class="exploration-pagination__count">{{ pageLabelText }}</span>
+    <span class="exploration-pagination__count">{{ pageLabelText }}</span>
 
+    <div class="exploration-pagination__nav">
       <D2eIconButton
         category="no-stroke"
         size="sm"
@@ -31,7 +31,7 @@
         data-testid="explorations-page-first"
         @click="goTo(1)"
       >
-        <ExplorationPaginationFirstIcon />
+        <ExplorationPaginationFirstIcon :size="24" />
       </D2eIconButton>
 
       <D2eIconButton
@@ -42,7 +42,7 @@
         data-testid="explorations-page-prev"
         @click="goTo(page - 1)"
       >
-        <ExplorationPaginationPrevIcon />
+        <ExplorationPaginationPrevIcon :size="24" />
       </D2eIconButton>
 
       <D2eIconButton
@@ -53,7 +53,7 @@
         data-testid="explorations-page-next"
         @click="goTo(page + 1)"
       >
-        <ExplorationPaginationNextIcon />
+        <ExplorationPaginationNextIcon :size="24" />
       </D2eIconButton>
 
       <D2eIconButton
@@ -64,7 +64,7 @@
         data-testid="explorations-page-last"
         @click="goTo(totalPages)"
       >
-        <ExplorationPaginationLastIcon />
+        <ExplorationPaginationLastIcon :size="24" />
       </D2eIconButton>
     </div>
   </div>
@@ -134,36 +134,48 @@ const onPageSizeChange = (event: Event): void => {
 .exploration-pagination {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  height: 48px;
+  justify-content: flex-end;
   flex-shrink: 0;
-  padding: var(--d2e-spacing-xs) var(--d2e-spacing-m);
-  border-top: 1px solid var(--d2e-color-neutral-lighter);
+  padding: var(--d2e-spacing-xs-s) var(--d2e-spacing-m);
+  border-top: var(--d2e-border-width-sm) solid var(--d2e-color-neutral-lighter);
   background: var(--d2e-color-white);
   font-family: var(--d2e-font-family);
 
-  &__left,
-  &__right {
+  &__size-group {
     display: flex;
     align-items: center;
     gap: var(--d2e-spacing-xs);
-    flex: 0 0 280px;
   }
 
-  &__right {
-    justify-content: flex-end;
+  &__nav {
+    display: flex;
+    align-items: center;
+    gap: var(--d2e-spacing-xs-s);
+    padding-inline: var(--d2e-spacing-xxs);
+
+    :deep(.d2e-icon-button) {
+      --d2e-icon-button-color: var(--d2e-color-neutral);
+    }
+
+    :deep(.d2e-icon-button:disabled) {
+      --d2e-icon-button-color: var(--d2e-color-neutral);
+      opacity: 0.26;
+    }
   }
 
   &__label,
   &__count {
     font-size: var(--d2e-font-body2-size);
     font-weight: var(--d2e-font-body2-weight);
-    line-height: var(--d2e-font-body2-line-height);
+    line-height: 1.425;
     color: var(--d2e-color-neutral-black);
+    white-space: nowrap;
   }
 
   &__count {
-    text-align: center;
+    min-width: 116px;
+    padding-inline: var(--d2e-spacing-s);
+    text-align: right;
   }
 
   &__size {
@@ -173,26 +185,29 @@ const onPageSizeChange = (event: Event): void => {
   }
 
   // A native <select> matches the frame's plain box exactly; D2eSelect's
-  // outlined field is 40/48px tall with a floating label, neither of which
-  // this control has. `appearance: none` drops the UA's own arrow so only
-  // the mdi-menu-down glyph shows.
+  // outlined field carries a floating label this control does not have.
+  // `appearance: none` drops the UA's own arrow so only the mdi-menu-down
+  // glyph shows.
   &__size-input {
     appearance: none;
-    border: 1px solid var(--d2e-color-neutral-light);
+    width: 90px;
+    height: 40px;
+    padding: 0 40px 0 var(--d2e-spacing-s);
+    border: var(--d2e-border-width-sm) solid rgba(0, 0, 0, 0.38);
     border-radius: var(--d2e-radius-sm);
-    padding: 0 32px 0 12px;
-    height: 32px;
     font-family: inherit;
-    font-size: var(--d2e-font-body2-size);
+    font-size: var(--d2e-font-body1-size);
+    line-height: 1.5;
     color: var(--d2e-color-neutral-black);
     background: var(--d2e-color-white);
+    cursor: pointer;
   }
 
   &__size-arrow {
     position: absolute;
-    right: 4px;
+    right: var(--d2e-spacing-xs-s);
     pointer-events: none;
-    color: var(--d2e-color-neutral);
+    color: rgba(0, 0, 0, 0.54);
   }
 }
 </style>

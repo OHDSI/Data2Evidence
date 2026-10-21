@@ -5,6 +5,7 @@
     :style="containerStyle"
     icon
     variant="text"
+    color="var(--d2e-icon-button-color)"
     :ripple="false"
     :aria-label="ariaLabel"
     :disabled="disabled"
@@ -57,8 +58,8 @@ const containerStyle = computed(() => ({
 .d2e-icon-button {
   flex: none;
   padding: 0;
+  --d2e-icon-button-color: var(--d2e-color-primary);
   font-family: var(--d2e-font-family);
-  color: var(--d2e-color-primary);
   background: transparent;
   // v-btn defaults to the `elevated` variant, which paints a surface and a
   // shadow. The design's icon buttons have neither.
@@ -97,7 +98,7 @@ const containerStyle = computed(() => ({
   }
 
   &--primary {
-    color: var(--d2e-color-white);
+    --d2e-icon-button-color: var(--d2e-color-white);
     background: var(--d2e-color-primary);
 
     &:hover {
@@ -112,7 +113,7 @@ const containerStyle = computed(() => ({
   // Figma 2006:843: only the primary category fills on disabled. Secondary
   // keeps its outline over a transparent surface, and no-stroke stays bare.
   &:disabled {
-    color: var(--d2e-color-neutral-light);
+    --d2e-icon-button-color: var(--d2e-color-neutral-light);
     background: transparent;
     opacity: 1;
   }

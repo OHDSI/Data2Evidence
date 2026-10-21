@@ -84,7 +84,7 @@ export const tokens = {
     body2: { size: 14, weight: 400, lineHeight: 1.5, letterSpacing: "0" },
     caption1: { size: 12, weight: 400, lineHeight: 1.4, letterSpacing: "0" },
     caption2: { size: 10, weight: 400, lineHeight: 1.4, letterSpacing: "0" },
-    button: { size: 16, weight: 500, lineHeight: "16px", letterSpacing: "0" },
+    button: { size: 14, weight: 500, lineHeight: "16px", letterSpacing: "0" },
   },
   // Figma variables Modal/S, Modal/L, Modal/XL. There is no Modal/M, and 600
   // is not a size in the design system — an earlier extraction invented it.
@@ -94,6 +94,7 @@ export const tokens = {
   modal: { s: 540, l: 900, xl: 1200 },
   elevation: {
     card: "0 0 10px rgba(0, 0, 0, 0.10)",
+    page: "0 1px 3px rgba(15, 23, 42, 0.08), 0 8px 24px rgba(15, 23, 42, 0.08)",
     e1: "0 2px 1px -1px rgba(0,0,0,0.20), 0 1px 1px 0 rgba(0,0,0,0.14), 0 1px 3px 0 rgba(0,0,0,0.12)",
     e2: "0 3px 1px -2px rgba(0,0,0,0.20), 0 2px 2px 0 rgba(0,0,0,0.14), 0 1px 5px 0 rgba(0,0,0,0.12)",
     e8: "0 5px 5px -3px rgba(0,0,0,0.20), 0 8px 10px 1px rgba(0,0,0,0.14), 0 3px 14px 2px rgba(0,0,0,0.12)",

@@ -143,14 +143,8 @@ export default {
         this.cohortBusy = true
 
         const callbackSuccess = () => {
-          setTimeout(() => this.closeWindow(), 1500)
-          this.cohortBusy = false
-          this.messageStrip = {
-            show: true,
-            message: this.getText('MRI_PA_COLL_SUCCESS_ADD_PATIENT'),
-            messageType: 'success',
-          }
           this.fireBookmarkQuery({ method: 'get', params: { cmd: 'loadAll' } })
+          this.closeWindow()
         }
         const failureCallback = err => {
           this.cohortBusy = false

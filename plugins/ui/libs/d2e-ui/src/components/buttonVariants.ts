@@ -9,5 +9,11 @@ export const VARIANT_MAP = {
 
 export const SIZE_MAP = { sm: "small", md: undefined, lg: "large" } as const;
 
+export const BUTTON_SIZE_SPEC = {
+  sm: { height: 28, fontSize: 12 },
+  md: { height: 36, fontSize: 14 },
+  lg: { height: 44, fontSize: 16 },
+} as const;
+
 export type D2eButtonVariant = keyof typeof VARIANT_MAP;
 export type D2eButtonSize = keyof typeof SIZE_MAP;
