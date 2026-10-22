@@ -10,7 +10,7 @@ from _shared_flow_utils.api.PortalServerAPI import PortalServerAPI
 from _shared_flow_utils.update_dataset_metadata import (
     update_entity_value,
     update_entity_count,
-    update_entity_count_distribution,
+    get_entity_counts,
     update_metadata_last_fetched_date,
     update_total_entity_count)
 
@@ -110,21 +110,14 @@ def get_and_update_attributes(options: CreateCacheOptions, dataset: dict):
                 distinct_count=False
                 )
             
-            # update entity_count_distribution or error msg
-            entity_count_distribution = update_entity_count_distribution(
-                portal_server_api=portal_server_api,
-                dataset_id=dataset_id,
-                dbdao=dbdao,
-                schema_name=schema_name,
-                logger=logger,
-                distinct_count=False
-            )
+            # entity counts per table, used for total_entity_count
+            entity_counts = get_entity_counts(dbdao, schema_name, logger, distinct_count=False)
             
             # update total_entity_count or error msg
             update_total_entity_count(
                 portal_server_api=portal_server_api,
                 dataset_id=dataset_id,
-                entity_count_distribution=entity_count_distribution,
+                entity_counts=entity_counts,
                 logger=logger
             )
 
