@@ -11,7 +11,7 @@ Vuetify button wrapper with the D2E palette and type ramp.
 | Prop          | Type                                              | Default     | Notes                                         |
 | ------------- | ------------------------------------------------- | ----------- | --------------------------------------------- |
 | `variant`     | `'primary' \| 'secondary' \| 'danger' \| 'ghost'` | `'primary'` | Maps to Vuetify variant/color                 |
-| `size`        | `'sm' \| 'md' \| 'lg'`                            | `'md'`      | Maps to Vuetify size                          |
+| `size`        | `'sm' \| 'md' \| 'lg'`                            | `'md'`      | Height and font size from `BUTTON_SIZE_SPEC`  |
 | `loading`     | `boolean`                                         | `false`     | Passed to Vuetify                             |
 | `disabled`    | `boolean`                                         | `false`     | Passed to Vuetify                             |
 | `block`       | `boolean`                                         | `false`     | Full-width button for equal-width footers     |
