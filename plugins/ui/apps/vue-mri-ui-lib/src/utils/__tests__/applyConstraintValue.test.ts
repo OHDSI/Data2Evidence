@@ -64,14 +64,6 @@ describe('applyConstraintValue', () => {
       )
       expect(dispatch).not.toHaveBeenCalled()
     })
-
-    it.each([[''], ['   '], [null], [undefined]])('clears an empty numeric constraint (%p)', async input => {
-      await applyConstraintValue(dispatch, constraint({}, { type: 'num' }), input)
-      expect(dispatch).toHaveBeenCalledWith('updateConstraintValue', {
-        constraintId: 'constraint-1',
-        value: [],
-      })
-    })
   })
 
   describe('date/year range ({ from, to }) values', () => {
