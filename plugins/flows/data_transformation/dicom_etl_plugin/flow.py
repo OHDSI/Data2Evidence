@@ -62,6 +62,10 @@ def dicom_etl_plugin(options: DICOMETLOptions):
                 list(root_dir.rglob('*.DCM'))
             logger.info(f"Found {len(dcm_files)} DICOM files for processing!")
 
+            if len(dcm_files) == 0:
+                raise Exception(
+                    f"Flow failed! No .dcm/.DCM files found under '{dicom_files_abs_path}'")
+
             # Extract all data elements into a single df
             extracted_data_df = extract_data_elements(dcm_files)
 
