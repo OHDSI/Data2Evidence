@@ -22,6 +22,7 @@ export interface StudyAttribute {
 
 export interface Dataset {
   id: string
+  tokenStudyCode?: string
   studyDetail?: StudyDetail
   attributes?: StudyAttribute[]
 }

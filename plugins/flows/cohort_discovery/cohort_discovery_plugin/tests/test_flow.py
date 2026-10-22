@@ -105,3 +105,21 @@ def test_resolve_uses_cache_id_for_trex(monkeypatch):
         CohortDiscoveryOptions(datasetId="ds1", databaseCode="db_code",
                                cacheId="cache-abc", schemaName="cdm"))
     assert database == "cache-abc"
+
+
+def test_run_child_puts_package_parent_on_pythonpath(monkeypatch):
+    """In the staged layout the package lives under flows/, below run-flow.sh's
+    cwd, so the child must get the package's parent dir on PYTHONPATH."""
+    import os, pathlib
+    from cohort_discovery_plugin import flow as flowmod
+    monkeypatch.setenv("PYTHONPATH", "/existing")
+    run = MagicMock(return_value=MagicMock(returncode=0, stdout='{"results": [], "error": null}\n', stderr=""))
+    monkeypatch.setattr(flowmod.subprocess, "run", run)
+
+    assert flowmod._run_child({"COLLECTION_ID": "ds1"}) == '{"results": [], "error": null}'
+
+    child_env = run.call_args.kwargs["env"]
+    first, *rest = child_env["PYTHONPATH"].split(os.pathsep)
+    assert (pathlib.Path(first) / "cohort_discovery_plugin" / "bunny_runner.py").is_file()
+    assert rest == ["/existing"]
+    assert child_env["COLLECTION_ID"] == "ds1"

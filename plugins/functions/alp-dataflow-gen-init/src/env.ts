@@ -27,7 +27,6 @@ export const env = {
     minio_region: _env.MINIO__REGION,
     minio_ssl: _env.MINIO__SSL,
     python_verify_ssl: _env.PYTHON_VERIFY_SSL,
-    lb_log_level: _env.LB__LOG_LEVEL,
     idp_scope: _env.IDP__SCOPE,
     alp_system_id: _env.ALP__SYSTEM_ID,
     achilles_thread_count: _env.ACHILLES_THREAD_COUNT,
@@ -54,11 +53,6 @@ export const env = {
     fhir_database_code: _env.FHIR_DATABASE_CODE,
     cache_task_timeout: _env.CACHE_TASK_TIMEOUT || "10800", // Default to 3 hours
     cache_chunk_timeout: _env.CACHE_CHUNK_TIMEOUT || "3600", // Default to 1 hour per chunk
-
-    // For integration tests which are currently disabled
-    liquibase_path: _env.LIQUIBASE_PATH,
-    hana_driver_class_path: _env.HANA__DRIVER_CLASS_PATH,
-    postgres_driver_class_path: _env.POSTGRES__DRIVER_CLASS_PATH,
     is_self_managed_roles: _env.IS_SELF_MANAGED_ROLES,
   },
   SECRETS: {

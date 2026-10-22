@@ -292,3 +292,25 @@ def test_pg_primary_key_priority_still_beats_nullability():
     )
     assert candidate.name == "nullable_key"
     assert candidate.kind is ColumnKind.PRIMARY_KEY
+
+
+# Results-schema tables have no primary key, so the chunk column has to come
+# from CHUNK_COLUMN_MAP. Without an entry a large Achilles table is refused.
+@pytest.mark.parametrize("table, column", [
+    ("achilles_result_concept_count", "concept_id"),
+    ("achilles_results", "analysis_id"),
+    ("achilles_results_dist", "analysis_id"),
+    ("heracles_results", "analysis_id"),
+    ("heracles_results_dist", "analysis_id"),
+])
+def test_pg_results_tables_without_a_primary_key_chunk_on_the_mapped_column(table, column):
+    from create_cachedb_file_plugin.filter import CHUNK_COLUMN_MAP
+
+    candidate = pick_pg_candidate(
+        [],
+        mapped_column=CHUNK_COLUMN_MAP.get(table),
+        mapped_meta=("bigint", True),
+    )
+    assert candidate is not None
+    assert candidate.name == column
+    assert candidate.kind is ColumnKind.MAPPED_ID
