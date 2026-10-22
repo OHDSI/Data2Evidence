@@ -126,25 +126,30 @@ export class PrefectService {
     const portalServerApi = new PortalServerAPI(token);
 
     // get dataset info to pass databaseCode, which is needed for the analysis flow to know which database to connect to when running the analysis
-    const dataset = await portalServerApi.getDataset(options["datasetId"]);
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(options["datasetId"]);
+    const dataset = isUuid
+      ? await portalServerApi.getDataset(options["datasetId"])
+      : await portalServerApi.getDatasetByToken(options["datasetId"]);
     const { schemaName, databaseCode } = dataset;
     const cacheId = dataset.cacheId ?? databaseCode;
 
-    // Resolve study by token and validate it exists
+    // Resolve study by token and save analysis only when tokenStudyCode is provided
     this.strategusAnalysisApi = new StrategusAnalysisApi(token);
-    const studyDataset = await portalServerApi.getDatasetByToken(options["tokenStudyCode"]);
-    const study = await this.strategusAnalysisApi.getStudyByDatasetId(studyDataset.id);
-    if (!study) {
-      throw new Error(`Study with token ${options["tokenStudyCode"]} does not exist.`);
-    }
+    if (options["tokenStudyCode"]) {
+      const studyDataset = await portalServerApi.getDatasetByToken(options["tokenStudyCode"]);
+      const study = await this.strategusAnalysisApi.getStudyByDatasetId(studyDataset.id);
+      if (!study) {
+        throw new Error(`Study with token ${options["tokenStudyCode"]} does not exist.`);
+      }
 
-    await this.strategusAnalysisApi.saveAnalysis(
-      options["tokenStudyCode"],
-      options["notebookName"],
-      json_graph["analysisSpecification"],
-      env.TREX__STRATEGUS_RESULTS_DB_NAME,
-      options["mode"],
-    );
+      await this.strategusAnalysisApi.saveAnalysis(
+        options["tokenStudyCode"],
+        options["notebookName"],
+        json_graph["analysisSpecification"],
+        env.TREX__STRATEGUS_RESULTS_DB_NAME,
+        options["mode"],
+      );
+    }
 
     const flowRunId = await prefectApi.createFlowRun(
       "jupyter-kernel-dataset-analysis",

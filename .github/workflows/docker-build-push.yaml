@@ -150,6 +150,7 @@ jobs:
               - "plugins/functions/**"
               - "plugins/fhir_functions/**"
               - "plugins/sibyl_functions/**"
+              - "plugins/notebook_git/**"
               - "services/trex/ext/**"
               - ".github/workflows/docker-build-push.yaml"
             http_tests:
@@ -345,6 +346,7 @@ jobs:
           - PKGPATH: ./plugins/flows/data_management/
           - PKGPATH: ./plugins/flows/hades/
           - PKGPATH: ./plugins/flows/loyalty_score/
+          - PKGPATH: ./plugins/flows/cohort_discovery/
           - PKGPATH: ./plugins/flows/eq5d5l_index_calculation/
           - PKGPATH: ./plugins/flows/data_transformation/
           - PKGPATH: ./plugins/ui
@@ -362,6 +364,10 @@ jobs:
           - PKGPATH: ./plugins/sibyl_functions/
             DESTPATH: /usr/src/data/plugins/@data2evidence/sibyl
             RUNNER: ubuntu-24.04
+          - PKGPATH: ./plugins/notebook_git/
+            DESTPATH: /usr/src/data/plugins/@ohdsi/notebook-git
+            RUNNER: ubuntu-24.04
+            SKIP_PUBLISH: true
     runs-on: ${{ matrix.RUNNER || needs.setup.outputs.random_runner }}
     env:
       NPM_ARTIFACT_TYPE: ${{ github.event.inputs.artifacttype || 'OSS-develop'}}
@@ -552,6 +558,7 @@ jobs:
         env:
           CI: ${{ matrix.NPM != 'bun' }}
           SHOULD_PUBLISH: ${{ needs.setup.outputs.is_publish_push == 'true' || github.event_name == 'workflow_dispatch' }}
+          SKIP_PUBLISH: ${{ matrix.SKIP_PUBLISH }}
           NODE_AUTH_TOKEN: ${{ secrets.NPM_PROJECT_TOKEN }}
         run: |
           cd ${{ matrix.DESTPATH || matrix.PKGPATH }}
@@ -577,7 +584,7 @@ jobs:
             fi
           done
           [ $FAILED -eq 0 ] || exit $FAILED
-          if [[ $SHOULD_PUBLISH == true ]]; then
+          if [[ $SHOULD_PUBLISH == true && "${SKIP_PUBLISH:-}" != "true" ]]; then
             for PACK_FILE in "${TGZ_FILES[@]}"; do
               npm publish "$PACK_FILE"
             done

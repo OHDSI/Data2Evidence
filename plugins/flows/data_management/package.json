@@ -48,6 +48,18 @@
                     "title": "Database Code",
                     "type": "string"
                   },
+                  "cache_id": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "title": "Cache Id"
+                  },
                   "data_model": {
                     "anyOf": [
                       {
@@ -83,30 +95,6 @@
                     ],
                     "default": null,
                     "title": "Vocab Schema"
-                  },
-                  "rollback_count": {
-                    "anyOf": [
-                      {
-                        "type": "integer"
-                      },
-                      {
-                        "type": "null"
-                      }
-                    ],
-                    "default": null,
-                    "title": "Rollback Count"
-                  },
-                  "rollback_tag": {
-                    "anyOf": [
-                      {
-                        "type": "string"
-                      },
-                      {
-                        "type": "null"
-                      }
-                    ],
-                    "default": null,
-                    "title": "Rollback Tag"
                   },
                   "update_count": {
                     "anyOf": [
@@ -145,8 +133,6 @@
                 "enum": [
                   "create_datamodel",
                   "update_datamodel",
-                  "rollback_count",
-                  "rollback_tag",
                   "get_version_info",
                   "create_cdm_schema",
                   "changelog_sync"
@@ -173,7 +159,6 @@
     "pyproject.toml",
     "pixi.lock",
     "renv.lock",
-    "setup_assets.sh",
     "setup_r.sh"
   ]
 }

@@ -6,6 +6,12 @@
     "lib": ["ES2020", "DOM", "DOM.Iterable"],
     "skipLibCheck": true,
 
+    "baseUrl": ".",
+    "paths": {
+      "@d2e/ui": ["../../libs/d2e-ui/src/index.ts"],
+      "@d2e/ui/tokens.css": ["../../libs/d2e-ui/src/tokens/tokens.css"]
+    },
+
     "moduleResolution": "bundler",
     "allowImportingTsExtensions": true,
     "resolveJsonModule": true,

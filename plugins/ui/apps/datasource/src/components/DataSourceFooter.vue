@@ -1,9 +1,9 @@
 <template>
   <footer class="ds-footer">
     <span
-      class="ds-footer__version"
+      class="ds-footer__version text-body-1"
       data-testid="footer-version"
-    >Data2Evidence {{ version }}</span>
+    >{{ PRODUCT_NAME }} {{ version }}</span>
     <nav class="ds-footer__links">
       <template
         v-for="(link, i) in LINKS"
@@ -18,6 +18,7 @@
           :href="link.url"
           target="_blank"
           rel="noopener noreferrer"
+          class="text-body-1"
           :data-testid="`footer-link-${link.label.toLowerCase()}`"
         >{{ link.label }}</a>
       </template>
@@ -26,9 +27,8 @@
 </template>
 
 <script setup lang="ts">
-// D2E product version shown in the footer. No public config endpoint exposes
-// it yet, so it's a prop with a sensible default — wire it to a real source
-// (build define / config endpoint) when one exists.
+const PRODUCT_NAME = 'Data2Evidence'
+
 withDefaults(defineProps<{ version?: string }>(), { version: 'v0.19' })
 
 const LINKS = [
@@ -49,7 +49,7 @@ const LINKS = [
   width: 100%;
   min-height: 56px;
   padding: 16px 32px;
-  font-family: 'IBM Plex Sans', sans-serif;
+  font-family: var(--ds-font-body);
   font-size: 14px;
   color: #595757;
 }
@@ -68,7 +68,7 @@ const LINKS = [
   text-decoration: none;
 }
 .ds-footer__links a:hover {
-  color: #000080;
+  color: var(--ds-primary);
   text-decoration: underline;
 }
 </style>
