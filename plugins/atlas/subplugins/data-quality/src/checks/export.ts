@@ -34,9 +34,11 @@ export const CSV_COLUMNS: CsvColumn[] = [
   { key: 'executionTime', title: 'Execution time', value: field('executionTime') },
 ];
 
+const FORMULA_PREFIX = /^[=+\-@\t\r]/;
+
 /** RFC 4180: quote a field holding a comma, a quote or a line break; double its quotes. */
 function csvField(value: string | number): string {
-  const text = String(value);
+  const text = typeof value === 'string' && FORMULA_PREFIX.test(value) ? `'${value}` : String(value);
   return /[",\r\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
 }
 
@@ -62,6 +64,8 @@ export function exportFileName(ext: 'csv' | 'json', now: Date = new Date()): str
   return `data-quality-checks-${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}.${ext}`;
 }
 
+const REVOKE_DELAY_MS = 40_000;
+
 /** Saves text as a file through a temporary object URL. */
 export function downloadText(text: string, fileName: string, mime: string): void {
   const url = URL.createObjectURL(new Blob([text], { type: mime }));
@@ -71,5 +75,5 @@ export function downloadText(text: string, fileName: string, mime: string): void
   document.body.appendChild(anchor);
   anchor.click();
   anchor.remove();
-  URL.revokeObjectURL(url);
+  setTimeout(() => URL.revokeObjectURL(url), REVOKE_DELAY_MS);
 }
