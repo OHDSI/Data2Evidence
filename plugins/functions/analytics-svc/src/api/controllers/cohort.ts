@@ -294,10 +294,14 @@ export async function createCohort(req: IMRIRequest, res: Response) {
             // If there exists an existing materialized cohort
             // Update existing cohort definition and remove all existing records from cohort table before saving cohort to db
             cohortDefinitionId = existingMaterializedCohort.id;
-            await cohortEndpoint.updateCohortDefinitionToDb({
-                ...cohort,
-                id: cohortDefinitionId,
-            });
+            // Set COHORT_INITIATION_DATE to the date of this materialization.
+            await cohortEndpoint.updateCohortDefinitionToDb(
+                {
+                    ...cohort,
+                    id: cohortDefinitionId,
+                },
+                true
+            );
 
             // Remove existing records from cohort table before saving cohort to db
             await cohortEndpoint.deleteCohortFromDb(cohortDefinitionId);

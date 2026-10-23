@@ -523,8 +523,10 @@ export class CohortEndpoint {
     }
 
     // Update cohort definition to db
+    // updateInitiationDate also sets COHORT_INITIATION_DATE to the current date.
     public async updateCohortDefinitionToDb(
-        cohortDefinition: CohortDefinitionTableType
+        cohortDefinition: CohortDefinitionTableType,
+        updateInitiationDate = false
     ) {
         const queryString = `
         UPDATE ${this.schemaName}.COHORT_DEFINITION SET (
@@ -532,9 +534,10 @@ export class CohortEndpoint {
             COHORT_DEFINITION_DESCRIPTION,
             DEFINITION_TYPE_CONCEPT_ID,
             COHORT_DEFINITION_SYNTAX,
-            SUBJECT_CONCEPT_ID
+            SUBJECT_CONCEPT_ID${updateInitiationDate ? `,
+            COHORT_INITIATION_DATE` : ""}
             )
-        = (%s, %s, %s, %s, %s)
+        = (%s, %s, %s, %s, %s${updateInitiationDate ? ", %s" : ""})
         WHERE COHORT_DEFINITION_ID = %s`;
 
         try {
@@ -545,6 +548,9 @@ export class CohortEndpoint {
                 cohortDefinition.definitionTypeConceptId,
                 cohortDefinition.syntax,
                 cohortDefinition.subjectConceptId,
+                ...(updateInitiationDate
+                    ? [new Date().toISOString().split("T")[0]]
+                    : []),
                 cohortDefinition.id
             );
             const result = await this.executeCohortQuery(query, true);
