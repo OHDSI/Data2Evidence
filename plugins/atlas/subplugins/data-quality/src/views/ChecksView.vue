@@ -56,6 +56,15 @@ const page = ref(1);
 const itemsPerPage = ref(10);
 const expanded = ref<string[]>([]);
 
+watch([ctx.datasetId, ctx.cohortDefinitionId], () => {
+  query.value = '';
+  filters.value = emptyFilters();
+});
+
+watch(rows, () => {
+  expanded.value = [];
+});
+
 const shown = computed(() =>
   visibleRows(rows.value, {
     query: query.value,
