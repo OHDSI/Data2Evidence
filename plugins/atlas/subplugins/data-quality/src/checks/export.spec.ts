@@ -1,6 +1,43 @@
-import { describe, expect, it } from 'vitest';
-import { CSV_COLUMNS, exportFileName, toCsv, toJson } from './export';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { CSV_COLUMNS, downloadText, exportFileName, toCsv, toJson } from './export';
 import { row } from './fixtures';
+
+describe('toCsv formula guard', () => {
+  it('prefixes a text field that a spreadsheet would read as a formula', () => {
+    const [header, line] = toCsv([row({ error: '=HYPERLINK("x")', notesValue: '@SUM(1)', context: '+1' })]).split(
+      '\r\n',
+    );
+    const cell = (title: string) => line.split(',')[header.split(',').indexOf(title)];
+    expect(cell('Notes')).toBe("'@SUM(1)");
+    expect(cell('Context')).toBe("'+1");
+    expect(line).toContain(`"'=HYPERLINK(""x"")"`);
+  });
+
+  it('leaves numbers and ordinary text alone', () => {
+    const [header, line] = toCsv([row({ numViolatedRows: -3, notesValue: 'a-b' })]).split('\r\n');
+    const cell = (title: string) => line.split(',')[header.split(',').indexOf(title)];
+    expect(cell('Violated rows')).toBe('-3');
+    expect(cell('Notes')).toBe('a-b');
+  });
+});
+
+describe('downloadText', () => {
+  afterEach(() => {
+    vi.useRealTimers();
+    vi.restoreAllMocks();
+  });
+
+  it('revokes the object URL only after the browser has had time to fetch it', () => {
+    vi.useFakeTimers();
+    vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:x');
+    const revoke = vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => undefined);
+    vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => undefined);
+    downloadText('a', 'a.csv', 'text/csv');
+    expect(revoke).not.toHaveBeenCalled();
+    vi.runAllTimers();
+    expect(revoke).toHaveBeenCalledWith('blob:x');
+  });
+});
 
 describe('toCsv', () => {
   it('writes a header and one CRLF line per row, without queryText', () => {
