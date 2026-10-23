@@ -5,6 +5,7 @@
  * mounting anything, which the repository's testing policy asks for. Same
  * shape as `explorationAnalyze.ts`, which the Analyze action uses.
  */
+import { isFlowRunInProgress } from '../../utils/FlowRunState'
 
 /** The parts of an exploration record this action reads. */
 export interface DataQualityCardSource {
@@ -94,22 +95,10 @@ export type DataQualityPhase = 'idle' | 'checking' | 'starting' | 'running' | 'r
 /** What a Prefect `state.type` means for the card. */
 export type FlowRunGroup = 'running' | 'failed' | 'completed' | 'cancelled'
 
-const RUNNING_STATES = new Set([
-  'SCHEDULED',
-  'PENDING',
-  'RUNNING',
-  'PAUSED',
-  'CANCELLING',
-  'LATE',
-  'RETRYING',
-  'AWAITINGRETRY',
-  'SUSPENDED',
-])
-
 /**
- * Groups a flow run's `state.type` (jobplugins src/const.ts). Read `state.type`,
- * never `state_name`: the name is display text ("Running"), which is what let
- * Bookmarks.vue miss a run in flight.
+ * Groups a flow run's `state.type` (jobplugins src/const.ts). The in-progress
+ * states are utils/FlowRunState's, plus CANCELLING, which still ends in a state
+ * worth waiting for.
  *
  * A missing or unknown state reads as failed, so the next click starts a fresh
  * run rather than waiting on a run whose outcome cannot be read.
@@ -117,7 +106,7 @@ const RUNNING_STATES = new Set([
 export function classifyFlowRunState(type: string | undefined | null): FlowRunGroup {
   if (type === 'COMPLETED') return 'completed'
   if (type === 'CANCELLED') return 'cancelled'
-  if (type && RUNNING_STATES.has(type)) return 'running'
+  if (type && (type === 'CANCELLING' || isFlowRunInProgress({ state: { type } }))) return 'running'
   return 'failed'
 }
 
