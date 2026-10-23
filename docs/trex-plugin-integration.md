@@ -196,7 +196,7 @@ is already set):
 |-------|-------|
 | `name` | Flow and deployment name in Prefect. |
 | `entrypoint` | `flows.<plugin_dir>.<module>.<function>`. The staging script reads the plugin directory from the second segment, so keep this shape. |
-| `image` | Optional. Docker image for this flow. If omitted, the flow uses the shared image in `trex.flow.image` (`ghcr.io/ohdsi/d2e/flow-base`), which is what you want for `demo_plugin`. |
+| `image` | Docker-worker compatibility metadata, inherited from `trex.flow.image` if omitted. D2E's default process work pool accepts but ignores it; flows run inside `alp-dataflow-gen-worker`, with the plugin's pixi environment selected by `/app/run-flow.sh`. |
 | `command` | Command the worker runs. D2E uses `/app/run-flow.sh d2e-flows`; the last argument is the **plugin group name** (the package, `d2e-flows`); keep it as is. |
 | `tags` | Prefect tags. |
 | `concurrencyLimitOptions` | `[{ "tag", "limit" }]`; `limit` is a number or an env var name (see `create_cachedb_file_plugin`). |
@@ -243,7 +243,8 @@ npm pack --dry-run   # confirm flows/demo_plugin and _shared_flow_utils are list
 **Image.** The flow image is the D2E dataflow-gen worker image, built from
 `services/alp-dataflow-gen-worker/Dockerfile` (CI publishes it as
 `d2e-dataflow-gen-worker`; the manifest's `image` value
-`ghcr.io/ohdsi/d2e/flow-base` is the name Trex hands to Prefect). It provides
+`ghcr.io/ohdsi/d2e/flow-base` is the name Trex hands to Prefect; the default
+process pool ignores it). It provides
 `/app/run-flow.sh` and bakes in `plugins/flows` with its pixi/R environments.
 `run-flow.sh` finds the plugin code from the deployment's `plugin_artifact` or,
 failing that, from that baked cache. CI rebuilds the image when files it copies
@@ -265,10 +266,17 @@ into the Trex container so you can test without publishing anything.
 **Flow.**
 - Unit test the flow code first with `pytest`. Existing tests sit next to each
   plugin, for example `plugins/flows/base/create_cachedb_file_plugin/tests`.
-- To run changed flow code in the stack without rebuilding the image, set
-  `D2E_FLOWS_DEV_DIR`. `run-flow.sh` then overlays `$D2E_FLOWS_DEV_DIR/d2e-flows`
-  onto the plugin before each run (the `flows-dev` volume is mounted for this in
-  `docker-compose-local.yml`).
+- To run changed flow code without rebuilding the image, first register the
+  entrypoint in the manifest, then run `bash ../build/stage_package.sh` from
+  `plugins/flows/base`. Create `/usr/src/flows-dev/d2e-flows/` in the running
+  Trex container and copy the staged `flows/`, `_shared_flow_utils/`, and
+  `__init__.py` there. This shared volume is visible to the worker at
+  `/var/lib/d2e-flows-dev/d2e-flows/`. Set
+  `D2E_FLOWS_DEV_DIR=/var/lib/d2e-flows-dev` in the local Compose environment
+  and recreate `alp-dataflow-gen-worker` to apply it. The overlay uses the
+  existing provisioned environment; dependency changes still need provisioning.
+  Repeat staging and copying after code edits. After copying, clean the staging
+  files with `bash ../build/stage_package.sh clean` from `plugins/flows/base`.
 - To load changes to `plugins/flows/base/package.json`, add the bind mount
   `./plugins/flows/base/package.json:/usr/src/bundled-plugins/d2e-flows/package.json`
   to the `trex` service in `docker-compose-local.yml`, then recreate `trex`.
