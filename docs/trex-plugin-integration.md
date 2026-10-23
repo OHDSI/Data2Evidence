@@ -113,7 +113,7 @@ the package at pack time (Step 3).
 
 ### Function: `plugins/functions/package.json`
 
-This is how `demo` is registered today; a new function adds its own entries in the same shape:
+The following is a **simplified manifest-shape example**, not the existing `demo` configuration. For the actual setup service, retain its complete environment block and `demo.setup` scope in `plugins/functions/package.json`; a new function adds its own entries in the same shape:
 
 ```json
 {
@@ -152,8 +152,9 @@ This is how `demo` is registered today; a new function adds its own entries in t
   `${VAR-default}`, `${VAR:?error}` and `${VAR:+alt}` are substituted when the
   config loads, not in the worker. Workers get no database secrets
   automatically; pass what they need through `env`.
-- Auth: callers send a Logto JWT, which Trex verifies against the Logto JWKS before forwarding to your
-  worker (the worker only decodes it). `roles` are created in `trexdb.role` at
+- Auth: callers send a Trex-issued access token from the D2E sign-in flow, which
+  Trex verifies before forwarding to the worker (the worker only decodes it). Logto is only an upstream sign-in
+  provider in `logto-federated` mode. `roles` are created in `trexdb.role` at
   startup. `scopes[].path` is a **regex** (see `^/files-manager/api` in the
   existing manifest), optionally limited by `httpMethods`, and the first match
   wins, so list the most specific first.
@@ -199,7 +200,7 @@ is already set):
 | `command` | Command the worker runs. D2E uses `/app/run-flow.sh d2e-flows`; the last argument is the **plugin group name** (the package, `d2e-flows`); keep it as is. |
 | `tags` | Prefect tags. |
 | `concurrencyLimitOptions` | `[{ "tag", "limit" }]`; `limit` is a number or an env var name (see `create_cachedb_file_plugin`). |
-| `parameter_openapi_schema` | JSON schema of the flow parameters. Generate it from the pydantic model (`DemoPluginOptions.model_json_schema()`) instead of hand-writing it, and regenerate when options change. |
+| `parameter_openapi_schema` | JSON schema of the flow function's parameters, including the outer `options` property. Generate it with Prefect's `parameter_schema_from_entrypoint(...).model_dump_for_openapi()` (see `plugins/flows/docs/scripts/packageutils.py`), and regenerate when the signature or options change. |
 | `type`, `datamodels` | D2E-specific metadata that dataset/portal services use to find flows by purpose (for example `datamodel`). Optional for a plain flow. |
 
 The Prefect connection is configured on the Trex server by whoever deploys it.
@@ -268,9 +269,11 @@ into the Trex container so you can test without publishing anything.
   `D2E_FLOWS_DEV_DIR`. `run-flow.sh` then overlays `$D2E_FLOWS_DEV_DIR/d2e-flows`
   onto the plugin before each run (the `flows-dev` volume is mounted for this in
   `docker-compose-local.yml`).
-- A change to the flow manifest (`plugins/flows/base/package.json`) is only
-  picked up if you enable the commented-out mount in `docker-compose-local.yml`
-  marked "For local flows development only", then restart `trex`.
+- To load changes to `plugins/flows/base/package.json`, add the bind mount
+  `./plugins/flows/base/package.json:/usr/src/bundled-plugins/d2e-flows/package.json`
+  to the `trex` service in `docker-compose-local.yml`, then recreate `trex`.
+  Use the staged code overlay above for the flow source. The existing commented
+  manifest mount under `/usr/src/plugins` is shadowed by the bundled package.
 
 Then do the checks under **Verify** below.
 
@@ -287,8 +290,11 @@ The Trex image bakes plugins in at build time:
   packages is published and the image is rebuilt.
 - **CI:** builds use the packed tarballs in `plugin-artifacts/` instead of the
   feed.
-- **Local development:** put the package directory in `plugins-dev/`
-  (`PLUGINS_DEV_PATH`, auto-discovered) and run `docker compose up`.
+- **Local development:** add a bind mount such as
+  `./plugins-dev/my-plugin:/usr/src/plugins-dev/my-plugin` to the `trex` service,
+  place the package in that host directory, and recreate `trex` using the same
+  Compose files as the running stack. `PLUGINS_DEV_PATH` discovers container
+  paths, not unmounted host directories.
 
 Only a brand-new package (not a new function or flow inside these two) must be
 added to `PLUGINS_FROM_REGISTRY`.
@@ -303,7 +309,7 @@ Verify:
 | Symptom | Likely cause |
 |---------|--------------|
 | `demo` returns `could not find an appropriate entrypoint` | `function` points at a file, or at a directory without `index.ts`. |
-| `demo` returns 401/403 | Missing or invalid Logto token, or the caller's role lacks the scope matched by `scopes[].path`; check ordering (first match wins). |
+| `demo` returns 401/403 | Missing or invalid Trex-issued access token, or the caller's role lacks the scope matched by `scopes[].path`; check ordering (first match wins). |
 | Env value empty in the worker | `${VAR}` was unset when the config loaded; use `${VAR:-default}` or `${VAR:?msg}`. |
 | `demo_plugin` never registers | Flow plugins are skipped when the server has no Prefect connection, or the worker pool does not exist yet. Ask whoever runs the Trex server. |
 | `npm pack` fails with `plugin dir 'demo_plugin' ... not found` | `entrypoint` names a directory that does not exist under `plugins/flows/base`. |
@@ -322,7 +328,7 @@ Verify:
 
 - [ ] `plugins/flows/base/demo_plugin/` has `flow.py` and `types.py`
 - [ ] `trex.flow.flows` entry added with entrypoint `flows.demo_plugin.flow.demo_plugin`
-- [ ] `parameter_openapi_schema` regenerated from the options model
+- [ ] `parameter_openapi_schema` regenerated from the flow entrypoint (full parameter schema, including `options`)
 - [ ] `npm pack --dry-run` lists `flows/demo_plugin` and `_shared_flow_utils`
 - [ ] If the flow adds new dependencies, `pyproject.toml` / `pixi.lock` / `renv.lock` updated and the flow image rebuilt
 
