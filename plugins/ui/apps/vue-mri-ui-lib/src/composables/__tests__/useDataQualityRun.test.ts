@@ -118,7 +118,7 @@ describe('useDataQualityRun', () => {
     expect(fetchLatest.mock.calls.length).toBe(polls)
   })
 
-  it('tolerates two failed polls, and reports the third', async () => {
+  it('tolerates two failed polls, and on the third reports it and stops, without calling the run failed', async () => {
     fetchLatest.mockResolvedValueOnce(null)
     const dq = make()
     await dq.activate('7', 'SNRI')
@@ -127,7 +127,7 @@ describe('useDataQualityRun', () => {
     await tick()
     expect(dq.phaseOf('7')).toBe('running')
     await tick()
-    expect(dq.phaseOf('7')).toBe('failed')
+    expect(dq.phaseOf('7')).toBe('idle')
     expect(notify).toHaveBeenCalledWith({ kind: 'error', key: 'MRI_PA_DATA_QUALITY_STATUS_FAILED', name: 'SNRI' })
   })
 
@@ -179,6 +179,16 @@ describe('useDataQualityRun', () => {
     await expect(dq.activate('7', 'SNRI')).resolves.toBe('error')
     expect(dq.phaseOf('7')).toBe('idle')
     expect(notify.mock.calls).toEqual([[{ kind: 'error', key: 'MRI_PA_DATA_QUALITY_START_FAILED', name: 'SNRI' }]])
+  })
+
+  it('passes on the reason the backend gave for a failed start', async () => {
+    fetchLatest.mockResolvedValue(null)
+    startRun.mockRejectedValue(Object.assign(new Error('Failed to start data quality'), { detail: 'missing tables' }))
+    const dq = make()
+    await dq.activate('7', 'SNRI')
+    expect(notify.mock.calls).toEqual([
+      [{ kind: 'error', key: 'MRI_PA_DATA_QUALITY_START_FAILED', name: 'SNRI', detail: 'missing tables' }],
+    ])
   })
 
   it('keeps each cohort apart', async () => {

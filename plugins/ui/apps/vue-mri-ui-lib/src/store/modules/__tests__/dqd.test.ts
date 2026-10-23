@@ -57,6 +57,15 @@ describe('store - dqd startDataQualityFlowRun', () => {
       actions.startDataQualityFlowRun({ dispatch, rootGetters }, { datasetId: 'ds-1', cohortDefinitionId: '1' })
     ).rejects.toThrow('Failed to start data quality')
   })
+
+  it('keeps the reason the backend gives for a client error, and only for a client error', async () => {
+    const start = () =>
+      actions.startDataQualityFlowRun({ dispatch, rootGetters }, { datasetId: 'ds-1', cohortDefinitionId: '1' })
+    dispatch.mockRejectedValueOnce({ response: { status: 400, data: { message: 'missing tables' } } })
+    await expect(start()).rejects.toMatchObject({ message: 'Failed to start data quality', detail: 'missing tables' })
+    dispatch.mockRejectedValueOnce({ response: { status: 500, data: { message: 'stack trace' } } })
+    await expect(start()).rejects.not.toHaveProperty('detail')
+  })
 })
 
 describe('store - dqd fetchDataQualityFlowRun', () => {

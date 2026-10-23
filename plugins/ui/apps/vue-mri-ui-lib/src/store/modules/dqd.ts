@@ -67,8 +67,11 @@ const actions = {
     }
     return dispatch('ajaxAuth', { url: `${job_plugins_url}dqd/data-quality/flow-run`, method: 'POST', params })
       .then(response => response.data)
-      .catch(() => {
-        throw new Error('Failed to start data quality')
+      .catch((error: AxiosError<{ message?: unknown }>) => {
+        const status = error?.response?.status ?? 0
+        const detail = error?.response?.data?.message
+        const failure = new Error('Failed to start data quality')
+        throw status >= 400 && status < 500 && typeof detail === 'string' ? Object.assign(failure, { detail }) : failure
       })
   },
 }
