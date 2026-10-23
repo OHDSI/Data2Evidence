@@ -2050,6 +2050,7 @@ jobs:
         with:
           package: ${{ matrix.image }}
           delete-untagged: true
+          older-than: 1 day
           validate: true
 
   docker-success:
