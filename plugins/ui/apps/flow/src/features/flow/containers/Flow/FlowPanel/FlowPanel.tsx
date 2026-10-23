@@ -25,7 +25,7 @@ import ReactFlow, {
   XYPosition,
 } from "reactflow";
 import { v4 as uuidv4 } from "uuid";
-import { Box } from "@portal/components";
+import { Alert, Box } from "@portal/components";
 import { isCircular, isNested } from "~/utils";
 import {
   markStatusAsDraft,
@@ -83,6 +83,8 @@ export const FlowPanel: FC<FlowPanelProps> = () => {
 
   const [position, setPosition] = useState<XYPosition>();
   const [target, setTarget] = useState(null);
+  const [connectionLimitWarningVisible, setConnectionLimitWarningVisible] =
+    useState(false);
   const nodes = useSelector(selectFlowNodes);
   const edges = useSelector(selectEdges);
   const lastNode = useSelector(selectLastNode);
@@ -393,6 +395,8 @@ export const FlowPanel: FC<FlowPanelProps> = () => {
       const source = connection.source;
       const target = connection.target;
       const isDifferentNode = source !== target;
+      const sourceNode = nodes.find((node) => node.id === source);
+      const targetNode = nodes.find((node) => node.id === target);
       const routes = edges.reduce<{ [key: string]: string[] }>((acc, edge) => {
         if (edge.source && edge.target) {
           if (acc[edge.source]) {
@@ -410,9 +414,24 @@ export const FlowPanel: FC<FlowPanelProps> = () => {
         sourceType === HandleIOType.Any ||
         targetType === HandleIOType.Any ||
         sourceType === targetType;
+      const isWhiteRabbitInput =
+        sourceNode?.type === "white_rabbit_node" &&
+        targetNode?.type === "rabbit_in_a_hat";
+      const hasWhiteRabbitInput = edges.some(
+        (edge) =>
+          edge.target === target &&
+          edge.source !== source &&
+          nodes.find((node) => node.id === edge.source)?.type ===
+            "white_rabbit_node"
+      );
+
+      if (isWhiteRabbitInput && hasWhiteRabbitInput) {
+        setConnectionLimitWarningVisible(true);
+      }
 
       return (
         isDifferentNode &&
+        !(isWhiteRabbitInput && hasWhiteRabbitInput) &&
         !isCircular(routes, source, target) &&
         !isNested(nodes, source, target) &&
         isValidType
@@ -461,6 +480,13 @@ export const FlowPanel: FC<FlowPanelProps> = () => {
           </Box>
         </Panel>
       </ReactFlow>
+      <Alert
+        severity="warning"
+        variant="toast"
+        message="Connection limit reached — One white rabbit node per Rabbit in a Hat node."
+        visible={connectionLimitWarningVisible}
+        onClose={() => setConnectionLimitWarningVisible(false)}
+      />
       <SelectNodeTypesDialog
         open={addNodeTypeDialog.visible}
         onClose={handleCloseDialog}
