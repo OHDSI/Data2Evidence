@@ -1060,12 +1060,12 @@ const dqRun = useDataQualityRun({
     store.dispatch('fetchDataQualityFlowRun', { cohortDefinitionId, datasetId: id }),
   startRun: (cohortDefinitionId, id) =>
     store.dispatch('startDataQualityFlowRun', { cohortDefinitionId, datasetId: id }),
-  notify: ({ kind, key, name }) => {
+  notify: ({ kind, key, name, detail }) => {
     // setAlertMessage toggles `show`, so close first: the alert must end up
     // shown even when one is already on screen.
     notifications.closeAlertNotification()
     notifications.setAlertMessage({
-      message: getText(key, name),
+      message: detail ? `${getText(key, name)} ${detail}` : getText(key, name),
       messageType: kind,
       title: getText(NOTIFICATION_TITLE_KEYS[kind]),
     })

@@ -32,7 +32,7 @@ export interface DataQualityRunDeps {
   /** The cohort's latest run; null when it has none (a 404). Throws otherwise. */
   fetchLatest: (cohortDefinitionId: string, datasetId: string) => Promise<LatestFlowRun | null>
   startRun: (cohortDefinitionId: string, datasetId: string) => Promise<{ flowRunId: string }>
-  notify: (notification: { kind: 'success' | 'warning' | 'error'; key: string; name: string }) => void
+  notify: (notification: { kind: 'success' | 'warning' | 'error'; key: string; name: string; detail?: string }) => void
   /** The portal's DQD dialogs re-read every 10s; so does this. */
   pollIntervalMs?: number
   /**
@@ -122,7 +122,7 @@ export function useDataQualityRun(deps: DataQualityRunDeps) {
       const failures = entry.failures + 1
       if (failures > failureTolerance) {
         console.error('[data-quality] could not follow the run', error)
-        set(id, { phase: 'failed', failures })
+        set(id, { phase: 'idle', failures })
         deps.notify({ kind: 'error', key: 'MRI_PA_DATA_QUALITY_STATUS_FAILED', name: entry.name })
         return
       }
@@ -200,7 +200,13 @@ export function useDataQualityRun(deps: DataQualityRunDeps) {
       if (disposed) return 'error'
       console.error('[data-quality] could not start a run', error)
       set(id, { phase: 'idle' })
-      deps.notify({ kind: 'error', key: 'MRI_PA_DATA_QUALITY_START_FAILED', name: explorationName })
+      const detail = (error as { detail?: unknown } | null)?.detail
+      deps.notify({
+        kind: 'error',
+        key: 'MRI_PA_DATA_QUALITY_START_FAILED',
+        name: explorationName,
+        ...(typeof detail === 'string' && detail ? { detail } : {}),
+      })
       return 'error'
     }
   }
