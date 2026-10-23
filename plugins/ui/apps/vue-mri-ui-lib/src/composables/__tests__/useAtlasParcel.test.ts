@@ -247,7 +247,15 @@ describe('useAtlasParcel', () => {
     finishImport(makeLifecycles())
     await Promise.all([mounting, updating])
     expect(parcels).toHaveLength(1)
-    expect(parcels[0].update).toHaveBeenCalledWith({ hostContext: { itemId: 'checks' } })
+    expect(parcels[0].update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        appId: PLUGIN,
+        isAtlas: true,
+        domElement: expect.any(HTMLElement),
+        t: expect.any(Function),
+        hostContext: { itemId: 'checks' },
+      })
+    )
   })
 
   it('unmount is safe when nothing was ever mounted', async () => {
