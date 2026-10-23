@@ -127,6 +127,7 @@ export function useAtlasParcel(options: AtlasParcelOptions): UseAtlasParcel {
   const error = ref<Error | null>(null)
 
   let handle: ParcelHandle | null = null
+  let mountedProps: Record<string, unknown> = {}
   let queue: Promise<void> = Promise.resolve()
 
   const enqueue = (operation: () => Promise<void>): Promise<void> => {
@@ -187,6 +188,7 @@ export function useAtlasParcel(options: AtlasParcelOptions): UseAtlasParcel {
       const next = mountRootParcel(mod as never, parcelProps as never) as unknown as ParcelHandle
       await next.mountPromise
       handle = next
+      mountedProps = parcelProps
       status.value = 'mounted'
     } catch (err) {
       const wrapped = err instanceof Error ? err : new Error(String(err))
@@ -216,7 +218,7 @@ export function useAtlasParcel(options: AtlasParcelOptions): UseAtlasParcel {
     await queue
     if (!handle || typeof handle.update !== 'function') return
     try {
-      await handle.update(next)
+      await handle.update({ ...mountedProps, ...next })
     } catch (err) {
       console.error(`[useAtlasParcel] Could not update ${pluginId}`, err)
     }
