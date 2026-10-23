@@ -1,7 +1,5 @@
 # Integrating Flows and Functions with Trex as a Plugin
 
-Tracks [OHDSI/Data2Evidence#1525](https://github.com/OHDSI/Data2Evidence/issues/1525).
-
 Trex loads extensions as **npm packages** whose `package.json` carries a `trex`
 block. D2E ships two such packages from `plugins/`:
 
