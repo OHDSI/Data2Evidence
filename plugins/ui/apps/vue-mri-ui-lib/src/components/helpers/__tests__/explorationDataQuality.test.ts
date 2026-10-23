@@ -81,17 +81,10 @@ describe('buildDataQualityParcelProps', () => {
 })
 
 describe('classifyFlowRunState', () => {
-  it.each([
-    'SCHEDULED',
-    'PENDING',
-    'RUNNING',
-    'PAUSED',
-    'CANCELLING',
-    'LATE',
-    'RETRYING',
-    'AWAITINGRETRY',
-    'SUSPENDED',
-  ])('reads %s as running', type => expect(classifyFlowRunState(type)).toBe('running'))
+  it.each(['SCHEDULED', 'PENDING', 'RUNNING', 'PAUSED', 'CANCELLING', 'LATE', 'RETRYING', 'AWAITINGRETRY', 'RESUMING'])(
+    'reads %s as running',
+    type => expect(classifyFlowRunState(type)).toBe('running')
+  )
 
   it.each(['FAILED', 'CRASHED', 'TIMEDOUT'])('reads %s as failed', type =>
     expect(classifyFlowRunState(type)).toBe('failed')
