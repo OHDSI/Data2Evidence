@@ -25,6 +25,7 @@ import {
     refreshCohortCacheEntry,
     updateCohortCacheEntryMetadata,
 } from "../../utils/cohortCacheMaintenance.ts";
+import { setBookmarkVersionInCohortSyntax } from "../../utils/cohortDefinitionSyntax.ts";
 
 const language = "en";
 
@@ -265,6 +266,10 @@ export async function createCohort(req: IMRIRequest, res: Response) {
         );
 
         const cohort = await getCohortFromMriQuery(req, bookmark.bookmark_name);
+        cohort.syntax = setBookmarkVersionInCohortSyntax(
+            cohort.syntax,
+            bookmark.version
+        );
         const [cacheResultsSchemaName, sourceResultsSchemaName] =
             await _getResultsSchemaNames(req.selectedstudyDbMetadata);
         const cohortEndpoint = await CohortEndpoint.createCohortEndpoint(
@@ -295,10 +300,17 @@ export async function createCohort(req: IMRIRequest, res: Response) {
             // Update existing cohort definition and remove all existing records from cohort table before saving cohort to db
             cohortDefinitionId = existingMaterializedCohort.id;
             // Set COHORT_INITIATION_DATE to the date of this materialization.
+            // Write a null bookmarkVersion until the patient rows are saved,
+            // so that a failed run shows as stale.
             await cohortEndpoint.updateCohortDefinitionToDb(
                 {
                     ...cohort,
                     id: cohortDefinitionId,
+                    syntax: setBookmarkVersionInCohortSyntax(
+                        cohort.syntax,
+                        bookmark.version,
+                        { pending: true }
+                    ),
                 },
                 true
             );
@@ -343,6 +355,18 @@ export async function createCohort(req: IMRIRequest, res: Response) {
                 cohortDefinitionId,
                 cohort,
                 queryResponse.queryObject
+            );
+        }
+
+        if (existingMaterializedCohort) {
+            // Write the real bookmarkVersion. The cache refresh below reads it
+            // from the database.
+            await cohortEndpoint.updateCohortDefinitionToDb(
+                {
+                    ...cohort,
+                    id: cohortDefinitionId,
+                },
+                false
             );
         }
 
