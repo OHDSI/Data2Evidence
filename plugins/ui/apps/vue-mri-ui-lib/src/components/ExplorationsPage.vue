@@ -237,24 +237,31 @@
             </template>
           </v-tooltip>
 
-          <!-- Action placeholders. Empty for this release: see
-               SHOW_DATA_QUALITY below. The loop stays so the list only has to
-               be repopulated to bring the buttons back. -->
+          <!-- Atlas only; see SHOW_DATA_QUALITY. Disabled until the
+               exploration has been materialised, because DQD reports on a
+               cohort definition and there is none before that. While a run is
+               being checked, started or followed it shows a spinner and cannot
+               be pressed again; the tooltip follows the phase (useDataQualityRun).
+               The click stops here: the spinner replaces the icon before the
+               card's own listener runs, so its closest() ignore check would
+               start from a detached node and open the exploration. -->
           <v-tooltip
-            v-for="placeholder in ACTION_PLACEHOLDERS"
-            :key="placeholder.testid"
+            v-if="SHOW_DATA_QUALITY"
             location="top"
             content-class="explorations-tooltip"
-            :text="getText(placeholder.labelKey)"
+            :text="dataQualityTooltip(card)"
           >
             <template #activator="{ props: tooltipProps }">
               <span v-bind="tooltipProps">
                 <D2eIconButton
                   category="no-stroke"
-                  :aria-label="getText(placeholder.labelKey)"
-                  :data-testid="`${placeholder.testid}-${card.id}`"
+                  :disabled="!card.cohortDefinitionId || dataQualityBusy(card)"
+                  :loading="dataQualityBusy(card)"
+                  :aria-label="getText('MRI_PA_EXPLORATIONS_DATA_QUALITY')"
+                  :data-testid="`explorations-dq-btn-${card.id}`"
+                  @click.stop="openDataQuality(card)"
                 >
-                  <component :is="placeholder.icon" />
+                  <ExplorationDataQualityIcon />
                 </D2eIconButton>
               </span>
             </template>
@@ -335,6 +342,16 @@
     <RenameExplorationDialog v-model="renameOpen" :bookmark-display="actionTarget" />
     <DeleteExplorationDialog v-model="deleteOpen" :bookmark-display="actionTarget" />
 
+    <!-- Atlas only; see SHOW_DATA_QUALITY. Mounted on the build gate rather
+         than on `dqOpen` so the close transition survives. -->
+    <DataQualityDialog
+      v-if="SHOW_DATA_QUALITY"
+      v-model="dqOpen"
+      :dataset-id="datasetId"
+      :cohort-definition-id="dqCohortDefinitionId"
+      :exploration-name="dqExplorationName"
+    />
+
     <!-- Mounted once, outside the grid, as Bookmarks.vue:153-158 does.
          `compareOpen` is a trigger the dialog watches, not its own visibility
          state, so it is reset only in `closeEv` (blueprint pr10/02 section 3b). -->
@@ -394,7 +411,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, nextTick, reactive, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, reactive, ref, watch } from 'vue'
 import { useStore } from 'vuex'
 import {
   D2eButton,
@@ -419,6 +436,8 @@ import {
   shouldResetDashboardFlow,
 } from './helpers/explorationAnalyze'
 import { filterAndSort, toCardId, type ExplorationSortKey } from './helpers/explorationList'
+import { dataQualityCohortId, dataQualityTooltipKey, isDataQualityBusy } from './helpers/explorationDataQuality'
+import { useDataQualityRun } from '../composables/useDataQualityRun'
 import { allSelected, someSelected } from './helpers/explorationSelection'
 import {
   applyFilters,
@@ -447,6 +466,7 @@ import ExplorationMoreIcon from './icons/ExplorationMoreIcon.vue'
 import AddCohort from './AddCohort.vue'
 import RenameExplorationDialog from './RenameExplorationDialog.vue'
 import DeleteExplorationDialog from './DeleteExplorationDialog.vue'
+import DataQualityDialog from './DataQualityDialog.vue'
 import ExplorationFiltersPanel from './ExplorationFiltersPanel.vue'
 import FilterCardSummary from './FilterCardSummary.vue'
 import DashboardFlowModals from './DashboardFlowModals.vue'
@@ -483,29 +503,22 @@ const IGNORED_CLICK_TARGETS = [
   '.d2e-exploration-card__lead-row .v-btn',
 ].join(', ')
 
-// #3119 data quality is not wired yet. It renders so the action bar matches
-// the frame. #3120 filter summary and #3121 analyze are wired below.
 /**
- * Data quality is hidden for this release.
+ * Data quality is an Atlas-only action (#3119).
  *
- * The button rendered so the action bar matched the frame, but it opens
- * nothing: the page belongs to another plugin and wiring it is #3119. Shipping
- * a control that does nothing when clicked is worse than not showing it.
+ * The dialog mounts the Atlas3 `data-quality` sub-plugin
+ * (plugins/atlas/subplugins/data-quality) as a single-spa parcel. Only the
+ * native Atlas mount shares a document with Atlas's SystemJS runtime, so only
+ * that build can load it - the iframe mount cannot, and the portal has its own
+ * React DQD page.
  *
- * Everything needed to bring it back is still here - the icon, the label and
- * the test id. Set this to true when #3119 lands.
+ * VITE_ATLAS_NATIVE is set only by vite.config.atlas-native.ts's `define`
+ * block. Every other build leaves it undefined, this folds to false, and
+ * neither the button nor the dialog renders. Same gate as `canSwitchDataSource`
+ * below.
  */
-const SHOW_DATA_QUALITY = false
+const SHOW_DATA_QUALITY = import.meta.env.VITE_ATLAS_NATIVE === 'true'
 
-const ALL_ACTION_PLACEHOLDERS = [
-  {
-    icon: ExplorationDataQualityIcon,
-    labelKey: 'MRI_PA_EXPLORATIONS_DATA_QUALITY',
-    testid: 'explorations-dq-btn',
-  },
-]
-
-const ACTION_PLACEHOLDERS = SHOW_DATA_QUALITY ? ALL_ACTION_PLACEHOLDERS : []
 const EMPTY_VALUE = '-'
 
 const searchQuery = ref(explorations.listView.searchQuery)
@@ -771,6 +784,10 @@ const cards = computed(() => {
       bmkId: bookmark?.id ?? null,
       chartType: bookmark?.chartType ?? null,
       isMaterialised: Boolean(cohortDefinition),
+      // DQD reports on a cohort definition, so a never-materialised
+      // exploration has nothing to open. The rule lives in the helper, beside
+      // the Analyze one, so it is testable without mounting the page.
+      cohortDefinitionId: dataQualityCohortId(card),
       // A type 'M' record has neither a bookmark nor an Atlas definition, so
       // there is nothing to materialise; offering it posts a URL with "null".
       canBeMaterialised: Boolean(bookmark || atlas),
@@ -1014,6 +1031,67 @@ const onCardClick = (card: { bmkId: string | null; chartType: string | null }, e
 /* ---- card actions ---------------------------------------------------- */
 
 const actionTarget = ref<BookmarkDisplay | null>(null)
+
+/**
+ * The Data quality dialog (#3119).
+ *
+ * Keyed to the clicked card's cohort definition, because DQD reports on a
+ * cohort definition rather than on the exploration record. The name only fills
+ * the dialog subtitle, which the frame writes as "Exploration cohort name: ...".
+ */
+const dqOpen = ref(false)
+const dqCohortDefinitionId = ref('')
+const dqExplorationName = ref('')
+
+/**
+ * The card's Data quality action (#3119). A click reads the cohort's latest run:
+ * a completed one opens the dialog; otherwise useDataQualityRun starts or
+ * follows a run and reports when it ends. The state is learned on click only.
+ */
+const NOTIFICATION_TITLE_KEYS = {
+  success: 'MRI_PA_NOTIFICATION_SUCCESS',
+  warning: 'MRI_PA_NOTIFICATION_WARNING',
+  error: 'MRI_PA_NOTIFICATION_ERROR',
+} as const
+
+const dqRun = useDataQualityRun({
+  datasetId: () => datasetId.value,
+  fetchLatest: (cohortDefinitionId, id) =>
+    store.dispatch('fetchDataQualityFlowRun', { cohortDefinitionId, datasetId: id }),
+  startRun: (cohortDefinitionId, id) =>
+    store.dispatch('startDataQualityFlowRun', { cohortDefinitionId, datasetId: id }),
+  notify: ({ kind, key, name, detail }) => {
+    // setAlertMessage toggles `show`, so close first: the alert must end up
+    // shown even when one is already on screen.
+    notifications.closeAlertNotification()
+    notifications.setAlertMessage({
+      message: detail ? `${getText(key, name)} ${detail}` : getText(key, name),
+      messageType: kind,
+      title: getText(NOTIFICATION_TITLE_KEYS[kind]),
+    })
+  },
+})
+onBeforeUnmount(() => dqRun.dispose())
+
+type DataQualityCard = { cohortDefinitionId: string | number | null }
+const dataQualityPhase = (card: DataQualityCard) =>
+  dqRun.phaseOf(card.cohortDefinitionId === null ? null : String(card.cohortDefinitionId))
+const dataQualityBusy = (card: DataQualityCard): boolean => isDataQualityBusy(dataQualityPhase(card))
+const dataQualityTooltip = (card: DataQualityCard): string =>
+  getText(dataQualityTooltipKey(dataQualityPhase(card), Boolean(card.cohortDefinitionId)))
+
+const openDataQuality = async (card: { name: string; cohortDefinitionId: string | number | null }): Promise<void> => {
+  // The button is disabled in this state; the guard is for keyboard and
+  // programmatic callers that do not go through it.
+  if (!card.cohortDefinitionId) return
+  const id = String(card.cohortDefinitionId)
+  const clickedDatasetId = datasetId.value
+  if ((await dqRun.activate(id, card.name)) !== 'open') return
+  if (datasetId.value !== clickedDatasetId) return
+  dqCohortDefinitionId.value = id
+  dqExplorationName.value = card.name
+  dqOpen.value = true
+}
 const renameOpen = ref(false)
 const deleteOpen = ref(false)
 const materializeTarget = ref<BookmarkDisplay | null>(null)
