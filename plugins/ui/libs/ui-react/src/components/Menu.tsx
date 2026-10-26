@@ -14,17 +14,19 @@ import {
   lastEnabledIndex,
   nextEnabledIndex,
 } from "./menuNavigation";
-import { resolveIcon } from "./internal/icon";
+import { resolveIcon, type Icon } from "./internal/icon";
 import "./Menu.scss";
 
 export interface MenuItem {
   label: string;
   value: string;
-  icon?: string;
+  icon?: Icon;
   selected?: boolean;
   disabled?: boolean;
   /** Destructive action: the label and icon paint in the alarm colour. */
   danger?: boolean;
+  /** Render a horizontal divider between groups instead of an action row. */
+  divider?: boolean;
 }
 
 export interface MenuProps {
@@ -56,16 +58,25 @@ function MenuList({
   const itemEls = useRef<(HTMLButtonElement | null)[]>([]);
   const [activeIndex, setActiveIndex] = useState(-1);
 
+  // Dividers are non-interactive: mark them disabled so roving-tabindex nav skips
+  // them (indices stay aligned with the rendered list).
+  const navItems = useMemo(
+    () => items.map((item) => (item.divider ? { ...item, disabled: true } : item)),
+    [items],
+  );
+
   const tabbableIndex = useMemo(() => {
     if (
       activeIndex >= 0 &&
-      activeIndex < items.length &&
-      !items[activeIndex]?.disabled
+      activeIndex < navItems.length &&
+      !navItems[activeIndex]?.disabled
     )
       return activeIndex;
-    const selected = items.findIndex((item) => item.selected && !item.disabled);
-    return selected >= 0 ? selected : firstEnabledIndex(items);
-  }, [activeIndex, items]);
+    const selected = navItems.findIndex(
+      (item) => item.selected && !item.disabled,
+    );
+    return selected >= 0 ? selected : firstEnabledIndex(navItems);
+  }, [activeIndex, navItems]);
 
   const focusIndex = useCallback((index: number) => {
     if (index < 0) return;
@@ -74,7 +85,7 @@ function MenuList({
   }, []);
 
   useEffect(() => {
-    if (autoFocusFirst) focusIndex(firstEnabledIndex(items));
+    if (autoFocusFirst) focusIndex(firstEnabledIndex(navItems));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [autoFocusFirst]);
 
@@ -88,16 +99,16 @@ function MenuList({
     const from = focusedIndex();
     if (event.key === "ArrowDown") {
       event.preventDefault();
-      focusIndex(nextEnabledIndex(items, from, 1));
+      focusIndex(nextEnabledIndex(navItems, from, 1));
     } else if (event.key === "ArrowUp") {
       event.preventDefault();
-      focusIndex(nextEnabledIndex(items, from < 0 ? items.length : from, -1));
+      focusIndex(nextEnabledIndex(navItems, from < 0 ? navItems.length : from, -1));
     } else if (event.key === "Home") {
       event.preventDefault();
-      focusIndex(firstEnabledIndex(items));
+      focusIndex(firstEnabledIndex(navItems));
     } else if (event.key === "End") {
       event.preventDefault();
-      focusIndex(lastEnabledIndex(items));
+      focusIndex(lastEnabledIndex(navItems));
     }
   };
 
@@ -112,7 +123,10 @@ function MenuList({
       style={{ width: resolvedWidth }}
       onKeyDown={onKeyDown}
     >
-      {items.map((item, index) => (
+      {items.map((item, index) =>
+        item.divider ? (
+          <div key={item.value} className="d2e-menu__divider" role="separator" />
+        ) : (
         <button
           key={item.value}
           ref={(el) => {
@@ -140,7 +154,8 @@ function MenuList({
             <CheckIcon className="d2e-menu__item-check" sx={{ fontSize: "20px" }} />
           ) : null}
         </button>
-      ))}
+        ),
+      )}
     </div>
   );
 }

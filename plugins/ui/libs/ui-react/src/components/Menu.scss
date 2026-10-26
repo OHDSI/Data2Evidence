@@ -57,6 +57,13 @@
     }
   }
 
+  // 1px divider (black 12%) with 8px vertical margin, for grouping (Figma).
+  &__divider {
+    height: 1px;
+    margin: 8px 0;
+    background: rgba(0, 0, 0, 0.12);
+  }
+
   &__item-icon {
     display: inline-flex;
     color: currentColor;
