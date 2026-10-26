@@ -33,6 +33,17 @@ export type {
   D2eDataTableProps,
   D2eSortItem,
 } from "./components/dataTable";
+export { default as D2ePagination } from "./components/D2ePagination.vue";
+export {
+  PAGINATION_STYLE_MAP,
+  pagerState,
+  pageTarget,
+} from "./components/pagination";
+export type {
+  D2ePaginationButton,
+  D2ePaginationPageLabels,
+  D2ePagerState,
+} from "./components/pagination";
 export { default as D2eSplitButton } from "./components/D2eSplitButton.vue";
 export { SPLIT_BUTTON_STYLE_MAP } from "./components/splitButton";
 export { toIsoDate, fromIsoDate } from "./components/dateFieldFormat";

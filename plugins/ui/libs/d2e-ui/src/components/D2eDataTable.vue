@@ -76,49 +76,19 @@
       </template>
 
       <template #bottom>
-        <div class="d2e-data-table__footer" data-testid="d2e-data-table-footer">
-          <div class="d2e-data-table__size">
-            <span>{{ rowsPerPageLabel }}</span>
-            <D2eSelect
-              class="d2e-data-table__size-select"
-              size="sm"
-              :model-value="String(itemsPerPage)"
-              :items="sizeItems"
-              @update:model-value="onSize"
-            />
-          </div>
-          <div class="d2e-data-table__pager">
-            <span class="d2e-data-table__range">{{ rangeText }}</span>
-            <D2eIconButton
-              size="sm"
-              icon="mdi-page-first"
-              :ariaLabel="labels.first"
-              :disabled="page <= 1"
-              @click="emit('update:page', 1)"
-            />
-            <D2eIconButton
-              size="sm"
-              icon="mdi-chevron-left"
-              :ariaLabel="labels.previous"
-              :disabled="page <= 1"
-              @click="emit('update:page', page - 1)"
-            />
-            <D2eIconButton
-              size="sm"
-              icon="mdi-chevron-right"
-              :ariaLabel="labels.next"
-              :disabled="page >= lastPage"
-              @click="emit('update:page', page + 1)"
-            />
-            <D2eIconButton
-              size="sm"
-              icon="mdi-page-last"
-              :ariaLabel="labels.last"
-              :disabled="page >= lastPage"
-              @click="emit('update:page', lastPage)"
-            />
-          </div>
-        </div>
+        <D2ePagination
+          class="d2e-data-table__footer"
+          test-id-prefix="d2e-data-table-footer"
+          :page="page"
+          :items-per-page="itemsPerPage"
+          :total="items.length"
+          :items-per-page-options="DATA_TABLE_STYLE_MAP.itemsPerPageOptions"
+          :items-per-page-label="rowsPerPageLabel"
+          :range-text="rangeText"
+          :page-labels="pageLabels"
+          @update:page="emit('update:page', $event)"
+          @update:items-per-page="emit('update:itemsPerPage', $event)"
+        />
       </template>
     </v-data-table>
   </div>
@@ -128,11 +98,10 @@
 import { computed } from "vue";
 import { VDataTable, VIcon } from "vuetify/components";
 import D2eIconButton from "./D2eIconButton.vue";
-import D2eSelect from "./D2eSelect.vue";
+import D2ePagination from "./D2ePagination.vue";
 import {
   DATA_TABLE_STYLE_MAP,
   nextSort,
-  pageCount,
   pageRange,
   type D2eDataTableProps,
   type D2eSortItem,
@@ -166,8 +135,6 @@ const emit = defineEmits<{
 
 defineOptions({ inheritAttrs: false });
 
-const labels = computed(() => props.pageLabels);
-
 // Vuetify must not sort: the caller owns the order (see the template comment).
 // The expand column leads the row, as in Figma (2855:278876); Vuetify appends
 // it last unless the headers already name it.
@@ -190,15 +157,6 @@ const vuetifyHeaders = computed(() => [
   })),
 ]);
 
-const sizeItems = DATA_TABLE_STYLE_MAP.itemsPerPageOptions.map((size) => ({
-  label: String(size),
-  value: String(size),
-}));
-
-const lastPage = computed(() =>
-  pageCount(props.itemsPerPage, props.items.length),
-);
-
 const rangeText = computed(() => {
   const { start, end, total } = pageRange(
     props.page,
@@ -213,13 +171,6 @@ function sortIcon(key: string): string {
   return active
     ? DATA_TABLE_STYLE_MAP.sortIcons[active.order]
     : DATA_TABLE_STYLE_MAP.sortIcons.none;
-}
-
-function onSize(value: string | string[] | null) {
-  const size = Number(Array.isArray(value) ? value[0] : value);
-  if (!Number.isFinite(size) || size <= 0) return;
-  emit("update:itemsPerPage", size);
-  emit("update:page", 1);
 }
 </script>
 
@@ -285,35 +236,8 @@ function onSize(value: string | string[] | null) {
   }
 
   &__footer {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
     padding: 8px 0;
     background: var(--d2e-color-white);
-  }
-
-  &__size {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: var(--d2e-font-body1-size);
-    line-height: var(--d2e-font-body1-line-height);
-  }
-
-  &__size-select {
-    width: 88px;
-  }
-
-  &__pager {
-    display: flex;
-    align-items: center;
-    gap: 0;
-  }
-
-  &__range {
-    margin-right: 8px;
-    font-size: var(--d2e-font-body2-size);
-    line-height: var(--d2e-font-body2-line-height);
   }
 }
 </style>
