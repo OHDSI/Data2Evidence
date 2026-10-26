@@ -7,6 +7,6 @@ import "@d4l/web-components-library/dist/d4l-ui/d4l-ui.css";
 
 if (typeof window !== "undefined") {
   applyPolyfills().then(() => {
-    defineCustomElements(window);
+    defineCustomElements(window, { resourcesUrl: "/d2e/portal/d4l-assets/" });
   });
 }
