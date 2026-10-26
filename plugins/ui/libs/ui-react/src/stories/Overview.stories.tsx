@@ -53,7 +53,15 @@ const tileTitle = {
   color: "var(--d2e-color-neutral)",
 } as const;
 
-function Tile({ name, children }: { name: string; children: ReactNode }) {
+function Tile({
+  name,
+  wide,
+  children,
+}: {
+  name: string;
+  wide?: boolean;
+  children: ReactNode;
+}) {
   return (
     <section
       style={{
@@ -64,6 +72,7 @@ function Tile({ name, children }: { name: string; children: ReactNode }) {
         display: "flex",
         flexDirection: "column",
         gap: 12,
+        gridColumn: wide ? "1 / -1" : undefined,
       }}
     >
       <h3 style={tileTitle}>{name}</h3>
@@ -258,8 +267,8 @@ export const Overview: Story = {
                 />
               </Tile>
 
-              <Tile name="Pagination">
-                <div style={{ width: "100%" }}>
+              <Tile name="Pagination" wide>
+                <div style={{ width: "100%", overflowX: "auto" }}>
                   <Pagination
                     page={page}
                     pageSize={pageSize}
