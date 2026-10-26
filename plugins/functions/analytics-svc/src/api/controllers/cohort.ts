@@ -309,13 +309,12 @@ export async function createCohort(req: IMRIRequest, res: Response) {
             // If there exists an existing materialized cohort
             // Update existing cohort definition and remove all existing records from cohort table before saving cohort to db
             cohortDefinitionId = existingMaterializedCohort.id;
-            // Set COHORT_INITIATION_DATE to the date of this materialization.
             await cohortEndpoint.updateCohortDefinitionToDb(
                 {
                     ...pendingCohort,
                     id: cohortDefinitionId,
                 },
-                true
+                false
             );
 
             // Remove existing records from cohort table before saving cohort to db
@@ -361,14 +360,15 @@ export async function createCohort(req: IMRIRequest, res: Response) {
             );
         }
 
-        // Write the real bookmarkVersion. The cache refresh below reads it
+        // Write the real bookmarkVersion and set COHORT_INITIATION_DATE to the
+        // date of this materialization. The cache refresh below reads both
         // from the database.
         await cohortEndpoint.updateCohortDefinitionToDb(
             {
                 ...cohort,
                 id: cohortDefinitionId,
             },
-            false
+            true
         );
 
         await refreshCohortCacheEntry({
