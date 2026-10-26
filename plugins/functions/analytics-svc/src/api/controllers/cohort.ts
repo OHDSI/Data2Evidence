@@ -270,6 +270,16 @@ export async function createCohort(req: IMRIRequest, res: Response) {
             cohort.syntax,
             bookmark.version
         );
+        // Write a null bookmarkVersion until the patient rows are saved, so
+        // that a run in progress or a failed run shows as stale.
+        const pendingCohort = {
+            ...cohort,
+            syntax: setBookmarkVersionInCohortSyntax(
+                cohort.syntax,
+                bookmark.version,
+                { pending: true }
+            ),
+        };
         const [cacheResultsSchemaName, sourceResultsSchemaName] =
             await _getResultsSchemaNames(req.selectedstudyDbMetadata);
         const cohortEndpoint = await CohortEndpoint.createCohortEndpoint(
@@ -300,17 +310,10 @@ export async function createCohort(req: IMRIRequest, res: Response) {
             // Update existing cohort definition and remove all existing records from cohort table before saving cohort to db
             cohortDefinitionId = existingMaterializedCohort.id;
             // Set COHORT_INITIATION_DATE to the date of this materialization.
-            // Write a null bookmarkVersion until the patient rows are saved,
-            // so that a failed run shows as stale.
             await cohortEndpoint.updateCohortDefinitionToDb(
                 {
-                    ...cohort,
+                    ...pendingCohort,
                     id: cohortDefinitionId,
-                    syntax: setBookmarkVersionInCohortSyntax(
-                        cohort.syntax,
-                        bookmark.version,
-                        { pending: true }
-                    ),
                 },
                 true
             );
@@ -321,11 +324,11 @@ export async function createCohort(req: IMRIRequest, res: Response) {
             // Else if there is no existing materialized cohort
             // Save cohort definition to db and query cohort definition id for newly created cohort definition
             // Save cohort to db
-            await cohortEndpoint.saveCohortDefinitionToDb(cohort);
+            await cohortEndpoint.saveCohortDefinitionToDb(pendingCohort);
 
             // Get cohort definition id from cohort object
             cohortDefinitionId =
-                await cohortEndpoint.queryCohortDefinitionId(cohort);
+                await cohortEndpoint.queryCohortDefinitionId(pendingCohort);
         }
 
         if (stream) {
@@ -358,17 +361,15 @@ export async function createCohort(req: IMRIRequest, res: Response) {
             );
         }
 
-        if (existingMaterializedCohort) {
-            // Write the real bookmarkVersion. The cache refresh below reads it
-            // from the database.
-            await cohortEndpoint.updateCohortDefinitionToDb(
-                {
-                    ...cohort,
-                    id: cohortDefinitionId,
-                },
-                false
-            );
-        }
+        // Write the real bookmarkVersion. The cache refresh below reads it
+        // from the database.
+        await cohortEndpoint.updateCohortDefinitionToDb(
+            {
+                ...cohort,
+                id: cohortDefinitionId,
+            },
+            false
+        );
 
         await refreshCohortCacheEntry({
             cohortEndpoint,
