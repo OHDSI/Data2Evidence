@@ -1,7 +1,7 @@
 import { useEffect, useId, useState, type ReactNode } from "react";
 import MuiDialog from "@mui/material/Dialog";
 import IconButton from "@mui/material/IconButton";
-import CircularProgress from "@mui/material/CircularProgress";
+import { Spinner } from "./Spinner";
 import CloseIcon from "@mui/icons-material/Close";
 import { DIALOG_SIZE_MAP, type DialogSize } from "./dialogSizes";
 import { Button } from "./Button";
@@ -120,7 +120,7 @@ export function Dialog({
           {children}
           {busy ? (
             <div className="d2e-dialog__busy">
-              <CircularProgress color="primary" aria-label="Loading" />
+              <Spinner size={48} />
             </div>
           ) : null}
         </div>

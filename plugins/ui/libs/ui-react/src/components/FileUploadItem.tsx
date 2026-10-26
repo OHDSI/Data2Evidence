@@ -1,4 +1,4 @@
-import CircularProgress from "@mui/material/CircularProgress";
+import { Spinner } from "./Spinner";
 import IconButton from "@mui/material/IconButton";
 import InsertDriveFileOutlinedIcon from "@mui/icons-material/InsertDriveFileOutlined";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
@@ -55,7 +55,7 @@ export function FileUploadItem({
       </div>
       <div className="d2e-file-item__actions">
         {status === "uploading" ? (
-          <CircularProgress size={20} className="d2e-file-item__spinner" />
+          <Spinner size={20} className="d2e-file-item__spinner" />
         ) : null}
         {status === "complete" ? (
           <CheckCircleIcon className="d2e-file-item__check" />

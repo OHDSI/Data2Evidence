@@ -11,6 +11,17 @@
     transform-origin: center;
     animation: d2e-spinner-rotate 1s linear infinite;
   }
+
+  // On a coloured surface (e.g. inside a primary button) the ring takes the
+  // host text colour: full-strength arc, faint track.
+  &--inherit &__track {
+    stroke: currentColor;
+    opacity: 0.24;
+  }
+
+  &--inherit &__arc {
+    stroke: currentColor;
+  }
 }
 
 .d2e-spinner-center {

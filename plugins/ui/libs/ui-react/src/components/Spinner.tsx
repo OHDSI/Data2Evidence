@@ -15,6 +15,12 @@ export interface SpinnerProps {
   size?: number;
   /** Centre the spinner in a full-size flex box (the page-loading pattern). */
   center?: boolean;
+  /**
+   * "brand" (default) is the Figma navy arc on a grey track — for page loading
+   * on a light surface. "inherit" paints the arc in `currentColor` (faint
+   * track) so it stays visible on a coloured surface, e.g. inside a button.
+   */
+  tone?: "brand" | "inherit";
   label?: string;
   className?: string;
 }
@@ -22,12 +28,13 @@ export interface SpinnerProps {
 export function Spinner({
   size = 160,
   center = false,
+  tone = "brand",
   label = "Loading",
   className,
 }: SpinnerProps) {
   const svg = (
     <svg
-      className="d2e-spinner"
+      className={clsx("d2e-spinner", tone === "inherit" && "d2e-spinner--inherit")}
       width={size}
       height={size}
       viewBox="0 0 160 160"

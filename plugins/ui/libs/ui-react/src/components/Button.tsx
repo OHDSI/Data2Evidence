@@ -1,7 +1,7 @@
 import { forwardRef } from "react";
 import type { ButtonHTMLAttributes, ReactNode } from "react";
 import MuiButton from "@mui/material/Button";
-import CircularProgress from "@mui/material/CircularProgress";
+import { Spinner } from "./Spinner";
 import clsx from "clsx";
 import { VARIANT_MAP, SIZE_MAP } from "./buttonVariants";
 import type { ButtonVariant, ButtonSize } from "./buttonVariants";
@@ -78,7 +78,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         {children}
         {loading ? (
           <span className="d2e-button__spinner">
-            <CircularProgress size={spec.icon} color="inherit" />
+            <Spinner size={spec.icon} tone="inherit" />
           </span>
         ) : null}
       </MuiButton>

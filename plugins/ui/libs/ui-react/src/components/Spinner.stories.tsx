@@ -29,6 +29,21 @@ export const Showcase: Story = {
         </div>
       </section>
       <section style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+        <h3 style={heading}>On a coloured surface (tone="inherit")</h3>
+        <div
+          style={{
+            display: "inline-flex",
+            width: "fit-content",
+            padding: 24,
+            color: "#fff",
+            background: "var(--d2e-color-primary)",
+            borderRadius: 8,
+          }}
+        >
+          <Spinner size={32} tone="inherit" />
+        </div>
+      </section>
+      <section style={{ display: "flex", flexDirection: "column", gap: 12 }}>
         <h3 style={heading}>Page loading</h3>
         <div
           style={{
