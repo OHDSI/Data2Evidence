@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 import {
+  BookmarkMaterializedCohortStatus,
   IBookmark,
   ICohortDefinition,
   ICohortGeneratorFlowRun,
@@ -274,6 +275,7 @@ export const getCohortDefinitionList = async (
     return parsedbookmarks.map((bookmark) => ({
       ...bookmark,
       cohortDefinitionId: undefined as number | undefined,
+      materializationStatus: BookmarkMaterializedCohortStatus.NOT_RUN,
     }));
   }
 

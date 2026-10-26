@@ -559,13 +559,10 @@ Deno.test("a dataset that cannot materialize cohorts never touches the cohort ca
         bookmarkItems(result).map((bookmark) => bookmark.bmkId),
         ["b1", "b2"],
       );
-      // Without materialized cohorts, the bookmarks get no status.
-      assertEquals(
-        bookmarkItems(result).filter((bookmark) =>
-          "materializationStatus" in bookmark
-        ),
-        [],
-      );
+      assertEquals(statuses(result), [
+        ["b1", BookmarkMaterializedCohortStatus.NOT_RUN],
+        ["b2", BookmarkMaterializedCohortStatus.NOT_RUN],
+      ]);
     },
   );
 });
@@ -1023,22 +1020,16 @@ const bookmarksWithUpstreamStatus = () =>
     { ...makeBookmark("b2"), materializationStatus: "running" },
   ] as unknown as IBookmark[];
 
-Deno.test("a status from the bookmark service does not pass through when cohorts cannot be materialized", async () => {
+Deno.test("a status from the bookmark service is replaced when cohorts cannot be materialized", async () => {
   await withStubs(
     { bookmarks: bookmarksWithUpstreamStatus(), canMaterializeCohort: false },
     async () => {
       const result = await getCohortDefinitionList(TOKEN, DATASET_ID);
 
-      assertEquals(
-        bookmarkItems(result).map((bookmark) => bookmark.bmkId),
-        ["b1", "b2"],
-      );
-      assertEquals(
-        bookmarkItems(result).filter((bookmark) =>
-          "materializationStatus" in bookmark
-        ),
-        [],
-      );
+      assertEquals(statuses(result), [
+        ["b1", BookmarkMaterializedCohortStatus.NOT_RUN],
+        ["b2", BookmarkMaterializedCohortStatus.NOT_RUN],
+      ]);
     },
   );
 });
