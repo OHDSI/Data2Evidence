@@ -11,6 +11,9 @@ import { Button } from "../components/Button";
 import { SplitButton } from "../components/SplitButton";
 import { IconButton } from "../components/IconButton";
 import { Chip } from "../components/Chip";
+import { Spinner } from "../components/Spinner";
+import { Skeleton } from "../components/Skeleton";
+import { Pagination } from "../components/Pagination";
 import { Checkbox } from "../components/Checkbox";
 import { RadioGroup } from "../components/Radio";
 import { Switch } from "../components/Switch";
@@ -112,6 +115,8 @@ export const Overview: Story = {
     const [dialog, setDialog] = useState(false);
     const [navItem, setNavItem] = useState("Overview");
     const [splitOpen, setSplitOpen] = useState(false);
+    const [page, setPage] = useState(1);
+    const [pageSize, setPageSize] = useState(10);
 
     return (
       <div
@@ -252,12 +257,40 @@ export const Overview: Story = {
                   ]}
                 />
               </Tile>
+
+              <Tile name="Pagination">
+                <div style={{ width: "100%" }}>
+                  <Pagination
+                    page={page}
+                    pageSize={pageSize}
+                    totalCount={123}
+                    onPageChange={setPage}
+                    onPageSizeChange={(size) => {
+                      setPageSize(size);
+                      setPage(1);
+                    }}
+                  />
+                </div>
+              </Tile>
             </Group>
 
             <Group title="Feedback">
               <Tile name="Alert">
                 <div style={{ width: "100%" }}>
                   <Alert severity="success">Saved successfully.</Alert>
+                </div>
+              </Tile>
+
+              <Tile name="Spinner">
+                <Spinner size={32} />
+                <Spinner size={48} />
+              </Tile>
+
+              <Tile name="Skeleton">
+                <div style={{ width: "100%", display: "flex", flexDirection: "column", gap: 8 }}>
+                  <Skeleton width="80%" height={12} />
+                  <Skeleton width="60%" height={12} />
+                  <Skeleton variant="rectangular" width="100%" height={48} />
                 </div>
               </Tile>
 
