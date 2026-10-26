@@ -54,8 +54,20 @@ export const Showcase: Story = {
         <Dialog open={open === "notitle"} size="s" onClose={close} actions={cancelConfirm}>
           <p>A dialog with no title row.</p>
         </Dialog>
-        <Dialog open={open === "busy"} size="s" title="Saving…" busy onClose={close}>
-          <p>Busy locks the dialog and shows a spinner overlay.</p>
+        <Dialog
+          open={open === "busy"}
+          size="s"
+          title="Edit profile"
+          busy
+          onClose={close}
+          actions={
+            <>
+              <Button variant="secondary" disabled>Cancel</Button>
+              <Button variant="primary" loading>Save</Button>
+            </>
+          }
+        >
+          <p>Busy locks the dialog (× and Esc disabled); the spinner sits on the action button.</p>
         </Dialog>
         <Dialog
           open={open === "confirm"}

@@ -4,7 +4,7 @@ import { Spinner } from "./Spinner";
 const meta = {
   title: "Feedback/Spinner",
   component: Spinner,
-  args: { size: 160 },
+  args: { size: 48 },
 } satisfies Meta<typeof Spinner>;
 
 export default meta;
@@ -25,7 +25,6 @@ export const Showcase: Story = {
           <Spinner size={20} />
           <Spinner size={32} />
           <Spinner size={48} />
-          <Spinner size={160} />
         </div>
       </section>
       <section style={{ display: "flex", flexDirection: "column", gap: 12 }}>
@@ -52,7 +51,7 @@ export const Showcase: Story = {
             borderRadius: 8,
           }}
         >
-          <Spinner center size={160} />
+          <Spinner center size={48} />
         </div>
       </section>
     </div>

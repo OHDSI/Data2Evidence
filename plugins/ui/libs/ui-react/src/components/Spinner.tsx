@@ -11,7 +11,7 @@ const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
 const ARC = CIRCUMFERENCE * 0.75;
 
 export interface SpinnerProps {
-  /** Diameter in px. Defaults to the Figma "Page Loading" size (160). */
+  /** Diameter in px. Defaults to 48. */
   size?: number;
   /** Centre the spinner in a full-size flex box (the page-loading pattern). */
   center?: boolean;
@@ -26,7 +26,7 @@ export interface SpinnerProps {
 }
 
 export function Spinner({
-  size = 160,
+  size = 48,
   center = false,
   tone = "brand",
   label = "Loading",

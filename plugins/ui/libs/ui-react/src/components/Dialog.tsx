@@ -1,7 +1,6 @@
 import { useEffect, useId, useState, type ReactNode } from "react";
 import MuiDialog from "@mui/material/Dialog";
 import IconButton from "@mui/material/IconButton";
-import { Spinner } from "./Spinner";
 import CloseIcon from "@mui/icons-material/Close";
 import { DIALOG_SIZE_MAP, type DialogSize } from "./dialogSizes";
 import { Button } from "./Button";
@@ -16,6 +15,11 @@ export interface DialogProps {
   closeOnEscape?: boolean;
   showClose?: boolean;
   closeLabel?: string;
+  /**
+   * An action is in flight: locks the dialog from closing (× and Esc disabled).
+   * The loading indicator belongs on the action button (`<Button loading>`),
+   * not on the whole dialog.
+   */
   busy?: boolean;
   /**
    * Destructive / unsaved-change dialogs: an attempt to dismiss (× or Esc) opens
@@ -116,14 +120,7 @@ export function Dialog({
           ) : null}
         </header>
 
-        <div className="d2e-dialog__body">
-          {children}
-          {busy ? (
-            <div className="d2e-dialog__busy">
-              <Spinner size={48} />
-            </div>
-          ) : null}
-        </div>
+        <div className="d2e-dialog__body">{children}</div>
 
         {actions ? <div className="d2e-dialog__actions">{actions}</div> : null}
       </MuiDialog>

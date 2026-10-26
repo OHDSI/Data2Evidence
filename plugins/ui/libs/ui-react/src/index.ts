@@ -17,6 +17,8 @@ export { Skeleton } from "./components/Skeleton";
 export type { SkeletonProps } from "./components/Skeleton";
 export { Pagination } from "./components/Pagination";
 export type { PaginationProps } from "./components/Pagination";
+export { EmptyState } from "./components/EmptyState";
+export type { EmptyStateProps, EmptyStateSize } from "./components/EmptyState";
 export { IconButton } from "./components/IconButton";
 export type { IconButtonProps } from "./components/IconButton";
 export { Menu } from "./components/Menu";

@@ -44,7 +44,7 @@
     line-height: var(--d2e-font-body1-line-height);
     color: var(--d2e-color-neutral-black);
 
-    > :last-child:not(.d2e-dialog__busy) {
+    > :last-child {
       margin-bottom: 0;
     }
   }
@@ -64,14 +64,5 @@
   &.d2e-dialog--s .d2e-dialog__actions .d2e-button {
     flex: 1 1 0;
     min-width: 0;
-  }
-
-  .d2e-dialog__busy {
-    position: absolute;
-    inset: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: rgb(255 255 255 / 70%);
   }
 }

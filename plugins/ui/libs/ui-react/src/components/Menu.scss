@@ -57,10 +57,10 @@
     }
   }
 
-  // 1px divider (black 12%) with 8px vertical margin, for grouping (Figma).
+  // 1px divider (black 12%) flush between items — no vertical spacing (Figma).
   &__divider {
     height: 1px;
-    margin: 8px 0;
+    margin: 0;
     background: rgba(0, 0, 0, 0.12);
   }
 

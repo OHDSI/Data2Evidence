@@ -33,6 +33,7 @@ const EXPECTED = [
   "Spinner",
   "Skeleton",
   "Pagination",
+  "EmptyState",
   "TextField",
   "Toolbar",
   "DIALOG_SIZE_MAP",

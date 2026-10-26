@@ -8,6 +8,7 @@ import { Chip } from "../components/Chip";
 import { Spinner } from "../components/Spinner";
 import { Skeleton } from "../components/Skeleton";
 import { Pagination } from "../components/Pagination";
+import { EmptyState } from "../components/EmptyState";
 import { Dialog } from "../components/Dialog";
 import { Menu } from "../components/Menu";
 import { Select } from "../components/Select";
@@ -79,6 +80,19 @@ describe("render smoke", () => {
     expect(first).toHaveProperty("disabled", true);
     fireEvent.click(screen.getByRole("button", { name: "Next page" }));
     expect(page).toBe(2);
+  });
+
+  it("renders an empty state with title, description and action", () => {
+    mount(
+      <EmptyState
+        title="No datasets yet"
+        description="Create one to get started."
+        action={<Button variant="secondary">Create</Button>}
+      />,
+    );
+    expect(screen.getByText("No datasets yet")).toBeTruthy();
+    expect(screen.getByText("Create one to get started.")).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Create" })).toBeTruthy();
   });
 
   it("renders an open dialog with title, actions and busy lock", () => {

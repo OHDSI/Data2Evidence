@@ -17,7 +17,7 @@ export function Skeleton({
   variant = "rounded",
   width,
   height,
-  animation,
+  animation = "wave",
   className,
 }: SkeletonProps) {
   return (
@@ -26,7 +26,7 @@ export function Skeleton({
       variant={variant}
       width={width}
       height={height}
-      {...(animation !== undefined ? { animation } : {})}
+      animation={animation}
     />
   );
 }

@@ -14,6 +14,7 @@ import { Chip } from "../components/Chip";
 import { Spinner } from "../components/Spinner";
 import { Skeleton } from "../components/Skeleton";
 import { Pagination } from "../components/Pagination";
+import { EmptyState } from "../components/EmptyState";
 import { Checkbox } from "../components/Checkbox";
 import { RadioGroup } from "../components/Radio";
 import { Switch } from "../components/Switch";
@@ -265,6 +266,17 @@ export const Overview: Story = {
                     { label: "Delete", value: "del", danger: true },
                   ]}
                 />
+              </Tile>
+
+              <Tile name="Empty state">
+                <div style={{ width: "100%", display: "flex", justifyContent: "center" }}>
+                  <EmptyState
+                    size="s"
+                    title="No datasets yet"
+                    description="Datasets you create will appear here."
+                    action={<Button variant="secondary">Create dataset</Button>}
+                  />
+                </div>
               </Tile>
 
               <Tile name="Pagination" wide>
