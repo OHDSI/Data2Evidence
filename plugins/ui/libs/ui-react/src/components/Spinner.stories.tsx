@@ -4,7 +4,7 @@ import { Spinner } from "./Spinner";
 const meta = {
   title: "Feedback/Spinner",
   component: Spinner,
-  args: { size: 48 },
+  args: { size: 160 },
 } satisfies Meta<typeof Spinner>;
 
 export default meta;
