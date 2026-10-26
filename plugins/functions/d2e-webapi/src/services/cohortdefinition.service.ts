@@ -26,6 +26,7 @@ import { BookmarksSchema } from "../api/types.ts";
 import { ICohortExpression } from "../types.ts";
 import { TrexDAO } from "../dao/trex.dao.ts";
 import { CohortCacheShapeError } from "../errors/CohortCacheErrors.ts";
+import { deriveBookmarkMaterializedCohortStatus } from "./bookmarkMaterializedCohortStatus.ts";
 
 const MATERIALIZED_COHORT_RETRY_ATTEMPTS = 5;
 const MATERIALIZED_COHORT_RETRY_DELAYS_MS = [500, 1000, 1500, 2000];
@@ -537,13 +538,14 @@ const _readCohortCache = async (
  * Attaches each bookmark's materialized cohort id, matching on the
  * `bookmarkId` carried in the cohort's syntax. Sorts `baseMaterializedCohorts`
  * in place by id, so the highest id wins for a bookmark with several matches
- * and the caller sees the cohorts in id order.
+ * and the caller sees the cohorts in id order. Also sets the materialization
+ * status from the same cohort.
  */
 const _mapBookmarksToCohorts = (
   bookmarks: IBookmark[],
   baseMaterializedCohorts: IBaseMaterializedCohort[],
 ): IBookmark[] => {
-  const bookmarkIdToCohortId = new Map<string, number>();
+  const bookmarkIdToCohort = new Map<string, IBaseMaterializedCohort>();
 
   baseMaterializedCohorts.sort((a, b) => a.id - b.id);
   for (const cohort of baseMaterializedCohorts) {
@@ -558,14 +560,21 @@ const _mapBookmarksToCohorts = (
       continue;
     }
     if (syntax.bookmarkId !== undefined) {
-      bookmarkIdToCohortId.set(syntax.bookmarkId, cohort.id);
+      bookmarkIdToCohort.set(syntax.bookmarkId, cohort);
     }
   }
 
-  return bookmarks.map((bookmark) => ({
-    ...bookmark,
-    cohortDefinitionId: bookmarkIdToCohortId.get(bookmark.bmkId),
-  }));
+  return bookmarks.map((bookmark) => {
+    const cohort = bookmarkIdToCohort.get(bookmark.bmkId);
+    return {
+      ...bookmark,
+      cohortDefinitionId: cohort?.id,
+      materializationStatus: deriveBookmarkMaterializedCohortStatus(
+        bookmark,
+        cohort,
+      ),
+    };
+  });
 };
 
 /**

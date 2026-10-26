@@ -1,8 +1,6 @@
 import { assertEquals } from "@std/assert";
-import {
-  BookmarkMaterializedCohortStatus,
-  deriveBookmarkMaterializedCohortStatus,
-} from "./bookmarkMaterializedCohortStatus.ts";
+import { BookmarkMaterializedCohortStatus } from "../api/types.ts";
+import { deriveBookmarkMaterializedCohortStatus } from "./bookmarkMaterializedCohortStatus.ts";
 
 const cohortWithSyntax = (syntax: Record<string, unknown>) => ({
   syntax: JSON.stringify({

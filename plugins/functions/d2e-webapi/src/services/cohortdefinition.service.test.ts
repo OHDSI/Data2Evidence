@@ -44,8 +44,14 @@ const { BookmarksAPI } = await import("../api/BookmarksAPI.ts");
 const { CohortCacheShapeError } = await import(
   "../errors/CohortCacheErrors.ts"
 );
-const { CachedMaterializedCohortSchema, CohortCacheLookupResponseSchema } =
-  await import("../api/types.ts");
+const {
+  BookmarkMaterializedCohortStatus,
+  CachedMaterializedCohortSchema,
+  CohortCacheLookupResponseSchema,
+} = await import("../api/types.ts");
+const { CohortDefinitionListResponseDto } = await import(
+  "../dto/cohortdefinition.ts"
+);
 
 type IBookmark = import("../api/types.ts").IBookmark;
 type IBaseMaterializedCohort = import(
@@ -62,13 +68,13 @@ type ICohortCacheWriteEntry = import(
 const DATASET_ID = "dataset-1";
 const TOKEN = "token";
 
-const makeBookmark = (bmkId: string): IBookmark => ({
+const makeBookmark = (bmkId: string, version = 1): IBookmark => ({
   bmkId,
   bookmarkname: `bookmark ${bmkId}`,
   bookmark: "{}",
   viewname: null,
   modified: "2026-08-01T00:00:00.000Z",
-  version: 1,
+  version,
   user_id: "user-1",
   shared: false,
 });
@@ -77,12 +83,18 @@ const makeCohort = (
   id: number,
   bookmarkId: string,
   patientCount: number,
+  // `undefined` leaves `bookmarkVersion` out of the syntax.
+  bookmarkVersion?: number | null,
 ): IBaseMaterializedCohort => ({
   id,
   name: `cohort ${id}`,
   description: `description of cohort ${id}`,
   creationTimestamp: "2026-08-02T00:00:00.000Z",
-  syntax: JSON.stringify({ datasetId: DATASET_ID, bookmarkId }),
+  syntax: JSON.stringify({
+    datasetId: DATASET_ID,
+    bookmarkId,
+    bookmarkVersion,
+  }),
   patientCount,
 });
 
@@ -102,6 +114,8 @@ const positiveEntry = (
 const negativeEntry = (): ICohortCacheEntry => ({ materializedCohort: null });
 
 interface RecordedCalls {
+  getAllBookmarks: number;
+  canMaterializeCohort: number;
   getFilteredCohorts: number;
   lookup: { datasetId: string; bookmarkIds: string[] }[];
   write: { datasetId: string; entries: ICohortCacheWriteEntry[] }[];
@@ -138,20 +152,26 @@ const withStubs = async <T>(
   const originalCohortCacheWrite = AnalyticsSvcAPI.prototype.cohortCacheWrite;
 
   const calls: RecordedCalls = {
+    getAllBookmarks: 0,
+    canMaterializeCohort: 0,
     getFilteredCohorts: 0,
     lookup: [],
     write: [],
   };
 
   try {
-    BookmarksAPI.prototype.getAllBookmarks = (_datasetId: string) =>
-      Promise.resolve({
+    BookmarksAPI.prototype.getAllBookmarks = (_datasetId: string) => {
+      calls.getAllBookmarks += 1;
+      return Promise.resolve({
         bookmarks: config.bookmarks,
         schemaName: "cdm_schema",
       });
+    };
 
-    AnalyticsSvcAPI.prototype.canMaterializeCohort = (_datasetId: string) =>
-      Promise.resolve(config.canMaterializeCohort ?? true);
+    AnalyticsSvcAPI.prototype.canMaterializeCohort = (_datasetId: string) => {
+      calls.canMaterializeCohort += 1;
+      return Promise.resolve(config.canMaterializeCohort ?? true);
+    };
 
     AnalyticsSvcAPI.prototype.getFilteredCohorts = (
       _datasetId: string,
@@ -539,6 +559,13 @@ Deno.test("a dataset that cannot materialize cohorts never touches the cohort ca
         bookmarkItems(result).map((bookmark) => bookmark.bmkId),
         ["b1", "b2"],
       );
+      // Without materialized cohorts, the bookmarks get no status.
+      assertEquals(
+        bookmarkItems(result).filter((bookmark) =>
+          "materializationStatus" in bookmark
+        ),
+        [],
+      );
     },
   );
 });
@@ -757,6 +784,278 @@ Deno.test("a failed revalidation leaves the stale entry alone", async () => {
       assertEquals(refreshAttempted, true);
       // No write, so the entry stays stale and the next load retries.
       assertEquals(calls.write.length, 0);
+    },
+  );
+});
+
+// --- materialization status -------------------------------------------------
+
+/** One bookmark for each status rule, with the status that it must get. */
+const statusFixture = () => ({
+  bookmarks: [
+    makeBookmark("ready", 2),
+    makeBookmark("stale", 3),
+    makeBookmark("stale-null", 2),
+    makeBookmark("not-run", 1),
+    makeBookmark("no-version", 4),
+  ],
+  cohorts: [
+    makeCohort(11, "ready", 111, 2),
+    makeCohort(12, "stale", 222, 2),
+    makeCohort(13, "stale-null", 333, null),
+    makeCohort(14, "no-version", 444),
+  ],
+  expected: [
+    ["ready", BookmarkMaterializedCohortStatus.READY],
+    ["stale", BookmarkMaterializedCohortStatus.STALE],
+    ["stale-null", BookmarkMaterializedCohortStatus.STALE],
+    ["not-run", BookmarkMaterializedCohortStatus.NOT_RUN],
+    ["no-version", BookmarkMaterializedCohortStatus.READY],
+  ],
+});
+
+// deno-lint-ignore no-explicit-any
+const statuses = (result: any[]) =>
+  bookmarkItems(result).map((bookmark) => [
+    bookmark.bmkId,
+    bookmark.materializationStatus,
+  ]);
+
+Deno.test("a cache miss and a cache hit give the same materialization status", async () => {
+  const { bookmarks, cohorts, expected } = statusFixture();
+  const store = new Map<string, ICohortCacheEntry>();
+
+  await withStubs(
+    {
+      bookmarks,
+      filteredCohorts: cohorts,
+      lookup: (_datasetId, bookmarkIds) => {
+        const entries: Record<string, ICohortCacheEntry> = {};
+        const missing: string[] = [];
+        for (const bookmarkId of bookmarkIds) {
+          const stored = store.get(bookmarkId);
+          if (stored) {
+            entries[bookmarkId] = stored;
+          } else {
+            missing.push(bookmarkId);
+          }
+        }
+        return Promise.resolve({ entries, missing, stale: false });
+      },
+      write: (_datasetId, entries) => {
+        for (const entry of entries) {
+          store.set(entry.bookmarkId, {
+            materializedCohort: entry.materializedCohort,
+          });
+        }
+        return Promise.resolve();
+      },
+    },
+    async (calls) => {
+      const coldResult = await getCohortDefinitionList(TOKEN, DATASET_ID);
+      assertEquals(statuses(coldResult), expected);
+
+      const callsAfterColdLoad = {
+        getAllBookmarks: calls.getAllBookmarks,
+        canMaterializeCohort: calls.canMaterializeCohort,
+        getFilteredCohorts: calls.getFilteredCohorts,
+        lookup: calls.lookup.length,
+        write: calls.write.length,
+      };
+      assertEquals(callsAfterColdLoad, {
+        getAllBookmarks: 1,
+        canMaterializeCohort: 1,
+        getFilteredCohorts: 1,
+        lookup: 1,
+        write: 1,
+      });
+
+      const warmResult = await getCohortDefinitionList(TOKEN, DATASET_ID);
+      assertEquals(statuses(warmResult), expected);
+      assertEquals(warmResult, coldResult);
+
+      // The warm load makes only the bookmark, capability and cache lookup
+      // calls. It does not query the source database or write the cache.
+      assertEquals(
+        {
+          getAllBookmarks: calls.getAllBookmarks,
+          canMaterializeCohort: calls.canMaterializeCohort,
+          getFilteredCohorts: calls.getFilteredCohorts,
+          lookup: calls.lookup.length,
+          write: calls.write.length,
+        },
+        {
+          getAllBookmarks: 2,
+          canMaterializeCohort: 2,
+          getFilteredCohorts: 1,
+          lookup: 2,
+          write: 1,
+        },
+      );
+    },
+  );
+});
+
+Deno.test("the cohort cache write does not contain the materialization status", async () => {
+  const { bookmarks, cohorts } = statusFixture();
+
+  await withStubs(
+    { bookmarks, filteredCohorts: cohorts },
+    async (calls) => {
+      await getCohortDefinitionList(TOKEN, DATASET_ID);
+
+      assertEquals(calls.write.length, 1);
+      assertEquals(
+        calls.write[0].entries.map((entry) => [
+          Object.keys(entry).sort(),
+          entry.materializedCohort === null
+            ? null
+            : Object.keys(entry.materializedCohort).sort(),
+        ]),
+        bookmarks.map((bookmark) => [
+          ["bookmarkId", "materializedCohort"],
+          bookmark.bmkId === "not-run" ? null : [
+            "creationTimestamp",
+            "description",
+            "id",
+            "name",
+            "patientCount",
+            "syntax",
+          ],
+        ]),
+      );
+    },
+  );
+});
+
+Deno.test("a stale cache hit also gives the materialization status", async () => {
+  const { bookmarks, cohorts, expected } = statusFixture();
+  const entries: Record<string, ICohortCacheEntry> = {};
+  for (const bookmark of bookmarks) {
+    const cohort = cohorts.find((candidate) =>
+      JSON.parse(candidate.syntax).bookmarkId === bookmark.bmkId
+    );
+    entries[bookmark.bmkId] = cohort ? positiveEntry(cohort) : negativeEntry();
+  }
+  const written = writeSignal();
+
+  await withStubs(
+    {
+      bookmarks,
+      filteredCohorts: cohorts,
+      lookup: () => Promise.resolve({ entries, missing: [], stale: true }),
+      write: () => {
+        written.fire();
+        return Promise.resolve();
+      },
+    },
+    async (calls) => {
+      const result = await getCohortDefinitionList(TOKEN, "stale-status");
+      assertEquals(statuses(result), expected);
+
+      await written.fired;
+      assertEquals(
+        calls.write[0].entries.some((entry) =>
+          "materializationStatus" in entry
+        ),
+        false,
+      );
+    },
+  );
+});
+
+Deno.test("the list response schema keeps the materialization status", async () => {
+  const { bookmarks, cohorts, expected } = statusFixture();
+
+  await withStubs(
+    { bookmarks, filteredCohorts: cohorts },
+    async () => {
+      const result = await getCohortDefinitionList(TOKEN, DATASET_ID);
+      const parsed = CohortDefinitionListResponseDto.parse(result);
+
+      assertEquals(statuses(parsed), expected);
+      // Compare the JSON text, as the route sends it. The schema must not
+      // remove a field from a bookmark or a cohort.
+      assertEquals(
+        JSON.parse(JSON.stringify(parsed)),
+        JSON.parse(JSON.stringify(result)),
+      );
+    },
+  );
+});
+
+Deno.test("the list response schema rejects an unknown materialization status", () => {
+  const parsed = CohortDefinitionListResponseDto.safeParse([
+    { ...makeBookmark("b1"), materializationStatus: "running" },
+  ]);
+  assertEquals(parsed.success, false);
+});
+
+Deno.test("the status comes from the same cohort as the cohort id", async () => {
+  // The lower id has the current bookmark version, but the higher id wins.
+  await withStubs(
+    {
+      bookmarks: [makeBookmark("b1", 2)],
+      filteredCohorts: [
+        makeCohort(12, "b1", 222, 1),
+        makeCohort(11, "b1", 111, 2),
+      ],
+    },
+    async () => {
+      const result = await getCohortDefinitionList(TOKEN, DATASET_ID);
+
+      assertEquals(
+        bookmarkItems(result).map((bookmark) => [
+          bookmark.bmkId,
+          bookmark.cohortDefinitionId,
+          bookmark.materializationStatus,
+        ]),
+        [["b1", 12, BookmarkMaterializedCohortStatus.STALE]],
+      );
+    },
+  );
+});
+
+/** Bookmarks as the bookmark service could send them, with a status field. */
+const bookmarksWithUpstreamStatus = () =>
+  [
+    { ...makeBookmark("b1"), materializationStatus: "ready" },
+    { ...makeBookmark("b2"), materializationStatus: "running" },
+  ] as unknown as IBookmark[];
+
+Deno.test("a status from the bookmark service does not pass through when cohorts cannot be materialized", async () => {
+  await withStubs(
+    { bookmarks: bookmarksWithUpstreamStatus(), canMaterializeCohort: false },
+    async () => {
+      const result = await getCohortDefinitionList(TOKEN, DATASET_ID);
+
+      assertEquals(
+        bookmarkItems(result).map((bookmark) => bookmark.bmkId),
+        ["b1", "b2"],
+      );
+      assertEquals(
+        bookmarkItems(result).filter((bookmark) =>
+          "materializationStatus" in bookmark
+        ),
+        [],
+      );
+    },
+  );
+});
+
+Deno.test("the server status replaces a status from the bookmark service", async () => {
+  await withStubs(
+    {
+      bookmarks: bookmarksWithUpstreamStatus(),
+      filteredCohorts: [makeCohort(12, "b2", 222, 1)],
+    },
+    async () => {
+      const result = await getCohortDefinitionList(TOKEN, DATASET_ID);
+
+      assertEquals(statuses(result), [
+        ["b1", BookmarkMaterializedCohortStatus.NOT_RUN],
+        ["b2", BookmarkMaterializedCohortStatus.READY],
+      ]);
     },
   );
 });

@@ -1,14 +1,8 @@
-import type { IBaseMaterializedCohort, IBookmark } from "../api/types.ts";
-
-/**
- * The materialization status of a bookmark on one dataset. It is not related
- * to `CohortCacheReadStatus.STALE`, which is a cache TTL state.
- */
-export enum BookmarkMaterializedCohortStatus {
-  READY = "ready",
-  NOT_RUN = "not-run",
-  STALE = "stale",
-}
+import {
+  BookmarkMaterializedCohortStatus,
+  type IBaseMaterializedCohort,
+  type IBookmark,
+} from "../api/types.ts";
 
 const readRecordedBookmarkVersion = (syntax: unknown): unknown => {
   if (typeof syntax !== "string") {
