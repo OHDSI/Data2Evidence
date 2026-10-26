@@ -4,10 +4,13 @@ import NotificationsOutlinedIcon from "@mui/icons-material/NotificationsOutlined
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import AddIcon from "@mui/icons-material/Add";
+import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
+import ScheduleIcon from "@mui/icons-material/Schedule";
+import LockIcon from "@mui/icons-material/Lock";
 import { Button } from "../components/Button";
 import { SplitButton } from "../components/SplitButton";
 import { IconButton } from "../components/IconButton";
-import { StatusChip } from "../components/StatusChip";
+import { Chip } from "../components/Chip";
 import { Checkbox } from "../components/Checkbox";
 import { RadioGroup } from "../components/Radio";
 import { Switch } from "../components/Switch";
@@ -204,10 +207,10 @@ export const Overview: Story = {
             </Group>
 
             <Group title="Data display">
-              <Tile name="Status chip">
-                <StatusChip variant="positive" label="Ready" />
-                <StatusChip variant="warning" label="Pending" />
-                <StatusChip variant="negative" label="Failed" />
+              <Tile name="Chip">
+                <Chip variant="positive" label="Ready" icon={<CheckCircleOutlineIcon />} />
+                <Chip variant="warning" label="Pending" icon={<ScheduleIcon />} />
+                <Chip variant="negative" label="Failed" icon={<LockIcon />} />
               </Tile>
 
               <Tile name="Table">

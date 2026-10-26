@@ -4,7 +4,7 @@ import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { ThemeProvider } from "@mui/material/styles";
 import { buildMuiTheme } from "../tokens/theme";
 import { Button } from "../components/Button";
-import { StatusChip } from "../components/StatusChip";
+import { Chip } from "../components/Chip";
 import { Dialog } from "../components/Dialog";
 import { Menu } from "../components/Menu";
 import { Select } from "../components/Select";
@@ -45,8 +45,8 @@ describe("render smoke", () => {
     expect(clicks).toBe(1);
   });
 
-  it("renders a status chip with its label", () => {
-    mount(<StatusChip variant="positive" label="Ready" />);
+  it("renders a chip with its label", () => {
+    mount(<Chip variant="positive" label="Ready" />);
     expect(screen.getByText("Ready")).toBeTruthy();
   });
 

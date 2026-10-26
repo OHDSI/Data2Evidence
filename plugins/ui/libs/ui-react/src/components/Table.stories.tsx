@@ -10,8 +10,11 @@ import {
   TableExpandableRow,
   TableSubRow,
 } from "./Table";
+import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
+import ScheduleIcon from "@mui/icons-material/Schedule";
+import LockIcon from "@mui/icons-material/Lock";
 import { Checkbox } from "./Checkbox";
-import { StatusChip } from "./StatusChip";
+import { Chip } from "./Chip";
 
 const meta = {
   title: "Data display/Table",
@@ -56,6 +59,12 @@ const STATUS_LABEL: Record<Row["status"], string> = {
   positive: "Ready",
   warning: "Pending",
   negative: "Failed",
+};
+
+const STATUS_ICON: Record<Row["status"], ReactNode> = {
+  positive: <CheckCircleOutlineIcon />,
+  warning: <ScheduleIcon />,
+  negative: <LockIcon />,
 };
 
 // Full table: sortable header, selectable checkbox column, hyperlink, number,
@@ -115,7 +124,11 @@ function DataTable() {
                 </TableCell>
                 <TableCell>{row.owner}</TableCell>
                 <TableCell>
-                  <StatusChip variant={row.status} label={STATUS_LABEL[row.status]} />
+                  <Chip
+                    variant={row.status}
+                    label={STATUS_LABEL[row.status]}
+                    icon={STATUS_ICON[row.status]}
+                  />
                 </TableCell>
                 <TableCell numeric>{row.count.toLocaleString()}</TableCell>
               </TableRow>

@@ -1,4 +1,4 @@
-export const STATUS_CHIP_VARIANT_MAP = {
+export const CHIP_VARIANT_MAP = {
   positive: {
     background: "var(--d2e-color-success-light)",
     color: "var(--d2e-color-success)",
@@ -33,4 +33,4 @@ export const STATUS_CHIP_VARIANT_MAP = {
   },
 } as const;
 
-export type StatusChipVariant = keyof typeof STATUS_CHIP_VARIANT_MAP;
+export type ChipVariant = keyof typeof CHIP_VARIANT_MAP;
