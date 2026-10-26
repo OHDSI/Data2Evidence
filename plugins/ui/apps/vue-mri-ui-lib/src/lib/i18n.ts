@@ -433,6 +433,7 @@ export const i18n = {
       'Deleting this saved filter will delete any access point that you generated for it. This action cannot be undone.',
     MRI_PA_BUTTON_YES_DELETE: 'Yes, delete',
     MRI_PA_BUTTON_MATERIALIZE: 'Materialize',
+    MRI_PA_BUTTON_REMATERIALIZE: 'Re-materialize',
     MRI_PA_COLL_CONFIRM_MATERIALIZE: 'Materialize this cohort?',
     MRI_PA_EXPLORATIONS_TITLE: 'Data Exploration',
     MRI_PA_EXPLORATIONS_DESCRIPTION:
@@ -1561,6 +1562,7 @@ export const i18n = {
       'Wenn Sie diesen gespeicherten Filter löschen, werden alle dafür erstellten Zugangspunkte ebenfalls gelöscht. Diese Aktion kann nicht rückgängig gemacht werden.',
     MRI_PA_BUTTON_YES_DELETE: 'Ja, löschen',
     MRI_PA_BUTTON_MATERIALIZE: 'Materialisieren',
+    MRI_PA_BUTTON_REMATERIALIZE: 'Erneut materialisieren',
     MRI_PA_COLL_CONFIRM_MATERIALIZE: 'Diese Kohorte materialisieren?',
     MRI_PA_EXPLORATIONS_TITLE: 'Datenerkundung',
     MRI_PA_EXPLORATIONS_DESCRIPTION:
@@ -2672,6 +2674,7 @@ export const i18n = {
     MRI_PA_EXPLORATION_DELETE_DIALOG_TEXT: '删除此已保存的过滤器将删除您为其生成的所有访问点。此操作无法撤消。',
     MRI_PA_BUTTON_YES_DELETE: '是，删除',
     MRI_PA_BUTTON_MATERIALIZE: '物化',
+    MRI_PA_BUTTON_REMATERIALIZE: '重新物化',
     MRI_PA_COLL_CONFIRM_MATERIALIZE: '物化此队列？',
     MRI_PA_EXPLORATIONS_TITLE: '数据探索',
     MRI_PA_EXPLORATIONS_DESCRIPTION:

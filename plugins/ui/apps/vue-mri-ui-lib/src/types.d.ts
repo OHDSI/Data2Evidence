@@ -185,6 +185,7 @@ interface FormattedBookmark {
   user_id: string
   shared: boolean
   cohortDefinitionId?: number | undefined
+  materializationStatus?: string
 }
 interface FormattedAtlasCohortDefinition {
   id: number
@@ -262,6 +263,7 @@ type Bookmark = {
   shared: boolean
   axisInfo: string[]
   disableUpdate: boolean
+  materializationStatus?: string
 }
 type CohortDefinition = {
   id: number
@@ -294,6 +296,7 @@ interface IBookmark {
   shared: boolean
   cohortDefinitionId?: number
   paConfigId?: string
+  materializationStatus?: string
 }
 
 interface ICohortDefinition {

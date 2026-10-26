@@ -181,14 +181,14 @@
           <v-tooltip
             location="top"
             content-class="explorations-tooltip"
-            :text="getText('MRI_PA_BUTTON_ADD_TO_COLLECTION')"
+            :text="card.materializeLabel"
           >
             <template #activator="{ props: tooltipProps }">
               <span v-bind="tooltipProps">
                 <D2eIconButton
                   category="no-stroke"
                   :disabled="!canMaterialize || !card.canBeMaterialised"
-                  :aria-label="getText('MRI_PA_BUTTON_ADD_TO_COLLECTION')"
+                  :aria-label="card.materializeLabel"
                   :data-testid="`explorations-materialize-btn-${card.id}`"
                   @click="openMaterialize(card.source)"
                 >
@@ -401,6 +401,7 @@ import {
   D2eCheckbox,
   D2eDialog,
   D2eExplorationCard,
+  D2eExplorationCardStatus,
   D2eIconButton,
   D2eMenu,
   D2ePageHeader,
@@ -435,6 +436,7 @@ import { sortByLabel } from './helpers/sortByLabel'
 import { chartQueryFor } from './helpers/explorationSqlQuery'
 import { deleteExploration, type DeleteExplorationDeps } from './helpers/deleteExploration'
 import { canDeleteAll, runBulkDelete } from './helpers/bulkDeleteExplorations'
+import { cardStatus } from './helpers/explorationCardStatus'
 import { canModifyBookmark, getBookmarkType } from '../utils/BookmarkUtils'
 import DateUtils from '../utils/DateUtils'
 import ExplorationMaterializeIcon from './icons/ExplorationMaterializeIcon.vue'
@@ -759,6 +761,8 @@ const cards = computed(() => {
     const cohortDefinition = card.cohortDefinition
     const atlas = card.atlasCohortDefinition
     const id = toCardId(card)
+    const status = cardStatus(card)
+    const isStale = status === D2eExplorationCardStatus.STALE
     // An Atlas record is a cohort; a D2E bookmark is an exploration.
     const idLabel = ['A', 'A+M'].includes(getBookmarkType(card))
       ? getText('MRI_PA_EXPLORATIONS_COHORT_ID_LABEL')
@@ -774,7 +778,9 @@ const cards = computed(() => {
       // A type 'M' record has neither a bookmark nor an Atlas definition, so
       // there is nothing to materialise; offering it posts a URL with "null".
       canBeMaterialised: Boolean(bookmark || atlas),
-      status: cohortDefinition ? 'ready' : 'not-run',
+      status,
+      // A stale card offers Re-materialize in place of Materialize.
+      materializeLabel: getText(isStale ? 'MRI_PA_BUTTON_REMATERIALIZE' : 'MRI_PA_BUTTON_ADD_TO_COLLECTION'),
       // The card prop is documented as pre-formatted, so localise here.
       personCount:
         typeof cohortDefinition?.patientCount === 'number'
