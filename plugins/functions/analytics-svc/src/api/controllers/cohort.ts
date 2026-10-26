@@ -158,6 +158,7 @@ export async function getFilteredCohorts(req: IMRIRequest, res: Response) {
 }
 
 export async function createCohort(req: IMRIRequest, res: Response) {
+    let cohortWriteStarted = false;
     try {
         const datasetId = req.body.datasetId;
         const token = req.headers.authorization;
@@ -305,6 +306,7 @@ export async function createCohort(req: IMRIRequest, res: Response) {
         )[0];
 
         let cohortDefinitionId;
+        cohortWriteStarted = true;
         if (existingMaterializedCohort) {
             // If there exists an existing materialized cohort
             // Update existing cohort definition and remove all existing records from cohort table before saving cohort to db
@@ -390,6 +392,15 @@ export async function createCohort(req: IMRIRequest, res: Response) {
         });
     } catch (err) {
         logger.error(err);
+        if (cohortWriteStarted) {
+            // The failed run changed or removed the cohort. Drop the cache
+            // entry, so that the next read does not show the old cohort.
+            await evictCohortCacheEntry({
+                syntax: req.body.syntax,
+                datasetId: req.body.datasetId,
+                paConfigId: req.paConfigId,
+            });
+        }
         res.status(500).send(MRIEndpointErrorHandler({ err, language }));
     }
 }
