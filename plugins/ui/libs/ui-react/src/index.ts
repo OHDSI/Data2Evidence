@@ -15,6 +15,8 @@ export { Spinner } from "./components/Spinner";
 export type { SpinnerProps } from "./components/Spinner";
 export { Skeleton } from "./components/Skeleton";
 export type { SkeletonProps } from "./components/Skeleton";
+export { Pagination } from "./components/Pagination";
+export type { PaginationProps } from "./components/Pagination";
 export { IconButton } from "./components/IconButton";
 export type { IconButtonProps } from "./components/IconButton";
 export { Menu } from "./components/Menu";

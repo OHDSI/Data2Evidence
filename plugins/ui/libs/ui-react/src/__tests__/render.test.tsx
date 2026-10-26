@@ -7,6 +7,7 @@ import { Button } from "../components/Button";
 import { Chip } from "../components/Chip";
 import { Spinner } from "../components/Spinner";
 import { Skeleton } from "../components/Skeleton";
+import { Pagination } from "../components/Pagination";
 import { Dialog } from "../components/Dialog";
 import { Menu } from "../components/Menu";
 import { Select } from "../components/Select";
@@ -60,6 +61,24 @@ describe("render smoke", () => {
   it("renders a skeleton with the d2e class", () => {
     const { container } = mount(<Skeleton width={120} height={12} />);
     expect(container.querySelector(".d2e-skeleton")).toBeTruthy();
+  });
+
+  it("renders pagination with range and disables nav at bounds", () => {
+    let page = 1;
+    mount(
+      <Pagination
+        page={1}
+        pageSize={10}
+        totalCount={123}
+        onPageChange={(p) => (page = p)}
+        onPageSizeChange={() => {}}
+      />,
+    );
+    expect(screen.getByText("1-10 of 123")).toBeTruthy();
+    const first = screen.getByRole("button", { name: "First page" });
+    expect(first).toHaveProperty("disabled", true);
+    fireEvent.click(screen.getByRole("button", { name: "Next page" }));
+    expect(page).toBe(2);
   });
 
   it("renders an open dialog with title, actions and busy lock", () => {
