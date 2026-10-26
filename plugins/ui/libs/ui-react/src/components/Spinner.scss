@@ -1,0 +1,35 @@
+.d2e-spinner {
+  display: block;
+
+  &__track {
+    stroke: var(--d2e-color-neutral-lighter);
+  }
+
+  // Navy arc spins at a constant length (a rotation, not MUI's grow/shrink dash).
+  &__arc {
+    stroke: var(--d2e-color-primary);
+    transform-origin: center;
+    animation: d2e-spinner-rotate 1s linear infinite;
+  }
+}
+
+.d2e-spinner-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  min-height: 160px;
+}
+
+@keyframes d2e-spinner-rotate {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .d2e-spinner__arc {
+    animation-duration: 2s;
+  }
+}

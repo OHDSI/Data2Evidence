@@ -5,6 +5,8 @@ import { ThemeProvider } from "@mui/material/styles";
 import { buildMuiTheme } from "../tokens/theme";
 import { Button } from "../components/Button";
 import { Chip } from "../components/Chip";
+import { Spinner } from "../components/Spinner";
+import { Skeleton } from "../components/Skeleton";
 import { Dialog } from "../components/Dialog";
 import { Menu } from "../components/Menu";
 import { Select } from "../components/Select";
@@ -48,6 +50,16 @@ describe("render smoke", () => {
   it("renders a chip with its label", () => {
     mount(<Chip variant="positive" label="Ready" />);
     expect(screen.getByText("Ready")).toBeTruthy();
+  });
+
+  it("renders a spinner with an accessible status role", () => {
+    mount(<Spinner label="Loading users" />);
+    expect(screen.getByRole("status", { name: "Loading users" })).toBeTruthy();
+  });
+
+  it("renders a skeleton with the d2e class", () => {
+    const { container } = mount(<Skeleton width={120} height={12} />);
+    expect(container.querySelector(".d2e-skeleton")).toBeTruthy();
   });
 
   it("renders an open dialog with title, actions and busy lock", () => {

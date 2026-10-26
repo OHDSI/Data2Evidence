@@ -30,6 +30,8 @@ const EXPECTED = [
   "IconButton",
   "Menu",
   "Chip",
+  "Spinner",
+  "Skeleton",
   "TextField",
   "Toolbar",
   "DIALOG_SIZE_MAP",
