@@ -1,15 +1,17 @@
 .d2e-spinner {
   display: block;
+  // MUI CircularProgress style: the whole ring rotates linearly while the arc
+  // grows and shrinks (two combined animations), not a fixed-length arc spin.
+  transform-origin: center;
+  animation: d2e-spinner-rotate 1.4s linear infinite;
 
   &__track {
     stroke: var(--d2e-color-neutral-lighter);
   }
 
-  // Navy arc spins at a constant length (a rotation, not MUI's grow/shrink dash).
   &__arc {
     stroke: var(--d2e-color-primary);
-    transform-origin: center;
-    animation: d2e-spinner-rotate 1s linear infinite;
+    animation: d2e-spinner-dash 1.4s ease-in-out infinite;
   }
 
   // On a coloured surface (e.g. inside a primary button) the ring takes the
@@ -39,8 +41,30 @@
   }
 }
 
+// MUI's dash keyframes scaled to our circumference (2π·74.42 ≈ 467.6); the gap
+// (740) just needs to exceed it so a single dash shows.
+@keyframes d2e-spinner-dash {
+  0% {
+    stroke-dasharray: 4px, 740px;
+    stroke-dashoffset: 0;
+  }
+  50% {
+    stroke-dasharray: 368px, 740px;
+    stroke-dashoffset: -55px;
+  }
+  100% {
+    stroke-dasharray: 368px, 740px;
+    stroke-dashoffset: -461px;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
+  // Keep a gentle rotation; drop the grow/shrink so the arc holds its static
+  // 75% length from the inline stroke-dasharray.
+  .d2e-spinner {
+    animation-duration: 2.4s;
+  }
   .d2e-spinner__arc {
-    animation-duration: 2s;
+    animation: none;
   }
 }
