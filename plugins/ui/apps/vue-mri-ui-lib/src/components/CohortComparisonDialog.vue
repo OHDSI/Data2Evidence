@@ -23,8 +23,7 @@
         </template>
       </div>
 
-      <cohortComparisonContainer :activeChart="selectedChart" :bookmarkIds="bookmarkList">
-      </cohortComparisonContainer>
+      <cohortComparisonContainer :activeChart="selectedChart" :bookmarkIds="bookmarkList"> </cohortComparisonContainer>
     </div>
   </D2eDialog>
 </template>
@@ -76,7 +75,7 @@ export default {
       if (val) {
         this.initChartConfig()
       }
-    }
+    },
   },
   mounted() {
     this.initChartConfig()
