@@ -1,5 +1,6 @@
 export const COHORT_ID = 'cohortId'
 export const NO_VALUE = 'NoValue'
+export const MAX_UNCENSORED_MIN_COHORT_SIZE = 1
 
 export interface CompareBarResponse {
   categories: { id: string }[]
@@ -7,7 +8,9 @@ export interface CompareBarResponse {
   data: Record<string, unknown>[]
 }
 
-export function withEmptyCohorts<T extends CompareBarResponse>(response: T, cohortIds: string[]): T {
+export function withEmptyCohorts<T extends CompareBarResponse>(response: T, cohortIds: string[], minCohortSize = 0): T {
+  if (Number(minCohortSize) > MAX_UNCENSORED_MIN_COHORT_SIZE) return response
+
   const measureId = response.measures[0]?.id
   if (!measureId) return response
 
