@@ -159,8 +159,6 @@ const rows = computed(() =>
 }
 
 .dq-matrix__measure {
-  /* Same horizontal padding as .dq-matrix__cell, so the right-aligned numbers
-     line up with their sub-headers. */
   padding: 0 var(--dq-space-xs);
   text-align: right;
   white-space: nowrap;
