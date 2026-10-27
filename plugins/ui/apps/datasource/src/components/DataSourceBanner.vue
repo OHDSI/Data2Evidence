@@ -47,7 +47,7 @@ defineProps<{ title: string; description: string; logoUrl?: string }>()
   font-size: 44px;
   line-height: 1.2;
   letter-spacing: -0.02em;
-  color: var(--ds-navy, #000080);
+  color: var(--ds-primary, #000080);
 }
 .ds-banner__desc {
   margin: 0;

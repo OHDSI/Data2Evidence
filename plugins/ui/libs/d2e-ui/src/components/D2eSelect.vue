@@ -17,7 +17,9 @@
     :error-messages="errorMessages"
     :hint="hint"
     :density="size === 'sm' ? 'compact' : 'default'"
-    :menu-props="{ contentClass: menuContentClass }"
+    :menu-props="{ contentClass: menuContentClass, width: menuWidth }"
+    :item-color="ITEM_COLOR"
+    :list-props="{ baseColor: ITEM_COLOR }"
     v-bind="forwardAttrs"
     @update:model-value="$emit('update:modelValue', $event)"
   >
@@ -32,6 +34,8 @@ import { VAutocomplete, VIcon, VSelect } from "vuetify/components";
 import { computed, useAttrs } from "vue";
 import { SELECT_SIZE_MAP } from "./selectSizes";
 import type { D2eSelectItem, D2eSelectSize } from "./selectSizes";
+import { selectMenuWidth } from "./selectMenuWidth";
+import { tokens } from "../tokens/tokens";
 
 interface Props {
   modelValue?: string | string[] | null;
@@ -73,6 +77,28 @@ defineEmits<{
 }>();
 
 const sizeSpec = computed(() => SELECT_SIZE_MAP[props.size]);
+
+const ITEM_COLOR = "rgba(0, 0, 0, 0.87)";
+
+const MENU_FONT = `${tokens.font.body1.weight} ${tokens.font.body1.size}px ${tokens.font.family}`;
+let measureContext: CanvasRenderingContext2D | null | undefined;
+
+function measureLabel(text: string): number {
+  if (measureContext === undefined && typeof document !== "undefined") {
+    measureContext = document.createElement("canvas").getContext("2d");
+  }
+  if (!measureContext) return 0;
+  measureContext.font = MENU_FONT;
+  return measureContext.measureText(text).width;
+}
+
+const menuWidth = computed(() =>
+  selectMenuWidth(
+    props.items.map((item) => item.label),
+    measureLabel,
+    props.multiple
+  )
+);
 
 // `mergeProps` special-cases `class`, `style` and `on*` only, so a
 // `contentClass` in `menuProps` REPLACES the one the component sets rather

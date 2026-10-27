@@ -10,6 +10,7 @@
     :prepend-icon="prependIcon"
     :append-icon="appendIcon"
     :ripple="false"
+    :style="sizeStyle"
   >
     <template v-if="$slots.prepend" #prepend>
       <slot name="prepend" />
@@ -19,7 +20,7 @@
 </template>
 
 <script setup lang="ts">
-import { VARIANT_MAP, SIZE_MAP } from "./buttonVariants";
+import { BUTTON_SIZE_SPEC, VARIANT_MAP, SIZE_MAP } from "./buttonVariants";
 import type { D2eButtonVariant, D2eButtonSize } from "./buttonVariants";
 import { VBtn } from "vuetify/components";
 import { computed } from "vue";
@@ -49,13 +50,15 @@ const props = withDefaults(defineProps<Props>(), {
 
 const resolvedVariant = computed(() => VARIANT_MAP[props.variant]);
 const resolvedSize = computed(() => SIZE_MAP[props.size]);
+const sizeStyle = computed(() => ({
+  "--v-btn-height": `${BUTTON_SIZE_SPEC[props.size].height}px`,
+  fontSize: `${BUTTON_SIZE_SPEC[props.size].fontSize}px`,
+}));
 </script>
 
 <style scoped lang="scss">
 .d2e-button {
-  height: 40px;
   border-radius: var(--d2e-radius-md);
-  font-size: var(--d2e-font-button-size);
   font-weight: var(--d2e-font-button-weight);
   line-height: var(--d2e-font-button-line-height);
   letter-spacing: var(--d2e-font-button-letter-spacing);
