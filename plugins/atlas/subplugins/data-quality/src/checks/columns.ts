@@ -18,8 +18,9 @@ export const displayValue = (column: CheckColumn, row: DqdCheckRow): string | nu
 const text = (value: string | undefined): string => value ?? '';
 
 /**
- * The table's columns. The first seven are the design's (Figma 1801:210534); the
- * rest are the portal DQD table's, hidden until the column menu shows them.
+ * The table's columns. The first seven are the design's, in its order (Figma
+ * 1783:373519 and 3782:369457); the rest are the portal DQD table's, hidden
+ * until the column menu shows them.
  */
 export const COLUMNS: CheckColumn[] = [
   { key: 'category', titleKey: 'category', fallback: 'Category', defaultVisible: true, value: (r) => r.category },
