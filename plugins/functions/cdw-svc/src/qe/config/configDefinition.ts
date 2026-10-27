@@ -1,7 +1,7 @@
 import { ruleValidator as rulesLib } from "@alp/alp-config-utils";
 import { getTablePlaceholdersFromExpression } from "../utils/queryutils";
 export const allowedPlaceholderRegex =
-  /^((((?!(_SYS|SYS|SYSTEM|HANA_XS_BASE))(\w+)|(_SYS_BIC))|("((?!(_SYS|SYS|SYSTEM|HANA_XS_BASE))([^\]]+)|(_SYS_BIC))"))\."([^"]*)")|^("([^"]*)")$/i;
+  /^((((?!(_SYS|SYS|SYSTEM|HANA_XS_BASE))(\w+)|(_SYS_BIC)|(\$\$(SCHEMA|VOCAB_SCHEMA)\$\$))|("((?!(_SYS|SYS|SYSTEM|HANA_XS_BASE))([^\]]+)|(_SYS_BIC))"))\."([^"]*)")$|^("([^"]*)")$/i;
 
 export function getDefinition(tableMapping: any) {
   // Ensure cohort definition placeholders are always defined
