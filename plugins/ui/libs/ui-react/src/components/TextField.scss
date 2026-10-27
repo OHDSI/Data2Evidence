@@ -1,0 +1,20 @@
+// 40px field, 14px text; flex-centre the natural-height input so the
+// value/placeholder sit on the field centre line.
+.d2e-text-field {
+  .MuiOutlinedInput-root {
+    min-height: 40px;
+    display: flex;
+    align-items: center;
+  }
+
+  .MuiOutlinedInput-input {
+    height: auto;
+    padding-top: 0;
+    padding-bottom: 0;
+    line-height: 20px;
+
+    &::placeholder {
+      line-height: 20px;
+    }
+  }
+}
