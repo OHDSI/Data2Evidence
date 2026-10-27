@@ -3,14 +3,14 @@ import { COLUMN_BY_KEY, DEFAULT_VISIBLE_KEYS } from './columns';
 import { row } from './fixtures';
 
 describe('COLUMNS', () => {
-  it('shows Severity by default, next to Category', () => {
+  it('shows Severity by default, between Level and Status', () => {
     expect(DEFAULT_VISIBLE_KEYS).toEqual([
       'category',
-      'severity',
       'checkName',
       'cdmTableName',
       'cdmFieldName',
       'checkLevel',
+      'severity',
       'status',
     ]);
   });

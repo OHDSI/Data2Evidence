@@ -23,13 +23,6 @@ const text = (value: string | undefined): string => value ?? '';
  */
 export const COLUMNS: CheckColumn[] = [
   { key: 'category', titleKey: 'category', fallback: 'Category', defaultVisible: true, value: (r) => r.category },
-  {
-    key: 'severity',
-    titleKey: 'severity',
-    fallback: 'Severity',
-    defaultVisible: true,
-    value: (r) => formatSeverity(r.severity),
-  },
   { key: 'checkName', titleKey: 'checkName', fallback: 'Check name', defaultVisible: true, value: (r) => r.checkName },
   {
     key: 'cdmTableName',
@@ -46,6 +39,13 @@ export const COLUMNS: CheckColumn[] = [
     value: (r) => text(r.cdmFieldName),
   },
   { key: 'checkLevel', titleKey: 'level', fallback: 'Level', defaultVisible: true, value: (r) => text(r.checkLevel) },
+  {
+    key: 'severity',
+    titleKey: 'severity',
+    fallback: 'Severity',
+    defaultVisible: true,
+    value: (r) => formatSeverity(r.severity),
+  },
   { key: 'status', titleKey: 'status', fallback: 'Status', defaultVisible: true, value: statusLabel },
   {
     key: 'subcategory',
