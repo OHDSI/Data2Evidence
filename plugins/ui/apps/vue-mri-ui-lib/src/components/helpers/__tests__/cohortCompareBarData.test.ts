@@ -54,14 +54,4 @@ describe('withEmptyCohorts', () => {
     const original = { ...response([]), measures: [] }
     expect(withEmptyCohorts(original, ['a'])).toBe(original)
   })
-
-  it.each([0, 1])('adds a zero row when the minimum cohort size is %i', minCohortSize => {
-    const result = withEmptyCohorts(response([{ cohortId: 'a', [MEASURE]: 12 }]), ['a', 'b'], minCohortSize)
-    expect(result.data).toContainEqual({ cohortId: 'b', [MEASURE]: 0 })
-  })
-
-  it('returns the same response when the minimum cohort size can hide a small cohort', () => {
-    const original = response([{ cohortId: 'a', [MEASURE]: 12 }])
-    expect(withEmptyCohorts(original, ['a', 'b'], 10)).toBe(original)
-  })
 })

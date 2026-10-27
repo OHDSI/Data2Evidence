@@ -62,14 +62,7 @@ export default {
     },
   },
   computed: {
-    ...mapGetters([
-      'dataToTraces',
-      'getAllChartConfigs',
-      'getMriFrontendConfig',
-      'getText',
-      'processResponse',
-      'getSelectedDataset',
-    ]),
+    ...mapGetters(['dataToTraces', 'getMriFrontendConfig', 'getText', 'processResponse', 'getSelectedDataset']),
   },
   methods: {
     ...mapActions(['ajaxAuth']),
@@ -137,8 +130,7 @@ export default {
           if (this.isUnmounted || requestId !== this.requestId) return
           const compareData = withEmptyCohorts(
             data,
-            this.bookmarks.map(e => e.id),
-            this.getAllChartConfigs?.minCohortSize
+            this.bookmarks.map(e => e.id)
           )
           this.chartData = this.processResponse(compareData)
           this.setupPlotly()
