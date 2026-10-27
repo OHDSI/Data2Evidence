@@ -1537,9 +1537,6 @@ const onMoreSelect = (card: { source: BookmarkDisplay }, value: string): void =>
 
   &__grid {
     display: grid;
-    // auto-fit collapses empty tracks so 1-2 cards grow to their 500px width
-    // (set on the card); a fixed 500px track max would make the browser count
-    // columns at 500px and leave gaps in full rows.
     grid-template-columns: repeat(auto-fit, minmax(314px, auto));
     grid-auto-rows: min-content;
     justify-content: start;
