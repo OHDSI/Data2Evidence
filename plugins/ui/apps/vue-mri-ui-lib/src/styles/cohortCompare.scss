@@ -1,6 +1,9 @@
 @use 'sass:map';
 @use './screen' as *;
 .compareContainer {
+  > .v-overlay__content {
+    contain: none;
+  }
   .d2e-dialog__body {
     .chartToolbarContainer {
       background-color: var(--color-mri-card-header-bg);
