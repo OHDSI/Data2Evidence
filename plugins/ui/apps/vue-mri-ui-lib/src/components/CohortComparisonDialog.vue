@@ -1,44 +1,38 @@
 <template>
-  <messageBox
+  <D2eDialog
     class="compareContainer"
-    dim="true"
-    messageType="custom"
-    v-if="showCohortCompareDialog"
+    :model-value="showCohortCompareDialog"
+    size="xl"
+    :title="getText('MRI_COMP_COHORT_TITLE_DIALOG')"
+    :close-label="getText('MRI_PA_CLOSE')"
+    data-testid="pa-compare-modal"
     @close="closeMessageBox"
   >
-    <template v-slot:header>{{ getText('MRI_COMP_COHORT_TITLE_DIALOG') }}</template>
-    <template v-slot:body>
-      <div class="body">
-        <!-- Chart Toolbar -->
-        <div class="chartToolbarContainer">
-          <template v-for="chart in chartConfig" :key="chart.name">
-            <chartButton
-              :name="chart.name"
-              :icon="chart.icon"
-              :iconGroup="chart.iconGroup"
-              :title="getText(chart.tooltip)"
-              @clickEv="onSelectChart(chart)"
-            ></chartButton>
-            <label class="separator"></label>
-          </template>
-        </div>
-
-        <!-- replace with stackbar , boxplot, KM that uses the cohortCompareContainer-->
-        <cohortComparisonContainer :activeChart="selectedChart" :bookmarkIds="bookmarkList">
-        </cohortComparisonContainer>
+    <div v-if="showCohortCompareDialog" class="body">
+      <div class="chartToolbarContainer">
+        <template v-for="chart in chartConfig" :key="chart.name">
+          <chartButton
+            :name="chart.name"
+            :icon="chart.icon"
+            :iconGroup="chart.iconGroup"
+            :title="getText(chart.tooltip)"
+            :activeChart="selectedChart"
+            @clickEv="onSelectChart(chart)"
+          ></chartButton>
+          <label class="separator"></label>
+        </template>
       </div>
-    </template>
-    <template v-slot:footer>
-      <appButton :click="closeMessageBox" :text="getText('MRI_PA_CLOSE_BUTTON')"></appButton>
-    </template>
-  </messageBox>
+
+      <cohortComparisonContainer :activeChart="selectedChart" :bookmarkIds="bookmarkList">
+      </cohortComparisonContainer>
+    </div>
+  </D2eDialog>
 </template>
 
 <script lang="ts">
 import { mapGetters } from 'vuex'
 // import axios from "axios";
-import messageBox from './MessageBox.vue'
-import appButton from '../lib/ui/app-button.vue'
+import { D2eDialog } from '@d2e/ui'
 import ChartButton from './ChartButton.vue'
 import Constants from '../utils/Constants'
 import { lazyComponent } from '../utils/lazyComponent'
@@ -141,8 +135,7 @@ export default {
     },
   },
   components: {
-    appButton,
-    messageBox,
+    D2eDialog,
     ChartButton,
     CohortComparisonContainer,
   },

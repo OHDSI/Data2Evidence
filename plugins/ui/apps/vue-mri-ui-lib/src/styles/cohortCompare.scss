@@ -1,85 +1,71 @@
 @use 'sass:map';
 @use './screen' as *;
 .compareContainer {
-  .modal-wrapper {
-    .modal-container {
-      width: calc(1200 * 1.1px) !important;
-      .modal-header {
-        text-align: center;
-        padding: 0;
-        height: 40px;
-        background-color: var(--color-tab-bar-header-bg);
-        color: var(--color-mri-header-text-dark);
-        font-weight: bold;
+  .d2e-dialog__body {
+    .chartToolbarContainer {
+      background-color: var(--color-mri-card-header-bg);
+      text-align: center;
+      justify-content: center;
+      display: flex;
+      height: 40px;
+      .chartButton {
+        margin-top: 3px;
       }
-      .modal-body {
-        padding: 0;
-        overflow-y: hidden;
-        max-height: 100vh;
-        .chartToolbarContainer {
-          background-color: var(--color-mri-card-header-bg);
-          text-align: center;
-          justify-content: center;
-          display: flex;
-          height: 40px;
-          .chartButton {
-            margin-top: 3px;
-          }
-          .separator {
-            width: 10px;
-          }
-          .icon {
-            margin-right: 0;
-          }
-        }
-        .axisContainer {
-          height: 600px;
-          grid-column: 1;
-          .upperAxisContainer {
-            position: relative;
-            height: 60%;
-            margin-left: 40px;
-            .kmInfo {
-              .kmInteractionList-wrapper {
-                .modal-container {
-                  width: 50px !important;
-                  margin: 0;
-                  .modal-header {
-                    background-color: var(--color-ui-extra-light-bg);
-                    box-shadow: none;
-                    color: var(--color-ui-dark-text);
-                    text-align: center;
-                    padding: 0;
-                    height: 40px;
-                    font-weight: 100;
-                  }
-                  .modal-body {
-                    padding: 0px;
-                  }
-                }
-              }
-            }
-            .sort-label {
-              position: absolute;
-              top: 77px;
-              left: 75px;
-              direction: inherit;
-              text-align: left;
-              color: var(--color-mri-header-text-dark);
-              font-size: 12px;
-            }
-          }
-          .lowerAxisContainer {
-            position: relative;
-            height: 40%;
-            margin-left: 40px;
-          }
-        }
-        .chartContainer {
-          width: 20%;
-        }
+      .separator {
+        width: 10px;
+      }
+      .icon {
+        margin-right: 0;
       }
     }
+    .axisContainer {
+      height: 600px;
+      grid-column: 1;
+      .upperAxisContainer {
+        position: relative;
+        height: 60%;
+        margin-left: 40px;
+        .kmInfo {
+          .kmInteractionList-wrapper {
+            .modal-container {
+              width: 50px !important;
+              margin: 0;
+              .modal-header {
+                background-color: var(--color-ui-extra-light-bg);
+                box-shadow: none;
+                color: var(--color-ui-dark-text);
+                text-align: center;
+                padding: 0;
+                height: 40px;
+                font-weight: 100;
+              }
+              .modal-body {
+                padding: 0px;
+              }
+            }
+          }
+        }
+        .sort-label {
+          position: absolute;
+          top: 77px;
+          left: 75px;
+          direction: inherit;
+          text-align: left;
+          color: var(--color-mri-header-text-dark);
+          font-size: 12px;
+        }
+      }
+      .lowerAxisContainer {
+        position: relative;
+        height: 40%;
+        margin-left: 40px;
+      }
+    }
+    .chartContainer {
+      width: 20%;
+    }
+  }
+  .modal-wrapper {
     .message-box-error {
       width: 450px !important;
       margin: 0px !important;
