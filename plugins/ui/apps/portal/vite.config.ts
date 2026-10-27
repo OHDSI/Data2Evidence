@@ -38,6 +38,31 @@ function d4lWebComponents() {
   };
 }
 
+// CRA emitted asset-manifest.json; keep a Vite equivalent so deploy smoke tests
+// can locate the entry bundle and crawl lazy chunks by name.
+function emitAssetManifest() {
+  return {
+    name: "emit-asset-manifest",
+    generateBundle(_options: any, bundle: any) {
+      const files: Record<string, string> = {};
+      const entrypoints: string[] = [];
+      for (const [fileName, chunk] of Object.entries<any>(bundle)) {
+        if (fileName.endsWith(".js")) {
+          files[chunk.isEntry ? "main.js" : fileName] = `/d2e/portal/${fileName}`;
+          if (chunk.isEntry) entrypoints.push(fileName);
+        } else if (fileName.endsWith(".css")) {
+          files[fileName] = `/d2e/portal/${fileName}`;
+        }
+      }
+      this.emitFile({
+        type: "asset",
+        fileName: "asset-manifest.json",
+        source: JSON.stringify({ files, entrypoints }, null, 2),
+      });
+    },
+  };
+}
+
 export default defineConfig(({ mode }) => {
   // PUBLIC_URL is consumed via env.ts; keep CRA's /d2e/portal build default so
   // plugin/asset URLs resolve even when runtime env.js omits it.
@@ -50,7 +75,7 @@ export default defineConfig(({ mode }) => {
 
   return {
     base: "/d2e/portal/",
-    plugins: [react(), d4lWebComponents()],
+    plugins: [react(), d4lWebComponents(), emitAssetManifest()],
     resolve: {
       alias: {
         // @portal/plugin ships only a webpack UMD build whose named exports
