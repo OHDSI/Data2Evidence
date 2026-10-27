@@ -70,7 +70,7 @@
             </button>
             <dropDownMenu
               :target="downloadButton"
-              boundariesElement="modal-body"
+              boundariesElement="d2e-dialog__body"
               :subMenu="downloadMenuData"
               :opened="downloadMenuOpened"
               @clickEv="handleDownloadClick"
