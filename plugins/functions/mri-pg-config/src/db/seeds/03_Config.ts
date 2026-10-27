@@ -20434,6 +20434,113 @@ export const cdwConfigDuckdb = {
                         "standardConceptCodeFilter": "",
                         "cohortDefinitionKey": "CodesetId",
                         "conceptIdentifierType": "name"
+                    },
+                    "caresitename": {
+                        "name": [
+                            {
+                                "lang": "",
+                                "value": "Care site name"
+                            }
+                        ],
+                        "disabledLangName": [
+                            {
+                                "lang": "en",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "de",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "fr",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "es",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "pt",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "zh",
+                                "value": "",
+                                "visible": true
+                            }
+                        ],
+                        "type": "text",
+                        "expression": "COALESCE(@REF.care_site_name, 'No matching care site')",
+                        "defaultPlaceholder": "@REF",
+                        "defaultFilter": "@REF.care_site_id = @VISIT.care_site_id",
+                        "referenceFilter": "@REF.care_site_name IS NOT NULL AND LOWER(@REF.care_site_name) LIKE LOWER('%@SEARCH_QUERY%')",
+                        "referenceExpression": "@REF.care_site_name",
+                        "from": {
+                            "@REF": "$$SCHEMA$$.\"care_site\""
+                        },
+                        "order": 12,
+                        "domainFilter": "",
+                        "includeDescendants": false,
+                        "includeDescendantsExpression": "",
+                        "optionalFiltering": false,
+                        "standardConceptCodeFilter": "",
+                        "cohortDefinitionKey": "",
+                        "conceptIdentifierType": ""
+                    },
+                    "caresiteid": {
+                        "name": [
+                            {
+                                "lang": "",
+                                "value": "Care site Id"
+                            }
+                        ],
+                        "disabledLangName": [
+                            {
+                                "lang": "en",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "de",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "fr",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "es",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "pt",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "zh",
+                                "value": "",
+                                "visible": true
+                            }
+                        ],
+                        "type": "text",
+                        "expression": "@VISIT.\"care_site_id\"",
+                        "order": 13,
+                        "domainFilter": "",
+                        "includeDescendants": false,
+                        "includeDescendantsExpression": "",
+                        "optionalFiltering": false,
+                        "standardConceptCodeFilter": "",
+                        "cohortDefinitionKey": "",
+                        "conceptIdentifierType": ""
                     }
                 }
             },
@@ -24054,6 +24161,46 @@ const paConfigDuckdb = {
                         "linkColumn": false
                     },
                     "modelName": "Visit concept set"
+                },
+                {
+                    "source": "patient.interactions.visit.attributes.caresitename",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": true,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 8
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Care site name"
+                },
+                {
+                    "source": "patient.interactions.visit.attributes.caresiteid",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 9
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Care site Id"
                 }
             ],
             "initialPatientlistColumn": false,
