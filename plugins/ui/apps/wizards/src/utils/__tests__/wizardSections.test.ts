@@ -3,6 +3,8 @@ import type { FieldDefinition, WizardFormSection } from "../../types/wizard";
 import {
   getFieldGroupCompletionHint,
   getFieldGroupValidationMessage,
+  getFormGroupValidationErrors,
+  getYearRangeErrors,
   isFieldDisabledByGroupLimit,
   resolveWizardFormLayout,
 } from "../wizardSections";
@@ -78,5 +80,55 @@ describe("getFieldGroupValidationMessage", () => {
     expect(isFieldDisabledByGroupLimit(group, "bmi", { height: "170", weight: "70" })).toBe(true);
     expect(isFieldDisabledByGroupLimit(group, "height", { height: "170", weight: "70" })).toBe(false);
     expect(isFieldDisabledByGroupLimit(group, "bmi", { height: "170" })).toBe(false);
+  });
+});
+
+describe("getFormGroupValidationErrors", () => {
+  const layout = resolveWizardFormLayout(fields, sections);
+
+  it("maps each invalid group ID to its message", () => {
+    expect(getFormGroupValidationErrors(layout, {})).toEqual({
+      "body-measurement": "Choose at least one measurement.",
+    });
+  });
+
+  it("returns no errors when every group is valid", () => {
+    expect(getFormGroupValidationErrors(layout, { height: "170" })).toEqual({});
+  });
+
+  it("returns no errors for a layout without sections", () => {
+    expect(getFormGroupValidationErrors(resolveWizardFormLayout(fields), {})).toEqual({});
+  });
+});
+
+describe("getYearRangeErrors", () => {
+  it("accepts an empty optional range", () => {
+    expect(getYearRangeErrors("", "", false)).toEqual({});
+    expect(getYearRangeErrors(undefined, undefined, false)).toEqual({});
+  });
+
+  it("requires both years of an empty required range", () => {
+    expect(getYearRangeErrors("", "", true)).toEqual({
+      from: "From year is required",
+      to: "To year is required",
+    });
+  });
+
+  it("requires the to year when only the from year is set", () => {
+    expect(getYearRangeErrors("2010", "", false)).toEqual({ to: "To year is required" });
+  });
+
+  it("requires the from year when only the to year is set", () => {
+    expect(getYearRangeErrors("", "2010", false)).toEqual({ from: "From year is required" });
+  });
+
+  it("rejects a to year before the from year", () => {
+    expect(getYearRangeErrors("2015", "2010", true)).toEqual({
+      to: "To year must be greater than or equal to from year",
+    });
+  });
+
+  it("accepts a range that starts and ends in the same year", () => {
+    expect(getYearRangeErrors("2010", "2010", true)).toEqual({});
   });
 });

@@ -93,6 +93,39 @@ export function getFieldGroupValidationMessage(
   return null;
 }
 
+export function getFormGroupValidationErrors(
+  layout: ResolvedWizardFormLayout,
+  formValues: Record<string, unknown>,
+): Record<string, string> {
+  return Object.fromEntries(
+    layout.sections.flatMap((section) =>
+      section.groups.flatMap((group) => {
+        const message = getFieldGroupValidationMessage(group, formValues);
+        return message ? [[group.id, message]] : [];
+      }),
+    ),
+  );
+}
+
+export interface YearRangeErrors {
+  from?: string;
+  to?: string;
+}
+
+export function getYearRangeErrors(from: unknown, to: unknown, required: boolean): YearRangeErrors {
+  const hasFrom = hasValue(from);
+  const hasTo = hasValue(to);
+
+  if (!hasFrom && !hasTo) {
+    return required ? { from: "From year is required", to: "To year is required" } : {};
+  }
+  if (!hasFrom) return { from: "From year is required" };
+  if (!hasTo) return { to: "To year is required" };
+  if (Number(to) < Number(from)) return { to: "To year must be greater than or equal to from year" };
+
+  return {};
+}
+
 export function getFieldGroupCompletionHint(group: ResolvedWizardFieldGroup): string | null {
   const minAnswered = group.validation?.minAnswered;
   const maxAnswered = group.validation?.maxAnswered;

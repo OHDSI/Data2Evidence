@@ -134,7 +134,8 @@ Define `sections` on each wizard because the section presence and order can diff
 - A wizard without `sections` uses the legacy flat field layout.
 - `columns` supports `1`, `2`, or `3` columns on desktop and collapses to one column on small screens.
 - `validation.minAnswered` and `validation.maxAnswered` constrain how many fields in the group contain values.
-- A positive `minAnswered` marks the group as required, disables the form action until the minimum is met, and adds a required marker to the group label.
+- A positive `minAnswered` marks the group as required and adds a required marker to the group label.
+- The form action stays enabled. On submit, a group that does not meet its limits blocks the action and shows `validation.minMessage` or `validation.maxMessage` under its fields. Without those, it shows `validation.message` or a generated message.
 - `validation.message` is optional guidance displayed from the group's information icon. Without it, guidance is generated from the limits and field labels.
 - Once `maxAnswered` is reached, unanswered fields in the group are disabled and explain the limit on hover or focus.
 - Individual field `required` rules remain independent. For an interchangeable group such as Height/Weight/BMI, keep the fields optional and express the required count on the group.
