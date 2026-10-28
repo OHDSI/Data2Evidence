@@ -2,11 +2,8 @@ import { createApp, Component } from 'vue'
 import vuetify from './plugins/vuetify'
 
 import App from './App.vue'
-import RootLayout from './RootLayout.vue'
 import { createPinia } from 'pinia'
 import { createStore } from './store'
-import { initializeApps } from './utils/AppRegistry'
-import { initializeComponents } from './utils/ComponentRegistry'
 import './styles/themes/_main.scss'
 import { createPortalContextStore } from './stores/portalContext'
 import { initGlobalsOnce, registerDirectivesAndComponents } from './bootstrap/registerGlobals'
@@ -15,19 +12,8 @@ import { getPortalContextBootstrap, resolvePortalContextProps } from './bootstra
 import { installPortalPropsListener } from './bootstrap/portalPropsListener'
 import { installDatasetChangeWatcher } from './bootstrap/datasetWatcher'
 
-let app: Component
+const app = createApp(App as unknown as Component)
 const searchParams = new URLSearchParams(window.location.search)
-const isAtlas = import.meta.env.VITE_STANDALONE_ATLAS === 'true'
-
-if (isAtlas) {
-  app = createApp(RootLayout as unknown as Component)
-
-  // Initialize registries
-  initializeApps()
-  initializeComponents()
-} else {
-  app = createApp(App as unknown as Component)
-}
 
 const pinia = createPinia()
 app.use(pinia)

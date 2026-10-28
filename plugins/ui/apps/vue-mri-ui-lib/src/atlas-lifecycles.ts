@@ -26,7 +26,7 @@ import {
   unmount as portalUnmount,
   update as portalUpdate,
 } from './lifecycles'
-import { formatConceptSetRef, parseConceptSetRef } from './query-filter/utils/conceptSetRef'
+import { formatConceptSetRef, parseConceptSetRef } from './utils/conceptSetRef'
 
 type AtlasProps = Record<string, any>
 

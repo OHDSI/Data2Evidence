@@ -12,8 +12,6 @@ declare global {
 interface ImportMetaEnv {
   readonly VITE_HOST?: string
   readonly VITE_PATH?: string
-  readonly VITE_NAVIGATION_ITEMS?: string
-  readonly VITE_STANDALONE_ATLAS?: string
   /** Set by the native Atlas build only; scopes the Vuetify theme stylesheet. */
   readonly VITE_ATLAS_NATIVE?: string
   /** Set by both Atlas builds: Atlas is the host, so the app owns its data source. */
