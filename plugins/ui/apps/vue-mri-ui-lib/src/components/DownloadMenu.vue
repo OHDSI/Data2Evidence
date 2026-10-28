@@ -5,7 +5,7 @@
       :header="getText('MRI_PA_EXPORT_UNAVAILABLE')"
       :message="popoverMessage"
     >
-      <bs-dropdown variant="link" size="sm" no-caret :disabled="isDownloadDisabled">
+      <bs-dropdown variant="link" size="sm" no-caret :disabled="isDownloadDisabled" @show="prefetchImageExport">
         <template v-slot:button-content>
           <button
             class="toolbarButton"
@@ -52,7 +52,8 @@ import { formatNumber } from '../utils/NumberUtils'
 import { generateDownloadFileName } from '../utils/generateDownloadFileName'
 import { clearPendingSaveTarget, pickSaveTarget, setPendingSaveTarget } from '../utils/saveFile'
 
-const ImageExport = lazyComponent('ImageExport', () => import('./ImageExport.vue'))
+const loadImageExport = () => import('./ImageExport.vue')
+const ImageExport = lazyComponent('ImageExport', loadImageExport)
 
 export default {
   name: 'downloadMenu',
@@ -188,6 +189,11 @@ export default {
   },
   methods: {
     ...mapActions(['setFireDownloadZIP']),
+    prefetchImageExport() {
+      if (this.list.some(item => item.key === 'image')) {
+        loadImageExport().catch(() => undefined)
+      }
+    },
     async handleMenuClick(arg) {
       if (arg) {
         // A second ZIP would abort the first mid-stream, and dismissing its picker would drop the
