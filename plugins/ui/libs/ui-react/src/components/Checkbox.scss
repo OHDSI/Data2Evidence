@@ -1,0 +1,17 @@
+.d2e-checkbox.d2e-checkbox {
+  color: var(--d2e-color-neutral-light);
+
+  &.Mui-checked,
+  &.MuiCheckbox-indeterminate {
+    color: var(--d2e-color-primary);
+  }
+
+  &.Mui-disabled {
+    color: var(--d2e-color-neutral-light);
+  }
+}
+
+.d2e-checkbox__label-wrap .MuiFormControlLabel-label {
+  font-family: var(--d2e-font-family);
+  color: var(--d2e-color-neutral-black);
+}
