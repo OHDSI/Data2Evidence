@@ -189,7 +189,10 @@ import {
 
 // Loaded on demand so plotly.js stays out of the single-spa entry's static
 // dependency graph. See docs: the chart chunk was blocking mount.
-const InclusionReport = lazyComponent('InclusionReport', () => import('../query-filter/components/InclusionReport/index.vue'))
+const InclusionReport = lazyComponent(
+  'InclusionReport',
+  () => import('../query-filter/components/InclusionReport/index.vue')
+)
 
 export default {
   name: 'chartToolbar',
