@@ -61,6 +61,7 @@ export const EXCLUDED_COLOR = '#CCCCCC' as const
 export const FUNNEL_FONT_SIZE = 16
 export const FUNNEL_FONT_FAMILY = FONT_FAMILY
 export const FUNNEL_FONT_COLOR = BODY_TEXT_COLOR
+export const FUNNEL_Y_AUTORANGE = 'reversed' as const
 
 /**
  * Layout budget for the rule name labels down the left of the funnel chart: labels wrap
