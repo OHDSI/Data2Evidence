@@ -39,6 +39,7 @@
   </div>
 </template>
 <script lang="ts">
+import { defineAsyncComponent } from 'vue'
 import { mapActions, mapGetters } from 'vuex'
 import DownloadCSVDialog from './DownloadCSVDialog.vue'
 import bsDropdown from '../lib/ui/bs-dropdown.vue'
@@ -47,13 +48,12 @@ import DisabledHoverPopover from './DisabledHoverPopover.vue'
 import VSnackbar from './vuetify/VSnackbar.vue'
 import appIcon from '../lib/ui/app-icon.vue'
 import Constants from '../utils/Constants'
-import { lazyComponent } from '../utils/lazyComponent'
 import { formatNumber } from '../utils/NumberUtils'
 import { generateDownloadFileName } from '../utils/generateDownloadFileName'
 import { clearPendingSaveTarget, pickSaveTarget, setPendingSaveTarget } from '../utils/saveFile'
 
 const loadImageExport = () => import('./ImageExport.vue')
-const ImageExport = lazyComponent('ImageExport', loadImageExport)
+const ImageExport = defineAsyncComponent(loadImageExport)
 
 export default {
   name: 'downloadMenu',
@@ -207,6 +207,14 @@ export default {
             this.csvShow = true
             break
           case 'image':
+            try {
+              await loadImageExport()
+            } catch (error) {
+              console.error('[DownloadMenu] ImageExport failed to load', error)
+              this.imageShow = false
+              this._showExportToast('error', this.fileTypeKeyMap['image'])
+              return
+            }
             this.imageShow = true
             break
           case 'zip': {
