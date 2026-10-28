@@ -4,19 +4,26 @@ import { createStore } from 'vuex'
 import DownloadMenu from '../DownloadMenu.vue'
 import { pickSaveTarget, setPendingSaveTarget } from '../../utils/saveFile'
 
+const imageExportModule = vi.hoisted(() => ({ loaded: vi.fn() }))
+
+vi.mock('../ImageExport.vue', () => {
+  imageExportModule.loaded()
+  return { default: { name: 'ImageExport', render: () => null } }
+})
+
 vi.mock('../../utils/saveFile', () => ({
   pickSaveTarget: vi.fn(),
   setPendingSaveTarget: vi.fn(),
   clearPendingSaveTarget: vi.fn(),
 }))
 
-const createTestStore = () => {
+const createTestStore = (chartConfigs: Record<string, unknown> = { list: { zipDownloadEnabled: true } }) => {
   const setFireDownloadZIP = vi.fn()
   const store = createStore({
     state: { zipDownloadCompleted: false },
     getters: {
       getText: () => (key: string) => key,
-      getAllChartConfigs: () => ({ list: { zipDownloadEnabled: true } }),
+      getAllChartConfigs: () => chartConfigs,
       getActiveChart: () => 'list',
       getActiveBookmark: () => null,
       getCurrentPatientCount: () => 10,
@@ -99,5 +106,21 @@ describe('DownloadMenu ZIP export', () => {
 
     expect(pickSaveTarget).toHaveBeenCalledTimes(2)
     expect(setFireDownloadZIP).toHaveBeenCalledTimes(1)
+  })
+})
+
+describe('DownloadMenu PNG export', () => {
+  it('starts loading the image exporter when a menu offering PNG opens', async () => {
+    const zipOnly = mountMenu(createTestStore().store)
+    zipOnly.findComponent({ name: 'bs-dropdown' }).vm.$emit('show')
+    await vi.dynamicImportSettled()
+    expect(imageExportModule.loaded).not.toHaveBeenCalled()
+
+    const withImage = mountMenu(createTestStore({ list: { imageDownloadEnabled: true } }).store)
+    expect(imageExportModule.loaded).not.toHaveBeenCalled()
+
+    withImage.findComponent({ name: 'bs-dropdown' }).vm.$emit('show')
+    await vi.dynamicImportSettled()
+    expect(imageExportModule.loaded).toHaveBeenCalledTimes(1)
   })
 })

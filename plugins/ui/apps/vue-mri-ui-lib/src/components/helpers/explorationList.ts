@@ -1,9 +1,8 @@
 /**
  * List behaviour for the Data Exploration page: scored search and sorting.
  *
- * Lifted from `BookmarkItems.vue` (lines 59-140), which holds the same scoring
- * but is gated out of the D2E build by `v-if="isAtlas"`. Kept as pure functions
- * with no Vue import so the test does not have to load Vuetify.
+ * Kept as pure functions with no Vue import so the test does not have to load
+ * Vuetify.
  */
 
 /** Relevance weights. The first group that matches wins; scores do not add. */
