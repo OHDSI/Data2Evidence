@@ -1,8 +1,4 @@
-import type {
-  FilterCardDetail,
-  FilterCardDetailAttribute,
-  RuleFilterCardDetails,
-} from '@/types/InclusionReportTypes'
+import type { FilterCardDetail, FilterCardDetailAttribute, RuleFilterCardDetails } from '@/types/InclusionReportTypes'
 
 /** Callback to resolve an attribute configPath to a display name */
 type GetAttributeNameFn = (configPath: string) => string

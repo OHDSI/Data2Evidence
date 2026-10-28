@@ -113,8 +113,7 @@ const extractConceptSets = async (filter: IFRFilterCardContent, cdmConfig: CdmCo
       const conceptValue = constraintContent && 'value' in constraintContent ? constraintContent.value : undefined
 
       const cohortDefinitionKey: string | null =
-        get(cdmConfig, `${filter.attributes?.content?.[attributesContentIndex].configPath}.cohortDefinitionKey`) ||
-        null
+        get(cdmConfig, `${filter.attributes?.content?.[attributesContentIndex].configPath}.cohortDefinitionKey`) || null
       const conceptIdentifierType: 'name' | 'code' | 'id' | null =
         get(cdmConfig, `${filter.attributes?.content?.[attributesContentIndex].configPath}.conceptIdentifierType`) ||
         null

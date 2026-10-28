@@ -1,9 +1,5 @@
 import { ref, computed, watch, type Ref } from 'vue'
-import {
-  type InclusionReportResponse,
-  type AttritionApiResponse,
-  parseTreemapData,
-} from '@/types/InclusionReportTypes'
+import { type InclusionReportResponse, type AttritionApiResponse, parseTreemapData } from '@/types/InclusionReportTypes'
 
 import { convertTreemapData } from '../computeTreemapStats'
 import { mapAttritionApiResponseToStats } from '../computeAttritionStats'

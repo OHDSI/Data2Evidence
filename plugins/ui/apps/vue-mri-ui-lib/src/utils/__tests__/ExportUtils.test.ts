@@ -1,10 +1,5 @@
 import { afterEach, describe, it, expect } from 'vitest'
-import {
-  buildXAxisTitle,
-  readStackBarLegendFromDOM,
-  INTERACTIVE_SELECTORS,
-  stripInteractiveSVG,
-} from '../ExportUtils'
+import { buildXAxisTitle, readStackBarLegendFromDOM, INTERACTIVE_SELECTORS, stripInteractiveSVG } from '../ExportUtils'
 
 const SVG_NS = 'http://www.w3.org/2000/svg'
 

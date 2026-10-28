@@ -1,11 +1,7 @@
 <script setup lang="ts">
 import { useStore } from 'vuex'
 import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue'
-import type {
-  InclusionReportResponse,
-  AttritionApiResponse,
-  RuleFilterCardDetails,
-} from '@/types/InclusionReportTypes'
+import type { InclusionReportResponse, AttritionApiResponse, RuleFilterCardDetails } from '@/types/InclusionReportTypes'
 import GroupButtons from './components/GroupButtons.vue'
 import SummaryTable from './components/SummaryTable.vue'
 import FilterControls from './components/FilterControls.vue'
