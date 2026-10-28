@@ -60,6 +60,7 @@
             :disabled="group.disabled"
             icon-position="prepend"
             clearable
+            :invalid-date-text="getText('MRI_PA_INVALID_DATE')"
             :aria-label="`${getText(group.labelKey)} ${getText('MRI_PA_EXPLORATIONS_FILTER_FROM')}`"
             :data-testid="`explorations-filter-${group.key}-from`"
             @update:model-value="patchRange(group.key, { from: toIsoDate($event) })"
@@ -71,6 +72,7 @@
             :disabled="group.disabled"
             icon-position="prepend"
             clearable
+            :invalid-date-text="getText('MRI_PA_INVALID_DATE')"
             :aria-label="`${getText(group.labelKey)} ${getText('MRI_PA_EXPLORATIONS_FILTER_TO')}`"
             :data-testid="`explorations-filter-${group.key}-to`"
             @update:model-value="patchRange(group.key, { to: toIsoDate($event) })"

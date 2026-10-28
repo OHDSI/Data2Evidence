@@ -84,6 +84,8 @@
                           :model-value="fromIsoDate(formValues[field.id].from)"
                           size="sm"
                           clearable
+                          :menu-z-index="DATE_MENU_Z_INDEX"
+                          :invalid-date-text="getText('MRI_PA_INVALID_DATE')"
                           @update:model-value="setDateBound(field.id, 'from', $event)"
                         />
                         <span>to</span>
@@ -92,6 +94,8 @@
                           :model-value="fromIsoDate(formValues[field.id].to)"
                           size="sm"
                           clearable
+                          :menu-z-index="DATE_MENU_Z_INDEX"
+                          :invalid-date-text="getText('MRI_PA_INVALID_DATE')"
                           @update:model-value="setDateBound(field.id, 'to', $event)"
                         />
                       </div>
@@ -256,6 +260,8 @@ import RangeConstraintPatternDefinition from '@/lib/utils/RangeConstraintPattern
 
 const store = useStore()
 const getText = (key: string, param?: string | string[]) => store.getters.getText(key, param)
+
+const DATE_MENU_Z_INDEX = 10002
 
 const props = defineProps<{
   isOpen: boolean
