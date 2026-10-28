@@ -106,7 +106,12 @@ import { useStore } from 'vuex'
 import { VSwitch } from 'vuetify/components'
 import { D2eButton, D2eDatePicker, D2eSelect, fromIsoDate, toIsoDate } from '@d2e/ui'
 import type { D2eSelectItem } from '@d2e/ui'
-import { isEmpty, type DateRange, type ExplorationFilters, type MaterializationStatus } from './helpers/explorationFilters'
+import {
+  isEmpty,
+  type DateRange,
+  type ExplorationFilters,
+  type MaterializationStatus,
+} from './helpers/explorationFilters'
 
 interface Props {
   modelValue: ExplorationFilters
