@@ -172,6 +172,10 @@ function onType(value: string | null) {
 }
 
 function commitText() {
+  if (text.value === formatDate(props.modelValue, props.format)) {
+    isInvalid.value = false;
+    return;
+  }
   if (!text.value.trim()) {
     emitIfChanged(null);
     return;
