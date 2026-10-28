@@ -2,7 +2,7 @@ import type {
   FilterCardDetail,
   FilterCardDetailAttribute,
   RuleFilterCardDetails,
-} from '@/query-filter/types/InclusionReportTypes'
+} from '@/types/InclusionReportTypes'
 
 /** Callback to resolve an attribute configPath to a display name */
 type GetAttributeNameFn = (configPath: string) => string

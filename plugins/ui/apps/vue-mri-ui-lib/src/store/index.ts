@@ -18,7 +18,6 @@ import search from './modules/search'
 import shared from './modules/shared'
 import dqd from './modules/dqd'
 import cohortDefinition from './modules/cohortDefinition'
-import samples from './modules/samples'
 import wizardConfig from './modules/wizardConfig'
 
 export const createStore = () =>
@@ -44,7 +43,6 @@ export const createStore = () =>
       shared,
       dqd,
       cohortDefinition,
-      samples,
       wizardConfig,
     },
     state: {},
