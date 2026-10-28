@@ -1,7 +1,10 @@
 <script setup lang="ts">
-import AppDate from '@/lib/ui/app-date.vue'
+import { D2eDatePicker } from '@d2e/ui'
+import { toDateUpdate, toPickerDate } from '@/utils/datePickerValue'
 import { onMounted, ref, watch } from 'vue'
 import { formatDateToYMD, parseDate } from '../../utils/DateUtils'
+
+const DATE_FORMAT = 'YYYY-MM-DD'
 
 const props = defineProps<{
   value?: { StartDate: string; EndDate: string }
@@ -57,11 +60,21 @@ const updateEndDateModel = (payload: { date: string | Date; isEmpty: boolean }) 
   <div class="user-defined-input-container">
     <div>starting</div>
     <div class="date-selection-container">
-      <AppDate :date="startDateModel" @update="updateStartDateModel" />
+      <D2eDatePicker
+        :model-value="toPickerDate(startDateModel, DATE_FORMAT)"
+        :format="DATE_FORMAT"
+        clearable
+        @update:model-value="updateStartDateModel(toDateUpdate($event))"
+      />
     </div>
     <div>and ending</div>
     <div class="date-selection-container">
-      <AppDate :date="endDateModel" @update="updateEndDateModel" />
+      <D2eDatePicker
+        :model-value="toPickerDate(endDateModel, DATE_FORMAT)"
+        :format="DATE_FORMAT"
+        clearable
+        @update:model-value="updateEndDateModel(toDateUpdate($event))"
+      />
     </div>
   </div>
 </template>
@@ -89,12 +102,6 @@ const updateEndDateModel = (payload: { date: string | Date; isEmpty: boolean }) 
     height: 100%;
     display: flex;
     align-items: center;
-    ::v-deep(.app-date .form-control) {
-      min-height: 100%;
-    }
-    .app-date.form-group {
-      margin: 0px;
-    }
   }
 }
 </style>
