@@ -5,7 +5,7 @@ export type NumericValidationStatus = 'valid' | 'invalid-format' | 'negative-not
 
 export interface RequiredFiltersValidationInput {
   fields: WizardFieldDefinition[]
-  formValues: Record<string, any>
+  formValues: Record<string, unknown>
   groups: ResolvedWizardFieldGroup[]
   validateNumeric: (value: unknown, allowNegative: boolean) => NumericValidationStatus
   getText: (key: string, param?: string | string[]) => string
@@ -57,7 +57,8 @@ function getFieldError(field: WizardFieldDefinition, input: RequiredFiltersValid
   if (!required) return null
 
   if (isDateFieldType(field.type)) {
-    return hasText(value?.from) || hasText(value?.to) ? null : requiredMessage
+    const range = value as { from?: unknown; to?: unknown } | null | undefined
+    return hasText(range?.from) || hasText(range?.to) ? null : requiredMessage
   }
 
   return hasText(value) ? null : requiredMessage
