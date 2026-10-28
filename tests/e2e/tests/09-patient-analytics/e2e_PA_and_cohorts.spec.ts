@@ -214,9 +214,6 @@ test(TEST_NAME, async ({ page }) => {
   // page: a non-owner seeing a shared cohort, Rename/Delete disabled for a
   // non-owner, and materialize by a non-owner. The owner's own rename and
   // delete are still covered below.
-  //
-  // See also atlas_cohort_definition.spec.ts, where the Atlas entry point went
-  // the same way.
 
   // === TEST: Researcher 1 renames and deletes own cohort ===
   // (Only the owner can modify cohorts, so switch back to researcher_1)
