@@ -1,6 +1,5 @@
 <template>
   <div :class="['pa-component-wrapper']">
-    <AtlasView v-if="atlasStore.showAtlas" />
     <ExplorationsPage
       v-if="displayCohorts"
       @open-exploration="loadExploration"
@@ -176,9 +175,7 @@ import SplashScreen from './SplashScreen.vue'
 import ResizeObserver from './ResizeObserver.vue'
 import { Splitpanes, Pane } from 'splitpanes'
 import 'splitpanes/dist/splitpanes.css'
-import AtlasView from '../views/AtlasView.vue'
 import * as types from '../store/mutation-types'
-import { useAtlasStore } from '../stores/atlas'
 import { useUnsavedChanges } from '../composables/useUnsavedChanges'
 import { usePortalContext } from '../composables/usePortalContext'
 import { useNotificationStore } from '../stores/notifications'
@@ -230,7 +227,6 @@ export default {
       PANEL,
       splitterMinWidth: 0,
       rightPaneEverOpened: false,
-      atlasStore: useAtlasStore(),
     }
   },
   created() {
@@ -679,7 +675,6 @@ export default {
     appIcon,
     Splitpanes,
     Pane,
-    AtlasView,
   },
 }
 </script>

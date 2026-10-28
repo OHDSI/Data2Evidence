@@ -39,8 +39,7 @@ function copyD4lStencilChunks(): PluginOption {
 // Native Atlas3 single-spa plugin build for Patient Analytics (no iframe).
 // Lib mode, SystemJS format, single entry index.system.js, styles injected
 // into the host document head at runtime. Build-relevant parts are cloned
-// from vite.config.ts; the d4l loader alias and chunk staging follow the
-// proven pattern from vite.config.atlas-app.ts, adapted to the output root.
+// from vite.config.ts.
 export default defineConfig({
   base: '',
   logLevel: 'info',
@@ -115,8 +114,8 @@ export default defineConfig({
       //   [vite]: Rollup failed to resolve import "vuetify/components"
       //     from libs/d2e-ui/src/components/D2eTextField.vue
       //
-      // vite.config.atlas-app.ts carries exactly these three; this config was
-      // given the @d2e/ui aliases without them.
+      // vite.config.ts carries exactly these three; this config was given
+      // the @d2e/ui aliases without them.
       { find: 'vuetify/styles', replacement: path.join(vuetifyDir, 'lib/styles/main.css') },
       {
         find: /^vuetify\/(components|directives)(\/(.+))?$/,

@@ -352,7 +352,7 @@
       :exploration-name="dqExplorationName"
     />
 
-    <!-- Mounted once, outside the grid, as Bookmarks.vue:153-158 does.
+    <!-- Mounted once, outside the grid.
          `compareOpen` is a trigger the dialog watches, not its own visibility
          state, so it is reset only in `closeEv` (blueprint pr10/02 section 3b). -->
     <CohortComparisonDialog
@@ -509,8 +509,7 @@ const IGNORED_CLICK_TARGETS = [
  * The dialog mounts the Atlas3 `data-quality` sub-plugin
  * (plugins/atlas/subplugins/data-quality) as a single-spa parcel. Only the
  * native Atlas mount shares a document with Atlas's SystemJS runtime, so only
- * that build can load it - the iframe mount cannot, and the portal has its own
- * React DQD page.
+ * that build can load it. The portal has its own React DQD page.
  *
  * VITE_ATLAS_NATIVE is set only by vite.config.atlas-native.ts's `define`
  * block. Every other build leaves it undefined, this folds to false, and
@@ -586,15 +585,10 @@ const datasetName = computed(() => store.getters.getSelectedDatasetName || datas
 /**
  * Switching the source is only possible when Atlas is the host.
  *
- * VITE_ATLAS_HOSTED, not VITE_ATLAS_NATIVE. The two are not the same question
- * and reusing the latter here was a bug: it is defined only by the native
- * build, where it exists to scope the Vuetify theme stylesheet because that
- * mount shares a document with Atlas3's own Vuetify (see plugins/vuetify.ts).
- * The build that actually ships to /atlas is the iframe one, which leaves it
- * undefined -- so this read false there, the switcher was compiled out, and
- * Data Exploration in Atlas offered only the dataset it was handed, with no way
- * to change it. Its own document means it must never take the scoping, so the
- * two flags have to stay apart.
+ * VITE_ATLAS_HOSTED, not VITE_ATLAS_NATIVE. The two are not the same question:
+ * VITE_ATLAS_NATIVE exists to scope the Vuetify theme stylesheet because the
+ * native mount shares a document with Atlas3's own Vuetify (see
+ * plugins/vuetify.ts). Keep the two flags apart.
  *
  * In the portal the dataset arrives through customProps and nothing flows
  * back, so changing it here would desynchronise the app from the shell that
