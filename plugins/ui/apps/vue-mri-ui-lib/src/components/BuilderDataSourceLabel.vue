@@ -1,7 +1,7 @@
 <template>
   <div v-if="isAtlasHosted" ref="rootRef" class="builder-data-source" data-testid="builder-datasource">
     <span class="builder-data-source__label">{{ getText('MRI_PA_BUILDER_DATASOURCE') }}</span>
-    <v-tooltip location="bottom" :text="datasetName" :disabled="!nameTruncated">
+    <D2eTooltip location="bottom" :text="datasetName" :disabled="!nameTruncated">
       <template #activator="{ props: tooltipProps }">
         <span
           class="builder-data-source__name"
@@ -12,14 +12,14 @@
           {{ datasetName }}
         </span>
       </template>
-    </v-tooltip>
+    </D2eTooltip>
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useStore } from 'vuex'
-import { isTruncated } from '@d2e/ui'
+import { D2eTooltip, isTruncated } from '@d2e/ui'
 import { usePortalContext } from '../composables/usePortalContext'
 
 const isAtlasHosted = import.meta.env.VITE_ATLAS_HOSTED === 'true'
