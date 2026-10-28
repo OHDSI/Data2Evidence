@@ -28,9 +28,7 @@ const store = useStore()
 const portalContext = usePortalContext()
 const getText = (key: string): string => store.getters.getText(key)
 
-const datasetName = computed<string>(
-  () => store.getters.getSelectedDatasetName || store.getters.getSelectedDataset?.id || portalContext.datasetId
-)
+const datasetName = computed<string>(() => store.getters.getSelectedDatasetName || portalContext.datasetId)
 
 const rootRef = ref<HTMLElement | null>(null)
 const nameTruncated = ref(false)
