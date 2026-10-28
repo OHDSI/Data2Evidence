@@ -1,4 +1,3 @@
-import _ from 'lodash'
 import { ExtCohortConcept } from './types'
 import { api } from './api'
 import { formatConceptSetRef, parseConceptSetRef } from '@/utils/conceptSetRef'

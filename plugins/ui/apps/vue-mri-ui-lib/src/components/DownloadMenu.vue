@@ -40,7 +40,6 @@
 </template>
 <script lang="ts">
 import { mapActions, mapGetters } from 'vuex'
-import ImageExport from './ImageExport.vue'
 import DownloadCSVDialog from './DownloadCSVDialog.vue'
 import bsDropdown from '../lib/ui/bs-dropdown.vue'
 import bsDropdownItem from '../lib/ui/bs-dropdown-item.vue'
@@ -48,9 +47,12 @@ import DisabledHoverPopover from './DisabledHoverPopover.vue'
 import VSnackbar from './vuetify/VSnackbar.vue'
 import appIcon from '../lib/ui/app-icon.vue'
 import Constants from '../utils/Constants'
+import { lazyComponent } from '../utils/lazyComponent'
 import { formatNumber } from '../utils/NumberUtils'
 import { generateDownloadFileName } from '../utils/generateDownloadFileName'
 import { clearPendingSaveTarget, pickSaveTarget, setPendingSaveTarget } from '../utils/saveFile'
+
+const ImageExport = lazyComponent('ImageExport', () => import('./ImageExport.vue'))
 
 export default {
   name: 'downloadMenu',

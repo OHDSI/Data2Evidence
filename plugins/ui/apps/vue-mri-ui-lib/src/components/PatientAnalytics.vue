@@ -153,10 +153,10 @@ declare var sap
 const myWindow: any = window
 
 import { mapActions, mapGetters, mapMutations } from 'vuex'
-// lodash, not the underscore debounce used elsewhere in this app: underscore caches
-// Date.now at import time, so its trailing call never elapses under vitest's fake
-// timers and the coalescing below could not be covered by a test.
-import { debounce } from 'lodash'
+// lodash, not underscore: underscore caches Date.now at import time, so its
+// trailing call never elapses under vitest's fake timers and the coalescing
+// below could not be covered by a test.
+import debounce from 'lodash/debounce'
 import { registerPaTools } from '@/ai/webmcpServer'
 import { publishPaTools } from '@/ai/paToolBridge'
 import icon from '../lib/ui/app-icon.vue'

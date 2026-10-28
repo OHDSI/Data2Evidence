@@ -15,7 +15,7 @@ import {
 } from '../constants'
 import type { InclusionReportResponse, RuleFilterCardDetails } from '@/types/InclusionReportTypes'
 import { getRuleDisplayName } from '@/utils/filterCardUtils'
-import { wrapTextByWidth, wrapTextToLineLimit } from '@/utils/ExportUtils'
+import { wrapTextByWidth, wrapTextToLineLimit } from '@/utils/textWrap'
 import { createResetViewButton, ignoreNonPrimaryDrag } from '@/utils/plotlyResetView'
 
 export interface FunnelChartData {
