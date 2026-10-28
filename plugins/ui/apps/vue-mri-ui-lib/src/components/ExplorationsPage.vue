@@ -1017,7 +1017,7 @@ const onCardClick = (card: { bmkId: string | null; chartType: string | null }, e
   if (!card.bmkId) return
   const target = event.target as HTMLElement | null
   if (target?.closest(IGNORED_CLICK_TARGETS)) return
-  // Allows highlighting text on the card without opening it, as BookmarkItems does.
+  // Allows highlighting text on the card without opening it.
   if ((window.getSelection()?.toString().length ?? 0) > 0) return
   emit('open-exploration', card.bmkId, card.chartType)
 }
@@ -1287,7 +1287,7 @@ watch(dashboardFlowModalOpen, async (isOpen, wasOpen) => {
   }
 })
 
-// Mirrors Bookmarks.addCohort: a D2E record materialises its bookmark, an Atlas
+// A D2E record materialises its bookmark, an Atlas
 // record materialises its cohort definition.
 const materializeProps = computed(() => {
   const target = materializeTarget.value
@@ -1326,8 +1326,8 @@ const onMaterializeClose = (open: boolean): void => {
 const duplicatingIds = ref<Set<string>>(new Set())
 
 const moreItems = (card: { source: BookmarkDisplay }) => {
-  // Do not offer an action the user cannot perform: the same ownership guard
-  // BookmarkItems applies to rename and delete.
+  // Do not offer an action the user cannot perform: rename and delete share
+  // one ownership guard.
   const owner = card.source.bookmark ?? card.source.atlasCohortDefinition ?? null
   // Also while the name is pending: canModifyBookmark would answer "not yours"
   // and the action would be offered as permanently disabled rather than as not
@@ -1335,7 +1335,7 @@ const moreItems = (card: { source: BookmarkDisplay }) => {
   const disabled = usernamePending.value || !canModifyBookmark(owner, portalContext.username)
   // Rename has no path for an Atlas-backed record: the D2E branch dereferences
   // `bookmark.id` and the materialized branch renames the cohort rather than the
-  // definition. Bookmarks.vue gated on the type for exactly this reason.
+  // definition, so it is gated on the type.
   const renameDisabled = disabled || !['D', 'M', 'D+M'].includes(getBookmarkType(card.source))
   return [
     {

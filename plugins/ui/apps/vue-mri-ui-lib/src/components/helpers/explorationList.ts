@@ -46,9 +46,8 @@ const toMs = (value: unknown): number => {
 /**
  * The record's effective "last updated" instant, in ms. 0 when unknown.
  *
- * Every access is optional. `BookmarkItems.vue:133` dereferences
- * `cohortDefinition.createdOn` without a guard, which throws on a bookmark-only
- * record; that bug is deliberately not carried over.
+ * Every access is optional, so a bookmark-only record without a
+ * `cohortDefinition` does not throw.
  */
 export function lastUpdatedMs(card): number {
   return (

@@ -738,8 +738,8 @@ describe('createPaTools', () => {
     it('captures the post-reset baseline so an untouched new cohort reports clean', async () => {
       const store = makeStore()
       // resetChart replaces the live cohort definition, so the baseline has to be the
-      // RESET state and not the cohort that was open before — which is why
-      // Bookmarks.vue addNewCohort() snapshots after `await this.reset()` + $nextTick.
+      // RESET state and not the cohort that was open before, so the snapshot is
+      // taken after `resetChart` settles.
       store.dispatch.mockImplementation((type: string) => {
         if (type === 'resetChart') store.getters.getBookmarksData = { name: 'New cohort', cards: [] }
         return Promise.resolve(undefined)

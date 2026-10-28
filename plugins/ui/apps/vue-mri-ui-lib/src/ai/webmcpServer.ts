@@ -324,7 +324,7 @@ export function createPaTools(store: Store<any>, hooks: PaComponentHooks = {}): 
         },
       },
       async execute({ name }: { name?: string } = {}) {
-        // Mirror Bookmarks.vue addNewCohort(): a brand-new unsaved active bookmark
+        // A brand-new unsaved active bookmark
         // (no bmkId, isNew) + a blank IFR/chart from config defaults.
         store.commit('SET_ACTIVE_BOOKMARK', { bookmarkname: name || 'New cohort', isNew: true })
         await store.dispatch('resetChart')
