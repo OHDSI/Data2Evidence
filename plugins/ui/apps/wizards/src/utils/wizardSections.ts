@@ -107,6 +107,42 @@ export function getFormGroupValidationErrors(
   );
 }
 
+export type WizardInvalidTarget = { kind: "field"; name: string } | { kind: "group"; groupId: string };
+
+function getFieldInputNames(field: FieldDefinition): string[] {
+  return field.type === "yearRange" ? [`${field.id}_from`, `${field.id}_to`] : [field.id];
+}
+
+function findFirstInvalidFieldName(
+  fields: FieldDefinition[],
+  fieldErrorNames: ReadonlySet<string>,
+): string | undefined {
+  return fields.flatMap(getFieldInputNames).find((name) => fieldErrorNames.has(name));
+}
+
+/**
+ * Returns the first invalid element in display order: within each group,
+ * field errors come before the group's own min/max error.
+ */
+export function getFirstInvalidTarget(
+  layout: ResolvedWizardFormLayout,
+  fieldErrorNames: readonly string[],
+  groupErrors: Record<string, string>,
+): WizardInvalidTarget | null {
+  const errorNames = new Set(fieldErrorNames);
+
+  for (const section of layout.sections) {
+    for (const group of section.groups) {
+      const fieldName = findFirstInvalidFieldName(group.fields, errorNames);
+      if (fieldName) return { kind: "field", name: fieldName };
+      if (groupErrors[group.id]) return { kind: "group", groupId: group.id };
+    }
+  }
+
+  const ungroupedFieldName = findFirstInvalidFieldName(layout.ungroupedFields, errorNames);
+  return ungroupedFieldName ? { kind: "field", name: ungroupedFieldName } : null;
+}
+
 export interface YearRangeErrors {
   from?: string;
   to?: string;

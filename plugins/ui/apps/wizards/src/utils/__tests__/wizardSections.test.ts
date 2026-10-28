@@ -3,6 +3,7 @@ import type { FieldDefinition, WizardFormSection } from "../../types/wizard";
 import {
   getFieldGroupCompletionHint,
   getFieldGroupValidationMessage,
+  getFirstInvalidTarget,
   getFormGroupValidationErrors,
   getYearRangeErrors,
   isFieldDisabledByGroupLimit,
@@ -98,6 +99,49 @@ describe("getFormGroupValidationErrors", () => {
 
   it("returns no errors for a layout without sections", () => {
     expect(getFormGroupValidationErrors(resolveWizardFormLayout(fields), {})).toEqual({});
+  });
+});
+
+describe("getFirstInvalidTarget", () => {
+  const yearField: FieldDefinition = { id: "year", type: "yearRange", label: "Year", required: true };
+  const layout = resolveWizardFormLayout([...fields, yearField], sections);
+  const groupErrors = { "body-measurement": "Choose at least one measurement." };
+
+  it("returns a group error displayed above a later field error", () => {
+    expect(getFirstInvalidTarget(layout, ["year_from", "year_to"], groupErrors)).toEqual({
+      kind: "group",
+      groupId: "body-measurement",
+    });
+  });
+
+  it("returns a field error inside a group before that group's own error", () => {
+    expect(getFirstInvalidTarget(layout, ["condition1", "weight"], groupErrors)).toEqual({
+      kind: "field",
+      name: "weight",
+    });
+  });
+
+  it("returns the first ungrouped field error in display order when groups are valid", () => {
+    expect(getFirstInvalidTarget(layout, ["year_to", "condition1"], {})).toEqual({ kind: "field", name: "condition1" });
+  });
+
+  it("returns the from input of a year range before its to input", () => {
+    const yearOnlyLayout = resolveWizardFormLayout([yearField]);
+    expect(getFirstInvalidTarget(yearOnlyLayout, ["year_to", "year_from"], {})).toEqual({
+      kind: "field",
+      name: "year_from",
+    });
+  });
+
+  it("returns field errors in display order for a layout without sections", () => {
+    expect(getFirstInvalidTarget(resolveWizardFormLayout(fields), ["condition1", "bmi"], {})).toEqual({
+      kind: "field",
+      name: "bmi",
+    });
+  });
+
+  it("returns null when nothing is invalid", () => {
+    expect(getFirstInvalidTarget(layout, [], {})).toBeNull();
   });
 });
 

@@ -13,6 +13,7 @@ import { WizardDashboardModal } from "./WizardDashboardModal";
 import { useWizardDashboardFlow } from "../hooks/useWizardDashboardFlow";
 import {
   getFieldGroupCompletionHint,
+  getFirstInvalidTarget,
   getFormGroupValidationErrors,
   getYearRangeErrors,
   isFieldDisabledByGroupLimit,
@@ -110,11 +111,12 @@ export function StepForm() {
     watch,
     setValue,
     getValues,
+    setFocus,
     formState: { errors, isSubmitted },
   } = useForm({
     mode: "onSubmit",
     reValidateMode: "onChange",
-    shouldFocusError: true,
+    shouldFocusError: false,
     defaultValues: defaultFormValues,
   });
 
@@ -131,15 +133,20 @@ export function StepForm() {
     groupElement?.querySelector<HTMLElement>("input:not(:disabled), select:not(:disabled)")?.focus();
   };
 
+  const focusFirstInvalid = (fieldErrorNames: string[], values: Record<string, unknown>) => {
+    const target = getFirstInvalidTarget(formLayout, fieldErrorNames, getFormGroupValidationErrors(formLayout, values));
+    if (target?.kind === "field") setFocus(target.name);
+    if (target?.kind === "group") focusFirstFieldInGroup(target.groupId);
+    return target !== null;
+  };
+
   const submitWith = (handler: (data: Record<string, any>) => void | Promise<void>) => (event?: BaseSyntheticEvent) =>
-    handleSubmit((data) => {
-      const [firstInvalidGroupId] = Object.keys(getFormGroupValidationErrors(formLayout, data));
-      if (firstInvalidGroupId) {
-        focusFirstFieldInGroup(firstInvalidGroupId);
-        return;
-      }
-      return handler(data);
-    })(event);
+    handleSubmit(
+      (data) => (focusFirstInvalid([], data) ? undefined : handler(data)),
+      (fieldErrors) => {
+        focusFirstInvalid(Object.keys(fieldErrors), getValues());
+      },
+    )(event);
 
   const onSubmit = async (data: Record<string, any>) => {
     updateFormData(data);
