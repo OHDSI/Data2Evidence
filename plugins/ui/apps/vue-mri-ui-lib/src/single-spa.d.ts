@@ -14,7 +14,7 @@ interface ImportMetaEnv {
   readonly VITE_PATH?: string
   /** Set by the native Atlas build only; scopes the Vuetify theme stylesheet. */
   readonly VITE_ATLAS_NATIVE?: string
-  /** Set by both Atlas builds: Atlas is the host, so the app owns its data source. */
+  /** Set by the native Atlas build: Atlas is the host, so the app owns its data source. */
   readonly VITE_ATLAS_HOSTED?: string
   readonly VITE_CLIENT_ID?: string
   readonly VITE_DATASET_ID?: string
