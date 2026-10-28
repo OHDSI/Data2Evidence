@@ -1,10 +1,6 @@
 import { computed, ref, watch, type Ref } from 'vue'
 import { loadConceptSets } from '@/services/ConceptSetApiService'
-import type {
-  ConceptSetAction,
-  ConceptSetDomainValues,
-  ConceptSetItemDisplay,
-} from '@/types/ConceptSetTypes'
+import type { ConceptSetAction, ConceptSetDomainValues, ConceptSetItemDisplay } from '@/types/ConceptSetTypes'
 
 export interface Table1ConceptSetSelection {
   id: string

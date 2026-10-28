@@ -1,8 +1,4 @@
-import {
-  type InclusionReportResponse,
-  type AttritionApiResponse,
-  parseTreemapData,
-} from '@/types/InclusionReportTypes'
+import { type InclusionReportResponse, type AttritionApiResponse, parseTreemapData } from '@/types/InclusionReportTypes'
 
 export type AttritionStat = {
   id: number
