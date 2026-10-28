@@ -248,8 +248,7 @@ export default {
   },
   watch: {
     'querystring.bmkId'(bmkId) {
-      // Restore the bookmark referenced by the URL (?bmkId=). This watch used to
-      // live in Bookmarks.vue, which is no longer mounted.
+      // Restore the bookmark referenced by the URL (?bmkId=).
       if (bmkId) {
         this.loadExploration(bmkId)
       }
@@ -492,8 +491,7 @@ export default {
       return uniqueName
     },
     startNewExploration() {
-      // Moved from Bookmarks.addNewCohort, which no longer mounts. Opens the
-      // builder on a fresh, uniquely named cohort.
+      // Opens the builder on a fresh, uniquely named cohort.
       this.unsavedChanges.guard(async () => {
         const cohortName = this.checkCohortName(this.getText('MRI_PA_EXPLORATIONS_NEW_NAME'))
         this[types.SET_ACTIVE_BOOKMARK]({ bookmarkname: cohortName, isNew: true })
@@ -507,7 +505,7 @@ export default {
       })
     },
     loadExploration(bmkId, chartType = null) {
-      // Mirrors Bookmarks.loadBookmarkCheck: reopening the exploration that is
+      // Reopening the exploration that is
       // already active must not re-load it, or an in-progress edit is discarded
       // and the unsaved-changes guard fires for a no-op.
       if (this.getActiveBookmark && bmkId === this.getActiveBookmark.bmkId) {
@@ -518,8 +516,8 @@ export default {
         this.loadbookmarkToState({ bmkId, chartType })
           .then(() => this.toggleCohorts(false))
           .catch(() => {
-            // The saved filter does not fit the active config. Bookmarks.vue
-            // showed a message box for this; without it the click looks dead.
+            // The saved filter does not fit the active config; without a
+            // message the click looks dead.
             this.notifications.setAlertMessage({
               message: this.getText('MRI_PA_BMK_COMPATIBLE_ERROR'),
               messageType: 'error',
