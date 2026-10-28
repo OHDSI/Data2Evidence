@@ -5,6 +5,7 @@
       :close-on-content-click="false"
       location="bottom start"
       :offset="4"
+      :z-index="menuZIndex"
       content-class="d2e-date-picker__menu"
     >
       <template #activator="{ props: activatorProps }">
@@ -65,7 +66,13 @@ import {
   VTextField,
 } from "vuetify/components";
 import { computed, mergeProps, nextTick, ref, useAttrs, watch } from "vue";
-import { formatDate, hasTime, parseDate, withTimeOf } from "./datePickerFormat";
+import {
+  formatDate,
+  hasTime,
+  isWithinDays,
+  parseDate,
+  withTimeOf,
+} from "./datePickerFormat";
 import { DATE_PICKER_SIZE_MAP } from "./datePickerSizes";
 import type {
   D2eDatePickerIconPosition,
@@ -99,6 +106,7 @@ interface Props {
   max?: Date | null;
   errorMessages?: string | string[];
   invalidDateText?: string;
+  menuZIndex?: number | string;
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -114,6 +122,7 @@ const props = withDefaults(defineProps<Props>(), {
   max: null,
   errorMessages: undefined,
   invalidDateText: "Invalid date",
+  menuZIndex: undefined,
 });
 
 const emit = defineEmits<{
@@ -168,7 +177,7 @@ function commitText() {
     return;
   }
   const parsed = parseDate(text.value, props.format);
-  if (!parsed) {
+  if (!parsed || !isWithinDays(parsed, props.min, props.max)) {
     isInvalid.value = true;
     return;
   }

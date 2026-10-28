@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   formatDate,
   hasTime,
+  isWithinDays,
   parseDate,
   withTimeOf,
 } from "../components/datePickerFormat";
@@ -109,5 +110,34 @@ describe("withTimeOf", () => {
     const picked = new Date(2026, 9, 12);
     withTimeOf(picked, new Date(2025, 0, 1, 14, 30, 15));
     expect(picked.getHours()).toBe(0);
+  });
+});
+
+describe("isWithinDays", () => {
+  const day = new Date(2026, 9, 2, 23, 59, 59);
+
+  it("accepts any day when no bound is set", () => {
+    expect(isWithinDays(day, null, null)).toBe(true);
+    expect(isWithinDays(day, undefined, undefined)).toBe(true);
+  });
+
+  it("accepts the bound days themselves whatever their time", () => {
+    expect(isWithinDays(day, new Date(2026, 9, 2, 12), null)).toBe(true);
+    expect(isWithinDays(day, null, new Date(2026, 9, 2, 0))).toBe(true);
+  });
+
+  it("rejects a day before min or after max", () => {
+    expect(isWithinDays(day, new Date(2026, 9, 3), null)).toBe(false);
+    expect(isWithinDays(day, null, new Date(2026, 9, 1))).toBe(false);
+  });
+
+  it("rejects a day after max inside a range", () => {
+    expect(
+      isWithinDays(
+        new Date(2026, 11, 1),
+        new Date(2026, 8, 1),
+        new Date(2026, 9, 1)
+      )
+    ).toBe(false);
   });
 });

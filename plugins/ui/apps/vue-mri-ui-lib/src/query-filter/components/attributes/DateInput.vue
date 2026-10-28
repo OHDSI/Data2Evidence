@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { D2eDatePicker } from '@d2e/ui'
+import { useStore } from 'vuex'
 import { toDateUpdate, toPickerDate } from '@/utils/datePickerValue'
 import SelectMaterial from '../SelectMaterial.vue'
 import { dateRangeOptions } from '../../utils/AtlasUtils'
@@ -7,6 +8,9 @@ import { computed, nextTick, ref, watch } from 'vue'
 import { formatDateToYMD, parseDate } from '../../utils/DateUtils'
 
 const DATE_FORMAT = 'YYYY-MM-DD'
+
+const store = useStore()
+const getText = (key: string): string => store.getters.getText(key)
 
 // Props now use internal format: operator (string like 'GREATER_THAN'), value (ISO date string), and extent (ISO date string)
 const props = defineProps<{
@@ -122,6 +126,7 @@ const updateDateExtentModel = (payload: { date: string | Date; isEmpty: boolean 
         :model-value="toPickerDate(dateValueModel, DATE_FORMAT)"
         :format="DATE_FORMAT"
         clearable
+        :invalid-date-text="getText('MRI_PA_INVALID_DATE')"
         @update:model-value="updateDateValueModel(toDateUpdate($event))"
       />
     </div>
@@ -132,6 +137,7 @@ const updateDateExtentModel = (payload: { date: string | Date; isEmpty: boolean 
         :model-value="toPickerDate(dateExtentModel, DATE_FORMAT)"
         :format="DATE_FORMAT"
         clearable
+        :invalid-date-text="getText('MRI_PA_INVALID_DATE')"
         @update:model-value="updateDateExtentModel(toDateUpdate($event))"
       />
     </div>

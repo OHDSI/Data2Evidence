@@ -1,10 +1,14 @@
 <script setup lang="ts">
 import { D2eDatePicker } from '@d2e/ui'
+import { useStore } from 'vuex'
 import { toDateUpdate, toPickerDate } from '@/utils/datePickerValue'
 import { onMounted, ref, watch } from 'vue'
 import { formatDateToYMD, parseDate } from '../../utils/DateUtils'
 
 const DATE_FORMAT = 'YYYY-MM-DD'
+
+const store = useStore()
+const getText = (key: string): string => store.getters.getText(key)
 
 const props = defineProps<{
   value?: { StartDate: string; EndDate: string }
@@ -64,6 +68,7 @@ const updateEndDateModel = (payload: { date: string | Date; isEmpty: boolean }) 
         :model-value="toPickerDate(startDateModel, DATE_FORMAT)"
         :format="DATE_FORMAT"
         clearable
+        :invalid-date-text="getText('MRI_PA_INVALID_DATE')"
         @update:model-value="updateStartDateModel(toDateUpdate($event))"
       />
     </div>
@@ -73,6 +78,7 @@ const updateEndDateModel = (payload: { date: string | Date; isEmpty: boolean }) 
         :model-value="toPickerDate(endDateModel, DATE_FORMAT)"
         :format="DATE_FORMAT"
         clearable
+        :invalid-date-text="getText('MRI_PA_INVALID_DATE')"
         @update:model-value="updateEndDateModel(toDateUpdate($event))"
       />
     </div>

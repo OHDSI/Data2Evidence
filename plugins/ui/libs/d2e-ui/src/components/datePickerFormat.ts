@@ -81,6 +81,19 @@ export function parseDate(text: string, format: string): Date | null {
   );
 }
 
+const dayStamp = (date: Date) =>
+  new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
+
+export function isWithinDays(
+  date: Date,
+  min: Date | null | undefined,
+  max: Date | null | undefined
+): boolean {
+  if (isValidDate(min) && dayStamp(date) < dayStamp(min)) return false;
+  if (isValidDate(max) && dayStamp(date) > dayStamp(max)) return false;
+  return true;
+}
+
 export function withTimeOf(day: Date, timeSource: Date | null): Date {
   return new Date(
     day.getFullYear(),
