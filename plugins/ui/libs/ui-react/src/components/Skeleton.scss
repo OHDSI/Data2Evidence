@@ -1,0 +1,12 @@
+// Doubled specificity to sit over MUI's theme background.
+.d2e-skeleton.d2e-skeleton {
+  // Figma --action/hover: a 4% black tint (not MUI's default ~11%).
+  background-color: rgba(0, 0, 0, 0.04);
+
+  // 4px radius for the bar shapes; circular keeps its 50%.
+  &.MuiSkeleton-rounded,
+  &.MuiSkeleton-text,
+  &.MuiSkeleton-rectangular {
+    border-radius: var(--d2e-radius-sm);
+  }
+}

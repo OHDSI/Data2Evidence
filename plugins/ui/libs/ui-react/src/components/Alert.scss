@@ -1,0 +1,109 @@
+.d2e-alert {
+  display: flex;
+  align-items: flex-start;
+  font-family: var(--d2e-font-family);
+  color: var(--d2e-color-neutral-black);
+  background: var(--d2e-color-primary-xtra-lightest);
+
+  &--inline {
+    border-radius: var(--d2e-radius-md);
+    padding: 6px 16px;
+  }
+
+  &--banner {
+    border-radius: 0;
+    padding: 6px 24px;
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  // Severity surfaces + icon colours (Functional palette). Warning surface is the
+  // alert-specific #FFF4E5, not the chip's warning-light.
+  &--error {
+    background: var(--d2e-color-alarm-light);
+    .d2e-alert__icon {
+      color: var(--d2e-color-alarm);
+    }
+  }
+
+  &--warning {
+    background: #fff4e5;
+    .d2e-alert__icon {
+      color: var(--d2e-color-warning);
+    }
+  }
+
+  &--success {
+    background: var(--d2e-color-success-light);
+    .d2e-alert__icon {
+      color: var(--d2e-color-success);
+    }
+  }
+
+  &--info {
+    background: var(--d2e-color-primary-xtra-lightest);
+    .d2e-alert__icon {
+      color: var(--d2e-color-primary);
+    }
+  }
+
+  &__icon {
+    display: flex;
+    padding: 7px 12px 7px 0;
+
+    .MuiSvgIcon-root {
+      font-size: 22px;
+    }
+  }
+
+  &__text {
+    flex: 1 0 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+    padding-block: 8px;
+    overflow: hidden;
+  }
+
+  &__title {
+    font-size: var(--d2e-font-subtitle1-size, 16px);
+    font-weight: 600;
+    line-height: 1.5;
+    color: var(--d2e-color-neutral-black);
+  }
+
+  &__message {
+    font-size: var(--d2e-font-body2-size);
+    font-weight: var(--d2e-font-body2-weight);
+    line-height: 1.5;
+    color: var(--d2e-color-neutral-black);
+  }
+
+  &__action {
+    flex: none;
+    padding: 4px 0 0 16px;
+  }
+
+  &__close {
+    flex: none;
+    padding: 4px 0 0 16px;
+
+    .MuiIconButton-root {
+      padding: 5px;
+      color: var(--d2e-color-neutral);
+    }
+
+    .MuiSvgIcon-root {
+      font-size: 20px;
+    }
+  }
+
+  // Floating toast: inline shape + soft drop shadow (Figma: 0 0 5px rgba(0,0,0,.1)).
+  &--toast {
+    width: 380px;
+    max-width: 100%;
+    box-sizing: border-box;
+    box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+  }
+}
