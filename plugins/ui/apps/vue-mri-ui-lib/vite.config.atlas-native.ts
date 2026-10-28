@@ -7,6 +7,7 @@ import path from 'path'
 import { copyFileSync, mkdirSync, readdirSync } from 'fs'
 import { createRequire } from 'module'
 import { vueDir, vuetifyDir } from './vite.resolve-deps'
+import { postcssWoff2Only } from './build/postcss-woff2-only'
 
 // The d4l web components use Stencil lazy loading: entry chunks are resolved at
 // runtime relative to the importing chunk's URL, invisible to Rollup's static
@@ -149,6 +150,7 @@ export default defineConfig({
             },
           },
         },
+        postcssWoff2Only(),
       ],
     },
     preprocessorOptions: {
