@@ -15,9 +15,16 @@
  * so a relative base would resolve underneath it. vue-mri-ui-lib's dqd store
  * module reaches the same service through the same root prefix.
  */
+import { parseCheckResults } from '../checks/parse';
+import type { DqdCheckRow } from '../checks/types';
+
 const JOBPLUGINS_BASE = '/jobplugins';
 
-/** Prefect flow-run states, as the portal enumerates them (SystemAdmin/DQD/types.ts). */
+/**
+ * Prefect flow-run states. The portal enumerates the first nine
+ * (SystemAdmin/DQD/types.ts); jobplugins knows the rest too
+ * (plugins/functions/jobplugins/src/const.ts), and a run can report any of them.
+ */
 export type FlowRunStateType =
   | 'COMPLETED'
   | 'SCHEDULED'
@@ -27,7 +34,12 @@ export type FlowRunStateType =
   | 'CANCELLING'
   | 'CANCELLED'
   | 'FAILED'
-  | 'CRASHED';
+  | 'CRASHED'
+  | 'LATE'
+  | 'AWAITINGRETRY'
+  | 'RETRYING'
+  | 'SUSPENDED'
+  | 'TIMEDOUT';
 
 export interface FlowRun {
   id: string;
@@ -118,15 +130,32 @@ function reportFailure(attempted: string, cause: unknown): Error {
   return new Error(LOAD_FAILED_MESSAGE);
 }
 
-/** Latest data-quality flow run for the dataset, or null when none exists. */
+/**
+ * Latest data-quality flow run for the dataset, or for one cohort within it.
+ * Null when none exists.
+ *
+ * Two routes, because the service keeps the two populations apart:
+ * `getLatestFlowRunWithoutCohort` filters cohort runs out of the dataset's
+ * list, so asking the dataset route for a cohort's run returns a different run
+ * rather than nothing. The overview endpoint that renders the result takes a
+ * run id and does not care which route found it.
+ */
 export async function getLatestDataQualityFlowRun(
   datasetId: string,
   token: string,
+  cohortDefinitionId?: string,
 ): Promise<FlowRun | null> {
+  const scope = cohortDefinitionId
+    ? `cohort ${cohortDefinitionId} of dataset ${datasetId}`
+    : `dataset ${datasetId}`;
+  // encodeURIComponent because the id arrives from a host, not from a constant.
+  const path = cohortDefinitionId
+    ? `/dqd/data-quality/cohort/${encodeURIComponent(cohortDefinitionId)}/flow-run/latest`
+    : '/dqd/data-quality/flow-run/latest';
   try {
-    return await getJson<FlowRun>('/dqd/data-quality/flow-run/latest', { datasetId }, token);
+    return await getJson<FlowRun>(path, { datasetId }, token);
   } catch (cause) {
-    throw reportFailure(`could not load the latest flow run for dataset ${datasetId}`, cause);
+    throw reportFailure(`could not load the latest flow run for ${scope}`, cause);
   }
 }
 
@@ -145,6 +174,34 @@ export async function getDataQualityOverview(
   } catch (cause) {
     throw reportFailure(
       `could not load the overview for flow run ${flowRunId} (dataset ${datasetId})`,
+      cause,
+    );
+  }
+}
+
+/**
+ * Every check result for one flow run, validated (see parseCheckResults), or
+ * null when the run holds no DQD artifact. Cohort scope comes from the run: a
+ * cohort's run only holds that cohort's checks.
+ *
+ * Call it only for a COMPLETED run. For a run still going, jobplugins waits for
+ * it to finish - up to ten minutes - before it answers.
+ */
+export async function getCheckResults(
+  flowRunId: string,
+  datasetId: string,
+  token: string,
+): Promise<DqdCheckRow[] | null> {
+  try {
+    const body = await getJson<unknown>(
+      `/dqd/data-quality/flow-run/${encodeURIComponent(flowRunId)}/results`,
+      { datasetId },
+      token,
+    );
+    return body === null ? null : parseCheckResults(body);
+  } catch (cause) {
+    throw reportFailure(
+      `could not load check results for flow run ${flowRunId} (dataset ${datasetId})`,
       cause,
     );
   }
