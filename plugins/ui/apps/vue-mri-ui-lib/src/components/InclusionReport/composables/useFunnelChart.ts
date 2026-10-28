@@ -14,7 +14,7 @@ import {
 } from '../constants'
 import type { InclusionReportResponse, RuleFilterCardDetails } from '@/types/InclusionReportTypes'
 import { getRuleDisplayName } from '@/utils/filterCardUtils'
-import { wrapTextByWidth, wrapTextToLineLimit } from '@/utils/ExportUtils'
+import { wrapTextByWidth, wrapTextToLineLimit } from '@/utils/textWrap'
 
 export interface FunnelChartData {
   /** One y axis label per funnel point, each distinct from the rest - see `labelPoints` */

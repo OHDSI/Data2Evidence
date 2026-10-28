@@ -122,7 +122,7 @@ for a real dataset.
 | `components/RulesTable.vue` | Draggable table (`vue-draggable-plus`). Dragging is disabled on the Intersect tab. |
 | `components/RuleNameContent.vue` | Renders one rule name with its constraints underneath |
 | `components/SummaryTable.vue`, `components/FilterControls.vue` | Summary block, and the ANY/ALL and PASSED/FAILED selects |
-| Outside this folder | [`../../types/InclusionReportTypes.ts`](../../types/InclusionReportTypes.ts), [`../../utils/filterCardUtils.ts`](../../utils/filterCardUtils.ts) (`getInclusionReportFilterCardDetails`, `getRuleNameParts`, `getRuleDisplayName`), [`../../utils/ExportUtils.ts`](../../utils/ExportUtils.ts) (`wrapTextByWidth`, `wrapTextToLineLimit`, `truncateTextToWidth`) |
+| Outside this folder | [`../../types/InclusionReportTypes.ts`](../../types/InclusionReportTypes.ts), [`../../utils/filterCardUtils.ts`](../../utils/filterCardUtils.ts) (`getInclusionReportFilterCardDetails`, `getRuleNameParts`, `getRuleDisplayName`), [`../../utils/textWrap.ts`](../../utils/textWrap.ts) (`wrapTextByWidth`, `wrapTextToLineLimit`, `truncateTextToWidth`) |
 
 ---
 
@@ -240,7 +240,7 @@ Unit tests are in `__tests__/`, with related specs under `src/utils/__tests__/`.
 `plugins/ui/apps/vue-mri-ui-lib`:
 
 ```bash
-npx vitest run src/components/InclusionReport src/utils/__tests__/filterCardUtils.test.ts src/utils/__tests__/ExportUtils.test.ts
+npx vitest run src/components/InclusionReport src/utils/__tests__/filterCardUtils.test.ts src/utils/__tests__/textWrap.test.ts
 ```
 
 `filterCardUtils.test.ts` covers Basic Data under a translated card name and card names that
