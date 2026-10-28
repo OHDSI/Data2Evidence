@@ -613,6 +613,10 @@ def extract_data_elements(dicom_files) -> pd.DataFrame:
         logger.error(processing_error_msg)
         raise Exception(processing_error_msg)
 
+    if len(extracted_metadata) == 0:
+        raise Exception(
+            f"No metadata extracted from {len(dicom_files)} files. Please ensure they are valid DICOM files")
+
     extracted_metadata_df = pd.DataFrame(extracted_metadata)
 
     assert extracted_metadata_df["sop_instance_id"].nunique() == len(
