@@ -93,7 +93,8 @@ component. If they disagree, the Chief Architect decides.
 
 A D2E EP is open for discussion for at least 7 calendar days, so that every
 time zone and a weekend are covered. If no binding objection is raised in that
-time, the D2E EP is accepted.
+time, the D2E EP is accepted. The role that decides states the outcome in a
+comment on the D2E EP.
 
 Consulted means: notified when the D2E EP is opened, with the chance to raise
 objections during the discussion period. Objections are answered on the D2E EP;

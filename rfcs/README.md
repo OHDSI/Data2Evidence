@@ -43,8 +43,8 @@ page.
    from the people named in
    [GOVERNANCE.md](../GOVERNANCE.md#across-components). If it cannot be
    resolved on the D2E EP, it is decided as set out there, with the reasons
-   written down. The decision is recorded in the D2E EP's status and in a
-   closing comment.
+   written down. In both cases, the role that decides states the outcome in a
+   comment on the D2E EP and sets its status.
 4. Merge or close. Accepted D2E EPs are merged with status *Accepted*. Rejected
    and withdrawn ones are closed with the decision in the last comment.
    Postponed ones are merged with status *Postponed*, so they can be picked up
