@@ -17,8 +17,7 @@ D2E EP (see [Changing this document](#changing-this-document)).
    components, or affect everyone, are decided centrally.
 3. Most questions settle without a vote: if nobody objects with a reason by the
    stated deadline, the proposal stands.
-4. Two people see every change. There are no self-merges and no direct pushes
-   to protected branches, whatever a person's role.
+4. Two people see every change.
 5. Rights follow roles and contribution, not job titles.
 6. Regressions are reverted first and discussed second.
 
