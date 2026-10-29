@@ -92,10 +92,8 @@ component. If they disagree, the Chief Architect decides.
 | This document, `CONTRIBUTING.md`, `RELEASE.md`, review or approval rules | Yes, *Process* | Chief Architect, after discussion on the D2E EP, Product Manager and Steering Board consulted |
 
 A D2E EP is open for discussion for at least 7 calendar days, so that every
-time zone and a weekend are covered. When the discussion has settled, the role
-that decides proposes a disposition: accept, reject or postpone. A final
-comment period of 7 days follows. If no binding objection is raised, the disposition
-stands.
+time zone and a weekend are covered. If no binding objection is raised in that
+time, the D2E EP is accepted.
 
 Consulted means: notified when the D2E EP is opened, with the chance to raise
 objections during the discussion period. Objections are answered on the D2E EP;

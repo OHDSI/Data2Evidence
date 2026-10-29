@@ -38,17 +38,14 @@ page.
    to it, so the history shows how the proposal moved. The roles to be
    consulted are mentioned in the pull request description, which notifies
    them.
-3. Disposition. When the discussion has settled, the role that decides, as set
-   out in GOVERNANCE.md, proposes a disposition in a comment: accept, reject or
-   postpone, with a short summary of the discussion.
-4. Final comment period. 7 calendar days follow, so that everyone sees the
-   proposed outcome before it stands. A binding objection must give a
-   technical reason and can come from the people named in
-   [GOVERNANCE.md](../GOVERNANCE.md#across-components).
-5. Decision. Without a binding objection, the disposition stands. Otherwise the
-   role that decides, as set out in GOVERNANCE.md, decides and writes down why.
-   The decision is recorded in the D2E EP's status and in a closing comment.
-6. Merge or close. Accepted D2E EPs are merged with status *Accepted*. Rejected
+3. Decision. If no binding objection is raised within the 7 days, the D2E EP
+   is accepted. A binding objection must give a technical reason and can come
+   from the people named in
+   [GOVERNANCE.md](../GOVERNANCE.md#across-components). If it cannot be
+   resolved on the D2E EP, it is decided as set out there, with the reasons
+   written down. The decision is recorded in the D2E EP's status and in a
+   closing comment.
+4. Merge or close. Accepted D2E EPs are merged with status *Accepted*. Rejected
    and withdrawn ones are closed with the decision in the last comment.
    Postponed ones are merged with status *Postponed*, so they can be picked up
    later.
@@ -56,7 +53,7 @@ page.
 Once the change is implemented, the status moves to *Final*. A later D2E EP
 that replaces an earlier one sets the earlier one to *Superseded by D2E EP-n*.
 
-Statuses: *Draft*, *Final comment period*, *Accepted*, *Rejected*,
+Statuses: *Draft*, *Accepted*, *Rejected*,
 *Postponed*, *Withdrawn*, *Final*, *Superseded by D2E EP-n*.
 
 Accepted D2E EPs can be changed later only through a new D2E EP, except for
