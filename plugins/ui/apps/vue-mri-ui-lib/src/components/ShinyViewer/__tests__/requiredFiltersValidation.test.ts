@@ -52,6 +52,26 @@ describe('validateRequiredFilters', () => {
     it('accepts a valid range', () => {
       expect(validate([field], { years_from: '2010', years_to: '2010' }).fieldErrors).toEqual({})
     })
+
+    it('marks both inputs of an empty required range as invalid', () => {
+      expect(validate([field], { years_from: '', years_to: '' }).invalidInputIds).toEqual({
+        years: ['years_from', 'years_to'],
+      })
+    })
+
+    it('marks only the missing to year as invalid', () => {
+      expect(validate([field], { years_from: '2010', years_to: '' }).invalidInputIds).toEqual({ years: ['years_to'] })
+    })
+
+    it('marks only the missing from year as invalid', () => {
+      expect(validate([field], { years_from: '', years_to: '2010' }).invalidInputIds).toEqual({ years: ['years_from'] })
+    })
+
+    it('marks only the to year of a reversed range as invalid', () => {
+      expect(validate([field], { years_from: '2015', years_to: '2010' }).invalidInputIds).toEqual({
+        years: ['years_to'],
+      })
+    })
   })
 
   describe('numeric fields', () => {
@@ -59,6 +79,7 @@ describe('validateRequiredFilters', () => {
 
     it('requires a required value', () => {
       expect(validate([field], { age: '  ' }).fieldErrors).toEqual({ age: 'MRI_PA_FIELD_IS_REQUIRED|Age' })
+      expect(validate([field], { age: '  ' }).invalidInputIds).toEqual({ age: ['age'] })
     })
 
     it('accepts an empty optional value', () => {
@@ -88,6 +109,12 @@ describe('validateRequiredFilters', () => {
     it('requires at least one date', () => {
       expect(validate([field], { visit: { from: '', to: '' } }).fieldErrors).toEqual({
         visit: 'MRI_PA_FIELD_IS_REQUIRED|Visit',
+      })
+    })
+
+    it('marks both date inputs as invalid', () => {
+      expect(validate([field], { visit: { from: '', to: '' } }).invalidInputIds).toEqual({
+        visit: ['visit_from', 'visit_to'],
       })
     })
 
@@ -154,6 +181,6 @@ describe('validateRequiredFilters', () => {
           condition1: '1234',
         }
       )
-    ).toEqual({ fieldErrors: {}, groupErrors: {} })
+    ).toEqual({ fieldErrors: {}, groupErrors: {}, invalidInputIds: {} })
   })
 })

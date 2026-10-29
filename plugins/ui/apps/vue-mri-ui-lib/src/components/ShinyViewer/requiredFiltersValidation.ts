@@ -14,6 +14,12 @@ export interface RequiredFiltersValidationInput {
 export interface RequiredFiltersValidationResult {
   fieldErrors: Record<string, string>
   groupErrors: Record<string, string>
+  invalidInputIds: Record<string, string[]>
+}
+
+interface FieldError {
+  message: string
+  inputIds: string[]
 }
 
 export function isDateFieldType(type?: string): boolean {
@@ -25,7 +31,25 @@ function hasText(value: unknown): boolean {
   return String(value).trim().length > 0
 }
 
-function getFieldError(field: WizardFieldDefinition, input: RequiredFiltersValidationInput): string | null {
+function getFieldError(field: WizardFieldDefinition, input: RequiredFiltersValidationInput): FieldError | null {
+  const message = getFieldErrorMessage(field, input)
+  if (!message) return null
+  if (field.type === 'yearRange') return { message, inputIds: getInvalidYearInputIds(field.id, input.formValues) }
+  if (isDateFieldType(field.type)) return { message, inputIds: [`${field.id}_from`, `${field.id}_to`] }
+  return { message, inputIds: [field.id] }
+}
+
+function getInvalidYearInputIds(fieldId: string, formValues: Record<string, unknown>): string[] {
+  const fromId = `${fieldId}_from`
+  const toId = `${fieldId}_to`
+  const hasFrom = hasText(formValues[fromId])
+  const hasTo = hasText(formValues[toId])
+  if (!hasFrom && !hasTo) return [fromId, toId]
+  if (!hasFrom) return [fromId]
+  return [toId]
+}
+
+function getFieldErrorMessage(field: WizardFieldDefinition, input: RequiredFiltersValidationInput): string | null {
   const { formValues, getText, validateNumeric } = input
   const required = field.required !== false
   const requiredMessage = getText('MRI_PA_FIELD_IS_REQUIRED', field.label || field.id)
@@ -65,12 +89,12 @@ function getFieldError(field: WizardFieldDefinition, input: RequiredFiltersValid
 }
 
 export function validateRequiredFilters(input: RequiredFiltersValidationInput): RequiredFiltersValidationResult {
-  const fieldErrors = Object.fromEntries(
-    input.fields.flatMap(field => {
-      const message = getFieldError(field, input)
-      return message ? [[field.id, message]] : []
-    })
-  )
+  const errors = input.fields.flatMap(field => {
+    const error = getFieldError(field, input)
+    return error ? [{ fieldId: field.id, ...error }] : []
+  })
+  const fieldErrors = Object.fromEntries(errors.map(error => [error.fieldId, error.message]))
+  const invalidInputIds = Object.fromEntries(errors.map(error => [error.fieldId, error.inputIds]))
   const groupErrors = Object.fromEntries(
     input.groups.flatMap(group => {
       const message = getWizardGroupValidationMessage(group, input.formValues)
@@ -78,5 +102,5 @@ export function validateRequiredFilters(input: RequiredFiltersValidationInput): 
     })
   )
 
-  return { fieldErrors, groupErrors }
+  return { fieldErrors, groupErrors, invalidInputIds }
 }

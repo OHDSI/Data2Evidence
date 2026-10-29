@@ -30,6 +30,9 @@ import { DataSourceField } from "./DataSourceSelect";
 const SHOW_COHORT_BUILDER_ACTION = false;
 
 const getGroupElementId = (groupId: string) => `wizard-group-${groupId}`;
+const getGroupErrorId = (groupId: string) => `${getGroupElementId(groupId)}-error`;
+const getFieldErrorId = (fieldId: string) => `${fieldId}-error`;
+const joinIds = (...ids: (string | false | undefined)[]) => ids.filter(Boolean).join(" ") || undefined;
 
 /**
  * Form step renderer with config-driven fields.
@@ -234,6 +237,15 @@ export function StepForm() {
     const groupLimitBody = disabledByGroupLimit
       ? `(${containingGroup?.fields.map((groupField) => groupField.label).join(", ")}) can be filled in at the same time.`
       : null;
+    const groupErrorId =
+      containingGroup && groupErrors[containingGroup.id] ? getGroupErrorId(containingGroup.id) : undefined;
+    const errorId = getFieldErrorId(field.id);
+    const renderError = (message: string | undefined) =>
+      message && (
+        <span id={errorId} className={styles.errorMessage} role="alert">
+          {message}
+        </span>
+      );
 
     // Text fields with configPath use typeahead search
     if (field.type === "text" && field.configPath && configMeta) {
@@ -258,6 +270,7 @@ export function StepForm() {
               setValue={setValue}
               defaultValue={formData[field.id] ?? ""}
               error={fieldError as { message?: string } | undefined}
+              describedBy={joinIds(!!fieldError && errorId, groupErrorId)}
               onDisplayValueChange={handleDisplayValueChange}
               allowFreeText={field.allowFreeText}
             />
@@ -272,11 +285,7 @@ export function StepForm() {
               </div>
             )}
           </div>
-          {fieldError && (
-            <span className={styles.errorMessage} role="alert">
-              {fieldError.message as string}
-            </span>
-          )}
+          {renderError(fieldError?.message as string | undefined)}
         </div>
       );
     }
@@ -302,6 +311,7 @@ export function StepForm() {
               id={`${field.id}_from`}
               className={`${styles.input} ${fromError ? styles.inputError : ""}`}
               aria-invalid={!!fromError}
+              aria-describedby={joinIds(!!yearRangeErrorMessage && errorId, groupErrorId)}
               {...register(fromFieldName, {
                 deps: [toFieldName],
                 validate: (value) => getYearRangeErrors(value, getValues(toFieldName), field.required).from ?? true,
@@ -319,6 +329,7 @@ export function StepForm() {
               id={`${field.id}_to`}
               className={`${styles.input} ${toError ? styles.inputError : ""}`}
               aria-invalid={!!toError}
+              aria-describedby={joinIds(!!yearRangeErrorMessage && errorId, groupErrorId)}
               {...register(toFieldName, {
                 deps: [fromFieldName],
                 validate: (value) => getYearRangeErrors(getValues(fromFieldName), value, field.required).to ?? true,
@@ -332,11 +343,7 @@ export function StepForm() {
               ))}
             </select>
           </div>
-          {yearRangeErrorMessage && (
-            <span className={styles.errorMessage} role="alert">
-              {yearRangeErrorMessage}
-            </span>
-          )}
+          {renderError(yearRangeErrorMessage)}
         </div>
       );
     }
@@ -383,7 +390,11 @@ export function StepForm() {
                 placeholder={field.placeholder || "e.g. >=60, [50-80]"}
                 className={`${styles.input} ${fieldError ? styles.inputError : ""}`}
                 aria-invalid={!!fieldError}
-                aria-describedby={disabledByGroupLimit ? `${field.id}-limit-help` : undefined}
+                aria-describedby={joinIds(
+                  !!fieldError && errorId,
+                  groupErrorId,
+                  disabledByGroupLimit && `${field.id}-limit-help`,
+                )}
                 disabled={disabledByGroupLimit}
                 {...register(field.id, {
                   required: field.required ? `${field.label} is required` : false,
@@ -412,11 +423,7 @@ export function StepForm() {
                 </span>
               )}
             </div>
-            {fieldError && (
-              <span className={styles.errorMessage} role="alert">
-                {fieldError.message as string}
-              </span>
-            )}
+            {renderError(fieldError?.message as string | undefined)}
           </div>
         );
 
@@ -433,15 +440,12 @@ export function StepForm() {
               placeholder={field.placeholder}
               className={`${styles.input} ${fieldError ? styles.inputError : ""}`}
               aria-invalid={!!fieldError}
+              aria-describedby={joinIds(!!fieldError && errorId, groupErrorId)}
               {...register(field.id, {
                 required: field.required ? `${field.label} is required` : false,
               })}
             />
-            {fieldError && (
-              <span className={styles.errorMessage} role="alert">
-                {fieldError.message as string}
-              </span>
-            )}
+            {renderError(fieldError?.message as string | undefined)}
           </div>
         );
 
@@ -459,15 +463,12 @@ export function StepForm() {
               aria-label={field.placeholder || field.label}
               className={`${styles.input} ${fieldError ? styles.inputError : ""}`}
               aria-invalid={!!fieldError}
+              aria-describedby={joinIds(!!fieldError && errorId, groupErrorId)}
               {...register(field.id, {
                 required: field.required ? `${field.label} is required` : false,
               })}
             />
-            {fieldError && (
-              <span className={styles.errorMessage} role="alert">
-                {fieldError.message as string}
-              </span>
-            )}
+            {renderError(fieldError?.message as string | undefined)}
           </div>
         );
 
@@ -478,7 +479,16 @@ export function StepForm() {
               {field.label}
               {field.required && <span className={styles.requiredAsterisk}> *</span>}:
             </label>
-            <div className={styles.unsupported}>Unsupported field type: {field.type}</div>
+            <div
+              ref={field.required ? register(field.id, { required: `${field.label} is required` }).ref : undefined}
+              tabIndex={field.required ? -1 : undefined}
+              className={styles.unsupported}
+              aria-invalid={!!fieldError}
+              aria-describedby={joinIds(!!fieldError && errorId, groupErrorId)}
+            >
+              Unsupported field type: {field.type}
+            </div>
+            {renderError(fieldError?.message as string | undefined)}
           </div>
         );
     }
@@ -550,7 +560,7 @@ export function StepForm() {
           {renderFields(group.fields, group)}
         </div>
         {groupError && (
-          <span className={styles.errorMessage} role="alert">
+          <span id={getGroupErrorId(group.id)} className={styles.errorMessage} role="alert">
             {groupError}
           </span>
         )}

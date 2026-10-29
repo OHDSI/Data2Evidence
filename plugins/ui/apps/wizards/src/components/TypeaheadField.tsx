@@ -16,6 +16,7 @@ interface TypeaheadFieldProps {
   setValue?: (name: string, value: any, options?: { shouldValidate?: boolean }) => void;
   defaultValue?: string;
   error?: { message?: string };
+  describedBy?: string;
   onDisplayValueChange?: (fieldId: string, displayValue: string | null) => void;
   allowFreeText?: boolean;
 }
@@ -59,6 +60,7 @@ export function TypeaheadField({
   setValue,
   defaultValue = "",
   error,
+  describedBy,
   onDisplayValueChange,
   allowFreeText = false,
 }: TypeaheadFieldProps) {
@@ -208,6 +210,7 @@ export function TypeaheadField({
               placeholder={placeholder || `Search ${label}`}
               className={`${styles.input} ${error ? styles.inputError : ""}`}
               aria-invalid={!!error}
+              aria-describedby={describedBy}
               autoComplete="off"
               onFocus={handleFocus}
               onChange={(e) => handleInputChange(e.target.value)}

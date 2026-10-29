@@ -82,10 +82,10 @@
                         <input
                           :id="`${field.id}_from`"
                           class="form-control"
-                          :class="{ 'is-invalid': fieldErrors[field.id] }"
+                          :class="{ 'is-invalid': isInputInvalid(`${field.id}_from`) }"
                           type="date"
-                          :aria-invalid="getAriaInvalid(field.id)"
-                          :aria-describedby="getDescribedBy(field.id)"
+                          :aria-invalid="getAriaInvalid(`${field.id}_from`)"
+                          :aria-describedby="getDescribedBy(group, field.id)"
                           v-model="formValues[field.id].from"
                           @change="markFieldDirty(field.id)"
                         />
@@ -93,10 +93,10 @@
                         <input
                           :id="`${field.id}_to`"
                           class="form-control"
-                          :class="{ 'is-invalid': fieldErrors[field.id] }"
+                          :class="{ 'is-invalid': isInputInvalid(`${field.id}_to`) }"
                           type="date"
-                          :aria-invalid="getAriaInvalid(field.id)"
-                          :aria-describedby="getDescribedBy(field.id)"
+                          :aria-invalid="getAriaInvalid(`${field.id}_to`)"
+                          :aria-describedby="getDescribedBy(group, field.id)"
                           v-model="formValues[field.id].to"
                           @change="markFieldDirty(field.id)"
                         />
@@ -113,9 +113,9 @@
                           :id="`${field.id}_from`"
                           v-model="formValues[`${field.id}_from` as string]"
                           class="form-control"
-                          :class="{ 'is-invalid': fieldErrors[field.id] }"
-                          :aria-invalid="getAriaInvalid(field.id)"
-                          :aria-describedby="getDescribedBy(field.id)"
+                          :class="{ 'is-invalid': isInputInvalid(`${field.id}_from`) }"
+                          :aria-invalid="getAriaInvalid(`${field.id}_from`)"
+                          :aria-describedby="getDescribedBy(group, field.id)"
                           @change="markFieldDirty(`${field.id}_from`)"
                         >
                           <option value="">{{ getText('MRI_PA_YEAR_FROM_PLACEHOLDER') }}</option>
@@ -128,9 +128,9 @@
                           :id="`${field.id}_to`"
                           v-model="formValues[`${field.id}_to` as string]"
                           class="form-control"
-                          :class="{ 'is-invalid': fieldErrors[field.id] }"
-                          :aria-invalid="getAriaInvalid(field.id)"
-                          :aria-describedby="getDescribedBy(field.id)"
+                          :class="{ 'is-invalid': isInputInvalid(`${field.id}_to`) }"
+                          :aria-invalid="getAriaInvalid(`${field.id}_to`)"
+                          :aria-describedby="getDescribedBy(group, field.id)"
                           @change="markFieldDirty(`${field.id}_to`)"
                         >
                           <option value="">{{ getText('MRI_PA_YEAR_TO_PLACEHOLDER') }}</option>
@@ -154,13 +154,14 @@
                         <input
                           :id="field.id"
                           class="form-control"
-                          :class="{ 'is-invalid': fieldErrors[field.id] }"
+                          :class="{ 'is-invalid': isInputInvalid(field.id) }"
                           type="text"
                           :placeholder="field.placeholder || getText('MRI_PA_NUMERIC_INPUT_PLACEHOLDER')"
                           :disabled="isFieldDisabled(group, field.id)"
                           :aria-invalid="getAriaInvalid(field.id)"
                           :aria-describedby="
                             getDescribedBy(
+                              group,
                               field.id,
                               isFieldDisabled(group, field.id) ? `${field.id}-limit-help` : undefined
                             )
@@ -195,8 +196,8 @@
                           :placeholder="field.placeholder"
                           :model-value="formValues[field.id]"
                           :display-value="displayValues[field.id]"
-                          :invalid="!!fieldErrors[field.id]"
-                          :described-by="getDescribedBy(field.id)"
+                          :invalid="isInputInvalid(field.id)"
+                          :described-by="getDescribedBy(group, field.id)"
                           @update:model-value="
                             (val: string | null) => {
                               formValues[field.id] = val
@@ -226,11 +227,11 @@
                       <input
                         :id="field.id"
                         class="form-control"
-                        :class="{ 'is-invalid': fieldErrors[field.id] }"
+                        :class="{ 'is-invalid': isInputInvalid(field.id) }"
                         type="text"
                         :placeholder="field.placeholder || getText('MRI_PA_SEARCH_PLACEHOLDER', field.label)"
                         :aria-invalid="getAriaInvalid(field.id)"
-                        :aria-describedby="getDescribedBy(field.id)"
+                        :aria-describedby="getDescribedBy(group, field.id)"
                         v-model="formValues[field.id]"
                         @input="markFieldDirty(field.id)"
                       />
@@ -241,7 +242,9 @@
                   </div>
                 </div>
               </div>
-              <p v-if="groupErrors[group.id]" class="field-error" role="alert">{{ groupErrors[group.id] }}</p>
+              <p v-if="groupErrors[group.id]" :id="getGroupErrorId(group.id)" class="field-error" role="alert">
+                {{ groupErrors[group.id] }}
+              </p>
             </div>
           </div>
         </section>
@@ -394,6 +397,9 @@ const isFormValid = computed(
 )
 const fieldErrors = computed<Record<string, string>>(() => (submitAttempted.value ? validation.value.fieldErrors : {}))
 const groupErrors = computed<Record<string, string>>(() => (submitAttempted.value ? validation.value.groupErrors : {}))
+const invalidInputIds = computed(
+  () => new Set(submitAttempted.value ? Object.values(validation.value.invalidInputIds).flat() : [])
+)
 
 function getGroupElementId(groupId: string): string {
   return `required-filters-group-${groupId}`
@@ -403,12 +409,24 @@ function getErrorId(fieldId: string): string {
   return `${fieldId}-error`
 }
 
-function getAriaInvalid(fieldId: string): 'true' | undefined {
-  return fieldErrors.value[fieldId] ? 'true' : undefined
+function getGroupErrorId(groupId: string): string {
+  return `${getGroupElementId(groupId)}-error`
 }
 
-function getDescribedBy(fieldId: string, extraId?: string): string | undefined {
-  const ids = [fieldErrors.value[fieldId] ? getErrorId(fieldId) : undefined, extraId].filter(Boolean)
+function isInputInvalid(inputId: string): boolean {
+  return invalidInputIds.value.has(inputId)
+}
+
+function getAriaInvalid(inputId: string): 'true' | undefined {
+  return isInputInvalid(inputId) ? 'true' : undefined
+}
+
+function getDescribedBy(group: ResolvedWizardFieldGroup, fieldId: string, extraId?: string): string | undefined {
+  const ids = [
+    fieldErrors.value[fieldId] ? getErrorId(fieldId) : undefined,
+    groupErrors.value[group.id] ? getGroupErrorId(group.id) : undefined,
+    extraId,
+  ].filter(Boolean)
   return ids.length > 0 ? ids.join(' ') : undefined
 }
 
@@ -552,8 +570,8 @@ function getFirstInvalidElement(): HTMLElement | null {
     for (const group of section.groups) {
       const invalidField = group.fields.find(field => fieldErrors.value[field.id])
       if (invalidField) {
-        const usesRangeInputs = invalidField.type === 'yearRange' || isDateFieldType(invalidField.type)
-        return document.getElementById(usesRangeInputs ? `${invalidField.id}_from` : invalidField.id)
+        const [firstInputId] = validation.value.invalidInputIds[invalidField.id] ?? [invalidField.id]
+        return document.getElementById(firstInputId)
       }
       if (groupErrors.value[group.id]) {
         return (
