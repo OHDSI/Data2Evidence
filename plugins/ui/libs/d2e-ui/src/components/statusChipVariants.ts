@@ -29,6 +29,12 @@ export const STATUS_CHIP_VARIANT_MAP = {
     background: "var(--d2e-color-warning-light)",
     color: "var(--d2e-color-warning-text)",
   },
+  // The DQD check category (Plausibility, Conformance, Completeness) in the
+  // Data quality checks table.
+  category: {
+    background: "var(--d2e-color-support-violet-light)",
+    color: "var(--d2e-color-support-violet-text)",
+  },
   locked: {
     background: "var(--d2e-color-alarm-light)",
     color: "var(--d2e-color-alarm)",

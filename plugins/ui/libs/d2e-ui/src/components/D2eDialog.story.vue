@@ -3,6 +3,7 @@ import { ref } from "vue";
 import D2eDialog from "./D2eDialog.vue";
 import D2eButton from "./D2eButton.vue";
 import D2eTextField from "./D2eTextField.vue";
+import D2eTabs from "./D2eTabs.vue";
 
 const open = ref(true);
 const renameOpen = ref(true);
@@ -10,6 +11,16 @@ const deleteOpen = ref(true);
 const materializeOpen = ref(true);
 const busyOpen = ref(true);
 const persistentOpen = ref(true);
+const tabsOpen = ref(true);
+const tab = ref("dashboard");
+const tabItems = [
+  { value: "dashboard", label: "Data quality dashboard", icon: "mdi-license" },
+  {
+    value: "checks",
+    label: "Data quality checks",
+    icon: "mdi-list-box-outline",
+  },
+];
 const sizeSOpen = ref(true);
 const sizeLOpen = ref(true);
 const sizeXlOpen = ref(true);
@@ -131,6 +142,21 @@ const description = ref("");
           <D2eButton variant="secondary"> Cancel </D2eButton>
           <D2eButton> Confirm </D2eButton>
         </template>
+      </D2eDialog>
+    </Variant>
+    <Variant title="subtitle + tabs">
+      <D2eDialog v-model="tabsOpen" size="xl" title="Data quality">
+        <template #subtitle>
+          Exploration cohort name: <strong>SNRI Users</strong>
+        </template>
+        <template #header-append>
+          <D2eTabs
+            v-model="tab"
+            :items="tabItems"
+            aria-label="Data quality views"
+          />
+        </template>
+        Tab body: {{ tab }}
       </D2eDialog>
     </Variant>
   </Story>
