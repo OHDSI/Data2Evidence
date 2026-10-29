@@ -12,8 +12,7 @@ D2E EP (see [Changing this document](#changing-this-document)).
 ## Principles
 
 1. Work is proposed, reviewed and decided on GitHub: in issues, pull requests,
-   Discussions and D2E EPs. A decision taken in a call or chat counts once it
-   is written on the issue, with its reasons.
+   Discussions and D2E EPs. Decisions are written down with their reasons.
 2. Code owners decide inside their component. Only questions that cross
    components, or affect everyone, are decided centrally.
 3. Most questions settle without a vote: if nobody objects with a reason by the
