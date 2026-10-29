@@ -113,6 +113,18 @@ jobs:
                 pull_number: prNumber,
               });
               
+              // D2E EPs (rfcs/) are decided by the role that decides, not by votes
+              const files = await octokit.paginate(octokit.rest.pulls.listFiles, {
+                owner,
+                repo,
+                pull_number: prNumber,
+              });
+              const inRfcs = name => !name || name.startsWith('rfcs/');
+              if (files.length > 0 && files.every(f => inRfcs(f.filename) && inRfcs(f.previous_filename))) {
+                console.log('✅ Only rfcs/ changed: D2E EPs need no votes');
+                process.exit(0);
+              }
+              
               // Get reactions on the PR body (initial comment)
               const { data: reactions } = await octokit.rest.reactions.listForIssue({
                 owner,

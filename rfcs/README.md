@@ -43,12 +43,19 @@ page.
    from the people named in
    [GOVERNANCE.md](../GOVERNANCE.md#across-components). If it cannot be
    resolved on the D2E EP, it is decided as set out there, with the reasons
-   written down. In both cases, the role that decides states the outcome in a
-   comment on the D2E EP and sets its status.
-4. Merge or close. Accepted D2E EPs are merged with status *Accepted*. Rejected
-   and withdrawn ones are closed with the decision in the last comment.
-   Postponed ones are merged with status *Postponed*, so they can be picked up
-   later.
+   written down.
+4. Merge or close. The pull request records the outcome:
+   - Accepted: the status is set to *Accepted* in the last commit, the role
+     that decides approves the pull request, and it is merged. The merge is
+     the decision.
+   - Postponed: the same, with status *Postponed*, so it can be picked up
+     later.
+   - Rejected: the role that decides closes the pull request, with the reason
+     in a comment.
+   - Withdrawn: the author closes the pull request.
+
+Pull requests that only change `rfcs/` need no core maintainer votes. The
+Chief Architect and the Product Manager are the code owners of `rfcs/`.
 
 Once the change is implemented, the status moves to *Final*. A later D2E EP
 that replaces an earlier one sets the earlier one to *Superseded by D2E EP-n*.

@@ -2,6 +2,7 @@
 /.github/*                                           @p-hoffmann
 /.github/workflows                                   @brandantck @mwaiyee @SantanM @p-hoffmann
 /.github/workflows/pr-approval.yml                   @p-hoffmann
+/rfcs/                                               @p-hoffmann
 /plugins/fhir_functions/                                     @alicia-koh @csafreen @Zhimin-arya @p-hoffmann
 /plugins/functions/_shared                                   @brandantck @jerome-ng @LSriragavan @khairul-syazwan @p-hoffmann @maggie-li-yd
 /plugins/functions/alp-usermgmt                              @hengxian-jiang @SantanM @suwarnoong @p-hoffmann

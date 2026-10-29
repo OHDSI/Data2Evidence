@@ -2,6 +2,7 @@
 /.github/*                                           @data2evidence/trex
 /.github/workflows                                   @data2evidence/devops
 /.github/workflows/pr-approval.yml                   @data2evidence/trex
+/rfcs/                                               @data2evidence/rfcs
 /plugins/fhir_functions/                                     @data2evidence/data
 /plugins/functions/_shared                                   @data2evidence/analyze
 /plugins/functions/alp-usermgmt                              @data2evidence/integrate
