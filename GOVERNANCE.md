@@ -17,7 +17,7 @@ D2E EP (see [Changing this document](#changing-this-document)).
    components, or affect everyone, are decided centrally.
 3. Most questions settle without a vote: if nobody objects with a reason by the
    stated deadline, the proposal stands.
-4. Two people see every change.
+4. Every change is reviewed by a code owner of the component it touches.
 5. Rights follow roles and contribution, not job titles.
 6. Regressions are reverted first and discussed second.
 
