@@ -41,7 +41,8 @@ there is no fixed date.
 - Code owners: `.github/CODEOWNERS.src` maps each path to a GitHub team,
   `.github/CODEOWNERS.teams` lists the members of each team, and
   `.github/CODEOWNERS.sh` generates `.github/CODEOWNERS`. Paths without an
-  entry fall to `@data2evidence/core`. A comment above each component marks its
+  entry fall to `@data2evidence/core`. Every path has at least two code owners,
+  so someone can always step in. A comment above each component marks its
   status (*Supported*, *Maintained*, *Odd Fixes*, *Orphan* or *Obsolete*) and
   whether it is core or critical.
 - Core maintainers: the `REQUIRED_APPROVERS` list in
