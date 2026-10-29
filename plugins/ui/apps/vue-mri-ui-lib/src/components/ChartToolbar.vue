@@ -102,45 +102,27 @@
     :cohort-id="(dashboardFlow.savedCohortId ?? getActiveCohortMaterializedId)?.toString() || ''"
   />
 
-  <Teleport to="#app">
-    <VDialog
-      :model-value="showInclusionReportModal"
-      @update:modelValue="showInclusionReportModal = $event"
-      @keydown.esc="closeInclusionReportModal"
-      max-width="90%"
-      persistent
-    >
-      <div class="inclusion-report-dialog" data-testid="pa-inclusion-report-dialog">
-        <div class="inclusion-report-dialog__title">
-          <div class="inclusion-report-dialog__title-text" data-testid="pa-inclusion-report-dialog-title">
-            Attrition Plot
-          </div>
-          <button
-            class="inclusion-report-dialog__close-btn"
-            @click="closeInclusionReportModal"
-            :title="'Close'"
-            data-testid="pa-inclusion-report-dialog-close-btn"
-          >
-            <span class="icon" style="font-family: app-icons">&#x2715;</span>
-          </button>
-        </div>
-
-        <div class="inclusion-report-dialog__content">
-          <InclusionReport
-            cohort-definition-id=""
-            :source-key="inclusionReportSourceKey"
-            :cache-key="inclusionReportCacheKey"
-            generation-status="complete"
-            :fetch-inclusion-report="fetchInclusionReport"
-            :fetch-attrition-report="fetchAttritionReportFn"
-            :show-person-event-switch="false"
-            :filter-card-details="inclusionReportFilterCardDetails"
-            :show-intersect-view="enableIntersectViewInclusionReport"
-          />
-        </div>
-      </div>
-    </VDialog>
-  </Teleport>
+  <D2eDialog
+    :model-value="showInclusionReportModal"
+    size="xl"
+    :title="getText('MRI_PA_INCLUSION_REPORT_DIALOG_TITLE')"
+    data-testid="pa-inclusion-report-dialog"
+    @close="closeInclusionReportModal"
+  >
+    <div class="inclusion-report-dialog__content">
+      <InclusionReport
+        cohort-definition-id=""
+        :source-key="inclusionReportSourceKey"
+        :cache-key="inclusionReportCacheKey"
+        generation-status="complete"
+        :fetch-inclusion-report="fetchInclusionReport"
+        :fetch-attrition-report="fetchAttritionReportFn"
+        :show-person-event-switch="false"
+        :filter-card-details="inclusionReportFilterCardDetails"
+        :show-intersect-view="enableIntersectViewInclusionReport"
+      />
+    </div>
+  </D2eDialog>
 </template>
 
 <script lang="ts">
@@ -176,7 +158,7 @@ function getBookmarkKey(bookmark) {
   )
 }
 import VButton from './vuetify/VButton.vue'
-import VDialog from './vuetify/VDialog.vue'
+import { D2eDialog } from '@d2e/ui'
 import { lazyComponent } from '../utils/lazyComponent'
 import type { RuleFilterCardDetails } from '../query-filter/types/InclusionReportTypes'
 import {
@@ -528,7 +510,7 @@ export default {
     DashboardFlowModals,
     Button,
     VButton,
-    VDialog,
+    D2eDialog,
     InclusionReport,
   },
 }

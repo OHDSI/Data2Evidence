@@ -1,139 +1,110 @@
 <template>
-  <VDialog
+  <D2eDialog
     :model-value="isOpen"
-    class="save-cohort-dialog"
-    max-width="540"
-    :persistent="isSaving"
-    width="calc(100vw - 48px)"
-    @update:modelValue="handleDialogModelUpdate"
+    :title="isSaving ? getText('MRI_PA_GENERATING_DASHBOARD') : modalTitle"
+    :show-close="!isSaving"
+    :close-on-escape="!isSaving"
+    :close-label="getText('MRI_PA_CLOSE_BUTTON')"
+    data-testid="pa-save-cohort-dialog"
+    @close="handleClose"
   >
-    <v-card class="save-cohort-card">
+    <div class="save-cohort-content">
       <div v-if="isSaving" class="save-cohort-saving">
-        <h2 class="save-cohort-saving__title">{{ getText('MRI_PA_GENERATING_DASHBOARD') }}</h2>
         <VProgressCircular indeterminate class="save-cohort-saving__spinner" color="primary" :size="96" :width="8" />
         <p class="save-cohort-saving__status">{{ savingStatusText }}</p>
       </div>
 
-      <template v-else>
-        <v-card-title class="save-cohort-dialog__header">
-          <span>{{ modalTitle }}</span>
-          <v-btn
-            icon
-            variant="text"
-            density="comfortable"
-            color="primary"
-            class="save-cohort-dialog__close"
-            :aria-label="getText('MRI_PA_CLOSE_BUTTON')"
-            @click="handleClose"
-          >
-            <span class="save-cohort-dialog__close-icon" aria-hidden="true">&#215;</span>
-          </v-btn>
-        </v-card-title>
+      <div v-else class="save-cohort-body">
+        <appMessageStrip
+          v-if="messageStrip.show"
+          :messageType="messageStrip.messageType"
+          :text="messageStrip.message"
+          @closeEv="resetMessageStrip"
+        />
 
-        <v-card-text class="save-cohort-body">
-          <appMessageStrip
-            v-if="messageStrip.show"
-            :messageType="messageStrip.messageType"
-            :text="messageStrip.message"
-            @closeEv="resetMessageStrip"
-          />
-
-          <div class="save-bookmark" v-if="isNewCohort">
-            <div class="save-cohort-field">
-              <v-text-field
-                id="save-cohort-name"
-                v-model="cohortName"
-                class="save-cohort-text-field"
-                :error="cohortNameValidationState !== 'valid' || hasExceededLength"
-                :error-messages="cohortNameErrorMessages"
-                :hide-details="cohortNameErrorMessages.length === 0"
-                :label="cohortNameLabel"
-                :maxlength="maxLength + 1"
-                variant="outlined"
-                density="comfortable"
-                base-color="#acaba8"
-                v-focus
-                required
-                tabindex="0"
-              >
-                <template #label>
-                  <span class="save-cohort-field-label-content">
-                    {{ cohortNameLabel }}
-                    <span class="save-cohort-field__required">*</span>
-                  </span>
-                </template>
-              </v-text-field>
-            </div>
+        <div class="save-bookmark" v-if="isNewCohort">
+          <div class="save-cohort-field">
+            <v-text-field
+              id="save-cohort-name"
+              v-model="cohortName"
+              class="save-cohort-text-field"
+              :error="cohortNameValidationState !== 'valid' || hasExceededLength"
+              :error-messages="cohortNameErrorMessages"
+              :hide-details="cohortNameErrorMessages.length === 0"
+              :label="cohortNameLabel"
+              :maxlength="maxLength + 1"
+              variant="outlined"
+              density="comfortable"
+              base-color="#acaba8"
+              v-focus
+              required
+              tabindex="0"
+            >
+              <template #label>
+                <span class="save-cohort-field-label-content">
+                  {{ cohortNameLabel }}
+                  <span class="save-cohort-field__required">*</span>
+                </span>
+              </template>
+            </v-text-field>
           </div>
+        </div>
 
-          <!-- Show existing cohort name for updates -->
-          <div v-else class="save-bookmark">
-            <p class="cohort-label">
-              <strong>{{ getText('MRI_PA_COLL_COHORT_NAME') }}</strong>
-              {{ getActiveBookmark?.bookmarkname }}
+        <!-- Show existing cohort name for updates -->
+        <div v-else class="save-bookmark">
+          <p class="cohort-label">
+            <strong>{{ getText('MRI_PA_COLL_COHORT_NAME') }}</strong>
+            {{ getActiveBookmark?.bookmarkname }}
+          </p>
+        </div>
+
+        <!-- Info message for bookmark-only mode -->
+        <div v-if="showInfoMessage && activeCohort" class="save-bookmark">
+          <v-alert type="info" variant="tonal" density="compact" class="save-cohort-info">
+            <p>
+              <strong>{{ getText('MRI_PA_COHORT_ALREADY_MATERIALIZED') }}</strong>
             </p>
-          </div>
+            <p>
+              <strong>{{ getText('MRI_PA_COLL_COHORT_ID') }}</strong> {{ activeCohort.id }}<br />
+              <strong>{{ getText('MRI_PA_COLL_CREATED_ON') }}</strong>
+              {{ new Date(activeCohort.createdOn).toLocaleString() }}
+            </p>
+          </v-alert>
+        </div>
 
-          <!-- Info message for bookmark-only mode -->
-          <div v-if="showInfoMessage && activeCohort" class="save-bookmark">
-            <v-alert type="info" variant="tonal" density="compact" class="save-cohort-info">
-              <p>
-                <strong>{{ getText('MRI_PA_COHORT_ALREADY_MATERIALIZED') }}</strong>
-              </p>
-              <p>
-                <strong>{{ getText('MRI_PA_COLL_COHORT_ID') }}</strong> {{ activeCohort.id }}<br />
-                <strong>{{ getText('MRI_PA_COLL_CREATED_ON') }}</strong>
-                {{ new Date(activeCohort.createdOn).toLocaleString() }}
-              </p>
-            </v-alert>
+        <div v-if="showDescriptionField" class="save-bookmark">
+          <div class="save-cohort-field">
+            <v-text-field
+              id="save-cohort-description"
+              v-model="cohortDescription"
+              class="save-cohort-text-field"
+              :label="cohortDescriptionLabel"
+              variant="outlined"
+              density="comfortable"
+              base-color="#acaba8"
+              hide-details
+              @keydown.enter="handleSave"
+              tabindex="1"
+            />
           </div>
+        </div>
+      </div>
+    </div>
 
-          <div v-if="showDescriptionField" class="save-bookmark">
-            <div class="save-cohort-field">
-              <v-text-field
-                id="save-cohort-description"
-                v-model="cohortDescription"
-                class="save-cohort-text-field"
-                :label="cohortDescriptionLabel"
-                variant="outlined"
-                density="comfortable"
-                base-color="#acaba8"
-                hide-details
-                @keydown.enter="handleSave"
-                tabindex="1"
-              />
-            </div>
-          </div>
-        </v-card-text>
-
-        <v-card-actions class="save-cohort-actions">
-          <v-btn
-            variant="outlined"
-            class="save-cohort-button save-cohort-button--secondary"
-            :title="getText('MRI_PA_COLL_BUT_CANCEL')"
-            :disabled="isSaving"
-            @click="handleCancel"
-          >
-            {{ getText('MRI_PA_COLL_BUT_CANCEL') }}
-          </v-btn>
-          <v-btn
-            variant="flat"
-            class="save-cohort-button save-cohort-button--primary"
-            :title="saveButtonText"
-            :disabled="isSaveDisabled"
-            @click="handleSave"
-          >
-            {{ saveButtonText }}
-          </v-btn>
-        </v-card-actions>
-      </template>
-    </v-card>
-  </VDialog>
+    <template v-if="!isSaving" #actions>
+      <D2eButton variant="secondary" data-testid="pa-save-cohort-cancel-btn" @click="handleCancel">
+        {{ getText('MRI_PA_COLL_BUT_CANCEL') }}
+      </D2eButton>
+      <D2eButton :disabled="isSaveDisabled" data-testid="pa-save-cohort-save-btn" @click="handleSave">
+        {{ saveButtonText }}
+      </D2eButton>
+    </template>
+  </D2eDialog>
 </template>
 
 <script lang="ts">
 import { mapGetters, mapActions, mapMutations } from 'vuex'
-import VDialog from '../vuetify/VDialog.vue'
+import { D2eButton, D2eDialog } from '@d2e/ui'
 import VProgressCircular from '../vuetify/VProgressCircular.vue'
 import appMessageStrip from '@/lib/ui/app-message-strip.vue'
 import * as types from '../../store/mutation-types'
@@ -144,7 +115,8 @@ import { isBookmarkSaveSuccess } from '@/utils/BookmarkUtils'
 export default {
   name: 'SaveCohortModal',
   components: {
-    VDialog,
+    D2eDialog,
+    D2eButton,
     VProgressCircular,
     appMessageStrip,
   },
@@ -590,14 +562,6 @@ export default {
       this.bookmarkSavedButMaterializationFailed = false
       this.$emit('close')
     },
-    handleDialogModelUpdate(value: boolean) {
-      if (this.isSaving) {
-        return
-      }
-      if (!value) {
-        this.handleClose()
-      }
-    },
     formatFieldLabel(label: string): string {
       return String(label || '').replace(/\s*[:：]\s*$/, '')
     },
@@ -620,110 +584,24 @@ export default {
 </script>
 
 <style scoped>
-.save-cohort-card {
+.save-cohort-content {
   --save-cohort-brand: var(--color-mri-brand, #000080);
   --save-cohort-error: var(--color-feedback-error, #a3293d);
   --save-cohort-field-border: #acaba8;
   --save-cohort-font: var(--app-font-family);
-  --save-cohort-muted-bg: #dedcda;
-
-  background: #fff;
-  border-radius: 16px;
-  box-shadow:
-    0 6px 30px 5px rgba(0, 0, 0, 0.12),
-    0 16px 24px 2px rgba(0, 0, 0, 0.14),
-    0 8px 10px -5px rgba(0, 0, 0, 0.2);
-  min-height: 288px;
-  overflow: hidden;
-  position: relative;
-}
-
-.save-cohort-dialog__header {
-  align-items: center;
-  color: var(--save-cohort-brand);
-  display: flex;
-  font-family: var(--save-cohort-font);
-  font-size: 18px;
-  font-weight: 500;
-  justify-content: space-between;
-  letter-spacing: 0;
-  line-height: 1.2;
-  min-height: 60px;
-  padding: 24px 24px 12px;
-  white-space: normal;
-  width: 100%;
-}
-
-.save-cohort-dialog__close {
-  color: var(--save-cohort-brand);
-  flex: 0 0 auto;
-  margin: -4px -4px 0 16px;
-  min-width: 32px;
-}
-
-.save-cohort-dialog__close-icon {
-  font-size: 24px;
-  font-weight: 400;
-  line-height: 1;
 }
 
 .save-cohort-body {
-  border-bottom: 1px solid var(--save-cohort-muted-bg);
   display: flex;
   flex-direction: column;
   gap: 14px;
   min-height: 156px;
-  padding: 24px;
 }
 
 .cohort-label {
   color: var(--color-ui-darkest-text, #000);
   font-size: 16px;
   margin: 0;
-}
-
-.save-cohort-actions {
-  align-items: flex-start;
-  display: flex;
-  gap: 16px;
-  height: 72px;
-  padding: 16px 24px;
-}
-
-.save-cohort-button {
-  border-radius: 8px;
-  cursor: pointer;
-  flex: 1 1 0;
-  font-family: var(--save-cohort-font);
-  font-size: 16px;
-  font-weight: 500;
-  height: 40px;
-  letter-spacing: 0;
-  line-height: 16px;
-  margin: 0;
-  min-width: 0;
-  text-transform: none;
-}
-
-.save-cohort-button.v-btn--disabled {
-  cursor: default;
-}
-
-.save-cohort-button--secondary {
-  background: #fff;
-  border-color: #cccfe5;
-  color: var(--save-cohort-brand);
-}
-
-.save-cohort-button--primary {
-  background: var(--save-cohort-brand);
-  color: #fff;
-}
-
-.save-cohort-button--primary.v-btn--disabled {
-  background: var(--save-cohort-muted-bg);
-  color: var(--save-cohort-field-border);
-  opacity: 1;
 }
 
 .save-cohort-saving {
@@ -733,16 +611,8 @@ export default {
   flex-direction: column;
   font-family: var(--save-cohort-font);
   justify-content: center;
-  min-height: 272px;
-  padding: 32px 24px 36px;
+  min-height: 200px;
   text-align: center;
-}
-
-.save-cohort-saving__title {
-  font-size: 20px;
-  font-weight: 500;
-  line-height: 24px;
-  margin: 0 0 22px;
 }
 
 .save-cohort-saving__spinner {
@@ -826,19 +696,5 @@ export default {
 :deep(.save-cohort-text-field .v-messages__message) {
   color: var(--save-cohort-error);
   font-family: var(--save-cohort-font);
-}
-
-@media (max-width: 620px) {
-  .save-cohort-dialog__header {
-    padding: 20px 20px 12px;
-  }
-
-  .save-cohort-body {
-    padding: 20px;
-  }
-
-  .save-cohort-actions {
-    padding: 16px 20px;
-  }
 }
 </style>

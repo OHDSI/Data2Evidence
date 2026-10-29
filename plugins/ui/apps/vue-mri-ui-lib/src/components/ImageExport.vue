@@ -4,7 +4,6 @@
 
 <script lang="ts">
 import { mapActions, mapGetters } from 'vuex'
-import MessageBox from './MessageBox.vue'
 import Constants from '../utils/Constants'
 import { createChartCanvas, buildXAxisTitle } from '../utils/ExportUtils'
 import { generateDownloadFileName } from '../utils/generateDownloadFileName'
@@ -213,9 +212,6 @@ export default {
         this.$emit('closeEv')
       })
     },
-  },
-  components: {
-    MessageBox,
   },
 }
 </script>

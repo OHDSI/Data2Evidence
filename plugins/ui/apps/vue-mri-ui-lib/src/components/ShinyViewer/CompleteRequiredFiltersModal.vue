@@ -1,8 +1,14 @@
 <template>
-  <MessageBox v-if="isOpen" :busy="loading" messageType="custom" dialogWidth="700px" @close="handleCancel">
-    <template #header>{{ getText('MRI_PA_REQUIRED_FILTERS_TITLE') }}</template>
-
-    <template #body>
+  <D2eDialog
+    :model-value="isOpen"
+    size="l"
+    :busy="loading"
+    :title="getText('MRI_PA_REQUIRED_FILTERS_TITLE')"
+    :close-label="getText('MRI_PA_CLOSE_BUTTON')"
+    data-testid="pa-required-filters-dialog"
+    @close="handleCancel"
+  >
+    <template #default>
       <div class="required-filters-modal">
         <p class="description">
           {{ getText('MRI_PA_REQUIRED_FILTERS_DESC') }}
@@ -216,23 +222,26 @@
       </div>
     </template>
 
-    <template #footer>
-      <div class="flex-spacer"></div>
-      <appButton
-        :click="handleSubmit"
-        :text="getText('MRI_PA_APPLY_FILTERS_BUTTON')"
-        :disabled="loading || !isFormValid"
-      />
-      <appButton :click="handleCancel" :text="getText('MRI_PA_BUTTON_CANCEL')" :disabled="loading" />
+    <template #actions>
+      <D2eButton
+        variant="secondary"
+        :disabled="loading"
+        data-testid="pa-required-filters-cancel-btn"
+        @click="handleCancel"
+      >
+        {{ getText('MRI_PA_BUTTON_CANCEL') }}
+      </D2eButton>
+      <D2eButton :disabled="loading || !isFormValid" data-testid="pa-required-filters-apply-btn" @click="handleSubmit">
+        {{ getText('MRI_PA_APPLY_FILTERS_BUTTON') }}
+      </D2eButton>
     </template>
-  </MessageBox>
+  </D2eDialog>
 </template>
 
 <script lang="ts" setup>
 import { computed, reactive, watch } from 'vue'
 import { useStore } from 'vuex'
-import MessageBox from '../MessageBox.vue'
-import appButton from '@/lib/ui/app-button.vue'
+import { D2eButton, D2eDialog } from '@d2e/ui'
 import ConceptSetTypeaheadField from './ConceptSetTypeaheadField.vue'
 import type {
   ResolvedWizardFieldGroup,
@@ -1118,10 +1127,6 @@ function validateYearRange(fieldId: string): void {
 
 .checkbox-label input[type='checkbox'] {
   margin: 0;
-}
-
-.flex-spacer {
-  flex: 1;
 }
 
 @media (max-width: 720px) {

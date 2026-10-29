@@ -79,23 +79,22 @@
         ></patientListContainer>
       </div>
     </div>
-    <messageBox
-      messageType="warning"
-      dim="true"
-      dialogWidth="400px"
-      v-if="showClearConfirmation"
+    <D2eDialog
+      :model-value="showClearConfirmation"
+      :title="getText('MRI_PA_CONFIRM_SELECTION_CHANGE')"
+      data-testid="pa-clear-selection-dialog"
       @close="cancelClearSelection"
     >
-      <template v-slot:header>{{ getText('MRI_PA_CONFIRM_SELECTION_CHANGE') }}</template>
-      <template v-slot:body>
-        <div>{{ clearConfirmationMessage }}</div>
+      <p>{{ clearConfirmationMessage }}</p>
+      <template #actions>
+        <D2eButton variant="secondary" data-testid="pa-clear-selection-cancel-btn" @click="cancelClearSelection">
+          {{ getText('MRI_PA_BUTTON_CANCEL') }}
+        </D2eButton>
+        <D2eButton v-focus data-testid="pa-clear-selection-confirm-btn" @click="confirmClearSelection">
+          {{ getText('MRI_PA_BUTTON_CONFIRM') }}
+        </D2eButton>
       </template>
-      <template v-slot:footer>
-        <div class="flex-spacer"></div>
-        <appButton :click="confirmClearSelection" :text="getText('MRI_PA_BUTTON_CONFIRM')"></appButton>
-        <appButton :click="cancelClearSelection" :text="getText('MRI_PA_BUTTON_CANCEL')"></appButton>
-      </template>
-    </messageBox>
+    </D2eDialog>
   </div>
 </template>
 
@@ -105,8 +104,7 @@ import appCheckbox from '../lib/ui/app-checkbox.vue'
 import appLabel from '../lib/ui/app-label.vue'
 import Constants from '../utils/Constants'
 import { formatNumber } from '../utils/NumberUtils'
-import messageBox from './MessageBox.vue'
-import appButton from '../lib/ui/app-button.vue'
+import { D2eButton, D2eDialog } from '@d2e/ui'
 import AxisMenuButton from './AxisMenuButton.vue'
 import DropDownMenu from './DropDownMenu.vue'
 import XAxisColorButton from './XAxisColorButton.vue'
@@ -425,8 +423,8 @@ export default {
     },
   },
   components: {
-    messageBox,
-    appButton,
+    D2eDialog,
+    D2eButton,
     AxisMenuButton,
     DropDownMenu,
     XAxisColorButton,
