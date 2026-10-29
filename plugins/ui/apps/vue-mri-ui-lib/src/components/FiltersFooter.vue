@@ -188,6 +188,7 @@ export default {
       cohortNameValidationState: 'valid' as 'invalid' | 'valid' | 'empty',
       cohortName: '',
       isSavingBookmark: false,
+      latestSaveId: 0,
       maxLength: 255,
       maxFiltercardCount: 10,
     }
@@ -325,6 +326,8 @@ export default {
         }
 
         this.isSavingBookmark = true
+        this.latestSaveId += 1
+        const saveId = this.latestSaveId
 
         try {
           const isInsert = isNewBookmark || this.isNotUserSharedBookmark
@@ -359,6 +362,19 @@ export default {
             return
           }
 
+          const savedBmkId = isInsert ? result.bmkId : activeBookmark.bmkId
+          if (isInsert) {
+            this[types.SET_ACTIVE_BOOKMARK]({
+              bmkId: savedBmkId,
+              bookmarkname: bookmarkName,
+              bookmark: JSON.stringify(bookmark),
+              user_id: username,
+              shared: this.shareBookmark,
+              paConfigId: this.getMriFrontendConfig.getPaConfigId(),
+              isNew: false,
+            })
+          }
+
           // Baseline the payload that was written, before the cohort list refresh: waiting
           // for that refresh is what left a saved cohort reporting dirty (#3341).
           this[types.SET_ACTIVE_BOOKMARK_BASELINE](bookmark)
@@ -371,9 +387,14 @@ export default {
           // after the modal closes, not while the subsequent list refresh is still running.
           this.closeSaveBookmark()
           useNotificationStore().setToastMessage({ text: successMessage })
+          this.isSavingBookmark = false
 
           await this.fireBookmarkQuery({ method: 'get', params: { cmd: 'loadAll' } })
+          const isSupersededSave = saveId !== this.latestSaveId || this.getActiveBookmark?.bmkId !== savedBmkId
           const savedBookmark = this.getBookmarkByNameAndUsername(bookmarkName, username)
+          if (isSupersededSave || !savedBookmark) {
+            return
+          }
           // SET_ACTIVE_BOOKMARK clears the baseline, so it has to be captured again. Live
           // state here would mark edits made during the refresh clean although they were
           // never written, so the written payload is used again.
@@ -382,7 +403,9 @@ export default {
         } catch (error) {
           console.error('Error during bookmark save or reload:', error)
         } finally {
-          this.isSavingBookmark = false
+          if (saveId === this.latestSaveId) {
+            this.isSavingBookmark = false
+          }
           this.cohortName = ''
           this.closeSaveBookmark()
         }
