@@ -27,13 +27,16 @@ const moduleNames = [
   "Setup/GitConfig",
 ];
 
-const modulePaths = moduleNames.reduce(
-  (acc, moduleName) => ({
-    ...acc,
-    [`plugins/${moduleName}/module`]: async () => await import(`./${moduleName}/module`),
-  }),
-  {}
-);
+const moduleLoaders = import.meta.glob("./**/module.{ts,tsx}");
+
+const modulePaths = moduleNames.reduce<{ [path: string]: any }>((acc, moduleName) => {
+  const loader =
+    moduleLoaders[`./${moduleName}/module.ts`] ?? moduleLoaders[`./${moduleName}/module.tsx`];
+  if (loader) {
+    acc[`plugins/${moduleName}/module`] = loader;
+  }
+  return acc;
+}, {});
 
 const builtInPlugins: { [path: string]: any } = {
   ...modulePaths,
