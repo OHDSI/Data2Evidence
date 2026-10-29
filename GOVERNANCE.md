@@ -89,7 +89,7 @@ component. If they disagree, the Chief Architect decides.
 | New service, plugin, repository, or a runtime dependency shared across components | Yes, *Architecture* | Chief Architect, after discussion on the D2E EP |
 | Replacing or adding a central component | Yes, *Architecture* | Chief Architect, after discussion on the D2E EP, Product Manager and Steering Board consulted |
 | Adding or dropping a database dialect, stopping a feature, support commitments | Yes, *Product* | Product Manager, Chief Architect consulted |
-| This document, `CONTRIBUTING.md`, `RELEASE.md`, review or approval rules | Yes, *Process* | Chief Architect, after discussion on the D2E EP |
+| This document, `CONTRIBUTING.md`, `RELEASE.md`, review or approval rules | Yes, *Process* | Chief Architect, after discussion on the D2E EP, Product Manager and Steering Board consulted |
 
 A D2E EP is open for discussion for at least 7 calendar days, so that every
 time zone and a weekend are covered. A shepherd (a code owner other than the
@@ -158,7 +158,7 @@ contacts named there.
 ## Changing this document
 
 This document is changed by a *Process* D2E EP, decided by the Chief Architect
-after discussion.
+after discussion, with the Product Manager and the Steering Board consulted.
 
 ## Current role holders
 
