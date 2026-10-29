@@ -38,19 +38,17 @@ page.
    to it, so the history shows how the proposal moved. The roles to be
    consulted are mentioned in the pull request description, which notifies
    them.
-3. Shepherd. Within 3 working days, a code owner other than the author takes
-   the D2E EP as shepherd and keeps the discussion moving.
-4. Disposition. When the discussion has settled, the shepherd proposes a
-   disposition in a comment: accept, reject or postpone, with a short summary
-   of the discussion.
-5. Final comment period. 7 calendar days follow, so that everyone sees the
+3. Disposition. When the discussion has settled, the role that decides, as set
+   out in GOVERNANCE.md, proposes a disposition in a comment: accept, reject or
+   postpone, with a short summary of the discussion.
+4. Final comment period. 7 calendar days follow, so that everyone sees the
    proposed outcome before it stands. A binding objection must give a
    technical reason and can come from the people named in
    [GOVERNANCE.md](../GOVERNANCE.md#across-components).
-6. Decision. Without a binding objection, the disposition stands. Otherwise the
+5. Decision. Without a binding objection, the disposition stands. Otherwise the
    role that decides, as set out in GOVERNANCE.md, decides and writes down why.
    The decision is recorded in the D2E EP's status and in a closing comment.
-7. Merge or close. Accepted D2E EPs are merged with status *Accepted*. Rejected
+6. Merge or close. Accepted D2E EPs are merged with status *Accepted*. Rejected
    and withdrawn ones are closed with the decision in the last comment.
    Postponed ones are merged with status *Postponed*, so they can be picked up
    later.
@@ -79,7 +77,6 @@ title: Short title
 type: Standards | Architecture | Product | Process
 status: Draft
 author: '@github-handle'
-shepherd: '@github-handle'
 consulted: '@github-handle, ...'
 created: YYYY-MM-DD
 ---
