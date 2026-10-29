@@ -87,7 +87,7 @@ component. If they disagree, the Chief Architect decides.
 | New or changed API, REST, plugin interface or config format | Yes, *Standards* | Code owners of the affected components; the Chief Architect if they disagree |
 | Data model, CDM handling or database schema | Yes, *Standards* | Chief Architect, after discussion on the D2E EP |
 | New service, plugin, repository, or a runtime dependency shared across components | Yes, *Architecture* | Chief Architect, after discussion on the D2E EP |
-| Replacing or adding a central component | Yes, *Architecture* | Chief Architect, after discussion on the D2E EP, Product Manager consulted, Steering Board notified |
+| Replacing or adding a central component | Yes, *Architecture* | Chief Architect, after discussion on the D2E EP, Product Manager and Steering Board consulted |
 | Adding or dropping a database dialect, stopping a feature, support commitments | Yes, *Product* | Product Manager, Chief Architect consulted |
 | This document, `CONTRIBUTING.md`, `RELEASE.md`, review or approval rules | Yes, *Process* | Chief Architect, after discussion on the D2E EP |
 
@@ -97,9 +97,9 @@ author) proposes a disposition: accept, reject or postpone. A final comment
 period of 7 days follows. If no binding objection is raised, the disposition
 stands.
 
-The Steering Board is notified when an *Architecture* D2E EP is opened and can
-raise objections during the discussion period. Objections are answered on the
-D2E EP; the decision stays with the Chief Architect.
+Consulted means: notified when the D2E EP is opened, with the chance to raise
+objections during the discussion period. Objections are answered on the D2E EP;
+the decision stays with the role that decides.
 
 A binding objection must give a technical reason. It can come from a code owner
 of an affected component, the Chief Architect, or, for *Product* D2E EPs, the
