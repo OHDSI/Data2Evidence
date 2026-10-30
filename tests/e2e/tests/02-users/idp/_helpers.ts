@@ -1,0 +1,722 @@
+/**
+ * Shared IDP test harness — the auth-provider contract every sign-in path must satisfy.
+ *
+ * Folder-scoped exception to the suite's inline-helper convention so the four provider specs
+ * (logto-native / entra-external-id / entra / physionet) share login + token-read + claim
+ * assertion, and a future `D2E_IDP=trex` cutover re-runs the exact same contract.
+ */
+import { expect } from '../../fixtures'
+import type { APIRequestContext, Page } from '@playwright/test'
+import { MINUTE_1, MINUTE_5, MINUTE_10, SECOND_30 } from '../../const'
+
+export const USERMGMT = '/d2e/usermgmt/api'
+
+export const ADMIN_USERNAME = process.env.E2E_ADMIN_USERNAME ?? 'admin'
+export const ADMIN_PASSWORD = process.env.E2E_ADMIN_PASSWORD ?? 'Updatepassword12345'
+
+// ---- env gating ---------------------------------------------------------------
+
+/**
+ * Which of `names` are missing/blank from the environment. Fed to `test.skip` so a skip always
+ * names the vars that would unblock it, never a silent pass.
+ */
+export function missingEnv(names: string[]): string[] {
+  return names.filter(n => !(process.env[n] ?? '').trim())
+}
+
+export function skipReason(names: string[]): string {
+  const missing = missingEnv(names)
+  return missing.length ? `set ${missing.join(', ')} to run this path` : ''
+}
+
+// ---- login --------------------------------------------------------------------
+
+/**
+ * Sign in with username/password through Logto's own form, reached via trex's "Sign in with
+ * Logto" (federated mode) — never trex's native password form.
+ */
+export async function loginViaUI(page: Page, username: string, password: string): Promise<void> {
+  // Portal 301-redirects to sign-in; ignore a goto abort from that redirect (the waits below gate readiness).
+  await page.goto('/d2e/portal').catch(() => {})
+
+  const logtoButton = page
+    .getByRole('link', { name: /sign in with logto/i })
+    .or(page.getByRole('button', { name: /sign in with logto/i }))
+  await logtoButton.first().waitFor({ state: 'visible', timeout: MINUTE_1 })
+  await logtoButton.first().click()
+
+  const logtoId = page
+    .locator('input[name="identifier"], input[name="username"], input[type="email"], input[type="text"]:not([type="hidden"])')
+    .first()
+  await logtoId.waitFor({ state: 'visible', timeout: MINUTE_1 })
+  await logtoId.fill(username)
+  await page.locator('input[name="password"], input[type="password"]').first().fill(password)
+  await page.getByRole('button', { name: /sign ?in|log ?in|continue/i }).first().click()
+}
+
+export interface UpstreamCreds {
+  username: string
+  password: string
+}
+
+/**
+ * Sign in through a social/enterprise connector, then drive the upstream IdP's own form.
+ *
+ * The connector click triggers a full-page redirect to the upstream IdP. We MUST wait for the
+ * browser to actually leave the portal origin before touching any field — otherwise the selectors
+ * race the still-visible Logto sign-in page and match its native fields / social buttons.
+ * Upstream branches: Microsoft (Entra/CIAM) splits identifier and password across two screens;
+ * a generic OIDC provider (e.g. PhysioNet's Django app) uses a single form and may show a
+ * consent/authorize page before redirecting back.
+ *
+ * `connectorName` is the visible button label on the Logto screen; `target` is for logging.
+ */
+export async function loginViaConnector(
+  page: Page,
+  opts: { target: string; connectorName: RegExp; creds: UpstreamCreds }
+): Promise<void> {
+  const { target, connectorName, creds } = opts
+
+  // Portal 301-redirects to sign-in; ignore a goto abort from that redirect (selectors below gate readiness).
+  await page.goto('/d2e/portal').catch(() => {})
+  // Origin from the page (not an env fallback) so it always matches the fixture's baseURL.
+  const portalOrigin = new URL(page.url()).origin
+
+  // May render as a button or a link depending on the sign-in theme.
+  const connectorButton = page.getByRole('button', { name: connectorName }).or(
+    page.getByRole('link', { name: connectorName })
+  )
+
+  // Federated mode: the connectors live on Logto, behind trex's "Sign in with
+  // Logto" button. Click through to it first. On a Logto-only stack that button
+  // is absent and the connector renders here already, so this is best-effort.
+  const logtoButton = page.getByRole('link', { name: /sign in with logto/i })
+  await Promise.race([
+    logtoButton.first().waitFor({ state: 'visible', timeout: MINUTE_1 }),
+    connectorButton.first().waitFor({ state: 'visible', timeout: MINUTE_1 })
+  ]).catch(() => {})
+  if (await logtoButton.first().isVisible().catch(() => false)) {
+    console.log('[login] federated mode: clicking "Sign in with Logto"')
+    await logtoButton.first().click()
+  }
+
+  await connectorButton.first().waitFor({ state: 'visible', timeout: MINUTE_1 })
+  console.log(`[login] clicking connector "${target}"`)
+  await connectorButton.first().click()
+
+  // Wait until we've actually navigated to the upstream IdP (a different origin), so a missing
+  // button / unreachable upstream surfaces plainly instead of a later selector timing out.
+  await page
+    .waitForURL(url => url.origin !== portalOrigin, { timeout: MINUTE_1 })
+    .catch(() => {
+      throw new Error(
+        `connector "${target}": browser never left ${portalOrigin} after clicking — upstream IdP unreachable or connector button missing`
+      )
+    })
+  const upstreamHost = new URL(page.url()).host
+  const isMicrosoft = /microsoftonline|ciamlogin|live\.com|microsoft/i.test(upstreamHost)
+  console.log(`[login] upstream IdP host: ${upstreamHost}${isMicrosoft ? ' (microsoft)' : ''}`)
+
+  // Interactive mode (E2E_MANUAL_LOGIN): for real MFA accounts, the tester completes sign-in in
+  // the headed browser and we just wait for the redirect back — avoids fighting the upstream SPA.
+  if ((process.env.E2E_MANUAL_LOGIN ?? '').trim()) {
+    console.log(
+      `[login] MANUAL mode — complete the sign-in (including MFA) in the browser window; ` +
+        `waiting up to 10 min for return to ${portalOrigin}`
+    )
+    // Auto-dismiss Microsoft's "Stay signed in?" (KMSI) prompt so the last click isn't on you.
+    page
+      .getByRole('button', { name: /^\s*(yes|no|ja|nein)\s*$/i })
+      .first()
+      .waitFor({ state: 'visible', timeout: MINUTE_10 })
+      .then(async () => {
+        await page.getByRole('button', { name: /^\s*(yes|no|ja|nein)\s*$/i }).first().click().catch(() => {})
+      })
+      .catch(() => {})
+    await page.waitForURL(url => url.origin === portalOrigin, { timeout: MINUTE_10 })
+    return
+  }
+
+  const identifier = page
+    .locator(
+      'input[name="loginfmt"], input[name="username"], input[name="identifier"], input[name="login"], input[type="email"], input#id_username, input#username, input#identifier'
+    )
+    .first()
+  await identifier.waitFor({ state: 'visible', timeout: MINUTE_1 })
+  await identifier.fill(creds.username)
+
+  // Microsoft splits identifier/password across two screens with a "Next" button; generic
+  // single-form providers don't, so only take it on a Microsoft origin.
+  if (isMicrosoft) {
+    const next = page.getByRole('button', { name: /next|weiter|continue/i })
+    if (await next.first().isVisible().catch(() => false)) {
+      await next.first().click()
+    }
+  }
+
+  // A rejected identifier (unknown user / wrong tenant) shows an error alert instead of the
+  // password screen. Race the two so a bad account fails fast rather than a 60s field timeout.
+  const identifierError = page
+    .getByRole('alert')
+    .filter({ hasText: /incorrect|isn.?t correct|doesn.?t exist|couldn.?t find|can.?t find|no account|not found/i })
+  const password = page
+    .locator('input[name="passwd"], input[name="password"], input[type="password"], input#id_password, input#password')
+    .first()
+  await Promise.race([
+    password.waitFor({ state: 'visible', timeout: MINUTE_1 }).catch(() => {}),
+    identifierError.first().waitFor({ state: 'visible', timeout: MINUTE_1 }).catch(() => {})
+  ])
+  if (await identifierError.first().isVisible().catch(() => false)) {
+    throw new Error(
+      `connector "${target}": upstream IdP rejected the identifier — account not found or not in this tenant`
+    )
+  }
+  await password.waitFor({ state: 'visible', timeout: SECOND_30 })
+  await password.fill(creds.password)
+
+  // Name-based only: getByRole matches both <button> and <input type=submit> (by its value),
+  // and NOT the navbar's "Search" submit — a bare button[type=submit] fallback would grab that.
+  const submit = page.getByRole('button', { name: /sign ?in|log ?in|anmelden/i })
+  await submit.first().click()
+
+  // A wrong password shows an error alert instead of progressing. Race it against the signs of
+  // progress (portal-origin return, or Microsoft's "stay signed in?") so it fails fast.
+  const passwordError = page
+    .getByRole('alert')
+    .filter({
+      hasText:
+        /incorrect|isn.?t correct|invalid|wrong|try again|couldn.?t (sign|find)|could not find|account with this email|email address or password|does.?n.?t match/i
+    })
+  const staySignedInBtn = page.getByRole('button', { name: /yes|ja/i })
+  // In the race so a generic upstream's consent page resolves it instead of a ~30s timeout.
+  const consent = page.getByRole('button', { name: /authorize|allow|approve|accept|consent/i })
+  await Promise.race([
+    passwordError.first().waitFor({ state: 'visible', timeout: SECOND_30 }).catch(() => {}),
+    page.waitForURL(url => url.origin === portalOrigin, { timeout: SECOND_30 }).catch(() => {}),
+    staySignedInBtn.first().waitFor({ state: 'visible', timeout: SECOND_30 }).catch(() => {}),
+    consent.first().waitFor({ state: 'visible', timeout: SECOND_30 }).catch(() => {})
+  ])
+  if (await passwordError.first().isVisible().catch(() => false)) {
+    throw new Error(`connector "${target}": upstream IdP rejected the password`)
+  }
+
+  if (isMicrosoft) {
+    // Microsoft's "Stay signed in?" interstitial, if present, must be dismissed to return.
+    const staySignedIn = page.getByRole('button', { name: /yes|ja/i })
+    if (await staySignedIn.first().isVisible({ timeout: SECOND_30 }).catch(() => false)) {
+      await staySignedIn.first().click()
+    }
+  } else if (await consent.first().isVisible().catch(() => false)) {
+    // Generic OIDC (e.g. PhysioNet) shows a consent page after login.
+    console.log('[login] approving upstream consent')
+    await consent.first().click()
+  }
+}
+
+/**
+ * Clear the OIDC session (Logto SSO cookie + portal storage tokens) and return to the sign-in
+ * form, so a spec can switch users without depending on nav selectors.
+ */
+export async function resetSession(page: Page): Promise<void> {
+  await page.context().clearCookies()
+  try {
+    await page.evaluate(() => {
+      sessionStorage.clear()
+      localStorage.clear()
+    })
+  } catch {
+    // context may be mid-navigation; storage still gets cleared on next load
+  }
+  // Portal 301-redirects to sign-in; goto can ERR_ABORTED. The waitFor below is the readiness gate.
+  await page.goto('/d2e/portal').catch(() => {})
+  await page.locator('input[name="identifier"]').waitFor({ state: 'visible', timeout: MINUTE_1 })
+}
+
+// ---- federated pre-link (test-only bridge over a Trex phase-5 gap) -------------
+
+function requireEnv(name: string): string {
+  const v = (process.env[name] ?? '').trim()
+  if (!v) throw new Error(`prelink needs ${name} (from the stack's generated .env)`)
+  return v
+}
+
+interface LogtoUser {
+  id: string
+  name?: string | null
+  primaryEmail?: string | null
+  identities?: Record<string, { details?: { email?: string } }>
+}
+
+/** Logto Management API token. */
+async function logtoMgmtToken(request: APIRequestContext, base: string): Promise<string> {
+  const m2mId = requireEnv('LOGTO_API_M2M_CLIENT_ID')
+  const m2mSecret = requireEnv('LOGTO_API_M2M_CLIENT_SECRET')
+  const res = await request.post(`${base}/oidc/token`, {
+    headers: {
+      'content-type': 'application/x-www-form-urlencoded',
+      authorization: 'Basic ' + Buffer.from(`${m2mId}:${m2mSecret}`).toString('base64')
+    },
+    form: { grant_type: 'client_credentials', resource: 'https://default.logto.app/api', scope: 'all' }
+  })
+  expect(res.ok(), `Logto M2M token failed: ${res.status()} ${await res.text()}`).toBeTruthy()
+  return (await res.json()).access_token as string
+}
+
+async function listLogtoUsers(
+  request: APIRequestContext,
+  base: string,
+  mgmtToken: string,
+  params: Record<string, string>
+): Promise<LogtoUser[]> {
+  const res = await request.get(`${base}/api/users`, { params, headers: { authorization: `Bearer ${mgmtToken}` } })
+  return res.ok() ? ((await res.json()) as LogtoUser[]) : []
+}
+
+/**
+ * Logto users carrying a `target` connector identity. Keyed off the identity, not username/email:
+ * the Microsoft login UPN can differ from the email Logto stores, so only the identity key is stable.
+ */
+async function usersWithConnectorIdentity(
+  request: APIRequestContext,
+  base: string,
+  mgmtToken: string,
+  target: string
+): Promise<LogtoUser[]> {
+  return (await listLogtoUsers(request, base, mgmtToken, { page_size: '100' })).filter(u => u.identities?.[target])
+}
+
+/**
+ * Delete every prior Logto user for this connector so the next sign-in produces exactly one user
+ * with the `target` identity.
+ */
+export async function resetLogtoConnectorUser(
+  request: APIRequestContext,
+  base: string,
+  opts: { target: string }
+): Promise<void> {
+  const mgmtToken = await logtoMgmtToken(request, base)
+  for (const user of await usersWithConnectorIdentity(request, base, mgmtToken, opts.target)) {
+    const res = await request.delete(`${base}/api/users/${user.id}`, { headers: { authorization: `Bearer ${mgmtToken}` } })
+    console.log(`[reset] deleted logto user ${user.id} (${user.primaryEmail ?? user.name ?? '?'}) -> ${res.status()}`)
+  }
+}
+
+/**
+ * trex's Logto provider maps the account email from the upstream `sub`, so a first-time connector
+ * user is refused at provisioning (upstream_email_unusable) while an already-linked user signs in
+ * fine (link branch never reads the address). Pre-create the link the way the IdP migration does
+ * (trex's /admin/federation/links, keyed by Logto user id). Remove once trex provisions connector
+ * users directly (Trex phase 5).
+ */
+export async function prelinkLogtoConnectorUser(
+  request: APIRequestContext,
+  base: string,
+  opts: { target: string }
+): Promise<{ logtoUserId: string; email: string }> {
+  const serviceKey = requireEnv('TREX__SERVICE_ROLE_KEY')
+  const mgmtToken = await logtoMgmtToken(request, base)
+
+  // The identity may not be written the instant login returns; poll. Priors were cleared, so the
+  // first match is the user that just signed in.
+  let user: LogtoUser | undefined
+  for (let i = 0; i < 20 && !user; i++) {
+    user = (await usersWithConnectorIdentity(request, base, mgmtToken, opts.target))[0]
+    if (!user) await new Promise(r => setTimeout(r, 1000))
+  }
+  if (!user) {
+    const all = await listLogtoUsers(request, base, mgmtToken, { page_size: '100' })
+    const seen = all.map(u => `${u.id}:${u.primaryEmail ?? u.name ?? '?'}[${Object.keys(u.identities ?? {}).join(',')}]`).join(' ')
+    expect(
+      user,
+      `no Logto user with a "${opts.target}" identity (the connector login likely didn't complete). Logto users: ${seen || '(none)'}`
+    ).toBeTruthy()
+  }
+
+  const logtoUserId = user!.id
+  const email = user!.primaryEmail || user!.identities![opts.target].details?.email || `${logtoUserId}@physionet.local`
+  const linkRes = await request.put(`${base}/trex/admin/federation/links`, {
+    headers: { authorization: `Bearer ${serviceKey}`, 'content-type': 'application/json' },
+    data: { providerId: 'logto', accountId: logtoUserId, userId: logtoUserId, email, name: user!.name ?? null, banned: false }
+  })
+  // 409 = already linked to this id on a re-run; still the state we want.
+  expect(
+    [200, 201, 409].includes(linkRes.status()),
+    `trex federation link failed: ${linkRes.status()} ${await linkRes.text()}`
+  ).toBeTruthy()
+  console.log(`[prelink] logto user ${logtoUserId} (${email}) linked in trex -> ${linkRes.status()}`)
+  return { logtoUserId, email }
+}
+
+// ---- token read + decode ------------------------------------------------------
+
+/**
+ * Portal keeps the token in sessionStorage `oidc.default:*.tokens.accessToken`; Atlas stores the
+ * raw JWT in localStorage `bearerToken`. Try portal first, fall back to Atlas. Returns null (never
+ * throws) when neither is present yet.
+ */
+async function readTokenFromPage(page: Page): Promise<string | null> {
+  try {
+    return await page.evaluate(() => {
+      const key = Object.keys(sessionStorage).find(k => k.startsWith('oidc.default:'))
+      if (key) {
+        try {
+          const t = JSON.parse(sessionStorage.getItem(key) || '{}')?.tokens?.accessToken
+          if (t) return t
+        } catch { /* fall through to Atlas */ }
+      }
+      const bt = localStorage.getItem('bearerToken') // Atlas
+      return bt && bt.length > 0 ? bt : null
+    })
+  } catch {
+    // Execution context destroyed by an in-flight OIDC redirect — retry.
+    return null
+  }
+}
+
+export async function readAccessToken(page: Page): Promise<string> {
+  await expect
+    .poll(() => readTokenFromPage(page), {
+      timeout: MINUTE_1,
+      message: 'access token did not appear in portal sessionStorage or Atlas localStorage'
+    })
+    .toBeTruthy()
+  const token = await readTokenFromPage(page)
+  if (!token) throw new Error('access token did not appear in portal sessionStorage or Atlas localStorage')
+  return token
+}
+
+/** Poll for a token up to `timeoutMs`, returning null instead of failing. */
+export async function tryReadAccessToken(page: Page, timeoutMs = SECOND_30): Promise<string | null> {
+  const end = Date.now() + timeoutMs
+  do {
+    const t = await readTokenFromPage(page)
+    if (t) return t
+    await new Promise(r => setTimeout(r, 1000))
+  } while (Date.now() < end)
+  return null
+}
+
+/**
+ * Re-enter trex after prelinking so the callback takes the link branch. Opening the portal
+ * auto-starts OIDC: a still-valid upstream session (Entra) silently re-auths and lands a token; a
+ * stateless upstream (the physionet mock) shows the sign-in page, so fall back to a fresh login.
+ */
+export async function reenterAfterPrelink(
+  page: Page,
+  connector: { target: string; connectorName: RegExp; creds: UpstreamCreds }
+): Promise<void> {
+  await page.goto('/d2e/portal').catch(() => {})
+  if (await tryReadAccessToken(page, SECOND_30)) return
+
+  console.log('[login] no silent re-auth; doing a fresh connector login')
+  await resetSession(page)
+  await loginViaConnector(page, connector)
+}
+
+export type TokenClaims = Record<string, unknown> & {
+  iss?: string
+  sub?: string
+  aud?: string | string[]
+  email?: string
+  preferred_username?: string
+  username?: string
+  name?: string
+  roles?: unknown
+}
+
+/** Decode a JWT payload without verifying the signature (verification is WebAPI/trex's job). */
+export function decodeToken(token: string): TokenClaims {
+  return JSON.parse(Buffer.from(token.split('.')[1], 'base64url').toString('utf8'))
+}
+
+export function rolesFromToken(token: string): string[] {
+  const payload = decodeToken(token)
+  return Array.isArray(payload.roles) ? (payload.roles as string[]) : []
+}
+
+export function authHeaders(token: string, baseURL: string): Record<string, string> {
+  return {
+    Authorization: `Bearer ${token}`,
+    accept: 'application/json',
+    origin: baseURL,
+    referer: `${baseURL}/d2e/portal`
+  }
+}
+
+// ---- contract assertions ------------------------------------------------------
+
+export async function expectContainsAll(actual: string[], expected: string[], label: string): Promise<void> {
+  const missing = expected.filter(e => !actual.includes(e))
+  expect(missing, `${label} is missing ${JSON.stringify(missing)}; got ${JSON.stringify(actual)}`).toEqual([])
+}
+
+export interface ClaimContractExpectations {
+  /** Roles that must all be present in the `roles` claim. */
+  roles?: string[]
+  /** Claim keys that must be present and non-empty (beyond the always-required base set). */
+  requiredClaims?: string[]
+}
+
+/**
+ * The auth-provider contract WebAPI / Atlas3 / usermgmt depend on. Every path must satisfy the base
+ * set; `expected.requiredClaims`/`roles` add path-specific extras. A `D2E_IDP=trex` cutover must
+ * keep this green — a failing key here is a concrete Trex gap.
+ */
+export function assertClaimContract(token: string, expected: ClaimContractExpectations = {}): TokenClaims {
+  const claims = decodeToken(token)
+
+  expect(typeof claims.iss, `iss missing; got ${JSON.stringify(claims.iss)}`).toBe('string')
+  expect(typeof claims.sub, `sub missing; got ${JSON.stringify(claims.sub)}`).toBe('string')
+  expect(claims.aud, `aud missing`).toBeTruthy()
+  expect(typeof claims.email, `email claim missing; got ${JSON.stringify(claims.email)}`).toBe('string')
+
+  // Display name under any of the three; Trex carries the login in `name`.
+  const displayName = claims.preferred_username ?? claims.username ?? claims.name
+  expect(
+    typeof displayName === 'string' && displayName.length > 0,
+    `no display-name claim (preferred_username/username/name) present; got ${JSON.stringify({
+      preferred_username: claims.preferred_username,
+      username: claims.username,
+      name: claims.name
+    })}`
+  ).toBeTruthy()
+
+  expect(Array.isArray(claims.roles), `roles claim is not an array; got ${JSON.stringify(claims.roles)}`).toBeTruthy()
+
+  for (const key of expected.requiredClaims ?? []) {
+    const v = claims[key]
+    expect(
+      v !== undefined && v !== null && v !== '',
+      `required claim "${key}" missing/empty; got ${JSON.stringify(v)}`
+    ).toBeTruthy()
+  }
+
+  // Path-specific roles; arrayContaining([]) is a no-op when none are requested.
+  expect(
+    claims.roles,
+    `roles claim is missing ${JSON.stringify(expected.roles ?? [])}; got ${JSON.stringify(claims.roles)}`
+  ).toEqual(expect.arrayContaining(expected.roles ?? []))
+
+  return claims
+}
+
+// ---- provisioning (admin-driven, via usermgmt REST) ---------------------------
+
+export interface PortalDataset {
+  id: string
+  tokenStudyCode?: string
+  type?: string
+  databaseName?: string
+  studyDetail?: { name?: string }
+  tenant?: { id?: string }
+}
+
+/** Resolve the demo WebAPI dataset (id + token code + tenant) for researcher-role grants. */
+export async function resolveWebapiDataset(
+  api: APIRequestContext,
+  base: string,
+  adminHeaders: Record<string, string>
+): Promise<{ datasetId: string; datasetCode: string; tenantId: string }> {
+  const dsRes = await api.get(`${base}/d2e/system-portal/dataset/list/systemadmin`, { headers: adminHeaders })
+  expect(dsRes.ok(), `dataset list failed: ${dsRes.status()}`).toBeTruthy()
+  const datasets = (await dsRes.json()) as PortalDataset[]
+  const webapiDatasets = datasets.filter(d => d.type === 'webapi' && d.id && d.tokenStudyCode && d.tenant?.id)
+  const dataset =
+    webapiDatasets.find(d => d.studyDetail?.name === 'Demo dataset' || d.databaseName === 'demo_database') ??
+    webapiDatasets[0]
+  expect(
+    dataset,
+    `No webapi dataset found. Datasets: ${JSON.stringify(datasets.map(d => ({ n: d.studyDetail?.name, t: d.type })))}`
+  ).toBeTruthy()
+  return {
+    datasetId: dataset.id,
+    datasetCode: dataset.tokenStudyCode as string,
+    tenantId: dataset.tenant!.id as string
+  }
+}
+
+/** Create a user with a password and resolve its internal usermgmt id. */
+export async function provisionUser(
+  api: APIRequestContext,
+  base: string,
+  adminHeaders: Record<string, string>,
+  username: string,
+  password: string
+): Promise<string> {
+  const addRes = await api.post(`${base}${USERMGMT}/member/tenant/add`, {
+    headers: adminHeaders,
+    data: { username, password }
+  })
+  expect(addRes.status(), `member/tenant/add failed: ${await addRes.text()}`).toBe(201)
+
+  await expect
+    .poll(
+      async () => {
+        const res = await api.get(`${base}${USERMGMT}/user`, { headers: adminHeaders })
+        if (!res.ok()) return undefined
+        const users = (await res.json()) as Array<{ id: string; username: string }>
+        return users.find(u => u.username === username)?.id
+      },
+      { timeout: SECOND_30, message: `user ${username} did not appear in usermgmt` }
+    )
+    .toBeTruthy()
+  const usersRes = await api.get(`${base}${USERMGMT}/user`, { headers: adminHeaders })
+  const users = (await usersRes.json()) as Array<{ id: string; username: string }>
+  return users.find(u => u.username === username)!.id
+}
+
+/** Look up a usermgmt user id by username (for federated users provisioned at login). */
+export async function findUserIdByUsername(
+  api: APIRequestContext,
+  base: string,
+  adminHeaders: Record<string, string>,
+  match: (u: { username: string; email?: string }) => boolean
+): Promise<string | undefined> {
+  const res = await api.get(`${base}${USERMGMT}/user`, { headers: adminHeaders })
+  if (!res.ok()) return undefined
+  const users = (await res.json()) as Array<{ id: string; username: string; email?: string }>
+  return users.find(match)?.id
+}
+
+export interface UsermgmtUser {
+  id: string
+  username: string
+  email?: string
+  idpUserId?: string
+  active?: boolean
+}
+
+/** Look up the full usermgmt user record (id + idpUserId + active) for linkage assertions. */
+export async function findUser(
+  api: APIRequestContext,
+  base: string,
+  adminHeaders: Record<string, string>,
+  match: (u: UsermgmtUser) => boolean
+): Promise<UsermgmtUser | undefined> {
+  const res = await api.get(`${base}${USERMGMT}/user`, { headers: adminHeaders })
+  if (!res.ok()) return undefined
+  const users = (await res.json()) as UsermgmtUser[]
+  return users.find(match)
+}
+
+/**
+ * Assert the usermgmt row is bound to the token subject by idp_user_id (not merely a shared
+ * email/username) and is active; returns the row. Set `poll` to wait out first-login provisioning.
+ * A single lookup per attempt — the found row is captured, not re-fetched.
+ */
+export async function assertLinkedBySub(
+  api: APIRequestContext,
+  base: string,
+  adminHeaders: Record<string, string>,
+  sub: string,
+  opts: { poll?: boolean; label?: string } = {}
+): Promise<UsermgmtUser> {
+  const label = opts.label ?? sub
+  let linked: UsermgmtUser | undefined
+  const lookup = async () => {
+    linked = await findUser(api, base, adminHeaders, u => u.idpUserId === sub)
+    return linked?.id
+  }
+  if (opts.poll) {
+    await expect
+      .poll(lookup, { timeout: SECOND_30, message: `no usermgmt user linked to idp sub for ${label}` })
+      .toBeTruthy()
+  } else {
+    await lookup()
+    expect(linked, `no usermgmt user linked to idp sub ${label}`).toBeTruthy()
+  }
+  expect(linked!.active, `usermgmt user ${linked!.id} is not active`).not.toBe(false)
+  return linked!
+}
+
+/** Grant ALP_SYSTEM_ADMIN (-> role.systemadmin -> `admin`). */
+export async function grantSystemAdmin(
+  api: APIRequestContext,
+  base: string,
+  adminHeaders: Record<string, string>,
+  userId: string
+): Promise<void> {
+  const res = await api.post(`${base}${USERMGMT}/alp-data-admin/register`, {
+    headers: adminHeaders,
+    data: { userId, roles: ['ALP_SYSTEM_ADMIN'] }
+  })
+  expect(res.status(), `alp-data-admin/register failed: ${await res.text()}`).toBe(200)
+}
+
+/** Grant RESEARCHER on a dataset (-> Source user / cohort scopes). */
+export async function grantResearcher(
+  api: APIRequestContext,
+  base: string,
+  adminHeaders: Record<string, string>,
+  args: { userId: string; tenantId: string; studyId: string }
+): Promise<void> {
+  const res = await api.post(`${base}${USERMGMT}/user-group/register-study-roles`, {
+    headers: adminHeaders,
+    data: { userIds: [args.userId], tenantId: args.tenantId, studyId: args.studyId, roles: ['RESEARCHER'] }
+  })
+  expect(res.status(), `register-study-roles failed: ${await res.text()}`).toBe(200)
+}
+
+/** Best-effort delete of a provisioned user (called from a spec's finally block). */
+export async function deleteUser(
+  api: APIRequestContext,
+  base: string,
+  adminHeaders: Record<string, string>,
+  userId: string
+): Promise<void> {
+  const res = await api.delete(`${base}${USERMGMT}/member/tenant/delete`, {
+    headers: adminHeaders,
+    data: { userId }
+  })
+  console.log(`[cleanup] delete user ${userId} -> ${res.status()}`)
+}
+
+/** Forward the user's token to WebAPI so it upserts sec_user_role from the JWT scopes. */
+export async function syncWebapiRoles(
+  api: APIRequestContext,
+  base: string,
+  userToken: string
+): Promise<void> {
+  // Best-effort: roles also resolve from the token's sec_external_role_map, and WebAPI's
+  // openidDirect decoder can transiently reject tokens after a Logto key rotation (see WebAPI
+  // OidcAuthConfig). Retry, then warn rather than fail on a persistent non-2xx.
+  let res = await api.post(`${base}${USERMGMT}/me/sync-webapi-roles`, { headers: authHeaders(userToken, base) })
+  for (let attempt = 1; attempt <= 5 && !res.ok(); attempt++) {
+    await new Promise(r => setTimeout(r, 1000))
+    res = await api.post(`${base}${USERMGMT}/me/sync-webapi-roles`, { headers: authHeaders(userToken, base) })
+  }
+  if (!res.ok()) {
+    console.warn(`[warn] sync-webapi-roles still ${res.status()} after retries: ${await res.text()}`)
+  }
+}
+
+/** Read the caller's WebAPI numeric user id from /user/me. */
+export async function webapiUserId(
+  api: APIRequestContext,
+  base: string,
+  userToken: string
+): Promise<number> {
+  const meRes = await api.get(`${base}/WebAPI/user/me/`, { headers: authHeaders(userToken, base) })
+  expect(meRes.ok(), `WebAPI /user/me failed: ${meRes.status()}`).toBeTruthy()
+  const me = (await meRes.json()) as { user?: { id: number; login: string } }
+  const id = me.user?.id
+  expect(typeof id, `unexpected /user/me shape: ${JSON.stringify(me)}`).toBe('number')
+  return id as number
+}
+
+/** Read a user's WebAPI role names (admin-token gated). */
+export async function webapiRoleNames(
+  api: APIRequestContext,
+  base: string,
+  adminToken: string,
+  userId: number
+): Promise<string[]> {
+  const rolesRes = await api.get(`${base}/WebAPI/user/${userId}/roles`, {
+    headers: authHeaders(adminToken, base)
+  })
+  expect(
+    rolesRes.ok(),
+    `WebAPI /user/${userId}/roles failed: ${rolesRes.status()} ${await rolesRes.text()}`
+  ).toBeTruthy()
+  return ((await rolesRes.json()) as Array<{ name: string }>).map(r => r.name)
+}
