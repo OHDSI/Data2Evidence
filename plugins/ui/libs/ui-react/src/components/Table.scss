@@ -1,5 +1,11 @@
 // Doubled class outranks MUI's emotion rules.
 .d2e-table.d2e-table {
+  border: none;
+
+  .MuiTableRow-root {
+    border: none;
+  }
+
   .MuiTableCell-root {
     font-family: var(--d2e-font-family);
     font-size: 14px;

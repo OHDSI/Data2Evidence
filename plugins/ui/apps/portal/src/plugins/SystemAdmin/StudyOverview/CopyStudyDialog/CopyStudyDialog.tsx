@@ -496,7 +496,7 @@ const CopyStudyDialog: FC<CopyStudyDialogProps> = ({ study, open, onClose, loadi
           </div>
           <div className="snapshotmetadata__filtergroup">
             <FormControl sx={styles} className="select" variant="standard" fullWidth>
-              <InputLabel htmlFor="pa-config-option">{getText(i18nKeys.ADD_STUDY_DIALOG__PA_CONFIG)}</InputLabel>
+              <InputLabel htmlFor="pa-config-option">{getText(i18nKeys.ADD_DATA_SOURCE_DIALOG__PA_CONFIG)}</InputLabel>
               <Select
                 sx={styles}
                 value={formData.paConfigId}

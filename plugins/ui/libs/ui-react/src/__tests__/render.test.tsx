@@ -12,6 +12,8 @@ import { EmptyState } from "../components/EmptyState";
 import { Dialog } from "../components/Dialog";
 import { Menu } from "../components/Menu";
 import { Select } from "../components/Select";
+import { FilterPanel } from "../components/FilterPanel";
+import type { FilterDef } from "../components/filterTypes";
 import { Tabs, Tab } from "../components/Tab";
 import { Alert } from "../components/Alert";
 import { Tooltip } from "../components/Tooltip";
@@ -173,6 +175,36 @@ describe("render smoke", () => {
     fireEvent.mouseDown(screen.getByRole("combobox"));
     expect(screen.getByRole("option", { name: "Alpha" })).toBeTruthy();
     expect(screen.getByRole("option", { name: "Beta" })).toBeTruthy();
+  });
+
+  it("opens the filter panel, shows the count badge and clears", () => {
+    const defs: FilterDef[] = [
+      { id: "category", label: "Category", control: { kind: "multiSelect" } },
+      { id: "created", label: "Created", control: { kind: "dateRange" } },
+    ];
+    let state: Record<string, unknown> = { category: { op: "in", values: ["A", "B"] } };
+    const options = {
+      category: [
+        { value: "A", label: "A" },
+        { value: "B", label: "B" },
+      ],
+    };
+    mount(
+      <FilterPanel
+        defs={defs}
+        state={state as never}
+        options={options}
+        onChange={(s) => (state = s)}
+      />,
+    );
+    // The two selected values surface as "(2)" on the trigger.
+    const trigger = screen.getByRole("button", { name: /Filters \(2\)/ });
+    fireEvent.click(trigger);
+    // A range field renders an uppercase group heading (raw text "Created").
+    expect(screen.getByText("Created")).toBeTruthy();
+    // Clear empties the state.
+    fireEvent.click(screen.getByRole("button", { name: "Clear all selections" }));
+    expect(state).toEqual({});
   });
 
   it("renders tabs, marks the selected one and fires onChange", () => {

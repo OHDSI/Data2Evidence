@@ -23,7 +23,7 @@
     "tokens:check": "tsx scripts/build-tokens.ts && git diff --exit-code src/tokens/tokens.css",
     "test": "vitest run",
     "lint": "prettier --write .",
-    "build": "vite build --config vite.config.lib.ts && bun run build:types",
+    "build": "vite build --config vite.config.lib.ts && bun run build:types && echo '{}' > dist/package.json",
     "build:types": "tsc --declaration --emitDeclarationOnly --outDir dist/types -p tsconfig.build.json",
     "verify:dist": "node scripts/verify-dist.mjs"
   },
@@ -33,8 +33,14 @@
     "@mui/icons-material": "^5.8.3",
     "@mui/material": "^5.8.3",
     "@mui/x-date-pickers": "^6.19.2",
+    "easymde": "^2.18.0",
     "react": "^18.2.0",
-    "react-dom": "^18.2.0"
+    "react-dom": "^18.2.0",
+    "react-simplemde-editor": "^5.2.0"
+  },
+  "peerDependenciesMeta": {
+    "easymde": { "optional": true },
+    "react-simplemde-editor": { "optional": true }
   },
   "dependencies": {
     "clsx": "^2.1.1",

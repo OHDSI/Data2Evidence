@@ -1,20 +1,15 @@
-.add-strategus-study-dialog {
-  .add-strategus-study-dialog__content {
-    min-height: 200px;
-    padding: 0 25px;
-    overflow: auto;
-    scrollbar-color: #c7c7c7 transparent;
-  }
+.add-strategus-study-dialog__content {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
 
-  .button-group-actions {
-    display: flex;
-    justify-content: center;
-    margin: 24px 0;
-
-    .alp-button__container {
-      margin: 0 0 0 8px;
-      width: 247px;
-    }
+  .d2e-field {
+    width: 100%;
   }
 }
 
+.add-strategus-study-dialog__field-hint {
+  margin-top: 4px;
+  font-size: 12px;
+  color: var(--d2e-color-neutral);
+}

@@ -432,7 +432,7 @@
             "route": "user-overview"
           },
           {
-            "name": "Datasets",
+            "name": "Data sources",
             "nameI18nKey": "UI_PLUGIN_DATASETS",
             "visible": true,
             "pluginPath": "plugins/SystemAdmin/StudyOverview/module",

@@ -17,7 +17,7 @@ export const FhirServerCheckbox: FC<FhirServerCheckboxProps> = ({ checked, onCha
         <Checkbox
           checked={checked}
           checkbox-id="create-fhir-server"
-          label={getText(i18nKeys.ADD_STUDY_DIALOG__CREATE_FHIR)}
+          label={getText(i18nKeys.ADD_DATA_SOURCE_DIALOG__CREATE_FHIR)}
           onChange={onChange}
         />
       </div>

@@ -1,0 +1,73 @@
+// The panel renders inside MUI's Popover paper (via Menu's children slot). The
+// panel itself is the surface, so strip the enclosing paper's own shadow/radius.
+// Top-level selector: the paper is portalled outside the component root.
+.MuiPopover-paper:has(.d2e-filter-panel) {
+  background: transparent;
+  box-shadow: none;
+  border-radius: var(--d2e-radius-md);
+  overflow: visible;
+}
+
+.d2e-filter-panel {
+  box-sizing: border-box;
+  overflow: hidden;
+  background: var(--d2e-color-white);
+  border-radius: var(--d2e-radius-md);
+  box-shadow: var(--d2e-elevation-e8);
+  font-family: var(--d2e-font-family);
+
+  &__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 52px;
+    padding: 0 var(--d2e-spacing-s);
+    // Figma 2697:211985: header rule is neutral #595757, not the lighter divider.
+    border-bottom: var(--d2e-border-width-sm) solid var(--d2e-color-neutral);
+  }
+
+  // "FILTERS" — Nav Subheader: Bold 10px, 1.2px tracking, uppercase, navy.
+  &__title {
+    font-size: var(--d2e-font-caption2-size);
+    font-weight: 700;
+    line-height: 2.2;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+    color: var(--d2e-color-primary);
+  }
+
+  &__body {
+    display: flex;
+    flex-direction: column;
+    gap: var(--d2e-spacing-s);
+    padding: var(--d2e-spacing-s);
+  }
+
+  &__field {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  // Group heading over a From/To (or Min/Max) row — same Nav Subheader style as
+  // the panel title but neutral.
+  &__group-label {
+    font-size: var(--d2e-font-caption2-size);
+    font-weight: 700;
+    line-height: 2.2;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+    color: var(--d2e-color-neutral);
+  }
+
+  &__row {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--d2e-spacing-s);
+
+    > * {
+      flex: 1 1 0;
+      min-width: 0;
+    }
+  }
+}

@@ -7,6 +7,8 @@ import { theme } from "./theme";
 import { NavigationGuardRouter } from "./components/NavigationGuardRouter/NavigationGuardRouter";
 import { extractDeepLinkParamsFromUrl, saveDeepLinkParams } from "./utils/deepLinkStorage";
 import "./webcomponents/registerWebComponents";
+import "ui-react/tokens.css";
+import "ui-react/style.css";
 import "./index.scss";
 import "import-map-overrides";
 import "./plugins/core/systemjsSetup";

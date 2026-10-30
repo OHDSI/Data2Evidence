@@ -4,7 +4,7 @@ import MuiTableHead, { type TableHeadProps as MuiTableHeadProps } from "@mui/mat
 import MuiTableBody, { type TableBodyProps as MuiTableBodyProps } from "@mui/material/TableBody";
 import MuiTableRow, { type TableRowProps as MuiTableRowProps } from "@mui/material/TableRow";
 import MuiTableCell, { type TableCellProps as MuiTableCellProps } from "@mui/material/TableCell";
-import UnfoldMoreIcon from "@mui/icons-material/UnfoldMore";
+import SwapVertIcon from "@mui/icons-material/SwapVert";
 import ArrowUpwardIcon from "@mui/icons-material/ArrowUpward";
 import ArrowDownwardIcon from "@mui/icons-material/ArrowDownward";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
@@ -90,7 +90,7 @@ export const TableCell = forwardRef<HTMLTableCellElement, TableCellProps>(
       ) : sortDirection === "desc" ? (
         <ArrowDownwardIcon />
       ) : (
-        <UnfoldMoreIcon />
+        <SwapVertIcon />
       );
 
     return (

@@ -15,7 +15,7 @@ import { JobRunTypes } from "../DQD/types";
 import ActionSelector from "./ActionSelector/ActionSelector";
 import StudyActionSelector from "./ActionSelector/StudyActionSelector";
 import AddStrategusStudyDialog from "./AddStrategusStudyDialog/AddStrategusStudyDialog";
-import AddStudyDialog from "./AddStudyDialog/AddStudyDialog";
+import AddDataSourceDialog from "./AddDataSourceDialog/AddDataSourceDialog";
 import AnalysisDialog from "./AnalysisDialog/AnalysisDialog";
 import CleanupStrategusStudyDialog from "./CleanupStrategusStudyDialog/CleanupStrategusStudyDialog";
 import DeleteStrategusStudyDialog from "./DeleteStrategusStudyDialog/DeleteStrategusStudyDialog";
@@ -29,7 +29,7 @@ import RunStrategusStudyDialog from "./RunStrategusStudyDialog/RunStrategusStudy
 import SetupSemanticSearchDialog from "./SetupSemanticSearchDialog/SetupSemanticSearchDialog";
 import SourceInformationDialog from "./SourceInformationDialog/SourceInformationDialog";
 import UpdateSchemaDialog from "./UpdateSchemaDialog/UpdateSchemaDialog";
-import UpdateStudyDialog from "./UpdateStudyDialog/UpdateStudyDialog";
+import UpdateDataSourceDialog from "./UpdateDataSourceDialog/UpdateDataSourceDialog";
 import UploadStrategusResultsDialog from "./UploadStrategusResultsDialog/UploadStrategusResultsDialog";
 import ManageViewerDialog from "./ManageViewerDialog/ManageViewerDialog";
 import TransformToWebApiDialog from "./TransformToWebApiDialog/TransformToWebApiDialog";
@@ -497,7 +497,7 @@ const StudyOverview: FC = () => {
     (type: CloseDialogType) => {
       closeUpdateStudyDialog();
       if (type === "success") {
-        setSuccessFeedback(getText(i18nKeys.UPDATE_STUDY_DIALOG__SUCCESS));
+        setSuccessFeedback(getText(i18nKeys.UPDATE_DATA_SOURCE_DIALOG__SUCCESS));
         setRefetch((refetch) => refetch + 1);
       }
     },
@@ -737,7 +737,7 @@ const StudyOverview: FC = () => {
             />
             <Button text={getText(i18nKeys.STUDY_OVERVIEW__ADD_DATASET)} onClick={openAddStudyDialog} />
           </div>
-          <AddStudyDialog
+          <AddDataSourceDialog
             open={showAddStudyDialog}
             onClose={handleCloseAddStudyDialog}
             loading={loading}
@@ -964,7 +964,7 @@ const StudyOverview: FC = () => {
           )}
 
           {activeDataset && (
-            <UpdateStudyDialog
+            <UpdateDataSourceDialog
               dataset={activeDataset}
               open={showUpdateStudyDialog}
               onClose={handleCloseUpdateStudyDialog}

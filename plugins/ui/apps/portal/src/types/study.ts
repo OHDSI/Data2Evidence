@@ -32,6 +32,7 @@ export type DatasetType =
 export type ActionValue =
   | "info"
   | "metadata"
+  | "manage-metadata"
   | "version"
   | "delete"
   | "permissions"

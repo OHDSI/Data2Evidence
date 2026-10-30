@@ -62,6 +62,7 @@
     "reactflow": "^11.11.4",
     "single-spa": "^6.0.3",
     "systemjs": "0.21.6",
+    "ui-react": "workspace:*",
     "uuid": "^14.0.0"
   },
   "devDependencies": {

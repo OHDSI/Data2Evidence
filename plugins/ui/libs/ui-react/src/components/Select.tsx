@@ -22,6 +22,7 @@ export interface SelectProps {
   label?: string;
   placeholder?: string;
   size?: SelectSize;
+  required?: boolean;
   disabled?: boolean;
   multiple?: boolean;
   errorMessages?: string | string[];
@@ -39,6 +40,7 @@ export function Select({
   label,
   placeholder,
   size = "sm",
+  required = false,
   disabled = false,
   multiple = false,
   errorMessages,
@@ -78,6 +80,9 @@ export function Select({
         className={rootClass}
         style={rootStyle}
         multiple={multiple}
+        // Keep the list open while picking several values (MUI closes it after
+        // each selection otherwise, forcing a reopen per choice).
+        disableCloseOnSelect={multiple}
         disabled={disabled}
         options={items}
         value={selectedValues as never}
@@ -125,6 +130,7 @@ export function Select({
             {...params}
             label={label}
             placeholder={placeholder}
+            required={required}
             error={error}
             helperText={helperText}
             InputProps={{
@@ -154,6 +160,7 @@ export function Select({
       onChange={(event) => onChange?.(event.target.value as SelectValue)}
       label={label}
       placeholder={placeholder}
+      required={required}
       disabled={disabled}
       error={error}
       helperText={helperText}
