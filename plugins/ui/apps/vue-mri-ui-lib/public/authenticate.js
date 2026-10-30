@@ -2,7 +2,6 @@
 
 // Get configuration from environment variables injected in index.html
 const AUTH_CONFIG = window.AUTH_CONFIG || {}
-const USE_MOCK_SERVER = AUTH_CONFIG.useMockServer || false
 const REDIRECT_URL = AUTH_CONFIG.redirectUrl || 'https://localhost:8081'
 const CLIENT_ID = AUTH_CONFIG.clientId || 'ALOjB8OcP85tw2ZQb33aH'
 
@@ -57,27 +56,25 @@ const logoutfn = () => {
   })
 }
 
-if (!USE_MOCK_SERVER) {
-  if (code) {
-    userManager
-      .signinRedirectCallback()
-      .then(user => {
-        localStorage.setItem('msaltoken', user.access_token)
-        const returnPath = sessionStorage.getItem('returnPath') || '/'
-        sessionStorage.removeItem('returnPath')
-        window.location.replace(window.location.origin + returnPath)
-      })
-      .catch(error => {
-        console.error('Error during login', error)
-        localStorage.removeItem('msaltoken')
-        signinRedirect()
-      })
-  } else if (!authToken || isTokenExpired(authToken)) {
-    if (authToken && isTokenExpired(authToken)) {
-      console.log('Token expired, redirecting to sign in')
+if (code) {
+  userManager
+    .signinRedirectCallback()
+    .then(user => {
+      localStorage.setItem('msaltoken', user.access_token)
+      const returnPath = sessionStorage.getItem('returnPath') || '/'
+      sessionStorage.removeItem('returnPath')
+      window.location.replace(window.location.origin + returnPath)
+    })
+    .catch(error => {
+      console.error('Error during login', error)
       localStorage.removeItem('msaltoken')
-    }
-    sessionStorage.setItem('returnPath', window.location.pathname)
-    signinRedirect()
+      signinRedirect()
+    })
+} else if (!authToken || isTokenExpired(authToken)) {
+  if (authToken && isTokenExpired(authToken)) {
+    console.log('Token expired, redirecting to sign in')
+    localStorage.removeItem('msaltoken')
   }
+  sessionStorage.setItem('returnPath', window.location.pathname)
+  signinRedirect()
 }

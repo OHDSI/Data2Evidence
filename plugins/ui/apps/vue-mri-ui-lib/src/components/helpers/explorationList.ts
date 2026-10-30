@@ -1,9 +1,8 @@
 /**
  * List behaviour for the Data Exploration page: scored search and sorting.
  *
- * Lifted from `BookmarkItems.vue` (lines 59-140), which holds the same scoring
- * but is gated out of the D2E build by `v-if="isAtlas"`. Kept as pure functions
- * with no Vue import so the test does not have to load Vuetify.
+ * Kept as pure functions with no Vue import so the test does not have to load
+ * Vuetify.
  */
 
 /** Relevance weights. The first group that matches wins; scores do not add. */
@@ -47,9 +46,8 @@ const toMs = (value: unknown): number => {
 /**
  * The record's effective "last updated" instant, in ms. 0 when unknown.
  *
- * Every access is optional. `BookmarkItems.vue:133` dereferences
- * `cohortDefinition.createdOn` without a guard, which throws on a bookmark-only
- * record; that bug is deliberately not carried over.
+ * Every access is optional, so a bookmark-only record without a
+ * `cohortDefinition` does not throw.
  */
 export function lastUpdatedMs(card): number {
   return (

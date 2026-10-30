@@ -12,8 +12,8 @@
 // point of this subphase; Vuetify owns them now.
 //
 // Exception to "same as Bootstrap": `.btn-outline-primary` uses
-// `var(--d2e-color-primary, #000080)` instead of Bootstrap's #007bff, so the one
-// call site (QueryFilterModern.vue copy button) follows the app theme.
+// `var(--d2e-color-primary, #000080)` instead of Bootstrap's #007bff, so it
+// follows the app theme.
 
 // ---------------------------------------------------------------------------
 // Reboot subset (from Bootstrap's _reboot.scss), scoped to the container.
@@ -105,8 +105,7 @@ section {
 }
 
 // Programmatic or mouse focus on a tabindex=-1 element must not paint a ring.
-// Used by ResizeObserver, bs-dropdown-item, app-tab, app-segmented-button and
-// Drawer.
+// Used by ResizeObserver, bs-dropdown-item and app-tab.
 [tabindex='-1']:focus:not(:focus-visible) {
   outline: 0 !important;
 }
@@ -196,7 +195,6 @@ samp {
   font-size: 1em;
 }
 
-// QueryFilterModern renders JSON debug output in two <pre> blocks.
 pre {
   margin-top: 0;
   margin-bottom: 1rem;
@@ -651,10 +649,7 @@ input[type='month'].form-control {
 // `.is-invalid ~ .invalid-feedback { display: block }`. Its mixin interpolates
 // `&`, so nested inside .mri-app-vue-container it compiled to the compound
 // selector `.mri-app-vue-container.is-invalid ~ .invalid-feedback`, which
-// never matched. The app depends on that: FiltersFooter and QueryFilterModern
-// each place several .invalid-feedback siblings after one input and reveal the
-// right one with an inline `display: block`. A live rule shows them all at
-// once.
+// never matched.
 
 .form-control.is-invalid {
   border-color: #dc3545;

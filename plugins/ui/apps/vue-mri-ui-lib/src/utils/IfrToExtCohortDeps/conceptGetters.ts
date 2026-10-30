@@ -1,7 +1,6 @@
-import _ from 'lodash'
 import { ExtCohortConcept } from './types'
 import { api } from './api'
-import { formatConceptSetRef, parseConceptSetRef } from '@/query-filter/utils/conceptSetRef'
+import { formatConceptSetRef, parseConceptSetRef } from '@/utils/conceptSetRef'
 
 function upperCaseKeys(obj: ExtCohortConcept): ExtCohortConcept {
   const result = {}

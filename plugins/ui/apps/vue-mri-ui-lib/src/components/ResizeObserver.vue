@@ -8,7 +8,7 @@
  * Reference: https://github.com/Akryum/vue-resize/blob/master/src/components/ResizeObserver.vue
  */
 import BrowserUtils from '../utils/BrowserUtils'
-import { debounce } from 'underscore'
+import debounce from 'lodash/debounce'
 
 export default {
   name: 'resizeObserver',

@@ -73,7 +73,7 @@ import MessageBox from '../MessageBox.vue'
 import appButton from '@/lib/ui/app-button.vue'
 import QueryFilterTagInputAdapter from '@/lib/ui/QueryFilterTagInputAdapter.vue'
 import { useTable1ConceptSetPicker, type Table1ConceptSetSelection } from '@/composables/useTable1ConceptSetPicker'
-import type { TagInputModel } from '@/query-filter/types/ConceptSetTypes'
+import type { TagInputModel } from '@/types/ConceptSetTypes'
 
 const props = withDefaults(defineProps<{
   isOpen: boolean

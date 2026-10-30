@@ -1,6 +1,5 @@
 <template>
   <div :class="['pa-component-wrapper']">
-    <AtlasView v-if="atlasStore.showAtlas" />
     <ExplorationsPage
       v-if="displayCohorts"
       @open-exploration="loadExploration"
@@ -11,7 +10,7 @@
         <pane :size="paneSize" :min-size="hideLeftPane ? 0 : splitterMinWidth">
           <div id="pane-left" class="split" data-testid="pa-pane-left">
             <div class="panel-header filters-toolbar d-flex">
-              <div v-if="!isAtlasBookmark">
+              <div>
                 <button
                   type="button"
                   class="actionButton"
@@ -29,7 +28,7 @@
                       getText('MRI_PA_VIEW_COHORT_TITLE')
                     }}</a>
                   </li>
-                  <li class="nav-item" @click="toggleCohorts(false, this.isAtlasBookmark)" v-show="hasActiveBookmark">
+                  <li class="nav-item" @click="toggleCohorts(false)" v-show="hasActiveBookmark">
                     <a class="nav-link" :class="{ active: !displayCohorts }" href="javascript:void(0)">{{
                       this.getActiveBookmarkName()
                     }}</a>
@@ -38,14 +37,7 @@
               </div>
             </div>
             <div class="pane-left-content">
-              <filters ref="filtersRef" v-if="!showQueryFilter && !displayCohorts"></filters>
-
-              <QueryFilter
-                v-else-if="showQueryFilter"
-                ref="queryFilterRef"
-                :atlas-data="atlasDataForQueryFilter"
-                :key="atlasDataForQueryFilter?.id || 'new-cohort'"
-              />
+              <filters ref="filtersRef" v-if="!displayCohorts"></filters>
             </div>
           </div>
         </pane>
@@ -161,10 +153,10 @@ declare var sap
 const myWindow: any = window
 
 import { mapActions, mapGetters, mapMutations } from 'vuex'
-// lodash, not the underscore debounce used elsewhere in this app: underscore caches
-// Date.now at import time, so its trailing call never elapses under vitest's fake
-// timers and the coalescing below could not be covered by a test.
-import { debounce } from 'lodash'
+// lodash, not underscore: underscore caches Date.now at import time, so its
+// trailing call never elapses under vitest's fake timers and the coalescing
+// below could not be covered by a test.
+import debounce from 'lodash/debounce'
 import { registerPaTools } from '@/ai/webmcpServer'
 import { publishPaTools } from '@/ai/paToolBridge'
 import icon from '../lib/ui/app-icon.vue'
@@ -183,10 +175,7 @@ import SplashScreen from './SplashScreen.vue'
 import ResizeObserver from './ResizeObserver.vue'
 import { Splitpanes, Pane } from 'splitpanes'
 import 'splitpanes/dist/splitpanes.css'
-import { QueryFilter } from '@/query-filter'
-import AtlasView from '../views/AtlasView.vue'
 import * as types from '../store/mutation-types'
-import { useAtlasStore } from '../stores/atlas'
 import { useUnsavedChanges } from '../composables/useUnsavedChanges'
 import { usePortalContext } from '../composables/usePortalContext'
 import { useNotificationStore } from '../stores/notifications'
@@ -237,10 +226,7 @@ export default {
       PANE_SIZE,
       PANEL,
       splitterMinWidth: 0,
-      showQueryFilter: false,
-      atlasDataForQueryFilter: null,
       rightPaneEverOpened: false,
-      atlasStore: useAtlasStore(),
     }
   },
   created() {
@@ -262,8 +248,7 @@ export default {
   },
   watch: {
     'querystring.bmkId'(bmkId) {
-      // Restore the bookmark referenced by the URL (?bmkId=). This watch used to
-      // live in Bookmarks.vue, which is no longer mounted.
+      // Restore the bookmark referenced by the URL (?bmkId=).
       if (bmkId) {
         this.loadExploration(bmkId)
       }
@@ -438,9 +423,6 @@ export default {
     hasActiveBookmark() {
       return !!this.getActiveBookmark
     },
-    isAtlasBookmark() {
-      return this.getActiveBookmark && this.getActiveBookmark.isAtlas
-    },
   },
   methods: {
     ...mapActions([
@@ -470,10 +452,9 @@ export default {
     },
     resetToDefaultView() {
       // Default empty state: full-width Cohorts list, no right chart pane, no
-      // query filter, no filter-card summary, and filters reset to the config's
-      // initial IFR (clears any retained filter-card selections).
+      // filter-card summary, and filters reset to the config's initial IFR
+      // (clears any retained filter-card selections).
       this.displayCohorts = true
-      this.showQueryFilter = false
       this.displayFilterCardSummary = false
       this.paneSize = PANE_SIZE.FULL
       this.rightPaneEverOpened = false
@@ -499,10 +480,6 @@ export default {
     dismissBrowserMessage() {
       this.clearBrowserMessage = true
     },
-    toggleQueryFilter(show) {
-      this.showQueryFilter = show
-      this.displayCohorts = !show
-    },
     checkCohortName(bookmarkName, suffix = '') {
       const username = this.portalContext.username
       const uniqueName = bookmarkName + (suffix ? ` ${suffix}` : '')
@@ -514,8 +491,7 @@ export default {
       return uniqueName
     },
     startNewExploration() {
-      // Moved from Bookmarks.addNewCohort, which no longer mounts. Opens the
-      // builder on a fresh, uniquely named cohort.
+      // Opens the builder on a fresh, uniquely named cohort.
       this.unsavedChanges.guard(async () => {
         const cohortName = this.checkCohortName(this.getText('MRI_PA_EXPLORATIONS_NEW_NAME'))
         this[types.SET_ACTIVE_BOOKMARK]({ bookmarkname: cohortName, isNew: true })
@@ -529,7 +505,7 @@ export default {
       })
     },
     loadExploration(bmkId, chartType = null) {
-      // Mirrors Bookmarks.loadBookmarkCheck: reopening the exploration that is
+      // Reopening the exploration that is
       // already active must not re-load it, or an in-progress edit is discarded
       // and the unsaved-changes guard fires for a no-op.
       if (this.getActiveBookmark && bmkId === this.getActiveBookmark.bmkId) {
@@ -540,8 +516,8 @@ export default {
         this.loadbookmarkToState({ bmkId, chartType })
           .then(() => this.toggleCohorts(false))
           .catch(() => {
-            // The saved filter does not fit the active config. Bookmarks.vue
-            // showed a message box for this; without it the click looks dead.
+            // The saved filter does not fit the active config; without a
+            // message the click looks dead.
             this.notifications.setAlertMessage({
               message: this.getText('MRI_PA_BMK_COMPATIBLE_ERROR'),
               messageType: 'error',
@@ -550,20 +526,12 @@ export default {
           })
       })
     },
-    toggleCohorts(isDisplayCohort, isPaAtlas = false, fromHistory = false) {
+    toggleCohorts(isDisplayCohort, fromHistory = false) {
       if (!isDisplayCohort && this.displayCohorts && !fromHistory) {
         pushBuilderEntry(window.history)
       }
-      if (isDisplayCohort) {
-        this.toggleQueryFilter(false)
-      } else {
-        if (isPaAtlas) {
-          this.togglePanel('right', true)
-          this.toggleQueryFilter(true)
-        } else {
-          if (this.paneSize === PANE_SIZE.FULL) this.togglePanel('right')
-          this.toggleQueryFilter(false)
-        }
+      if (!isDisplayCohort && this.paneSize === PANE_SIZE.FULL) {
+        this.togglePanel('right')
       }
       this.displayCohorts = isDisplayCohort
     },
@@ -574,9 +542,9 @@ export default {
       if (isSyntheticPopState(event)) return
       const toBuilder = isBuilderEntry(event.state)
       if (!toBuilder && !this.displayCohorts) {
-        this.toggleCohorts(true, false, true)
+        this.toggleCohorts(true, true)
       } else if (toBuilder && this.displayCohorts && this.hasActiveBookmark) {
-        this.toggleCohorts(false, this.isAtlasBookmark, true)
+        this.toggleCohorts(false, true)
       }
     },
     toggleFilterCardSummary(displayFilterCardSummary) {
@@ -586,11 +554,9 @@ export default {
         this.rerenderStackBarChart()
       })
     },
-    togglePanel(panel, isPaAtlas = false) {
+    togglePanel(panel) {
       if (panel === PANEL.LEFT) {
         this.paneSize = this.paneSize > 0 ? PANE_SIZE.HIDDEN : this.splitterMinWidth
-      } else if (panel === PANEL.RIGHT && isPaAtlas) {
-        this.paneSize = PANE_SIZE.FULL
       } else if (panel === PANEL.RIGHT) {
         this.paneSize = this.paneSize === PANE_SIZE.FULL ? this.splitterMinWidth : PANE_SIZE.FULL
       }
@@ -690,28 +656,6 @@ export default {
     updateMinSplitterWidth() {
       this.splitterMinWidth = (400 / window.innerWidth) * 100
     },
-    async handleLoadAtlasCohortDefinition(atlasJson) {
-      try {
-        // IMPORTANT: Set the data BEFORE showing QueryFilter to avoid race condition
-        if (atlasJson === null) {
-          // Clear any existing data and set null for empty initialization
-          this.atlasDataForQueryFilter = null
-        } else {
-          // Set the Atlas JSON data
-          this.atlasDataForQueryFilter = atlasJson
-        }
-
-        // Ensure QueryFilter is shown AFTER setting the data
-        if (!this.showQueryFilter) {
-          this.toggleQueryFilter(true)
-        }
-
-        // Wait for component to be mounted and reactive updates to propagate
-        await this.$nextTick()
-      } catch (error) {
-        console.error('Error setting Atlas data:', error)
-      }
-    },
   },
   components: {
     icon,
@@ -729,8 +673,6 @@ export default {
     appIcon,
     Splitpanes,
     Pane,
-    QueryFilter,
-    AtlasView,
   },
 }
 </script>

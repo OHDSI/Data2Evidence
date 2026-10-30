@@ -28,7 +28,6 @@ Vite optimized production build:
 ```
 yarn build              # Standard production build
 yarn build:local        # Build with localhost host
-yarn build:mock         # Build with mock data
 yarn build:watch        # Build in watch mode (for local single-spa dev)
 ```
 
@@ -60,27 +59,6 @@ yarn test:ci            # Run tests with coverage
 ```
 
 ## Configuration
-
-### Logo Customization
-
-Configure the application logo at runtime via `public/config.json`:
-
-```json
-{
-  "logoUrl": "/logos/your-logo.svg"
-}
-```
-
-**Supported formats:** SVG (recommended), PNG, JPEG, WebP
-
-The application will automatically fall back to the default ATLAS logo if the configured logo fails to load.
-
-For Docker deployments, mount a custom config file:
-
-```yaml
-volumes:
-  - ./custom-config.json:/app/config.json:ro
-```
 
 ### Theme Configuration
 
@@ -122,17 +100,6 @@ To avoid SSL warnings and enable shinylive dashboards to work properly in local 
    - Shinylive dashboards will now work without SSL errors
 
 **Why this is needed:** Shinylive and modern browser features require valid HTTPS. D2E uses Caddy with self-signed certificates locally, which browsers don't trust by default.
-
-### Mock Server for Development
-
-To run the application with mock data for standalone development:
-
-```bash
-yarn build:mock                  # Build with mock configuration
-yarn start:mock                  # Start mock server (port 3131)
-```
-
-The mock server provides sample data without requiring backend services.
 
 ### Single-Spa Development with Import Map Overrides
 
