@@ -93,6 +93,75 @@ export function getFieldGroupValidationMessage(
   return null;
 }
 
+export function getFormGroupValidationErrors(
+  layout: ResolvedWizardFormLayout,
+  formValues: Record<string, unknown>,
+): Record<string, string> {
+  return Object.fromEntries(
+    layout.sections.flatMap((section) =>
+      section.groups.flatMap((group) => {
+        const message = getFieldGroupValidationMessage(group, formValues);
+        return message ? [[group.id, message]] : [];
+      }),
+    ),
+  );
+}
+
+export type WizardInvalidTarget = { kind: "field"; name: string } | { kind: "group"; groupId: string };
+
+function getFieldInputNames(field: FieldDefinition): string[] {
+  return field.type === "yearRange" ? [`${field.id}_from`, `${field.id}_to`] : [field.id];
+}
+
+function findFirstInvalidFieldName(
+  fields: FieldDefinition[],
+  fieldErrorNames: ReadonlySet<string>,
+): string | undefined {
+  return fields.flatMap(getFieldInputNames).find((name) => fieldErrorNames.has(name));
+}
+
+/**
+ * Returns the first invalid element in display order: within each group,
+ * field errors come before the group's own min/max error.
+ */
+export function getFirstInvalidTarget(
+  layout: ResolvedWizardFormLayout,
+  fieldErrorNames: readonly string[],
+  groupErrors: Record<string, string>,
+): WizardInvalidTarget | null {
+  const errorNames = new Set(fieldErrorNames);
+
+  for (const section of layout.sections) {
+    for (const group of section.groups) {
+      const fieldName = findFirstInvalidFieldName(group.fields, errorNames);
+      if (fieldName) return { kind: "field", name: fieldName };
+      if (groupErrors[group.id]) return { kind: "group", groupId: group.id };
+    }
+  }
+
+  const ungroupedFieldName = findFirstInvalidFieldName(layout.ungroupedFields, errorNames);
+  return ungroupedFieldName ? { kind: "field", name: ungroupedFieldName } : null;
+}
+
+export interface YearRangeErrors {
+  from?: string;
+  to?: string;
+}
+
+export function getYearRangeErrors(from: unknown, to: unknown, required: boolean): YearRangeErrors {
+  const hasFrom = hasValue(from);
+  const hasTo = hasValue(to);
+
+  if (!hasFrom && !hasTo) {
+    return required ? { from: "From year is required", to: "To year is required" } : {};
+  }
+  if (!hasFrom) return { from: "From year is required" };
+  if (!hasTo) return { to: "To year is required" };
+  if (Number(to) < Number(from)) return { to: "To year must be greater than or equal to from year" };
+
+  return {};
+}
+
 export function getFieldGroupCompletionHint(group: ResolvedWizardFieldGroup): string | null {
   const minAnswered = group.validation?.minAnswered;
   const maxAnswered = group.validation?.maxAnswered;
