@@ -1,7 +1,19 @@
 import { ruleValidator as rulesLib } from "@alp/alp-config-utils";
 import { getTablePlaceholdersFromExpression } from "../utils/queryutils";
-export const allowedPlaceholderRegex =
-  /^((((?!(_SYS|SYS|SYSTEM|HANA_XS_BASE))(\w+)|(_SYS_BIC))|("((?!(_SYS|SYS|SYSTEM|HANA_XS_BASE))([^\]]+)|(_SYS_BIC))"))\."([^"]*)")|^("([^"]*)")$/i;
+
+// A schema must not be a HANA system schema, except _SYS_BIC.
+const NOT_SYSTEM_SCHEMA = "(?!(_SYS|SYS|SYSTEM|HANA_XS_BASE))";
+const UNQUOTED_SCHEMA = `(${NOT_SYSTEM_SCHEMA}\\w+|_SYS_BIC)`;
+const QUOTED_SCHEMA = `"(${NOT_SYSTEM_SCHEMA}[^\\]]+|_SYS_BIC)"`;
+// Resolved at query time to the dataset's own schemas.
+const SCHEMA_PLACEHOLDER = "\\$\\$(SCHEMA|VOCAB_SCHEMA)\\$\\$";
+const QUOTED_TABLE = '"[^"]*"';
+
+// Accepts schema."table" or "table".
+export const allowedPlaceholderRegex = new RegExp(
+  `^((${UNQUOTED_SCHEMA}|${QUOTED_SCHEMA}|${SCHEMA_PLACEHOLDER})\\.${QUOTED_TABLE}|${QUOTED_TABLE})$`,
+  "i"
+);
 
 export function getDefinition(tableMapping: any) {
   // Ensure cohort definition placeholders are always defined
