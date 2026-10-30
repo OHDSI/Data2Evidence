@@ -10,13 +10,9 @@
     :aria-labelledby="title ? titleId : undefined"
     v-bind="forwardAttrs"
     @update:model-value="onModelValueUpdate"
+    @keydown="onKeydown"
   >
-    <v-card
-      class="d2e-dialog"
-      :data-testid="dataTestId"
-      tabindex="-1"
-      @keydown.esc="onEscape"
-    >
+    <v-card class="d2e-dialog" :data-testid="dataTestId" tabindex="-1">
       <header class="d2e-dialog__header">
         <div class="d2e-dialog__title-row">
           <h2 v-if="title" :id="titleId" class="d2e-dialog__title">
@@ -186,7 +182,8 @@ function onModelValueUpdate(open: boolean) {
 // The overlay never dismisses a modal — MODAL CLOSE BEHAVIOR (Figma 2106:162)
 // says "Don't dismiss modal, no action" for every modal type. `v-dialog` is
 // therefore always persistent, and Escape is handled here instead.
-function onEscape() {
+function onKeydown(event: KeyboardEvent) {
+  if (event.key !== "Escape") return;
   if (props.busy || !props.closeOnEscape) return;
   emit("update:modelValue", false);
   emit("close");
