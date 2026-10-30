@@ -159,11 +159,8 @@ const rows = computed(() =>
 }
 
 .dq-matrix__measure {
-  /* Pass / Fail / Total / %Pass sit in twelve ~77px columns inside the 1104px
-     the design gives the card (Figma 1798:208295). The 24px inset above left
-     them ~29px and broke "Pass" over two lines, so they take 8px and stay on
-     one line. */
   padding: 0 var(--dq-space-xs);
+  text-align: right;
   white-space: nowrap;
   font-weight: 400;
   border-bottom: 1px solid var(--dq-border-subtle);
@@ -190,14 +187,16 @@ const rows = computed(() =>
 
 .dq-matrix__category {
   padding: 0 var(--dq-space-s);
-  text-align: right;
+  text-align: left;
   font-weight: 600;
   white-space: nowrap;
 }
 
 .dq-matrix__cell {
-  padding: 0 var(--dq-space-s);
-  text-align: center;
+  padding: 0 var(--dq-space-xs);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
 
 .dq-matrix__cell--emphasis {
