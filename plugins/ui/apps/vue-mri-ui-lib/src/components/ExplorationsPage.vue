@@ -148,7 +148,7 @@
       <D2eExplorationCard
         v-for="card in cards"
         :key="card.id"
-        width="100%"
+        width="500px"
         :clickable="Boolean(card.bmkId)"
         :name="card.name"
         :selected="explorations.isSelected(card.id)"
@@ -1615,8 +1615,9 @@ const onMoreSelect = (card: { source: BookmarkDisplay }, value: string): void =>
 
   &__grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(314px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(314px, auto));
     grid-auto-rows: min-content;
+    justify-content: start;
     align-content: start;
     gap: var(--d2e-spacing-s);
     padding: 24px;
@@ -1625,7 +1626,7 @@ const onMoreSelect = (card: { source: BookmarkDisplay }, value: string): void =>
     overflow-y: auto;
 
     > .d2e-exploration-card {
-      max-width: 500px;
+      max-width: 100%;
     }
   }
 
