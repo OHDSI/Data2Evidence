@@ -1,5 +1,5 @@
 /**
- * ISO date conversion helpers for `D2eDateField`.
+ * ISO date conversion helpers for callers of `D2eDatePicker` that store ISO strings.
  *
  * The model contract is an ISO `YYYY-MM-DD` string or `null`, never a `Date`.
  * These two functions are the only place the component converts between the

@@ -79,20 +79,24 @@
                     <!-- Date types -->
                     <template v-if="isDateType(field.type)">
                       <div class="date-range-group">
-                        <input
+                        <D2eDatePicker
                           :id="`${field.id}_from`"
-                          class="form-control"
-                          type="date"
-                          v-model="formValues[field.id].from"
-                          @change="markFieldDirty(field.id)"
+                          :model-value="fromIsoDate(formValues[field.id].from)"
+                          size="sm"
+                          clearable
+                          :menu-z-index="DATE_MENU_Z_INDEX"
+                          :invalid-date-text="getText('MRI_PA_INVALID_DATE')"
+                          @update:model-value="setDateBound(field.id, 'from', $event)"
                         />
                         <span>to</span>
-                        <input
+                        <D2eDatePicker
                           :id="`${field.id}_to`"
-                          class="form-control"
-                          type="date"
-                          v-model="formValues[field.id].to"
-                          @change="markFieldDirty(field.id)"
+                          :model-value="fromIsoDate(formValues[field.id].to)"
+                          size="sm"
+                          clearable
+                          :menu-z-index="DATE_MENU_Z_INDEX"
+                          :invalid-date-text="getText('MRI_PA_INVALID_DATE')"
+                          @update:model-value="setDateBound(field.id, 'to', $event)"
                         />
                       </div>
                     </template>
@@ -234,6 +238,7 @@ import { useStore } from 'vuex'
 import MessageBox from '../MessageBox.vue'
 import appButton from '@/lib/ui/app-button.vue'
 import ConceptSetTypeaheadField from './ConceptSetTypeaheadField.vue'
+import { D2eDatePicker, fromIsoDate, toIsoDate } from '@d2e/ui'
 import type {
   ResolvedWizardFieldGroup,
   ResolvedWizardFormSection,
@@ -255,6 +260,8 @@ import RangeConstraintPatternDefinition from '@/lib/utils/RangeConstraintPattern
 
 const store = useStore()
 const getText = (key: string, param?: string | string[]) => store.getters.getText(key, param)
+
+const DATE_MENU_Z_INDEX = 10002
 
 const props = defineProps<{
   isOpen: boolean
@@ -604,6 +611,11 @@ watch(
 
 function isDateType(type?: string) {
   return type === 'time' || type === 'datetime' || type === 'date'
+}
+
+function setDateBound(fieldId: string, bound: 'from' | 'to', date: Date | null) {
+  formValues[fieldId][bound] = toIsoDate(date) ?? ''
+  markFieldDirty(fieldId)
 }
 
 function shouldUseTypeahead(field: WizardFieldDefinition): boolean {

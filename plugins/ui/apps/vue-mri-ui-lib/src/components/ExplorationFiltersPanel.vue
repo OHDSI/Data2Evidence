@@ -53,25 +53,29 @@
         <div class="filters-panel__range">
           <!-- Cross-bound so the picker cannot produce an inverted range: the
                From field's max is the current `to`, and the reverse. -->
-          <D2eDateField
-            :model-value="modelValue[group.key].from"
-            :label="getText('MRI_PA_EXPLORATIONS_FILTER_FROM')"
-            :max="modelValue[group.key].to"
+          <D2eDatePicker
+            :model-value="fromIsoDate(modelValue[group.key].from)"
+            :placeholder="getText('MRI_PA_EXPLORATIONS_FILTER_FROM')"
+            :max="fromIsoDate(modelValue[group.key].to)"
             :disabled="group.disabled"
+            icon-position="prepend"
             clearable
+            :invalid-date-text="getText('MRI_PA_INVALID_DATE')"
             :aria-label="`${getText(group.labelKey)} ${getText('MRI_PA_EXPLORATIONS_FILTER_FROM')}`"
             :data-testid="`explorations-filter-${group.key}-from`"
-            @update:model-value="patchRange(group.key, { from: $event })"
+            @update:model-value="patchRange(group.key, { from: toIsoDate($event) })"
           />
-          <D2eDateField
-            :model-value="modelValue[group.key].to"
-            :label="getText('MRI_PA_EXPLORATIONS_FILTER_TO')"
-            :min="modelValue[group.key].from"
+          <D2eDatePicker
+            :model-value="fromIsoDate(modelValue[group.key].to)"
+            :placeholder="getText('MRI_PA_EXPLORATIONS_FILTER_TO')"
+            :min="fromIsoDate(modelValue[group.key].from)"
             :disabled="group.disabled"
+            icon-position="prepend"
             clearable
+            :invalid-date-text="getText('MRI_PA_INVALID_DATE')"
             :aria-label="`${getText(group.labelKey)} ${getText('MRI_PA_EXPLORATIONS_FILTER_TO')}`"
             :data-testid="`explorations-filter-${group.key}-to`"
-            @update:model-value="patchRange(group.key, { to: $event })"
+            @update:model-value="patchRange(group.key, { to: toIsoDate($event) })"
           />
         </div>
         <!-- CREATED is backend-blocked: a bookmark carries no creation
@@ -100,9 +104,14 @@
 import { computed } from 'vue'
 import { useStore } from 'vuex'
 import { VSwitch } from 'vuetify/components'
-import { D2eButton, D2eDateField, D2eSelect } from '@d2e/ui'
+import { D2eButton, D2eDatePicker, D2eSelect, fromIsoDate, toIsoDate } from '@d2e/ui'
 import type { D2eSelectItem } from '@d2e/ui'
-import { isEmpty, type DateRange, type ExplorationFilters, type MaterializationStatus } from './helpers/explorationFilters'
+import {
+  isEmpty,
+  type DateRange,
+  type ExplorationFilters,
+  type MaterializationStatus,
+} from './helpers/explorationFilters'
 
 interface Props {
   modelValue: ExplorationFilters
@@ -305,7 +314,7 @@ const patchRange = (key: DateGroupKey, part: Partial<DateRange>): void => {
   }
 
   /* The frame writes both placeholders in Neutral/Default, not the lighter
-     grey D2eSelect and D2eDateField use elsewhere (Figma 2697:211989 and
+     grey D2eSelect and D2eDatePicker use elsewhere (Figma 2697:211989 and
      2697:211995). `.v-input` is in the selector only to outrank the two
      components' own scoped rules, which carry a `[data-v-*]` attribute. */
   .v-input .v-field__input::placeholder,
