@@ -10,6 +10,7 @@ import axios from 'axios'
 import Plotly from '../lib/CustomPlotly'
 import chartErrorMessage from './ChartErrorMessage.vue'
 import Constants from '../utils/Constants'
+import { withEmptyCohorts } from './helpers/cohortCompareBarData'
 
 export default {
   name: 'StackBarCohortCompare',
@@ -127,7 +128,11 @@ export default {
       })
         .then(({ data }) => {
           if (this.isUnmounted || requestId !== this.requestId) return
-          this.chartData = this.processResponse(data)
+          const compareData = withEmptyCohorts(
+            data,
+            this.bookmarks.map(e => e.id)
+          )
+          this.chartData = this.processResponse(compareData)
           this.setupPlotly()
           this.renderChart()
           this.requestCancel = null
@@ -135,7 +140,7 @@ export default {
           // main chart's store response, which is `{}` when Compare is opened
           // from the Data Exploration list, so the export gate sees no data and
           // returns silently. KMCohortCompare already emits; this one did not.
-          this.$emit('response', data)
+          this.$emit('response', compareData)
           this.$emit('busyEv', false)
         })
         .catch(({ response }) => {

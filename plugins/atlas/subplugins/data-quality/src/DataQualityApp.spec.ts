@@ -35,11 +35,14 @@ function mountApp(overrides: Partial<DqHostCtx> = {}): VueWrapper {
   const ctx: DqHostCtx = {
     getToken: async () => 'token',
     datasetId: ref('dataset-1'),
+    cohortDefinitionId: ref(undefined),
     appId: 'app-1',
     locale: 'en',
     uiFilesUrl: '',
     isRoutedApp: false,
     t: (_key, fallback) => fallback ?? _key,
+    view: ref('dashboard'),
+    surface: ref(''),
     ...overrides,
   };
   const wrapper = mount(DataQualityApp, {

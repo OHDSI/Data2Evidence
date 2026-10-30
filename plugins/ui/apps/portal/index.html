@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <base href="/d2e/portal" />
+    <meta charset="utf-8" />
+    <link rel="icon" href="/assets/favicon.ico" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#000000" />
+    <meta name="description" content="Data2Evidence" />
+    <meta name="importmap-type" content="systemjs-importmap" />
+    <link rel="apple-touch-icon" href="/assets/icon.png" />
+    <link rel="manifest" href="/assets/manifest.json" />
+    <title>Data2Evidence</title>
+    <!-- Comment env.js for using REACT_APP_PLUGINS in local dev -->
+    <script src="/d2e/portal/env.js"></script>
+  </head>
+  <body>
+    <noscript>You need to enable JavaScript to run this app.</noscript>
+    <div id="root"></div>
+    <import-map-overrides-full show-when-local-storage="devtools"></import-map-overrides-full>
+    <script type="module" src="/src/index.tsx"></script>
+  </body>
+</html>

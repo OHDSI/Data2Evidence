@@ -1,5 +1,6 @@
 node_modules/
 resources/atlas/
+resources/d2e-login/
 subplugins/*/dist/
 # Deno resolves its project root up to this directory (package.json, no
 # deno.json), so running the d2e-login tests drops a lock file here for
