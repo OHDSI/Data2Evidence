@@ -201,6 +201,16 @@ export type IAtlasCohortDefinition = z.infer<
   typeof AtlasCohortDefinitionSchema
 >;
 
+/**
+ * The materialization status of a bookmark on one dataset. It is not related
+ * to `CohortCacheReadStatus.STALE`, which is a cache TTL state.
+ */
+export enum BookmarkMaterializedCohortStatus {
+  READY = "ready",
+  NOT_RUN = "not-run",
+  STALE = "stale",
+}
+
 export const BookmarkSchema = z.object({
   bmkId: z.string(),
   bookmarkname: z.string(),
@@ -212,6 +222,8 @@ export const BookmarkSchema = z.object({
   shared: z.boolean(),
   cohortDefinitionId: z.number().optional(),
   paConfigId: z.string().optional(),
+  materializationStatus: z.nativeEnum(BookmarkMaterializedCohortStatus)
+    .optional(),
 });
 export type IBookmark = z.infer<typeof BookmarkSchema>;
 
@@ -225,8 +237,10 @@ export const MaterializedCohortSchema = z.object({
 });
 export type IMaterializedCohort = z.infer<typeof MaterializedCohortSchema>;
 
+// The bookmark service response. Only d2e-webapi sets the status, so the
+// schema removes a status that the bookmark service sends.
 export const BookmarksSchema = z.object({
-  bookmarks: z.array(BookmarkSchema),
+  bookmarks: z.array(BookmarkSchema.omit({ materializationStatus: true })),
   schemaName: z.string(),
 });
 

@@ -3,6 +3,7 @@ import { ref } from "vue";
 import D2eExplorationCard from "./D2eExplorationCard.vue";
 import D2eIconButton from "./D2eIconButton.vue";
 import D2eButton from "./D2eButton.vue";
+import { D2eExplorationCardStatus } from "./explorationCardStatus";
 
 const readySelected = ref(false);
 const notRunSelected = ref(false);
@@ -40,7 +41,7 @@ const staleRows = [
       <D2eExplorationCard
         v-model:selected="readySelected"
         name="SNRI Users"
-        status="ready"
+        :status="D2eExplorationCardStatus.READY"
         person-count="223,888,432"
         :metadata="readyRows"
         :bookmark="bookmark"
@@ -71,7 +72,7 @@ const staleRows = [
       <D2eExplorationCard
         v-model:selected="notRunSelected"
         name="SNRI Users"
-        status="not-run"
+        :status="D2eExplorationCardStatus.NOT_RUN"
         :metadata="notRunRows"
         :bookmark="bookmark"
       >
@@ -110,7 +111,7 @@ const staleRows = [
       <D2eExplorationCard
         v-model:selected="staleSelected"
         name="SNRI Users"
-        status="stale"
+        :status="D2eExplorationCardStatus.STALE"
         person-count="223,888,432"
         :metadata="staleRows"
         :bookmark="[...bookmark.slice(0, 2), { label: 'Version', value: 2 }]"
@@ -141,7 +142,7 @@ const staleRows = [
       <D2eExplorationCard
         v-model:selected="truncatedSelected"
         name="SNRI Users Researcher trial Helsinki cohort 2026"
-        status="ready"
+        :status="D2eExplorationCardStatus.READY"
         person-count="223,888,432"
         :metadata="[
           { label: 'Last Materialised on', value: '19 May 2026' },

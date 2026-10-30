@@ -68,11 +68,11 @@ export {
   firstEnabledIndex,
   lastEnabledIndex,
 } from "./components/menuNavigation";
-export { EXPLORATION_STATUS_MAP } from "./components/explorationCardStatus";
-export type {
-  D2eExplorationCardRow,
+export {
+  EXPLORATION_STATUS_MAP,
   D2eExplorationCardStatus,
 } from "./components/explorationCardStatus";
+export type { D2eExplorationCardRow } from "./components/explorationCardStatus";
 export { SELECT_SIZE_MAP } from "./components/selectSizes";
 export type { D2eSelectSize, D2eSelectItem } from "./components/selectSizes";
 export { tokens } from "./tokens/tokens";

@@ -25,6 +25,7 @@ import {
     refreshCohortCacheEntry,
     updateCohortCacheEntryMetadata,
 } from "../../utils/cohortCacheMaintenance.ts";
+import { setBookmarkVersionInCohortSyntax } from "../../utils/cohortDefinitionSyntax.ts";
 
 const language = "en";
 
@@ -157,6 +158,7 @@ export async function getFilteredCohorts(req: IMRIRequest, res: Response) {
 }
 
 export async function createCohort(req: IMRIRequest, res: Response) {
+    let cohortWriteStarted = false;
     try {
         const datasetId = req.body.datasetId;
         const token = req.headers.authorization;
@@ -265,6 +267,20 @@ export async function createCohort(req: IMRIRequest, res: Response) {
         );
 
         const cohort = await getCohortFromMriQuery(req, bookmark.bookmark_name);
+        cohort.syntax = setBookmarkVersionInCohortSyntax(
+            cohort.syntax,
+            bookmark.version
+        );
+        // Write a null bookmarkVersion until the patient rows are saved, so
+        // that a run in progress or a failed run shows as stale.
+        const pendingCohort = {
+            ...cohort,
+            syntax: setBookmarkVersionInCohortSyntax(
+                cohort.syntax,
+                bookmark.version,
+                { pending: true }
+            ),
+        };
         const [cacheResultsSchemaName, sourceResultsSchemaName] =
             await _getResultsSchemaNames(req.selectedstudyDbMetadata);
         const cohortEndpoint = await CohortEndpoint.createCohortEndpoint(
@@ -290,14 +306,18 @@ export async function createCohort(req: IMRIRequest, res: Response) {
         )[0];
 
         let cohortDefinitionId;
+        cohortWriteStarted = true;
         if (existingMaterializedCohort) {
             // If there exists an existing materialized cohort
             // Update existing cohort definition and remove all existing records from cohort table before saving cohort to db
             cohortDefinitionId = existingMaterializedCohort.id;
-            await cohortEndpoint.updateCohortDefinitionToDb({
-                ...cohort,
-                id: cohortDefinitionId,
-            });
+            await cohortEndpoint.updateCohortDefinitionToDb(
+                {
+                    ...pendingCohort,
+                    id: cohortDefinitionId,
+                },
+                false
+            );
 
             // Remove existing records from cohort table before saving cohort to db
             await cohortEndpoint.deleteCohortFromDb(cohortDefinitionId);
@@ -305,11 +325,11 @@ export async function createCohort(req: IMRIRequest, res: Response) {
             // Else if there is no existing materialized cohort
             // Save cohort definition to db and query cohort definition id for newly created cohort definition
             // Save cohort to db
-            await cohortEndpoint.saveCohortDefinitionToDb(cohort);
+            await cohortEndpoint.saveCohortDefinitionToDb(pendingCohort);
 
             // Get cohort definition id from cohort object
             cohortDefinitionId =
-                await cohortEndpoint.queryCohortDefinitionId(cohort);
+                await cohortEndpoint.queryCohortDefinitionId(pendingCohort);
         }
 
         if (stream) {
@@ -342,6 +362,17 @@ export async function createCohort(req: IMRIRequest, res: Response) {
             );
         }
 
+        // Write the real bookmarkVersion and set COHORT_INITIATION_DATE to the
+        // date of this materialization. The cache refresh below reads both
+        // from the database.
+        await cohortEndpoint.updateCohortDefinitionToDb(
+            {
+                ...cohort,
+                id: cohortDefinitionId,
+            },
+            true
+        );
+
         await refreshCohortCacheEntry({
             cohortEndpoint,
             cohortDefinitionId,
@@ -361,6 +392,15 @@ export async function createCohort(req: IMRIRequest, res: Response) {
         });
     } catch (err) {
         logger.error(err);
+        if (cohortWriteStarted) {
+            // The failed run changed or removed the cohort. Drop the cache
+            // entry, so that the next read does not show the old cohort.
+            await evictCohortCacheEntry({
+                syntax: req.body.syntax,
+                datasetId: req.body.datasetId,
+                paConfigId: req.paConfigId,
+            });
+        }
         res.status(500).send(MRIEndpointErrorHandler({ err, language }));
     }
 }

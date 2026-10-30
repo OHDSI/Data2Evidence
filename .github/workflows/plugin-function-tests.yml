@@ -27,7 +27,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        plugin: [strategus-analysis, jobplugins, dataset, _shared/idp, alp-idp-migration-init]
+        plugin: [strategus-analysis, jobplugins, dataset, _shared/idp, alp-idp-migration-init, d2e-webapi]
     steps:
       - uses: actions/checkout@v4
       - uses: denoland/setup-deno@v2
