@@ -1,7 +1,6 @@
-from shiny import render, ui
+from shiny import ui
 
 
-# DOWNLOAD OPTIONS
 download_format_options = {
     "CSV": "Download CSV",
     "SVG": "Download SVG",
@@ -14,16 +13,14 @@ def download_icon():
 
 
 def download_toolbar_head_content():
-    """Returns head content tags required for the download toolbar."""
+    """Head tags (icon font, CSS, save-dialog JS) for the download toolbar."""
     return [
         ui.tags.link(
             rel="stylesheet",
             href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,500,0,0&icon_names=download",
         ),
         ui.tags.style("""
-            /* Layout rules normally supplied by shiny's bslib toolbar component
-               (shiny>=1.7 only). Inlined here so the toolbar also renders
-               correctly on older shiny, e.g. the version bundled by shinylive/pyodide. */
+            /* bslib toolbar layout, inlined for the older shiny in shinylive. */
             .bslib-toolbar {
                 display: flex;
                 flex-wrap: wrap;
@@ -107,7 +104,7 @@ def download_toolbar_head_content():
             #download_format .bslib-toolbar-label {
                 display: none !important;
             }
-            /* Hide Plotly modebar/toolbar; the custom download toolbar replaces it */
+            /* Hide Plotly's modebar; the download toolbar replaces it. */
             .modebar {
                 display: none !important;
             }
@@ -130,7 +127,7 @@ def download_toolbar_head_content():
                 try {
                     localStorage.setItem(DOWNLOAD_COUNTS_KEY, JSON.stringify(downloadCounts));
                 } catch (err) {
-                    // localStorage unavailable (e.g. private browsing); counts stay in-memory only.
+                    // No localStorage (e.g. private browsing): keep counts in memory.
                 }
             }
 
@@ -206,12 +203,7 @@ def download_toolbar_head_content():
 
 
 def create_download_toolbar(filename_prefix="download"):
-    """Returns the download toolbar with hidden download links.
-
-    Built from plain tags rather than shiny.ui.toolbar / toolbar_input_select
-    (only available in shiny>=1.7) so it also works on older shiny versions,
-    e.g. the one bundled by shinylive/pyodide.
-    """
+    """Download format select plus the hidden CSV/SVG/PNG download links."""
     select_id = "download_format-select"
 
     icon_elem = ui.tags.span(
@@ -270,22 +262,3 @@ def create_download_toolbar(filename_prefix="download"):
         hidden_links,
         {"class": "bslib-toolbar bslib-gap-spacing", "data-align": "right"},
     )
-
-
-def register_download_handlers(output, filename_prefix, build_csv, build_figure):
-    """Registers the CSV/SVG/PNG download handlers backing the download toolbar."""
-
-    @output(id="download_csv", suspend_when_hidden=False)
-    @render.download(filename=f"{filename_prefix}.csv", media_type="text/csv")
-    def download_csv():
-        yield build_csv()
-
-    @output(id="download_svg", suspend_when_hidden=False)
-    @render.download(filename=f"{filename_prefix}.svg", media_type="image/svg+xml")
-    def download_svg():
-        yield build_figure().to_image(format="svg")
-
-    @output(id="download_png", suspend_when_hidden=False)
-    @render.download(filename=f"{filename_prefix}.png", media_type="image/png")
-    def download_png():
-        yield build_figure().to_image(format="png")
