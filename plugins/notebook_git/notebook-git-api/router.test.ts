@@ -8,12 +8,13 @@ const ID = "3f1a2b3c-4d5e-6f70-8192-a3b4c5d6e7f8";
 
 const row = {
   id: ID, name: "My nb", description: "d",
-  content: { cells: [], metadata: {} }, deletedAt: null,
+  content: { cells: [], metadata: {} }, deletedAt: null, createdBy: "u1",
 };
 
-function req(path: string, method = "GET", userId: string | null = "u1"): Request {
+function req(path: string, method = "GET", userId: string | null = "u1", userRole?: string): Request {
   const headers: Record<string, string> = {};
   if (userId) headers["x-user-id"] = userId;
+  if (userRole) headers["x-user-role"] = userRole;
   return new Request(`${BASE}${path}`, { method, headers });
 }
 
@@ -160,6 +161,44 @@ Deno.test("overwrite-from-remote is a no-op when content is identical", async ()
   }));
   assertEquals((await res.json()).overwritten, false);
   assertEquals(called, false);
+});
+
+const remoteDiffers = () => ({
+  ensureLatest: async () => {},
+  readFile: async () => JSON.stringify({ name: "Remote", description: "rd", content: { cells: [{ id: "c9" }] } }),
+  listFiles: async () => [], saveFile: async () => {}, deleteFile: async () => {},
+});
+
+Deno.test("overwrite-from-remote refuses another user's notebook", async () => {
+  let called = false;
+  const res = await handleRequest(req(`/${ID}/overwrite-from-remote`, "POST", "u2"), deps({
+    makeGit: remoteDiffers,
+    writeNotebook: async () => { called = true; },
+  }));
+  assertEquals(res.status, 403);
+  assertEquals(called, false);
+});
+
+Deno.test("overwrite-from-remote refuses a shared notebook for a non-admin", async () => {
+  let called = false;
+  const res = await handleRequest(req(`/${ID}/overwrite-from-remote`, "POST", "u1", "user"), deps({
+    makeGit: remoteDiffers,
+    readNotebook: async () => ({ ...row, createdBy: null }),
+    writeNotebook: async () => { called = true; },
+  }));
+  assertEquals(res.status, 403);
+  assertEquals(called, false);
+});
+
+Deno.test("overwrite-from-remote lets an admin overwrite a shared notebook", async () => {
+  let called = false;
+  const res = await handleRequest(req(`/${ID}/overwrite-from-remote`, "POST", "admin1", "admin"), deps({
+    makeGit: remoteDiffers,
+    readNotebook: async () => ({ ...row, createdBy: null }),
+    writeNotebook: async () => { called = true; },
+  }));
+  assertEquals((await res.json()).overwritten, true);
+  assertEquals(called, true);
 });
 
 Deno.test("overwrite-all-from-remote processes every json file", async () => {
