@@ -17,6 +17,7 @@ import {
   DC_DIRECT_DIALECTS_USE_TREX_VARIABLE,
   isTruthyVariable,
   resolveDcTarget,
+  webapiCacheSourceKey,
 } from "./dcTarget.ts";
 
 export class DataCharacterizationService {
@@ -216,6 +217,9 @@ export class DataCharacterizationService {
         executeConceptRecordCount:
           dataCharacterizationFlowRunDto.executeConceptRecordCount ?? true,
         useSourceConnection: dcTarget.useSourceConnection,
+        // Set for every webapi dataset, so the flow clears the reports WebAPI
+        // cached for it even when the run did not use the source connection.
+        webapiSourceKey: webapiCacheSourceKey(dataset),
       },
     };
 

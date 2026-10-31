@@ -231,7 +231,9 @@ def tables_to_drop(use_trex_connection: bool) -> list[str]:
 
 
 def webapi_cache_source_key(
-    use_trex_connection: bool, dataset_id: str | None
+    use_trex_connection: bool,
+    dataset_id: str | None,
+    webapi_source_key: str | None = None,
 ) -> str | None:
     """
     The WebAPI source whose cached reports this run invalidates, or None.
@@ -241,10 +243,14 @@ def webapi_cache_source_key(
     before a DC run keep being served afterwards - an empty dashboard stays empty
     even though the achilles tables now hold data.
 
-    Only a source-connection (webapi dataset) run rewrites the achilles tables a
-    WebAPI source reads: a legacy trex run writes into its own throwaway results
-    schema, which no source points at. The dataset id is the source key.
+    jobplugins names the source for every webapi dataset, and that wins: such a run
+    writes into the results schema its WebAPI source reads whichever connection it
+    used, so a trex run left Atlas on the old reports too. Without it (a run started
+    by an older jobplugins), only a source-connection run is known to have rewritten
+    a source's achilles tables, and the dataset id is the source key.
     """
+    if webapi_source_key:
+        return webapi_source_key
     if use_trex_connection or not dataset_id:
         return None
     return dataset_id
