@@ -167,14 +167,16 @@ export function DataSourcesPage() {
   const filteredRows = useMemo(() => {
     const term = search.trim().toLowerCase();
     if (!term) return tabRows;
-    return tabRows.filter((row) => {
-      const name = row.studyDetail?.name ?? "";
-      return (
-        row.id.toLowerCase().includes(term) ||
-        name.toLowerCase().includes(term) ||
-        (row.schemaName ?? "").toLowerCase().includes(term)
-      );
-    });
+    return tabRows.filter((row) =>
+      [row, ...(row.children ?? [])].some((candidate) => {
+        const name = candidate.studyDetail?.name ?? "";
+        return (
+          candidate.id.toLowerCase().includes(term) ||
+          name.toLowerCase().includes(term) ||
+          (candidate.schemaName ?? "").toLowerCase().includes(term)
+        );
+      })
+    );
   }, [tabRows, search]);
 
   const sortedRows = useMemo(() => {
