@@ -574,6 +574,7 @@ const ManageMetadataDialog: FC<ManageMetadataDialogProps> = ({ dataset, open, on
           onAttributeCreated={() => setConfigRefetch((n) => n + 1)}
           onClose={() => setImportState(null)}
           onImport={handleImportApply}
+          errorMessage={feedback?.type === "error" ? feedback.message : undefined}
         />
       )}
 

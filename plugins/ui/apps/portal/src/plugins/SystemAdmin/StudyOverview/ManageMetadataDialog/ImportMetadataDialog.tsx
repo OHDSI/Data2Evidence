@@ -220,6 +220,7 @@ interface ImportMetadataDialogProps {
   onAttributeCreated: () => void;
   onClose: () => void;
   onImport: (rows: { attributeId: string; value: string }[]) => void;
+  errorMessage?: string;
 }
 
 const ImportMetadataDialog: FC<ImportMetadataDialogProps> = ({
@@ -230,6 +231,7 @@ const ImportMetadataDialog: FC<ImportMetadataDialogProps> = ({
   onAttributeCreated,
   onClose,
   onImport,
+  errorMessage,
 }) => {
   const { getText, i18nKeys } = useTranslation();
   const [rows, setRows] = useState<ImportRow[]>([]);
@@ -389,6 +391,11 @@ const ImportMetadataDialog: FC<ImportMetadataDialogProps> = ({
       >
         <div className="manage-metadata import-metadata">
           <div className="import-metadata__filename">{fileName}</div>
+          {errorMessage && (
+            <Alert severity="error" variant="banner">
+              {errorMessage}
+            </Alert>
+          )}
           {feedback?.message && (
             <Alert severity={feedback.type ?? "error"} variant="banner">
               {feedback.message}
