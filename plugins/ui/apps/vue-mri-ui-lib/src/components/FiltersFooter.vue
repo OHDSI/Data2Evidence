@@ -328,6 +328,7 @@ export default {
         this.isSavingBookmark = true
         this.latestSaveId += 1
         const saveId = this.latestSaveId
+        let isDialogReleased = false
 
         try {
           const isInsert = isNewBookmark || this.isNotUserSharedBookmark
@@ -385,7 +386,9 @@ export default {
 
           // Close the dialog right after the save succeeds so the success toast is shown
           // after the modal closes, not while the subsequent list refresh is still running.
+          this.cohortName = ''
           this.closeSaveBookmark()
+          isDialogReleased = true
           useNotificationStore().setToastMessage({ text: successMessage })
           this.isSavingBookmark = false
 
@@ -406,8 +409,10 @@ export default {
           if (saveId === this.latestSaveId) {
             this.isSavingBookmark = false
           }
-          this.cohortName = ''
-          this.closeSaveBookmark()
+          if (!isDialogReleased) {
+            this.cohortName = ''
+            this.closeSaveBookmark()
+          }
         }
       }
     },

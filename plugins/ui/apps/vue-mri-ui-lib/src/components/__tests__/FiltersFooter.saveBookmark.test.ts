@@ -67,6 +67,7 @@ const createContext = (
     canShare: false,
     shareBookmark: false,
     isSavingBookmark: false,
+    showSaveBookmark: true,
     latestSaveId: 0,
     getText: (key: string) => key,
     cohortName: COHORT_NAME,
@@ -83,7 +84,9 @@ const createContext = (
     getMriFrontendConfig: { getPaConfigId: () => 'pa-1' },
     getBookmarkByNameAndUsername: vi.fn(() => listBookmark),
     fireBookmarkQuery,
-    closeSaveBookmark: vi.fn(),
+    closeSaveBookmark: vi.fn(() => {
+      context.showSaveBookmark = false
+    }),
   }
 
   context[types.SET_ACTIVE_BOOKMARK] = vi.fn((bookmark: unknown) => {
@@ -256,7 +259,6 @@ describe('FiltersFooter saveBookmark', () => {
       const firstSave = saveBookmark(context)
       await settle()
       editFilters(EDITED_FILTERS)
-      context.cohortName = ''
       const secondSave = saveBookmark(context)
       await settle()
 
@@ -266,6 +268,38 @@ describe('FiltersFooter saveBookmark', () => {
 
       loadAll.resolve({})
       await Promise.all([firstSave, secondSave])
+    })
+
+    it('closes the dialog and clears the name once the write succeeds', async () => {
+      const loadAll = createDeferred<unknown>()
+      const { context } = createContext(loadAll.promise)
+
+      const saving = saveBookmark(context)
+      await settle()
+
+      expect(context.showSaveBookmark).toBe(false)
+      expect(context.cohortName).toBe('')
+
+      loadAll.resolve({})
+      await saving
+    })
+
+    it('keeps a save dialog opened during the refresh open with its name', async () => {
+      const loadAll = createDeferred<unknown>()
+      const { context } = createContext(loadAll.promise)
+
+      const saving = saveBookmark(context)
+      await settle()
+
+      context.getActiveBookmark = { bookmarkname: '', isNew: true }
+      context.showSaveBookmark = true
+      context.cohortName = 'Another Cohort'
+
+      loadAll.resolve({})
+      await saving
+
+      expect(context.showSaveBookmark).toBe(true)
+      expect(context.cohortName).toBe('Another Cohort')
     })
 
     it('ignores a refresh that resolves after a newer save', async () => {
@@ -337,6 +371,15 @@ describe('FiltersFooter saveBookmark', () => {
 
       expect(context[types.SET_ACTIVE_BOOKMARK]).not.toHaveBeenCalled()
       expect(setToastMessage).not.toHaveBeenCalled()
+    })
+
+    it('closes the dialog and clears the name', async () => {
+      const { context } = createContext(Promise.resolve({}), failed)
+
+      await saveBookmark(context)
+
+      expect(context.showSaveBookmark).toBe(false)
+      expect(context.cohortName).toBe('')
     })
   })
 })
