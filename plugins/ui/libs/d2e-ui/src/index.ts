@@ -13,6 +13,7 @@ export { default as D2eExplorationCard } from "./components/D2eExplorationCard.v
 export { default as D2eSelect } from "./components/D2eSelect.vue";
 export { default as D2eCheckbox } from "./components/D2eCheckbox.vue";
 export { default as D2eDatePicker } from "./components/D2eDatePicker.vue";
+export { default as D2eDateTimePicker } from "./components/D2eDateTimePicker.vue";
 export { default as D2eViewToggle } from "./components/D2eViewToggle.vue";
 export { default as D2eTooltip } from "./components/D2eTooltip.vue";
 export { default as D2eTruncatedText } from "./components/D2eTruncatedText.vue";
