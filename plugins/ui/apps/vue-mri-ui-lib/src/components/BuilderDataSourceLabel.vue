@@ -1,6 +1,6 @@
 <template>
   <div v-if="isAtlasHosted" ref="rootRef" class="builder-data-source" data-testid="builder-datasource">
-    <span class="builder-data-source__label">{{ getText('MRI_PA_BUILDER_DATASOURCE') }}</span>
+    <span class="builder-data-source__label">{{ getText('MRI_PA_EXPLORATIONS_DATASOURCE') }}:</span>
     <D2eTooltip location="bottom" :text="datasetName" :disabled="!nameTruncated">
       <template #activator="{ props: tooltipProps }">
         <span
