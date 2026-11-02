@@ -70,13 +70,13 @@ watch(datasetName, () => nextTick(syncTruncation))
   min-width: 0;
   margin-left: var(--d2e-spacing-s);
   font-family: var(--d2e-font-family);
-  font-size: var(--d2e-font-body1-size);
-  line-height: var(--d2e-font-body1-line-height);
+  font-size: var(--d2e-font-body2-size);
+  line-height: var(--d2e-font-body2-line-height);
 
   &__label {
     flex: 0 0 auto;
     color: var(--d2e-color-text-secondary);
-    font-weight: var(--d2e-font-body1-weight);
+    font-weight: var(--d2e-font-body2-weight);
   }
 
   &__name {

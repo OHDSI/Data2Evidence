@@ -84,6 +84,14 @@
   justify-content: space-between;
   top: 0px;
 
+  .chartToolbar-leading {
+    min-width: 0;
+  }
+
+  &:has(.builder-data-source) .actionButtonGroup {
+    flex-shrink: 0;
+  }
+
   .vertical-spacer {
     width: 2px;
     height: 28px;

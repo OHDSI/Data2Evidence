@@ -1,6 +1,6 @@
 <template>
   <div class="chartToolbar-main-container">
-    <div class="d-flex align-center">
+    <div class="d-flex align-center chartToolbar-leading">
       <button
         v-if="!showUnHideFilters"
         class="actionButton"
