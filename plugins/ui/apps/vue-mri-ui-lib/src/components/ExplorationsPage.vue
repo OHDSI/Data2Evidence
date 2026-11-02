@@ -167,7 +167,7 @@
         v-for="card in cards"
         :key="card.id"
         width="100%"
-        :clickable="Boolean(card.bmkId)"
+        :clickable="isOpenable(card)"
         :name="card.name"
         :selected="explorations.isSelected(card.id)"
         :status="card.status"
@@ -459,6 +459,7 @@ import {
 } from './helpers/explorationAnalyze'
 import { filterAndSort, toCardId, type ExplorationSortKey } from './helpers/explorationList'
 import { sortByColumn, type ExplorationColumnSort } from './helpers/explorationTableSort'
+import { isOpenable } from './helpers/explorationTableRow'
 import { quickActionMenuItems, quickActionState, type QuickAction } from './helpers/explorationQuickActions'
 import { dataQualityCohortId, dataQualityTooltipKey, isDataQualityBusy } from './helpers/explorationDataQuality'
 import { useDataQualityRun } from '../composables/useDataQualityRun'

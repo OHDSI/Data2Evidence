@@ -1,7 +1,8 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import {
   DATA_TABLE_COMPACT_STYLE_MAP,
   DATA_TABLE_STYLE_MAP,
+  clickableRowProps,
   nextSort,
   pageCount,
   pageRange,
@@ -35,7 +36,6 @@ describe("D2eDataTable compact style map", () => {
       cellPaddingX: 8,
       cellPaddingY: 10,
       headerGap: 10,
-      sortIconSize: 16,
     });
   });
 });
@@ -88,5 +88,51 @@ describe("pageCount", () => {
   it("rounds up", () => {
     expect(pageCount(10, 123)).toBe(13);
     expect(pageCount(25, 50)).toBe(2);
+  });
+});
+
+describe("clickableRowProps", () => {
+  const row = {};
+  const keydown = (key: string, target: object = row) => {
+    const preventDefault = vi.fn();
+    const event = {
+      key,
+      target,
+      currentTarget: row,
+      preventDefault,
+    } as unknown as KeyboardEvent;
+    return { event, preventDefault };
+  };
+
+  it("makes the row focusable and opens it on click", () => {
+    const onActivate = vi.fn();
+    const props = clickableRowProps(onActivate);
+    expect(props.tabindex).toBe(0);
+    props.onClick();
+    expect(onActivate).toHaveBeenCalledTimes(1);
+  });
+
+  it.each(["Enter", " "])("opens the focused row on %j", (key) => {
+    const onActivate = vi.fn();
+    const { event, preventDefault } = keydown(key);
+    clickableRowProps(onActivate).onKeydown(event);
+    expect(onActivate).toHaveBeenCalledTimes(1);
+    expect(preventDefault).toHaveBeenCalled();
+  });
+
+  it("ignores other keys", () => {
+    const onActivate = vi.fn();
+    const { event, preventDefault } = keydown("a");
+    clickableRowProps(onActivate).onKeydown(event);
+    expect(onActivate).not.toHaveBeenCalled();
+    expect(preventDefault).not.toHaveBeenCalled();
+  });
+
+  it("ignores keys pressed on a control inside the row", () => {
+    const onActivate = vi.fn();
+    const { event, preventDefault } = keydown("Enter", {});
+    clickableRowProps(onActivate).onKeydown(event);
+    expect(onActivate).not.toHaveBeenCalled();
+    expect(preventDefault).not.toHaveBeenCalled();
   });
 });

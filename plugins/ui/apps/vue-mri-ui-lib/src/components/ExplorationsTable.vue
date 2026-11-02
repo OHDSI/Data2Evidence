@@ -9,6 +9,7 @@
     :items="rows"
     :items-per-page="-1"
     :sort-by="sortBy"
+    :row-clickable="isOpenable"
     data-testid="explorations-table"
     @update:sort-by="emit('update:sortBy', $event)"
     @click:row="emit('open', $event)"
@@ -85,7 +86,7 @@ import {
 } from '@d2e/ui'
 import ExplorationMoreIcon from './icons/ExplorationMoreIcon.vue'
 import ExplorationSortIcon from './icons/ExplorationSortIcon.vue'
-import type { ExplorationTableRow } from './helpers/explorationTableRow'
+import { isOpenable, type ExplorationTableRow } from './helpers/explorationTableRow'
 
 const SORT_ICON_SIZE = 16
 const MORE_ICON_SIZE = 20
@@ -127,10 +128,6 @@ const headers = computed<D2eDataTableHeader[]>(() => [
 <style scoped lang="scss">
 .explorations-table {
   padding: 0 var(--d2e-spacing-m);
-
-  :deep(.v-table > .v-table__wrapper > table > tbody > tr) {
-    cursor: pointer;
-  }
 
   :deep(.v-table > .v-table__wrapper > table > thead > tr > th:last-child),
   :deep(.v-table > .v-table__wrapper > table > tbody > tr > td:last-child) {

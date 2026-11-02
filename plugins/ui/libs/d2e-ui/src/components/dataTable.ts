@@ -24,7 +24,6 @@ export const DATA_TABLE_COMPACT_STYLE_MAP = {
   cellPaddingX: 8,
   cellPaddingY: 10,
   headerGap: 10,
-  sortIconSize: 16,
 } as const;
 
 export type D2eDataTableDensity = "default" | "compact";
@@ -66,6 +65,33 @@ export function pageRange(
   return { start, end: Math.min(page * itemsPerPage, total), total };
 }
 
+const ROW_ACTIVATION_KEYS: readonly string[] = ["Enter", " "];
+
+export type D2eClickableRowProps = {
+  tabindex: number;
+  onClick: () => void;
+  onKeydown: (event: KeyboardEvent) => void;
+};
+
+/**
+ * The attributes that make a table row open like a button: focusable, opened
+ * by a click, or by Enter or Space while the row itself has focus.
+ */
+export function clickableRowProps(
+  onActivate: () => void,
+): D2eClickableRowProps {
+  return {
+    tabindex: 0,
+    onClick: onActivate,
+    onKeydown: (event) => {
+      if (event.target !== event.currentTarget) return;
+      if (!ROW_ACTIVATION_KEYS.includes(event.key)) return;
+      event.preventDefault();
+      onActivate();
+    },
+  };
+}
+
 /** How many pages the rows fill. Never less than one, so page 1 always exists. */
 export function pageCount(itemsPerPage: number, total: number): number {
   return Math.max(1, Math.ceil(total / itemsPerPage));
@@ -100,4 +126,6 @@ export interface D2eDataTableProps<T> {
   density?: D2eDataTableDensity;
   hover?: boolean;
   hideFooter?: boolean;
+  /** Rows that open on click, Enter or Space; none when unset. */
+  rowClickable?: (item: T) => boolean;
 }

@@ -22,7 +22,6 @@ export type { D2eTabItem } from "./components/tabsStyles";
 export { default as D2eDataTable } from "./components/D2eDataTable.vue";
 export { default as D2eDataTableDetail } from "./components/D2eDataTableDetail.vue";
 export {
-  DATA_TABLE_COMPACT_STYLE_MAP,
   DATA_TABLE_STYLE_MAP,
   nextSort,
   pageRange,
@@ -65,7 +64,6 @@ export type {
 } from "./components/iconButtonSizes";
 export type { D2eMenuItem } from "./components/D2eMenu.vue";
 export type { D2eViewToggleOption } from "./components/D2eViewToggle.vue";
-export { VIEW_TOGGLE_STYLE_MAP } from "./components/viewToggle";
 export {
   nextEnabledIndex,
   firstEnabledIndex,

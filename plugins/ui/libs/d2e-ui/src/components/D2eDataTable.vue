@@ -19,11 +19,11 @@
       :expanded="expanded"
       :show-expand="expandable"
       :hover="hover"
+      :row-props="rowProps"
       disable-sort
       hide-default-footer
       @update:page="emit('update:page', $event)"
       @update:expanded="emit('update:expanded', $event as string[])"
-      @click:row="onRowClick"
     >
       <template
         v-for="header in headers"
@@ -115,6 +115,7 @@ import D2ePagination from "./D2ePagination.vue";
 import {
   DATA_TABLE_COMPACT_STYLE_MAP,
   DATA_TABLE_STYLE_MAP,
+  clickableRowProps,
   nextSort,
   pageRange,
   type D2eDataTableProps,
@@ -195,9 +196,12 @@ function sortIcon(key: string): string {
     : DATA_TABLE_STYLE_MAP.sortIcons.none;
 }
 
-function onRowClick(_event: Event, row: { item: T }): void {
-  emit("click:row", row.item);
-}
+const rowProps = computed(() => {
+  const isClickable = props.rowClickable;
+  if (!isClickable) return undefined;
+  return ({ item }: { item: T }) =>
+    isClickable(item) ? clickableRowProps(() => emit("click:row", item)) : {};
+});
 </script>
 
 <style scoped lang="scss">
@@ -250,6 +254,11 @@ function onRowClick(_event: Event, row: { item: T }): void {
       outline: 2px solid var(--d2e-color-primary);
       outline-offset: 2px;
     }
+  }
+
+  :deep(.v-data-table__tr--clickable:focus-visible) {
+    outline: 2px solid var(--d2e-color-primary);
+    outline-offset: -2px;
   }
 
   :deep(.d2e-data-table__detail-cell) {

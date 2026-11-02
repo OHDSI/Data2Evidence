@@ -11,4 +11,7 @@ export interface ExplorationTableRow {
   createdBy: string
   lastUpdated: string
   version: string | number
+  bmkId: string | null
 }
+
+export const isOpenable = (row: Pick<ExplorationTableRow, 'bmkId'>): boolean => Boolean(row.bmkId)
