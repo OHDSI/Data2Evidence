@@ -14,7 +14,9 @@
       <p v-if="!loading" class="description">{{ getText('MRI_PA_SELECT_DASHBOARD_DESC') }}</p>
 
       <p v-if="!loading && error" class="error-text">{{ error }}</p>
-      <p v-else-if="!loading && dashboards.length === 0" class="status-text">{{ getText('MRI_PA_NO_DASHBOARDS_AVAILABLE') }}</p>
+      <p v-else-if="!loading && dashboards.length === 0" class="status-text">
+        {{ getText('MRI_PA_NO_DASHBOARDS_AVAILABLE') }}
+      </p>
       <p v-else-if="!loading && availableDashboards.length === 0 && dashboards.length > 0" class="status-text">
         {{ getText('MRI_PA_NO_CONFIGURED_DASHBOARDS') }}
       </p>

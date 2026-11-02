@@ -21,7 +21,7 @@ The component in `index.vue` has two hosts, and they wire it up differently:
 
 | Host | Where the user sees it | Data source | Props of note |
 |---|---|---|---|
-| [ChartToolbar.vue](../../../components/ChartToolbar.vue) | PA chart toolbar → **Attrition Plot** button → `VDialog` | analytics-svc (see [Backend](#backend)) | `fetch-attrition-report`, `filter-card-details`, `show-person-event-switch=false`, `show-intersect-view` from config |
+| [ChartToolbar.vue](../../../components/ChartToolbar.vue) | PA chart toolbar → **Attrition Plot** button → `D2eDialog` | analytics-svc (see [Backend](#backend)) | `fetch-attrition-report`, `filter-card-details`, `show-person-event-switch=false`, `show-intersect-view` from config |
 | [ExecuteSidePanel.vue](../ExecuteSidePanel.vue) (retired) | D2E cohort builder → execute side panel → *Inclusion report* tab | d2e-webapi `getInclusionReport` (Atlas-style, needs a generated cohort) | `show-intersect-view=true`, PERSON/EVENT switch shown, no `filter-card-details` |
 
 **The PA dialog (ChartToolbar) is the main path.** Most of the recent work targets it.
@@ -200,7 +200,7 @@ These are worth knowing before you pick up tickets. None of them is fixed on `de
   `index.vue` passes `{ cacheKey: props.cacheKey, sourceKey: props.sourceKey, … }`, which is a plain
   object snapshot, so `watch(() => options.cacheKey)` and the others never trigger. The unit tests
   build `options` with `reactive()`, so they don't catch this.
-  - **In PA this does no harm. It is dead code.** The `VDialog` in ChartToolbar has no `eager`, so
+  - **In PA this does no harm. It is dead code.** The `D2eDialog` in ChartToolbar has no `eager`, so
     Vuetify unmounts its content after it closes. Every open remounts the report and fetches again
     in `onMounted`. The dialog is modal and `persistent`, so the bookmark and dataset can't change
     while it is open. `generationStatus` is hard-coded to `"complete"`. ChartToolbar's

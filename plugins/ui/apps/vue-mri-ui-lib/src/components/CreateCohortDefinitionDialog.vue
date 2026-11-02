@@ -8,7 +8,12 @@
   >
     <p>{{ getText('MRI_PA_FILTER_SUMMARY_CREATE_COHORT_DEFINITION_WARNING') }}</p>
     <template #actions>
-      <D2eButton variant="secondary" :disabled="isLoading" data-testid="pa-create-cohort-definition-cancel-btn" @click="cancel">
+      <D2eButton
+        variant="secondary"
+        :disabled="isLoading"
+        data-testid="pa-create-cohort-definition-cancel-btn"
+        @click="cancel"
+      >
         {{ getText('MRI_PA_BUTTON_CANCEL') }}
       </D2eButton>
       <D2eButton
