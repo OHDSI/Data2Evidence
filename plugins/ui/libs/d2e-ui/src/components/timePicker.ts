@@ -17,13 +17,10 @@ export const padTimePart = (value: number) => String(value).padStart(2, "0");
 export const selectedHour = (date: Date | null): number | null =>
   date ? date.getHours() : null;
 
-export function selectedMinute(
-  date: Date | null,
-  options: readonly number[]
-): number | null {
+export function selectedMinute(date: Date | null): number | null {
   if (!date) return null;
   const minute = date.getMinutes();
-  return options.includes(minute) ? minute : null;
+  return MINUTE_OPTIONS.includes(minute) ? minute : null;
 }
 
 const atTime = (day: Date, hours: number, minutes: number) =>

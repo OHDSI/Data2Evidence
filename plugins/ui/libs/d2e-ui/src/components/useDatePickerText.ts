@@ -77,6 +77,7 @@ export function useDatePickerText(
   return {
     text,
     shownErrors,
+    isEdited,
     show,
     markInvalid,
     onType,

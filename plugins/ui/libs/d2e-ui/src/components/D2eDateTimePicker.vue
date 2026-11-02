@@ -44,7 +44,7 @@
             />
             <D2eTimeColumn
               :options="MINUTE_OPTIONS"
-              :selected="selectedMinute(draft, MINUTE_OPTIONS)"
+              :selected="selectedMinute(draft)"
               :open="isOpen"
               :label="minutesLabel"
               @select="onPickMinute"
@@ -155,6 +155,7 @@ const isOpen = computed({
 const {
   text,
   shownErrors,
+  isEdited,
   show,
   markInvalid,
   onType,
@@ -169,11 +170,19 @@ watch(internalOpen, (open) => {
     return;
   }
   if (closeAction.value === "accept") {
-    acceptDraft();
+    acceptOnClose();
   } else {
     show(props.modelValue);
   }
 });
+
+function acceptOnClose() {
+  if (isEdited.value) {
+    commitText();
+    return;
+  }
+  acceptDraft();
+}
 
 function acceptDraft() {
   const value = draft.value;

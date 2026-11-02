@@ -44,19 +44,19 @@ describe("time options", () => {
 describe("selected items", () => {
   it("selects nothing without a value", () => {
     expect(selectedHour(null)).toBeNull();
-    expect(selectedMinute(null, MINUTE_OPTIONS)).toBeNull();
+    expect(selectedMinute(null)).toBeNull();
   });
 
   it("selects the hour and a minute that is a step", () => {
     const value = new Date(2026, 9, 12, 15, 30);
     expect(selectedHour(value)).toBe(15);
-    expect(selectedMinute(value, MINUTE_OPTIONS)).toBe(30);
+    expect(selectedMinute(value)).toBe(30);
   });
 
   it("selects no minute for a typed minute that is not a step", () => {
     const value = new Date(2026, 9, 12, 14, 32);
     expect(selectedHour(value)).toBe(14);
-    expect(selectedMinute(value, MINUTE_OPTIONS)).toBeNull();
+    expect(selectedMinute(value)).toBeNull();
   });
 });
 
