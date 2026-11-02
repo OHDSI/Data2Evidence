@@ -1,9 +1,9 @@
 /**
  * ISO date conversion helpers for callers of `D2eDatePicker` that store ISO strings.
  *
- * The model contract is an ISO `YYYY-MM-DD` string or `null`, never a `Date`.
- * These two functions are the only place the component converts between the
- * two. `Date#toISOString()` is deliberately never used: it converts to UTC
+ * The picker's model is a `Date` or `null`; a caller that stores an ISO
+ * `YYYY-MM-DD` string converts between the two with these functions.
+ * `Date#toISOString()` is deliberately never used: it converts to UTC
  * first, so a local midnight date east of UTC serializes as the previous
  * day. Every conversion here works from the `Date`'s local parts instead.
  */

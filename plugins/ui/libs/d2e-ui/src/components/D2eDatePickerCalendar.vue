@@ -46,7 +46,7 @@ function onPick(value: unknown) {
 
 function alignSelectedYear(list: HTMLElement) {
   const selected = list.querySelector<HTMLElement>(
-    ".v-date-picker-years__content > .v-btn--active"
+    ".v-date-picker-years__content > .v-btn--active",
   );
   if (!selected?.parentElement) return;
   const index = Array.from(selected.parentElement.children).indexOf(selected);

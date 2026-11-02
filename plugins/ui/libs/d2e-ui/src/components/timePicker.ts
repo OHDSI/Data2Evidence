@@ -4,12 +4,12 @@ const MINUTE_STEP = 5;
 
 export const HOUR_OPTIONS: readonly number[] = Array.from(
   { length: HOURS_IN_DAY },
-  (_, hour) => hour
+  (_, hour) => hour,
 );
 
 export const MINUTE_OPTIONS: readonly number[] = Array.from(
   { length: MINUTES_IN_HOUR / MINUTE_STEP },
-  (_, index) => index * MINUTE_STEP
+  (_, index) => index * MINUTE_STEP,
 );
 
 export const padTimePart = (value: number) => String(value).padStart(2, "0");
@@ -35,5 +35,5 @@ export const withHour = (draft: Date | null, hour: number, today: Date): Date =>
 export const withMinute = (
   draft: Date | null,
   minute: number,
-  today: Date
+  today: Date,
 ): Date => atTime(draft ?? today, draft?.getHours() ?? 0, minute);

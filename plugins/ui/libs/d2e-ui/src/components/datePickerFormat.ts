@@ -22,12 +22,12 @@ const tokenValues = (date: Date): Record<Token, number> => ({
 
 export function formatDate(
   date: Date | null | undefined,
-  format: string
+  format: string,
 ): string {
   if (!isValidDate(date)) return "";
   const values = tokenValues(date);
   return format.replace(TOKEN_PATTERN, (token) =>
-    String(values[token as Token]).padStart(TOKEN_LENGTHS[token as Token], "0")
+    String(values[token as Token]).padStart(TOKEN_LENGTHS[token as Token], "0"),
   );
 }
 
@@ -54,7 +54,7 @@ function parseExact(text: string, format: string): Date | null {
   if (!match) return null;
 
   const values: Partial<Record<Token, number>> = Object.fromEntries(
-    tokens.map((token, index) => [token, Number(match[index + 1])])
+    tokens.map((token, index) => [token, Number(match[index + 1])]),
   );
   const date = new Date(
     values.YYYY ?? 0,
@@ -62,7 +62,7 @@ function parseExact(text: string, format: string): Date | null {
     values.DD ?? 1,
     values.HH ?? 0,
     values.mm ?? 0,
-    values.ss ?? 0
+    values.ss ?? 0,
   );
   return formatDate(date, format) === text ? date : null;
 }
@@ -87,7 +87,7 @@ const dayStamp = (date: Date) =>
 export function isWithinDays(
   date: Date,
   min: Date | null | undefined,
-  max: Date | null | undefined
+  max: Date | null | undefined,
 ): boolean {
   if (isValidDate(min) && dayStamp(date) < dayStamp(min)) return false;
   if (isValidDate(max) && dayStamp(date) > dayStamp(max)) return false;
@@ -101,6 +101,6 @@ export function withTimeOf(day: Date, timeSource: Date | null): Date {
     day.getDate(),
     timeSource?.getHours() ?? 0,
     timeSource?.getMinutes() ?? 0,
-    timeSource?.getSeconds() ?? 0
+    timeSource?.getSeconds() ?? 0,
   );
 }

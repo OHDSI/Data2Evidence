@@ -26,7 +26,7 @@ describe("formatDate", () => {
 
   it("writes the time when the format has one", () => {
     expect(
-      formatDate(new Date(2026, 9, 2, 7, 5, 9), "YYYY-MM-DD HH:mm:ss")
+      formatDate(new Date(2026, 9, 2, 7, 5, 9), "YYYY-MM-DD HH:mm:ss"),
     ).toBe("2026-10-02 07:05:09");
   });
 
@@ -48,7 +48,7 @@ describe("parseDate", () => {
 
   it("reads the time when the format has one", () => {
     expect(
-      localParts(parseDate("2026-10-02 14:30:15", "YYYY-MM-DD HH:mm:ss"))
+      localParts(parseDate("2026-10-02 14:30:15", "YYYY-MM-DD HH:mm:ss")),
     ).toEqual([2026, 10, 2, 14, 30, 15]);
   });
 
@@ -136,8 +136,8 @@ describe("isWithinDays", () => {
       isWithinDays(
         new Date(2026, 11, 1),
         new Date(2026, 8, 1),
-        new Date(2026, 9, 1)
-      )
+        new Date(2026, 9, 1),
+      ),
     ).toBe(false);
   });
 });

@@ -15,14 +15,14 @@ export const sameInstant = (a: Date | null, b: Date | null) =>
 
 export function useDatePickerText(
   props: DatePickerTextProps,
-  emitValue: (value: Date | null) => void
+  emitValue: (value: Date | null) => void,
 ) {
   const text = ref("");
   const isInvalid = ref(false);
   const isEdited = ref(false);
 
   const shownErrors = computed(() =>
-    isInvalid.value ? [props.invalidDateText] : props.errorMessages
+    isInvalid.value ? [props.invalidDateText] : props.errorMessages,
   );
 
   function show(value: Date | null) {
@@ -39,7 +39,7 @@ export function useDatePickerText(
   watch(
     () => [props.modelValue, props.format] as const,
     ([value]) => show(value),
-    { immediate: true }
+    { immediate: true },
   );
 
   function emitIfChanged(value: Date | null) {

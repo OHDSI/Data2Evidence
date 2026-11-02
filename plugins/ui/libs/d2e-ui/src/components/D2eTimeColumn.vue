@@ -47,7 +47,7 @@ const emit = defineEmits<{
 const list = ref<HTMLUListElement | null>(null);
 
 const selectedIndex = computed(() =>
-  props.selected === null ? -1 : props.options.indexOf(props.selected)
+  props.selected === null ? -1 : props.options.indexOf(props.selected),
 );
 const focusIndex = computed(() => Math.max(0, selectedIndex.value));
 
@@ -60,7 +60,7 @@ watch(
       list.value.scrollTop = Math.max(0, selectedIndex.value) * ITEM_PITCH;
     }
   },
-  { immediate: true }
+  { immediate: true },
 );
 
 function focusItem(index: number) {
@@ -72,7 +72,7 @@ function focusItem(index: number) {
 
 function onKeydown(event: KeyboardEvent) {
   const items = Array.from(
-    list.value?.querySelectorAll<HTMLElement>("[role='option']") ?? []
+    list.value?.querySelectorAll<HTMLElement>("[role='option']") ?? [],
   );
   const current = items.indexOf(document.activeElement as HTMLElement);
   if (current === -1) return;
