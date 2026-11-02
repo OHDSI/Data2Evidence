@@ -30,7 +30,6 @@ import { useTranslation } from "../../../../contexts";
 import { useDataSourceController, StudyAttributeConfigIds } from "../useDataSourceController";
 import { DataSourceDialogs } from "../DataSourceDialogs";
 import { DataSourceRowMenu } from "./DataSourceRowMenu";
-import { StudyRowMenu } from "./StudyRowMenu";
 import "./DataSourcesPage.scss";
 
 const theme = buildMuiTheme();
@@ -162,9 +161,8 @@ export function DataSourcesPage() {
 
   const tabRows: DsRow[] = useMemo(() => {
     if (tab === 1) return ctrl.fhirDatasets;
-    if (tab === 2) return ctrl.strategusAnalysisDatasets;
     return ctrl.sourceOmopHanaDatasets;
-  }, [tab, ctrl.fhirDatasets, ctrl.strategusAnalysisDatasets, ctrl.sourceOmopHanaDatasets]);
+  }, [tab, ctrl.fhirDatasets, ctrl.sourceOmopHanaDatasets]);
 
   const filteredRows = useMemo(() => {
     const term = search.trim().toLowerCase();
@@ -314,55 +312,8 @@ export function DataSourcesPage() {
     );
   };
 
-  const renderStudiesTable = () => (
-    <Table>
-      <TableHead>
-        <TableRow>
-          <TableCell header>{getText(i18nKeys.STUDY_OVERVIEW__NAME)}</TableCell>
-          <TableCell header>{getText(i18nKeys.STUDY_OVERVIEW__SCHEMA_NAME)}</TableCell>
-          <TableCell header>{getText(i18nKeys.STUDY_OVERVIEW__CREATED_AT)}</TableCell>
-          <TableCell header>{getText(i18nKeys.STUDY_OVERVIEW__UPDATED_AT)}</TableCell>
-          <TableCell header />
-        </TableRow>
-      </TableHead>
-      <TableBody>
-        {pageRows.map((ds) => (
-          <TableRow key={ds.id} hover>
-            <TableCell>
-              <TruncCell value={nameOf(ds)} />
-            </TableCell>
-            <TableCell>
-              <CopyCell value={ds.schemaName} className="d2e-ds__trunc" />
-            </TableCell>
-            <TableCell>
-              <TruncCell
-                value={
-                  ds.strategusAnalysis?.createdAt
-                    ? new Date(ds.strategusAnalysis.createdAt).toLocaleDateString()
-                    : undefined
-                }
-              />
-            </TableCell>
-            <TableCell>
-              <TruncCell
-                value={
-                  ds.strategusAnalysis?.updatedAt
-                    ? new Date(ds.strategusAnalysis.updatedAt).toLocaleDateString()
-                    : undefined
-                }
-              />
-            </TableCell>
-            <TableCell align="right">
-              {ds.strategusAnalysis && <StudyRowMenu study={ds.strategusAnalysis} ctrl={ctrl} />}
-            </TableCell>
-          </TableRow>
-        ))}
-      </TableBody>
-    </Table>
-  );
-
   const content = () => {
-    if (ctrl.loadingDatasets || (tab === 2 && ctrl.loadingStrategusStudies)) {
+    if (ctrl.loadingDatasets) {
       return (
         <div className="d2e-ds__content d2e-ds__content--center">
           <Spinner center />
@@ -379,12 +330,10 @@ export function DataSourcesPage() {
     return (
       <div className="d2e-ds__content">
         <div className="d2e-ds__tablewrap">
-          {tab === 2
-            ? renderStudiesTable()
-            : renderDataSourceTable(
-                tabRows.some((row) => (row.children?.length ?? 0) > 0),
-                tab === 0
-              )}
+          {renderDataSourceTable(
+            tabRows.some((row) => (row.children?.length ?? 0) > 0),
+            tab === 0
+          )}
         </div>
         <Pagination
           page={page}
@@ -409,14 +358,9 @@ export function DataSourcesPage() {
           overline={getText(i18nKeys.STUDY_OVERVIEW__ADMIN)}
           title={getText(i18nKeys.STUDY_OVERVIEW__TITLE)}
           actions={
-            <>
-              <Button variant="secondary" prependIcon={<AddIcon />} onClick={ctrl.openAddStrategusStudyDialog}>
-                {getText(i18nKeys.STUDY_OVERVIEW__ADD_STUDY)}
-              </Button>
-              <Button variant="primary" prependIcon={<AddIcon />} onClick={ctrl.openAddStudyDialog}>
-                {getText(i18nKeys.STUDY_OVERVIEW__ADD_DATA_SOURCE)}
-              </Button>
-            </>
+            <Button variant="primary" prependIcon={<AddIcon />} onClick={ctrl.openAddStudyDialog}>
+              {getText(i18nKeys.STUDY_OVERVIEW__ADD_DATA_SOURCE)}
+            </Button>
           }
         />
 
@@ -429,7 +373,6 @@ export function DataSourcesPage() {
         >
           <Tab label={getText(i18nKeys.STUDY_OVERVIEW__OMOP_DATA_SOURCE)} />
           <Tab label={getText(i18nKeys.STUDY_OVERVIEW__FHIR_DATA_SOURCE)} />
-          <Tab label={getText(i18nKeys.STUDY_OVERVIEW__STUDIES)} />
         </Tabs>
 
         <div className="d2e-ds__toolbar">

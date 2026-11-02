@@ -1033,7 +1033,7 @@ export const i18nDefault = {
     STUDY_OVERVIEW__CLICK_TO_COPY: "Click to copy",
     STUDY_OVERVIEW__COPIED: "Copied!",
     STUDY_OVERVIEW__UPDATE_METADATA: "Update metadata",
-    STUDY_OVERVIEW__TITLE: "Data sources & studies",
+    STUDY_OVERVIEW__TITLE: "Data sources",
     STUDY_OVERVIEW__OMOP_DATA_SOURCE: "OMOP data source",
     STUDY_OVERVIEW__FHIR_DATA_SOURCE: "FHIR data source",
     STUDY_OVERVIEW__SEARCH: "Search",
