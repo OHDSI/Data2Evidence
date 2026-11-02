@@ -23,7 +23,7 @@
     "tokens:check": "tsx scripts/build-tokens.ts && git diff --exit-code src/tokens/tokens.css",
     "test": "vitest run",
     "lint": "prettier --write .",
-    "build": "vite build --config vite.config.lib.ts && bun run build:types && echo '{}' > dist/package.json",
+    "build": "vite build --config vite.config.lib.ts && bun run build:types",
     "build:types": "tsc --declaration --emitDeclarationOnly --outDir dist/types -p tsconfig.build.json",
     "verify:dist": "node scripts/verify-dist.mjs"
   },
