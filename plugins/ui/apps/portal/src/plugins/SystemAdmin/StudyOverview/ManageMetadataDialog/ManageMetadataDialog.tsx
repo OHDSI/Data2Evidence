@@ -38,6 +38,7 @@ import {
   TableBody,
   TableRow,
   TableCell,
+  Tooltip,
 } from "ui-react";
 import { Study, NewStudyMetadataInput, CloseDialogType, UpdateStudyMetadataInput, Feedback } from "../../../../types";
 import { useDatasetAttributeConfigs } from "../../../../hooks";
@@ -54,6 +55,7 @@ interface SortableMetadataRowProps {
   value: string;
   disabled: boolean;
   dragLabel: string;
+  disabledHint: string;
   editLabel: string;
   deleteLabel: string;
   onEdit: () => void;
@@ -66,6 +68,7 @@ const SortableMetadataRow: FC<SortableMetadataRowProps> = ({
   value,
   disabled,
   dragLabel,
+  disabledHint,
   editLabel,
   deleteLabel,
   onEdit,
@@ -81,16 +84,23 @@ const SortableMetadataRow: FC<SortableMetadataRowProps> = ({
   };
   return (
     <TableRow ref={setNodeRef} style={style} hover>
-      {!disabled && (
-        <TableCell
-          className="manage-metadata__drag manage-metadata__drag-col"
-          aria-label={dragLabel}
-          {...attributes}
-          {...listeners}
-        >
+      <TableCell
+        className="manage-metadata__drag manage-metadata__drag-col"
+        aria-label={disabled ? undefined : dragLabel}
+        aria-disabled={disabled || undefined}
+        {...(disabled ? {} : attributes)}
+        {...(disabled ? {} : listeners)}
+      >
+        {disabled ? (
+          <Tooltip title={disabledHint}>
+            <span className="manage-metadata__drag-icon">
+              <DragIndicatorIcon fontSize="small" />
+            </span>
+          </Tooltip>
+        ) : (
           <DragIndicatorIcon fontSize="small" />
-        </TableCell>
-      )}
+        )}
+      </TableCell>
       <TableCell>{name}</TableCell>
       <TableCell>{id}</TableCell>
       <TableCell>{value}</TableCell>
@@ -363,7 +373,7 @@ const ManageMetadataDialog: FC<ManageMetadataDialogProps> = ({ dataset, open, on
         <Table>
           <TableHead>
             <TableRow>
-              {!isSearching && <TableCell header className="manage-metadata__drag-col" />}
+              <TableCell header className="manage-metadata__drag-col" />
               <TableCell header>{getText(i18nKeys.MANAGE_METADATA_DIALOG__NAME)}</TableCell>
               <TableCell header>{getText(i18nKeys.MANAGE_METADATA_DIALOG__ID)}</TableCell>
               <TableCell header>{getText(i18nKeys.MANAGE_METADATA_DIALOG__VALUE)}</TableCell>
@@ -381,6 +391,7 @@ const ManageMetadataDialog: FC<ManageMetadataDialogProps> = ({ dataset, open, on
                     value={r.value}
                     disabled={isSearching}
                     dragLabel={getText(i18nKeys.MANAGE_METADATA_DIALOG__REORDER)}
+                    disabledHint={getText(i18nKeys.MANAGE_METADATA_DIALOG__REORDER_DISABLED)}
                     editLabel={getText(i18nKeys.MANAGE_METADATA_DIALOG__EDIT)}
                     deleteLabel={getText(i18nKeys.MANAGE_METADATA_DIALOG__DELETE)}
                     onEdit={() => {

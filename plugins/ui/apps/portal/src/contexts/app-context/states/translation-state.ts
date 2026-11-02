@@ -1288,6 +1288,7 @@ export const i18nDefault = {
     MANAGE_METADATA_DIALOG__EDIT: "Edit",
     MANAGE_METADATA_DIALOG__DELETE: "Delete",
     MANAGE_METADATA_DIALOG__REORDER: "Drag to reorder",
+    MANAGE_METADATA_DIALOG__REORDER_DISABLED: "Clear search to reorder manually",
     MANAGE_METADATA_DIALOG__NO_DATA: "No metadata yet",
     MANAGE_METADATA_DIALOG__NO_DATA_DESCRIPTION: "This data source has no metadata. Use Add metadata above to add one.",
     MANAGE_METADATA_DIALOG__NO_RESULTS: "No metadata matches your search.",

@@ -64,6 +64,18 @@
       font-size: 12px;
       vertical-align: middle;
     }
+
+    &[aria-disabled="true"] {
+      cursor: default;
+
+      svg {
+        opacity: 0.4;
+      }
+    }
+  }
+
+  &__drag-icon {
+    display: inline-flex;
   }
 
   &__actions {
