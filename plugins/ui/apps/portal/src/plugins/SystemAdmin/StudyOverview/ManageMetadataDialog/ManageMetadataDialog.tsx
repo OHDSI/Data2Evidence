@@ -45,6 +45,7 @@ import { useDatasetAttributeConfigs } from "../../../../hooks";
 import { api } from "../../../../axios/api";
 import { useTranslation } from "../../../../contexts";
 import MetadataEntryDialog, { MetadataEntryMode } from "./MetadataEntryDialog";
+import ImportMetadataDialog, { ImportEntry } from "./ImportMetadataDialog";
 import "./ManageMetadataDialog.scss";
 
 const PROTECTED_ATTRIBUTE_IDS = new Set<string>(["source_dataset_id"]);
@@ -87,9 +88,9 @@ const SortableMetadataRow: FC<SortableMetadataRowProps> = ({
       <TableCell
         className="manage-metadata__drag manage-metadata__drag-col"
         aria-label={disabled ? undefined : dragLabel}
-        aria-disabled={disabled || undefined}
         {...(disabled ? {} : attributes)}
         {...(disabled ? {} : listeners)}
+        aria-disabled={disabled || undefined}
       >
         {disabled ? (
           <Tooltip title={disabledHint}>
@@ -128,7 +129,8 @@ interface ManageMetadataDialogProps {
 
 const ManageMetadataDialog: FC<ManageMetadataDialogProps> = ({ dataset, open, onClose }) => {
   const { getText, i18nKeys } = useTranslation();
-  const [attributeConfigs] = useDatasetAttributeConfigs();
+  const [configRefetch, setConfigRefetch] = useState(0);
+  const [attributeConfigs] = useDatasetAttributeConfigs(configRefetch);
   const [attributes, setAttributes] = useState<NewStudyMetadataInput[]>([]);
   const [search, setSearch] = useState("");
   const [busy, setBusy] = useState(false);
@@ -140,6 +142,7 @@ const ManageMetadataDialog: FC<ManageMetadataDialogProps> = ({ dataset, open, on
     initial?: { attributeId: string; value: string };
   } | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<NewStudyMetadataInput | null>(null);
+  const [importState, setImportState] = useState<{ fileName: string; entries: ImportEntry[] } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -304,23 +307,31 @@ const ManageMetadataDialog: FC<ManageMetadataDialogProps> = ({ dataset, open, on
       setFeedback({ type: "error", message: getText(i18nKeys.MANAGE_METADATA_DIALOG__IMPORT_INVALID) });
       return;
     }
-    const validIds = new Set(addableConfigs.map((c) => c.id));
-    const imported = parsed
+    const entries: ImportEntry[] = parsed
       .filter(
-        (e): e is { id: string; value?: unknown } =>
-          !!e &&
-          typeof e === "object" &&
-          typeof (e as { id?: unknown }).id === "string" &&
-          validIds.has((e as { id: string }).id)
+        (e): e is { id: string; name?: unknown; value?: unknown } =>
+          !!e && typeof e === "object" && typeof (e as { id?: unknown }).id === "string"
       )
-      .map((e) => ({ attributeId: e.id, value: String(e.value ?? "") }));
-    if (imported.length === 0) {
+      .map((e) => ({
+        id: e.id,
+        name: typeof e.name === "string" ? e.name : undefined,
+        value: String(e.value ?? ""),
+      }));
+    if (entries.length === 0) {
       setFeedback({ type: "error", message: getText(i18nKeys.MANAGE_METADATA_DIALOG__IMPORT_EMPTY) });
       return;
     }
+    setImportState({ fileName: file.name, entries });
+  };
+
+  const handleImportApply = (imported: NewStudyMetadataInput[]) => {
     const byId = new Map(attributes.map((a) => [a.attributeId, a]));
     imported.forEach((e) => byId.set(e.attributeId, e));
-    commit(Array.from(byId.values()), getText(i18nKeys.MANAGE_METADATA_DIALOG__IMPORTED));
+    commit(
+      Array.from(byId.values()),
+      getText(i18nKeys.MANAGE_METADATA_DIALOG__IMPORT_RESULT, [String(imported.length)]),
+      () => setImportState(null)
+    );
   };
 
   const handleClose = () => onClose(changed ? "success" : "cancelled");
@@ -453,6 +464,7 @@ const ManageMetadataDialog: FC<ManageMetadataDialogProps> = ({ dataset, open, on
               </Button>
               <Menu
                 placement="bottom-end"
+                width="auto"
                 items={[{ label: getText(i18nKeys.MANAGE_METADATA_DIALOG__IMPORT_JSON), value: "import-json" }]}
                 onSelect={(action) => {
                   if (action === "import-json") triggerImport();
@@ -553,6 +565,18 @@ const ManageMetadataDialog: FC<ManageMetadataDialogProps> = ({ dataset, open, on
         style={{ display: "none" }}
         onChange={handleImportFile}
       />
+
+      {importState && (
+        <ImportMetadataDialog
+          open={!!importState}
+          fileName={importState.fileName}
+          entries={importState.entries}
+          attributeConfigs={addableConfigs}
+          onAttributeCreated={() => setConfigRefetch((n) => n + 1)}
+          onClose={() => setImportState(null)}
+          onImport={handleImportApply}
+        />
+      )}
 
       <AlertToast
         open={toast.open}
