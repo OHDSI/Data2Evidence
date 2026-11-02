@@ -187,10 +187,11 @@ export function DataSourcesPage() {
     return sortDir === "asc" ? arr : arr.reverse();
   }, [filteredRows, sortCol, sortDir]);
 
-  const pageRows = useMemo(
-    () => sortedRows.slice((page - 1) * pageSize, page * pageSize),
-    [sortedRows, page, pageSize]
-  );
+  const pageRows = useMemo(() => {
+    const lastPage = Math.max(1, Math.ceil(sortedRows.length / pageSize));
+    const currentPage = Math.min(Math.max(1, page), lastPage);
+    return sortedRows.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+  }, [sortedRows, page, pageSize]);
 
   const nameOf = (ds: Study) => ds.studyDetail?.name || getText(i18nKeys.STUDY_OVERVIEW__UNTITLED);
 
