@@ -929,6 +929,14 @@ export class DatasetCommandService {
         this.addOwner(entity, true),
       );
     }
+    for (let index = 0; index < attributes.length; index++) {
+      await this.attributeRepo.updateAttributeSequence(
+        entityMgr,
+        datasetId,
+        attributes[index].attributeId,
+        index,
+      );
+    }
   }
 
   async updateDatabaseCode(datasetId: string, databaseCode: string) {

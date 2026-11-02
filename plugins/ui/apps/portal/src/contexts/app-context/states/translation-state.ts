@@ -1287,6 +1287,7 @@ export const i18nDefault = {
     MANAGE_METADATA_DIALOG__VALUE: "Value",
     MANAGE_METADATA_DIALOG__EDIT: "Edit",
     MANAGE_METADATA_DIALOG__DELETE: "Delete",
+    MANAGE_METADATA_DIALOG__REORDER: "Drag to reorder",
     MANAGE_METADATA_DIALOG__NO_DATA: "No metadata yet",
     MANAGE_METADATA_DIALOG__NO_DATA_DESCRIPTION: "This data source has no metadata. Use Add metadata above to add one.",
     MANAGE_METADATA_DIALOG__NO_RESULTS: "No metadata matches your search.",
@@ -1305,6 +1306,7 @@ export const i18nDefault = {
     MANAGE_METADATA_DIALOG__ADDED: "Metadata added successfully",
     MANAGE_METADATA_DIALOG__UPDATED: "Metadata updated successfully",
     MANAGE_METADATA_DIALOG__DELETED: "Metadata deleted successfully",
+    MANAGE_METADATA_DIALOG__REORDERED: "Metadata order updated",
     MANAGE_METADATA_DIALOG__NO_ATTRIBUTES: "No metadata attributes are configured. Add them in Setup → Metadata.",
     TRANSFORM_TO_WEBAPI__BODY:
       "This merges the cache dataset into the source row and deletes the cache row. Researcher roles on the cache row will be orphaned and must be re-granted on the source after migration. Continue?",

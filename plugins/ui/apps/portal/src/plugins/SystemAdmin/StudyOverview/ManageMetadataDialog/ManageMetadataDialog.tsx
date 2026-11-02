@@ -1,11 +1,28 @@
-import { FC, useEffect, useMemo, useRef, useState } from "react";
+import { CSSProperties, FC, useEffect, useMemo, useRef, useState } from "react";
 import AddIcon from "@mui/icons-material/Add";
 import SearchIcon from "@mui/icons-material/Search";
 import FileDownloadOutlinedIcon from "@mui/icons-material/FileDownloadOutlined";
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
-import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
+import DragIndicatorIcon from "@mui/icons-material/DragIndicator";
 import InputAdornment from "@mui/material/InputAdornment";
+import {
+  DndContext,
+  closestCenter,
+  PointerSensor,
+  KeyboardSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  verticalListSortingStrategy,
+  useSortable,
+  arrayMove,
+  sortableKeyboardCoordinates,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import {
   Dialog,
   Button,
@@ -31,6 +48,67 @@ import "./ManageMetadataDialog.scss";
 
 const PROTECTED_ATTRIBUTE_IDS = new Set<string>(["source_dataset_id"]);
 
+interface SortableMetadataRowProps {
+  id: string;
+  name: string;
+  value: string;
+  disabled: boolean;
+  dragLabel: string;
+  editLabel: string;
+  deleteLabel: string;
+  onEdit: () => void;
+  onDelete: () => void;
+}
+
+const SortableMetadataRow: FC<SortableMetadataRowProps> = ({
+  id,
+  name,
+  value,
+  disabled,
+  dragLabel,
+  editLabel,
+  deleteLabel,
+  onEdit,
+  onDelete,
+}) => {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id, disabled });
+  const style: CSSProperties = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : undefined,
+    position: isDragging ? "relative" : undefined,
+    zIndex: isDragging ? 1 : undefined,
+  };
+  return (
+    <TableRow ref={setNodeRef} style={style} hover>
+      <TableCell
+        className="manage-metadata__drag"
+        aria-label={dragLabel}
+        {...(disabled ? {} : attributes)}
+        {...(disabled ? {} : listeners)}
+        aria-disabled={disabled || undefined}
+      >
+        <DragIndicatorIcon fontSize="small" />
+      </TableCell>
+      <TableCell>{name}</TableCell>
+      <TableCell>{id}</TableCell>
+      <TableCell>{value}</TableCell>
+      <TableCell align="right">
+        <div className="manage-metadata__actions">
+          <IconButton category="no-stroke" icon={<EditOutlinedIcon />} ariaLabel={editLabel} onClick={onEdit} />
+          <IconButton
+            className="manage-metadata__delete"
+            category="no-stroke"
+            icon={<DeleteOutlineIcon />}
+            ariaLabel={deleteLabel}
+            onClick={onDelete}
+          />
+        </div>
+      </TableCell>
+    </TableRow>
+  );
+};
+
 interface ManageMetadataDialogProps {
   dataset?: Study;
   open: boolean;
@@ -42,7 +120,6 @@ const ManageMetadataDialog: FC<ManageMetadataDialogProps> = ({ dataset, open, on
   const [attributeConfigs] = useDatasetAttributeConfigs();
   const [attributes, setAttributes] = useState<NewStudyMetadataInput[]>([]);
   const [search, setSearch] = useState("");
-  const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
   const [busy, setBusy] = useState(false);
   const [changed, setChanged] = useState(false);
   const [feedback, setFeedback] = useState<Feedback>({});
@@ -62,7 +139,6 @@ const ManageMetadataDialog: FC<ManageMetadataDialogProps> = ({ dataset, open, on
           .map((a) => ({ attributeId: a.attributeId, value: a.value }))
       );
       setSearch("");
-      setSortDir("asc");
       setFeedback({});
       setChanged(false);
     }
@@ -96,6 +172,8 @@ const ManageMetadataDialog: FC<ManageMetadataDialogProps> = ({ dataset, open, on
     [attributeConfigs]
   );
 
+  const isSearching = search.trim().length > 0;
+
   const rows = useMemo(() => {
     const term = search.trim().toLowerCase();
     let list = attributes
@@ -110,10 +188,14 @@ const ManageMetadataDialog: FC<ManageMetadataDialogProps> = ({ dataset, open, on
           (r.value ?? "").toLowerCase().includes(term)
       );
     }
-    list.sort((a, b) => (sortDir === "asc" ? a.name.localeCompare(b.name) : b.name.localeCompare(a.name)));
     return list;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [attributes, search, sortDir, configNameById, categoryById]);
+  }, [attributes, search, configNameById, categoryById]);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+  );
 
   const buildPayload = (next: NewStudyMetadataInput[]): UpdateStudyMetadataInput => ({
     id: dataset!.id,
@@ -232,7 +314,30 @@ const ManageMetadataDialog: FC<ManageMetadataDialogProps> = ({ dataset, open, on
 
   const handleClose = () => onClose(changed ? "success" : "cancelled");
 
-  const toggleSort = () => setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+  const handleDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id || !dataset) return;
+    const visible = attributes.filter((a) => !PROTECTED_ATTRIBUTE_IDS.has(a.attributeId));
+    const reserved = attributes.filter((a) => PROTECTED_ATTRIBUTE_IDS.has(a.attributeId));
+    const oldIndex = visible.findIndex((a) => a.attributeId === active.id);
+    const newIndex = visible.findIndex((a) => a.attributeId === over.id);
+    if (oldIndex === -1 || newIndex === -1) return;
+    const prev = attributes;
+    const next = [...arrayMove(visible, oldIndex, newIndex), ...reserved];
+    setAttributes(next);
+    setBusy(true);
+    setFeedback({});
+    try {
+      await api.systemPortal.updateDataset(buildPayload(next));
+      setChanged(true);
+      setToast({ open: true, message: getText(i18nKeys.MANAGE_METADATA_DIALOG__REORDERED) });
+    } catch (err: any) {
+      setAttributes(prev);
+      setFeedback({ type: "error", message: err?.data?.message || err?.data || err?.message });
+    } finally {
+      setBusy(false);
+    }
+  };
 
   const content = () => {
     if (visibleCount === 0) {
@@ -257,48 +362,39 @@ const ManageMetadataDialog: FC<ManageMetadataDialogProps> = ({ dataset, open, on
         <Table>
           <TableHead>
             <TableRow>
-              <TableCell header sortable sortDirection={sortDir} onSort={toggleSort}>
-                {getText(i18nKeys.MANAGE_METADATA_DIALOG__NAME)}
-              </TableCell>
-              <TableCell header>{getText(i18nKeys.MANAGE_METADATA_DIALOG__CATALOG)}</TableCell>
+              <TableCell header />
+              <TableCell header>{getText(i18nKeys.MANAGE_METADATA_DIALOG__NAME)}</TableCell>
               <TableCell header>{getText(i18nKeys.MANAGE_METADATA_DIALOG__ID)}</TableCell>
               <TableCell header>{getText(i18nKeys.MANAGE_METADATA_DIALOG__VALUE)}</TableCell>
               <TableCell header />
             </TableRow>
           </TableHead>
-          <TableBody>
-            {rows.map((r) => (
-              <TableRow key={r.attributeId} hover>
-                <TableCell>{r.name}</TableCell>
-                <TableCell>{r.catalog || "-"}</TableCell>
-                <TableCell>{r.attributeId}</TableCell>
-                <TableCell>{r.value}</TableCell>
-                <TableCell align="right">
-                  <div className="manage-metadata__actions">
-                    <IconButton
-                      category="no-stroke"
-                      icon={<EditOutlinedIcon />}
-                      ariaLabel={getText(i18nKeys.MANAGE_METADATA_DIALOG__EDIT)}
-                      onClick={() => {
-                        setFeedback({});
-                        setEntry({ mode: "update", initial: { attributeId: r.attributeId, value: r.value } });
-                      }}
-                    />
-                    <IconButton
-                      className="manage-metadata__delete"
-                      category="no-stroke"
-                      icon={<DeleteOutlineIcon />}
-                      ariaLabel={getText(i18nKeys.MANAGE_METADATA_DIALOG__DELETE)}
-                      onClick={() => {
-                        setFeedback({});
-                        setDeleteTarget({ attributeId: r.attributeId, value: r.value });
-                      }}
-                    />
-                  </div>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
+          <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+            <SortableContext items={rows.map((r) => r.attributeId)} strategy={verticalListSortingStrategy}>
+              <TableBody>
+                {rows.map((r) => (
+                  <SortableMetadataRow
+                    key={r.attributeId}
+                    id={r.attributeId}
+                    name={r.name}
+                    value={r.value}
+                    disabled={isSearching}
+                    dragLabel={getText(i18nKeys.MANAGE_METADATA_DIALOG__REORDER)}
+                    editLabel={getText(i18nKeys.MANAGE_METADATA_DIALOG__EDIT)}
+                    deleteLabel={getText(i18nKeys.MANAGE_METADATA_DIALOG__DELETE)}
+                    onEdit={() => {
+                      setFeedback({});
+                      setEntry({ mode: "update", initial: { attributeId: r.attributeId, value: r.value } });
+                    }}
+                    onDelete={() => {
+                      setFeedback({});
+                      setDeleteTarget({ attributeId: r.attributeId, value: r.value });
+                    }}
+                  />
+                ))}
+              </TableBody>
+            </SortableContext>
+          </DndContext>
         </Table>
       </div>
     );
@@ -335,23 +431,14 @@ const ManageMetadataDialog: FC<ManageMetadataDialogProps> = ({ dataset, open, on
               }}
             />
             <div className="manage-metadata__toolbar-end">
-              <Menu
-                items={[{ label: getText(i18nKeys.MANAGE_METADATA_DIALOG__EXPORT_JSON), value: "json" }]}
-                onSelect={(format) => {
-                  if (format === "json") handleExport();
-                }}
-                activator={({ open }) => (
-                  <Button
-                    variant="secondary"
-                    prependIcon={<FileDownloadOutlinedIcon />}
-                    appendIcon={<KeyboardArrowDownIcon />}
-                    onClick={open}
-                    disabled={visibleCount === 0}
-                  >
-                    {getText(i18nKeys.MANAGE_METADATA_DIALOG__EXPORT)}
-                  </Button>
-                )}
-              />
+              <Button
+                variant="secondary"
+                prependIcon={<FileDownloadOutlinedIcon />}
+                onClick={handleExport}
+                disabled={visibleCount === 0}
+              >
+                {getText(i18nKeys.MANAGE_METADATA_DIALOG__EXPORT_JSON)}
+              </Button>
               <Menu
                 placement="bottom-end"
                 items={[{ label: getText(i18nKeys.MANAGE_METADATA_DIALOG__IMPORT_JSON), value: "import-json" }]}
@@ -453,9 +540,11 @@ const ManageMetadataDialog: FC<ManageMetadataDialogProps> = ({ dataset, open, on
       <AlertToast
         open={toast.open}
         severity="success"
-        title={toast.message}
+        closeButton={false}
         onClose={() => setToast((t) => ({ ...t, open: false }))}
-      />
+      >
+        {toast.message}
+      </AlertToast>
     </>
   );
 };
