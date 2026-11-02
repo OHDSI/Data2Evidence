@@ -73,10 +73,6 @@ export type D2eClickableRowProps = {
   onKeydown: (event: KeyboardEvent) => void;
 };
 
-/**
- * The attributes that make a table row open like a button: focusable, opened
- * by a click, or by Enter or Space while the row itself has focus.
- */
 export function clickableRowProps(
   onActivate: () => void,
 ): D2eClickableRowProps {
@@ -126,6 +122,5 @@ export interface D2eDataTableProps<T> {
   density?: D2eDataTableDensity;
   hover?: boolean;
   hideFooter?: boolean;
-  /** Rows that open on click, Enter or Space; none when unset. */
   rowClickable?: (item: T) => boolean;
 }
