@@ -20,11 +20,11 @@ test(TEST_NAME, async ({ page, context }) => {
   await page.getByRole('link', { name: 'Data sources' }).click()
 
   // Get the dataset ID
-  await page.locator('div.alp-text__copy-button-container').nth(0).locator('button.alp-icon-button--icon-only').click()
+  await page.locator('.d2e-ds__copy.d2e-ds__mono').first().click()
   const dataset_id = await page.evaluate(async () => await navigator.clipboard.readText())
 
   // Get the schema name
-  await page.locator('div.alp-text__copy-button-container').nth(1).locator('button.alp-icon-button--icon-only').click()
+  await page.locator('.d2e-ds__copy.d2e-ds__trunc').first().click()
   const schema_name = await page.evaluate(async () => await navigator.clipboard.readText())
 
   // Check if the cell contains the dataset ID and schema name
