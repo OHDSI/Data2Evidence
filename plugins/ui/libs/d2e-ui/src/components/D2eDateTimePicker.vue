@@ -43,8 +43,8 @@
               @select="onPickHour"
             />
             <D2eTimeColumn
-              :options="minutes"
-              :selected="selectedMinute(draft, minutes)"
+              :options="MINUTE_OPTIONS"
+              :selected="selectedMinute(draft, MINUTE_OPTIONS)"
               :open="isOpen"
               :label="minutesLabel"
               @select="onPickMinute"
@@ -77,9 +77,8 @@ import type {
   D2eDatePickerSize,
 } from "./datePickerSizes";
 import {
-  DEFAULT_MINUTE_STEP,
   HOUR_OPTIONS,
-  minuteOptions,
+  MINUTE_OPTIONS,
   selectedHour,
   selectedMinute,
   withDay,
@@ -108,7 +107,6 @@ interface Props {
   clearable?: boolean;
   min?: Date | null;
   max?: Date | null;
-  minuteStep?: number;
   errorMessages?: string | string[];
   invalidDateText?: string;
   cancelText?: string;
@@ -129,7 +127,6 @@ const props = withDefaults(defineProps<Props>(), {
   clearable: false,
   min: null,
   max: null,
-  minuteStep: DEFAULT_MINUTE_STEP,
   errorMessages: undefined,
   invalidDateText: "Invalid date",
   cancelText: "Cancel",
@@ -147,8 +144,6 @@ const attrs = useAttrs();
 const internalOpen = ref(false);
 const draft = ref<Date | null>(null);
 const closeAction = ref<CloseAction>("accept");
-
-const minutes = computed(() => minuteOptions(props.minuteStep));
 
 const isOpen = computed({
   get: () => internalOpen.value,

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   HOUR_OPTIONS,
-  minuteOptions,
+  MINUTE_OPTIONS,
   padTimePart,
   selectedHour,
   selectedMinute,
@@ -28,19 +28,10 @@ describe("time options", () => {
     expect(HOUR_OPTIONS[23]).toBe(23);
   });
 
-  it("lists the minutes in steps", () => {
-    expect(minuteOptions(5)).toEqual([
+  it("lists the minutes in steps of 5", () => {
+    expect(MINUTE_OPTIONS).toEqual([
       0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55,
     ]);
-    expect(minuteOptions(15)).toEqual([0, 15, 30, 45]);
-    expect(minuteOptions(1)).toHaveLength(60);
-  });
-
-  it("uses the 5 minute step for a step it cannot use", () => {
-    expect(minuteOptions(0)).toEqual(minuteOptions(5));
-    expect(minuteOptions(-10)).toEqual(minuteOptions(5));
-    expect(minuteOptions(2.5)).toEqual(minuteOptions(5));
-    expect(minuteOptions(61)).toEqual(minuteOptions(5));
   });
 
   it("writes two digits", () => {
@@ -53,19 +44,19 @@ describe("time options", () => {
 describe("selected items", () => {
   it("selects nothing without a value", () => {
     expect(selectedHour(null)).toBeNull();
-    expect(selectedMinute(null, minuteOptions(5))).toBeNull();
+    expect(selectedMinute(null, MINUTE_OPTIONS)).toBeNull();
   });
 
   it("selects the hour and a minute that is a step", () => {
     const value = new Date(2026, 9, 12, 15, 30);
     expect(selectedHour(value)).toBe(15);
-    expect(selectedMinute(value, minuteOptions(5))).toBe(30);
+    expect(selectedMinute(value, MINUTE_OPTIONS)).toBe(30);
   });
 
   it("selects no minute for a typed minute that is not a step", () => {
     const value = new Date(2026, 9, 12, 14, 32);
     expect(selectedHour(value)).toBe(14);
-    expect(selectedMinute(value, minuteOptions(5))).toBeNull();
+    expect(selectedMinute(value, MINUTE_OPTIONS)).toBeNull();
   });
 });
 

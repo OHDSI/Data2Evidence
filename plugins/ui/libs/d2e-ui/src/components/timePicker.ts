@@ -1,22 +1,16 @@
 export const HOURS_IN_DAY = 24;
 export const MINUTES_IN_HOUR = 60;
-export const DEFAULT_MINUTE_STEP = 5;
+const MINUTE_STEP = 5;
 
 export const HOUR_OPTIONS: readonly number[] = Array.from(
   { length: HOURS_IN_DAY },
   (_, hour) => hour
 );
 
-export function minuteOptions(step: number): number[] {
-  const safeStep =
-    Number.isInteger(step) && step > 0 && step <= MINUTES_IN_HOUR
-      ? step
-      : DEFAULT_MINUTE_STEP;
-  return Array.from(
-    { length: Math.ceil(MINUTES_IN_HOUR / safeStep) },
-    (_, index) => index * safeStep
-  );
-}
+export const MINUTE_OPTIONS: readonly number[] = Array.from(
+  { length: MINUTES_IN_HOUR / MINUTE_STEP },
+  (_, index) => index * MINUTE_STEP
+);
 
 export const padTimePart = (value: number) => String(value).padStart(2, "0");
 
