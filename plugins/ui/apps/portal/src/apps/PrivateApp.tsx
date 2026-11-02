@@ -11,6 +11,7 @@ import { config } from "../config";
 import { usePostLoginRedirectUri, useUser } from "../contexts";
 import { ResultsDialogWithEventLister } from "../plugins/SystemAdmin/DQD/ResultsDialog/ResultsDialogWithEventListener";
 import { DisclaimerDialog } from "../containers/shared/Legal/DisclaimerDialog";
+import { AtlasAccount } from "../containers/shared/Account/AtlasAccount";
 
 export const PrivateApp: FC = () => {
   const { postLoginRedirectUri, clearPostLoginRedirectUri } = usePostLoginRedirectUri();
@@ -60,6 +61,9 @@ export const PrivateApp: FC = () => {
               <Route path={`${config.ROUTES.researcher}/*`} element={<Researcher />} />
             )}
             {user?.canAccessEtlPortal && <Route path={`${config.ROUTES.etl}/*`} element={<Etl />} />}
+            {user?.canAccessResearcherPortal && (
+              <Route path={config.ROUTES.atlasAccount} element={<AtlasAccount />} />
+            )}
             <Route path={config.ROUTES.logout} element={<Logout />} />
             <Route path={config.ROUTES.noAccess} element={<NoAccess />} />
             <Route path="/" element={<Navigate to={defaultRoute} />}>
