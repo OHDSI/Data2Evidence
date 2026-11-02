@@ -32,15 +32,15 @@
       background: var(--d2e-color-white);
     }
 
-    .d2e-table th:first-child,
-    .d2e-table td:first-child {
+    .d2e-table th.manage-metadata__drag-col,
+    .d2e-table td.manage-metadata__drag-col {
       width: 1%;
       white-space: nowrap;
       padding-left: 6px;
       padding-right: 6px;
     }
 
-    .d2e-table tbody td:first-child {
+    .d2e-table td.manage-metadata__drag-col {
       text-align: center;
       background: var(--d2e-color-neutral-xtra-lightest);
     }
@@ -63,14 +63,6 @@
     svg {
       font-size: 12px;
       vertical-align: middle;
-    }
-
-    &[aria-disabled="true"] {
-      cursor: default;
-
-      svg {
-        opacity: 0.4;
-      }
     }
   }
 

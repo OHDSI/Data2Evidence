@@ -81,15 +81,16 @@ const SortableMetadataRow: FC<SortableMetadataRowProps> = ({
   };
   return (
     <TableRow ref={setNodeRef} style={style} hover>
-      <TableCell
-        className="manage-metadata__drag"
-        aria-label={dragLabel}
-        {...(disabled ? {} : attributes)}
-        {...(disabled ? {} : listeners)}
-        aria-disabled={disabled || undefined}
-      >
-        <DragIndicatorIcon fontSize="small" />
-      </TableCell>
+      {!disabled && (
+        <TableCell
+          className="manage-metadata__drag manage-metadata__drag-col"
+          aria-label={dragLabel}
+          {...attributes}
+          {...listeners}
+        >
+          <DragIndicatorIcon fontSize="small" />
+        </TableCell>
+      )}
       <TableCell>{name}</TableCell>
       <TableCell>{id}</TableCell>
       <TableCell>{value}</TableCell>
@@ -362,7 +363,7 @@ const ManageMetadataDialog: FC<ManageMetadataDialogProps> = ({ dataset, open, on
         <Table>
           <TableHead>
             <TableRow>
-              <TableCell header />
+              {!isSearching && <TableCell header className="manage-metadata__drag-col" />}
               <TableCell header>{getText(i18nKeys.MANAGE_METADATA_DIALOG__NAME)}</TableCell>
               <TableCell header>{getText(i18nKeys.MANAGE_METADATA_DIALOG__ID)}</TableCell>
               <TableCell header>{getText(i18nKeys.MANAGE_METADATA_DIALOG__VALUE)}</TableCell>
