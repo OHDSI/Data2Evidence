@@ -19,6 +19,16 @@ export const DATA_TABLE_STYLE_MAP = {
   },
 } as const;
 
+export const DATA_TABLE_COMPACT_STYLE_MAP = {
+  rowHeight: 40,
+  cellPaddingX: 8,
+  cellPaddingY: 10,
+  headerGap: 10,
+  sortIconSize: 16,
+} as const;
+
+export type D2eDataTableDensity = "default" | "compact";
+
 export interface D2eDataTableHeader {
   key: string;
   title: string;
@@ -87,4 +97,7 @@ export interface D2eDataTableProps<T> {
   pageLabels?: D2eDataTablePageLabels;
   /** Accessible name of each row's expand chevron. */
   expandLabel?: string;
+  density?: D2eDataTableDensity;
+  hover?: boolean;
+  hideFooter?: boolean;
 }

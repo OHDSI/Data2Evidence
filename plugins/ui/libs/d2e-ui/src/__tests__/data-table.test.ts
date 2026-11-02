@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  DATA_TABLE_COMPACT_STYLE_MAP,
   DATA_TABLE_STYLE_MAP,
   nextSort,
   pageCount,
@@ -23,6 +24,18 @@ describe("D2eDataTable style map", () => {
         asc: "mdi-arrow-up",
         desc: "mdi-arrow-down",
       },
+    });
+  });
+});
+
+describe("D2eDataTable compact style map", () => {
+  it("matches the Figma exploration table (4532:452010, 4532:452988)", () => {
+    expect(DATA_TABLE_COMPACT_STYLE_MAP).toEqual({
+      rowHeight: 40,
+      cellPaddingX: 8,
+      cellPaddingY: 10,
+      headerGap: 10,
+      sortIconSize: 16,
     });
   });
 });
