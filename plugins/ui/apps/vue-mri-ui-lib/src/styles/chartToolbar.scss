@@ -127,13 +127,14 @@
   .toolbarButton.toolbarButtonDisabled .icon {
     cursor: default;
   }
-  
+
   .actionButtonGroup {
     display: flex;
     align-items: center;
     gap: 2em;
     height: 100%;
-    .dashboardButton, .attritionButton {
+    .dashboardButton,
+    .attritionButton {
       display: flex;
       align-items: center;
       height: 100%;
