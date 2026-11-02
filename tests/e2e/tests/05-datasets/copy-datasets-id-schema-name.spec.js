@@ -17,7 +17,7 @@ test(TEST_NAME, async ({ page, context }) => {
   await page.getByTestId('card-content').first().click()
   await page.getByRole('link', { name: 'Account' }).click()
   await page.getByRole('button', { name: 'Switch to Admin portal' }).click()
-  await page.getByRole('link', { name: 'Datasets' }).click()
+  await page.getByRole('link', { name: 'Data sources' }).click()
 
   // Get the dataset ID
   await page.locator('div.alp-text__copy-button-container').nth(0).locator('button.alp-icon-button--icon-only').click()

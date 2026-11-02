@@ -17,7 +17,7 @@ test(TEST_NAME, async ({ page, context }) => {
   await page.getByRole('button', { name: 'Sign in' }).click()
   await page.getByTestId('button').nth(1).click()
   await page.getByRole('button', { name: 'Switch to Admin portal' }).click()
-  await page.getByRole('link', { name: 'Datasets' }).click()
+  await page.getByRole('link', { name: 'Data sources' }).click()
   await expect(page.getByText('Demo dataset')).toBeVisible()
   const demoRow = page.getByRole('row', { name: /Demo dataset/ })
   await demoRow.locator('div.alp-text__copy-button-container').nth(0).locator('button.alp-icon-button--icon-only').click()

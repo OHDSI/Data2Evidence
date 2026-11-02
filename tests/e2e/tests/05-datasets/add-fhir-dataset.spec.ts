@@ -45,25 +45,25 @@ test(TEST_NAME, async ({ page }) => {
   await saveFeatureFlagButton.click()
 
   // Cleanup if the datasets already exist
-  await page.getByRole('link', { name: 'Datasets' }).click()
-  await expect(page.locator('.studyoverview__list tbody tr').first()).toBeVisible()
+  await page.getByRole('link', { name: 'Data sources' }).click()
+  await expect(page.locator('.d2e-table tbody tr').first()).toBeVisible()
   await expect(page.locator('tr', { hasText: 'Demo dataset' }).first()).toBeVisible()
   const datasetRow = page.locator('tr', { hasText: `${datasetSchema}` }).first()
   while (await datasetRow.isVisible()) {
-    await datasetRow.getByText('Select action').click()
-    await page.getByRole('option', { name: 'Delete dataset' }).click()
+    await datasetRow.getByRole('button', { name: 'Actions' }).click()
+    await page.getByRole('menuitem', { name: 'Delete data source' }).click()
     // Enter dataset name to confirm deletion
     await page.getByRole('textbox', { name: 'Enter dataset name to confirm' }).fill(datasetSchema)
     await page.getByRole('button', { name: 'Yes, delete' }).click()
     await page.reload()
-    await expect(page.locator('.studyoverview__list tbody tr').first()).toBeVisible()
+    await expect(page.locator('.d2e-table tbody tr').first()).toBeVisible()
   }
 
   // Add new dataset
-  // await page.getByRole('link', { name: 'Datasets' }).click()
-  await page.getByRole('button', { name: 'Add dataset' }).click()
-  await page.getByRole('textbox', { name: 'Dataset name - Displayed on' }).fill(datasetSchema)
-  await page.getByRole('textbox', { name: 'Dataset summary' }).fill(datasetSchema)
+  // await page.getByRole('link', { name: 'Data sources' }).click()
+  await page.getByRole('button', { name: 'Add data source' }).click()
+  await page.getByRole('textbox', { name: 'Data source name - Displayed on' }).fill(datasetSchema)
+  await page.getByRole('textbox', { name: 'Data source summary' }).fill(datasetSchema)
   await page.locator('#mui-component-select-schemaOption').click()
   await page.getByRole('option', { name: 'Create FHIR dataset', exact: true }).click()
   await page.locator('#mui-component-select-paConfigOption').click()
@@ -76,14 +76,14 @@ test(TEST_NAME, async ({ page }) => {
   await expect(fhirDataset).toBeVisible()
 
   // Clean up Delete the newly created dataset
-  await fhirDataset.getByText('Select action').click()
-  await page.getByRole('option', { name: 'Delete dataset' }).click()
+  await fhirDataset.getByRole('button', { name: 'Actions' }).click()
+  await page.getByRole('menuitem', { name: 'Delete data source' }).click()
   // Enter dataset name to confirm deletion
   await page.getByRole('textbox', { name: 'Enter dataset name to confirm' }).fill(datasetSchema)
   await page.getByRole('button', { name: 'Yes, delete' }).click()
 
   // Confirm the dataset no longer appears in the list
   // await page.reload()
-  await expect(page.locator('.studyoverview__list tbody tr').first()).toBeVisible()
+  await expect(page.locator('.d2e-table tbody tr').first()).toBeVisible()
   await expect(page.locator('tr', { hasText: datasetSchema })).toHaveCount(0)
 })

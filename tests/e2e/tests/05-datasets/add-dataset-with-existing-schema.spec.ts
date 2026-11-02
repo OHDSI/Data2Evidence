@@ -27,19 +27,19 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByRole('button', { name: 'Switch to Admin portal' }).click()
 
   // Cleanup if the datasets already exist
-  await page.getByRole('link', { name: 'Datasets' }).click()
-  await expect(page.locator('.studyoverview__list tbody tr').first()).toBeVisible()
+  await page.getByRole('link', { name: 'Data sources' }).click()
+  await expect(page.locator('.d2e-table tbody tr').first()).toBeVisible()
   await expect(page.locator('tr', { hasText: 'Demo dataset' }).first()).toBeVisible()
   for (const dataset of [datasetNewSchema, datasetNewCacheSchema, datasetExistingSchema, datasetExistingCacheSchema]) {
     const datasetRow = page.locator('tr', { hasText: `${dataset}` }).first()
     if (await datasetRow.isVisible()) {
-      await datasetRow.getByText('Select action').click()
-      await page.getByRole('option', { name: 'Delete dataset' }).click()
+      await datasetRow.getByRole('button', { name: 'Actions' }).click()
+      await page.getByRole('menuitem', { name: 'Delete data source' }).click()
       // Enter dataset name to confirm deletion
       await page.getByRole('textbox', { name: 'Enter dataset name to confirm' }).fill(dataset)
       await page.getByRole('button', { name: 'Yes, delete' }).click()
       await page.reload()
-      await expect(page.locator('.studyoverview__list tbody tr').first()).toBeVisible()
+      await expect(page.locator('.d2e-table tbody tr').first()).toBeVisible()
     }
   }
 
@@ -53,16 +53,16 @@ test(TEST_NAME, async ({ page }) => {
       .first()
     const stateBadge = entry.locator('.state-badge')
     await expect(stateBadge).toHaveText('Completed', { timeout: 720000 })
-    await page.getByRole('link', { name: 'Datasets' }).click()
+    await page.getByRole('link', { name: 'Data sources' }).click()
     // Wait for table to load
-    await expect(page.locator('.studyoverview__list tbody tr').first()).toBeVisible()
+    await expect(page.locator('.d2e-table tbody tr').first()).toBeVisible()
   }
 
   // Add new dataset
-  await page.getByRole('link', { name: 'Datasets' }).click()
-  await page.getByRole('button', { name: 'Add dataset' }).click()
-  await page.getByRole('textbox', { name: 'Dataset name - Displayed on' }).fill(datasetNewSchema)
-  await page.getByRole('textbox', { name: 'Dataset summary' }).fill(datasetNewSchema)
+  await page.getByRole('link', { name: 'Data sources' }).click()
+  await page.getByRole('button', { name: 'Add data source' }).click()
+  await page.getByRole('textbox', { name: 'Data source name - Displayed on' }).fill(datasetNewSchema)
+  await page.getByRole('textbox', { name: 'Data source summary' }).fill(datasetNewSchema)
   await page.locator('#mui-component-select-schemaOption').click()
   await page.getByRole('option', { name: 'Create new schema', exact: true }).click()
   await page.locator('#mui-component-select-databaseOption').click()
@@ -79,7 +79,7 @@ test(TEST_NAME, async ({ page }) => {
   // Close the "Dataset Created" notification dialog
   await page.getByRole('button', { name: 'Close', exact: true }).click({ timeout: MINUTE_2 })
   // Wait for table to load first
-  await expect(page.locator('.studyoverview__list tbody tr').first()).toBeVisible()
+  await expect(page.locator('.d2e-table tbody tr').first()).toBeVisible()
   // Wait for parent dataset to appear in the table (with parent-child structure, use row locators)
   await expect(page.locator('tr', { hasText: datasetNewSchema }).first()).toBeVisible({ timeout: MINUTE_2 })
 
@@ -89,19 +89,19 @@ test(TEST_NAME, async ({ page }) => {
   // webapi-managed datasets render as a single row; no separate cache child row.
 
   // Delete the dataset (webapi-managed, single row — no child cleanup required).
-  await expect(page.locator('.studyoverview__list tbody tr').first()).toBeVisible()
+  await expect(page.locator('.d2e-table tbody tr').first()).toBeVisible()
   const newSchemaRow = page.locator('tr', { hasText: datasetNewSchema }).first()
   await expect(newSchemaRow).toBeVisible()
-  await newSchemaRow.getByText('Select action').click()
-  await page.getByRole('option', { name: 'Delete dataset' }).click()
+  await newSchemaRow.getByRole('button', { name: 'Actions' }).click()
+  await page.getByRole('menuitem', { name: 'Delete data source' }).click()
   // Enter dataset name to confirm deletion
   await page.getByRole('textbox', { name: 'Enter dataset name to confirm' }).fill(datasetNewSchema)
   await page.getByRole('button', { name: 'Yes, delete' }).click()
 
   // Add dataset with existing schema
-  await page.getByRole('button', { name: 'Add dataset' }).click()
-  await page.getByRole('textbox', { name: 'Dataset name - Displayed on' }).fill(datasetExistingSchema)
-  await page.getByRole('textbox', { name: 'Dataset summary' }).fill(datasetExistingSchema)
+  await page.getByRole('button', { name: 'Add data source' }).click()
+  await page.getByRole('textbox', { name: 'Data source name - Displayed on' }).fill(datasetExistingSchema)
+  await page.getByRole('textbox', { name: 'Data source summary' }).fill(datasetExistingSchema)
   await page.locator('#mui-component-select-schemaOption').click()
   await page.getByRole('option', { name: 'Use existing schema', exact: true }).click()
   await page.locator('#mui-component-select-databaseOption').click()
@@ -120,15 +120,15 @@ test(TEST_NAME, async ({ page }) => {
   // Close the "Dataset Created" notification dialog
   await page.getByRole('button', { name: 'Close', exact: true }).click({ timeout: MINUTE_2 })
   // Wait for table to load and dataset to appear (single row for webapi-managed)
-  await expect(page.locator('.studyoverview__list tbody tr').first()).toBeVisible()
+  await expect(page.locator('.d2e-table tbody tr').first()).toBeVisible()
   await expect(page.locator('tr', { hasText: datasetExistingSchema }).first()).toBeVisible()
 
   // Clean up
-  await expect(page.locator('.studyoverview__list tbody tr').first()).toBeVisible()
+  await expect(page.locator('.d2e-table tbody tr').first()).toBeVisible()
   const existingSchemaRow = page.locator('tr', { hasText: datasetExistingSchema }).first()
   await expect(existingSchemaRow).toBeVisible()
-  await existingSchemaRow.getByText('Select action').click()
-  await page.getByRole('option', { name: 'Delete dataset' }).click()
+  await existingSchemaRow.getByRole('button', { name: 'Actions' }).click()
+  await page.getByRole('menuitem', { name: 'Delete data source' }).click()
   // Enter dataset name to confirm deletion
   await page.getByRole('textbox', { name: 'Enter dataset name to confirm' }).fill(datasetExistingSchema)
   await page.getByRole('button', { name: 'Yes, delete' }).click()
