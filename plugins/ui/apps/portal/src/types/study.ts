@@ -235,7 +235,7 @@ export interface UpdateStudyMetadataInput {
   paConfigId: string;
   attributes: NewStudyMetadataInput[];
   tags: string[];
-  dashboards: DatasetDashboard[];
+  dashboards?: DatasetDashboard[];
   vocabSchemaName?: string;
   resultsSchemaName?: string;
 }

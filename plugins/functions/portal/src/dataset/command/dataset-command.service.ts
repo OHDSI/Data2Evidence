@@ -662,7 +662,9 @@ export class DatasetCommandService {
 
       daimonsChanged = await this.updateDataset(entityMgr, datasetUpdateDto);
       await this.updateDatasetDetail(entityMgr, datasetId, detail);
-      await this.updateDatasetDashboards(entityMgr, datasetId, dashboards);
+      if (dashboards) {
+        await this.updateDatasetDashboards(entityMgr, datasetId, dashboards);
+      }
       await this.updateDatasetTags(entityMgr, datasetId, tags);
       await this.updateDatasetAttributes(entityMgr, datasetId, attributes);
 

@@ -227,7 +227,6 @@ const ManageMetadataDialog: FC<ManageMetadataDialogProps> = ({ dataset, open, on
     visibilityStatus: dataset!.visibilityStatus,
     attributes: next,
     tags: dataset?.tags?.map((t) => t.name) ?? [],
-    dashboards: [],
   });
 
   const commit = async (next: NewStudyMetadataInput[], message: string, done?: () => void) => {
