@@ -84,6 +84,8 @@ describe('stores/explorations', () => {
       filters: emptyFilters(),
       page: 1,
       pageSize: PAGE_SIZES[0],
+      viewMode: 'grid',
+      columnSort: [],
     })
   })
 
@@ -91,14 +93,26 @@ describe('stores/explorations', () => {
     const store = useExplorationsStore()
     const filters = emptyFilters()
     filters.authors = ['admin']
+    const columnSort = [{ key: 'personCount', order: 'asc' as const }]
 
-    store.saveListView({ searchQuery: 'snri', sortKey: 'nameAsc', filters, page: 2, pageSize: 24 })
+    store.saveListView({
+      searchQuery: 'snri',
+      sortKey: 'nameAsc',
+      filters,
+      page: 2,
+      pageSize: 24,
+      viewMode: 'list',
+      columnSort,
+    })
     filters.authors.push('other')
+    columnSort[0].order = 'desc'
 
     expect(store.listView.searchQuery).toBe('snri')
     expect(store.listView.sortKey).toBe('nameAsc')
     expect(store.listView.filters.authors).toEqual(['admin'])
     expect(store.listView.page).toBe(2)
     expect(store.listView.pageSize).toBe(24)
+    expect(store.listView.viewMode).toBe('list')
+    expect(store.listView.columnSort).toEqual([{ key: 'personCount', order: 'asc' }])
   })
 })
