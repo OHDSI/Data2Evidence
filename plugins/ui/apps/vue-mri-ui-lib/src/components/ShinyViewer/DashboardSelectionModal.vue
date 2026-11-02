@@ -2,13 +2,15 @@
   <D2eDialog
     :model-value="isOpen"
     size="l"
-    :busy="loading"
     :title="getText('MRI_PA_SELECT_DASHBOARD_TITLE')"
     :close-label="getText('MRI_PA_CLOSE_BUTTON')"
     data-testid="pa-dashboard-selection-dialog"
     @close="handleClose"
   >
     <div class="dashboard-selection-body">
+      <div v-if="loading" class="dashboard-selection-loading" data-testid="pa-dashboard-selection-loading">
+        <VProgressCircular indeterminate color="primary" />
+      </div>
       <p v-if="!loading" class="description">{{ getText('MRI_PA_SELECT_DASHBOARD_DESC') }}</p>
 
       <p v-if="!loading && error" class="error-text">{{ error }}</p>
@@ -52,6 +54,7 @@
 import { computed } from 'vue'
 import { useStore } from 'vuex'
 import { D2eDialog } from '@d2e/ui'
+import VProgressCircular from '../vuetify/VProgressCircular.vue'
 import { isWizardVisibleOnSurface, type WizardDefinition } from '@/utils/dashboardFlowUtils'
 
 const store = useStore()
@@ -106,6 +109,17 @@ function handleDashboardSelect(dashboardId: string) {
 <style scoped>
 .dashboard-selection-body {
   min-height: 270px;
+  position: relative;
+}
+
+.dashboard-selection-loading {
+  align-items: center;
+  background: rgb(255 255 255 / 70%);
+  display: flex;
+  inset: 0;
+  justify-content: center;
+  position: absolute;
+  z-index: 1;
 }
 
 .description {

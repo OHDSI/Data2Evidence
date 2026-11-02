@@ -1,7 +1,7 @@
 <template>
   <D2eDialog
     :model-value="isOpen"
-    :busy="loading"
+    :retain-focus="false"
     :title="getText('MRI_PA_TABLE1_CONFIG_TITLE')"
     :subtitle="getText('MRI_PA_TABLE1_CONFIG_DESC')"
     :close-label="getText('MRI_PA_CLOSE_BUTTON')"
@@ -9,6 +9,9 @@
     @close="handleClose"
   >
     <div v-if="isOpen" class="table1-config-dialog">
+      <div v-if="loading" class="table1-loading" data-testid="pa-table1-loading">
+        <VProgressCircular indeterminate color="primary" />
+      </div>
       <div class="covariate-card">
         <div class="covariate-card__header">{{ getText('MRI_PA_TABLE1_COVARIATE_HEADER') }}</div>
         <div class="covariate-card__body">
@@ -38,7 +41,7 @@
       </div>
     </div>
     <template #actions>
-      <D2eButton variant="secondary" :disabled="loading" data-testid="pa-table1-back-btn" @click="handleCancel">
+      <D2eButton variant="secondary" data-testid="pa-table1-back-btn" @click="handleCancel">
         {{ getText('MRI_PA_TOOLTIP_BOOKMARK_BACK') }}
       </D2eButton>
       <D2eButton
@@ -56,6 +59,7 @@
 import { computed, toRef } from 'vue'
 import { useStore } from 'vuex'
 import { D2eButton, D2eDialog } from '@d2e/ui'
+import VProgressCircular from '../vuetify/VProgressCircular.vue'
 import QueryFilterTagInputAdapter from '@/lib/ui/QueryFilterTagInputAdapter.vue'
 import { useTable1ConceptSetPicker, type Table1ConceptSetSelection } from '@/composables/useTable1ConceptSetPicker'
 import type { TagInputModel } from '@/query-filter/types/ConceptSetTypes'
@@ -134,6 +138,20 @@ function handleConfirm() {
 </script>
 
 <style scoped>
+.table1-config-dialog {
+  position: relative;
+}
+
+.table1-loading {
+  align-items: center;
+  background: rgb(255 255 255 / 70%);
+  display: flex;
+  inset: 0;
+  justify-content: center;
+  position: absolute;
+  z-index: 1;
+}
+
 .covariate-card {
   border: 1px solid var(--color-ui-light-border, #dedcda);
   border-radius: 4px;
