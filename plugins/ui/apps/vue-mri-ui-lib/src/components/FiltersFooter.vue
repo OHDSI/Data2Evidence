@@ -317,6 +317,7 @@ export default {
 
         // Check for duplicate names only if a new name is provided
         if (this.cohortName.length > 0) {
+          if (this.getBookmarksLoading) return
           for (const bookmark of this.getBookmarks) {
             if (username === bookmark.user_id && bookmark.bookmarkname === this.cohortName) {
               this.cohortNameValidationState = 'invalid'

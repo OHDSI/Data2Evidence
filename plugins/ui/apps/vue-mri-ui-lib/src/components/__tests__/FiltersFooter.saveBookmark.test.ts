@@ -58,7 +58,13 @@ const createContext = (
   const listBookmark = { bookmarkname: COHORT_NAME, bmkId: 'from-the-list', user_id: USERNAME }
 
   const fireBookmarkQuery = vi.fn(({ params }) => {
-    if (params.cmd === 'loadAll') return typeof loadAllResult === 'function' ? loadAllResult() : loadAllResult
+    if (params.cmd === 'loadAll') {
+      context.getBookmarksLoading = true
+      const refresh = typeof loadAllResult === 'function' ? loadAllResult() : loadAllResult
+      return refresh.finally(() => {
+        context.getBookmarksLoading = false
+      })
+    }
     if (params.cmd === 'insert') return Promise.resolve(insertResult)
     return Promise.resolve(updateResult)
   })
@@ -77,6 +83,7 @@ const createContext = (
     isNotUserSharedBookmark: false,
     portalContext: { username: USERNAME },
     getBookmarks: [],
+    getBookmarksLoading: false,
     get getBookmarksData() {
       return liveBookmarksData
     },
@@ -300,6 +307,29 @@ describe('FiltersFooter saveBookmark', () => {
 
       expect(context.showSaveBookmark).toBe(true)
       expect(context.cohortName).toBe('Another Cohort')
+    })
+
+    it('does not insert a named cohort from the Enter key while the list is loading', async () => {
+      const loadAll = createDeferred<unknown>()
+      const { context, editFilters } = createContext(loadAll.promise)
+
+      const firstSave = saveBookmark(context)
+      await settle()
+
+      context.getActiveBookmark = { bookmarkname: '', isNew: true }
+      editFilters(EDITED_FILTERS)
+      context.showSaveBookmark = true
+      context.cohortName = COHORT_NAME
+      const enterPress = saveBookmark(context)
+      await settle()
+
+      const inserts = context.fireBookmarkQuery.mock.calls.filter(([arg]) => arg.params.cmd === 'insert')
+      expect(inserts).toHaveLength(1)
+      expect(context.showSaveBookmark).toBe(true)
+      expect(context.cohortName).toBe(COHORT_NAME)
+
+      loadAll.resolve({})
+      await Promise.all([firstSave, enterPress])
     })
 
     it('ignores a refresh that resolves after a newer save', async () => {
