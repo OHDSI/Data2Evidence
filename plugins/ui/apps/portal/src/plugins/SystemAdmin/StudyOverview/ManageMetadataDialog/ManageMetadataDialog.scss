@@ -110,3 +110,13 @@
     width: 100%;
   }
 }
+
+.d2e-button.manage-metadata__delete-confirm.manage-metadata__delete-confirm {
+  background: var(--d2e-color-alarm);
+  color: var(--d2e-color-white);
+
+  &:hover {
+    background: var(--d2e-color-alarm);
+    filter: brightness(0.92);
+  }
+}

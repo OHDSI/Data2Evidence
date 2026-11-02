@@ -523,8 +523,13 @@ const ManageMetadataDialog: FC<ManageMetadataDialogProps> = ({ dataset, open, on
             >
               {getText(i18nKeys.MANAGE_METADATA_DIALOG__CANCEL)}
             </Button>
-            <Button variant="primary" onClick={handleDelete} loading={busy}>
-              {getText(i18nKeys.MANAGE_METADATA_DIALOG__DELETE)}
+            <Button
+              variant="primary"
+              className="manage-metadata__delete-confirm"
+              onClick={handleDelete}
+              loading={busy}
+            >
+              {getText(i18nKeys.MANAGE_METADATA_DIALOG__DELETE_CONFIRM)}
             </Button>
           </>
         }
@@ -552,7 +557,6 @@ const ManageMetadataDialog: FC<ManageMetadataDialogProps> = ({ dataset, open, on
       <AlertToast
         open={toast.open}
         severity="success"
-        closeButton={false}
         onClose={() => setToast((t) => ({ ...t, open: false }))}
       >
         {toast.message}
