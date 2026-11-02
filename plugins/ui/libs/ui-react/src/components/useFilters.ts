@@ -88,7 +88,7 @@ export function useFilters<Row>(args: UseFiltersArgs<Row>): UseFiltersResult<Row
   const clear = useCallback(() => setState({}), [setState]);
 
   const options = useMemo(() => {
-    const derived = rows ? deriveAllOptions(defs, rows, { withCounts }) : {};
+    const derived = deriveAllOptions(defs, rows ?? [], { withCounts });
     return { ...derived, ...(optionOverride ?? {}) };
   }, [defs, rows, withCounts, optionOverride]);
 
