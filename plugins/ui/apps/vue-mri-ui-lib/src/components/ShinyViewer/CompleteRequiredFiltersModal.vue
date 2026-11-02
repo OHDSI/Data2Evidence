@@ -904,6 +904,7 @@ function validateYearRange(fieldId: string): void {
   display: flex;
   min-width: 0;
   flex-direction: column;
+  align-items: stretch;
   gap: 5px;
   margin-bottom: 0;
 }
