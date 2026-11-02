@@ -1,13 +1,18 @@
-import { Suspense, lazy, useId, useMemo } from "react";
+import { Suspense, lazy, useCallback, useEffect, useId, useMemo, useRef } from "react";
 import type { ComponentType } from "react";
 import clsx from "clsx";
 import "./MarkdownField.scss";
+
+type MdeInstance = {
+  codemirror: { setOption: (key: string, value: unknown) => void };
+};
 
 type EditorProps = {
   id?: string;
   value?: string;
   onChange?: (value: string) => void;
   options?: Record<string, unknown>;
+  getMdeInstance?: (instance: MdeInstance) => void;
 };
 
 // SimpleMDE (CodeMirror) is heavy, so the editor and its stylesheet load only
@@ -59,6 +64,24 @@ export function MarkdownField({
   showIcons,
 }: MarkdownFieldProps) {
   const id = useId();
+
+  // `disabled` must reach the CodeMirror instance itself — a CSS
+  // `pointer-events: none` still lets keyboard users tab in and edit.
+  // `nocursor` makes it unfocusable, which also neutralises the toolbar
+  // keyboard shortcuts.
+  const mdeRef = useRef<MdeInstance | null>(null);
+  const disabledRef = useRef(disabled);
+  disabledRef.current = disabled;
+
+  const getMdeInstance = useCallback((instance: MdeInstance) => {
+    mdeRef.current = instance;
+    instance.codemirror.setOption("readOnly", disabledRef.current ? "nocursor" : false);
+  }, []);
+
+  useEffect(() => {
+    mdeRef.current?.codemirror.setOption("readOnly", disabled ? "nocursor" : false);
+  }, [disabled]);
+
   const messages = Array.isArray(errorMessages)
     ? errorMessages
     : errorMessages
@@ -98,7 +121,13 @@ export function MarkdownField({
         <Suspense
           fallback={<div className="d2e-markdown-field__loading" style={{ minHeight: maxHeight }} />}
         >
-          <LazyEditor id={id} value={value} onChange={onChange} options={options} />
+          <LazyEditor
+            id={id}
+            value={value}
+            onChange={onChange}
+            options={options}
+            getMdeInstance={getMdeInstance}
+          />
         </Suspense>
       </div>
       {error && <div className="d2e-markdown-field__error">{messages[0]}</div>}
