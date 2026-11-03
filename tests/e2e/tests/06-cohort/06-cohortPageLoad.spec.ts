@@ -16,7 +16,7 @@ test.fixme(SHOULD_SKIP, `${TEST_NAME} test is temporarily disabled.`)
  *   what the user owns.
  * - 'Import' (import an Atlas cohort definition) has no entry point on the new
  *   page. That is an open question for the redesign, not something this test
- *   can assert around - see atlas_cohort_definition.spec.ts.
+ *   can assert around.
  * - 'Compare' moved into the bulk-actions bar, which only appears once a card
  *   is selected, so it is not part of a page-load assertion any more.
  */

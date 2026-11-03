@@ -3,7 +3,6 @@ import { createPinia, setActivePinia } from 'pinia'
 import { createStore } from 'vuex'
 import { vi } from 'vitest'
 import { usePortalContextStore } from '../../stores/portalContext'
-import { useAtlasStore } from '../../stores/atlas'
 
 vi.mock('../../composables/useDeepLink', () => ({
   useDeepLink: () => ({
@@ -15,13 +14,6 @@ vi.mock('../../components/PatientAnalytics.vue', () => ({
   default: {
     name: 'patientanalytics',
     template: '<div data-test="patientanalytics" />',
-  },
-}))
-
-vi.mock('../../views/AtlasView.vue', () => ({
-  default: {
-    name: 'AtlasView',
-    template: '<div data-test="atlas-view" />',
   },
 }))
 
@@ -76,9 +68,6 @@ describe('App startup', () => {
     const pinia = createPinia()
     setActivePinia(pinia)
 
-    const atlasStore = useAtlasStore()
-    atlasStore.closeAtlas()
-
     const portalContext = usePortalContextStore()
     portalContext.applyProps({
       datasetId: 'dataset-1',
@@ -99,9 +88,6 @@ describe('App startup', () => {
   it('shows splash during dataset reload after initial load', async () => {
     const pinia = createPinia()
     setActivePinia(pinia)
-
-    const atlasStore = useAtlasStore()
-    atlasStore.closeAtlas()
 
     const portalContext = usePortalContextStore()
     portalContext.applyProps({

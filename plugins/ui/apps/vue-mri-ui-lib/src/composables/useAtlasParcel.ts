@@ -9,8 +9,7 @@
  *
  * Only meaningful in the native Atlas mount. `window.System` is Atlas's
  * SystemJS instance, which exists in the Atlas shell and nowhere else; the
- * iframe mount and the D2E portal both fail the guard and surface an error
- * state rather than throwing.
+ * D2E portal fails the guard and surfaces an error state rather than throwing.
  */
 import { ref, type Ref } from 'vue'
 import { mountRootParcel } from 'single-spa'

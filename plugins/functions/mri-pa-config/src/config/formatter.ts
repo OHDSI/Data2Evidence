@@ -167,7 +167,6 @@ export class Formatter {
           externalAccessPoints: mriConfig.panelOptions.externalAccessPoints,
           cohortEntryExit: mriConfig.panelOptions.cohortEntryExit,
           atlasCohortDefinition: mriConfig.panelOptions.atlasCohortDefinition,
-          usePaAtlas: mriConfig.panelOptions.usePaAtlas,
           inclusionReport: mriConfig.panelOptions.inclusionReport,
           intersectViewInclusionReport: mriConfig.panelOptions.intersectViewInclusionReport,
         };

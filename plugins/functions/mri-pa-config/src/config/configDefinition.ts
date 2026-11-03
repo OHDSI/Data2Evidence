@@ -807,12 +807,13 @@ function _getValidDefinition(cdwConfig) {
           type: "boolean",
           strict: false,
         },
+        // deprecated
         {
           name: "usePaAtlas",
           type: "boolean",
           strict: false,
+          mandatory: false,
         },
-        // deprecated
         {
           name: "afp",
           type: "object",

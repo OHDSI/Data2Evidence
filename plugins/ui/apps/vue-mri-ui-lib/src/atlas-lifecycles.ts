@@ -8,14 +8,12 @@
  *
  * - qeSvcUrl is absent, which would make the vuex auth module fall back to
  *   import.meta.env.VITE_HOST (undefined in this build). Atlas3 serves the
- *   plugin same-origin, so qeSvcUrl is normalized to window.location.origin
- *   (the same value the iframe boot uses).
+ *   plugin same-origin, so qeSvcUrl is normalized to window.location.origin.
  * - features / featuresLoading / releaseId may be absent; default them so the
  *   portal-context store never sees undefined.
  *
  * The `alp-terminology-open` DOM event is answered here via the host's
- * messageBus instead of the iframe postMessage relay in
- * utils/atlasTerminologyBridge.ts.
+ * messageBus.
  */
 
 import { publishPaClientToolProxy } from './atlas-parcel/clientToolProxy'
@@ -26,7 +24,7 @@ import {
   unmount as portalUnmount,
   update as portalUpdate,
 } from './lifecycles'
-import { formatConceptSetRef, parseConceptSetRef } from './query-filter/utils/conceptSetRef'
+import { formatConceptSetRef, parseConceptSetRef } from './utils/conceptSetRef'
 
 type AtlasProps = Record<string, any>
 

@@ -1,4 +1,4 @@
-import { debounce } from 'underscore'
+import debounce from 'lodash/debounce'
 
 const positionWindow = (el, containerId) => {
   const clientRect = el.getBoundingClientRect()
