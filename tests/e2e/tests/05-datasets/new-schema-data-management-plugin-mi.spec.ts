@@ -40,8 +40,8 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByRole('option', { name: 'OMOP', exact: true }).click()
   await page.getByRole('textbox', { name: 'Token data source code' }).click()
   await page.getByRole('textbox', { name: 'Token data source code' }).fill(randomString)
-  await page.getByRole('textbox', { name: 'Cache Dataset Name' }).click()
-  await page.getByRole('textbox', { name: 'Cache Dataset Name' }).fill('Test Cache')
+  await page.getByRole('textbox', { name: 'Cache data source name' }).click()
+  await page.getByRole('textbox', { name: 'Cache data source name' }).fill('Test Cache')
   await page.getByRole('button', { name: 'Add', exact: true }).click()
   // Close the "Dataset Created" notification dialog
   await page.getByRole('button', { name: 'Close', exact: true }).click({ timeout: MINUTE_2 })

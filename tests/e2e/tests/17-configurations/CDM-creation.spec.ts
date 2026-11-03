@@ -464,7 +464,7 @@ test(TEST_NAME, async ({ page }, testInfo) => {
     await page.getByRole('link', { name: 'Data sources' }).click()
     await page.getByRole('row').filter({ hasText: 'Demo dataset' }).getByRole('combobox').click()
     await page.getByRole('menuitem', { name: 'Edit data source' }).click()
-    await page.locator('#mui-component-select-paConfigOption').click()
+    await page.getByRole('combobox', { name: 'PA config' }).click()
     await page.getByRole('option', { name: 'CDM-Test101-PA' }).click()
     await page.getByRole('button', { name: 'Save' }).click()
   })

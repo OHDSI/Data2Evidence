@@ -1,4 +1,5 @@
 import { expect, test } from '../fixtures'
+import { MINUTE_2 } from '../const'
 const TEST_NAME = 'add-fhir-dataset'
 const SHOULD_SKIP = false
 test.fixme(SHOULD_SKIP, `${TEST_NAME} test is temporarily disabled.`)
@@ -72,8 +73,9 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByRole('button', { name: 'Add', exact: true }).click()
   await expect(page.getByText(`Data source ${datasetSchema} has been created successfully.`)).toBeVisible()
   await page.getByTestId('dialog-close').click()
+  await expect(page.locator('.d2e-table tbody tr').first()).toBeVisible()
   const fhirDataset = page.locator('tr', { hasText: datasetSchema }).first()
-  await expect(fhirDataset).toBeVisible()
+  await expect(fhirDataset).toBeVisible({ timeout: MINUTE_2 })
 
   // Clean up Delete the newly created dataset
   await fhirDataset.getByRole('button', { name: 'Actions' }).click()

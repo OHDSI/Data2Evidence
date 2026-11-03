@@ -109,8 +109,8 @@ test(TEST_NAME, async ({ page }) => {
     await page.getByRole('option', { name: PA_CONFIG_NAME, exact: true }).click()
     await page.getByRole('textbox', { name: 'Token data source code' }).click()
     await page.getByRole('textbox', { name: 'Token data source code' }).fill(randomString)
-    await page.getByRole('textbox', { name: 'Cache Dataset Name' }).click()
-    await page.getByRole('textbox', { name: 'Cache Dataset Name' }).fill(CACHE_DATASET_NAME)
+    await page.getByRole('textbox', { name: 'Cache data source name' }).click()
+    await page.getByRole('textbox', { name: 'Cache data source name' }).fill(CACHE_DATASET_NAME)
     await page.getByRole('button', { name: 'Add', exact: true }).click()
   })
 
