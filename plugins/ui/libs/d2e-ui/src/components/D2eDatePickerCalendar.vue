@@ -14,6 +14,7 @@
     :max="max ?? undefined"
     @update:model-value="onPick"
     @update:view-mode="onViewMode"
+    @keydown.enter.stop
   />
 </template>
 

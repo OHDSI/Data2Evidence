@@ -50,7 +50,7 @@
               @select="onPickMinute"
             />
           </div>
-          <div class="d2e-date-time-picker__actions">
+          <div class="d2e-date-time-picker__actions" @keydown.enter.stop>
             <D2eButton variant="ghost" @click="close('cancel')">
               {{ cancelText }}
             </D2eButton>
@@ -138,6 +138,7 @@ const props = withDefaults(defineProps<Props>(), {
 
 const emit = defineEmits<{
   "update:modelValue": [value: Date | null];
+  "update:invalid": [value: boolean];
 }>();
 
 const attrs = useAttrs();
@@ -156,12 +157,16 @@ const {
   text,
   shownErrors,
   isEdited,
+  isInvalid,
   show,
   markInvalid,
   onType,
+  readText,
   commitText,
   emitIfChanged,
 } = useDatePickerText(props, (value) => emit("update:modelValue", value));
+
+watch(isInvalid, (invalid) => emit("update:invalid", invalid));
 
 watch(internalOpen, (open) => {
   if (open) {
@@ -186,11 +191,11 @@ function acceptOnClose() {
 
 function acceptDraft() {
   const value = draft.value;
-  if (!value || sameInstant(value, props.modelValue)) {
+  if (sameInstant(value, props.modelValue)) {
     show(props.modelValue);
     return;
   }
-  if (!isWithinDays(value, props.min, props.max)) {
+  if (value && !isWithinDays(value, props.min, props.max)) {
     markInvalid();
     return;
   }
@@ -216,10 +221,15 @@ function onPickMinute(minute: number) {
 }
 
 function onCommitText() {
-  const committed = commitText();
-  if (committed !== undefined && internalOpen.value) {
-    draft.value = committed;
+  if (!internalOpen.value) {
+    commitText();
+    return;
   }
+  if (!isEdited.value) return;
+  const typed = readText();
+  if (typed === undefined) return;
+  draft.value = typed;
+  show(typed);
 }
 
 function close(action: CloseAction) {

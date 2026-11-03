@@ -87,6 +87,7 @@
                           :menu-z-index="DATE_MENU_Z_INDEX"
                           :invalid-date-text="getText('MRI_PA_INVALID_DATE')"
                           @update:model-value="setDateBound(field.id, 'from', $event)"
+                          @update:invalid="invalidDateBounds[`${field.id}_from`] = $event"
                         />
                         <span>to</span>
                         <D2eDatePicker
@@ -97,6 +98,7 @@
                           :menu-z-index="DATE_MENU_Z_INDEX"
                           :invalid-date-text="getText('MRI_PA_INVALID_DATE')"
                           @update:model-value="setDateBound(field.id, 'to', $event)"
+                          @update:invalid="invalidDateBounds[`${field.id}_to`] = $event"
                         />
                       </div>
                     </template>
@@ -288,6 +290,7 @@ const formValues = reactive<Record<string, any>>({})
 const displayValues = reactive<Record<string, string>>({})
 const yearErrors = reactive<Record<string, string>>({})
 const numericErrors = reactive<Record<string, string>>({})
+const invalidDateBounds = reactive<Record<string, boolean>>({})
 const dirtyFields = reactive<Set<string>>(new Set())
 const initialSnapshot = reactive<Record<string, any>>({})
 
@@ -479,6 +482,10 @@ const isFormValid = computed(() => {
     return false
   }
 
+  if (Object.values(invalidDateBounds).some(Boolean)) {
+    return false
+  }
+
   if (!props.allFields.length) {
     return true
   }
@@ -563,6 +570,7 @@ watch(
     Object.keys(displayValues).forEach(key => delete displayValues[key])
     Object.keys(yearErrors).forEach(key => delete yearErrors[key])
     Object.keys(numericErrors).forEach(key => delete numericErrors[key])
+    Object.keys(invalidDateBounds).forEach(key => delete invalidDateBounds[key])
     Object.keys(initialSnapshot).forEach(key => delete initialSnapshot[key])
     dirtyFields.clear()
 

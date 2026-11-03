@@ -39,7 +39,7 @@
 
 <script setup lang="ts">
 import { VDefaultsProvider, VMenu } from "vuetify/components";
-import { computed, mergeProps, ref, useAttrs } from "vue";
+import { computed, mergeProps, ref, useAttrs, watch } from "vue";
 import D2eDatePickerCalendar from "./D2eDatePickerCalendar.vue";
 import D2eDatePickerField from "./D2eDatePickerField.vue";
 import { hasTime, withTimeOf } from "./datePickerFormat";
@@ -90,6 +90,7 @@ const props = withDefaults(defineProps<Props>(), {
 
 const emit = defineEmits<{
   "update:modelValue": [value: Date | null];
+  "update:invalid": [value: boolean];
 }>();
 
 const attrs = useAttrs();
@@ -102,8 +103,17 @@ const isOpen = computed({
   },
 });
 
-const { text, shownErrors, show, onType, commitText, emitIfChanged } =
-  useDatePickerText(props, (value) => emit("update:modelValue", value));
+const {
+  text,
+  shownErrors,
+  isInvalid,
+  show,
+  onType,
+  commitText,
+  emitIfChanged,
+} = useDatePickerText(props, (value) => emit("update:modelValue", value));
+
+watch(isInvalid, (invalid) => emit("update:invalid", invalid));
 
 function onPick(value: Date) {
   const picked = hasTime(props.format)

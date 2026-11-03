@@ -1,4 +1,4 @@
-import { computed, ref, watch } from "vue";
+import { computed, readonly, ref, watch } from "vue";
 import { formatDate, isWithinDays, parseDate } from "./datePickerFormat";
 
 interface DatePickerTextProps {
@@ -37,8 +37,8 @@ export function useDatePickerText(
   }
 
   watch(
-    () => [props.modelValue, props.format] as const,
-    ([value]) => show(value),
+    [() => props.modelValue?.getTime() ?? null, () => props.format],
+    () => show(props.modelValue),
     { immediate: true },
   );
 
@@ -54,30 +54,35 @@ export function useDatePickerText(
     isEdited.value = true;
   }
 
+  function readText(): Date | null | undefined {
+    if (!text.value.trim()) return null;
+    const parsed = parseDate(text.value, props.format);
+    if (!parsed || !isWithinDays(parsed, props.min, props.max)) {
+      isInvalid.value = true;
+      return undefined;
+    }
+    return parsed;
+  }
+
   function commitText(): Date | null | undefined {
     if (!isEdited.value) return undefined;
     if (text.value === formatDate(props.modelValue, props.format)) {
       isInvalid.value = false;
       return undefined;
     }
-    if (!text.value.trim()) {
-      emitIfChanged(null);
-      return null;
-    }
-    const parsed = parseDate(text.value, props.format);
-    if (!parsed || !isWithinDays(parsed, props.min, props.max)) {
-      isInvalid.value = true;
-      return undefined;
-    }
-    show(parsed);
-    emitIfChanged(parsed);
-    return parsed;
+    const value = readText();
+    if (value === undefined) return undefined;
+    show(value);
+    emitIfChanged(value);
+    return value;
   }
 
   return {
     text,
     shownErrors,
     isEdited,
+    isInvalid: readonly(isInvalid),
+    readText,
     show,
     markInvalid,
     onType,
