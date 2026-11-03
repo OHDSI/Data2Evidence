@@ -89,18 +89,26 @@
           </div>
         </template>
       </chartPopover>
-      <D2eDialog
-        :model-value="showKMStatisticsPopup"
-        size="l"
-        :title="getText('MRI_PA_KAPLAN_CURVE_ANA_HED')"
-        :close-label="getText('MRI_PA_KAPLAN_CURVE_ANA_POPUP_BUT_CLOSE')"
-        data-testid="pa-km-statistics-dialog"
-        @close="closeKMStatisticsPopup"
-      >
-        <div class="body-container label-for">
-          <kmStatisticsTable :dof="getGlobalDoF()" :pvalue="globalPValue" :chartData="chartData" />
-        </div>
-      </D2eDialog>
+      <messageBox v-if="showKMStatisticsPopup" dim="true" @close="closeKMStatisticsPopup" messageType="custom">
+        <template v-slot:header>{{ getText('MRI_PA_KAPLAN_CURVE_ANA_HED') }}</template>
+        <template v-slot:body>
+          <div class="flex-spacer">
+            <div style="padding: 30px 30px 30px 30px">
+              <div class="body-container label-for">
+                <kmStatisticsTable :dof="getGlobalDoF()" :pvalue="globalPValue" :chartData="chartData" />
+              </div>
+            </div>
+          </div>
+        </template>
+        <template v-slot:footer>
+          <div class="flex-spacer"></div>
+          <appButton
+            :click="closeKMStatisticsPopup"
+            :text="getText('MRI_PA_KAPLAN_CURVE_ANA_POPUP_BUT_CLOSE')"
+            v-focus
+          ></appButton>
+        </template>
+      </messageBox>
       <errorMessageBox
         v-if="showKMStatisticsErrPopupForMoreCurves"
         @ok="closeKMStatisticsErrPopupForMoreCurves"
@@ -146,7 +154,7 @@ import axios from 'axios'
 import d3 from 'd3'
 import { computed, ref, watch, onMounted, onBeforeUnmount } from 'vue'
 import { useStore } from 'vuex'
-import { D2eDialog } from '@d2e/ui'
+import appButton from '../lib/ui/app-button.vue'
 import appLabel from '../lib/ui/app-label.vue'
 import Constants from '../utils/Constants'
 import chartErrorMessage from './ChartErrorMessage.vue'
@@ -155,6 +163,7 @@ import DialogBox from './DialogBox.vue'
 import kmLegend from './KMLegend.vue'
 import kmStatisticsTable from './KMStatisticsTable.vue'
 import KMUnitMenu from './KMUnitMenu.vue'
+import messageBox from './MessageBox.vue'
 import errorMessageBox from './Notification.vue'
 
 const X_PADDING = 50
