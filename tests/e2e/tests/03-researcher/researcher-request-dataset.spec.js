@@ -24,8 +24,8 @@ test(TEST_NAME, async ({ page }) => {
   await expect(demoRow).toBeVisible()
 
   // webapi-managed datasets render as a single row (no child cache row).
-  // Table structure: [icon] [Dataset ID] [Name] [Schema name] [Schema version] ...
-  const cacheDatasetNameCell = demoRow.locator('td').nth(2)
+  // Redesigned table columns: [Dataset ID] [Name] [Schema name] [Schema version] ...
+  const cacheDatasetNameCell = demoRow.locator('td').nth(1)
   const cacheDatasetName = (await cacheDatasetNameCell.textContent())?.trim()
 
   await demoRow.getByRole('button', { name: 'Actions' }).click()
