@@ -99,7 +99,7 @@ test(TEST_NAME, async ({ page }) => {
     await page.getByRole('option', { name: 'demo_database-postgres' }).click()
     // webapi mode only lists data models starting with "omop", so switch to source mode to make waveform selectable
     await page.getByRole('combobox', { name: 'Management mode' }).click()
-    await page.getByRole('option', { name: 'Source (with cache dataset)' }).click()
+    await page.getByRole('option', { name: 'Source (with cache data source)' }).click()
     // Uncheck the "Use default result schema name" checkbox to enable custom input
     await page.getByRole('checkbox', { name: /use default result schema name/i }).uncheck()
     await page.getByRole('textbox', { name: 'Result Schema Name' }).fill(`result_schema_${randomString}`)
