@@ -985,7 +985,7 @@ test(TEST_NAME, async ({ page }) => {
       .catch(() => {})
     await page.getByRole('button', { name: 'Switch to Admin portal' }).click()
     await page.getByRole('link', { name: 'Data sources' }).click()
-    await page.getByRole('row', { name: 'wizardE2E' }).getByRole('combobox').click()
+    await page.getByRole('row', { name: 'wizardE2E' }).getByRole('button', { name: 'Actions' }).click()
     await page.getByRole('menuitem', { name: 'Delete data source' }).click()
     await page.getByRole('textbox', { name: 'Enter dataset name to confirm' }).fill('wizardE2E')
     await page.getByRole('button', { name: 'Yes, delete' }).click()

@@ -462,7 +462,7 @@ test(TEST_NAME, async ({ page }, testInfo) => {
   await test.step('Update dataset', async () => {
     await page.reload()
     await page.getByRole('link', { name: 'Data sources' }).click()
-    await page.getByRole('row').filter({ hasText: 'Demo dataset' }).getByRole('combobox').click()
+    await page.getByRole('row').filter({ hasText: 'Demo dataset' }).getByRole('button', { name: 'Actions' }).click()
     await page.getByRole('menuitem', { name: 'Edit data source' }).click()
     await page.getByRole('combobox', { name: 'PA config' }).click()
     await page.getByRole('option', { name: 'CDM-Test101-PA' }).click()

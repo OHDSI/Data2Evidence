@@ -73,6 +73,7 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByRole('button', { name: 'Add', exact: true }).click()
   await expect(page.getByText(`Data source ${datasetSchema} has been created successfully.`)).toBeVisible()
   await page.getByTestId('dialog-close').click()
+  await page.reload()
   await expect(page.locator('.d2e-table tbody tr').first()).toBeVisible()
   const fhirDataset = page.locator('tr', { hasText: datasetSchema }).first()
   await expect(fhirDataset).toBeVisible({ timeout: MINUTE_2 })
