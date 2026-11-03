@@ -9663,7 +9663,6 @@ export const cdwConfig = {
         "settings": {
             "fuzziness": 0.7,
             "maxResultSize": 5000,
-            "sqlReturnOn": false,
             "errorDetailsReturnOn": false,
             "errorStackTraceReturnOn": false,
             "enableFreeText": true,
@@ -13820,6 +13819,60 @@ export const cdwConfigDuckdb = {
                 "cohortDefinitionKey": "ConditionOccurrence",
                 "conceptIdentifierType": "",
                 "attributes": {
+                    "wizard_condition_concept_search": {
+                        "name": [
+                            {
+                                "lang": "",
+                                "value": "Wizard condition concept search"
+                            }
+                        ],
+                        "disabledLangName": [
+                            {
+                                "lang": "en",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "de",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "fr",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "es",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "pt",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "zh",
+                                "value": "",
+                                "visible": true
+                            }
+                        ],
+                        "type": "text",
+                        "expression": "@REF.CONCEPT_CODE",
+                        "defaultPlaceholder": "@REF",
+                        "defaultFilter": "@REF.CONCEPT_ID = @COND.CONDITION_CONCEPT_ID",
+                        "referenceFilter": "@REF.DOMAIN_ID = 'Condition' AND @REF.STANDARD_CONCEPT = 'S' AND JARO_SIMILARITY(lower(@REF.CONCEPT_NAME), lower('@SEARCH_QUERY')) >= 0.65",
+                        "referenceExpression": "@REF.CONCEPT_CODE",
+                        "order": 0,
+                        "domainFilter": "",
+                        "includeDescendants": false,
+                        "includeDescendantsExpression": "",
+                        "optionalFiltering": false,
+                        "standardConceptCodeFilter": "",
+                        "cohortDefinitionKey": "",
+                        "conceptIdentifierType": "code"
+                    },
                     "visitoccurrenceid": {
                         "name": [
                             {
@@ -20381,6 +20434,31 @@ export const cdwConfigDuckdb = {
                         "standardConceptCodeFilter": "",
                         "cohortDefinitionKey": "CodesetId",
                         "conceptIdentifierType": "name"
+                    },
+                    "visit_concept_id": {
+                      "name": [{ "lang": "", "value": "Visit concept id" }],
+                      "disabledLangName": [
+                        { "lang": "en", "value": "", "visible": true },
+                        { "lang": "de", "value": "", "visible": true },
+                        { "lang": "fr", "value": "", "visible": true },
+                        { "lang": "es", "value": "", "visible": true },
+                        { "lang": "pt", "value": "", "visible": true },
+                        { "lang": "zh", "value": "", "visible": true }
+                      ],
+                      "type": "text",
+                      "expression": "@REF.concept_id",
+                      "defaultPlaceholder": "@REF",
+                      "defaultFilter": "@REF.concept_id = @VISIT.VISIT_CONCEPT_ID",
+                      "referenceFilter": "@REF.DOMAIN_ID = 'Visit' AND @REF.STANDARD_CONCEPT = 'S' AND JARO_SIMILARITY(lower(@REF.CONCEPT_NAME), lower('@SEARCH_QUERY')) >= 0.65",
+                      "referenceExpression": "@REF.CONCEPT_ID",
+                      "order": 0,
+                      "domainFilter": "",
+                      "includeDescendants": false,
+                      "includeDescendantsExpression": "",
+                      "optionalFiltering": false,
+                      "standardConceptCodeFilter": "",
+                      "cohortDefinitionKey": "CodesetId",
+                      "conceptIdentifierType": "id"
                     }
                 }
             },
@@ -23507,7 +23585,6 @@ export const cdwConfigDuckdb = {
         "settings": {
             "fuzziness": 0.7,
             "maxResultSize": 5000,
-            "sqlReturnOn": false,
             "errorDetailsReturnOn": false,
             "errorStackTraceReturnOn": false,
             "enableFreeText": true,
@@ -26134,6 +26211,26 @@ const paConfigDuckdb = {
             "initial": false,
             "attributes": [
                 {
+                    "source": "patient.interactions.conditionoccurrence.attributes.wizard_condition_concept_search",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": true,
+                    "useRefValue": true,
+                    "category": false,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": false,
+                        "order": 12
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": false,
+                        "linkColumn": false
+                    },
+                    "modelName": "Wizard condition concept search"
+                },
+                {
                     "source": "patient.interactions.conditionoccurrence.attributes.visitoccurrenceid",
                     "ordered": false,
                     "cached": true,
@@ -28381,7 +28478,6 @@ const cdwI2b2ConfigDuckdb = {
     settings: {
       fuzziness: 0.7,
       maxResultSize: 5000,
-      sqlReturnOn: false,
       errorDetailsReturnOn: false,
       errorStackTraceReturnOn: false,
       enableFreeText: true,
@@ -32989,7 +33085,6 @@ const cdwjsonfhirConfigDuckdb = {
         "settings": {
             "fuzziness": 0.7,
             "maxResultSize": 5000,
-            "sqlReturnOn": false,
             "errorDetailsReturnOn": false,
             "errorStackTraceReturnOn": false,
             "enableFreeText": true,
@@ -37318,7 +37413,6 @@ const omopHanaLeanCdwConfig = {
 		"settings": {
 			"fuzziness": 0.7,
 			"maxResultSize": 5000,
-			"sqlReturnOn": false,
 			"errorDetailsReturnOn": false,
 			"errorStackTraceReturnOn": false,
 			"enableFreeText": true,
