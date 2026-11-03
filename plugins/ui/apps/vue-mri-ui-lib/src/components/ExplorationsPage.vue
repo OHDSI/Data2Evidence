@@ -1041,6 +1041,14 @@ watch(matchedIds, ids => {
   explorations.retain(ids)
 })
 
+watch(
+  viewMode,
+  mode => {
+    if (mode === 'list') explorations.clear()
+  },
+  { immediate: true }
+)
+
 /**
  * Close the panel and put the cohort builder's state back.
  *
