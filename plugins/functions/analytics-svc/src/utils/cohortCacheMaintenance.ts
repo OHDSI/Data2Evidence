@@ -201,6 +201,16 @@ export const refreshCohortCacheEntry = async (
                 err instanceof Error ? err.message : String(err)
             }`
         );
+        // Drop the old entry, so that the next read loads the new cohort.
+        await dao.deleteKey(key).catch((deleteErr) => {
+            logger.warn(
+                `Cohort cache eviction failed after materializing cohort ${cohortDefinitionId}: ${
+                    deleteErr instanceof Error
+                        ? deleteErr.message
+                        : String(deleteErr)
+                }`
+            );
+        });
         return false;
     }
 };

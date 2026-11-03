@@ -28,6 +28,7 @@ export function formatBookmark(bookmark: FormattedBookmark) {
     chartType: bookmarkObj.chartType,
     axisInfo: bookmarkObj.chartType === 'list' ? bookmarkObj.filter.selected_attributes : bookmarkObj.axisSelection,
     shared: bookmark.shared,
+    materializationStatus: bookmark.materializationStatus,
   }
 }
 

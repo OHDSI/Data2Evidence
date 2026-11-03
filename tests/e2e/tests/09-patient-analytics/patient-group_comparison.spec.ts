@@ -97,7 +97,7 @@ test('pa-compare-cohorts', async ({ page }) => {
   await page.waitForTimeout(15000)
 
   // Verify the comparison modal is visible
-  await expect(page.locator('.modal-body')).toBeVisible()
+  await expect(page.getByTestId('pa-compare-modal')).toBeVisible()
   await page.locator('.mainChartToolbar').getByTitle('Export to File').click()
 
   const downloadPromise = page.waitForEvent('download')

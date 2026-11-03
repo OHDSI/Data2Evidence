@@ -1,3 +1,4 @@
+import { CHECK_SEVERITY } from './severity';
 import type { DqdCheckRow } from './types';
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
@@ -26,6 +27,7 @@ export function parseCheckResults(raw: unknown): DqdCheckRow[] {
       checkId,
       checkName: item.checkName,
       category: item.category,
+      severity: typeof item.severity === 'string' && item.severity ? item.severity : CHECK_SEVERITY[item.checkName],
       failed: typeof item.failed === 'number' ? item.failed : 0,
       key: `${checkId ?? ''}#${index}`,
     });

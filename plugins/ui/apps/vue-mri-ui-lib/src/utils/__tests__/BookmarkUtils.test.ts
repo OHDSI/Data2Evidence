@@ -1,4 +1,6 @@
-import { canModifyBookmark, isBookmarkSaveSuccess } from '../BookmarkUtils'
+import { D2eExplorationCardStatus } from '@d2e/ui'
+import { BookmarkSchema } from '@/schema/bookmarksSchema'
+import { canModifyBookmark, formatBookmark, isBookmarkSaveSuccess, processBookmarksData } from '../BookmarkUtils'
 
 describe('BookmarkUtils - canModifyBookmark', () => {
   describe('canModifyBookmark', () => {
@@ -127,5 +129,42 @@ describe('BookmarkUtils - isBookmarkSaveSuccess', () => {
     ['unrelated text', 'saved'],
   ])('rejects %s', (_name, result) => {
     expect(isBookmarkSaveSuccess(result)).toBe(false)
+  })
+})
+
+describe('BookmarkUtils - materializationStatus', () => {
+  const rawBookmark = (materializationStatus?: D2eExplorationCardStatus): FormattedBookmark => ({
+    bmkId: 'bmk-1',
+    bookmarkname: 'SNRI Users',
+    bookmark: JSON.stringify({ filter: { cards: { content: [] } }, chartType: 'stacked' }),
+    viewname: null,
+    modified: '2026-10-20T10:00:00.000Z',
+    version: '2',
+    user_id: 'alice',
+    shared: false,
+    materializationStatus,
+  })
+
+  it('formatBookmark keeps the status', () => {
+    expect(formatBookmark(rawBookmark(D2eExplorationCardStatus.STALE)).materializationStatus).toBe(
+      D2eExplorationCardStatus.STALE
+    )
+  })
+
+  it('formatBookmark leaves the status undefined when the backend does not send it', () => {
+    expect(formatBookmark(rawBookmark()).materializationStatus).toBeUndefined()
+  })
+
+  it('processBookmarksData keeps the status on the bookmark', () => {
+    const item: IBookmark = { ...rawBookmark(D2eExplorationCardStatus.STALE), version: 2, paConfigId: 'pa-1' }
+    const { bookmarks } = processBookmarksData([item], 'pa-1')
+    expect(bookmarks[0].materializationStatus).toBe(D2eExplorationCardStatus.STALE)
+  })
+
+  it('BookmarkSchema accepts an unknown or null status, so the bookmark stays in the list', () => {
+    for (const materializationStatus of ['archived', null, 3]) {
+      const item = { ...rawBookmark(), version: 2, materializationStatus }
+      expect(BookmarkSchema.safeParse(item).success).toBe(true)
+    }
   })
 })

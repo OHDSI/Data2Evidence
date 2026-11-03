@@ -36,4 +36,23 @@ describe('parseCheckResults', () => {
     const [parsed] = parseCheckResults([{ checkName: 'n', category: 'c' }]);
     expect(parsed.failed).toBe(0);
   });
+
+  it('fills severity from the DQD check catalogue', () => {
+    const rows = parseCheckResults([
+      { checkName: 'isPrimaryKey', category: 'Conformance' },
+      { checkName: 'fkDomain', category: 'Conformance' },
+      { checkName: 'plausibleValueHigh', category: 'Plausibility' },
+    ]);
+    expect(rows.map((r) => r.severity)).toEqual(['fatal', 'convention', 'characterization']);
+  });
+
+  it('keeps a severity that the result already has', () => {
+    const [parsed] = parseCheckResults([{ checkName: 'isPrimaryKey', category: 'Conformance', severity: 'convention' }]);
+    expect(parsed.severity).toBe('convention');
+  });
+
+  it('leaves severity empty for a check that is not in the catalogue', () => {
+    const [parsed] = parseCheckResults([{ checkName: 'customCheck', category: 'Plausibility' }]);
+    expect(parsed.severity).toBeUndefined();
+  });
 });

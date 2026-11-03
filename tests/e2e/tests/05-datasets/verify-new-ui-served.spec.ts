@@ -15,7 +15,7 @@ test('new UI bundle is served and contains transform-to-webapi action', async ({
   expect(manifestResp.status(), 'asset-manifest.json should 200').toBe(200)
   const manifest = await manifestResp.json()
   const mainJsRel = manifest.files['main.js']
-  expect(mainJsRel, 'manifest must reference main.js').toMatch(/main\..+\.js$/)
+  expect(mainJsRel, 'manifest must reference the entry bundle').toMatch(/assets\/index-.+\.js$/)
   console.log('main.js path:', mainJsRel)
 
   const mainResp = await page.request.get(mainJsRel)
@@ -25,7 +25,7 @@ test('new UI bundle is served and contains transform-to-webapi action', async ({
   expect(mainBody, 'main.js should contain Convert to WebAPI menu label').toContain('Convert to WebAPI')
 
   // The TransformToWebApiDialog component lives in a lazy-loaded chunk. Find it via the manifest.
-  const chunkPaths = Object.values<string>(manifest.files).filter((p) => /chunk\.js$/.test(p))
+  const chunkPaths = Object.values<string>(manifest.files).filter((p) => p !== mainJsRel && p.endsWith('.js'))
   let dialogChunkFound = false
   for (const chunkRel of chunkPaths) {
     const chunkResp = await page.request.get(chunkRel)
@@ -44,5 +44,5 @@ test('portal index loads and references env.js + main.js', async ({ page }) => {
   expect(indexResp.status(), 'portal index should 200').toBe(200)
   const indexBody = await indexResp.text()
   expect(indexBody, 'index references env.js').toContain('/d2e/portal/env.js')
-  expect(indexBody, 'index references main.js bundle').toMatch(/main\.[a-z0-9]+\.js/)
+  expect(indexBody, 'index references the entry bundle').toMatch(/assets\/index-[A-Za-z0-9_-]+\.js/)
 })
