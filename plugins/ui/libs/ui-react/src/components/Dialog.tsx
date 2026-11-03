@@ -37,6 +37,8 @@ export interface DialogProps {
   confirmKeepLabel?: string;
   children?: ReactNode;
   actions?: ReactNode;
+  /** Actions aligned to the left of the footer; the footer becomes space-between. */
+  leadingActions?: ReactNode;
 }
 
 export function Dialog({
@@ -57,6 +59,7 @@ export function Dialog({
   confirmKeepLabel = "Keep editing",
   children,
   actions,
+  leadingActions,
 }: DialogProps) {
   const titleId = useId();
   const resolvedMaxWidth = maxWidth ?? DIALOG_SIZE_MAP[size];
@@ -128,7 +131,14 @@ export function Dialog({
 
         <div className="d2e-dialog__body">{children}</div>
 
-        {actions ? <div className="d2e-dialog__actions">{actions}</div> : null}
+        {actions || leadingActions ? (
+          <div className="d2e-dialog__actions">
+            {leadingActions ? (
+              <div className="d2e-dialog__actions-leading">{leadingActions}</div>
+            ) : null}
+            {actions}
+          </div>
+        ) : null}
       </MuiDialog>
 
       {confirmOnClose ? (

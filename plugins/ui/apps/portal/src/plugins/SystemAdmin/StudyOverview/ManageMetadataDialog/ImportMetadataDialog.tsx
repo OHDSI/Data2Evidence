@@ -378,15 +378,15 @@ const ImportMetadataDialog: FC<ImportMetadataDialogProps> = ({
         open={open}
         closeOnBackdrop
         onClose={onClose}
+        leadingActions={
+          <Button variant="ghost" onClick={onClose}>
+            {getText(i18nKeys.MANAGE_METADATA_DIALOG__CANCEL)}
+          </Button>
+        }
         actions={
-          <>
-            <Button variant="ghost" onClick={onClose}>
-              {getText(i18nKeys.MANAGE_METADATA_DIALOG__CANCEL)}
-            </Button>
-            <Button variant="primary" onClick={handleImport} disabled={selectedCount === 0}>
-              {importLabel}
-            </Button>
-          </>
+          <Button variant="primary" onClick={handleImport} disabled={selectedCount === 0}>
+            {importLabel}
+          </Button>
         }
       >
         <div className="manage-metadata import-metadata">
