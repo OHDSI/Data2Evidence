@@ -419,7 +419,8 @@
           "TREX_OIDC_ISSUER": "${TREX_OIDC_ISSUER:-}",
           "TREX__FEDERATION_ADMIN_URL": "${TREX__FEDERATION_ADMIN_URL:-}",
           "PG__LOGTO_MANAGER_USER": "${PG__LOGTO_MANAGER_USER:-logto_postgres}",
-          "PG__LOGTO_MANAGER_PASSWORD": "${PG__LOGTO_MANAGER_PASSWORD:-}"
+          "PG__LOGTO_MANAGER_PASSWORD": "${PG__LOGTO_MANAGER_PASSWORD:-}",
+          "IDP__ROLE_STORE": "${IDP__ROLE_STORE:-trex}"
         },
         "white-rabbit": {
           "PG_ADMIN_PASSWORD": "${PG_ADMIN_PASSWORD}",
