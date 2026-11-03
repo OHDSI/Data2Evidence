@@ -5,7 +5,7 @@ export interface ConfigStamp {
   configVersion: string;
 }
 
-const COHORT_ROUTE = "/d2e/portal/researcher/cohort";
+const COHORT_ROUTE = "/atlas/#/plugins/patient-analytics/";
 const LINK_TYPE = "cohort-definition";
 const URL_WARN_THRESHOLD = 2048;
 
