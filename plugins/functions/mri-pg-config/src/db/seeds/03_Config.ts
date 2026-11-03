@@ -20434,6 +20434,31 @@ export const cdwConfigDuckdb = {
                         "standardConceptCodeFilter": "",
                         "cohortDefinitionKey": "CodesetId",
                         "conceptIdentifierType": "name"
+                    },
+                    "visit_concept_id": {
+                      "name": [{ "lang": "", "value": "Visit concept id" }],
+                      "disabledLangName": [
+                        { "lang": "en", "value": "", "visible": true },
+                        { "lang": "de", "value": "", "visible": true },
+                        { "lang": "fr", "value": "", "visible": true },
+                        { "lang": "es", "value": "", "visible": true },
+                        { "lang": "pt", "value": "", "visible": true },
+                        { "lang": "zh", "value": "", "visible": true }
+                      ],
+                      "type": "text",
+                      "expression": "@REF.concept_id",
+                      "defaultPlaceholder": "@REF",
+                      "defaultFilter": "@REF.concept_id = @VISIT.VISIT_CONCEPT_ID",
+                      "referenceFilter": "@REF.DOMAIN_ID = 'Visit' AND @REF.STANDARD_CONCEPT = 'S' AND JARO_SIMILARITY(lower(@REF.CONCEPT_NAME), lower('@SEARCH_QUERY')) >= 0.65",
+                      "referenceExpression": "@REF.CONCEPT_ID",
+                      "order": 0,
+                      "domainFilter": "",
+                      "includeDescendants": false,
+                      "includeDescendantsExpression": "",
+                      "optionalFiltering": false,
+                      "standardConceptCodeFilter": "",
+                      "cohortDefinitionKey": "CodesetId",
+                      "conceptIdentifierType": "id"
                     }
                 }
             },
