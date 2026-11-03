@@ -36,6 +36,7 @@ const bookmarkURL = '/analytics-svc/api/services/bookmark'
 const webApiCohortDefinitionURL = '/d2e-webapi/cohortdefinition'
 let latestLoadAllRequestId = 0
 let latestAppliedLoadAllRequestId = 0
+let latestSettledLoadAllRequestId = 0
 
 // getters
 const getters = {
@@ -441,7 +442,10 @@ const actions = {
         }
       })
       .finally(() => {
-        commit(types.SET_BOOKMARKS_LOADING, { loading: false })
+        latestSettledLoadAllRequestId = Math.max(latestSettledLoadAllRequestId, loadAllRequestId)
+        if (latestSettledLoadAllRequestId === latestLoadAllRequestId) {
+          commit(types.SET_BOOKMARKS_LOADING, { loading: false })
+        }
       })
   },
   /**

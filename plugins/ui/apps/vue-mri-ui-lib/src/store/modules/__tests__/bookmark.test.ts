@@ -652,6 +652,49 @@ describe('store - bookmark', () => {
           [types.SET_BOOKMARKS, ['newer']],
         ])
       })
+
+      it('keeps the list loading until the newer loadAll settles when the older one arrives first', async () => {
+        const commit = vi.fn()
+        const { older, newer, olderRun, newerRun } = startTwoLoads(commit)
+
+        older.resolve({ data: {} })
+        await olderRun
+        expect(commit).not.toHaveBeenCalledWith(types.SET_BOOKMARKS_LOADING, { loading: false })
+
+        newer.resolve({ data: {} })
+        await newerRun
+        expect(commit).toHaveBeenLastCalledWith(types.SET_BOOKMARKS_LOADING, { loading: false })
+      })
+
+      it('keeps the list loading when a write fails while a loadAll is pending', async () => {
+        const commit = vi.fn()
+        const pendingLoad = createDeferred()
+        const dispatch = vi
+          .fn()
+          .mockReturnValueOnce(pendingLoad.promise)
+          .mockRejectedValueOnce(new Error('Network Error'))
+        const context = {
+          state: { bookmarksDatasetId: 'dataset-1' },
+          commit,
+          dispatch,
+          rootGetters: {
+            ...rootGetters,
+            getMriFrontendConfig: {
+              ...rootGetters.getMriFrontendConfig,
+              getDatamodelConfigId: () => 'cdm-config-id',
+              getVersion: () => 'v1',
+            },
+          },
+        }
+        const loadRun = bookmarkModule.actions.fireBookmarkQuery(context, loadAll())
+
+        await bookmarkModule.actions.fireBookmarkQuery(context, { params: { cmd: 'insert' } })
+        expect(commit).not.toHaveBeenCalledWith(types.SET_BOOKMARKS_LOADING, { loading: false })
+
+        pendingLoad.resolve({ data: {} })
+        await loadRun
+        expect(commit).toHaveBeenLastCalledWith(types.SET_BOOKMARKS_LOADING, { loading: false })
+      })
     })
 
     describe('refreshBookmarksForDatasetSwitch', () => {
