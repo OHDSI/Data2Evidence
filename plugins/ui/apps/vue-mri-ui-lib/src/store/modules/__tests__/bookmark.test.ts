@@ -1,4 +1,4 @@
-import { vi, describe, expect, it } from 'vitest'
+import { vi, describe, expect, it, afterEach } from 'vitest'
 
 vi.mock('axios')
 vi.mock('@/stores/notifications', () => ({
@@ -23,6 +23,7 @@ vi.mock('@/utils/BookmarkUtils', () => ({
 
 import bookmarkModule from '../bookmark'
 import * as types from '../../mutation-types'
+import { processBookmarksData } from '@/utils/BookmarkUtils'
 
 describe('store - bookmark', () => {
   describe('mutations', () => {
@@ -569,6 +570,87 @@ describe('store - bookmark', () => {
         await run
 
         expect(commit).toHaveBeenCalledWith(types.SET_BOOKMARKS_LOADING, { loading: false })
+      })
+    })
+
+    describe('fireBookmarkQuery - overlapping loadAll requests', () => {
+      const rootGetters = {
+        getMriFrontendConfig: {
+          getPaConfigId: () => 'pa-config-id',
+          _internalConfig: { panelOptions: { atlasCohortDefinition: false } },
+        },
+        getSelectedDataset: { id: 'dataset-1' },
+        getText: (key: string) => key,
+      }
+      const loadAll = () => ({ method: 'get', params: { cmd: 'loadAll' } })
+
+      afterEach(() => {
+        vi.mocked(processBookmarksData).mockImplementation(() => ({
+          bookmarks: [],
+          materializedCohorts: [],
+          atlasCohortDefinitions: [],
+        }))
+      })
+
+      const startTwoLoads = (commit: ReturnType<typeof vi.fn>) => {
+        const older = createDeferred()
+        const newer = createDeferred()
+        const dispatch = vi.fn().mockReturnValueOnce(older.promise).mockReturnValueOnce(newer.promise)
+        const context = { state: { bookmarksDatasetId: 'dataset-1' }, commit, dispatch, rootGetters }
+        const olderRun = bookmarkModule.actions.fireBookmarkQuery(context, loadAll())
+        const newerRun = bookmarkModule.actions.fireBookmarkQuery(context, loadAll())
+        return { older, newer, olderRun, newerRun }
+      }
+
+      it('keeps the newer list when an older loadAll response arrives last', async () => {
+        vi.mocked(processBookmarksData).mockImplementation((data: any) => ({
+          bookmarks: data.bookmarks,
+          materializedCohorts: [],
+          atlasCohortDefinitions: [],
+        }))
+        const commit = vi.fn()
+        const { older, newer, olderRun, newerRun } = startTwoLoads(commit)
+
+        newer.resolve({ data: { bookmarks: ['newer'] } })
+        await newerRun
+        older.resolve({ data: { bookmarks: ['older'] } })
+        await olderRun
+
+        const listCommits = commit.mock.calls.filter(([type]) => type === types.SET_BOOKMARKS)
+        expect(listCommits).toEqual([[types.SET_BOOKMARKS, ['newer']]])
+      })
+
+      it('does not show a load error when an older loadAll fails after a newer one succeeded', async () => {
+        const commit = vi.fn()
+        const { older, newer, olderRun, newerRun } = startTwoLoads(commit)
+
+        newer.resolve({ data: {} })
+        await newerRun
+        older.reject(new Error('Network Error'))
+        await expect(olderRun).rejects.toThrow('Network Error')
+
+        expect(commit).not.toHaveBeenCalledWith(types.SET_BOOKMARKS_LOAD_ERROR, { loadError: true })
+      })
+
+      it('applies both lists in order when the older loadAll response arrives first', async () => {
+        vi.mocked(processBookmarksData).mockImplementation((data: any) => ({
+          bookmarks: data.bookmarks,
+          materializedCohorts: [],
+          atlasCohortDefinitions: [],
+        }))
+        const commit = vi.fn()
+        const { older, newer, olderRun, newerRun } = startTwoLoads(commit)
+
+        older.resolve({ data: { bookmarks: ['older'] } })
+        await olderRun
+        newer.resolve({ data: { bookmarks: ['newer'] } })
+        await newerRun
+
+        const listCommits = commit.mock.calls.filter(([type]) => type === types.SET_BOOKMARKS)
+        expect(listCommits).toEqual([
+          [types.SET_BOOKMARKS, ['older']],
+          [types.SET_BOOKMARKS, ['newer']],
+        ])
       })
     })
 
