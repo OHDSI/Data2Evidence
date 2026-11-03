@@ -49,6 +49,8 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByRole('link', { name: 'Data sources' }).click()
   await expect(page.locator('.d2e-table tbody tr').first()).toBeVisible()
   await expect(page.locator('tr', { hasText: 'Demo dataset' }).first()).toBeVisible()
+  // FHIR data sources are listed under their own tab in the redesigned page.
+  await page.getByRole('tab', { name: 'FHIR data source' }).click()
   const datasetRow = page.locator('tr', { hasText: `${datasetSchema}` }).first()
   while (await datasetRow.isVisible()) {
     await datasetRow.getByRole('button', { name: 'Actions' }).click()
@@ -58,6 +60,7 @@ test(TEST_NAME, async ({ page }) => {
     await page.getByRole('button', { name: 'Yes, delete' }).click()
     await page.reload()
     await expect(page.locator('.d2e-table tbody tr').first()).toBeVisible()
+    await page.getByRole('tab', { name: 'FHIR data source' }).click()
   }
 
   // Add new dataset
@@ -74,7 +77,7 @@ test(TEST_NAME, async ({ page }) => {
   await expect(page.getByText(`Data source ${datasetSchema} has been created successfully.`)).toBeVisible()
   await page.getByTestId('dialog-close').click()
   await page.reload()
-  await expect(page.locator('.d2e-table tbody tr').first()).toBeVisible()
+  await page.getByRole('tab', { name: 'FHIR data source' }).click()
   const fhirDataset = page.locator('tr', { hasText: datasetSchema }).first()
   await expect(fhirDataset).toBeVisible({ timeout: MINUTE_2 })
 
@@ -85,8 +88,6 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByRole('textbox', { name: 'Enter dataset name to confirm' }).fill(datasetSchema)
   await page.getByRole('button', { name: 'Yes, delete' }).click()
 
-  // Confirm the dataset no longer appears in the list
-  // await page.reload()
-  await expect(page.locator('.d2e-table tbody tr').first()).toBeVisible()
-  await expect(page.locator('tr', { hasText: datasetSchema })).toHaveCount(0)
+  // Confirm the dataset no longer appears in the list (FHIR tab may now be empty)
+  await expect(page.locator('tr', { hasText: datasetSchema })).toHaveCount(0, { timeout: MINUTE_2 })
 })
