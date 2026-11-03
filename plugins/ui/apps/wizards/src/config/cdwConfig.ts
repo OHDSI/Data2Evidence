@@ -151,8 +151,6 @@ export async function fetchAttributeValues(
     },
   });
 
-  // The API can return non-string values (e.g. numeric concept ids) and "NoValue" as text;
-  // normalise to strings so downstream filtering (toLowerCase) doesn't throw.
   const items: Array<{ value: unknown; text?: string | null }> = response.data?.data || [];
   return items.map((item) => {
     const value = String(item.value ?? "");
