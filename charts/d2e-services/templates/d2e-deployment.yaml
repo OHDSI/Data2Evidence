@@ -40,6 +40,22 @@ spec:
         - name: atlas-db-init
           configMap:
             name: "{{ .Release.Name }}-{{ .Chart.Name }}-atlas-db-init"
+        # trex migrations plugin for the `notebook` schema; the image does not
+        # ship it. ConfigMap keys are flat, so items rebuild the plugin layout.
+        - name: notebook-schema
+          configMap:
+            name: "{{ .Release.Name }}-{{ .Chart.Name }}-notebook-schema"
+            items:
+              - key: package.json
+                path: package.json
+              - key: V1__notebook_schema.sql
+                path: migrations/V1__notebook_schema.sql
+              - key: V2__notebook_document.sql
+                path: migrations/V2__notebook_document.sql
+              - key: V3__notebook_graphql_grants.sql
+                path: migrations/V3__notebook_graphql_grants.sql
+              - key: V4__soft_delete_columns.sql
+                path: migrations/V4__soft_delete_columns.sql
         # Internal CA, delivered as a file the way caddy-local-pki already is.
         # Only the CA lands here: trex writes its own cert/key from
         # TLS__INTERNAL__* env, and nothing in this pod terminates TLS on the
@@ -510,6 +526,8 @@ spec:
                 configMapKeyRef:
                   name: "{{ .Release.Name }}-{{ .Chart.Name }}"
                   key: AZ_AUTO_GRANT_RESEARCHER_BY_DATASET_CODES
+            # Logto issues the tokens here, so usermgmt reads a user's roles from
+            # the Logto token and lists users from Logto rather than its own copy.
             - name: USER_MGMT__ROLE_SOURCE
               value: "logto"
             # This chart has not been migrated to the trex identity provider yet;
@@ -849,17 +867,10 @@ spec:
             # OpenID Connect configuration (Logto)
             # Property prefix updated for WebAPI p-hoffmann/openid branch: security.auth.openId.* (was security.oid.*)
             #
-            # These four URLs are LOGTO's, not trex's: /oidc/* is the gateway
-            # route to the idp service (d2e-core's core-config.yaml), and
-            # /oidc/session/end is node-oidc-provider's own end-session path.
-            # trex's provider moving onto @better-auth/oauth-provider therefore
-            # leaves this chart alone, and repointing these at /trex/oidc/* on
-            # its own would break a working install: the client id and secret
-            # below still come from the Logto app's secret keys, D2E_IDP and
-            # IDP__ROLE_STORE below still say logto, and nothing here registers
-            # a trex client. Migrating the chart to trex is those changes plus
-            # TREX__OIDC__WEBAPI_CLIENT_ID/_SECRET in d2e-secrets.yaml and the
-            # TREX_OIDC_* block from docker-compose.yml, verified on a cluster.
+            # These URLs are Logto's, not trex's: /oidc/* is the gateway route to
+            # the idp service (d2e-core's core-config.yaml), and /oidc/session/end
+            # is node-oidc-provider's own end-session path. The client is the
+            # Logto app WebAPI signs users in through (alp-app).
             - name: SECURITY_AUTH_OIDC_CLIENTID
               valueFrom:
                 secretKeyRef:
@@ -1246,6 +1257,11 @@ spec:
             # webapi-init container, which ran the same files through psql.
             - mountPath: /usr/src/atlas-db-init
               name: atlas-db-init
+            # `notebook` schema + PostGraphile grants, applied by trex against
+            # _config and tracked in notebook.refinery_schema_history.
+            - mountPath: /usr/src/bundled-plugins/notebook-schema
+              name: notebook-schema
+              readOnly: true
             # The internal CA, read by the args above (OS trust store, for
             # shell/curl and DENO_TLS_CA_STORE=system) and by the GraalVM WebAPI
             # via WEBAPI_TRUST_CERTS. Without this mount all three go untrusted.

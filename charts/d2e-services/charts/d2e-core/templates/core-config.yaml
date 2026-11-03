@@ -87,6 +87,11 @@ data:
         }
         redir @atlas_uppercase /atlas{re.atlas_case.1} 301
 
+        # Bare root lands on Atlas. Matched exactly so only "/" moves: every
+        # other path still falls through to the trex gateway below.
+        @root path /
+        redir @root /atlas/ 302
+
         @portalpath {
             path /d2e/portal/researcher/*
             path /d2e/portal/systemadmin/*
