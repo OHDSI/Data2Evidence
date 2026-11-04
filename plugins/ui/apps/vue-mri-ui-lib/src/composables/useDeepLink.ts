@@ -24,6 +24,52 @@ export function useDeepLink(dispatch: any, options?: { guard?: (action: () => vo
   const processed = ref(false)
 
   /**
+   * Read deep-link params from the URL.
+   *
+   * Legacy iframe/portal links carry them in location.search. Atlas PA links
+   * carry them in the hash query (`#/plugins/patient-analytics/?…`), which
+   * location.search does not see. The search path wins when both exist,
+   * preserving the existing ingestion contract.
+   */
+  const readDeepLinkParams = (): { params: URLSearchParams; fromHash: boolean } => {
+    const searchParams = new URLSearchParams(window.location.search)
+    if (searchParams.get('linkType')) {
+      return { params: searchParams, fromHash: false }
+    }
+    const hash = window.location.hash || ''
+    const qIndex = hash.indexOf('?')
+    if (qIndex >= 0 && qIndex < hash.length - 1) {
+      return { params: new URLSearchParams(hash.slice(qIndex + 1)), fromHash: true }
+    }
+    return { params: searchParams, fromHash: false }
+  }
+
+  /**
+   * Remove the consumed deep-link keys from the URL after a successful load.
+   * For hash-sourced links, rewrite only the hash query, preserving the route,
+   * datasetId, unrelated params and history.state.
+   */
+  const cleanDeepLinkParams = (fromHash: boolean) => {
+    const keys = ['linkType', 'query', 'wizards']
+    if (!fromHash) {
+      const cleanUrl = new URL(window.location.href)
+      keys.forEach(k => cleanUrl.searchParams.delete(k))
+      window.history.replaceState(window.history.state, '', cleanUrl.toString())
+      return
+    }
+    const hash = window.location.hash || ''
+    const qIndex = hash.indexOf('?')
+    if (qIndex < 0) return
+    const route = hash.slice(0, qIndex)
+    const hashParams = new URLSearchParams(hash.slice(qIndex + 1))
+    keys.forEach(k => hashParams.delete(k))
+    const rest = hashParams.toString()
+    const cleanUrl = new URL(window.location.href)
+    cleanUrl.hash = rest ? `${route}?${rest}` : route
+    window.history.replaceState(window.history.state, '', cleanUrl.toString())
+  }
+
+  /**
    * Process deep link from URL query parameters
    *
    * Checks for linkType=cohort-definition and query parameter,
@@ -38,10 +84,10 @@ export function useDeepLink(dispatch: any, options?: { guard?: (action: () => vo
     }
 
     // Read URL parameters
-    const params = new URLSearchParams(window.location.search)
-    const linkType = params.get('linkType')
-    const query = params.get('query')
-    const wizardsParam = params.get('wizards')
+    const params = readDeepLinkParams()
+    const linkType = params.params.get('linkType')
+    const query = params.params.get('query')
+    const wizardsParam = params.params.get('wizards')
 
     // Check if this is a cohort definition deep link
     if (linkType !== 'cohort-definition') {
@@ -126,11 +172,7 @@ export function useDeepLink(dispatch: any, options?: { guard?: (action: () => vo
           console.debug('[DeepLink] loadBookmarkDataToState completed successfully')
 
           // Clean up URL by removing deep link params
-          const cleanUrl = new URL(window.location.href)
-          cleanUrl.searchParams.delete('linkType')
-          cleanUrl.searchParams.delete('query')
-          cleanUrl.searchParams.delete('wizards')
-          window.history.replaceState(window.history.state, '', cleanUrl.toString())
+          cleanDeepLinkParams(params.fromHash)
 
           // Show success message, enhanced if wizard config has conditions/years
           let successMessage = 'Cohort definition loaded successfully from shared link.'

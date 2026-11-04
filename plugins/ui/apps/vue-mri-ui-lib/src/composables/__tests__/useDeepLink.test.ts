@@ -39,10 +39,13 @@ describe('useDeepLink', () => {
     })
   })
 
-  const mockLocation = (search: string) => {
+  const mockLocation = (search: string, hash = '') => {
     const origin = originalLocation.origin || 'http://localhost:3000'
     const pathname = originalLocation.pathname || '/'
     const url = new URL(`${origin}${pathname}${search}`)
+    if (hash) {
+      url.hash = hash
+    }
     const locationMock = Object.create(originalLocation) as Location
 
     Object.defineProperties(locationMock, {
@@ -50,6 +53,7 @@ describe('useDeepLink', () => {
       origin: { value: url.origin, configurable: true },
       pathname: { value: url.pathname, configurable: true },
       search: { value: url.search, configurable: true },
+      hash: { value: url.hash, configurable: true },
     })
 
     Object.defineProperty(window, 'location', {
@@ -243,5 +247,83 @@ describe('useDeepLink', () => {
 
     expect(CohortUrlCodec.safeDecompress).not.toHaveBeenCalled()
     expect(mockDispatch).not.toHaveBeenCalled()
+  })
+
+  describe('Atlas hash-query ingestion', () => {
+    const HASH_ROUTE = '#/plugins/patient-analytics/'
+
+    it('loads the cohort from the hash query when search has no payload', async () => {
+      mockLocation('', `${HASH_ROUTE}?datasetId=B&linkType=cohort-definition&query=hashQuery123`)
+      const mockBookmark = { filter: { some: 'filter' }, axisSelection: [], chartType: 'stacked' }
+      ;(CohortUrlCodec.safeDecompress as Mock).mockReturnValue({ success: true, data: mockBookmark })
+
+      const { processDeepLink } = useDeepLink(mockDispatch)
+      await processDeepLink()
+
+      expect(CohortUrlCodec.safeDecompress).toHaveBeenCalledWith('hashQuery123')
+      expect(mockDispatch).toHaveBeenCalledWith('loadBookmarkDataToState', {
+        bookmark: mockBookmark,
+        chartType: 'stacked',
+      })
+    })
+
+    it('prefers the legacy search payload when both search and hash carry one', async () => {
+      mockLocation('?linkType=cohort-definition&query=searchQuery', `${HASH_ROUTE}?linkType=cohort-definition&query=hashQuery`)
+      ;(CohortUrlCodec.safeDecompress as Mock).mockReturnValue({
+        success: true,
+        data: { filter: { some: 'filter' } },
+      })
+
+      const { processDeepLink } = useDeepLink(mockDispatch)
+      await processDeepLink()
+
+      expect(CohortUrlCodec.safeDecompress).toHaveBeenCalledWith('searchQuery')
+    })
+
+    it('cleans only consumed keys from the hash, preserving route, datasetId and other params', async () => {
+      mockLocation('', `${HASH_ROUTE}?datasetId=B&linkType=cohort-definition&query=hashQuery123&foo=bar`)
+      ;(CohortUrlCodec.safeDecompress as Mock).mockReturnValue({
+        success: true,
+        data: { filter: { some: 'filter' } },
+      })
+      // The location mock's href/hash are static, so observe the rewrite via replaceState.
+      const replaceStateSpy = vi.spyOn(window.history, 'replaceState')
+
+      const { processDeepLink } = useDeepLink(mockDispatch)
+      await processDeepLink()
+
+      expect(replaceStateSpy).toHaveBeenCalled()
+      const rewritten = new URL(replaceStateSpy.mock.calls.at(-1)![2] as string)
+      const hash = rewritten.hash
+      expect(hash.startsWith(HASH_ROUTE)).toBe(true)
+      const params = new URLSearchParams(hash.slice(HASH_ROUTE.length))
+      expect(params.get('datasetId')).toBe('B')
+      expect(params.get('foo')).toBe('bar')
+      expect(params.get('linkType')).toBeNull()
+      expect(params.get('query')).toBeNull()
+      replaceStateSpy.mockRestore()
+    })
+
+    it('leaves the hash intact when decompression fails', async () => {
+      const originalHash = `${HASH_ROUTE}?datasetId=B&linkType=cohort-definition&query=badQuery`
+      mockLocation('', originalHash)
+      ;(CohortUrlCodec.safeDecompress as Mock).mockReturnValue({ success: false, error: 'bad' })
+
+      const { processDeepLink } = useDeepLink(mockDispatch)
+      await processDeepLink()
+
+      expect(window.location.hash).toBe(originalHash)
+      expect(mockDispatch).not.toHaveBeenCalledWith('loadBookmarkDataToState', expect.anything())
+    })
+
+    it('does nothing when the hash has no query', async () => {
+      mockLocation('', HASH_ROUTE)
+
+      const { processDeepLink } = useDeepLink(mockDispatch)
+      await processDeepLink()
+
+      expect(CohortUrlCodec.safeDecompress).not.toHaveBeenCalled()
+      expect(mockDispatch).not.toHaveBeenCalled()
+    })
   })
 })
