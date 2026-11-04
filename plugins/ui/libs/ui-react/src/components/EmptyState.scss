@@ -1,0 +1,81 @@
+.d2e-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  font-family: var(--d2e-font-family);
+  text-align: center;
+
+  &--s {
+    gap: 8px;
+  }
+
+  // Icon scale per size — fixed box; inline SVG fills it, MUI icons use font-size.
+  &__icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: none;
+    color: var(--d2e-color-neutral-light);
+
+    > svg,
+    > img {
+      width: 100%;
+      height: 100%;
+    }
+
+    .MuiSvgIcon-root {
+      font-size: inherit;
+    }
+  }
+
+  &--s &__icon {
+    width: 90px;
+    height: 90px;
+    font-size: 90px;
+  }
+
+  &--m &__icon {
+    width: 140px;
+    height: 140px;
+    font-size: 140px;
+  }
+
+  &--l &__icon {
+    width: 200px;
+    height: 200px;
+    font-size: 200px;
+  }
+
+  &__text {
+    display: flex;
+    flex-direction: column;
+    gap: var(--d2e-spacing-xxs);
+    color: var(--d2e-color-neutral);
+  }
+
+  &__title {
+    margin: 0;
+    font-weight: 600;
+    font-size: 16px;
+    line-height: 1.5;
+  }
+
+  &__description {
+    margin: 0;
+    font-weight: 400;
+    font-size: 16px;
+    line-height: 1.5;
+  }
+
+  // Figma: the small size drops the description to 14px.
+  &--s &__description {
+    font-size: 14px;
+  }
+
+  &__action {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+}

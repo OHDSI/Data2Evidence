@@ -97,6 +97,23 @@ describe('useDeepLink', () => {
     expect(mockDispatch).not.toHaveBeenCalledWith('setAlertMessage', expect.anything())
   })
 
+  it('keeps the current history state when it removes the deep link params', async () => {
+    mockLocation('?linkType=cohort-definition&query=testQuery123')
+    ;(CohortUrlCodec.safeDecompress as Mock).mockReturnValue({
+      success: true,
+      data: { filter: { some: 'filter' }, axisSelection: [], chartType: 'stacked' },
+    })
+    const builderState = { position: 3, d2eExplorationBuilder: true }
+    mockDispatch.mockImplementation(async () => {
+      window.history.pushState(builderState, '')
+    })
+
+    const { processDeepLink } = useDeepLink(mockDispatch)
+    await processDeepLink()
+
+    expect(window.history.state).toEqual(builderState)
+  })
+
   it('should do nothing when no query param present', async () => {
     mockLocation('?linkType=cohort-definition')
 

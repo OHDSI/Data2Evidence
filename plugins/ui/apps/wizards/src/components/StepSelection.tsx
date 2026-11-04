@@ -5,10 +5,17 @@ import type { WizardDefinition } from "../types/wizard";
 import { listAtlasSources, publishAtlasSourceSelection, resolveAtlasSourceKey } from "../api/atlasSourceApi";
 import type { AtlasSource } from "../api/atlasSourceApi";
 import { DataSourceSelect } from "./DataSourceSelect";
+import { GRID_VIEW_ICON, LIST_VIEW_ICON, ViewToggle } from "./ViewToggle";
 import { filterWizards } from "../utils/wizardSearch";
+import { sortByLabel } from "../utils/sortByLabel";
 import styles from "./StepSelection.module.css";
 
 type ViewMode = "tiles" | "list";
+
+const VIEW_OPTIONS = [
+  { value: "tiles", label: "Grid view", iconPath: GRID_VIEW_ICON },
+  { value: "list", label: "List view", iconPath: LIST_VIEW_ICON },
+] as const;
 
 /**
  * Wizard selection grid.
@@ -217,40 +224,11 @@ export function StepSelection() {
           />
         </label>
         <div className={styles.toolbarActions}>
-          <div className={styles.viewToggle} role="group" aria-label="Wizard view">
-            <button
-              type="button"
-              className={viewMode === "tiles" ? styles.viewButtonActive : styles.viewButton}
-              onClick={() => setViewMode("tiles")}
-              aria-label="Tile view"
-              aria-pressed={viewMode === "tiles"}
-            >
-              <svg viewBox="0 0 24 24" aria-hidden="true">
-                <rect x="4" y="4" width="6" height="6" />
-                <rect x="14" y="4" width="6" height="6" />
-                <rect x="4" y="14" width="6" height="6" />
-                <rect x="14" y="14" width="6" height="6" />
-              </svg>
-            </button>
-            <button
-              type="button"
-              className={viewMode === "list" ? styles.viewButtonActive : styles.viewButton}
-              onClick={() => setViewMode("list")}
-              aria-label="List view"
-              aria-pressed={viewMode === "list"}
-            >
-              <svg viewBox="0 0 24 24" aria-hidden="true">
-                <circle cx="5" cy="6" r="1" />
-                <circle cx="5" cy="12" r="1" />
-                <circle cx="5" cy="18" r="1" />
-                <path d="M9 6h11M9 12h11M9 18h11" />
-              </svg>
-            </button>
-          </div>
+          <ViewToggle value={viewMode} options={VIEW_OPTIONS} ariaLabel="Wizard view" onChange={setViewMode} />
           {portalProps.isAtlas === true ? (
             <div className={styles.sourceField}>
               <DataSourceSelect
-                options={sources.map((source) => ({ value: source.sourceKey, label: source.sourceName }))}
+                options={sortByLabel(sources.map((source) => ({ value: source.sourceKey, label: source.sourceName })))}
                 value={portalProps.datasetId || ""}
                 placeholder={
                   sourcesLoading

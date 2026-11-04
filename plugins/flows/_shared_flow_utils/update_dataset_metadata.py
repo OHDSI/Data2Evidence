@@ -1,8 +1,6 @@
-import json
 from datetime import datetime
 
 from _shared_flow_utils.dao.DBDao import DBDao
-from _shared_flow_utils.types import EntityCountDistributionType
 
 
 # List of tables linked to person table
@@ -112,11 +110,11 @@ def update_entity_count(portal_server_api,
 
 def update_total_entity_count(portal_server_api,
                               dataset_id: str, 
-                              entity_count_distribution: dict | None,
+                              entity_counts: dict | None,
                               logger) -> str:
     total_entity_count = None
     try:
-        total_entity_count = get_total_entity_count(entity_count_distribution, logger)
+        total_entity_count = get_total_entity_count(entity_counts, logger)
         portal_server_api.update_dataset_attributes_table(dataset_id, "entity_count", total_entity_count)
     except Exception as e:
         logger.error(f"Failed to update attribute 'entity_count' for dataset '{dataset_id}' with value '{total_entity_count}': {e}")
@@ -124,15 +122,11 @@ def update_total_entity_count(portal_server_api,
         logger.info(f"Updated attribute 'entity_count' for dataset '{dataset_id}' with value '{total_entity_count}'")
 
 
-def get_total_entity_count(entity_count_distribution: dict | None, logger) -> str | None:
+def get_total_entity_count(entity_counts: dict | None, logger) -> str | None:
     try:
         total_entity_count = 0
-        for entity, entity_count in entity_count_distribution.items():
-            # value could be str(int) or "error"
-            if entity_count == "error":
-                continue
-            else:
-                total_entity_count += int(entity_count)
+        for entity, entity_count in entity_counts.items():
+            total_entity_count += int(entity_count)
     except Exception as e:
         error_msg = f"Error retrieving entity count"
         logger.error(f"{error_msg}: {e}")
@@ -140,38 +134,15 @@ def get_total_entity_count(entity_count_distribution: dict | None, logger) -> st
     return str(total_entity_count)
 
 
-def update_entity_count_distribution(portal_server_api,
-                                     dataset_id: str, 
-                                     dbdao: DBDao, 
-                                     schema_name: str,
-                                     logger,
-                                     *,
-                                     distinct_count: bool = True,
-                                     ) -> EntityCountDistributionType:
-    try:
-        entity_count_distribution = get_entity_count_distribution(dbdao, schema_name, distinct_count, logger)
-        portal_server_api.update_dataset_attributes_table(dataset_id, 'entity_count_distribution', json.dumps(entity_count_distribution))
-    except Exception as e:
-        logger.error(f"Failed to update attribute 'entity_count_distribution' for dataset '{dataset_id}' with value '{json.dumps(entity_count_distribution)}': {e}")
-        return None
-    else:
-        logger.info(f"Updated attribute 'entity_count_distribution' for dataset '{dataset_id}' with value '{json.dumps(entity_count_distribution)}'")
-        return entity_count_distribution
-
-
-def get_entity_count_distribution(dbdao, schema: str, distinct_count: bool, logger) -> EntityCountDistributionType:
-    entity_count_distribution = {}
-    # retrieve count for each entity table
+def get_entity_counts(dbdao, schema: str, logger, *, distinct_count: bool = True) -> dict[str, int]:
+    entity_counts = {}
+    # retrieve count for each entity table, skipping tables that fail
     for table, unique_id_column in OMOP_NON_PERSON_ENTITIES.items():
         try:
-            entity_count = dbdao.get_distinct_count(schema, table, unique_id_column) if distinct_count else dbdao.get_table_row_count(schema, table)
+            entity_counts[table] = dbdao.get_distinct_count(schema, table, unique_id_column) if distinct_count else dbdao.get_table_row_count(schema, table)
         except Exception as e:
             logger.error(f"Error retrieving entity count for {table}: {e}")
-            entity_count = "error"
-        entity_count_key = table.replace("_", " ").title() + " Count"
-        if entity_count != "error":
-            entity_count_distribution[entity_count_key] = str(entity_count)
-    return entity_count_distribution
+    return entity_counts
 
 
 def extract_version(text_str: str) -> str:

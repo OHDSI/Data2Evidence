@@ -1,31 +1,27 @@
 <template>
   <div class="explorations-page" data-testid="explorations-page">
     <div class="explorations-page__card">
-      <header class="explorations-page__header">
-      <div class="explorations-page__heading">
-        <p class="explorations-page__breadcrumb">
-          <span>D2E</span>
-          <span class="explorations-page__breadcrumb-dot">·</span>
-          <span>{{ getText('MRI_PA_EXPLORATIONS_TITLE') }}</span>
-          <span class="explorations-page__breadcrumb-rule" />
-        </p>
-        <h1 class="explorations-page__title">{{ getText('MRI_PA_EXPLORATIONS_TITLE') }}</h1>
-        <p class="explorations-page__description">{{ getText('MRI_PA_EXPLORATIONS_DESCRIPTION') }}</p>
-      </div>
-      <D2eSelect
-        v-if="isAtlasHosted"
-        class="explorations-page__dataset"
-        size="sm"
-        :disabled="!canSwitchDataSource"
-        :label="getText('MRI_PA_EXPLORATIONS_DATASOURCE')"
-        :items="datasetItems"
-        :model-value="datasetId"
-        prepend-icon="mdi-database-outline"
-        hide-details
-        data-testid="explorations-datasource"
-        @update:model-value="onDataSourceSelect"
-      />
-    </header>
+      <D2ePageHeader
+        class="explorations-page__header"
+        :eyebrow="`D2E · ${getText('MRI_PA_EXPLORATIONS_TITLE')}`"
+        :title="getText('MRI_PA_EXPLORATIONS_TITLE')"
+        :subtitle="getText('MRI_PA_EXPLORATIONS_DESCRIPTION')"
+      >
+        <template v-if="isAtlasHosted" #actions>
+          <D2eSelect
+            class="explorations-page__dataset"
+            size="sm"
+            :disabled="!canSwitchDataSource"
+            :label="getText('MRI_PA_EXPLORATIONS_DATASOURCE')"
+            :items="datasetItems"
+            :model-value="datasetId"
+            prepend-icon="mdi-database-outline"
+            hide-details
+            data-testid="explorations-datasource"
+            @update:model-value="onDataSourceSelect"
+          />
+        </template>
+      </D2ePageHeader>
 
     <div v-if="explorations.hasSelection" class="explorations-page__bulk" data-testid="explorations-bulk-bar">
       <D2eCheckbox
@@ -67,12 +63,10 @@
     </div>
     <div v-else class="explorations-page__toolbar">
       <div class="explorations-page__toolbar-left">
-        <D2eTextField
+        <D2eSearchField
           v-model="searchQuery"
           class="explorations-page__search"
           :placeholder="getText('MRI_PA_EXPLORATIONS_SEARCH')"
-          prepend-inner-icon="mdi-magnify"
-          :hide-details="true"
           data-testid="explorations-search"
         />
 
@@ -103,7 +97,13 @@
         </D2eMenu>
       </div>
       <div class="explorations-page__toolbar-right">
-        <D2eMenu :width="220" location="bottom end" :items="sortItems" @select="onSortSelect">
+        <D2eMenu
+          variant="select"
+          width="activator"
+          location="bottom end"
+          :items="sortItems"
+          @select="onSortSelect"
+        >
           <template #activator="activatorProps">
             <D2eButton
               v-bind="activatorProps"
@@ -148,7 +148,7 @@
       <D2eExplorationCard
         v-for="card in cards"
         :key="card.id"
-        width="100%"
+        width="500px"
         :clickable="Boolean(card.bmkId)"
         :name="card.name"
         :selected="explorations.isSelected(card.id)"
@@ -181,14 +181,14 @@
           <v-tooltip
             location="top"
             content-class="explorations-tooltip"
-            :text="getText('MRI_PA_BUTTON_ADD_TO_COLLECTION')"
+            :text="card.materializeLabel"
           >
             <template #activator="{ props: tooltipProps }">
               <span v-bind="tooltipProps">
                 <D2eIconButton
                   category="no-stroke"
                   :disabled="!canMaterialize || !card.canBeMaterialised"
-                  :aria-label="getText('MRI_PA_BUTTON_ADD_TO_COLLECTION')"
+                  :aria-label="card.materializeLabel"
                   :data-testid="`explorations-materialize-btn-${card.id}`"
                   @click="openMaterialize(card.source)"
                 >
@@ -237,31 +237,39 @@
             </template>
           </v-tooltip>
 
-          <!-- Action placeholders. Empty for this release: see
-               SHOW_DATA_QUALITY below. The loop stays so the list only has to
-               be repopulated to bring the buttons back. -->
+          <!-- Atlas only; see SHOW_DATA_QUALITY. Disabled until the
+               exploration has been materialised, because DQD reports on a
+               cohort definition and there is none before that. While a run is
+               being checked, started or followed it shows a spinner and cannot
+               be pressed again; the tooltip follows the phase (useDataQualityRun).
+               The click stops here: the spinner replaces the icon before the
+               card's own listener runs, so its closest() ignore check would
+               start from a detached node and open the exploration. -->
           <v-tooltip
-            v-for="placeholder in ACTION_PLACEHOLDERS"
-            :key="placeholder.testid"
+            v-if="SHOW_DATA_QUALITY"
             location="top"
             content-class="explorations-tooltip"
-            :text="getText(placeholder.labelKey)"
+            :text="dataQualityTooltip(card)"
           >
             <template #activator="{ props: tooltipProps }">
               <span v-bind="tooltipProps">
                 <D2eIconButton
                   category="no-stroke"
-                  :aria-label="getText(placeholder.labelKey)"
-                  :data-testid="`${placeholder.testid}-${card.id}`"
+                  :disabled="!card.cohortDefinitionId || dataQualityBusy(card)"
+                  :loading="dataQualityBusy(card)"
+                  :aria-label="getText('MRI_PA_EXPLORATIONS_DATA_QUALITY')"
+                  :data-testid="`explorations-dq-btn-${card.id}`"
+                  @click.stop="openDataQuality(card)"
                 >
-                  <component :is="placeholder.icon" />
+                  <ExplorationDataQualityIcon />
                 </D2eIconButton>
               </span>
             </template>
           </v-tooltip>
 
           <D2eMenu
-            :width="220"
+            width="max-content"
+            density="compact"
             location="bottom end"
             :items="moreItems(card)"
             @select="onMoreSelect(card, $event)"
@@ -334,6 +342,16 @@
     <RenameExplorationDialog v-model="renameOpen" :bookmark-display="actionTarget" />
     <DeleteExplorationDialog v-model="deleteOpen" :bookmark-display="actionTarget" />
 
+    <!-- Atlas only; see SHOW_DATA_QUALITY. Mounted on the build gate rather
+         than on `dqOpen` so the close transition survives. -->
+    <DataQualityDialog
+      v-if="SHOW_DATA_QUALITY"
+      v-model="dqOpen"
+      :dataset-id="datasetId"
+      :cohort-definition-id="dqCohortDefinitionId"
+      :exploration-name="dqExplorationName"
+    />
+
     <!-- Mounted once, outside the grid, as Bookmarks.vue:153-158 does.
          `compareOpen` is a trigger the dialog watches, not its own visibility
          state, so it is reset only in `closeEv` (blueprint pr10/02 section 3b). -->
@@ -393,9 +411,20 @@
 </template>
 
 <script setup lang="ts">
-import { computed, nextTick, reactive, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, reactive, ref, watch } from 'vue'
 import { useStore } from 'vuex'
-import { D2eButton, D2eCheckbox, D2eDialog, D2eExplorationCard, D2eIconButton, D2eMenu, D2eSelect, D2eTextField } from '@d2e/ui'
+import {
+  D2eButton,
+  D2eCheckbox,
+  D2eDialog,
+  D2eExplorationCard,
+  D2eExplorationCardStatus,
+  D2eIconButton,
+  D2eMenu,
+  D2ePageHeader,
+  D2eSearchField,
+  D2eSelect,
+} from '@d2e/ui'
 import { useExplorationsStore } from '../stores/explorations'
 import { useNotificationStore } from '../stores/notifications'
 import { useUnsavedChanges } from '@/composables/useUnsavedChanges'
@@ -408,6 +437,8 @@ import {
   shouldResetDashboardFlow,
 } from './helpers/explorationAnalyze'
 import { filterAndSort, toCardId, type ExplorationSortKey } from './helpers/explorationList'
+import { dataQualityCohortId, dataQualityTooltipKey, isDataQualityBusy } from './helpers/explorationDataQuality'
+import { useDataQualityRun } from '../composables/useDataQualityRun'
 import { allSelected, someSelected } from './helpers/explorationSelection'
 import {
   applyFilters,
@@ -418,12 +449,15 @@ import {
   visibleToUser,
   type ExplorationFilters,
 } from './helpers/explorationFilters'
-import { PAGE_SIZES, clampPage, pageSlice } from './helpers/explorationPaging'
+import { clampPage, pageSlice } from './helpers/explorationPaging'
 import { fallbackDatasetId } from './helpers/dataSourceSelection'
+import { sortByLabel } from './helpers/sortByLabel'
 import { chartQueryFor } from './helpers/explorationSqlQuery'
 import { deleteExploration, type DeleteExplorationDeps } from './helpers/deleteExploration'
 import { canDeleteAll, runBulkDelete } from './helpers/bulkDeleteExplorations'
+import { cardStatus } from './helpers/explorationCardStatus'
 import { canModifyBookmark, getBookmarkType } from '../utils/BookmarkUtils'
+import DateUtils from '../utils/DateUtils'
 import ExplorationMaterializeIcon from './icons/ExplorationMaterializeIcon.vue'
 import ExplorationDataQualityIcon from './icons/ExplorationDataQualityIcon.vue'
 import ExplorationFilterSummaryIcon from './icons/ExplorationFilterSummaryIcon.vue'
@@ -434,6 +468,7 @@ import ExplorationMoreIcon from './icons/ExplorationMoreIcon.vue'
 import AddCohort from './AddCohort.vue'
 import RenameExplorationDialog from './RenameExplorationDialog.vue'
 import DeleteExplorationDialog from './DeleteExplorationDialog.vue'
+import DataQualityDialog from './DataQualityDialog.vue'
 import ExplorationFiltersPanel from './ExplorationFiltersPanel.vue'
 import FilterCardSummary from './FilterCardSummary.vue'
 import DashboardFlowModals from './DashboardFlowModals.vue'
@@ -470,37 +505,30 @@ const IGNORED_CLICK_TARGETS = [
   '.d2e-exploration-card__lead-row .v-btn',
 ].join(', ')
 
-// #3119 data quality is not wired yet. It renders so the action bar matches
-// the frame. #3120 filter summary and #3121 analyze are wired below.
 /**
- * Data quality is hidden for this release.
+ * Data quality is an Atlas-only action (#3119).
  *
- * The button rendered so the action bar matched the frame, but it opens
- * nothing: the page belongs to another plugin and wiring it is #3119. Shipping
- * a control that does nothing when clicked is worse than not showing it.
+ * The dialog mounts the Atlas3 `data-quality` sub-plugin
+ * (plugins/atlas/subplugins/data-quality) as a single-spa parcel. Only the
+ * native Atlas mount shares a document with Atlas's SystemJS runtime, so only
+ * that build can load it - the iframe mount cannot, and the portal has its own
+ * React DQD page.
  *
- * Everything needed to bring it back is still here - the icon, the label and
- * the test id. Set this to true when #3119 lands.
+ * VITE_ATLAS_NATIVE is set only by vite.config.atlas-native.ts's `define`
+ * block. Every other build leaves it undefined, this folds to false, and
+ * neither the button nor the dialog renders. Same gate as `canSwitchDataSource`
+ * below.
  */
-const SHOW_DATA_QUALITY = false
+const SHOW_DATA_QUALITY = import.meta.env.VITE_ATLAS_NATIVE === 'true'
 
-const ALL_ACTION_PLACEHOLDERS = [
-  {
-    icon: ExplorationDataQualityIcon,
-    labelKey: 'MRI_PA_EXPLORATIONS_DATA_QUALITY',
-    testid: 'explorations-dq-btn',
-  },
-]
-
-const ACTION_PLACEHOLDERS = SHOW_DATA_QUALITY ? ALL_ACTION_PLACEHOLDERS : []
 const EMPTY_VALUE = '-'
 
-const searchQuery = ref('')
-const sortKey = ref<ExplorationSortKey>('lastUpdated')
-const filters = ref<ExplorationFilters>(emptyFilters())
+const searchQuery = ref(explorations.listView.searchQuery)
+const sortKey = ref<ExplorationSortKey>(explorations.listView.sortKey)
+const filters = ref<ExplorationFilters>(explorations.listView.filters)
 const filtersOpen = ref(false)
-const page = ref(1)
-const pageSize = ref<number>(PAGE_SIZES[0])
+const page = ref(explorations.listView.page)
+const pageSize = ref<number>(explorations.listView.pageSize)
 const filterSummaryOpen = ref(false)
 /** True while the panel's SQL query is in flight; feeds its `chartBusy` prop. */
 const summaryBusy = ref(false)
@@ -582,7 +610,7 @@ const canSwitchDataSource = computed(() => isAtlasHosted && dataSourceItems.valu
 /** Every source the user can read, for the switcher. */
 const dataSourceItems = computed(() => {
   const sources = (store.getters.getDataSources || []) as Array<{ sourceKey: string; sourceName?: string }>
-  return sources.map(source => ({ label: source.sourceName || source.sourceKey, value: source.sourceKey }))
+  return sortByLabel(sources.map(source => ({ label: source.sourceName || source.sourceKey, value: source.sourceKey })))
 })
 
 /**
@@ -704,6 +732,16 @@ watch([searchQuery, filters, sortKey], () => {
   page.value = 1
 })
 
+watch([searchQuery, sortKey, filters, page, pageSize], () => {
+  explorations.saveListView({
+    searchQuery: searchQuery.value,
+    sortKey: sortKey.value,
+    filters: filters.value,
+    page: page.value,
+    pageSize: pageSize.value,
+  })
+})
+
 const emptyState = computed(() => {
   if (allCards.value.length === 0) {
     return { title: getText('MRI_PA_EXPLORATIONS_EMPTY'), body: getText('MRI_PA_EXPLORATIONS_EMPTY_BODY') }
@@ -736,6 +774,8 @@ const cards = computed(() => {
     const cohortDefinition = card.cohortDefinition
     const atlas = card.atlasCohortDefinition
     const id = toCardId(card)
+    const status = cardStatus(card)
+    const isStale = status === D2eExplorationCardStatus.STALE
     // An Atlas record is a cohort; a D2E bookmark is an exploration.
     const idLabel = ['A', 'A+M'].includes(getBookmarkType(card))
       ? getText('MRI_PA_EXPLORATIONS_COHORT_ID_LABEL')
@@ -748,10 +788,16 @@ const cards = computed(() => {
       bmkId: bookmark?.id ?? null,
       chartType: bookmark?.chartType ?? null,
       isMaterialised: Boolean(cohortDefinition),
+      // DQD reports on a cohort definition, so a never-materialised
+      // exploration has nothing to open. The rule lives in the helper, beside
+      // the Analyze one, so it is testable without mounting the page.
+      cohortDefinitionId: dataQualityCohortId(card),
       // A type 'M' record has neither a bookmark nor an Atlas definition, so
       // there is nothing to materialise; offering it posts a URL with "null".
       canBeMaterialised: Boolean(bookmark || atlas),
-      status: cohortDefinition ? 'ready' : 'not-run',
+      status,
+      // A stale card offers Re-materialize in place of Materialize.
+      materializeLabel: getText(isStale ? 'MRI_PA_BUTTON_REMATERIALIZE' : 'MRI_PA_BUTTON_ADD_TO_COLLECTION'),
       // The card prop is documented as pre-formatted, so localise here.
       personCount:
         typeof cohortDefinition?.patientCount === 'number'
@@ -762,7 +808,7 @@ const cards = computed(() => {
       metadata: [
         {
           label: getText('MRI_PA_EXPLORATIONS_LAST_MATERIALISED'),
-          value: cohortDefinition?.createdOnFormatted || EMPTY_VALUE,
+          value: DateUtils.displayExplorationDate(cohortDefinition?.createdOn) || EMPTY_VALUE,
         },
         // The frame's id row is the materialised cohort's id, so a card that has
         // never been materialised shows a dash (Figma 1798:192928).
@@ -779,7 +825,10 @@ const cards = computed(() => {
         },
         {
           label: getText('MRI_PA_EXPLORATIONS_LAST_UPDATED'),
-          value: bookmark?.dateModifiedFormatted || atlas?.updatedOnFormatted || EMPTY_VALUE,
+          value:
+            DateUtils.displayExplorationDate(bookmark?.dateModified) ||
+            DateUtils.displayExplorationDate(atlas?.updatedOn) ||
+            EMPTY_VALUE,
         },
         { label: getText('MRI_PA_EXPLORATIONS_VERSION'), value: bookmark?.version ?? EMPTY_VALUE },
       ],
@@ -988,6 +1037,67 @@ const onCardClick = (card: { bmkId: string | null; chartType: string | null }, e
 /* ---- card actions ---------------------------------------------------- */
 
 const actionTarget = ref<BookmarkDisplay | null>(null)
+
+/**
+ * The Data quality dialog (#3119).
+ *
+ * Keyed to the clicked card's cohort definition, because DQD reports on a
+ * cohort definition rather than on the exploration record. The name only fills
+ * the dialog subtitle, which the frame writes as "Exploration cohort name: ...".
+ */
+const dqOpen = ref(false)
+const dqCohortDefinitionId = ref('')
+const dqExplorationName = ref('')
+
+/**
+ * The card's Data quality action (#3119). A click reads the cohort's latest run:
+ * a completed one opens the dialog; otherwise useDataQualityRun starts or
+ * follows a run and reports when it ends. The state is learned on click only.
+ */
+const NOTIFICATION_TITLE_KEYS = {
+  success: 'MRI_PA_NOTIFICATION_SUCCESS',
+  warning: 'MRI_PA_NOTIFICATION_WARNING',
+  error: 'MRI_PA_NOTIFICATION_ERROR',
+} as const
+
+const dqRun = useDataQualityRun({
+  datasetId: () => datasetId.value,
+  fetchLatest: (cohortDefinitionId, id) =>
+    store.dispatch('fetchDataQualityFlowRun', { cohortDefinitionId, datasetId: id }),
+  startRun: (cohortDefinitionId, id) =>
+    store.dispatch('startDataQualityFlowRun', { cohortDefinitionId, datasetId: id }),
+  notify: ({ kind, key, name, detail }) => {
+    // setAlertMessage toggles `show`, so close first: the alert must end up
+    // shown even when one is already on screen.
+    notifications.closeAlertNotification()
+    notifications.setAlertMessage({
+      message: detail ? `${getText(key, name)} ${detail}` : getText(key, name),
+      messageType: kind,
+      title: getText(NOTIFICATION_TITLE_KEYS[kind]),
+    })
+  },
+})
+onBeforeUnmount(() => dqRun.dispose())
+
+type DataQualityCard = { cohortDefinitionId: string | number | null }
+const dataQualityPhase = (card: DataQualityCard) =>
+  dqRun.phaseOf(card.cohortDefinitionId === null ? null : String(card.cohortDefinitionId))
+const dataQualityBusy = (card: DataQualityCard): boolean => isDataQualityBusy(dataQualityPhase(card))
+const dataQualityTooltip = (card: DataQualityCard): string =>
+  getText(dataQualityTooltipKey(dataQualityPhase(card), Boolean(card.cohortDefinitionId)))
+
+const openDataQuality = async (card: { name: string; cohortDefinitionId: string | number | null }): Promise<void> => {
+  // The button is disabled in this state; the guard is for keyboard and
+  // programmatic callers that do not go through it.
+  if (!card.cohortDefinitionId) return
+  const id = String(card.cohortDefinitionId)
+  const clickedDatasetId = datasetId.value
+  if ((await dqRun.activate(id, card.name)) !== 'open') return
+  if (datasetId.value !== clickedDatasetId) return
+  dqCohortDefinitionId.value = id
+  dqExplorationName.value = card.name
+  dqOpen.value = true
+}
 const renameOpen = ref(false)
 const deleteOpen = ref(false)
 const materializeTarget = ref<BookmarkDisplay | null>(null)
@@ -1243,7 +1353,7 @@ const moreItems = (card: { source: BookmarkDisplay }) => {
     {
       label: getText('MRI_PA_BUTTON_RENAME'),
       value: 'rename',
-      icon: 'mdi-pencil-outline',
+      icon: 'mdi-square-edit-outline',
       disabled: renameDisabled,
     },
     // #3123. Duplicate copies the bookmark's filters, so it needs a D2E
@@ -1316,7 +1426,7 @@ const onMoreSelect = (card: { source: BookmarkDisplay }, value: string): void =>
 .explorations-page {
   height: 100%;
   padding: 24px;
-  background: var(--d2e-color-neutral-xtra-lightest);
+  background: var(--atlas-color-surface-variant, var(--d2e-color-neutral-xtra-lightest));
   font-family: var(--d2e-font-family);
 
   &__card {
@@ -1326,65 +1436,16 @@ const onMoreSelect = (card: { source: BookmarkDisplay }, value: string): void =>
     overflow: hidden;
     background: var(--d2e-color-white);
     border-radius: var(--d2e-radius-lg);
+    box-shadow: var(--d2e-elevation-page);
   }
 
   &__header {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 24px;
     padding: 24px;
     // Never shrink: the card is now clamped to viewport height, and only
     // __status/__grid (both `min-height: 0`) are meant to absorb a shortfall
     // by scrolling. Without this, a very short viewport would squeeze the
     // header instead of the content that's actually built to give way.
     flex-shrink: 0;
-  }
-
-  /* 10px Medium, 1px tracking, closed by a 24x2 secondary rule
-     (Figma 1676:221313). */
-  &__breadcrumb {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin: 0 0 8px;
-    font-size: 10px;
-    font-weight: 500;
-    line-height: 1.5;
-    letter-spacing: 1px;
-    text-transform: uppercase;
-    color: var(--d2e-color-primary);
-  }
-
-  &__breadcrumb-dot {
-    font-size: 12px;
-    font-weight: 600;
-    letter-spacing: 1.2px;
-    color: var(--d2e-color-neutral-black);
-  }
-
-  &__breadcrumb-rule {
-    width: 24px;
-    height: 2px;
-    border-radius: 200px;
-    background: var(--d2e-color-secondary);
-  }
-
-  &__title {
-    margin: 0 0 8px;
-    font-size: 24px;
-    font-weight: 600;
-    line-height: 1.2;
-    letter-spacing: -2px;
-    color: var(--d2e-color-primary);
-  }
-
-  &__description {
-    max-width: 760px;
-    margin: 0;
-    font-size: 14px;
-    line-height: 1.5;
-    color: var(--d2e-color-neutral);
   }
 
   /* 208px in the frame. Read-only until #2956 settles the nav contract: the
@@ -1401,6 +1462,10 @@ const onMoreSelect = (card: { source: BookmarkDisplay }, value: string): void =>
     // renders as a stray line under the field.
     :deep(.v-input__details) {
       display: none;
+    }
+
+    :deep(.v-field) {
+      border-radius: var(--d2e-radius-sm);
     }
 
     :deep(.v-field--disabled) {
@@ -1454,10 +1519,9 @@ const onMoreSelect = (card: { source: BookmarkDisplay }, value: string): void =>
     border-top: var(--d2e-border-width-sm) solid var(--d2e-color-neutral-lighter);
     border-bottom: var(--d2e-border-width-sm) solid var(--d2e-color-neutral-lighter);
 
-    // D2eButton has no height/padding/shadow prop; its own border-radius
+    // D2eButton has no padding/shadow prop; its own border-radius
     // already defaults to --d2e-radius-md (8px), which matches the frame.
     :deep(.d2e-button) {
-      height: 36px;
       padding: var(--d2e-spacing-xs) 22px;
       box-shadow: var(--d2e-elevation-e2);
     }
@@ -1476,52 +1540,16 @@ const onMoreSelect = (card: { source: BookmarkDisplay }, value: string): void =>
     color: var(--d2e-color-primary);
   }
 
-  /* Search is 466x44 with a 1px #ACABA8 border and a 4px radius
-     (Figma 1762:475284). Vuetify's own outlined field is 56px tall. */
   &__search {
     flex: 0 0 466px;
     max-width: 466px;
-
-    :deep(.v-field) {
-      border-radius: 4px;
-    }
-
-    :deep(.v-field__outline) {
-      --v-field-border-width: 1px;
-      color: var(--d2e-color-neutral-light);
-      opacity: 1;
-    }
-
-    /* 24px icon, 8px gap, then the placeholder. The field owns the 16px
-       inset; the input adds none, or the icon reads as a second slot. */
-    :deep(.v-field) {
-      padding-inline: 16px;
-    }
-
-    :deep(.v-field__input) {
-      min-height: 44px;
-      padding: 0;
-      font-size: 16px;
-    }
-
-    :deep(.v-field__prepend-inner) {
-      align-items: center;
-      padding: 0;
-      margin-inline-end: 8px;
-
-      .v-icon {
-        font-size: 24px;
-        opacity: 1;
-        color: var(--d2e-color-neutral-light);
-      }
-    }
   }
 
   /* 101x40, 8px radius, 8px gap. `secondary` is outlined in the theme
      `primary`; the frame outlines it in Primary/Light (Figma 2634:58660). */
   &__filters {
     min-width: 101px;
-    padding: 0 var(--d2e-spacing-xs-s);
+    padding: 0 var(--d2e-spacing-xs-s) 0 10px;
 
     &.v-btn--variant-outlined {
       border-color: var(--d2e-color-primary-light);
@@ -1532,20 +1560,37 @@ const onMoreSelect = (card: { source: BookmarkDisplay }, value: string): void =>
     }
   }
 
-  /* Text button: 22px icon, 8px gap, 16px Medium neutral label, no box
+  /* Text button: 22px icon, 8px gap, neutral label, no box
      (Figma 2634:58663). */
   &__sort {
     :deep(.v-btn__content) {
-      font-size: 16px;
-      font-weight: 500;
-      letter-spacing: normal;
-      text-transform: none;
       color: var(--d2e-color-neutral);
     }
 
     :deep(.v-btn__prepend) {
       margin-inline: 0 8px;
       color: var(--d2e-color-neutral);
+    }
+
+    &:focus {
+      outline: none;
+    }
+
+    &:focus-visible {
+      outline: var(--d2e-border-width-md) solid var(--d2e-color-primary-light);
+      outline-offset: 2px;
+    }
+
+    &[aria-expanded='true'] {
+      --v-activated-opacity: 0;
+      --v-focus-opacity: 0;
+      --v-hover-opacity: 0;
+      background: var(--d2e-color-primary-xtra-lightest);
+
+      :deep(.v-btn__content),
+      :deep(.v-btn__prepend) {
+        color: var(--d2e-color-primary);
+      }
     }
   }
 
@@ -1576,15 +1621,19 @@ const onMoreSelect = (card: { source: BookmarkDisplay }, value: string): void =>
 
   &__grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, 324px);
+    grid-template-columns: repeat(auto-fit, minmax(314px, auto));
     grid-auto-rows: min-content;
     justify-content: start;
-    column-gap: 16px;
-    row-gap: 40px;
+    align-content: start;
+    gap: var(--d2e-spacing-s);
     padding: 24px;
     flex: 1 1 auto;
     min-height: 0;
     overflow-y: auto;
+
+    > .d2e-exploration-card {
+      max-width: 100%;
+    }
   }
 
   &__summary-panel {

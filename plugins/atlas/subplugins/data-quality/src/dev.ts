@@ -17,11 +17,13 @@
  *   /?state=no-source    no data source selected in the header
  *   /?delay=2000         hold every response back, to look at the loading state
  *   /?token=late         host answers "" for 1.5s, as it does before login settles
+ *   /?view=checks        the Data quality checks view instead of the dashboard
  */
 import 'vuetify/styles';
 import '@ohdsi/atlas-ui/tokens.css';
 import '@mdi/font/css/materialdesignicons.css';
 import './style.css';
+import '@d2e/ui/tokens.css';
 import { createApp, h, ref } from 'vue';
 import { createVuetify } from 'vuetify';
 import { aliases, mdi } from 'vuetify/iconsets/mdi';
@@ -64,6 +66,30 @@ const OVERVIEW: OverviewResults = {
   dqdVersion: '2.6.0',
 };
 
+/** A spread of check results: every category, status and level the view shows. */
+const CATEGORIES = ['Plausibility', 'Conformance', 'Completeness'];
+const TABLES = ['PERSON', 'MEASUREMENT', 'CONDITION_OCCURRENCE', 'DRUG_EXPOSURE'];
+const RESULTS = Array.from({ length: 57 }, (_, index) => ({
+  checkId: `check_${index}`,
+  checkName: ['plausibleValueLow', 'isRequired', 'measureValueCompleteness', 'cdmDatatype'][index % 4],
+  checkLevel: ['FIELD', 'TABLE', 'CONCEPT'][index % 3],
+  checkDescription: `The number and percent of records with a value below the plausible low (check ${index}).`,
+  category: CATEGORIES[index % 3],
+  subcategory: index % 2 ? 'Atemporal' : 'Relational',
+  context: index % 5 ? 'Verification' : 'Validation',
+  cdmTableName: TABLES[index % 4],
+  cdmFieldName: index % 3 ? 'value_as_number' : undefined,
+  failed: index % 3 === 0 ? 1 : 0,
+  passed: index % 3 === 0 ? 0 : 1,
+  isError: index === 7 ? 1 : 0,
+  notApplicable: index === 11 ? 1 : 0,
+  pctViolatedRows: (index % 10) / 10,
+  numViolatedRows: index * 3,
+  numDenominatorRows: 1000,
+  executionTime: '0.4 secs',
+  queryText: `SELECT COUNT(*) FROM ${TABLES[index % 4]}`,
+}));
+
 const params = new URLSearchParams(window.location.search);
 const scenario = params.get('state') ?? 'COMPLETED';
 const delay = Number(params.get('delay') ?? 0);
@@ -86,6 +112,9 @@ window.fetch = (async (input: RequestInfo | URL) => {
   if (String(input).includes('/overview')) {
     return json(scenario === 'empty' ? null : OVERVIEW);
   }
+  if (String(input).includes('/results')) {
+    return json(scenario === 'empty' ? null : RESULTS);
+  }
   const stateType = scenario === 'empty' ? 'COMPLETED' : scenario;
   return json({ id: 'dev-flow-run', state: { type: stateType } });
 }) as typeof fetch;
@@ -98,6 +127,9 @@ const tokenReadyAt = Date.now() + (params.get('token') === 'late' ? 1500 : 0);
 const hostCtx: DqHostCtx = {
   getToken: async () => (Date.now() < tokenReadyAt ? '' : 'dev-token'),
   datasetId: ref(scenario === 'no-source' ? '' : 'dev-dataset'),
+  // The harness exercises the data-source scope; a cohort scope comes from a
+  // host that opens the dashboard for one, which this harness does not.
+  cohortDefinitionId: ref(undefined),
   appId: 'data-quality',
   // No host to borrow i18n from out here, so fall back to the default copy.
   t: (_key, fallback) => fallback ?? _key,
@@ -105,6 +137,9 @@ const hostCtx: DqHostCtx = {
   uiFilesUrl: '',
   // The harness stands in for the parcel surface, which is how we ship.
   isRoutedApp: false,
+  // `?view=checks` previews the checks view; anything else is the dashboard.
+  view: ref(params.get('view') === 'checks' ? 'checks' : 'dashboard'),
+  surface: ref('datasource-sidebar'),
 };
 
 const app = createApp({

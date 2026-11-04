@@ -1,0 +1,81 @@
+.d2e-page-header {
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  gap: var(--d2e-spacing-xl); // 40px between the text block and the actions.
+  // Figma: pt 24 / pb 16 / px 24.
+  padding: var(--d2e-spacing-m) var(--d2e-spacing-m) var(--d2e-spacing-s);
+  font-family: var(--d2e-font-family);
+
+  &__text {
+    display: flex;
+    flex: 1 1 0;
+    min-width: 0;
+    flex-direction: column;
+    gap: var(--d2e-spacing-xxs); // 4px between the heading and the description.
+  }
+
+  &__heading {
+    display: flex;
+    flex-direction: column;
+    gap: var(--d2e-spacing-xs); // 8px between the overline and the title.
+  }
+
+  // Overline: Bold 11 uppercase navy, optional "· sub-overline", trailing coral
+  // accent dash (Figma Overline).
+  &__overline {
+    display: flex;
+    align-items: center;
+    gap: var(--d2e-spacing-xs);
+  }
+
+  &__overline-label,
+  &__sub-overline {
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 1.2;
+    letter-spacing: 1.98px;
+    text-transform: uppercase;
+    color: var(--d2e-color-primary);
+  }
+
+  &__sub-overline {
+    display: flex;
+    align-items: center;
+    gap: var(--d2e-spacing-xs);
+  }
+
+  &__accent {
+    flex-shrink: 0;
+    width: 24px;
+    height: 2px;
+    border-radius: 100px;
+    background: var(--d2e-color-secondary);
+  }
+
+  // Title: Display 2 — Light 26, navy (Figma Display 2).
+  &__title {
+    margin: 0;
+    font-size: 26px;
+    font-weight: 300;
+    line-height: 1.2;
+    letter-spacing: 0.26px;
+    color: var(--d2e-color-primary);
+  }
+
+  // Description: Page Subtitle — Regular 13, black (Figma Page Subtitle).
+  &__description {
+    margin: 0;
+    font-size: 13px;
+    font-weight: 400;
+    line-height: 1.5;
+    color: var(--d2e-color-neutral-black);
+  }
+
+  &__actions {
+    display: flex;
+    flex-shrink: 0;
+    align-items: center;
+    gap: var(--d2e-spacing-xs);
+  }
+}

@@ -21,7 +21,7 @@ const TOKENS = {
   neutralBlack: "#000000",
   neutral: "#595757",
   neutralLight: "#ACABA8",
-  radiusMd: 8,
+  radiusSm: 4,
   // D2eSelect size "md". It matches the 48px search box and view toggle beside it.
   fieldHeight: 48,
   minWidth: 208,
@@ -31,10 +31,9 @@ const TOKENS = {
 } as const;
 
 // The Vuetify list states that D2eSelect's menu uses, measured in Data
-// Exploration: the row text, and an overlay of the text colour at these
-// opacities. The selected row takes the theme primary; states add together.
+// Exploration and in the ATLAS data source select: the row text, and an
+// overlay of the text colour at these opacities. States add together.
 const MENU = {
-  primary: "#000080",
   itemTextOpacity: 0.87,
   hoverOpacity: 0.04,
   activatedOpacity: 0.12,
@@ -50,7 +49,7 @@ const theme = createTheme({
     primary: { main: TOKENS.primaryLight },
     text: { primary: TOKENS.neutralBlack, secondary: TOKENS.neutral },
   },
-  shape: { borderRadius: TOKENS.radiusMd },
+  shape: { borderRadius: TOKENS.radiusSm },
   typography: { fontFamily: TOKENS.fontFamily },
   components: {
     MuiOutlinedInput: {
@@ -85,11 +84,10 @@ const theme = createTheme({
           // on a mouse click. Vuetify shows no focus overlay then, so the selected
           // row keeps the activated tint. The hover rule comes last, so it wins.
           "&.Mui-selected, &.Mui-selected.Mui-focusVisible": {
-            color: MENU.primary,
-            backgroundColor: alpha(MENU.primary, MENU.activatedOpacity),
+            backgroundColor: itemOverlay(MENU.activatedOpacity),
           },
           "&.Mui-selected:hover": {
-            backgroundColor: alpha(MENU.primary, MENU.activatedOpacity + MENU.hoverOpacity),
+            backgroundColor: itemOverlay(MENU.activatedOpacity + MENU.hoverOpacity),
           },
         },
       },

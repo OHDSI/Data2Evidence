@@ -5,14 +5,25 @@
     :style="containerStyle"
     icon
     variant="text"
+    color="var(--d2e-icon-button-color)"
     :ripple="false"
     :aria-label="ariaLabel"
-    :disabled="disabled"
+    :aria-busy="loading || undefined"
+    :disabled="disabled || loading"
     @click="$emit('click', $event)"
   >
+    <!-- A busy action shows a spinner in place of its glyph and cannot be
+         pressed again until it settles. It paints in currentColor, which is the
+         disabled colour while loading. -->
+    <v-progress-circular
+      v-if="loading"
+      indeterminate
+      :size="iconSize"
+      width="2"
+    />
     <!-- Default slot carries an exported SVG when the design's glyph is not in
          the MDI set; otherwise the `icon` prop names an MDI glyph. -->
-    <slot :size="iconSize">
+    <slot v-else :size="iconSize">
       <v-icon :icon="icon" :size="iconSize" />
     </slot>
   </v-btn>
@@ -24,7 +35,7 @@ import type {
   D2eIconButtonSize,
   D2eIconButtonCategory,
 } from "./iconButtonSizes";
-import { VBtn, VIcon } from "vuetify/components";
+import { VBtn, VIcon, VProgressCircular } from "vuetify/components";
 import { computed } from "vue";
 
 interface Props {
@@ -35,12 +46,15 @@ interface Props {
   /** No visible label backs this button, so an accessible name is mandatory. */
   ariaLabel: string;
   disabled?: boolean;
+  /** Shows a spinner in place of the glyph and disables the button. */
+  loading?: boolean;
 }
 
 const props = withDefaults(defineProps<Props>(), {
   category: "no-stroke",
   size: "md",
   disabled: false,
+  loading: false,
 });
 
 defineEmits<{ click: [event: MouseEvent] }>();
@@ -57,8 +71,8 @@ const containerStyle = computed(() => ({
 .d2e-icon-button {
   flex: none;
   padding: 0;
+  --d2e-icon-button-color: var(--d2e-color-primary);
   font-family: var(--d2e-font-family);
-  color: var(--d2e-color-primary);
   background: transparent;
   // v-btn defaults to the `elevated` variant, which paints a surface and a
   // shadow. The design's icon buttons have neither.
@@ -97,7 +111,7 @@ const containerStyle = computed(() => ({
   }
 
   &--primary {
-    color: var(--d2e-color-white);
+    --d2e-icon-button-color: var(--d2e-color-white);
     background: var(--d2e-color-primary);
 
     &:hover {
@@ -112,7 +126,7 @@ const containerStyle = computed(() => ({
   // Figma 2006:843: only the primary category fills on disabled. Secondary
   // keeps its outline over a transparent surface, and no-stroke stays bare.
   &:disabled {
-    color: var(--d2e-color-neutral-light);
+    --d2e-icon-button-color: var(--d2e-color-neutral-light);
     background: transparent;
     opacity: 1;
   }

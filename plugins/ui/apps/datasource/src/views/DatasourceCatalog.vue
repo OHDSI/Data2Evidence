@@ -95,7 +95,7 @@ const cat = useDatasourceCatalog(() => props.token)
     -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 
   min-height: 100%;
-  background: #faf8f8;
+  background: var(--atlas-color-surface-variant, var(--ds-meta-bg));
   color: var(--ds-text);
   font-family: var(--ds-font-body);
 }
