@@ -1,0 +1,41 @@
+.d2e-chip {
+  // Local reset: the fixed 24px height must include its padding regardless of
+  // the host app's box-sizing (don't rely on a global CssBaseline reset).
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--d2e-spacing-xxs);
+  height: 24px;
+  padding: var(--d2e-spacing-xxs) var(--d2e-spacing-xs);
+  border-radius: 100px;
+  font-family: var(--d2e-font-family);
+  font-size: var(--d2e-font-caption1-size);
+  font-weight: var(--d2e-font-caption1-weight);
+  line-height: var(--d2e-font-caption1-line-height);
+  letter-spacing: var(--d2e-font-caption1-letter-spacing);
+  white-space: nowrap;
+
+  .MuiSvgIcon-root {
+    font-size: 16px;
+  }
+
+  &__label {
+    line-height: 1;
+  }
+
+  &__dismiss {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: inherit;
+    cursor: pointer;
+
+    .MuiSvgIcon-root {
+      font-size: 16px;
+    }
+  }
+}

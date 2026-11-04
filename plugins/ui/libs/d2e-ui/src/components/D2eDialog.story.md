@@ -19,6 +19,7 @@ equal-width action buttons.
 | --------------- | -------------------- | ---------------- | ---------------------------------------------------- |
 | `modelValue`    | `boolean`            | required         | `v-model`                                            |
 | `title`         | `string`             | `undefined`      | Header title; drives `aria-labelledby`               |
+| `subtitle`      | `string`             | `undefined`      | One line under the title; `#subtitle` overrides it   |
 | `size`          | `'s' \| 'l' \| 'xl'` | `'s'`            | Figma Modal/S 540, Modal/L 900, Modal/XL 1200        |
 | `maxWidth`      | `number \| string`   | `undefined`      | Escape hatch; overrides `size` when set              |
 | `closeOnEscape` | `boolean`            | `true`           | Set false for long forms that confirm before discard |
@@ -36,10 +37,12 @@ equal-width action buttons.
 
 ## Slots
 
-| Slot      | Notes                                    |
-| --------- | ---------------------------------------- |
-| default   | Dialog body                              |
-| `actions` | Footer; rendered with a divider above it |
+| Slot            | Notes                                                         |
+| --------------- | ------------------------------------------------------------- |
+| default         | Dialog body                                                   |
+| `actions`       | Footer; rendered with a divider above it                      |
+| `subtitle`      | Rich subtitle, e.g. a label with a bold value                 |
+| `header-append` | Under the header, e.g. `D2eTabs`; replaces the header divider |
 
 > The scrim never dismisses a dialog — MODAL CLOSE BEHAVIOR (Figma 2106:162)
 > specifies "Don't dismiss modal, no action" for every modal type. There is no

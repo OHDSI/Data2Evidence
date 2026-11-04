@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest'
+import { D2eExplorationCardStatus } from '@d2e/ui'
 import {
   EMPTY_FILTERS,
   applyFilters,
@@ -25,7 +26,7 @@ describe('emptyFilters / EMPTY_FILTERS', () => {
 
   it('isEmpty is false once any one of the five fields is constrained', () => {
     expect(isEmpty({ ...emptyFilters(), authors: ['alice'] })).toBe(false)
-    expect(isEmpty({ ...emptyFilters(), statuses: ['materialized'] })).toBe(false)
+    expect(isEmpty({ ...emptyFilters(), statuses: [D2eExplorationCardStatus.READY] })).toBe(false)
     expect(isEmpty({ ...emptyFilters(), created: { from: '2026-01-01', to: null } })).toBe(false)
     expect(isEmpty({ ...emptyFilters(), lastUpdated: { from: null, to: '2026-01-01' } })).toBe(false)
     expect(isEmpty({ ...emptyFilters(), lastMaterialized: { from: '2026-01-01', to: '2026-01-02' } })).toBe(false)
@@ -64,7 +65,7 @@ describe('hasNarrowingFilters', () => {
 
   it('is true when an author, status or date range is set', () => {
     expect(hasNarrowingFilters({ ...emptyFilters(), authors: ['alice'] })).toBe(true)
-    expect(hasNarrowingFilters({ ...emptyFilters(), statuses: ['materialized'] })).toBe(true)
+    expect(hasNarrowingFilters({ ...emptyFilters(), statuses: [D2eExplorationCardStatus.READY] })).toBe(true)
     expect(hasNarrowingFilters({ ...emptyFilters(), created: { from: '2026-01-01', to: null } })).toBe(true)
     expect(hasNarrowingFilters({ ...emptyFilters(), lastUpdated: { from: null, to: '2026-01-01' } })).toBe(true)
     expect(hasNarrowingFilters({ ...emptyFilters(), lastMaterialized: { from: '2026-01-01', to: null } })).toBe(true)
@@ -107,24 +108,58 @@ describe('author filter', () => {
   })
 })
 
-describe('materialisation status filter', () => {
-  const materialized = card({ displayName: 'M', cohortDefinition: { id: '1' } })
-  const notMaterialized = card({ displayName: 'N' })
+describe('status filter', () => {
+  const ready = card({
+    displayName: 'R',
+    cohortDefinition: { id: '1' },
+    bookmark: { materializationStatus: D2eExplorationCardStatus.READY },
+  })
+  const stale = card({
+    displayName: 'S',
+    cohortDefinition: { id: '2' },
+    bookmark: { materializationStatus: D2eExplorationCardStatus.STALE },
+  })
+  const notRun = card({ displayName: 'N', bookmark: {} })
+  // The card has no cohort, so it shows Not run yet whatever the bookmark says.
+  const staleWithoutCohort = card({
+    displayName: 'SN',
+    bookmark: { materializationStatus: D2eExplorationCardStatus.STALE },
+  })
+  const cards = [ready, stale, notRun, staleWithoutCohort]
 
-  it('materialized keeps only cards with a cohortDefinition', () => {
-    const filters = { ...emptyFilters(), statuses: ['materialized' as const] }
-    expect(applyFilters([materialized, notMaterialized], filters)).toEqual([materialized])
+  const only = (status: D2eExplorationCardStatus) => ({ ...emptyFilters(), statuses: [status] })
+
+  it('ready keeps only the ready cards', () => {
+    expect(applyFilters(cards, only(D2eExplorationCardStatus.READY))).toEqual([ready])
   })
 
-  it('not-materialized is the exact complement', () => {
-    const filters = { ...emptyFilters(), statuses: ['not-materialized' as const] }
-    expect(applyFilters([materialized, notMaterialized], filters)).toEqual([notMaterialized])
+  it('stale keeps only the stale cards', () => {
+    expect(applyFilters(cards, only(D2eExplorationCardStatus.STALE))).toEqual([stale])
   })
 
-  it('both statuses selected is equivalent to neither selected', () => {
-    const filters = { ...emptyFilters(), statuses: ['materialized' as const, 'not-materialized' as const] }
-    expect(applyFilters([materialized, notMaterialized], filters)).toEqual([materialized, notMaterialized])
-    expect(applyFilters([materialized, notMaterialized], emptyFilters())).toEqual([materialized, notMaterialized])
+  it('not run keeps the cards without a cohort, also when the bookmark says stale', () => {
+    expect(applyFilters(cards, only(D2eExplorationCardStatus.NOT_RUN))).toEqual([notRun, staleWithoutCohort])
+  })
+
+  it('two statuses keep the cards of either status', () => {
+    const filters = {
+      ...emptyFilters(),
+      statuses: [D2eExplorationCardStatus.READY, D2eExplorationCardStatus.STALE],
+    }
+    expect(applyFilters(cards, filters)).toEqual([ready, stale])
+  })
+
+  it('all statuses selected is equivalent to none selected', () => {
+    const filters = { ...emptyFilters(), statuses: Object.values(D2eExplorationCardStatus) }
+    expect(applyFilters(cards, filters)).toEqual(cards)
+    expect(applyFilters(cards, emptyFilters())).toEqual(cards)
+  })
+
+  it('a status with no cards gives an empty result that counts as a narrowing filter', () => {
+    const filters = only(D2eExplorationCardStatus.STALE)
+    expect(applyFilters([ready, notRun], filters)).toEqual([])
+    // The page shows the filter empty state when hasNarrowingFilters is true.
+    expect(hasNarrowingFilters(filters)).toBe(true)
   })
 })
 
@@ -270,6 +305,16 @@ describe('AND across filters', () => {
 
     expect(applyFilters([alice, aliceOutOfRange, bobInRange], filters)).toEqual([alice])
   })
+
+  it('author and status together are AND, not OR', () => {
+    const aliceReady = card({ bookmark: { username: 'alice' }, cohortDefinition: { id: '1' } })
+    const aliceNotRun = card({ bookmark: { username: 'alice' } })
+    const bobReady = card({ bookmark: { username: 'bob' }, cohortDefinition: { id: '2' } })
+
+    const filters = { ...emptyFilters(), authors: ['alice'], statuses: [D2eExplorationCardStatus.READY] }
+
+    expect(applyFilters([aliceReady, aliceNotRun, bobReady], filters)).toEqual([aliceReady])
+  })
 })
 
 describe('created filter (backend-blocked but plumbed)', () => {
@@ -323,12 +368,12 @@ describe('keepKnownAuthors', () => {
     const filters: ExplorationFilters = {
       ...emptyFilters(),
       authors: ['alice', 'bob'],
-      statuses: ['materialized'],
+      statuses: [D2eExplorationCardStatus.READY],
     }
     const next = keepKnownAuthors(filters, [])
     expect(filters.authors).toEqual(['alice', 'bob'])
     expect(next.authors).toEqual([])
-    expect(next.statuses).toEqual(['materialized'])
+    expect(next.statuses).toEqual([D2eExplorationCardStatus.READY])
   })
 })
 

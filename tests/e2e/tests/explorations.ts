@@ -20,7 +20,7 @@ import type { Locator, Page } from '@playwright/test'
 
 /** The card's accessible action names, as rendered by ExplorationsPage. */
 export type CardMenuAction = 'Rename' | 'Duplicate' | 'Delete'
-export type CardButtonAction = 'Materialize cohort' | 'Filter summary' | 'Analyze'
+export type CardButtonAction = 'Materialize cohort' | 'Re-materialize' | 'Filter summary' | 'Analyze'
 
 /**
  * One exploration card, found by the name shown on it.

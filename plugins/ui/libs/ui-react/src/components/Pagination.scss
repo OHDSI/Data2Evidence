@@ -1,0 +1,94 @@
+.d2e-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding: var(--d2e-spacing-xs) 4px;
+  background: var(--d2e-color-white);
+  font-family: var(--d2e-font-family);
+
+  &__page-size {
+    display: flex;
+    align-items: center;
+    gap: var(--d2e-spacing-xs);
+  }
+
+  // "Items per page:" / range — Body 2 (14px) in black.
+  &__label {
+    font-size: var(--d2e-font-body2-size);
+    color: var(--d2e-color-neutral-black);
+    letter-spacing: 0.25px;
+    white-space: nowrap;
+  }
+
+  // Compact bordered select (90×40, 4px radius) — bespoke to the pagination row.
+  &__select {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    width: 90px;
+    height: 40px;
+    border: 1px solid rgba(0, 0, 0, 0.38);
+    border-radius: var(--d2e-radius-sm);
+  }
+
+  &__select-input {
+    width: 100%;
+    height: 100%;
+    padding: 0 36px 0 16px;
+    appearance: none;
+    border: 0;
+    background: transparent;
+    font-family: inherit;
+    font-size: 16px;
+    letter-spacing: 0.15px;
+    color: var(--d2e-color-neutral-black);
+    cursor: pointer;
+
+    &:focus-visible {
+      outline: 2px solid var(--d2e-color-primary);
+      outline-offset: 1px;
+      border-radius: var(--d2e-radius-sm);
+    }
+  }
+
+  &__select-icon.MuiSvgIcon-root {
+    position: absolute;
+    right: 12px;
+    pointer-events: none;
+    font-size: 24px;
+    color: var(--d2e-color-neutral);
+  }
+
+  &__range-nav {
+    display: flex;
+    align-items: center;
+  }
+
+  &__range {
+    min-width: 116px;
+    padding: 0 16px;
+    text-align: center;
+    font-size: var(--d2e-font-body2-size);
+    color: var(--d2e-color-neutral-black);
+    letter-spacing: 0.25px;
+    white-space: nowrap;
+  }
+
+  &__nav {
+    display: flex;
+    align-items: center;
+    gap: 9.6px;
+    padding: 0 4.8px;
+
+    // Figma nav icons are neutral (#595757), disabled neutral-lighter (#DEDCDA)
+    // — not the IconButton's default navy.
+    .d2e-icon-button.d2e-icon-button {
+      color: var(--d2e-color-neutral);
+
+      &:disabled {
+        color: var(--d2e-color-neutral-lighter);
+        opacity: 1;
+      }
+    }
+  }
+}

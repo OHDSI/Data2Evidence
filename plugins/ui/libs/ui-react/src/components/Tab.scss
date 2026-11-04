@@ -1,0 +1,83 @@
+// Doubled classes outrank MUI's emotion rules.
+.d2e-tabs.d2e-tabs {
+  min-height: 0;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  padding-inline: var(--d2e-spacing-m, 24px);
+
+  .MuiTabs-indicator {
+    height: 3px;
+    background-color: var(--d2e-color-primary);
+  }
+}
+
+.d2e-tab.d2e-tab {
+  min-width: 90px;
+  max-width: 360px;
+  min-height: 52px;
+  gap: 8px;
+  padding-inline: 16px;
+  font-family: var(--d2e-font-family);
+  font-size: 16px;
+  font-weight: 500;
+  line-height: normal;
+  letter-spacing: 0;
+  text-transform: none;
+  color: rgba(0, 0, 0, 0.87);
+  opacity: 1;
+
+  .MuiTab-iconWrapper {
+    margin: 0;
+    font-size: 20px;
+  }
+
+  &--icon-front {
+    padding-left: 12px;
+    padding-right: 16px;
+  }
+
+  &--icon-back {
+    padding-left: 16px;
+    padding-right: 12px;
+  }
+
+  &:hover {
+    background-color: rgba(0, 0, 0, 0.04);
+  }
+
+  &.Mui-focusVisible,
+  &:active {
+    background-color: rgba(0, 0, 0, 0.12);
+  }
+
+  &.Mui-selected {
+    color: var(--d2e-color-primary);
+    font-weight: 700;
+  }
+
+  // The label reserves its bold width via a hidden 700-weight copy, so toggling
+  // selected changes the rendered weight without reflowing the tab.
+  .d2e-tab__label {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+
+    &::after {
+      content: attr(data-text);
+      height: 0;
+      overflow: hidden;
+      visibility: hidden;
+      font-weight: 700;
+      pointer-events: none;
+      user-select: none;
+    }
+  }
+
+  &.Mui-disabled {
+    opacity: 0.26;
+  }
+}
+
+.d2e-tabs--small .d2e-tab.d2e-tab {
+  min-height: 40px;
+  font-size: 14px;
+}

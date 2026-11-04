@@ -25,6 +25,11 @@ export const tokens = {
     alarmLight: "#FDEDED",
     supportBlueLight: "#CCDEF1",
     supportBlueLightest: "#EBF2FA",
+    // Figma Support/Violet/Light — the category chip's fill (2855:278884).
+    supportVioletLight: "#E3D6DF",
+    // The category chip's text. No Figma variable carries it; the value is the
+    // one on the chip instance itself (I2855:278884;998:85777).
+    supportVioletText: "#461A37",
     // Figma has no red token on the dialog frames; #A3293D is the existing
     // feedback-error value in the app Vuetify theme. Replace once design
     // supplies an official danger token.

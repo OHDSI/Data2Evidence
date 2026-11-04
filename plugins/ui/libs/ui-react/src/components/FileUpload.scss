@@ -1,0 +1,120 @@
+.d2e-file-upload {
+  position: relative;
+  box-sizing: border-box;
+  font-family: var(--d2e-font-family);
+  border: 1px dashed var(--d2e-color-neutral-light);
+  border-radius: var(--d2e-radius-md);
+  background: var(--d2e-color-white);
+  cursor: pointer;
+
+  &__input {
+    display: none;
+  }
+
+  &__icon {
+    color: var(--d2e-color-neutral);
+  }
+
+  &__heading {
+    margin: 0;
+    color: var(--d2e-color-neutral-black);
+  }
+
+  &__hint {
+    font-size: var(--d2e-font-caption1-size);
+    color: var(--d2e-color-neutral);
+  }
+
+  &__browse-link {
+    padding: 0;
+    border: 0;
+    background: none;
+    font: inherit;
+    font-weight: var(--d2e-font-subtitle2-weight);
+    color: var(--d2e-color-primary);
+    cursor: pointer;
+  }
+
+  // Default density: tall, centred stack.
+  &--default {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding: 32px 24px;
+
+    .d2e-file-upload__icon {
+      font-size: 48px;
+    }
+
+    .d2e-file-upload__heading {
+      font-size: var(--d2e-font-heading5-size);
+      font-weight: var(--d2e-font-heading5-weight);
+      line-height: var(--d2e-font-heading5-line-height);
+    }
+
+    .d2e-file-upload__divider {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      width: 100%;
+      margin: 8px 0;
+      font-size: var(--d2e-font-caption1-size);
+      color: var(--d2e-color-neutral);
+
+      &::before,
+      &::after {
+        content: "";
+        flex: 1;
+        height: 1px;
+        background: var(--d2e-color-neutral-lighter);
+      }
+    }
+  }
+
+  // Compact density: single row.
+  &--compact {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    cursor: default;
+
+    .d2e-file-upload__icon {
+      font-size: 32px;
+      color: var(--d2e-color-primary);
+    }
+
+    .d2e-file-upload__heading {
+      font-size: var(--d2e-font-body2-size);
+    }
+  }
+
+  // Dragging: navy dashed border, tinted fill, navy icon.
+  &--dragging {
+    border-color: var(--d2e-color-primary);
+    background: var(--d2e-color-primary-xtra-lightest);
+
+    .d2e-file-upload__icon {
+      color: var(--d2e-color-primary);
+    }
+  }
+
+  &--disabled {
+    cursor: not-allowed;
+    background: var(--d2e-color-white);
+
+    .d2e-file-upload__icon,
+    .d2e-file-upload__heading,
+    .d2e-file-upload__hint,
+    .d2e-file-upload__browse-link {
+      color: var(--d2e-color-neutral-light);
+    }
+  }
+
+  &__list {
+    display: flex;
+    flex-direction: column;
+    margin-top: 8px;
+  }
+}

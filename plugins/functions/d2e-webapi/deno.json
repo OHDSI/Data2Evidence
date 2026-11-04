@@ -10,7 +10,8 @@
   },
   "tasks": {
     "dev": "SERVICE_ROUTES='{}' deno run --watch --allow-env --allow-read --allow-write --allow-net --allow-sys index.ts",
-    "check": "deno check ./index.ts && deno lint"
+    "check": "deno check ./index.ts && deno lint",
+    "test": "deno test --allow-read --allow-env --no-check src/"
   },
   "imports": {
     "@fastify/swagger": "npm:@fastify/swagger@^9.4.2",

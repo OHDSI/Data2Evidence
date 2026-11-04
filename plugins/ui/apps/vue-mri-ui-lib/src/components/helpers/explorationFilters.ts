@@ -1,17 +1,16 @@
 /**
- * Filter state and predicate for the Data Exploration list (PR 8, ticket
- * OHDSI/Data2Evidence#3150). Pure functions, no Vue import, so the test does
- * not have to load Vuetify.
+ * Filter state and predicate for the Data Exploration list. Pure functions.
  *
- * Record parameters are typed loosely (`unknown` with optional chaining). The
- * store getter that produces list rows is untyped and `BookmarkDisplay` from
+ * The field accessors take `unknown` and use optional chaining. The store
+ * getter that produces list rows is untyped and `BookmarkDisplay` from
  * `src/types.d.ts` is an ambient global, not an importable module — see
- * `explorationList.ts` next door for the same reasoning.
+ * `explorationList.ts` next door for the same reasoning. The filter functions
+ * take `CardStatusSource`, the fields that `cardStatus` reads.
  */
 
+import type { D2eExplorationCardStatus } from '@d2e/ui'
 import { canModifyBookmark } from '../../utils/BookmarkUtils'
-
-export type MaterializationStatus = 'materialized' | 'not-materialized'
+import { cardStatus, type CardStatusSource } from './explorationCardStatus'
 
 export interface DateRange {
   from: string | null // ISO "YYYY-MM-DD", inclusive
@@ -20,7 +19,7 @@ export interface DateRange {
 
 export interface ExplorationFilters {
   authors: string[] // empty = no author constraint
-  statuses: MaterializationStatus[] // empty = no status constraint
+  statuses: D2eExplorationCardStatus[] // empty = no status constraint
   created: DateRange
   lastUpdated: DateRange
   lastMaterialized: DateRange
@@ -114,18 +113,6 @@ export function visibleToUser<T>(cards: readonly T[], showShared: boolean, usern
   return showShared ? [...cards] : cards.filter(card => !isOthersAtlasDefinition(card, username))
 }
 
-/**
- * Materialisation status. The canonical helper is `getBookmarkType()` in
- * `src/utils/BookmarkUtils.ts` — `'M'`, `'A+M'` and `'D+M'` are materialised,
- * `'A'` and `'D'` are not. Presence of `cohortDefinition` is the same test
- * and is cheaper.
- *
- * There are exactly two statuses. *Stale* is not derivable from any field
- * today and belongs to ticket #3117.
- */
-const status = (card: unknown): MaterializationStatus =>
-  (card as any)?.cohortDefinition ? 'materialized' : 'not-materialized'
-
 /** Local calendar day ("YYYY-MM-DD") for a timestamp, in the viewer's timezone. Empty when unknown. */
 const localDay = (value: unknown): string | null => {
   if (!value) return null
@@ -182,13 +169,13 @@ const lastUpdated = (card: unknown): unknown =>
 const lastMaterialized = (card: unknown): unknown => (card as any)?.cohortDefinition?.createdOn
 
 /** True when the card satisfies every active constraint. */
-export function matchesFilters(card: unknown, filters: ExplorationFilters): boolean {
+export function matchesFilters(card: CardStatusSource, filters: ExplorationFilters): boolean {
   if (filters.authors.length > 0) {
     const owner = author(card)
     if (owner == null || !filters.authors.includes(owner)) return false
   }
 
-  if (filters.statuses.length > 0 && !filters.statuses.includes(status(card))) {
+  if (filters.statuses.length > 0 && !filters.statuses.includes(cardStatus(card))) {
     return false
   }
 
@@ -199,6 +186,6 @@ export function matchesFilters(card: unknown, filters: ExplorationFilters): bool
   return true
 }
 
-export function applyFilters(cards: readonly unknown[], filters: ExplorationFilters): unknown[] {
+export function applyFilters<T extends CardStatusSource>(cards: readonly T[], filters: ExplorationFilters): T[] {
   return cards.filter(card => matchesFilters(card, filters))
 }
