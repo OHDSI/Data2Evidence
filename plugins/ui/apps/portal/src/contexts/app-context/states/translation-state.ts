@@ -1210,7 +1210,7 @@ export const i18nDefault = {
     UI_PLUGIN_COHORTS: "Cohorts",
     UI_PLUGIN_CONCEPTS: "Concepts",
     UI_PLUGIN_DATABASES: "Databases",
-    UI_PLUGIN_DATASETS: "Data sources",
+    UI_PLUGIN_DATA_SOURCES: "Data sources",
     UI_PLUGIN_DEMO_SETUP: "Demo setup",
     UI_PLUGIN_ETL: "ETL",
     UI_PLUGIN_FEATURE_FLAGS: "Feature flags",
