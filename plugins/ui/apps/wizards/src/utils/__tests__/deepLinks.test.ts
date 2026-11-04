@@ -299,17 +299,23 @@ describe("deepLinks", () => {
       isWizardField: true,
       ...overrides,
     });
-    const getWizardConfig = (url: string) =>
-      decompress<any>(new URL(url, "https://example.com").searchParams.get("wizards")!);
+    const getWizardConfig = (url: string) => decompress<any>(getHashParams(url).get("wizards")!);
+
+    // Params live in the hash query (`#/plugins/patient-analytics/?…`), which
+    // URL.searchParams does not see.
+    function getHashParams(url: string): URLSearchParams {
+      const hash = new URL(url, "https://example.com").hash;
+      return new URLSearchParams(hash.slice(hash.indexOf("?") + 1));
+    }
 
     it("uses the same payload builder for direct and Cohort Builder flows", () => {
       const formData = { age: 65 };
       const directPayload = buildWizardSubmitPayload(defaultFields, formData, defaultMeta, "dataset-123");
       const deepLink = generateFormSubmitDeepLink(defaultFields, formData, defaultMeta, "dataset-123");
-      const url = new URL(deepLink, "https://example.com");
+      const hashParams = getHashParams(deepLink);
 
-      expect(decompress(url.searchParams.get("query")!)).toEqual(directPayload.bookmark);
-      expect(decompress(url.searchParams.get("wizards")!)).toEqual(directPayload.wizardConfig);
+      expect(decompress(hashParams.get("query")!)).toEqual(directPayload.bookmark);
+      expect(decompress(hashParams.get("wizards")!)).toEqual(directPayload.wizardConfig);
     });
 
     it("should generate URL with correct format", () => {
@@ -319,7 +325,7 @@ describe("deepLinks", () => {
       const result = generateFormSubmitDeepLink(defaultFields, formData, defaultMeta, datasetId);
 
       expect(result).toBeTruthy();
-      expect(result).toContain("/d2e/portal/researcher/cohort");
+      expect(result).toContain("/atlas/#/plugins/patient-analytics/");
       expect(result).toContain("datasetId=dataset-123");
       expect(result).toContain("linkType=cohort-definition");
       expect(result).toContain("query=");
