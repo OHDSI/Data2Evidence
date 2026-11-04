@@ -159,10 +159,11 @@ def create_embeddings_duckdb(conn, schema_name, chunksize, tmp_embedding_table='
     conn.execute(f'CREATE TABLE "{schema_name}"."{tmp_embedding_table}" (concept_id int, vec FLOAT[384]);')
 
     ## Stream concept rows in Arrow RecordBatches of ~chunksize rows so we
-    ## never materialize the full 6M-row table in memory.
-    reader = conn.execute(
+    ## never materialize the full 6M-row table in memory. Read on a separate
+    ## cursor: the INSERTs below would otherwise end the stream after one batch.
+    reader = conn.cursor().sql(
         f'SELECT concept_id, concept_name FROM "{schema_name}".concept'
-    ).fetch_record_batch(chunksize)
+    ).to_arrow_reader(chunksize)
 
     processed = 0
     for batch in reader:
