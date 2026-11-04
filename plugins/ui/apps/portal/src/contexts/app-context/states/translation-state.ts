@@ -1309,7 +1309,7 @@ export const i18nDefault = {
     MANAGE_METADATA_DIALOG__REORDER: "Drag to reorder",
     MANAGE_METADATA_DIALOG__REORDER_DISABLED: "Clear search to reorder manually",
     MANAGE_METADATA_DIALOG__NO_DATA: "No metadata yet",
-    MANAGE_METADATA_DIALOG__NO_DATA_DESCRIPTION: "This data source has no metadata. Use Add metadata above to add one.",
+    MANAGE_METADATA_DIALOG__NO_DATA_DESCRIPTION: "This data source has no metadata. Use Add metadata above to add one, or import a JSON file.",
     MANAGE_METADATA_DIALOG__NO_RESULTS: "No metadata matches your search.",
     MANAGE_METADATA_DIALOG__METADATA_NAME: "Metadata name",
     MANAGE_METADATA_DIALOG__METADATA_ID: "Metadata ID",
