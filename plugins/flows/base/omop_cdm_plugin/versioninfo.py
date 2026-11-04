@@ -143,20 +143,14 @@ def get_and_update_attributes(dataset: dict):
                 logger=logger
                 )
             
-            # update entity_count_distribution or error msg
-            entity_count_distribution = update_entity_count_distribution(
-                portal_server_api=portal_server_api,
-                dataset_id=dataset_id,
-                dbdao=dbdao,
-                schema_name=schema_name,
-                logger=logger
-            )
+            # entity counts per table, used for total_entity_count
+            entity_counts = get_entity_counts(dbdao, schema_name, logger)
             
             # update total_entity_count or error msg
             update_total_entity_count(
                 portal_server_api=portal_server_api,
                 dataset_id=dataset_id,
-                entity_count_distribution=entity_count_distribution,
+                entity_counts=entity_counts,
                 logger=logger
             )
 

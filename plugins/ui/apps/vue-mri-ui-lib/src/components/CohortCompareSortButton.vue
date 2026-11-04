@@ -19,7 +19,7 @@
       </button>
       <dropDownMenu
         :target="menuButton"
-        boundariesElement="modal-body"
+        boundariesElement="d2e-dialog__body"
         :subMenu="menuData"
         :opened="menuVisible"
         :openParam="menuOpenParam"

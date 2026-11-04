@@ -1,5 +1,25 @@
 import { defineStore } from 'pinia'
 import { applyPageSelection, retainIds } from '../components/helpers/explorationSelection'
+import { emptyFilters, type ExplorationFilters } from '../components/helpers/explorationFilters'
+import type { ExplorationSortKey } from '../components/helpers/explorationList'
+import { PAGE_SIZES } from '../components/helpers/explorationPaging'
+
+export interface ExplorationListView {
+  searchQuery: string
+  sortKey: ExplorationSortKey
+  filters: ExplorationFilters
+  page: number
+  pageSize: number
+}
+
+const copyFilters = (filters: ExplorationFilters): ExplorationFilters => ({
+  ...filters,
+  authors: [...filters.authors],
+  statuses: [...filters.statuses],
+  created: { ...filters.created },
+  lastUpdated: { ...filters.lastUpdated },
+  lastMaterialized: { ...filters.lastMaterialized },
+})
 
 // Exploration-only UI state. Deliberately Pinia, not Vuex: Vuex module state is
 // shared across mounts (see the plan Appendix B), while Pinia is per-mount.
@@ -12,6 +32,13 @@ export const useExplorationsStore = defineStore('explorations', {
     // from unset to set; Analyze needs the active bookmark set (dashboardContext
     // reads it) without that switch firing and unmounting this page mid-click.
     analyzeInProgress: false,
+    listView: {
+      searchQuery: '',
+      sortKey: 'lastUpdated',
+      filters: emptyFilters(),
+      page: 1,
+      pageSize: PAGE_SIZES[0],
+    } as ExplorationListView,
   }),
   getters: {
     isSelected: state => (id: string) => state.selectedBookmarkIds.includes(id),
@@ -38,6 +65,9 @@ export const useExplorationsStore = defineStore('explorations', {
     /** Drop ids that left the filtered set. Pass the matched ids, not the page. */
     retain(visibleIds: string[]) {
       this.selectedBookmarkIds = retainIds(this.selectedBookmarkIds, visibleIds)
+    },
+    saveListView(view: ExplorationListView) {
+      this.listView = { ...view, filters: copyFilters(view.filters) }
     },
   },
 })

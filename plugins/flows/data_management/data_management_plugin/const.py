@@ -1,5 +1,3 @@
-from re import compile
-
 from _shared_flow_utils.dao.DBDao import DBDao
 from _shared_flow_utils.types import InternalPluginType
 
@@ -12,15 +10,6 @@ DATAMODEL_CDM_VERSION = {
     "custom-omop-ms-phi": "5.3",
     "waveform": "5.4"
 }
-
-CHANGESET_AVAILABLE_REGEX = compile(r"db/migrations/\S+")
-
-LB_ERROR_MESSAGE_REGEX = compile(r"Unexpected error running Liquibase:")
-
-PASSWORD_REGEX = compile(r"password=\S+")
-
-SSL_TRUST_STORE_REGEX = compile(
-    r"&sslTrustStore=-----BEGIN CERTIFICATE-----[a-zA-Z0-9\+\/]+-----END CERTIFICATE-----")
 
 
 def hana_to_postgres(table_name: str) -> str:

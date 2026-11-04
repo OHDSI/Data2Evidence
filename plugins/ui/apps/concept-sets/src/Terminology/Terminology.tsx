@@ -135,6 +135,7 @@ const NameSection = ({
   isUserConceptSet,
   saveConceptSet,
   isLoading,
+  isSaving,
   conceptSetId,
   onClickClose,
   errorMsg,
@@ -147,6 +148,7 @@ const NameSection = ({
   isUserConceptSet: boolean;
   saveConceptSet(): void;
   isLoading: boolean;
+  isSaving: boolean;
   conceptSetId: string | null;
   onClickClose(): void;
   errorMsg: string;
@@ -226,6 +228,7 @@ const NameSection = ({
             text={getText(i18nKeys.TERMINOLOGY__CLOSE)}
             style={{ marginLeft: 10 }}
             onClick={onClickClose}
+            disabled={isSaving}
           />
         </Box>
       </Box>
@@ -398,6 +401,7 @@ export const Terminology: FC<TerminologyProps> = ({
   const [conceptSetShared, setConceptSetShared] = useState(false);
   const [isUserConceptSet, setIsUserConceptSet] = useState(false);
   const [isConceptSetLoading, setIsConceptSetLoading] = useState(false);
+  const [isConceptSetSaving, setIsConceptSetSaving] = useState(false);
   const [currentConceptSet, setCurrentConceptSet] = useState<ConceptSet | null>(
     null,
   );
@@ -541,6 +545,7 @@ export const Terminology: FC<TerminologyProps> = ({
       ...(!conceptSetId && { userName }),
     };
     setIsConceptSetLoading(true);
+    setIsConceptSetSaving(true);
     try {
       // When creating a new concept set there is no id yet. Use "0" (a
       // never-existing id) as the exclusion sentinel: the backend route param
@@ -597,6 +602,7 @@ export const Terminology: FC<TerminologyProps> = ({
       );
     } finally {
       setIsConceptSetLoading(false);
+      setIsConceptSetSaving(false);
     }
   }, [
     selectedConcepts,
@@ -797,7 +803,7 @@ export const Terminology: FC<TerminologyProps> = ({
   }, [getConceptSet, selectedConceptSetId, selectedConceptSetCanWrite]);
 
   const onClickClose = useCallback(() => {
-    if (!onClose) {
+    if (!onClose || isConceptSetSaving) {
       return;
     }
 
@@ -826,6 +832,7 @@ export const Terminology: FC<TerminologyProps> = ({
     selectedConcepts,
     isConceptMultiSelect,
     isConceptSet,
+    isConceptSetSaving,
   ]);
 
   if (!activeDatasetId) {
@@ -957,6 +964,7 @@ export const Terminology: FC<TerminologyProps> = ({
             isUserConceptSet={isUserConceptSet}
             saveConceptSet={saveConceptSet}
             isLoading={isConceptSetLoading}
+            isSaving={isConceptSetSaving}
             conceptSetId={conceptSetId}
             onClickClose={onClickClose}
             errorMsg={errorMsg}

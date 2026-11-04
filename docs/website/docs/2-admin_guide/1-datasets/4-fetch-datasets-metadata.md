@@ -9,7 +9,6 @@ This should trigger a job to run in the background which will update the followi
 - Latest Available Schema Version
 - CDM Version (OMOP data models only)
 - Patient Count (OMOP data models only)
-- Entity Count Distribution (OMOP data models only)
 - Total Entity Count (OMOP data models only)
 ![Get Version Info Flow Run](../images/metadata/GetVersionInfoJob.png)
 
@@ -19,7 +18,6 @@ Current Schema Version and Latest Available Schema Version are displayed on the 
 For OMOP data models:
 
 - The dataset will be displayed in the Researcher Portal alongside an updated donut chart if data is present in the schema
-- The donut chart is populated based on the Entity Count Distribution
 - Total Subjects is based on the Patient Count
 - This information can also be viewed in the Dataset Info tab
 

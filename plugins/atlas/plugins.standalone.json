@@ -115,11 +115,19 @@
           "icon": "mdi-license",
           "group": "Data quality",
           "order": 10
+        },
+        {
+          "id": "checks",
+          "surface": "datasource-sidebar",
+          "name": "Data quality checks",
+          "icon": "mdi-list-box-outline",
+          "group": "Data quality",
+          "order": 20
         }
       ],
       "metadata": {
         "author": "D2E",
-        "description": "OMOP CDM data quality dashboard for the selected data source"
+        "description": "OMOP CDM data quality dashboard and checks for the selected data source"
       }
     },
     {

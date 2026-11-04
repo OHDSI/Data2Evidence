@@ -1,0 +1,52 @@
+.toggle {
+  display: inline-flex;
+  height: 48px;
+  box-sizing: border-box;
+  overflow: hidden;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: 4px;
+  background: #fff;
+}
+
+.option {
+  display: grid;
+  place-items: center;
+  width: 50px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: rgba(0, 0, 0, 0.6);
+  cursor: pointer;
+}
+
+.option + .option {
+  border-left: 1px solid rgba(0, 0, 0, 0.12);
+}
+
+.option:hover {
+  background: rgba(0, 0, 0, 0.04);
+}
+
+.option:focus {
+  outline: none;
+}
+
+.option:focus-visible {
+  outline: 1px dotted rgb(0, 84, 131);
+  outline-offset: -3px;
+}
+
+.selected {
+  background: rgba(0, 0, 0, 0.12);
+  color: rgba(0, 0, 0, 0.87);
+}
+
+.selected:hover {
+  background: rgba(0, 0, 0, 0.16);
+}
+
+.option svg {
+  width: 20px;
+  height: 20px;
+  fill: currentColor;
+}

@@ -17,6 +17,13 @@ export async function applyConstraintValue(
 ): Promise<any> {
   const constraintType = constraint.props.type
   if (constraintType === 'num') {
+    // Handle case when input field is empty
+    if (rawInput === null || typeof rawInput === 'undefined' || String(rawInput).trim() === '') {
+      return dispatch('updateConstraintValue', {
+        constraintId: constraint.id,
+        value: [],
+      })
+    }
     let parsedValues: NumericFilterValue[] = []
     if (typeof rawInput === 'string') {
       parsedValues = parseNumericInput(rawInput)

@@ -5,7 +5,7 @@
     exactly as it did before the popover was added, so no existing consumer
     can regress.
   -->
-  <component :is="wrapper" v-bind="wrapperProps">
+  <component :is="wrapper" ref="wrapperRef" v-bind="wrapperProps">
     <template v-if="$slots.activator" #activator="{ props: activatorProps }">
       <slot name="activator" v-bind="activatorProps" />
     </template>
@@ -18,6 +18,10 @@
     <slot>
       <div
         class="d2e-menu"
+        :class="{
+          'd2e-menu--select': variant === 'select',
+          'd2e-menu--compact': density === 'compact',
+        }"
         role="menu"
         :style="{ width: resolvedWidth }"
         @keydown="onKeydown"
@@ -42,12 +46,12 @@
           <v-icon
             v-if="item.icon"
             :icon="item.icon"
-            size="20"
+            :size="density === 'compact' ? 18 : 20"
             class="d2e-menu__item-icon"
           />
           <span class="d2e-menu__item-label">{{ item.label }}</span>
           <v-icon
-            v-if="item.selected"
+            v-if="item.selected && variant === 'action'"
             icon="mdi-check"
             size="20"
             class="d2e-menu__item-check"
@@ -89,12 +93,14 @@ interface Props {
   items: D2eMenuItem[];
   /** Open state. Leave it unbound to let the menu own its open state. */
   modelValue?: boolean;
-  /** Panel width. A number becomes px. A string passes through. */
+  /** Panel width. A number becomes px. "activator" matches the activator. */
   width?: number | string;
   /** Vuetify location string for the popover anchor. */
   location?: string;
   /** Close the popover after a select. */
   closeOnSelect?: boolean;
+  variant?: "action" | "select";
+  density?: "default" | "compact";
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -102,6 +108,8 @@ const props = withDefaults(defineProps<Props>(), {
   width: 330,
   location: "bottom end",
   closeOnSelect: true,
+  variant: "action",
+  density: "default",
 });
 
 const emit = defineEmits<{
@@ -120,9 +128,15 @@ const PassThrough = defineComponent({
   },
 });
 
-const resolvedWidth = computed(() =>
-  typeof props.width === "number" ? `${props.width}px` : props.width,
-);
+const wrapperRef = ref<{ activatorEl?: HTMLElement } | null>(null);
+const activatorWidth = ref<number>();
+
+const resolvedWidth = computed(() => {
+  if (props.width === "activator") {
+    return activatorWidth.value ? `${activatorWidth.value}px` : undefined;
+  }
+  return typeof props.width === "number" ? `${props.width}px` : props.width;
+});
 
 // When `modelValue` is not bound, the menu keeps its own open state. An
 // activator then works without the caller wiring `v-model`.
@@ -130,6 +144,12 @@ const internalOpen = ref(false);
 const isOpen = computed(() =>
   props.modelValue === undefined ? internalOpen.value : props.modelValue,
 );
+
+watch(isOpen, (open) => {
+  if (open && props.width === "activator") {
+    activatorWidth.value = wrapperRef.value?.activatorEl?.offsetWidth;
+  }
+});
 
 function setOpen(value: boolean) {
   internalOpen.value = value;
@@ -144,6 +164,7 @@ const wrapperProps = computed(() =>
         modelValue: isOpen.value,
         location: props.location,
         closeOnContentClick: false,
+        offset: props.variant === "select" ? 4 : undefined,
         "onUpdate:modelValue": setOpen,
       }
     : {},
@@ -244,12 +265,12 @@ function onSelect(item: D2eMenuItem) {
 
 <style scoped lang="scss">
 // Values from design-system/menu-dropdown.md: container 330 (showcase width),
-// radius 8, padding 16/12, elevation/8; rows 40 px, Body 1/Subtitle 1.
+// radius 8, padding 12/0, elevation/8; rows 40 px and edge to edge, Body 1/Subtitle 1.
 // The width comes from the `width` prop as an inline style.
 .d2e-menu {
   display: flex;
   flex-direction: column;
-  padding: 12px 16px;
+  padding: 12px 0;
   background: var(--d2e-color-white);
   border-radius: 8px;
   box-shadow: var(--d2e-elevation-e8);
@@ -261,11 +282,11 @@ function onSelect(item: D2eMenuItem) {
     gap: 8px;
     width: 100%;
     height: 44px;
-    padding: 12px 24px 12px 16px;
+    padding: 12px 40px 12px 32px;
     color: var(--d2e-color-primary);
     background: transparent;
     border: 0;
-    border-radius: 4px;
+    border-radius: 0;
     font-size: var(--d2e-font-body1-size);
     font-weight: var(--d2e-font-body1-weight);
     line-height: var(--d2e-font-body1-line-height);
@@ -274,6 +295,16 @@ function onSelect(item: D2eMenuItem) {
 
     &:hover {
       background: var(--d2e-color-primary-xtra-lightest);
+    }
+
+    &:focus {
+      outline: none;
+    }
+
+    &:focus-visible {
+      background: var(--d2e-color-primary-xtra-lightest);
+      outline: var(--d2e-border-width-md) solid var(--d2e-color-primary-light);
+      outline-offset: calc(-1 * var(--d2e-border-width-md));
     }
 
     &--selected {
@@ -290,6 +321,44 @@ function onSelect(item: D2eMenuItem) {
     // Delete reads in the alarm colour (Figma 1801:215950).
     &--danger:not(.d2e-menu__item--disabled) {
       color: var(--d2e-color-alarm);
+    }
+  }
+
+  &--select {
+    padding: var(--d2e-spacing-xs) 0;
+  }
+
+  &--compact {
+    padding: var(--d2e-spacing-xs) 0;
+  }
+
+  &--compact &__item {
+    height: 40px;
+    padding: 0 var(--d2e-spacing-s);
+    font-size: var(--d2e-font-body2-size);
+    font-weight: var(--d2e-font-body2-weight);
+    line-height: var(--d2e-font-body2-line-height);
+  }
+
+  &--select &__item {
+    height: 40px;
+    padding: 0 var(--d2e-spacing-s);
+    color: rgba(0, 0, 0, 0.87);
+
+    &:hover,
+    &:focus-visible {
+      background: rgba(0, 0, 0, 0.035);
+    }
+  }
+
+  &--select &__item--selected {
+    font-weight: var(--d2e-font-body1-weight);
+    color: rgba(0, 0, 0, 0.87);
+    background: rgba(0, 0, 0, 0.104);
+
+    &:hover,
+    &:focus-visible {
+      background: rgba(0, 0, 0, 0.139);
     }
   }
 

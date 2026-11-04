@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { SIZE_MAP, VARIANT_MAP } from "../components/buttonVariants";
+import {
+  BUTTON_SIZE_SPEC,
+  SIZE_MAP,
+  VARIANT_MAP,
+} from "../components/buttonVariants";
+import { tokens } from "../tokens/tokens";
 
 describe("D2eButton lookup tables", () => {
   it("maps every variant to the Vuetify variant/color pair", () => {
@@ -19,5 +24,15 @@ describe("D2eButton lookup tables", () => {
     expect(SIZE_MAP.sm).toBe("small");
     expect(SIZE_MAP.md).toBeUndefined();
     expect(SIZE_MAP.lg).toBe("large");
+  });
+
+  it("gives each size the design system height and label size", () => {
+    expect(BUTTON_SIZE_SPEC.sm).toEqual({ height: 28, fontSize: 12 });
+    expect(BUTTON_SIZE_SPEC.md).toEqual({ height: 36, fontSize: 14 });
+    expect(BUTTON_SIZE_SPEC.lg).toEqual({ height: 44, fontSize: 16 });
+  });
+
+  it("keeps the default label size token at the md size", () => {
+    expect(tokens.font.button.size).toBe(BUTTON_SIZE_SPEC.md.fontSize);
   });
 });

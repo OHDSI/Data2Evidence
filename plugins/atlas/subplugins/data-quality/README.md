@@ -34,6 +34,7 @@ changes automatically. Use query parameters to exercise dashboard states:
 | `?state=no-source` | No selected data source. |
 | `?delay=2000` | Delay responses to inspect loading states. |
 | `?token=late` | Delay token availability to reproduce login initialization. |
+| `?view=checks` | Render the Data quality checks view instead of the dashboard. |
 
 Run the package checks when needed:
 

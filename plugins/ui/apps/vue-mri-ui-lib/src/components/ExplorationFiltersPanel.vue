@@ -45,7 +45,7 @@
         :placeholder="getText('MRI_PA_EXPLORATIONS_FILTER_STATUS')"
         prepend-icon="mdi-check-circle-outline"
         data-testid="explorations-filter-status"
-        @update:model-value="patch({ statuses: ($event as MaterializationStatus[]) ?? [] })"
+        @update:model-value="patch({ statuses: ($event as D2eExplorationCardStatus[]) ?? [] })"
       />
 
       <div v-for="group in dateGroups" :key="group.key" class="filters-panel__group">
@@ -100,9 +100,9 @@
 import { computed } from 'vue'
 import { useStore } from 'vuex'
 import { VSwitch } from 'vuetify/components'
-import { D2eButton, D2eDateField, D2eSelect } from '@d2e/ui'
+import { D2eButton, D2eDateField, D2eExplorationCardStatus, D2eSelect } from '@d2e/ui'
 import type { D2eSelectItem } from '@d2e/ui'
-import { isEmpty, type DateRange, type ExplorationFilters, type MaterializationStatus } from './helpers/explorationFilters'
+import { isEmpty, type DateRange, type ExplorationFilters } from './helpers/explorationFilters'
 
 interface Props {
   modelValue: ExplorationFilters
@@ -127,17 +127,22 @@ const getText = (key: string): string => {
 /** The three date ranges, in the frame's order. Only CREATED is blocked. */
 type DateGroupKey = 'created' | 'lastUpdated' | 'lastMaterialized'
 
-const dateGroups: { key: DateGroupKey; labelKey: string; disabled: boolean }[] = [
+const ALL_DATE_GROUPS: { key: DateGroupKey; labelKey: string; disabled: boolean }[] = [
   { key: 'created', labelKey: 'MRI_PA_EXPLORATIONS_FILTER_CREATED', disabled: true },
   { key: 'lastUpdated', labelKey: 'MRI_PA_EXPLORATIONS_FILTER_LAST_UPDATED', disabled: false },
   { key: 'lastMaterialized', labelKey: 'MRI_PA_EXPLORATIONS_FILTER_LAST_MATERIALIZED', disabled: false },
 ]
 
+const SHOW_CREATED_FILTER = false
+
+const dateGroups = ALL_DATE_GROUPS.filter(group => SHOW_CREATED_FILTER || group.key !== 'created')
+
 const authorItems = computed<D2eSelectItem[]>(() => props.authors.map(name => ({ label: name, value: name })))
 
 const statusItems = computed<D2eSelectItem[]>(() => [
-  { label: getText('MRI_PA_EXPLORATIONS_FILTER_MATERIALIZED'), value: 'materialized' },
-  { label: getText('MRI_PA_EXPLORATIONS_FILTER_NOT_MATERIALIZED'), value: 'not-materialized' },
+  { label: getText('MRI_PA_EXPLORATIONS_FILTER_READY'), value: D2eExplorationCardStatus.READY },
+  { label: getText('MRI_PA_EXPLORATIONS_FILTER_STALE'), value: D2eExplorationCardStatus.STALE },
+  { label: getText('MRI_PA_EXPLORATIONS_FILTER_NOT_RUN'), value: D2eExplorationCardStatus.NOT_RUN },
 ])
 
 /**

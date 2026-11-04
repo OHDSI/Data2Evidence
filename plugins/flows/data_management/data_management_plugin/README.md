@@ -1,57 +1,102 @@
-# How to use this repo
+# Data management plugin
+
+Creates and updates the tables of a data model (`omop5-4`, `waveform`, `medical-imaging`) by running
+the `.sql` changesets under `db/migrations/<dialect>/changesets/`. `sql_migration.py` runs them
+directly with SQLAlchemy, in place of the Liquibase CLI.
+
+## Changeset files
+
+A changeset is a plain `.sql` file:
+
+```sql
+-- V1.0.0.0.0__create_test_table.sql
+CREATE TABLE test (id integer NOT NULL, name varchar(50));
+CREATE INDEX idx_test_id ON test (id);
+```
+
+- **Location:** `data_management_plugin/db/migrations/<dialect>/changesets/<directory>/`, where
+  `<dialect>` is `postgres` or `hana`.
+- **Naming:** `V<version>__<description>.sql`. Files run in file-name order, and the portal shows the
+  `V<version>` part as the schema version.
+- **One changeset per file.** It is split into statements on top-level `;` (comments, strings and quoted
+  identifiers are respected), and all statements run in one transaction on Postgres.
+- **Stored procedures and triggers** can't be split on `;`. Put `-- splitStatements:false` on its own line
+  and the whole file runs as one statement.
+- **Placeholders:** `${VOCAB_SCHEMA}` is replaced with the vocabulary schema. It is the only placeholder.
+  `:name` is left alone, so HANA SQLScript variables such as `:Questionnaire_ID` work.
+- **Liquibase headers are optional.** Existing files keep `--liquibase formatted sql` and
+  `--changeset author:id` (with `splitStatements:false` on that line for procedures); `--rollback`
+  lines are ignored. Without a header the author is recorded as `d2e` and the id as the file name.
+
+`tests/test_sql_migration.py` lints every changeset (one changeset per file, no `$$` body in a file
+that is split, no unknown `${...}` placeholder), so run the tests after adding or editing one.
 
 ## Creating a new data model
-### Modify the metadata of the package
-- Register the name of the new data model in `metadata/alp-job.json` e.g.:
-    ```
-    {  
-        "name": "datamodel_plugin",
-        "type": "datamodel",
-        "datamodels": [..., "new-datamodel"],
-        "entrypoint": "datamodel_plugin/flow.py"
-    }
-    ```
 
-### Add migration scripts required to create the tables of the new data model 
-- Create a folder e.g. `new-datamodel` under `datamodel_plugin/db/migrations/hana/changesets`
-- Within this folder, add Liquibase formatted changesets in the order they should be applied e.g.:
-  ```
-  --liquibase formatted sql
-  --changeset author_name:V1.0.0__create_tables.sql
-  
-  CREATE TABLE test ("ID" VARCHAR(50));
-  ```
+1. Add the changeset files in a new directory, e.g. `db/migrations/postgres/changesets/new-datamodel/`
+   (and one under `hana` if it supports HANA).
+2. Register the directories in `DATAMODEL_CHANGESET_DIRS` in `sql_migration.py`, in the order they
+   should run, per dialect:
+   ```python
+   DATAMODEL_CHANGESET_DIRS = {
+       "postgres": {..., "new-datamodel": ["new-datamodel"]},
+       "hana": {..., "new-datamodel": ["new-datamodel"]},
+   }
+   ```
+3. Register the data model in the package manifest by rerunning `flowinit.py` from `plugins/flows`
+   with it added to `-dm`. This updates `plugins/flows/data_management/package.json`:
+   ```
+   python flowinit.py [package_name] data_management/data_management_plugin/flow.py:data_management_plugin datamodel -dm omop5-4,medical-imaging,waveform,new-datamodel
+   ```
 
-### Add a changelog to reference the location of the migration scripts
-- Create a changelog.xml in `datamodel_plugin/db/migrations/hana` e.g `liquibase-new-datamodel.xml`
-  ```
-    <databaseChangeLog
-    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
-    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
-            http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd">
+## Updating an existing data model
 
-        <includeAll path="changesets/new-datamodel" relativeToChangelogFile="true"/>
-    </databaseChangeLog>
-  ```
+Add a new file with the next `V<version>` to the model's directory, e.g.
+`db/migrations/postgres/changesets/omop5-4/`. Don't edit a file that has already been applied. The next
+`update_datamodel` run applies it.
 
-### Add the changelog mapping for the new data model 
-- Register the data model and its respective changelog in the dictionary `DATAMODEL_CHANGELOG_MAPPING` located in `datamodel_plugin/config.py`
-  ```
-  DATAMODEL_CHANGELOG_MAPPING = {
-    ...,
-    "new-datamodel": "liquibase-new-datamodel.xml"
-  }
-  ```
+Applied changesets are recorded per schema in the `databasechangelog` table, the same table Liquibase
+used, so schemas Liquibase already migrated are picked up as-is. Each run applies only the changesets
+not yet recorded there.
 
-## Updating existing data models
+An applied changeset must not be edited. Each run first checks every already-applied file against its
+record and stops before running anything if the author or id changed, or, for changesets this runner
+recorded, if the file's content changed (Liquibase's own checksums can't be recomputed, so for rows
+Liquibase wrote only the author and id are checked). Add a new changeset instead.
 
-### Add migration scripts to update an existing data model 
-- Look for the folder with the name of the existing data model under `datamodel_plugin/db/migrations/hana/changesets` e.g. `datamodel_plugin/db/migrations/hana/changesets/omop5-4`
-- Within this folder, add Liquibase formatted changesets in the order they should be applied e.g.:
-  ```
-  --liquibase formatted sql
-  --changeset author_name:V1.0.0__create_tables.sql
-  
-  CREATE TABLE test ("ID" VARCHAR(50));
-  ```
+## Flow actions
+
+| Action | What it does |
+|---|---|
+| `create_datamodel` | Creates the schema, runs every changeset, assigns roles |
+| `update_datamodel` | Runs the changesets not yet recorded |
+| `changelog_sync` | Records the pending changesets as executed **without running their SQL**, to baseline a schema that was provisioned another way |
+| `get_version_info` | Reports each dataset's current and latest schema version to the portal |
+| `create_cdm_schema` | Creates the vocabulary and CDM schemas if they don't exist |
+
+`rollback_count` and `rollback_tag` no longer exist.
+
+## Guarantees and limits
+
+- **One migration per schema at a time.** A run holds a row lock on `databasechangeloglock` (the table
+  Liquibase used) for its whole duration, on both Postgres and HANA. A second run waits for the first to
+  finish. The database drops the lock if a run dies, so a crashed run never blocks the next one.
+- **Postgres:** a changeset and its `databasechangelog` row commit in one transaction.
+- **HANA:** DDL auto-commits, so a crash between a changeset and its changelog row can leave them out of
+  step. The HANA changesets and the HANA lock have not been run against a real HANA instance.
+- A data model or dialect that isn't registered fails before anything in the schema is changed.
+
+## Running the tests
+
+From `plugins/flows/data_management`:
+
+```
+uv run pytest data_management_plugin/tests
+uv run --with pytest-cov pytest data_management_plugin/tests --cov=data_management_plugin --cov-branch --cov-report=term-missing
+```
+
+The unit tests need no database: Prefect tasks and DAOs are mocked, and SQLite stands in for the
+changelog and lock tables. Every statement and branch of the plugin is covered. They do not run in CI
+automatically. Behavior that needs a real database (a schema Liquibase already migrated, concurrent
+runs, a crashed run, an edited changeset) was checked by hand against Postgres, and nothing has been run
+against HANA.

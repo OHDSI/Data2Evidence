@@ -228,11 +228,37 @@ Deno.test("refreshCohortCacheEntry deletes the entry when the cohort cannot be r
     assert.assertEquals(dao.upserted, []);
 });
 
-Deno.test("refreshCohortCacheEntry returns false when the query throws", async () => {
+Deno.test("refreshCohortCacheEntry deletes the entry when the query throws", async () => {
     const dao = fakeDao();
     const cohortEndpoint = {
         getCohortDefinition: () => Promise.resolve({ data: [] }),
         queryCohorts: () => Promise.reject(new Error("hana unavailable")),
+    };
+
+    const refreshed = await refreshCohortCacheEntry(
+        {
+            cohortEndpoint,
+            cohortDefinitionId: 42,
+            bookmarkId: BOOKMARK,
+            datasetId: DATASET,
+            paConfigId: PA_CONFIG,
+        },
+        dao,
+    );
+    assert.assertEquals(refreshed, false);
+    assert.assertEquals(dao.deleted, [KEY]);
+    assert.assertEquals(dao.upserted, []);
+});
+
+Deno.test("refreshCohortCacheEntry returns false when the upsert and the delete throw", async () => {
+    const dao = {
+        ...fakeDao(),
+        upsert: () => Promise.reject(new Error("cache unavailable")),
+        deleteKey: () => Promise.reject(new Error("cache unavailable")),
+    };
+    const cohortEndpoint = {
+        getCohortDefinition: () => Promise.resolve({ data: [] }),
+        queryCohorts: () => Promise.resolve([cohortRow()]),
     };
 
     const refreshed = await refreshCohortCacheEntry(

@@ -1,0 +1,87 @@
+.d2e-menu {
+  display: flex;
+  flex-direction: column;
+  // Figma "Single select dropdown": MenuList has 8px vertical padding only — no
+  // horizontal inset, so rows (and their hover/selected fills) span edge to edge.
+  padding: 8px 0;
+  overflow: hidden;
+  background: var(--d2e-color-white);
+  border-radius: 8px;
+  box-shadow: var(--d2e-elevation-e8);
+  font-family: var(--d2e-font-family);
+
+  // Figma "Menu action item": navy #000080 (Default) / red (Danger) text+icon,
+  // 12px icon gap, pl 16 / pr 24. This is an action menu — not the Select
+  // dropdown's "Menu item" (black text, 12% selected), which stays as the theme.
+  &__item {
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    height: 40px;
+    padding: 8px 24px 8px 16px;
+    color: var(--d2e-color-primary);
+    background: transparent;
+    border: 0;
+    font-family: var(--d2e-font-family);
+    font-size: var(--d2e-font-body1-size);
+    font-weight: var(--d2e-font-body1-weight);
+    line-height: var(--d2e-font-body1-line-height);
+    letter-spacing: 0.15px;
+    text-align: left;
+    cursor: pointer;
+
+    // Hover = 4% of the item's tone (navy), not a grey — so it reads distinctly
+    // from the grey "selected" fill (Figma "Menu action item" Hover).
+    &:hover {
+      background: rgba(0, 0, 128, 0.04);
+    }
+
+    &--selected {
+      background: rgba(0, 0, 0, 0.12);
+    }
+
+    &--disabled {
+      opacity: 0.38;
+      cursor: not-allowed;
+    }
+
+    &--danger:not(.d2e-menu__item--disabled) {
+      color: var(--d2e-color-alarm);
+
+      // Danger hover tone = 4% red.
+      &:hover {
+        background: rgba(213, 57, 57, 0.04);
+      }
+    }
+  }
+
+  // 1px divider (black 12%) flush between items — no vertical spacing (Figma).
+  &__divider {
+    height: 1px;
+    margin: 0;
+    background: rgba(0, 0, 0, 0.12);
+  }
+
+  &__item-icon {
+    display: inline-flex;
+    color: currentColor;
+
+    .MuiSvgIcon-root {
+      font-size: 20px;
+    }
+  }
+
+  &__item-check {
+    margin-left: auto;
+    color: var(--d2e-color-primary);
+  }
+
+  &__item-label {
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}

@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import type { BaseSyntheticEvent } from "react";
 import { useForm } from "react-hook-form";
 import { useWizardContext } from "../context/WizardContext";
 import type { FieldDefinition, FormStepConfig } from "../types/wizard";
@@ -12,7 +13,9 @@ import { WizardDashboardModal } from "./WizardDashboardModal";
 import { useWizardDashboardFlow } from "../hooks/useWizardDashboardFlow";
 import {
   getFieldGroupCompletionHint,
-  getFieldGroupValidationMessage,
+  getFirstInvalidTarget,
+  getFormGroupValidationErrors,
+  getYearRangeErrors,
   isFieldDisabledByGroupLimit,
   resolveWizardFormLayout,
 } from "../utils/wizardSections";
@@ -25,6 +28,11 @@ import { DataSourceField } from "./DataSourceSelect";
 // Keep the legacy Cohort Builder action available for a one-line re-enable.
 // Standalone Wizards currently exposes only the direct dashboard action.
 const SHOW_COHORT_BUILDER_ACTION = false;
+
+const getGroupElementId = (groupId: string) => `wizard-group-${groupId}`;
+const getGroupErrorId = (groupId: string) => `${getGroupElementId(groupId)}-error`;
+const getFieldErrorId = (fieldId: string) => `${fieldId}-error`;
+const joinIds = (...ids: (string | false | undefined)[]) => ids.filter(Boolean).join(" ") || undefined;
 
 /**
  * Form step renderer with config-driven fields.
@@ -105,45 +113,43 @@ export function StepForm() {
     control,
     watch,
     setValue,
-    formState: { errors, isValid },
+    getValues,
+    setFocus,
+    formState: { errors, isSubmitted },
   } = useForm({
-    mode: "onChange",
+    mode: "onSubmit",
+    reValidateMode: "onChange",
+    shouldFocusError: false,
     defaultValues: defaultFormValues,
   });
 
-  // Watch all form values to check if required fields are filled
   const formValues = watch();
   const formLayout = useMemo(
     () => resolveWizardFormLayout(selectedWizard?.fields || [], selectedWizard?.sections),
     [selectedWizard],
   );
-  const groupValidationMessages = formLayout.sections.flatMap((section) =>
-    section.groups.flatMap((group) => {
-      const message = getFieldGroupValidationMessage(group, formValues);
-      return message ? [message] : [];
-    }),
-  );
-  const hasGroupValidationErrors = groupValidationMessages.length > 0;
+  const groupErrors = isSubmitted ? getFormGroupValidationErrors(formLayout, formValues) : {};
 
-  // Check if all required fields have values
-  const allRequiredFieldsFilled = useCallback(() => {
-    if (!selectedWizard) return false;
-    if (hasGroupValidationErrors) return false;
-    for (const field of selectedWizard.fields) {
-      if (field.type === "yearRange") {
-        const from = formValues[`${field.id}_from`];
-        const to = formValues[`${field.id}_to`];
-        // If required, both must be filled
-        if (field.required && (!from || from === "" || !to || to === "")) return false;
-        // If either is set, both must be set
-        if ((from && !to) || (!from && to)) return false;
-      } else if (field.required) {
-        const value = formValues[field.id];
-        if (!value || value === "") return false;
-      }
-    }
-    return true;
-  }, [selectedWizard, formValues, hasGroupValidationErrors]);
+  const focusFirstFieldInGroup = (groupId: string) => {
+    const groupElement = document.getElementById(getGroupElementId(groupId));
+    groupElement?.scrollIntoView({ block: "center" });
+    groupElement?.querySelector<HTMLElement>("input:not(:disabled), select:not(:disabled)")?.focus();
+  };
+
+  const focusFirstInvalid = (fieldErrorNames: string[], values: Record<string, unknown>) => {
+    const target = getFirstInvalidTarget(formLayout, fieldErrorNames, getFormGroupValidationErrors(formLayout, values));
+    if (target?.kind === "field") setFocus(target.name);
+    if (target?.kind === "group") focusFirstFieldInGroup(target.groupId);
+    return target !== null;
+  };
+
+  const submitWith = (handler: (data: Record<string, any>) => void | Promise<void>) => (event?: BaseSyntheticEvent) =>
+    handleSubmit(
+      (data) => (focusFirstInvalid([], data) ? undefined : handler(data)),
+      (fieldErrors) => {
+        focusFirstInvalid(Object.keys(fieldErrors), getValues());
+      },
+    )(event);
 
   const onSubmit = async (data: Record<string, any>) => {
     updateFormData(data);
@@ -231,6 +237,15 @@ export function StepForm() {
     const groupLimitBody = disabledByGroupLimit
       ? `(${containingGroup?.fields.map((groupField) => groupField.label).join(", ")}) can be filled in at the same time.`
       : null;
+    const groupErrorId =
+      containingGroup && groupErrors[containingGroup.id] ? getGroupErrorId(containingGroup.id) : undefined;
+    const errorId = getFieldErrorId(field.id);
+    const renderError = (message: string | undefined) =>
+      message && (
+        <span id={errorId} className={styles.errorMessage} role="alert">
+          {message}
+        </span>
+      );
 
     // Text fields with configPath use typeahead search
     if (field.type === "text" && field.configPath && configMeta) {
@@ -255,6 +270,7 @@ export function StepForm() {
               setValue={setValue}
               defaultValue={formData[field.id] ?? ""}
               error={fieldError as { message?: string } | undefined}
+              describedBy={joinIds(!!fieldError && errorId, groupErrorId)}
               onDisplayValueChange={handleDisplayValueChange}
               allowFreeText={field.allowFreeText}
             />
@@ -269,11 +285,7 @@ export function StepForm() {
               </div>
             )}
           </div>
-          {fieldError && (
-            <span className={styles.errorMessage} role="alert">
-              {fieldError.message as string}
-            </span>
-          )}
+          {renderError(fieldError?.message as string | undefined)}
         </div>
       );
     }
@@ -284,9 +296,9 @@ export function StepForm() {
       const currentYear = new Date().getFullYear();
       const startYear = 1900;
       const years = Array.from({ length: currentYear - startYear + 1 }, (_, i) => currentYear - i);
-      const fromYearValue = watch(`${field.id}_from`);
-      const toYearValue = formValues[`${field.id}_to`];
-      const hasYearError = fromError || toError;
+      const fromFieldName = `${field.id}_from`;
+      const toFieldName = `${field.id}_to`;
+      const yearRangeErrorMessage = (fromError?.message || toError?.message) as string | undefined;
 
       return (
         <div key={field.id} className={styles.fieldGroup}>
@@ -298,8 +310,11 @@ export function StepForm() {
             <select
               id={`${field.id}_from`}
               className={`${styles.input} ${fromError ? styles.inputError : ""}`}
-              {...register(`${field.id}_from`, {
-                required: field.required ? "From year is required" : false,
+              aria-invalid={!!fromError}
+              aria-describedby={joinIds(!!yearRangeErrorMessage && errorId, groupErrorId)}
+              {...register(fromFieldName, {
+                deps: [toFieldName],
+                validate: (value) => getYearRangeErrors(value, getValues(toFieldName), field.required).from ?? true,
               })}
             >
               <option value="">From year</option>
@@ -313,15 +328,11 @@ export function StepForm() {
             <select
               id={`${field.id}_to`}
               className={`${styles.input} ${toError ? styles.inputError : ""}`}
-              {...register(`${field.id}_to`, {
-                required: field.required ? "To year is required" : false,
-                validate: (value) => {
-                  if (!value) return true;
-                  if (fromYearValue && Number(value) < Number(fromYearValue)) {
-                    return "To year must be greater than or equal to from year";
-                  }
-                  return true;
-                },
+              aria-invalid={!!toError}
+              aria-describedby={joinIds(!!yearRangeErrorMessage && errorId, groupErrorId)}
+              {...register(toFieldName, {
+                deps: [fromFieldName],
+                validate: (value) => getYearRangeErrors(getValues(fromFieldName), value, field.required).to ?? true,
               })}
             >
               <option value="">To year</option>
@@ -332,15 +343,7 @@ export function StepForm() {
               ))}
             </select>
           </div>
-          {(hasYearError || (fromYearValue && !toYearValue) || (!fromYearValue && toYearValue)) && (
-            <span className={styles.errorMessage} role="alert">
-              {hasYearError
-                ? ((fromError?.message || toError?.message) as string)
-                : fromYearValue && !toYearValue
-                  ? "To year is required"
-                  : "From year is required"}
-            </span>
-          )}
+          {renderError(yearRangeErrorMessage)}
         </div>
       );
     }
@@ -387,7 +390,11 @@ export function StepForm() {
                 placeholder={field.placeholder || "e.g. >=60, [50-80]"}
                 className={`${styles.input} ${fieldError ? styles.inputError : ""}`}
                 aria-invalid={!!fieldError}
-                aria-describedby={disabledByGroupLimit ? `${field.id}-limit-help` : undefined}
+                aria-describedby={joinIds(
+                  !!fieldError && errorId,
+                  groupErrorId,
+                  disabledByGroupLimit && `${field.id}-limit-help`,
+                )}
                 disabled={disabledByGroupLimit}
                 {...register(field.id, {
                   required: field.required ? `${field.label} is required` : false,
@@ -416,11 +423,7 @@ export function StepForm() {
                 </span>
               )}
             </div>
-            {fieldError && (
-              <span className={styles.errorMessage} role="alert">
-                {fieldError.message as string}
-              </span>
-            )}
+            {renderError(fieldError?.message as string | undefined)}
           </div>
         );
 
@@ -437,15 +440,12 @@ export function StepForm() {
               placeholder={field.placeholder}
               className={`${styles.input} ${fieldError ? styles.inputError : ""}`}
               aria-invalid={!!fieldError}
+              aria-describedby={joinIds(!!fieldError && errorId, groupErrorId)}
               {...register(field.id, {
                 required: field.required ? `${field.label} is required` : false,
               })}
             />
-            {fieldError && (
-              <span className={styles.errorMessage} role="alert">
-                {fieldError.message as string}
-              </span>
-            )}
+            {renderError(fieldError?.message as string | undefined)}
           </div>
         );
 
@@ -463,15 +463,12 @@ export function StepForm() {
               aria-label={field.placeholder || field.label}
               className={`${styles.input} ${fieldError ? styles.inputError : ""}`}
               aria-invalid={!!fieldError}
+              aria-describedby={joinIds(!!fieldError && errorId, groupErrorId)}
               {...register(field.id, {
                 required: field.required ? `${field.label} is required` : false,
               })}
             />
-            {fieldError && (
-              <span className={styles.errorMessage} role="alert">
-                {fieldError.message as string}
-              </span>
-            )}
+            {renderError(fieldError?.message as string | undefined)}
           </div>
         );
 
@@ -482,7 +479,16 @@ export function StepForm() {
               {field.label}
               {field.required && <span className={styles.requiredAsterisk}> *</span>}:
             </label>
-            <div className={styles.unsupported}>Unsupported field type: {field.type}</div>
+            <div
+              ref={field.required ? register(field.id, { required: `${field.label} is required` }).ref : undefined}
+              tabIndex={field.required ? -1 : undefined}
+              className={styles.unsupported}
+              aria-invalid={!!fieldError}
+              aria-describedby={joinIds(!!fieldError && errorId, groupErrorId)}
+            >
+              Unsupported field type: {field.type}
+            </div>
+            {renderError(fieldError?.message as string | undefined)}
           </div>
         );
     }
@@ -516,9 +522,10 @@ export function StepForm() {
   const renderFieldGroup = (group: ResolvedWizardFieldGroup) => {
     const completionHint = getFieldGroupCompletionHint(group);
     const isRequiredGroup = (group.validation?.minAnswered ?? 0) > 0;
+    const groupError = groupErrors[group.id];
 
     return (
-      <div key={group.id} className={styles.sectionGroup}>
+      <div key={group.id} id={getGroupElementId(group.id)} className={styles.sectionGroup}>
         {group.label && (
           <div className={styles.groupHeader}>
             <div className={styles.groupTitleRow}>
@@ -552,6 +559,11 @@ export function StepForm() {
         <div className={`${styles.fieldGrid} ${getColumnsClass(group.columns)}`}>
           {renderFields(group.fields, group)}
         </div>
+        {groupError && (
+          <span id={getGroupErrorId(group.id)} className={styles.errorMessage} role="alert">
+            {groupError}
+          </span>
+        )}
       </div>
     );
   };
@@ -618,7 +630,7 @@ export function StepForm() {
       <hr className={styles.divider} />
 
       <form
-        onSubmit={handleSubmit(onSubmit)}
+        onSubmit={submitWith(onSubmit)}
         onKeyDown={(e) => {
           if (e.key === "Enter" && (e.target as HTMLElement).tagName !== "BUTTON") {
             e.preventDefault();
@@ -635,18 +647,14 @@ export function StepForm() {
           </button>
           <div className={styles.primaryActions}>
             {SHOW_COHORT_BUILDER_ACTION && (
-              <button
-                type="submit"
-                disabled={!allRequiredFieldsFilled() || !isValid}
-                className={`${styles.button} ${styles.buttonPrimary}`}
-              >
+              <button type="submit" className={`${styles.button} ${styles.buttonPrimary}`}>
                 <AnalyticsIcon /> {submitLabel}
               </button>
             )}
             <button
               type="button"
-              onClick={handleSubmit(onOpenDashboard)}
-              disabled={!allRequiredFieldsFilled() || !isValid || dashboardFlow.state.isOpen}
+              onClick={submitWith(onOpenDashboard)}
+              disabled={dashboardFlow.state.isOpen}
               aria-busy={dashboardFlow.state.isOpen && dashboardFlow.state.status !== "ready"}
               className={`${styles.button} ${styles.buttonPrimary}`}
             >
