@@ -6,8 +6,11 @@
         ref="inputRef"
         v-model="searchText"
         class="form-control"
+        :class="{ 'is-invalid': invalid }"
         type="text"
         :placeholder="placeholder"
+        :aria-invalid="invalid ? 'true' : undefined"
+        :aria-describedby="describedBy"
         autocomplete="off"
         @keydown="handleKeyDown"
         @focus="handleFocus"
@@ -105,6 +108,8 @@ const props = defineProps<{
   modelValue: string | null
   displayValue?: string
   placeholder?: string
+  invalid?: boolean
+  describedBy?: string
 }>()
 
 const emit = defineEmits<{
@@ -393,6 +398,10 @@ watch(
 </script>
 
 <style scoped>
+.form-control.is-invalid {
+  border-color: var(--color-feedback-error, #a3293d);
+}
+
 .concept-set-typeahead {
   position: relative;
   width: 100%;
