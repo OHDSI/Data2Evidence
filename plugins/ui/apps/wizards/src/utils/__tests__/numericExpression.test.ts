@@ -17,6 +17,7 @@ describe("validateNumericExpression", () => {
     "[50-80]",
     "]50-80[",
     "[ 50 - 80 ]",
+    "[100-40]",
   ])("accepts non-negative expression %j by default", (expression) => {
     expect(validateNumericExpression(expression)).toBe("valid");
   });

@@ -29,7 +29,7 @@ export function WizardShell() {
 
   useLayoutEffect(() => {
     const shell = shellRef.current;
-    if (!shell || portalProps.isAtlas !== true) return;
+    if (!shell || portalProps.isAtlas !== true || currentStepIndex === -1) return;
 
     // page-card is owned by Atlas and supplies the outer spacing used here.
     const pageCard = shell.closest<HTMLElement>(".page-card");
@@ -121,7 +121,11 @@ export function WizardShell() {
   return (
     <div
       ref={shellRef}
-      className={`${styles.shell} ${portalProps.isAtlas === true ? styles.atlasShell : ""}`}
+      className={[
+        styles.shell,
+        portalProps.isAtlas === true ? styles.atlasShell : "",
+        portalProps.isAtlas === true && currentStepIndex === -1 ? styles.atlasSelectionShell : "",
+      ].join(" ")}
       data-atlas-wizard-step={portalProps.isAtlas === true && currentStepIndex >= 0 ? "" : undefined}
     >
       <main className={styles.content}>

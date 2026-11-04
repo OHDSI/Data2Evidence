@@ -873,6 +873,169 @@ Deno.test("getConceptSetUsage does not confuse legacy and webapi concept sets wi
   }
 });
 
+const ifrBookmark = (
+  attributeConfigPath: string,
+  operator: string,
+  value: unknown,
+): string =>
+  JSON.stringify({
+    filter: {
+      configMetadata: { id: "config-1", version: "A" },
+      cards: {
+        type: "BooleanContainer",
+        op: "AND",
+        content: [
+          {
+            type: "BooleanContainer",
+            op: "OR",
+            content: [
+              {
+                type: "FilterCard",
+                configPath: "patient.interactions.conditionoccurrence",
+                instanceNumber: 1,
+                instanceID: "patient.interactions.conditionoccurrence.1",
+                name: "Condition Occurrence",
+                inactive: false,
+                attributes: {
+                  type: "BooleanContainer",
+                  op: "AND",
+                  content: [
+                    {
+                      type: "Attribute",
+                      configPath: attributeConfigPath,
+                      instanceID: `${attributeConfigPath}.1`,
+                      constraints: {
+                        type: "BooleanContainer",
+                        op: "OR",
+                        content: [{ type: "Expression", operator, value }],
+                      },
+                    },
+                  ],
+                },
+              },
+            ],
+          },
+        ],
+      },
+    },
+  });
+
+const getUsageForBookmark = async (
+  bookmark: string,
+  conceptSetId: string,
+) => {
+  const originalGetAtlasCohortDefinitionList =
+    PortalServerAPI.prototype.getAtlasCohortDefinitionList;
+  const originalGetAllBookmarks = BookmarksAPI.prototype.getAllBookmarks;
+
+  try {
+    PortalServerAPI.prototype.getAtlasCohortDefinitionList = () =>
+      Promise.resolve([] as unknown as IUserArtifactAtlasCohortDefinitionDto[]);
+    BookmarksAPI.prototype.getAllBookmarks = () =>
+      Promise.resolve({
+        bookmarks: [
+          {
+            bmkId: "b1",
+            bookmarkname: "Bookmark",
+            bookmark,
+            viewname: null,
+            modified: "2026-01-01",
+            version: 1,
+            user_id: "u1",
+            shared: true,
+          },
+        ],
+        schemaName: "test",
+      } as unknown as IBookmarks);
+
+    return await getConceptSetUsage("token", "dataset-1", conceptSetId);
+  } finally {
+    PortalServerAPI.prototype.getAtlasCohortDefinitionList =
+      originalGetAtlasCohortDefinitionList;
+    BookmarksAPI.prototype.getAllBookmarks = originalGetAllBookmarks;
+  }
+};
+
+Deno.test("getConceptSetUsage ignores a numeric filter value that equals the legacy id", async () => {
+  const result = await getUsageForBookmark(
+    ifrBookmark("patient.attributes.age", ">=", 18),
+    "legacy:18",
+  );
+
+  assertEquals(result.inUse, false);
+  assertEquals(result.bookmarks.length, 0);
+});
+
+Deno.test("getConceptSetUsage ignores a text filter value that equals the legacy id", async () => {
+  const result = await getUsageForBookmark(
+    ifrBookmark(
+      "patient.interactions.conditionoccurrence.attributes.conditioncode",
+      "=",
+      "18",
+    ),
+    "legacy:18",
+  );
+
+  assertEquals(result.inUse, false);
+  assertEquals(result.bookmarks.length, 0);
+});
+
+Deno.test("getConceptSetUsage detects a compound id in a concept set filter", async () => {
+  const result = await getUsageForBookmark(
+    ifrBookmark(
+      "patient.interactions.conditionoccurrence.attributes.conditionconceptset",
+      "=",
+      "legacy:18",
+    ),
+    "legacy:18",
+  );
+
+  assertEquals(result.inUse, true);
+  assertEquals(result.bookmarks.length, 1);
+});
+
+Deno.test("getConceptSetUsage detects a bare legacy id in a concept set filter of an older bookmark", async () => {
+  const result = await getUsageForBookmark(
+    ifrBookmark(
+      "patient.interactions.conditionoccurrence.attributes.conditionconceptset",
+      "=",
+      18,
+    ),
+    "legacy:18",
+  );
+
+  assertEquals(result.inUse, true);
+  assertEquals(result.bookmarks.length, 1);
+});
+
+Deno.test("getConceptSetUsage detects a bare id in a concept_set filter regardless of case", async () => {
+  const result = await getUsageForBookmark(
+    ifrBookmark(
+      "patient.interactions.conditionera.attributes.Condition_era_concept_set",
+      "=",
+      "18",
+    ),
+    "legacy:18",
+  );
+
+  assertEquals(result.inUse, true);
+  assertEquals(result.bookmarks.length, 1);
+});
+
+Deno.test("getConceptSetUsage detects a bare offset webapi id in a concept set filter", async () => {
+  const result = await getUsageForBookmark(
+    ifrBookmark(
+      "patient.interactions.conditionoccurrence.attributes.conditionconceptset",
+      "=",
+      1_000_000_007,
+    ),
+    "webapi:7",
+  );
+
+  assertEquals(result.inUse, true);
+  assertEquals(result.bookmarks.length, 1);
+});
+
 Deno.test("getConceptSets propagates WebAPI errors instead of returning silent empty list", async () => {
   const originalGetConceptSetsTerm = TerminologySvcAPI.prototype.getConceptSets;
   const originalGetConceptSetsWeb = WebApiConceptSetAPI.prototype.getConceptSets;

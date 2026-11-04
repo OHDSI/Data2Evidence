@@ -57,6 +57,21 @@ test(TEST_NAME, async ({ page }) => {
   // Find the closest state badge to this entry
   const stateBadge = firstEntry.locator('.state-badge')
   await expect(stateBadge).toHaveText(/Completed/, { timeout: MINUTE_5 })
+  // Update dataset metadata should trigger the i2b2 plugin get_version_info job
+  await page.getByRole('link', { name: 'Datasets' }).click()
+  const versionInfoRequest = page.waitForRequest(
+    (req) =>
+      req.url().includes('datamodel/get_version_info') &&
+      (req.postData() ?? '').includes('i2b2_plugin-get_version_info')
+  )
+  await page.getByRole('button', { name: 'Update dataset metadata' }).click()
+  await versionInfoRequest
+  await page.getByRole('link', { name: 'Jobs' }).click()
+  const versionInfoEntry = page
+    .locator('.state-list-item__content')
+    .filter({ has: page.locator('a:has-text("i2b2_plugin-get_version_info")') })
+    .first()
+  await expect(versionInfoEntry.locator('.state-badge')).toHaveText(/Completed/, { timeout: MINUTE_5 })
   // Clean up - delete the created dataset
   await page.getByRole('link', { name: 'Datasets' }).click()
   await expect(page.locator('.studyoverview__list tbody tr').first()).toBeVisible()

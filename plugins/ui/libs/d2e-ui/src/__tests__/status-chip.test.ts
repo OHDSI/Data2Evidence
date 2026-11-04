@@ -25,6 +25,13 @@ describe("D2eStatusChip variant map", () => {
     });
   });
 
+  it("maps the category variant to Support/Violet (Figma 2855:278884)", () => {
+    expect(STATUS_CHIP_VARIANT_MAP.category).toEqual({
+      background: "var(--d2e-color-support-violet-light)",
+      color: "var(--d2e-color-support-violet-text)",
+    });
+  });
+
   it("maps the dataset-status variants", () => {
     expect(STATUS_CHIP_VARIANT_MAP["have-access"].color).toBe(
       "var(--d2e-color-success)",

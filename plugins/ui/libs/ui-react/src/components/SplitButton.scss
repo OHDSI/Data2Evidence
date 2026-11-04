@@ -1,0 +1,50 @@
+.d2e-split-button {
+  display: inline-flex;
+  align-items: stretch;
+  width: fit-content;
+
+  // The group owns the outer radius; inner segment corners are squared off.
+  .d2e-button.d2e-button {
+    border-radius: 0;
+  }
+
+  &__divider {
+    flex-shrink: 0;
+    align-self: stretch;
+    width: 1px;
+  }
+}
+
+// Primary: filled navy segments keep their elevation, so the group is not
+// clipped — instead each outer corner is rounded. White 1px divider (Figma).
+.d2e-split-button--primary {
+  .d2e-split-button__main.d2e-button.d2e-button {
+    border-start-start-radius: var(--d2e-radius-md);
+    border-end-start-radius: var(--d2e-radius-md);
+  }
+
+  .d2e-split-button__toggle.d2e-button.d2e-button {
+    border-start-end-radius: var(--d2e-radius-md);
+    border-end-end-radius: var(--d2e-radius-md);
+  }
+
+  .d2e-split-button__divider {
+    background: var(--d2e-color-white);
+  }
+}
+
+// Secondary: one outer border + a 1px divider in Primary/Lighter (Figma). Drop
+// the segments' own outlines and clip the inner corners to the group radius.
+.d2e-split-button--secondary {
+  border: 1px solid var(--d2e-color-primary-lighter);
+  border-radius: var(--d2e-radius-md);
+  overflow: hidden;
+
+  .d2e-button.d2e-button {
+    border: 0;
+  }
+
+  .d2e-split-button__divider {
+    background: var(--d2e-color-primary-lighter);
+  }
+}
