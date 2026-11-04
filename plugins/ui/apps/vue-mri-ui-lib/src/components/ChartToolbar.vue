@@ -1,6 +1,6 @@
 <template>
   <div class="chartToolbar-main-container">
-    <div class="d-flex">
+    <div class="d-flex align-center chartToolbar-leading">
       <button
         v-if="!showUnHideFilters"
         class="actionButton"
@@ -17,6 +17,7 @@
       >
         <span class="icon" style="font-family: app-icons">{{ unHideIcon }}</span>
       </button>
+      <BuilderDataSourceLabel />
     </div>
     <div class="actionButtonGroup">
       <div
@@ -138,6 +139,7 @@ import appIcon from '../lib/ui/app-icon.vue'
 import DownloadMenu from './DownloadMenu.vue'
 import DashboardFlowModals from './DashboardFlowModals.vue'
 import Button from './Button.vue'
+import BuilderDataSourceLabel from './BuilderDataSourceLabel.vue'
 import CohortDefinitionIcon from './icons/CohortDefinitionIcon.vue'
 import { useDashboardFlow } from '../composables/useDashboardFlow'
 import { usePortalContext } from '../composables/usePortalContext'
@@ -169,7 +171,10 @@ import {
 
 // Loaded on demand so plotly.js stays out of the single-spa entry's static
 // dependency graph. See docs: the chart chunk was blocking mount.
-const InclusionReport = lazyComponent('InclusionReport', () => import('../query-filter/components/InclusionReport/index.vue'))
+const InclusionReport = lazyComponent(
+  'InclusionReport',
+  () => import('../query-filter/components/InclusionReport/index.vue')
+)
 
 export default {
   name: 'chartToolbar',
@@ -509,6 +514,7 @@ export default {
     DownloadMenu,
     DashboardFlowModals,
     Button,
+    BuilderDataSourceLabel,
     VButton,
     D2eDialog,
     InclusionReport,
