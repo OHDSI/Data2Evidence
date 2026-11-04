@@ -5,6 +5,10 @@
       {
         "Name": "CRAN",
         "URL": "https://packagemanager.posit.co/cran/2025-09-22"
+      },
+      {
+        "Name": "CRAN-duckdb2",
+        "URL": "https://packagemanager.posit.co/cran/2026-11-02"
       }
     ]
   },
