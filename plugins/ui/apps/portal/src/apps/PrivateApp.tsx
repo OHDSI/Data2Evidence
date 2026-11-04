@@ -1,17 +1,51 @@
 import React, { FC, useCallback, useEffect, useMemo, useState } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import { Loader } from "@portal/components";
-import { Researcher } from "../containers/researcher/Researcher";
 import SystemAdmin from "../containers/systemadmin/SystemAdmin";
 import Etl from "../containers/etl/Etl";
 import NoAccess from "../containers/shared/NoAccess/NoAccess";
 import { Logout } from "../containers/auth/Logout";
 import { LoginSilent } from "../containers/auth/LoginSilent";
 import { config } from "../config";
-import { usePostLoginRedirectUri, useUser } from "../contexts";
+import { usePostLoginRedirectUri, useTranslation, useUser } from "../contexts";
 import { ResultsDialogWithEventLister } from "../plugins/SystemAdmin/DQD/ResultsDialog/ResultsDialogWithEventListener";
 import { DisclaimerDialog } from "../containers/shared/Legal/DisclaimerDialog";
 import { AtlasAccount } from "../containers/shared/Account/AtlasAccount";
+
+// Retired researcher routes render this notice (HTTP 200, SPA-level — never
+// the researcher UI or a blank page), with a way forward to Atlas.
+const PortalUnavailable: FC = () => {
+  const { getText, i18nKeys } = useTranslation();
+  return (
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        justifyContent: "center",
+        alignItems: "center",
+        height: "100vh",
+        textAlign: "center",
+      }}
+    >
+      <div style={{ fontSize: 20, fontWeight: 500, marginBottom: "1em" }}>
+        {getText(i18nKeys.PORTAL_UNAVAILABLE__TITLE)}
+      </div>
+      <div>{getText(i18nKeys.PORTAL_UNAVAILABLE__INFO)}</div>
+      <div style={{ marginTop: "1em" }}>
+        <a href={`${window.location.origin}/atlas/`}>{getText(i18nKeys.PORTAL_UNAVAILABLE__GO_TO_ATLAS)}</a>
+      </div>
+    </div>
+  );
+};
+
+// Atlas is served outside the portal basename (/d2e/portal), so react-router's
+// Navigate cannot reach it — a full-page replace is required.
+const RedirectToAtlas: FC = () => {
+  useEffect(() => {
+    window.location.replace(`${window.location.origin}/atlas/`);
+  }, []);
+  return <Loader />;
+};
 
 export const PrivateApp: FC = () => {
   const { postLoginRedirectUri, clearPostLoginRedirectUri } = usePostLoginRedirectUri();
@@ -27,7 +61,9 @@ export const PrivateApp: FC = () => {
   }, [isBootstrapping, postLoginRedirectUri, clearPostLoginRedirectUri]);
 
   const defaultRoute = useMemo(() => {
-    let defaultRoute = config.ROUTES.researcher;
+    // Researcher landing is retired: users who previously landed on the
+    // researcher portal now land on Atlas (served outside this SPA).
+    let defaultRoute = "/atlas";
 
     if (!user) {
       defaultRoute = config.ROUTES.login;
@@ -57,15 +93,14 @@ export const PrivateApp: FC = () => {
             {user?.canAccessSystemAdminPortal && (
               <Route path={`${config.ROUTES.systemadmin}/*`} element={<SystemAdmin />} />
             )}
-            {user?.canAccessResearcherPortal && (
-              <Route path={`${config.ROUTES.researcher}/*`} element={<Researcher />} />
-            )}
+            {/* Retired researcher routes: always render the unavailable page,
+                never the researcher UI, regardless of role. */}
+            <Route path={`${config.ROUTES.researcher}/*`} element={<PortalUnavailable />} />
             {user?.canAccessEtlPortal && <Route path={`${config.ROUTES.etl}/*`} element={<Etl />} />}
-            {user?.canAccessResearcherPortal && (
-              <Route path={config.ROUTES.atlasAccount} element={<AtlasAccount />} />
-            )}
+            {user?.canAccessResearcherPortal && <Route path={config.ROUTES.atlasAccount} element={<AtlasAccount />} />}
             <Route path={config.ROUTES.logout} element={<Logout />} />
             <Route path={config.ROUTES.noAccess} element={<NoAccess />} />
+            <Route path="/atlas" element={<RedirectToAtlas />} />
             <Route path="/" element={<Navigate to={defaultRoute} />}>
               <Route path="public" element={<Navigate to={defaultRoute} />} />
               <Route path="login" element={<Navigate to={defaultRoute} />} />
