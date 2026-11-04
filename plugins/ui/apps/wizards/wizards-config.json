@@ -1327,7 +1327,7 @@
           "type": "text",
           "label": "Condition 1",
           "required": true,
-          "configPath": "patient.interactions.conditionoccurrence.attributes.wizard_condition_id_search",
+          "configPath": "patient.interactions.conditionoccurrence.attributes.wizard_condition_concept_search",
           "isWizardField": true,
           "allowFreeText": true
         },
@@ -1336,7 +1336,7 @@
           "type": "text",
           "label": "Condition 2",
           "required": false,
-          "configPath": "patient.interactions.conditionoccurrence.attributes.wizard_condition_id_search",
+          "configPath": "patient.interactions.conditionoccurrence.attributes.wizard_condition_concept_search",
           "isWizardField": true,
           "allowFreeText": true
         },
@@ -1345,7 +1345,7 @@
           "type": "text",
           "label": "Condition 3",
           "required": false,
-          "configPath": "patient.interactions.conditionoccurrence.attributes.wizard_condition_id_search",
+          "configPath": "patient.interactions.conditionoccurrence.attributes.wizard_condition_concept_search",
           "isWizardField": true,
           "allowFreeText": true
         },
