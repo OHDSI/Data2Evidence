@@ -8,7 +8,6 @@ import {
   Dialog,
   Button,
   IconButton,
-  Checkbox,
   Alert,
   Tooltip,
   TextField,
@@ -35,7 +34,6 @@ interface ImportRow {
   attributeId: string;
   fileName: string;
   value: string;
-  selected: boolean;
   excluded: boolean;
 }
 
@@ -246,14 +244,12 @@ const ImportMetadataDialog: FC<ImportMetadataDialogProps> = ({
 
   useEffect(() => {
     if (open) {
-      const known = new Set(attributeConfigs.map((c) => c.id));
       setRows(
         entries.map((e, i) => ({
           rowId: `r${i}`,
           attributeId: e.id,
           fileName: e.name || e.id,
           value: e.value,
-          selected: known.has(e.id),
           excluded: false,
         }))
       );
@@ -280,11 +276,10 @@ const ImportMetadataDialog: FC<ImportMetadataDialogProps> = ({
     () => rows.filter((r) => !knownIds.has(r.attributeId) && !r.excluded).length,
     [rows, knownIds]
   );
-  const selectableRows = useMemo(
+  const importableRows = useMemo(
     () => rows.filter((r) => knownIds.has(r.attributeId) && !r.excluded),
     [rows, knownIds]
   );
-  const selectedCount = useMemo(() => selectableRows.filter((r) => r.selected).length, [selectableRows]);
 
   const displayRows = useMemo(() => {
     if (!sortCol) return rows;
@@ -305,14 +300,6 @@ const ImportMetadataDialog: FC<ImportMetadataDialogProps> = ({
     }
   };
 
-  const setSelected = (rowId: string, selected: boolean) =>
-    setRows((prev) => prev.map((r) => (r.rowId === rowId ? { ...r, selected } : r)));
-
-  const toggleAll = (selected: boolean) =>
-    setRows((prev) =>
-      prev.map((r) => (knownIds.has(r.attributeId) && !r.excluded ? { ...r, selected } : r))
-    );
-
   const toggleExclude = (rowId: string) =>
     setRows((prev) => prev.map((r) => (r.rowId === rowId ? { ...r, excluded: !r.excluded } : r)));
 
@@ -331,7 +318,7 @@ const ImportMetadataDialog: FC<ImportMetadataDialogProps> = ({
     try {
       await api.systemPortal.addDatasetAttributeConfig(config);
       setCreatedConfigs((prev) => [...prev, config]);
-      setRows((prev) => prev.map((r) => (r.rowId === createRowId ? { ...r, fileName: name, selected: true } : r)));
+      setRows((prev) => prev.map((r) => (r.rowId === createRowId ? { ...r, fileName: name } : r)));
       setCreatedBanner(getText(i18nKeys.MANAGE_METADATA_DIALOG__IMPORT_CREATED_BANNER, [name]));
       onAttributeCreated();
       setCreateRowId(null);
@@ -344,28 +331,19 @@ const ImportMetadataDialog: FC<ImportMetadataDialogProps> = ({
 
   const handleEditSave = (name: string, attributeId: string, value: string) => {
     setRows((prev) =>
-      prev.map((r) =>
-        r.rowId === editRowId
-          ? { ...r, fileName: name, attributeId, value, selected: knownIds.has(attributeId) }
-          : r
-      )
+      prev.map((r) => (r.rowId === editRowId ? { ...r, fileName: name, attributeId, value } : r))
     );
     setEditRowId(null);
   };
 
   const handleImport = () => {
-    const toImport = rows
-      .filter((r) => knownIds.has(r.attributeId) && r.selected && !r.excluded)
-      .map((r) => ({ attributeId: r.attributeId, value: r.value }));
-    onImport(toImport);
+    onImport(importableRows.map((r) => ({ attributeId: r.attributeId, value: r.value })));
   };
 
-  const allSelected = selectableRows.length > 0 && selectedCount === selectableRows.length;
-  const someSelected = selectedCount > 0 && !allSelected;
   const importLabel =
-    selectedCount === rows.length
+    importableRows.length === rows.length
       ? getText(i18nKeys.MANAGE_METADATA_DIALOG__IMPORT_BUTTON)
-      : getText(i18nKeys.MANAGE_METADATA_DIALOG__IMPORT_BUTTON_N, [String(selectedCount)]);
+      : getText(i18nKeys.MANAGE_METADATA_DIALOG__IMPORT_BUTTON_N, [String(importableRows.length)]);
 
   const editRow = editRowId ? rows.find((r) => r.rowId === editRowId) : undefined;
   const createRow = createRowId ? rows.find((r) => r.rowId === createRowId) : undefined;
@@ -384,7 +362,7 @@ const ImportMetadataDialog: FC<ImportMetadataDialogProps> = ({
           </Button>
         }
         actions={
-          <Button variant="primary" onClick={handleImport} disabled={selectedCount === 0}>
+          <Button variant="primary" onClick={handleImport} disabled={importableRows.length === 0}>
             {importLabel}
           </Button>
         }
@@ -416,14 +394,6 @@ const ImportMetadataDialog: FC<ImportMetadataDialogProps> = ({
             <Table>
               <TableHead>
                 <TableRow>
-                  <TableCell header checkbox>
-                    <Checkbox
-                      checked={allSelected}
-                      indeterminate={someSelected}
-                      disabled={selectableRows.length === 0}
-                      onChange={toggleAll}
-                    />
-                  </TableCell>
                   <TableCell header sortable sortDirection={sortCol === "name" ? sortDir : false} onSort={() => toggleSort("name")}>
                     {getText(i18nKeys.MANAGE_METADATA_DIALOG__NAME)}
                   </TableCell>
@@ -445,13 +415,6 @@ const ImportMetadataDialog: FC<ImportMetadataDialogProps> = ({
                       .join(" ") || undefined;
                   return (
                     <TableRow key={r.rowId} className={rowClass}>
-                      <TableCell checkbox>
-                        <Checkbox
-                          checked={r.selected && !r.excluded}
-                          disabled={unknown || r.excluded}
-                          onChange={(v) => setSelected(r.rowId, v)}
-                        />
-                      </TableCell>
                       <TableCell>
                         {unknown ? (
                           <Tooltip
