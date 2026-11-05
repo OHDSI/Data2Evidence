@@ -3,6 +3,9 @@ import { env } from "./env";
 import { DbCredentialProcessor } from "./utils/credentialProcessor";
 import { AUTHENTICATION_MODES, IDbCreateDto, IDbCredential } from "./utils/type"
 
+// Code of the pre-trex FHIR database seeded against the Medplum FHIR server.
+const LEGACY_FHIR_DATABASE_CODE = "d2e_fhir";
+
 export async function seed(): Promise<void> {
   try {
     let logger = console;
