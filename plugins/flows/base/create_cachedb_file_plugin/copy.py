@@ -19,7 +19,6 @@ from .chunk_utils import (
     describe_dry_run_summary,
     describe_plan,
     find_column_case_insensitive,
-    plan_chunks,
     resolve_target_chunk_rows,
 )
 from .checkpoint import (
@@ -37,7 +36,7 @@ from .checkpoint import (
 )
 from .errors import ChunkCopyError, PlannerError, ReconciliationError
 from .planner_types import ChunkConfig, ChunkStrategy
-from .source_stats import build_source_adapter
+from .source_stats import build_source_adapter, plan_table
 
 from _shared_flow_utils.types import SupportedDatabaseDialects
 
@@ -539,8 +538,11 @@ def copy_table(write_conn: Any, read_conn: Any, copy_params: CopyParameters, que
         else None
     )
 
-    stats = adapter.collect(source_schema, table, config, logger, allowed_columns)
-    plan = plan_chunks(dialect, source_schema, table, stats, config)
+    # Tries another chunk column when the first one is rejected or skewed,
+    # instead of failing the cache build on it (issue 3576).
+    stats, plan = plan_table(
+        adapter, dialect, source_schema, table, config, logger, allowed_columns
+    )
     logger.info(describe_plan(plan, source_schema, table))
 
     if config.dry_run:

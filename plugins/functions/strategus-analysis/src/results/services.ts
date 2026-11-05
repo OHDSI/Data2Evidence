@@ -37,8 +37,19 @@ export default class StrategusResultsService {
     this.storage = storage;
   }
 
-  async ensureBucket() {
-    await this.storage.createBucket(this.bucket);
+  // Shared by the boot call and every upload. Storage starts after trex, so
+  // the boot attempt can fail; a failed attempt is dropped and the next upload
+  // retries instead of failing until the plugin restarts.
+  private bucketReady: Promise<void> | null = null;
+
+  ensureBucket(): Promise<void> {
+    if (!this.bucketReady) {
+      this.bucketReady = this.storage.createBucket(this.bucket).catch((e) => {
+        this.bucketReady = null;
+        throw e;
+      });
+    }
+    return this.bucketReady;
   }
 
   async createResult(token: string, input: ResultUploadInput) {
@@ -46,6 +57,7 @@ export default class StrategusResultsService {
     const storagePath = `${id}/${input.fileName}`;
 
     // Storage first, row second: a storage failure then leaves no dangling row.
+    await this.ensureBucket();
     await this.storage.upload(this.bucket, storagePath, {
       fileName: input.fileName,
       buffer: input.buffer,
