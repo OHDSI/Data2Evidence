@@ -1,5 +1,5 @@
 import { assertEquals, assertThrows } from "jsr:@std/assert";
-import { isTruthyVariable, resolveDcTarget } from "./dcTarget.ts";
+import { isTruthyVariable, resolveDcTarget, webapiCacheSourceKey } from "./dcTarget.ts";
 
 Deno.test("webapi + postgres runs on the source with the registered results schema", () => {
   const target = resolveDcTarget(
@@ -145,4 +145,22 @@ Deno.test("webapi + postgres ignores the opt-in flag and stays verbatim", () => 
     false,
   );
   assertEquals(target, { useSourceConnection: true, resultsSchema: "cdm_results" });
+});
+
+Deno.test("a webapi dataset's DC run clears the cache of its own WebAPI source", () => {
+  assertEquals(
+    webapiCacheSourceKey({ id: "ds1", type: "webapi", dialect: "postgres" }),
+    "ds1",
+  );
+});
+
+// The connection a run uses does not decide this: a webapi dataset whose run went
+// through trex still wrote into the results schema its WebAPI source reads.
+Deno.test("the cache source key does not depend on the dialect or connection", () => {
+  assertEquals(webapiCacheSourceKey({ id: "ds1", type: "webapi", dialect: "hana" }), "ds1");
+});
+
+Deno.test("datasets without a WebAPI source have no cache to clear", () => {
+  assertEquals(webapiCacheSourceKey({ id: "ds1", type: "cdm", dialect: "postgres" }), undefined);
+  assertEquals(webapiCacheSourceKey({ id: "", type: "webapi", dialect: "postgres" }), undefined);
 });
