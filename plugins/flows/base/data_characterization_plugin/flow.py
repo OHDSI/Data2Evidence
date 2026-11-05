@@ -175,7 +175,11 @@ def data_characterization_plugin(options: DCOptionsType):
                     retain_output(output_attempt, logger)
 
                 invalidate_trex_source_cache(options, dbdao.dialect, logger)
-                clear_webapi_results_cache(options, flow_run_id, logger)
+
+            # Outside the source-connection branch: a webapi dataset's run through
+            # trex rewrites the same results schema, and Atlas would keep serving
+            # the reports WebAPI cached before it.
+            clear_webapi_results_cache(options, flow_run_id, logger)
 
             # Partial results were kept above; mark the flow failed without dropping them.
             if partial_failure:
@@ -200,7 +204,9 @@ def clear_webapi_results_cache(options: DCOptionsType, flow_run_id: str, logger)
     but not the run, so it is logged rather than raised: the cache can also be
     cleared from Atlas (Configuration -> Data sources -> Refresh cache).
     """
-    source_key = webapi_cache_source_key(options.use_trex_connection, options.datasetId)
+    source_key = webapi_cache_source_key(
+        options.use_trex_connection, options.datasetId, options.webapiSourceKey
+    )
     if source_key is None:
         return
     try:
