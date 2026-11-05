@@ -172,7 +172,7 @@ export class InclusionReportEndpoint extends BaseQueryEngineEndpoint {
                         }
                     }
 
-                    // Strip all axis selection as is not needed by inclusionreport
+                    // Some inclusion card will be transformed into a NOT in some mask, and axis selection does not work for exlcusions.
                     bitmapMriquery["axisSelection"] = [];
 
                     return this.formulateQuery(req, {
@@ -659,7 +659,7 @@ export class InclusionReportEndpoint extends BaseQueryEngineEndpoint {
     }
 
     /**
-     * Returns a copy of the Basic Data card without constraints when an axis is on Basic Data.
+     * Returns a copy of the Basic Data card without constraints when an x-axis is on Basic Data.
      * The query needs this card to group by the axis. It adds no filter.
      */
     private getBasicDataAxisCard(mriquery, axes: any[]) {
