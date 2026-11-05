@@ -5,24 +5,10 @@ import { CssBaseline, ThemeProvider } from "@mui/material";
 import { App } from "./App";
 import { theme } from "./theme";
 import { NavigationGuardRouter } from "./components/NavigationGuardRouter/NavigationGuardRouter";
-import { extractDeepLinkParamsFromUrl, saveDeepLinkParams } from "./utils/deepLinkStorage";
 import "./webcomponents/registerWebComponents";
 import "./index.scss";
 import "import-map-overrides";
 import "./plugins/core/systemjsSetup";
-
-// Save deep link params BEFORE any redirects happen
-// This must run synchronously before React initializes
-// Only whitelisted paths (/researcher/cohort, /researcher/wizards) will have params extracted
-// New params always replace existing ones
-try {
-  const params = extractDeepLinkParamsFromUrl(window.location.href);
-  if (Object.keys(params).length > 0) {
-    saveDeepLinkParams(params);
-  }
-} catch (error) {
-  console.warn("Failed to save deep link params on initial load:", error);
-}
 
 const root = ReactDOM.createRoot(document.getElementById("root") as HTMLElement);
 root.render(
