@@ -2,8 +2,8 @@
 
 ## Setting up legal documentation via UI
 
-- Open the Researcher Portal and click **Switch to the Admin Portal**.
-- In the Admin Portal click **Setup**
+- Open the Admin Portal at `/d2e/portal/systemadmin/setup`.
+- Click **Setup**
 - Click the **Platform content & legal texts** - **Configure** button.
 
 > **The expected display is:**
@@ -29,4 +29,4 @@ Steps:
 
 > **The expected display is:**
 >
-> ![Account](../../images/portal/AccountPage.png)
+> ![Account](../../images/portal/AtlasAccountPage.png)

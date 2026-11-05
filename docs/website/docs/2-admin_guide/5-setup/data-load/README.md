@@ -63,9 +63,9 @@ This section outlines the steps required for generating the Data Quality Dashboa
 - In the Admin Portal, go to **Datasets**. Go to the dataset of interest and click **Select Action**.
 - Select **Run data quality** and select the **Run Analysis** button.
 - Repeat the step for **Run data characterization**.
-- After completing the **Data Quality** and **Data Characterization** job runs, refer to the Researcher Portal to access the Data Quality Dashboard for the respective datasets.
+- After completing the **Data Quality** and **Data Characterization** job runs, open the dataset in Atlas (`/atlas`) and select **Data quality > Data quality dashboard** in the left sidebar to access the Data Quality Dashboard.
 
-  > **The expected result is:** ![dqd-dashboard](../../images/dqd/dqd-dashboard.png)
+  > **The expected result is:** ![dqd-dashboard](../../images/dqd/atlas-dqd-dashboard.png)
 
 ### Update Datasets Metadata
 
