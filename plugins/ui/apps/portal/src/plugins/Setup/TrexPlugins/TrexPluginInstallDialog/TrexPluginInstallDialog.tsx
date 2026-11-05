@@ -102,7 +102,7 @@ const TrexPluginInstallDialog: FC<TrexPluginInstallDialogProps> = ({ open, onClo
             error={formError.required}
           />
           {formError.required && (
-            <FormHelperText error={true}>{getText(i18nKeys.ADD_STUDY_DIALOG__REQUIRED)}</FormHelperText>
+            <FormHelperText error={true}>{getText(i18nKeys.ADD_DATA_SOURCE_DIALOG__REQUIRED)}</FormHelperText>
           )}
         </div>
       </div>

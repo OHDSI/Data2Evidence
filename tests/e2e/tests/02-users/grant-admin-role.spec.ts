@@ -33,7 +33,7 @@ test('test', async ({ page }) => {
   await page.locator('input[name="password"]').click()
   await page.locator('input[name="password"]').fill('Updatepassword12345')
   await page.getByRole('button', { name: 'Sign in' }).click()
-  await expect(page.getByTestId('nav')).toContainText('Datasets')
+  await expect(page.getByTestId('nav')).toContainText('Data sources')
   await expect(page.getByTestId('nav')).toContainText('Users')
   await page.getByRole('link', { name: 'Account' }).click()
   await page.getByRole('button', { name: 'Logout' }).click()

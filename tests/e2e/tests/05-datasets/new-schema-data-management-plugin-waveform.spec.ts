@@ -19,7 +19,7 @@ const loadDatasetList = async (page: Page, navigate: () => Promise<unknown>) => 
   )
   await navigate()
   await listResponse
-  await expect(page.locator('.studyoverview__list tbody tr').first()).toBeVisible({ timeout: MINUTE_2 })
+  await expect(page.locator('.d2e-table tbody tr').first()).toBeVisible({ timeout: MINUTE_2 })
 }
 
 // Deletes every dataset row matching the name, so leftovers from earlier failed attempts are removed too
@@ -29,8 +29,8 @@ const deleteDatasetsIfPresent = async (page: Page, name: string) => {
     // The dataset table is already loaded by the caller, so count immediately instead of waiting for a row
     const remaining = await rows.count()
     if (remaining === 0) return
-    await rows.first().getByText('Select action').click()
-    await page.getByRole('option', { name: 'Delete dataset' }).click()
+    await rows.first().getByRole('button', { name: 'Actions' }).click()
+    await page.getByRole('menuitem', { name: 'Delete data source' }).click()
     // Enter dataset name to confirm deletion
     await page.getByRole('textbox', { name: 'Enter dataset name to confirm' }).fill(name)
     await page.getByRole('button', { name: 'Yes, delete' }).click()
@@ -58,7 +58,7 @@ const openAdminPortal = async (page: Page) => {
 
 const cleanUpWaveformDatasets = async (page: Page) => {
   await openAdminPortal(page)
-  await loadDatasetList(page, () => page.getByRole('link', { name: 'Datasets' }).click())
+  await loadDatasetList(page, () => page.getByRole('link', { name: 'Data sources' }).click())
   // Delete the child (cache) dataset before its parent
   await deleteDatasetsIfPresent(page, CACHE_DATASET_NAME)
   await deleteDatasetsIfPresent(page, DATASET_NAME)
@@ -85,32 +85,32 @@ test(TEST_NAME, async ({ page }) => {
 
   // beforeEach has already signed in and left the page on Admin portal > Datasets
   await test.step('Create dataset with waveform data model', async () => {
-    await page.getByRole('link', { name: 'Datasets' }).click()
-    await page.getByRole('button', { name: 'Add dataset' }).click()
-    await page.getByRole('textbox', { name: 'Dataset name - Displayed on' }).click()
-    await page.getByRole('textbox', { name: 'Dataset name - Displayed on' }).fill(DATASET_NAME)
-    await page.getByRole('textbox', { name: 'Dataset summary' }).click()
-    await page.getByRole('textbox', { name: 'Dataset summary' }).fill('Test Summary')
+    await page.getByRole('link', { name: 'Data sources' }).click()
+    await page.getByRole('button', { name: 'Add data source' }).click()
+    await page.getByRole('textbox', { name: 'Data source name - Displayed on' }).click()
+    await page.getByRole('textbox', { name: 'Data source name - Displayed on' }).fill(DATASET_NAME)
+    await page.getByRole('textbox', { name: 'Data source summary' }).click()
+    await page.getByRole('textbox', { name: 'Data source summary' }).fill('Test Summary')
     // Use the test ID selector for SimpleMDE editor
-    await page.getByTestId('add-study-mde').getByRole('textbox').fill('Test Description')
-    await page.getByTestId('dialog').locator('div').filter({ hasText: 'CDM Schema Option' }).nth(4).click()
+    await page.locator('.d2e-markdown-field').getByRole('textbox').fill('Test Description')
+    await page.getByRole('combobox', { name: 'CDM schema option' }).click()
     await page.getByRole('option', { name: 'Create new schema', exact: true }).click()
-    await page.locator('#mui-component-select-databaseOption').click()
+    await page.getByRole('combobox', { name: 'Databases' }).click()
     await page.getByRole('option', { name: 'demo_database-postgres' }).click()
     // webapi mode only lists data models starting with "omop", so switch to source mode to make waveform selectable
-    await page.locator('#mui-component-select-managementMode').click()
-    await page.getByRole('option', { name: 'Source (with cache dataset)' }).click()
+    await page.getByRole('combobox', { name: 'Management mode' }).click()
+    await page.getByRole('option', { name: 'Source (with cache data source)' }).click()
     // Uncheck the "Use default result schema name" checkbox to enable custom input
     await page.getByRole('checkbox', { name: /use default result schema name/i }).uncheck()
     await page.getByRole('textbox', { name: 'Result Schema Name' }).fill(`result_schema_${randomString}`)
-    await page.locator('#mui-component-select-dataModelOption').click()
+    await page.getByRole('combobox', { name: 'Data model option', exact: true }).click()
     await page.getByRole('option', { name: 'waveform [data_management_plugin]' }).click()
-    await page.locator('#mui-component-select-paConfigOption').click()
+    await page.getByRole('combobox', { name: 'PA config' }).click()
     await page.getByRole('option', { name: PA_CONFIG_NAME, exact: true }).click()
-    await page.getByRole('textbox', { name: 'Token dataset code' }).click()
-    await page.getByRole('textbox', { name: 'Token dataset code' }).fill(randomString)
-    await page.getByRole('textbox', { name: 'Cache Dataset Name' }).click()
-    await page.getByRole('textbox', { name: 'Cache Dataset Name' }).fill(CACHE_DATASET_NAME)
+    await page.getByRole('textbox', { name: 'Token data source code' }).click()
+    await page.getByRole('textbox', { name: 'Token data source code' }).fill(randomString)
+    await page.getByRole('textbox', { name: 'Cache data source name' }).click()
+    await page.getByRole('textbox', { name: 'Cache data source name' }).fill(CACHE_DATASET_NAME)
     await page.getByRole('button', { name: 'Add', exact: true }).click()
   })
 
@@ -124,13 +124,13 @@ test(TEST_NAME, async ({ page }) => {
   await test.step('Update cache for the cache dataset', async () => {
     // data_management_plugin only creates the schema in Postgres; PA queries the DuckDB cache,
     // so populate it from the source schema via the create_cachedb_file_plugin flow
-    await page.getByRole('link', { name: 'Datasets' }).click()
+    await page.getByRole('link', { name: 'Data sources' }).click()
     // Both the source dataset and its child cache dataset are listed
     await expect(page.locator('tr', { hasText: DATASET_NAME }).first()).toBeVisible({ timeout: MINUTE_2 })
     const cacheRow = page.locator('tr', { hasText: CACHE_DATASET_NAME }).first()
     await expect(cacheRow).toBeVisible({ timeout: MINUTE_2 })
-    await cacheRow.getByText('Select action').click()
-    await page.getByRole('option', { name: 'Update cache' }).click()
+    await cacheRow.getByRole('button', { name: 'Actions' }).click()
+    await page.getByRole('menuitem', { name: 'Update cache' }).click()
     await expect(page.getByRole('dialog')).toContainText(`Update cache for dataset: ${CACHE_DATASET_NAME}`)
     await page.getByRole('button', { name: 'Run cache update' }).click()
     await expect(page.getByText('Create cache flow triggered')).toBeVisible({ timeout: MINUTE_2 })
@@ -143,11 +143,11 @@ test(TEST_NAME, async ({ page }) => {
   await test.step('Grant admin access to the cache dataset', async () => {
     // A newly created dataset is not accessible in Patient Analytics until the user is granted access.
     // The parent is a "source" dataset with no Permissions action; the OMOP cache dataset is the researcher-facing one.
-    await page.getByRole('link', { name: 'Datasets' }).click()
+    await page.getByRole('link', { name: 'Data sources' }).click()
     const cacheRow = page.locator('tr', { hasText: CACHE_DATASET_NAME }).first()
     await expect(cacheRow).toBeVisible({ timeout: MINUTE_2 })
-    await cacheRow.getByText('Select action').click()
-    await page.getByRole('option', { name: 'Permissions' }).click()
+    await cacheRow.getByRole('button', { name: 'Actions' }).click()
+    await page.getByRole('menuitem', { name: 'Update permissions' }).click()
     await page.getByRole('tab', { name: 'Access' }).click()
     const addButton = page.getByTestId('dialog').getByTestId('button')
     await expect(addButton).toBeVisible()

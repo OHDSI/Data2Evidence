@@ -49,11 +49,11 @@ export const DatasetMap: Record<SourceDatasetType, CacheDatasetType[]> = {
 export const ResearcherFeatures = ["Notebooks", "Results", "Concepts", "Cohorts", "Analysis"];
 
 export const ActionSelectorMap: Record<DatasetType, ActionValue[]> = {
-  source: ["info", "metadata", "version", "delete", "transform-to-webapi"],
-  fhir: ["info", "metadata", "delete"],
-  non_omop: ["metadata", "permissions", "resources", "delete", "create-cache"],
+  source: ["info", "metadata", "manage-metadata", "version", "delete", "transform-to-webapi"],
+  fhir: ["info", "metadata", "manage-metadata", "delete"],
+  non_omop: ["metadata", "manage-metadata", "permissions", "resources", "delete", "create-cache"],
   omop: [
-    "metadata",
+    "metadata", "manage-metadata",
     "permissions",
     "resources",
     "delete",
@@ -63,9 +63,9 @@ export const ActionSelectorMap: Record<DatasetType, ActionValue[]> = {
     "manage-dashboard",
     "create-cache",
   ],
-  study: ["metadata", "permissions", "resources", "delete"],
+  study: ["metadata", "manage-metadata", "permissions", "resources", "delete"],
   hana__omop: [
-    "metadata",
+    "metadata", "manage-metadata",
     "permissions",
     "resources",
     "delete",
@@ -74,11 +74,11 @@ export const ActionSelectorMap: Record<DatasetType, ActionValue[]> = {
     "setup-semantic-search",
     "manage-dashboard",
   ],
-  hana__non_omop: ["metadata", "permissions", "resources", "delete", "manage-dashboard"],
-  strategus_analysis: ["metadata", "permissions", "resources", "delete"],
+  hana__non_omop: ["metadata", "manage-metadata", "permissions", "resources", "delete", "manage-dashboard"],
+  strategus_analysis: ["metadata", "manage-metadata", "permissions", "resources", "delete"],
   webapi: [
     "info",
-    "metadata",
+    "metadata", "manage-metadata",
     "permissions",
     "resources",
     "delete",
@@ -88,7 +88,7 @@ export const ActionSelectorMap: Record<DatasetType, ActionValue[]> = {
     "manage-dashboard",
     "refresh-cache",
   ],
-  i2b2: ["metadata", "permissions", "resources", "delete"],
+  i2b2: ["metadata", "manage-metadata", "permissions", "resources", "delete"],
 };
 
 export const InformationPageMap: Record<DatasetType, DatasetInfoTab[]> = {

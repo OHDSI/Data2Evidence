@@ -13,6 +13,8 @@ export interface DialogProps {
   size?: DialogSize;
   maxWidth?: number | string;
   closeOnEscape?: boolean;
+  /** Allow dismissing by clicking the backdrop (off by default — dialogs are persistent). */
+  closeOnBackdrop?: boolean;
   showClose?: boolean;
   closeLabel?: string;
   /**
@@ -35,6 +37,8 @@ export interface DialogProps {
   confirmKeepLabel?: string;
   children?: ReactNode;
   actions?: ReactNode;
+  /** Actions aligned to the left of the footer; the footer becomes space-between. */
+  leadingActions?: ReactNode;
 }
 
 export function Dialog({
@@ -44,6 +48,7 @@ export function Dialog({
   size = "s",
   maxWidth,
   closeOnEscape = true,
+  closeOnBackdrop = false,
   showClose = true,
   closeLabel = "Close dialog",
   busy = false,
@@ -54,6 +59,7 @@ export function Dialog({
   confirmKeepLabel = "Keep editing",
   children,
   actions,
+  leadingActions,
 }: DialogProps) {
   const titleId = useId();
   const resolvedMaxWidth = maxWidth ?? DIALOG_SIZE_MAP[size];
@@ -89,7 +95,10 @@ export function Dialog({
         disableEscapeKeyDown={busy || !closeOnEscape}
         aria-labelledby={title ? titleId : undefined}
         onClose={(_event, reason) => {
-          if (reason === "backdropClick") return;
+          if (reason === "backdropClick") {
+            if (closeOnBackdrop) requestClose();
+            return;
+          }
           if (!closeOnEscape) return;
           requestClose();
         }}
@@ -122,7 +131,14 @@ export function Dialog({
 
         <div className="d2e-dialog__body">{children}</div>
 
-        {actions ? <div className="d2e-dialog__actions">{actions}</div> : null}
+        {actions || leadingActions ? (
+          <div className="d2e-dialog__actions">
+            {leadingActions ? (
+              <div className="d2e-dialog__actions-leading">{leadingActions}</div>
+            ) : null}
+            {actions}
+          </div>
+        ) : null}
       </MuiDialog>
 
       {confirmOnClose ? (
