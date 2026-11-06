@@ -119,7 +119,6 @@ import { D2eButton, D2eIconButton } from '@d2e/ui'
 import appButton from '../lib/ui/app-button.vue'
 import appLabel from '../lib/ui/app-label.vue'
 import bsBadge from '../lib/ui/bs-badge.vue'
-import messageBox from './MessageBox.vue'
 import CreateCohortDefinitionDialog from './CreateCohortDefinitionDialog.vue'
 import { getAttributeName, getAdvanceTimeFilterFormatted } from '../utils/filterCardUtils'
 
@@ -330,7 +329,6 @@ export default {
   components: {
     D2eButton,
     D2eIconButton,
-    messageBox,
     appButton,
     appLabel,
     bsBadge,

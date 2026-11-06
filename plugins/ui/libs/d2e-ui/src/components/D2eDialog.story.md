@@ -15,18 +15,18 @@ equal-width action buttons.
 
 ## Props
 
-| Prop            | Type                 | Default          | Notes                                                |
-| --------------- | -------------------- | ---------------- | ---------------------------------------------------- |
-| `modelValue`    | `boolean`            | required         | `v-model`                                            |
-| `title`         | `string`             | `undefined`      | Header title; drives `aria-labelledby`               |
-| `subtitle`      | `string`             | `undefined`      | One line under the title; `#subtitle` overrides it   |
-| `size`          | `'s' \| 'l' \| 'xl'` | `'s'`            | Figma Modal/S 540, Modal/L 900, Modal/XL 1200        |
-| `maxWidth`      | `number \| string`   | `undefined`      | Escape hatch; overrides `size` when set              |
-| `closeOnEscape` | `boolean`            | `true`           | Set false for long forms that confirm before discard |
-| `showClose`     | `boolean`            | `true`           | Shows the header close button                        |
-| `closeLabel`    | `string`             | `'Close dialog'` | Accessible name of the close button                  |
-| `busy`          | `boolean`            | `false`          | Shows a spinner overlay and blocks every close path  |
-| `attach`        | `string \| boolean`  | `'#app'`         | Vuetify overlay attach target                        |
+| Prop            | Type                 | Default          | Notes                                                             |
+| --------------- | -------------------- | ---------------- | ----------------------------------------------------------------- |
+| `modelValue`    | `boolean`            | required         | `v-model`                                                         |
+| `title`         | `string`             | `undefined`      | Header title; drives `aria-labelledby`                            |
+| `subtitle`      | `string`             | `undefined`      | One line under the title; `#subtitle` overrides it                |
+| `size`          | `'s' \| 'l' \| 'xl'` | `'s'`            | Figma Modal/S 540, Modal/L 900, Modal/XL 1200                     |
+| `maxWidth`      | `number \| string`   | `undefined`      | Escape hatch; overrides `size` when set                           |
+| `closeOnEscape` | `boolean`            | `true`           | Set false for long forms that confirm before discard              |
+| `showClose`     | `boolean`            | `true`           | Shows the header close button                                     |
+| `closeLabel`    | `string`             | `'Close dialog'` | Accessible name of the close button                               |
+| `busy`          | `boolean`            | `false`          | Shows a spinner overlay and blocks every close path               |
+| `attach`        | `string \| boolean`  | injected         | Vuetify overlay attach target; `D2E_DIALOG_ATTACH`, else `'#app'` |
 
 ## Events
 

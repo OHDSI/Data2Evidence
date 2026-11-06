@@ -1,76 +1,65 @@
 <template>
-  <MessageBox
-    v-if="isOpen"
-    class="table1-config-messagebox"
-    messageType="custom"
-    dialogWidth="540px"
-    :busy="loading"
+  <D2eDialog
+    :model-value="isOpen"
+    :retain-focus="false"
+    :title="getText('MRI_PA_TABLE1_CONFIG_TITLE')"
+    :subtitle="getText('MRI_PA_TABLE1_CONFIG_DESC')"
+    :close-label="getText('MRI_PA_CLOSE_BUTTON')"
+    data-testid="pa-table1-config-dialog"
     @close="handleClose"
   >
-    <template #header>
-      <div class="table1-dialog-header">
-        <div class="table1-dialog-title-row">
-          <span>{{ getText('MRI_PA_TABLE1_CONFIG_TITLE') }}</span>
-          <button type="button" class="table1-dialog-close" :aria-label="getText('MRI_PA_CLOSE_BUTTON')" @click="handleClose">
-            <span class="table1-dialog-close-icon" aria-hidden="true">&#215;</span>
-          </button>
-        </div>
-        <p class="description">{{ getText('MRI_PA_TABLE1_CONFIG_DESC') }}</p>
+    <div v-if="isOpen" class="table1-config-dialog">
+      <div v-if="loading" class="table1-loading" data-testid="pa-table1-loading">
+        <VProgressCircular indeterminate color="primary" />
       </div>
-    </template>
+      <div class="covariate-card">
+        <div class="covariate-card__header">{{ getText('MRI_PA_TABLE1_COVARIATE_HEADER') }}</div>
+        <div class="covariate-card__body">
+          <div v-if="errorMessage" class="error-state">
+            <p class="error-text">{{ errorMessage }}</p>
+            <D2eButton :disabled="loading" data-testid="pa-table1-retry-btn" @click="handleRetry">
+              {{ getText('MRI_PA_TABLE1_RETRY_BUTTON') }}
+            </D2eButton>
+          </div>
+          <p v-else-if="showEmptyState" class="status-text">
+            {{ getText('MRI_PA_TABLE1_NO_CONCEPT_SETS') }}
+          </p>
 
-    <template #body>
-      <div class="table1-config-dialog">
-        <div class="covariate-card">
-          <div class="covariate-card__header">{{ getText('MRI_PA_TABLE1_COVARIATE_HEADER') }}</div>
-          <div class="covariate-card__body">
-            <div v-if="errorMessage" class="error-state">
-              <p class="error-text">{{ errorMessage }}</p>
-              <appButton class="table1-action-button table1-action-button--primary" :click="handleRetry" :text="getText('MRI_PA_TABLE1_RETRY_BUTTON')" :disabled="loading" />
-            </div>
-            <p v-else-if="showEmptyState" class="status-text">
-              {{ getText('MRI_PA_TABLE1_NO_CONCEPT_SETS') }}
-            </p>
-
-            <div v-if="showPicker" class="covariate-picker">
-              <label class="covariate-picker__label">{{ getText('MRI_PA_TABLE1_CONCEPT_SET_LABEL') }}</label>
-              <QueryFilterTagInputAdapter
-                :model="conceptSetPickerModel"
-                :external-value="selectedConceptSetItems"
-                :external-domain-values="conceptSetDomainValues"
-                :external-texts="tagInputTexts"
-                @update:value="handleSelectedConceptSetsChange"
-                @search-change="handleSearchChange"
-                @concept-set-action="handleConceptSetAction"
-              />
-            </div>
+          <div v-if="showPicker" class="covariate-picker">
+            <label class="covariate-picker__label">{{ getText('MRI_PA_TABLE1_CONCEPT_SET_LABEL') }}</label>
+            <QueryFilterTagInputAdapter
+              :model="conceptSetPickerModel"
+              :external-value="selectedConceptSetItems"
+              :external-domain-values="conceptSetDomainValues"
+              :external-texts="tagInputTexts"
+              @update:value="handleSelectedConceptSetsChange"
+              @search-change="handleSearchChange"
+              @concept-set-action="handleConceptSetAction"
+            />
           </div>
         </div>
       </div>
-    </template>
-
-    <template #footer>
-      <appButton
-        class="table1-action-button table1-action-button--secondary"
-        :click="handleCancel"
-        :text="getText('MRI_PA_TOOLTIP_BOOKMARK_BACK')"
-        :disabled="loading"
-      />
-      <appButton
-        class="table1-action-button table1-action-button--primary"
-        :click="handleConfirm"
-        :text="getText('MRI_PA_TABLE1_GENERATE_BUTTON')"
+    </div>
+    <template #actions>
+      <D2eButton variant="secondary" data-testid="pa-table1-back-btn" @click="handleCancel">
+        {{ getText('MRI_PA_TOOLTIP_BOOKMARK_BACK') }}
+      </D2eButton>
+      <D2eButton
         :disabled="loading || !!errorMessage || selectedConceptSetItems.length === 0"
-      />
+        data-testid="pa-table1-generate-btn"
+        @click="handleConfirm"
+      >
+        {{ getText('MRI_PA_TABLE1_GENERATE_BUTTON') }}
+      </D2eButton>
     </template>
-  </MessageBox>
+  </D2eDialog>
 </template>
 
 <script lang="ts" setup>
 import { computed, toRef } from 'vue'
 import { useStore } from 'vuex'
-import MessageBox from '../MessageBox.vue'
-import appButton from '@/lib/ui/app-button.vue'
+import { D2eButton, D2eDialog } from '@d2e/ui'
+import VProgressCircular from '../vuetify/VProgressCircular.vue'
 import QueryFilterTagInputAdapter from '@/lib/ui/QueryFilterTagInputAdapter.vue'
 import { useTable1ConceptSetPicker, type Table1ConceptSetSelection } from '@/composables/useTable1ConceptSetPicker'
 import type { TagInputModel } from '@/query-filter/types/ConceptSetTypes'
@@ -150,56 +139,17 @@ function handleConfirm() {
 
 <style scoped>
 .table1-config-dialog {
-  padding: 0 24px 20px;
+  position: relative;
 }
 
-.description {
-  color: #595757;
-  font-size: 16px;
-  font-weight: 400;
-  line-height: 1.5;
-  margin: 8px 0 0;
-}
-
-.table1-dialog-header {
-  align-items: stretch;
-  color: var(--color-mri-brand, #000080);
-  display: flex;
-  flex-direction: column;
-  font-size: 18px;
-  font-weight: 500;
-  gap: 0;
-  line-height: 1.2;
-  width: 100%;
-}
-
-.table1-dialog-title-row {
+.table1-loading {
   align-items: center;
+  background: rgb(255 255 255 / 70%);
   display: flex;
-  justify-content: space-between;
-  min-height: 24px;
-  width: 100%;
-}
-
-.table1-dialog-close {
-  align-items: center;
-  background: transparent;
-  border: 0;
-  color: var(--color-mri-brand, #000080);
-  cursor: pointer;
-  display: inline-flex;
-  font-weight: 400;
-  height: 24px;
+  inset: 0;
   justify-content: center;
-  line-height: 1;
-  margin: 0;
-  padding: 0;
-  width: 24px;
-}
-
-.table1-dialog-close-icon {
-  font-size: 28px;
-  line-height: 1;
+  position: absolute;
+  z-index: 1;
 }
 
 .covariate-card {
@@ -245,104 +195,6 @@ function handleConfirm() {
   color: var(--color-feedback-error, #a3293d);
 }
 
-.table1-action-button {
-  flex: 1 1 0;
-}
-
-:global(.table1-config-messagebox.message-box .modal-container) {
-  border-radius: 16px;
-  box-shadow:
-    0 6px 30px 5px rgba(0, 0, 0, 0.12),
-    0 16px 24px 2px rgba(0, 0, 0, 0.14),
-    0 8px 10px -5px rgba(0, 0, 0, 0.2);
-  max-width: calc(100vw - 32px);
-  overflow: hidden;
-}
-
-:global(.table1-config-messagebox.message-box .modal-header) {
-  background: var(--color-ui-lightest-bg, #fff);
-  border-bottom: 0;
-  box-shadow: none;
-  padding: 24px 24px 12px;
-}
-
-:global(.table1-config-messagebox.message-box div.message-box-custom header.modal-header) {
-  box-shadow: none;
-}
-
-:global(.table1-config-messagebox.message-box .modal-header-container) {
-  height: auto;
-  justify-content: stretch;
-  line-height: normal;
-  padding: 0;
-}
-
-:global(.table1-config-messagebox.message-box .modal-header-container > span) {
-  width: 100%;
-}
-
-:global(.table1-config-messagebox.message-box .modal-body) {
-  max-height: calc(100vh - 180px);
-  padding: 0;
-}
-
-:global(.table1-config-messagebox.message-box .modal-footer) {
-  background: var(--color-ui-lightest-bg, #fff);
-  border-top: 1px solid var(--color-ui-light-border, #dedcda);
-  gap: 16px;
-  padding: 16px 24px;
-}
-
-:global(.table1-config-messagebox.message-box .modal-footer button.table1-action-button) {
-  margin: 0;
-  padding: 0;
-}
-
-:global(.table1-config-messagebox.message-box button.table1-action-button .buttonInner) {
-  align-items: center;
-  border-radius: 8px;
-  display: flex;
-  height: 40px;
-  justify-content: center;
-  padding: 0 16px;
-  width: 100%;
-}
-
-:global(.table1-config-messagebox.message-box button.table1-action-button .buttonContent) {
-  font-size: 16px;
-  font-weight: 500;
-  height: auto;
-  line-height: 1;
-}
-
-:global(.table1-config-messagebox.message-box button.table1-action-button--primary .buttonInner) {
-  background: var(--color-mri-brand, #000080);
-  border-color: var(--color-mri-brand, #000080);
-  color: var(--color-mri-lightest-text, #fff);
-  text-shadow: none;
-}
-
-:global(.table1-config-messagebox.message-box button.table1-action-button--secondary .buttonInner) {
-  background: var(--color-ui-lightest-bg, #fff);
-  border-color: var(--color-mri-button-border, #c9d0ea);
-  color: var(--color-mri-brand, #000080);
-  text-shadow: none;
-}
-
-:global(.table1-config-messagebox.message-box button.table1-action-button.disabled .buttonInner) {
-  background: #dedbd9;
-  border-color: #dedbd9;
-  color: #9a9a9a;
-  opacity: 1;
-}
-
-:global(.table1-config-messagebox.message-box div.message-box-custom footer button.table1-action-button.disabled .buttonInner) {
-  background: #dedbd9;
-  border-color: #dedbd9;
-  color: #9a9a9a;
-  opacity: 1;
-}
-
 :deep(.covariate-picker .app-tag-input) {
   align-items: flex-start;
   gap: 16px;
@@ -357,5 +209,4 @@ function handleConfirm() {
   min-height: 34px;
   padding-right: 0;
 }
-
 </style>
