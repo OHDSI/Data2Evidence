@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { api } from "../../../../axios/api";
 import { Roles, STUDY_ROLES } from "../../../../config";
 import { useUser } from "../../../../contexts";
@@ -23,6 +23,8 @@ export const useUserDataSourcePermissions = (user?: UserWithRolesInfoExt) => {
   const [rows, setRows] = useState<DataSourcePermissionRow[]>([]);
   const [loadedUserId, setLoadedUserId] = useState<string>();
   const [error, setError] = useState(false);
+  const currentUserId = useRef(user?.userId);
+  currentUserId.current = user?.userId;
 
   useEffect(() => {
     setLoadedUserId(undefined);
@@ -84,6 +86,13 @@ export const useUserDataSourcePermissions = (user?: UserWithRolesInfoExt) => {
 
   const loading = user != null && loadedUserId !== user.userId;
 
+  const setRowsFor = useCallback(
+    (userId: string, update: (prev: DataSourcePermissionRow[]) => DataSourcePermissionRow[]) => {
+      if (currentUserId.current === userId) setRows(update);
+    },
+    []
+  );
+
   const refreshOwnGroups = useCallback(async () => {
     if (user?.userId !== ctxUser.userId || !ctxUser.idpUserId) return;
     try {
@@ -99,31 +108,34 @@ export const useUserDataSourcePermissions = (user?: UserWithRolesInfoExt) => {
       if (!row.request) return;
       const { id, userId, groupId } = row.request;
       await api.userMgmt.handleStudyAccessRequest("approve", id, userId, groupId);
-      setRows((prev) =>
+      setRowsFor(userId, (prev) =>
         prev.map((r) =>
           r.key === row.key ? { ...r, key: `access-${r.studyId}-${r.role}`, status: "access", request: undefined } : r
         )
       );
       await refreshOwnGroups();
     },
-    [refreshOwnGroups]
+    [setRowsFor, refreshOwnGroups]
   );
 
-  const reject = useCallback(async (row: DataSourcePermissionRow) => {
-    if (!row.request) return;
-    const { id, userId, groupId } = row.request;
-    await api.userMgmt.handleStudyAccessRequest("reject", id, userId, groupId);
-    setRows((prev) => prev.filter((r) => r.key !== row.key));
-  }, []);
+  const reject = useCallback(
+    async (row: DataSourcePermissionRow) => {
+      if (!row.request) return;
+      const { id, userId, groupId } = row.request;
+      await api.userMgmt.handleStudyAccessRequest("reject", id, userId, groupId);
+      setRowsFor(userId, (prev) => prev.filter((r) => r.key !== row.key));
+    },
+    [setRowsFor]
+  );
 
   const revoke = useCallback(
     async (row: DataSourcePermissionRow) => {
       if (!user) return;
       await api.userMgmt.withdrawStudyRoles(user.userId, row.tenantId, row.studyId, [row.role]);
-      setRows((prev) => prev.filter((r) => r.key !== row.key));
+      setRowsFor(user.userId, (prev) => prev.filter((r) => r.key !== row.key));
       await refreshOwnGroups();
     },
-    [user, refreshOwnGroups]
+    [user, setRowsFor, refreshOwnGroups]
   );
 
   const add = useCallback(
@@ -131,7 +143,7 @@ export const useUserDataSourcePermissions = (user?: UserWithRolesInfoExt) => {
       if (!user) return;
       const role = Roles.STUDY_RESEARCHER;
       await api.userMgmt.registerStudyRoles([user.userId], dataset.tenant.id, dataset.id, [role]);
-      setRows((prev) => [
+      setRowsFor(user.userId, (prev) => [
         ...prev.filter((r) => !(r.studyId === dataset.id && r.role === role)),
         {
           key: `access-${dataset.id}-${role}`,
@@ -145,7 +157,7 @@ export const useUserDataSourcePermissions = (user?: UserWithRolesInfoExt) => {
       ]);
       await refreshOwnGroups();
     },
-    [user, refreshOwnGroups]
+    [user, setRowsFor, refreshOwnGroups]
   );
 
   const assignableDatasets = useMemo(() => {
