@@ -40,9 +40,6 @@ const enum ViewerType {
 
 const ManageViewerDialog: FC<ManageViewerDialogProps> = ({ config, open, onClose }) => {
   const { getText } = useTranslation();
-  const [templateLanguage, setTemplateLanguage] = useState<ViewerType>(
-    config.type === "strategus" ? ViewerType.SHINY_SERVER : ViewerType.R
-  );
   const [selectedTemplate, setSelectedTemplate] = useState<string>("default");
   const [codeType, setCodeType] = useState<"dashboard" | "cohort">(config.type === "cohort" ? "cohort" : "dashboard");
   const [nameError, setNameError] = useState<string | null>(null);
@@ -55,6 +52,7 @@ const ManageViewerDialog: FC<ManageViewerDialogProps> = ({ config, open, onClose
     savedCodes,
     code,
     name,
+    language,
     isNewName,
     queries,
     originalQueryNames,
@@ -64,6 +62,7 @@ const ManageViewerDialog: FC<ManageViewerDialogProps> = ({ config, open, onClose
     applyTemplate,
     updateCode,
     updateName,
+    updateLanguage,
     markSaved,
   } = useViewerData({
     open,
@@ -88,6 +87,13 @@ const ManageViewerDialog: FC<ManageViewerDialogProps> = ({ config, open, onClose
             { label: "Python", value: ViewerType.Python },
           ],
     [config.type]
+  );
+
+  // Follow the language saved with the loaded code. A new code, or one saved
+  // before the language was stored, falls back to the first viewer type.
+  const templateLanguage = useMemo(
+    () => viewerTypes.find((type) => type.value === language)?.value ?? viewerTypes[0].value,
+    [viewerTypes, language]
   );
 
   const editorLanguage = useMemo(() => {
@@ -191,6 +197,7 @@ const ManageViewerDialog: FC<ManageViewerDialogProps> = ({ config, open, onClose
     code,
     name,
     codeType,
+    templateLanguage,
     getDeletedQueryNames,
     getValidQueries,
     markSaved,
@@ -304,7 +311,7 @@ const ManageViewerDialog: FC<ManageViewerDialogProps> = ({ config, open, onClose
               sx={{ width: "100%" }}
               variant="standard"
               value={templateLanguage}
-              onChange={(event) => setTemplateLanguage(event.target.value as ViewerType)}
+              onChange={(event) => updateLanguage(event.target.value as ViewerType)}
             >
               {viewerTypes.map((type) => (
                 <MenuItem key={type.value} value={type.value}>
