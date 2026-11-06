@@ -2,13 +2,12 @@
 
 ## Add database connection details and credentials
 
-- Log in to the Researcher Portal using a Chrome web browser
+- Log in to the Admin Portal using a Chrome web browser
 
-  - [https://localhost:443/portal](https://localhost:443/portal) - local workstation
-  - `https://<FQDN>/portal` - remote server
+  - [https://localhost:443/d2e/portal/systemadmin/setup](https://localhost:443/d2e/portal/systemadmin/setup) - local workstation
+  - `https://<FQDN>/d2e/portal/systemadmin/setup` - remote server
 
 - Login as the new admin user
-- Switch to **Admin Portal**
 - Select **Setup** on top right
 - URL is now:
   

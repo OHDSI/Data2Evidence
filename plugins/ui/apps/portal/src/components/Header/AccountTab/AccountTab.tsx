@@ -13,7 +13,9 @@ export const AccountTab: FC<AccountTabProps> = ({ portalType }) => {
   const location = useLocation();
 
   const getLink = useCallback(() => {
-    if (portalType === "researcher") {
+    if (portalType === "atlas") {
+      return config.ROUTES.atlasAccount;
+    } else if (portalType === "researcher") {
       return `${config.ROUTES.researcher}/account`;
     } else if (portalType === "etl") {
       return `${config.ROUTES.etl}/account`;

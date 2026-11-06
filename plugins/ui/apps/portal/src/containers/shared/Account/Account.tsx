@@ -57,10 +57,6 @@ export const Account: FC<AccountProps> = ({ portalType }) => {
     });
   }, [idTokenClaims, username]);
 
-  const handleSwitchToResearcher = useCallback(() => {
-    navigate(config.ROUTES.researcher);
-  }, [navigate]);
-
   const handleSwitchToAdmin = useCallback(() => {
     navigate(config.ROUTES.systemadmin);
   }, [navigate]);
@@ -100,15 +96,12 @@ export const Account: FC<AccountProps> = ({ portalType }) => {
                 <Loader />
               ) : (
                 <>
-                  {portalType === "system_admin" && user.canAccessResearcherPortal && (
+                  {portalType === "researcher" && user.canAccessSystemAdminPortal && (
                     <Button
                       block
-                      text={getText(i18nKeys.ACCOUNT__SWITCH_TO_RESEARCHER_PORTAL)}
-                      onClick={handleSwitchToResearcher}
+                      text={getText(i18nKeys.ACCOUNT__SWITCH_TO_ADMIN_PORTAL)}
+                      onClick={handleSwitchToAdmin}
                     />
-                  )}
-                  {portalType === "researcher" && user.canAccessSystemAdminPortal && (
-                    <Button block text={getText(i18nKeys.ACCOUNT__SWITCH_TO_ADMIN_PORTAL)} onClick={handleSwitchToAdmin} />
                   )}
                   {(portalType === "system_admin" || portalType === "researcher") && user.canAccessEtlPortal && (
                     <Button block text={getText(i18nKeys.ACCOUNT__SWITCH_TO_ETL_PORTAL)} onClick={handleSwitchToEtl} />
@@ -118,13 +111,6 @@ export const Account: FC<AccountProps> = ({ portalType }) => {
                       block
                       text={getText(i18nKeys.ACCOUNT__SWITCH_TO_ADMIN_PORTAL)}
                       onClick={handleSwitchToAdmin}
-                    />
-                  )}
-                  {portalType === "etl" && user.canAccessResearcherPortal && (
-                    <Button
-                      block
-                      text={getText(i18nKeys.ACCOUNT__SWITCH_TO_RESEARCHER_PORTAL)}
-                      onClick={handleSwitchToResearcher}
                     />
                   )}
                   <FeatureGate featureFlags={[FEATURE_ATLAS]}>

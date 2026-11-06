@@ -1,9 +1,9 @@
 import React, { FC, HTMLAttributes, useEffect, useState } from "react";
 import classNames from "classnames";
-import { useScrollPosition } from "../../../../hooks";
-import env from "../../../../env";
-import { SearchBarDataset } from "./SearchBarDatasets";
-import { AccountButton } from "./AccountButton";
+import { useScrollPosition } from "../../../../../hooks";
+import env from "../../../../../env";
+import { SearchBarDataset } from "../SearchBarDatasets/SearchBarDatasets";
+import { AccountButton } from "../AccountButton/AccountButton";
 import "./HomeHeader.scss";
 
 interface HomeHeaderProps extends HTMLAttributes<HTMLDivElement> {

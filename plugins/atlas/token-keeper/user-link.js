@@ -5,7 +5,7 @@
  */
 (function () {
   "use strict";
-  var TARGET = "/d2e/portal/researcher/account";
+  var TARGET = "/d2e/portal/atlas/account";
   document.addEventListener("click", function (e) {
     // Leave modified/non-primary clicks (open-in-new-tab gestures) alone.
     if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;

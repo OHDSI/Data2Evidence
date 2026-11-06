@@ -116,17 +116,18 @@ Start Data2Evidence services:
 
 ## Data2Evidence guide
 
-### Researcher Portal
+### Atlas
 
-- Input the Researcher Portal URL into a Chrome web browser:
+- Input the Atlas URL into a Chrome web browser:
 
-  - [https://localhost:443](https://localhost:443) - local workstation
-  - `https://<FQDN>` - remote server
+  - [https://localhost:443/atlas/](https://localhost:443/atlas/) - local workstation
+  - `https://<FQDN>/atlas/` - remote server
 
 - A ["**Proceed to localhost**"](../2-admin_guide/images/chrome/chrome-proceed-to-localhost.png) display is expected.
 - Select **Advanced** > **Proceed to localhost (unsafe)**
 - You will see the [**Data2Evidence login screen**](../2-admin_guide/images/portal/LoginPage.png)
-- You can find more information about the usage of the Researcher Portal in the [user guide](../1-user_guide/README.md)
+- After login, researchers land on Atlas, the home for researcher workflows (datasets, concepts, cohorts, analysis).
+- You can find more information about the usage of Atlas in the [user guide](../1-user_guide/README.md)
 
 ### Accessing Admin Portal
 
@@ -166,7 +167,7 @@ These are the two methods to load the demo dataset:
 - Run the command: `./d2e setupdemo`
 - [Via Admin Portal](../2-admin_guide/5-setup/data-load/8-load-broadsea.md)
 
-Upon completion, switch to the Researcher Portal by navigating to Account > switch to Researcher Portal. The [demo dataset](../2-admin_guide/images/portal/ResearcherPortalDemoDataset.png) will be shown.
+Upon completion, open Atlas at `/atlas` (researchers are taken there automatically after login). The demo dataset will be shown.
 
 ### Stop the application
 

@@ -6,5 +6,4 @@
 ![](../images/dqd/dqd-jobs.png)
 - Select the **Run Analysis** button.
 ![](../images/dqd/dqd-runanalysis.png)
-- After completing the Data Quality job run, the dashboards is available through the researcher portal.
-![dqd-dashboard](../images/dqd/dqd-dashboard.png)
+- After completing the Data Quality job run, the dashboard is available in Atlas: open the dataset from the Atlas home page, then select **Data quality > Data quality dashboard** in the left sidebar.

@@ -2,10 +2,10 @@
 
 ## Data2Evidence
 
-- Input the Researcher Portal URL into a Chrome Web Browser:
+- Input the portal URL into a Chrome Web Browser:
 
-  - [https://localhost:443/portal](https://localhost:443/portal) - local workstation
-  - `https://<FQDN>/portal` - remote server
+  - [https://localhost:443/d2e/portal](https://localhost:443/d2e/portal) - local workstation
+  - `https://<FQDN>/d2e/portal` - remote server
 
 - A message indicating `Your connection is not private` is expected due to the self-signed certificate
 - Click Advanced>Proceed to localhost (unsafe)

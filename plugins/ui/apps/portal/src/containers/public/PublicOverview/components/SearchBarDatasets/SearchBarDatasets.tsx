@@ -1,7 +1,7 @@
 import React, { FC } from "react";
-import SearchBar from "../../../../components/SearchBar/SearchBar";
-import { useTranslation } from "../../../../contexts";
-import { FeatureGate, FEATURE_DATASET_SEARCH } from "../../../../config";
+import SearchBar from "../../../../../components/SearchBar/SearchBar";
+import { useTranslation } from "../../../../../contexts";
+import { FeatureGate, FEATURE_DATASET_SEARCH } from "../../../../../config";
 
 interface SearchBarDatasetProps {
   width?: string;
