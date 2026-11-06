@@ -85,9 +85,12 @@ export const useUserDataSourcePermissions = (user?: UserWithRolesInfoExt) => {
   const loading = user != null && loadedUserId !== user.userId;
 
   const refreshOwnGroups = useCallback(async () => {
-    if (user?.userId === ctxUser.userId && ctxUser.idpUserId) {
+    if (user?.userId !== ctxUser.userId || !ctxUser.idpUserId) return;
+    try {
       const userGroups = await api.userMgmt.getUserGroupList(ctxUser.idpUserId);
       setUserGroup(ctxUser.idpUserId, userGroups);
+    } catch (err) {
+      console.error("Error when refreshing own user groups", err);
     }
   }, [user, ctxUser, setUserGroup]);
 
