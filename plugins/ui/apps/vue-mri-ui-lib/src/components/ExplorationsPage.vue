@@ -311,8 +311,8 @@
     </div>
 
     <!--
-      Mounted only while the flow is live. These modals `<Teleport to="#app">`,
-      and #app is an ancestor of this page, so leaving them mounted meant that
+      Mounted only while the flow is live. These modals teleport to the app root
+      (`.mri-app-vue-container`), an ancestor of this page, so leaving them mounted meant that
       unmounting the page — which is what clicking a card does — tore down a
       teleport whose target was itself being removed. Vue threw
       "Cannot destructure property 'bum' of 'ne' as it is null" during unmount,

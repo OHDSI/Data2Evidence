@@ -1,5 +1,9 @@
 export { default as D2eDialog } from "./components/D2eDialog.vue";
 export { DIALOG_SIZE_MAP, type D2eDialogSize } from "./components/dialogSizes";
+export {
+  D2E_DIALOG_ATTACH,
+  DEFAULT_DIALOG_ATTACH,
+} from "./components/dialogAttach";
 export { default as D2eButton } from "./components/D2eButton.vue";
 export { default as D2eTextField } from "./components/D2eTextField.vue";
 export { default as D2eSearchField } from "./components/D2eSearchField.vue";

@@ -76,8 +76,9 @@ import {
   VDivider,
   VProgressCircular,
 } from "vuetify/components";
-import { computed, nextTick, ref, useAttrs, watch } from "vue";
+import { computed, inject, nextTick, ref, useAttrs, watch } from "vue";
 import { DIALOG_SIZE_MAP, type D2eDialogSize } from "./dialogSizes";
+import { D2E_DIALOG_ATTACH, DEFAULT_DIALOG_ATTACH } from "./dialogAttach";
 
 interface Props {
   modelValue: boolean;
@@ -112,7 +113,7 @@ const props = withDefaults(defineProps<Props>(), {
   showClose: true,
   closeLabel: "Close dialog",
   busy: false,
-  attach: "#app",
+  attach: () => inject(D2E_DIALOG_ATTACH, DEFAULT_DIALOG_ATTACH),
 });
 
 const resolvedMaxWidth = computed(
