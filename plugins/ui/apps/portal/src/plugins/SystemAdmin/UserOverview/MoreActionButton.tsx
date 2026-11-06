@@ -7,6 +7,7 @@ import { useTranslation } from "../../../contexts";
 interface MoreActionButtonProps {
   user: UserWithRolesInfoExt;
   canDelete: boolean;
+  canManageDataSources: boolean;
   onActivateClick: () => Promise<void> | void;
   onChangePasswordClick: () => void;
   onDeleteClick: () => void;
@@ -16,6 +17,7 @@ interface MoreActionButtonProps {
 export const MoreActionButton: FC<MoreActionButtonProps> = ({
   user,
   canDelete,
+  canManageDataSources,
   onActivateClick,
   onChangePasswordClick,
   onDeleteClick,
@@ -25,19 +27,22 @@ export const MoreActionButton: FC<MoreActionButtonProps> = ({
   const [activating, setActivating] = useState(false);
 
   const items: MenuItem[] = useMemo(() => {
-    const list: MenuItem[] = [
-      { value: "permission", label: getText(i18nKeys.USER_OVERVIEW__DATA_SOURCE_PERMISSION) },
+    const list: MenuItem[] = [];
+    if (canManageDataSources) {
+      list.push({ value: "permission", label: getText(i18nKeys.USER_OVERVIEW__DATA_SOURCE_PERMISSION) });
+    }
+    list.push(
       { value: "password", label: getText(i18nKeys.MORE_ACTION_BUTTON__CHANGE_PASSWORD) },
       {
         value: "activate",
         label: getText(user.active ? i18nKeys.USER_OVERVIEW__DEACTIVATE : i18nKeys.USER_OVERVIEW__ACTIVATE),
-      },
-    ];
+      }
+    );
     if (canDelete) {
       list.push({ value: "delete", label: getText(i18nKeys.USER_OVERVIEW__DELETE), danger: true });
     }
     return list;
-  }, [user.active, canDelete, getText, i18nKeys]);
+  }, [user.active, canDelete, canManageDataSources, getText, i18nKeys]);
 
   const handleSelect = useCallback(
     async (value: string) => {

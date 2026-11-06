@@ -396,6 +396,7 @@ export const UserOverview: FC<UserOverviewProps> = () => {
                         <MoreActionButton
                           user={user}
                           canDelete={!isManagedUser}
+                          canManageDataSources={ctxUser.isSystemAdmin}
                           onActivateClick={() => handleActivateUser(user, !user.active)}
                           onChangePasswordClick={() => handleOpenPasswordDialog(user)}
                           onDeleteClick={() => handleDelete(user)}
