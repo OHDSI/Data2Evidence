@@ -46,7 +46,12 @@
                 </div>
               </div>
               <div class="field-grid" :class="getColumnsClass(group.columns)">
-                <div v-for="field in group.fields" :key="field.id" class="field-row">
+                <div
+                  v-for="field in group.fields"
+                  :key="field.id"
+                  class="field-row"
+                  :class="{ 'field-row--full': isDateFieldType(field.type) }"
+                >
                   <div class="field-label-wrapper">
                     <label class="field-label" :for="field.id">
                       {{ field.label }}
@@ -75,7 +80,10 @@
                     </span>
                   </div>
 
-                  <div class="field-input-wrapper">
+                  <div
+                    class="field-input-wrapper"
+                    :class="{ 'field-input-wrapper--fill': isDateFieldType(field.type) }"
+                  >
                     <!-- Date types -->
                     <template v-if="isDateFieldType(field.type)">
                       <div class="date-range-group">
@@ -941,6 +949,14 @@ function validateNumericValue(value: unknown, allowNegative: boolean): NumericVa
   display: flex;
   flex-direction: column;
   gap: 6px;
+}
+
+.field-input-wrapper--fill {
+  align-self: stretch;
+}
+
+.field-row--full {
+  grid-column: 1 / -1;
 }
 
 .date-range-group,
