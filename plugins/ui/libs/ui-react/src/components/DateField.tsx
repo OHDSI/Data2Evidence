@@ -15,6 +15,7 @@ import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFnsV3";
 import { addMonths, addYears, format } from "date-fns";
 import clsx from "clsx";
 import { fromIsoDate, toIsoDate } from "./dateFieldFormat";
+import { resolveIcon, type Icon } from "./internal/icon";
 import "./Field.scss";
 import "./DateField.scss";
 
@@ -75,6 +76,9 @@ export interface DateFieldProps {
   value?: string | null;
   onChange?: (value: string | null) => void;
   label?: string;
+  placeholder?: string;
+  /** Leading glyph (e.g. "mdi-calendar-today"). */
+  prependIcon?: Icon;
   disabled?: boolean;
   min?: string | null;
   max?: string | null;
@@ -97,6 +101,8 @@ export function DateField({
   value = null,
   onChange,
   label,
+  placeholder,
+  prependIcon,
   disabled = false,
   min = null,
   max = null,
@@ -147,6 +153,7 @@ export function DateField({
         variant="outlined"
         value={toDisplay(value)}
         label={label}
+        placeholder={placeholder}
         disabled={disabled}
         error={messages.length > 0}
         helperText={messages[0]}
@@ -162,6 +169,11 @@ export function DateField({
           }
         }}
         InputProps={{
+          startAdornment: prependIcon ? (
+            <InputAdornment position="start" className="d2e-date-field__adornment">
+              {resolveIcon(prependIcon, { fontSize: 20 })}
+            </InputAdornment>
+          ) : undefined,
           endAdornment:
             clearable && value ? (
               <InputAdornment position="end">

@@ -1,19 +1,9 @@
-.source-information-dialog {
-    &__content {
-      min-height: 200px;
-      padding: 0 25px;
-      color: var(--color-primary);
-    }
-  
-    .button-group-actions {
-      display: flex;
-      justify-content: center;
-      margin: 24px 0;
-  
-      .alp-button__container {
-        margin: 0 0 0 8px;
-        width: 247px;
-      }
-    }
+.source-information-dialog__content {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+
+  .d2e-field {
+    width: 100%;
   }
-  
+}

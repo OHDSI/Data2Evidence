@@ -1,0 +1,159 @@
+.manage-metadata {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+
+  &__toolbar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  &__search {
+    width: 466px;
+    max-width: 100%;
+  }
+
+  &__toolbar-end {
+    margin-left: auto;
+    display: flex;
+    gap: 12px;
+  }
+
+  &__tablewrap {
+    flex: 1 1 auto;
+    max-height: 440px;
+    overflow-y: auto;
+
+    thead th {
+      position: sticky;
+      top: 0;
+      z-index: 1;
+      background: var(--d2e-color-white);
+    }
+
+    .d2e-table th.manage-metadata__drag-col,
+    .d2e-table td.manage-metadata__drag-col {
+      width: 1%;
+      white-space: nowrap;
+      padding-left: 6px;
+      padding-right: 6px;
+    }
+
+    .d2e-table td.manage-metadata__drag-col {
+      text-align: center;
+      background: var(--d2e-color-neutral-xtra-lightest);
+    }
+
+    th:last-child,
+    td:last-child {
+      width: 96px;
+    }
+  }
+
+  &__drag {
+    cursor: grab;
+    color: var(--d2e-color-neutral);
+    touch-action: none;
+
+    &:active {
+      cursor: grabbing;
+    }
+
+    svg {
+      font-size: 12px;
+      vertical-align: middle;
+    }
+
+    &[aria-disabled="true"] {
+      cursor: default;
+
+      svg {
+        opacity: 0.4;
+      }
+    }
+  }
+
+  &__drag-icon {
+    display: inline-flex;
+  }
+
+  &__actions {
+    display: inline-flex;
+    gap: 4px;
+    justify-content: flex-end;
+  }
+
+  &__delete svg {
+    color: var(--d2e-color-alarm);
+  }
+
+  // Figma: empty state is a contained light-grey rounded panel (852×240)
+  // inside the dialog body, with the toolbar still shown above it.
+  &__empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 240px;
+    padding: 24px;
+    background: var(--d2e-color-neutral-xtra-lightest);
+    border-radius: var(--d2e-radius-md);
+  }
+}
+
+.manage-metadata__form {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+
+  .d2e-field {
+    width: 100%;
+  }
+}
+
+.d2e-button.manage-metadata__delete-confirm.manage-metadata__delete-confirm {
+  background: var(--d2e-color-alarm);
+  color: var(--d2e-color-white);
+
+  &:hover {
+    background: var(--d2e-color-alarm);
+    filter: brightness(0.92);
+  }
+}
+
+.import-metadata__filename {
+  font-size: var(--d2e-font-body2-size, 14px);
+  color: var(--d2e-color-neutral);
+}
+
+.import-metadata .d2e-alert--banner {
+  width: calc(100% + 48px);
+  margin-left: -24px;
+}
+
+.import-metadata .d2e-table .import-metadata__row--unknown .MuiTableCell-root {
+  background: var(--d2e-color-alarm-light);
+}
+
+.import-metadata .d2e-table .import-metadata__row--excluded .MuiTableCell-root {
+  background: none;
+}
+
+.import-metadata .d2e-table .import-metadata__row--excluded td:not(:last-child) {
+  opacity: 0.4;
+}
+
+.import-metadata__unknown-name {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.import-metadata .d2e-table .import-metadata__row--unknown .import-metadata__unknown-name {
+  color: var(--d2e-color-alarm);
+
+  svg {
+    font-size: 16px;
+    color: var(--d2e-color-alarm);
+  }
+}

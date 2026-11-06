@@ -909,6 +909,8 @@ spec:
               value: /usr/src/node_modules/@trex
             - name: TREX_POOL_SIZE
               value: "1024"
+            - name: TREXSQL_PREVIEW_MAX_CONCURRENT
+              value: {{ (.Values.trex).previewMaxConcurrent | default 1 | quote }}
             - name: TREXSQL_ENABLED
               value: "true"
             - name: "PG_SCHEMA"

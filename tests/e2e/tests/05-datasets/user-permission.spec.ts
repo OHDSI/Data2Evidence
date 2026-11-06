@@ -32,12 +32,12 @@ test(TEST_NAME, async ({ page }) => {
   await expect(page.getByRole('cell', { name: 'testuserC' })).toBeVisible()
 
   // Go to Datasets
-  await page.getByRole('link', { name: 'Datasets' }).click()
+  await page.getByRole('link', { name: 'Data sources' }).click()
   const demoRow = page.locator('tr', { hasText: 'Demo dataset' }).first()
-  await demoRow.getByText('Select action').click()
+  await demoRow.getByRole('button', { name: 'Actions' }).click()
 
   // Manage dataset permissions
-  await page.getByRole('option', { name: 'Permissions' }).click()
+  await page.getByRole('menuitem', { name: 'Update permissions' }).click()
   await page.getByRole('tab', { name: 'Access' }).click()
 
   // Grant access to testuserC user
