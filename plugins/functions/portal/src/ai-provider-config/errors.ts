@@ -19,7 +19,8 @@ export type AiProviderConfigErrorCode =
 
 /**
  * Response body (Danet 2.4.3 default handler): { status, name, code, field?, message }.
- * The parameter-property form is required: it is the form verified to reach the body.
+ * Keep `code` and `field` as constructor parameter properties; errors.test.ts checks
+ * that they reach the response body.
  * `field` is set only for AI_PROVIDER_CONFIG_INVALID.
  */
 export class AiProviderConfigError extends HttpException {

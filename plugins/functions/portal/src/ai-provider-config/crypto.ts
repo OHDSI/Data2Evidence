@@ -2,9 +2,6 @@ import { createCipheriv, createDecipheriv, randomBytes } from "node:crypto";
 import { Buffer } from "node:buffer";
 import { env } from "../env.ts";
 
-export const AI_PROVIDER_CONFIG_ENCRYPTION_KEY_ENV =
-  "AI_PROVIDER_CONFIG_ENCRYPTION_KEY";
-
 const KEY_BYTES = 32;
 const IV_BYTES = 12;
 const TAG_BYTES = 16;
@@ -31,10 +28,6 @@ export function parseEncryptionKey(raw: string | undefined | null): Buffer | nul
  */
 export function getEncryptionKeyFromEnv(): Buffer | null {
   return parseEncryptionKey(env.AI_PROVIDER_CONFIG_ENCRYPTION_KEY);
-}
-
-export function isEncryptionKeyConfigured(): boolean {
-  return getEncryptionKeyFromEnv() !== null;
 }
 
 function assertKeyLength(key: Buffer): void {

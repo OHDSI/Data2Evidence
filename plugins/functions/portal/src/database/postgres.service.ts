@@ -18,6 +18,7 @@ import { UserArtifactGroup } from '../user-artifact/entity/user-artifact-group.e
 import { UserArtifact } from '../user-artifact/entity/user-artifact.entity.ts';
 import { DatasetCode } from '../dataset/entity/dataset-code.entity.ts';
 import { DatasetCodeQuery } from '../dataset/entity/dataset-code-query.entity.ts';
+import { AiProviderConfig } from '../ai-provider-config/entity/ai-provider-config.entity.ts';
 
 const _env = Deno.env.toObject();
 
@@ -45,7 +46,7 @@ const dataSource = new DataSource({
   database: _env.PG__DB_NAME,
   schema: _env.PG_SCHEMA,
   ssl: _ssl,
-  entities: [Feature, Config, UserArtifact, UserArtifactGroup, Dataset, DatasetDetail, DatasetTag, DatasetTagConfig, DatasetDashboard, DatasetRelease, DatasetAttribute, DatasetAttributeConfig, Notebook, DatasetCode, DatasetCodeQuery],
+  entities: [Feature, Config, UserArtifact, UserArtifactGroup, Dataset, DatasetDetail, DatasetTag, DatasetTagConfig, DatasetDashboard, DatasetRelease, DatasetAttribute, DatasetAttributeConfig, Notebook, DatasetCode, DatasetCodeQuery, AiProviderConfig],
 });
 
 let _initPromise: Promise<DataSource> | null = null;

@@ -2,11 +2,9 @@ import { assert, assertEquals, assertNotEquals, assertThrows } from "@std/assert
 import { Buffer } from "node:buffer";
 import { randomBytes } from "node:crypto";
 import {
-  AI_PROVIDER_CONFIG_ENCRYPTION_KEY_ENV,
   decryptApiKey,
   encryptApiKey,
   getEncryptionKeyFromEnv,
-  isEncryptionKeyConfigured,
   parseEncryptionKey,
 } from "./crypto.ts";
 
@@ -45,28 +43,21 @@ Deno.test("parseEncryptionKey rejects a non-canonical encoding of 32 bytes", () 
   const canonical = randomBytes(32).toString("base64"); // 43 data chars + "="
   assertEquals(canonical.endsWith("="), true);
   const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
-  // The last data char carries 4 bits + 2 padding bits; set a padding bit.
+  // The last data char carries 4 bits + 2 padding bits; flip a padding bit.
   const last = canonical.slice(-2, -1);
-  const bumped = alphabet[alphabet.indexOf(last) | 1 ? alphabet.indexOf(last) | 1 : 0];
-  const nonCanonical = canonical.slice(0, -2) + bumped + "=";
-  // Make sure we really changed the padding bits and still decode to 32 bytes.
   const flipped = alphabet[alphabet.indexOf(last) ^ 1];
   const candidate = canonical.slice(0, -2) + flipped + "=";
+  // Make sure it still decodes to 32 bytes but does not re-encode to itself.
   assertEquals(Buffer.from(candidate, "base64").length, 32);
   assertNotEquals(Buffer.from(candidate, "base64").toString("base64"), candidate);
   assertEquals(parseEncryptionKey(candidate), null);
-  void nonCanonical;
 });
 
-Deno.test("getEncryptionKeyFromEnv / isEncryptionKeyConfigured agree with the env snapshot", () => {
+Deno.test("getEncryptionKeyFromEnv agrees with the env snapshot", () => {
   // env is snapshotted at module load, so assert consistency rather than mutate it.
   assertEquals(
-    isEncryptionKeyConfigured(),
-    getEncryptionKeyFromEnv() !== null,
-  );
-  assertEquals(
     getEncryptionKeyFromEnv(),
-    parseEncryptionKey(Deno.env.get(AI_PROVIDER_CONFIG_ENCRYPTION_KEY_ENV)),
+    parseEncryptionKey(Deno.env.get("AI_PROVIDER_CONFIG_ENCRYPTION_KEY")),
   );
 });
 
