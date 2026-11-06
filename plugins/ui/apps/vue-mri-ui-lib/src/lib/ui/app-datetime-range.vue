@@ -1,31 +1,36 @@
 <template>
   <div class="app-date-range">
-    <appDate
-      :date="fromDate"
-      :text="getText('MRI_PA_DATE_FROM_LABEL')"
-      @update="updateFrom"
-      :config="dateControlConfig"
-      :config-format="dateControlConfig.format"
+    <D2eDateTimePicker
+      :model-value="toPickerDate(fromDate, dateControlConfig.format)"
+      :label="getText('MRI_PA_DATE_FROM_LABEL')"
+      :format="dateControlConfig.format"
       :placeholder="dateFormatPlaceholder"
-      datetype="from"
-      :errMsg="errTextFrom"
-    ></appDate>
-    <appDate
-      :date="toDate"
-      :text="getText('MRI_PA_DATE_TO_LABEL')"
-      @update="updateTo"
-      :config="dateControlConfig"
-      :config-format="dateControlConfig.format"
+      :error-messages="errTextFrom || undefined"
+      :invalid-date-text="getText('MRI_PA_INVALID_DATE')"
+      :cancel-text="getText('MRI_PA_BUTTON_CANCEL')"
+      :ok-text="getText('MRI_PA_BUTTON_OK')"
+      clearable
+      @update:model-value="updateFrom(toDateUpdate($event))"
+    />
+    <D2eDateTimePicker
+      :model-value="toPickerDate(toDate, dateControlConfig.format)"
+      :label="getText('MRI_PA_DATE_TO_LABEL')"
+      :format="dateControlConfig.format"
       :placeholder="dateFormatPlaceholder"
-      datetype="to"
-      :errMsg="errTextTo"
-    ></appDate>
+      :error-messages="errTextTo || undefined"
+      :invalid-date-text="getText('MRI_PA_INVALID_DATE')"
+      :cancel-text="getText('MRI_PA_BUTTON_CANCEL')"
+      :ok-text="getText('MRI_PA_BUTTON_OK')"
+      clearable
+      @update:model-value="updateTo(toDateUpdate($event))"
+    />
   </div>
 </template>
 <script lang="ts">
 import { mapGetters, mapActions } from 'vuex'
 import DateUtils from '../../utils/DateUtils'
-import appDate from './app-date.vue'
+import { D2eDateTimePicker } from '@d2e/ui'
+import { toDateUpdate, toPickerDate } from '../../utils/datePickerValue'
 import moment from 'moment'
 
 export default {
@@ -60,7 +65,7 @@ export default {
         const configFormat = this.getMriFrontendConfig?._internalConfig?.panelOptions?.settings?.dateFormat
         // For datetime, append time format to the config date format as it does not have time format included
         const baseFormat = configFormat || 'YYYY-MM-DD'
-        const format = `${baseFormat} HH:mm:ss`
+        const format = `${baseFormat} HH:mm`
         return {
           format,
           sideBySide: true,
@@ -68,7 +73,7 @@ export default {
       } catch (error) {
         console.warn('Could not access MRI frontend config for date format, using default:', error)
         return {
-          format: 'YYYY-MM-DD HH:mm:ss',
+          format: 'YYYY-MM-DD HH:mm',
           sideBySide: true,
         }
       }
@@ -77,19 +82,21 @@ export default {
       try {
         const configFormat =
           this.getMriFrontendConfig?._internalConfig?.panelOptions?.settings?.dateFormat || 'YYYY-MM-DD'
-        const format = `${configFormat} HH:mm:ss`
+        const format = `${configFormat} HH:mm`
         // Use September 30, 2025 14:30:00 - makes it clear which is month (09) vs day (30)
         const exampleDate = moment('2025-09-30 14:30:00')
         const formattedExample = exampleDate.format(format)
         return `e.g., ${formattedExample}`
       } catch (error) {
         console.warn('Could not access MRI frontend config for date format, using default:', error)
-        return 'e.g., 2025-09-30 14:30:00'
+        return 'e.g., 2025-09-30 14:30'
       }
     },
   },
   methods: {
     ...mapActions(['updateDateConstraintValue']),
+    toPickerDate,
+    toDateUpdate,
 
     updateFrom(val) {
       if (val) {
@@ -154,7 +161,7 @@ export default {
     },
   },
   components: {
-    appDate,
+    D2eDateTimePicker,
   },
 }
 </script>

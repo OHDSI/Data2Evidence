@@ -187,7 +187,7 @@ sup {
 
 // Inline media must not sit on the text baseline. Without these the descender
 // gap under an icon adds a few pixels of height to any row containing one,
-// which is how the filter card, advanced-time and app-date panels grew.
+// which is how the filter card and advanced-time panels grew.
 pre,
 code,
 kbd,
