@@ -38,6 +38,10 @@ deploy/**/generated
 **/*private*
 !plugins/ui/**/.env*
 !plugins/ui/**/*private*
+# Connector overlay templates (the real .env.<provider> stay ignored).
+!.env.entra.example
+!.env.entra-external-id.example
+!.env.physionet.example
 
 .cubestore
 

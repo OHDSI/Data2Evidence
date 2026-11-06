@@ -16,6 +16,10 @@ export const env = {
   // resolves the seed account once its password has been changed.
   INITIAL_USER_NAME: Deno.env.get('IDP__INITIAL_USER__NAME') ?? '',
   INITIAL_USER_UUID: Deno.env.get('IDP__INITIAL_USER__UUID') ?? '',
+  // Whether the Logto provider trex registers may auto-provision a first-time
+  // federated user. Same flag usermgmt reads for the usermgmt-row side, so one
+  // switch turns on both halves of connector auto-provisioning.
+  AUTO_PROVISION_USERS: Deno.env.get('IDP__AUTO_PROVISION_USERS') === 'true',
   // Logto's own database role, which owns logto.users and so bypasses its
   // row-level policy; see KnexMigrationStore. Empty on a trex-mode install,
   // which has no Logto schema to read.
