@@ -16,9 +16,9 @@ test(TEST_NAME, async ({ page }) => {
 
   // Embedding concepts in admin portal
   await page.getByRole('button', { name: 'Switch to Admin portal' }).click()
-  await page.getByRole('link', { name: 'Datasets' }).click()
-  await page.locator('tr').filter({ hasText: 'Demo dataset' }).getByText('Select action').click()
-  await page.getByRole('option', { name: 'Setup semantic search' }).click()
+  await page.getByRole('link', { name: 'Data sources' }).click()
+  await page.locator('tr').filter({ hasText: 'Demo dataset' }).getByRole('button', { name: 'Actions' }).click()
+  await page.getByRole('menuitem', { name: 'Setup semantic search' }).click()
   await page.getByRole('button', { name: 'Setup semantic search' }).click()
   await expect(
     page.getByText('Successfully generated the semantic search creation for dataset: Demo dataset')

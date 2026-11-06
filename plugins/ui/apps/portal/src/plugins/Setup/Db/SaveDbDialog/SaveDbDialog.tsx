@@ -478,7 +478,7 @@ export const SaveDbDialog: FC<SaveDbDialogProps> = ({ open, onClose }) => {
               onChange={(event) => handleFormDataChange({ code: event.target?.value })}
               error={formError.code}
             />
-            {formError.code && <FormHelperText error>{getText(i18nKeys.ADD_STUDY_DIALOG__REQUIRED)}</FormHelperText>}
+            {formError.code && <FormHelperText error>{getText(i18nKeys.ADD_DATA_SOURCE_DIALOG__REQUIRED)}</FormHelperText>}
           </div>
           <FormControl fullWidth variant="standard" sx={{ width: "300px" }}>
             <InputLabel id="dialect-select-label">{getText(i18nKeys.SAVE_DB_DIALOG__DIALECT)}</InputLabel>
@@ -517,7 +517,7 @@ export const SaveDbDialog: FC<SaveDbDialogProps> = ({ open, onClose }) => {
                   error={formError.host}
                 />
                 {formError.host && (
-                  <FormHelperText error>{getText(i18nKeys.ADD_STUDY_DIALOG__REQUIRED)}</FormHelperText>
+                  <FormHelperText error>{getText(i18nKeys.ADD_DATA_SOURCE_DIALOG__REQUIRED)}</FormHelperText>
                 )}
               </div>
               <div>
@@ -532,7 +532,7 @@ export const SaveDbDialog: FC<SaveDbDialogProps> = ({ open, onClose }) => {
                   error={formError.port}
                 />
                 {formError.port && (
-                  <FormHelperText error>{getText(i18nKeys.ADD_STUDY_DIALOG__REQUIRED)}</FormHelperText>
+                  <FormHelperText error>{getText(i18nKeys.ADD_DATA_SOURCE_DIALOG__REQUIRED)}</FormHelperText>
                 )}
               </div>
               <div style={{ flex: 1 }}>
@@ -546,7 +546,7 @@ export const SaveDbDialog: FC<SaveDbDialogProps> = ({ open, onClose }) => {
                   error={formError.name}
                 />
                 {formError.name && (
-                  <FormHelperText error>{getText(i18nKeys.ADD_STUDY_DIALOG__REQUIRED)}</FormHelperText>
+                  <FormHelperText error>{getText(i18nKeys.ADD_DATA_SOURCE_DIALOG__REQUIRED)}</FormHelperText>
                 )}
               </div>
             </div>
@@ -642,7 +642,7 @@ export const SaveDbDialog: FC<SaveDbDialogProps> = ({ open, onClose }) => {
                 error={formError.ca}
                 helperText={
                   formError.ca
-                    ? getText(i18nKeys.ADD_STUDY_DIALOG__REQUIRED)
+                    ? getText(i18nKeys.ADD_DATA_SOURCE_DIALOG__REQUIRED)
                     : getText(i18nKeys.SAVE_DB_DIALOG__CA_HELPERTEXT)
                 }
               />

@@ -107,7 +107,18 @@ export function buildMuiTheme(): Theme {
     components: {
       MuiButton: {
         styleOverrides: {
-          root: { textTransform: "none" },
+          // Keep legacy MUI buttons a sane height: without this they inherit
+          // typography.button's tight 16px line-height and shrink. ui-react's
+          // own .d2e-button pins its line-height (doubled specificity) so it wins.
+          root: { textTransform: "none", lineHeight: 1.75 },
+        },
+      },
+      MuiTableCell: {
+        styleOverrides: {
+          // MUI derives the cell border from lighten(divider, 0.88); D2E's divider
+          // is already light, so that renders near-white and the row lines vanish.
+          // Pin the real border colour. .d2e-table styles its own cells.
+          root: { borderBottomColor: colors["border-color"] },
         },
       },
       // Menu-item rows (Figma "Menu item"): black text, hover = 4% black

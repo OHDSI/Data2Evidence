@@ -1,4 +1,4 @@
 import { SystemAdminPagePlugin } from "@portal/plugin";
-import StudyOverview from "./StudyOverview";
+import { DataSourcesPage } from "./DataSourcesPage/DataSourcesPage";
 
-export const plugin = new SystemAdminPagePlugin(StudyOverview);
+export const plugin = new SystemAdminPagePlugin(DataSourcesPage);
