@@ -7,6 +7,7 @@ import {
 import { contentType } from "mime-types";
 import pg from "npm:pg";
 import { env, services } from "../env.ts";
+import { isBucketAlreadyExists } from "./bucket.util.ts";
 
 interface UploadFile {
   originalname: string;
@@ -21,6 +22,12 @@ export class SupabaseStorageClient {
   private readonly authToken: string;
   private static pgPool: pg.Pool;
   private static isInitialized = false;
+  // Buckets this portal owns, created on demand before a write. Names passed in
+  // by callers (e.g. the strategus-results ?bucket= param) are never created.
+  private static readonly managedBuckets = new Map<string, boolean>();
+  // bucket -> creation in flight or done. A failed attempt is dropped so the
+  // next write retries: storage starts after trex, so the boot attempt can 502.
+  private static readonly ensuredBuckets = new Map<string, Promise<void>>();
 
   constructor() {
     this.baseUrl = services.supabaseStorage;
@@ -66,12 +73,25 @@ export class SupabaseStorageClient {
         console.error("Unexpected error on idle PostgreSQL client", err);
       });
 
-      // Test connection and initialize buckets
+      const buckets: Array<[string | undefined, boolean]> = [
+        [this.DEFAULT_BUCKET, false],
+        [envObj.DATA_TRANSFORMATION_BUCKET, false],
+        ["strategus-results", false],
+        ["portal-datasets-graphs", true],
+      ];
+      for (const [name, isPublic] of buckets) {
+        if (name) {
+          SupabaseStorageClient.managedBuckets.set(name, isPublic);
+        }
+      }
+
+      // Test connection and warm up the buckets; writes ensure them again.
       this.initializeDb();
-      this.createBucket(this.DEFAULT_BUCKET);
-      this.createBucket(envObj.DATA_TRANSFORMATION_BUCKET);
-      this.createBucket("strategus-results");
-      this.createBucket("portal-datasets-graphs", true);
+      for (const name of SupabaseStorageClient.managedBuckets.keys()) {
+        this.ensureBucket(name).catch((e) =>
+          console.warn(`Bucket ${name} not created at startup, retrying on first write: ${e}`)
+        );
+      }
     }
   }
 
@@ -96,37 +116,40 @@ export class SupabaseStorageClient {
     }
   }
 
-  private async createBucket(bucketName: string, isPublic = false) {
-    try {
-      console.info(`Creating bucket ${bucketName}...`);
-
-      const url = `${this.baseUrl}/bucket`;
-      console.log(`Making request to create bucket: ${url}`);
-
-      const response = await fetch(url, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${this.authToken}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          name: bucketName,
-          public: isPublic,
-        }),
-      });
-
-      if (!response.ok && response.status !== 409) {
-        // 409 means bucket already exists
-        const errorText = await response.text();
-        console.error(
-          `Error creating bucket: ${response.status} - ${errorText}`
-        );
-      } else {
-        console.info(`Bucket ${bucketName} created or already exists`);
-      }
-    } catch (e) {
-      console.error(`Error creating default bucket: ${e}`);
+  // Creates a managed bucket once per worker; no-op for other names.
+  private ensureBucket(bucketName: string): Promise<void> {
+    const isPublic = SupabaseStorageClient.managedBuckets.get(bucketName);
+    if (isPublic === undefined) {
+      return Promise.resolve();
     }
+    let pending = SupabaseStorageClient.ensuredBuckets.get(bucketName);
+    if (!pending) {
+      pending = this.createBucket(bucketName, isPublic).catch((e) => {
+        SupabaseStorageClient.ensuredBuckets.delete(bucketName);
+        throw e;
+      });
+      SupabaseStorageClient.ensuredBuckets.set(bucketName, pending);
+    }
+    return pending;
+  }
+
+  private async createBucket(bucketName: string, isPublic = false) {
+    const response = await fetch(`${this.baseUrl}/bucket`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${this.authToken}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        name: bucketName,
+        public: isPublic,
+      }),
+    });
+    const errorText = response.ok ? "" : await response.text();
+    if (!response.ok && !isBucketAlreadyExists(response.status, errorText)) {
+      throw new Error(`Error creating bucket ${bucketName}: ${response.status} - ${errorText}`);
+    }
+    console.info(`Bucket ${bucketName} created or already exists`);
   }
 
   // Supabase storage API does not work for listing files, need further investigation.
@@ -283,6 +306,7 @@ export class SupabaseStorageClient {
     const targetBucket = bucketName || this.DEFAULT_BUCKET;
 
     try {
+      await this.ensureBucket(targetBucket);
       const filePath = this.getFilePath(id, fileName, pathType);
       console.log(`Uploading file: ${filePath} to bucket: ${targetBucket}`);
 
@@ -414,6 +438,7 @@ export class SupabaseStorageClient {
 
   async uploadDirect(bucket: string, path: string, file: UploadFile) {
     try {
+      await this.ensureBucket(bucket);
       console.log(`Uploading file directly: ${path} to bucket: ${bucket}`);
 
       const url = `${this.baseUrl}/object/${bucket}/${path}`;
@@ -646,6 +671,7 @@ export class SupabaseStorageClient {
     };
 
     try {
+      await this.ensureBucket(bucket);
       if (parallel) {
         // Parallel uploads with concurrency limit
         const results: string[] = [];

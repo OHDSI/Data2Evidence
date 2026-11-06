@@ -16,6 +16,9 @@
     "prettier": "prettier --write \"**/*.{ts,tsx}\""
   },
   "dependencies": {
+    "@dnd-kit/core": "^6.3.1",
+    "@dnd-kit/sortable": "^10.0.0",
+    "@dnd-kit/utilities": "^3.2.2",
     "@fontsource-variable/ibm-plex-sans": "^5.2.8",
     "@axa-fr/react-oidc": "6.10.9",
     "@babel/runtime": "^7.18.9",
@@ -62,6 +65,7 @@
     "reactflow": "^11.11.4",
     "single-spa": "^6.0.3",
     "systemjs": "0.21.6",
+    "ui-react": "workspace:*",
     "uuid": "^14.0.0"
   },
   "devDependencies": {

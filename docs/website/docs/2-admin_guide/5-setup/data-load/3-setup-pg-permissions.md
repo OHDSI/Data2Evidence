@@ -6,6 +6,7 @@
   - **postgres_tenant_admin_user**
 
 - For added security, the above Database Credentials are not stored in plain text with the .env file but encrypted within the database
+- When a dataset is registered in Atlas (WebAPI), its source connects with the **Admin** credential. Atlas writes cohort, characterization, incidence rate and pathway results into the dataset's results schema and creates temporary tables there, which the read-only user cannot do. Without an Admin credential the source falls back to the Read credential, and generating cohorts in Atlas fails with `permission denied`.
 - Set the following environment variables with random passwords. Note down these passwords as they will be used in the subsequent sections.
 
 ```bash

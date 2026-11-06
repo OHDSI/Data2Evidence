@@ -84,6 +84,33 @@ export const env = {
 
 export const services = JSON.parse(env.SERVICE_ROUTES);
 
+type ITrexDbUserCredential = ITrexDbCredential["credentials"][number];
+
+// Picks the login a dataset's WebAPI source is registered with. WebAPI runs
+// every Atlas analysis as the source user and writes into the Results schema
+// (cohort_inclusion, *_cache, cc_results, ir_*, pathway_*, ...), where it also
+// creates temp_cohort_* tables, so the read-only tenant user cannot generate
+// anything. The Admin user owns those tables (admin guide: setup-pg-permissions).
+// Read remains a fallback for databases registered without an Admin login.
+export const pickWebApiCredential = (
+  databaseCode: string,
+  credentials: ITrexDbUserCredential[] | undefined,
+): ITrexDbUserCredential | undefined => {
+  const adminCred = credentials?.find((c) => c.userScope === "Admin");
+  if (adminCred) {
+    return adminCred;
+  }
+  const fallback = credentials?.find((c) => c.userScope === "Read") ||
+    credentials?.[0];
+  if (fallback) {
+    console.warn(
+      `No Admin credential for database "${databaseCode}"; registering its WebAPI source with the ` +
+        `"${fallback.userScope}" credential, so Atlas cannot write cohort results.`,
+    );
+  }
+  return fallback;
+};
+
 export const getDbCredentialsByCode = (databaseCode: string): {
   host: string;
   port: number | string;
@@ -96,8 +123,6 @@ export const getDbCredentialsByCode = (databaseCode: string): {
 
   for (const cred of credentials) {
     if (cred.code === databaseCode) {
-      const readCred = cred.credentials?.find(c => c.userScope === 'Read')
-        || cred.credentials?.[0];
       const dialect = cred.dialect === 'postgres' ? 'postgresql' : cred.dialect;
 
       // BigQuery entries authenticate with a service account (host = GCP
@@ -106,7 +131,10 @@ export const getDbCredentialsByCode = (databaseCode: string): {
       // BigQuery dataset creation abort with a 400 "No database credentials
       // found" before the WebAPI source could be created.
       const needsUserPass = dialect?.toLowerCase() !== 'bigquery';
-      if (needsUserPass && (!readCred?.username || !readCred?.password)) {
+      const webApiCred = needsUserPass
+        ? pickWebApiCredential(databaseCode, cred.credentials)
+        : undefined;
+      if (needsUserPass && (!webApiCred?.username || !webApiCred?.password)) {
         console.warn(
           `No usable database credentials found for code "${databaseCode}".`,
         );
@@ -118,8 +146,8 @@ export const getDbCredentialsByCode = (databaseCode: string): {
         port: cred.port,
         database: cred.name,
         dialect,
-        username: readCred?.username ?? '',
-        password: readCred?.password ?? '',
+        username: webApiCred?.username ?? '',
+        password: webApiCred?.password ?? '',
       };
     }
   }
