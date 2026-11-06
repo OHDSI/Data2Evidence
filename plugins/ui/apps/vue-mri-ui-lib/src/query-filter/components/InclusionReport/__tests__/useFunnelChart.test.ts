@@ -2,12 +2,13 @@ import { ref, nextTick } from 'vue'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import type { InclusionReportResponse } from '@/query-filter/types/InclusionReportTypes'
 
-const { newPlot, hover, unhover } = vi.hoisted(() => ({
+const { newPlot, relayout, hover, unhover } = vi.hoisted(() => ({
   newPlot: vi.fn(),
+  relayout: vi.fn(),
   hover: vi.fn(),
   unhover: vi.fn(),
 }))
-vi.mock('@/lib/CustomPlotly', () => ({ default: { newPlot, Fx: { hover, unhover } } }))
+vi.mock('@/lib/CustomPlotly', () => ({ default: { newPlot, relayout, Fx: { hover, unhover } } }))
 
 import { useFunnelChart, type AttritionStat } from '../composables/useFunnelChart'
 
@@ -171,5 +172,66 @@ describe('useFunnelChart rules that render to the same label', () => {
     expect(visibleText(1)).toBe(`+ ${SHORT_NAME}`)
     expect(visibleText(2)).toBe(`+ ${SHORT_NAME}`)
     expect(visibleText(3)).toBe(visibleText(4))
+  })
+})
+
+describe('useFunnelChart reset view', () => {
+  beforeEach(() => {
+    newPlot.mockReset()
+    relayout.mockReset()
+  })
+
+  const renderedConfig = async () => {
+    const graphDiv = renderChart([makeStat(SHORT_NAME)])
+    await nextTick()
+    await nextTick()
+    const [, , layout, config] = newPlot.mock.calls[0]
+    return { graphDiv, layout, config }
+  }
+
+  it('shows a mode bar with only the Reset view button', async () => {
+    const { config } = await renderedConfig()
+
+    expect(config.displayModeBar).toBe(true)
+    expect(config.displaylogo).toBe(false)
+    expect(config.modeBarButtons).toHaveLength(1)
+    expect(config.modeBarButtons[0].map((button: { title: string }) => button.title)).toEqual(['Reset view'])
+  })
+
+  it('resets both axes to their full range and keeps the funnel top down', async () => {
+    const { graphDiv, layout, config } = await renderedConfig()
+    expect(layout.yaxis.autorange).toBe('reversed')
+
+    config.modeBarButtons[0][0].click(graphDiv)
+
+    expect(relayout).toHaveBeenCalledWith(graphDiv, {
+      'xaxis.autorange': true,
+      'yaxis.autorange': 'reversed',
+    })
+  })
+
+  it('still resets the funnel top down after a zoom has rewritten the layout', async () => {
+    const { graphDiv, layout, config } = await renderedConfig()
+    layout.xaxis.autorange = false
+    layout.yaxis.autorange = false
+
+    config.modeBarButtons[0][0].click(graphDiv)
+
+    expect(relayout).toHaveBeenCalledWith(graphDiv, {
+      'xaxis.autorange': true,
+      'yaxis.autorange': 'reversed',
+    })
+  })
+
+  it('keeps a right-button drag from reaching the plot', async () => {
+    const { graphDiv } = await renderedConfig()
+    const dragLayer = graphDiv.querySelector('svg') as SVGSVGElement
+    const plotlyDrag = vi.fn()
+    dragLayer.addEventListener('mousedown', plotlyDrag)
+
+    dragLayer.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, button: 2 }))
+    dragLayer.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, button: 0 }))
+
+    expect(plotlyDrag).toHaveBeenCalledOnce()
   })
 })
