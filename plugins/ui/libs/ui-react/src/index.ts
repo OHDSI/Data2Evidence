@@ -8,6 +8,8 @@ export type { ButtonProps } from "./components/Button";
 export { SplitButton } from "./components/SplitButton";
 export type { SplitButtonProps, SplitButtonVariant } from "./components/SplitButton";
 export { TextField } from "./components/TextField";
+export { MarkdownField } from "./components/MarkdownField";
+export type { MarkdownFieldProps } from "./components/MarkdownField";
 export type { TextFieldProps } from "./components/TextField";
 export { Chip } from "./components/Chip";
 export type { ChipProps } from "./components/Chip";
@@ -22,7 +24,7 @@ export type { EmptyStateProps, EmptyStateSize } from "./components/EmptyState";
 export { IconButton } from "./components/IconButton";
 export type { IconButtonProps } from "./components/IconButton";
 export { Menu } from "./components/Menu";
-export type { MenuProps, MenuItem } from "./components/Menu";
+export type { MenuProps, MenuItem, MenuPlacement } from "./components/Menu";
 export { Toolbar } from "./components/Toolbar";
 export type { ToolbarProps } from "./components/Toolbar";
 export { PageHeader } from "./components/PageHeader";
@@ -99,6 +101,29 @@ export {
 } from "./components/menuNavigation";
 export { SELECT_SIZE_MAP } from "./components/selectSizes";
 export type { SelectSize, SelectItem } from "./components/selectSizes";
+export { FilterPanel } from "./components/FilterPanel";
+export type { FilterPanelProps } from "./components/FilterPanel";
+export { useFilters } from "./components/useFilters";
+export type { UseFiltersArgs, UseFiltersResult } from "./components/useFilters";
+export {
+  activeFilterCount,
+  applyFilters,
+  deriveOptions,
+  deriveAllOptions,
+  matchesFilter,
+  isActive,
+  readField,
+  serializeFilters,
+} from "./components/filterEngine";
+export type {
+  FilterDef,
+  FilterControl,
+  FilterControlKind,
+  FilterOption,
+  FilterOptionsSource,
+  FilterState,
+  FilterValue,
+} from "./components/filterTypes";
 export { tokens } from "./tokens/tokens";
 export type { Tokens } from "./tokens/tokens";
 export { buildMuiTheme, buildColors } from "./tokens/theme";

@@ -294,8 +294,74 @@ def test_pg_primary_key_priority_still_beats_nullability():
     assert candidate.kind is ColumnKind.PRIMARY_KEY
 
 
-# Results-schema tables have no primary key, so the chunk column has to come
-# from CHUNK_COLUMN_MAP. Without an entry a large Achilles table is refused.
+# ---------------------------------------------------------------------------
+# pg_stats fallback
+# ---------------------------------------------------------------------------
+
+from create_cachedb_file_plugin.source_stats import (
+    pg_column_stats_sql,
+    pick_pg_stats_candidate,
+)
+
+
+def test_pg_column_stats_sql_reads_only_the_statistics_views():
+    sql = pg_column_stats_sql("cdm", "fact_relationship")
+    assert "FROM pg_attribute a JOIN pg_stats s" in sql
+    assert "s.schemaname = 'cdm' AND s.tablename = 'fact_relationship'" in sql
+    assert "(s.most_common_freqs)[1]" in sql
+
+
+def test_pg_column_stats_sql_refuses_unsafe_identifiers():
+    with pytest.raises(PlannerError):
+        pg_column_stats_sql("cdm", "x'; DROP TABLE y; --")
+
+
+def test_the_stats_candidate_with_the_smallest_unsplittable_group_wins():
+    rows = [
+        ("domain_concept_id_1", "integer", False, 3, 0.0, 0.6),
+        ("fact_id_1", "bigint", False, -0.3, 0.0, 0.0001),
+        ("relationship_concept_id", "integer", False, 40, 0.0, 0.2),
+    ]
+    candidate = pick_pg_stats_candidate(rows, row_count=8_000_000)
+    assert candidate.name == "fact_id_1"
+    assert candidate.kind is ColumnKind.STATISTICS
+
+
+def test_a_null_heavy_column_loses_to_a_not_null_one():
+    rows = [
+        ("value_as_number", "numeric", True, -0.5, 0.7, 0.0001),
+        ("count_value", "bigint", False, 5_000, 0.0, 0.01),
+    ]
+    assert pick_pg_stats_candidate(rows, row_count=1_000_000).name == "count_value"
+
+
+def test_stats_candidates_respect_exclusions_types_and_allowed_columns():
+    rows = [
+        ("fact_id_1", "bigint", False, -0.3, 0.0, 0.0001),
+        ("payload", "jsonb", False, -1, 0.0, 0.0),
+        ("fact_id_2", "bigint", False, -0.3, 0.0, 0.0002),
+    ]
+    assert pick_pg_stats_candidate(rows, 1_000_000, excluded_columns=["FACT_ID_1"]).name == "fact_id_2"
+    assert pick_pg_stats_candidate(rows, 1_000_000, allowed_columns=["payload"]) is None
+
+
+def test_a_column_with_too_few_distinct_values_is_never_picked():
+    rows = [("flag", "integer", False, 2, 0.0, 0.5)]
+    assert pick_pg_stats_candidate(rows, row_count=1_000_000) is None
+
+
+def test_a_column_name_the_sql_builders_refuse_is_never_picked():
+    rows = [
+        ("site-id", "bigint", False, -1, 0.0, 0.000001),
+        ("fact_id_1", "bigint", False, -0.3, 0.0, 0.0001),
+    ]
+    assert pick_pg_stats_candidate(rows, row_count=1_000_000).name == "fact_id_1"
+
+
+def test_a_table_without_statistics_has_no_stats_candidate():
+    assert pick_pg_stats_candidate([], row_count=1_000_000) is None
+
+
 @pytest.mark.parametrize("table, column", [
     ("achilles_result_concept_count", "concept_id"),
     ("achilles_results", "analysis_id"),
@@ -303,14 +369,11 @@ def test_pg_primary_key_priority_still_beats_nullability():
     ("heracles_results", "analysis_id"),
     ("heracles_results_dist", "analysis_id"),
 ])
-def test_pg_results_tables_without_a_primary_key_chunk_on_the_mapped_column(table, column):
+def test_results_tables_without_a_primary_key_chunk_on_the_mapped_column(table, column):
     from create_cachedb_file_plugin.filter import CHUNK_COLUMN_MAP
 
-    candidate = pick_pg_candidate(
-        [],
-        mapped_column=CHUNK_COLUMN_MAP.get(table),
-        mapped_meta=("bigint", True),
-    )
+    candidate = pick_pg_candidate([], mapped_column=CHUNK_COLUMN_MAP.get(table),
+                                  mapped_meta=("bigint", True))
     assert candidate is not None
     assert candidate.name == column
     assert candidate.kind is ColumnKind.MAPPED_ID

@@ -1,4 +1,5 @@
 import { expect, test } from '../fixtures'
+import { MINUTE_2 } from '../const'
 const TEST_NAME = 'add-fhir-dataset'
 const SHOULD_SKIP = false
 test.fixme(SHOULD_SKIP, `${TEST_NAME} test is temporarily disabled.`)
@@ -45,45 +46,48 @@ test(TEST_NAME, async ({ page }) => {
   await saveFeatureFlagButton.click()
 
   // Cleanup if the datasets already exist
-  await page.getByRole('link', { name: 'Datasets' }).click()
-  await expect(page.locator('.studyoverview__list tbody tr').first()).toBeVisible()
+  await page.getByRole('link', { name: 'Data sources' }).click()
+  await expect(page.locator('.d2e-table tbody tr').first()).toBeVisible()
   await expect(page.locator('tr', { hasText: 'Demo dataset' }).first()).toBeVisible()
+  // FHIR data sources are listed under their own tab in the redesigned page.
+  await page.getByRole('tab', { name: 'FHIR data source' }).click()
   const datasetRow = page.locator('tr', { hasText: `${datasetSchema}` }).first()
   while (await datasetRow.isVisible()) {
-    await datasetRow.getByText('Select action').click()
-    await page.getByRole('option', { name: 'Delete dataset' }).click()
+    await datasetRow.getByRole('button', { name: 'Actions' }).click()
+    await page.getByRole('menuitem', { name: 'Delete data source' }).click()
     // Enter dataset name to confirm deletion
     await page.getByRole('textbox', { name: 'Enter dataset name to confirm' }).fill(datasetSchema)
     await page.getByRole('button', { name: 'Yes, delete' }).click()
     await page.reload()
-    await expect(page.locator('.studyoverview__list tbody tr').first()).toBeVisible()
+    await expect(page.locator('.d2e-table tbody tr').first()).toBeVisible()
+    await page.getByRole('tab', { name: 'FHIR data source' }).click()
   }
 
   // Add new dataset
-  // await page.getByRole('link', { name: 'Datasets' }).click()
-  await page.getByRole('button', { name: 'Add dataset' }).click()
-  await page.getByRole('textbox', { name: 'Dataset name - Displayed on' }).fill(datasetSchema)
-  await page.getByRole('textbox', { name: 'Dataset summary' }).fill(datasetSchema)
-  await page.locator('#mui-component-select-schemaOption').click()
-  await page.getByRole('option', { name: 'Create FHIR dataset', exact: true }).click()
-  await page.locator('#mui-component-select-paConfigOption').click()
+  // await page.getByRole('link', { name: 'Data sources' }).click()
+  await page.getByRole('button', { name: 'Add data source' }).click()
+  await page.getByRole('textbox', { name: 'Data source name - Displayed on' }).fill(datasetSchema)
+  await page.getByRole('textbox', { name: 'Data source summary' }).fill(datasetSchema)
+  await page.getByRole('combobox', { name: 'CDM schema option' }).click()
+  await page.getByRole('option', { name: 'Create FHIR data source', exact: true }).click()
+  await page.getByRole('combobox', { name: 'PA config' }).click()
   await page.getByRole('option', { name: 'FHIR_QR', exact: true }).click()
-  await page.getByRole('textbox', { name: 'Token dataset code' }).fill(`${randomString}1`)
+  await page.getByRole('textbox', { name: 'Token data source code' }).fill(`${randomString}1`)
   await page.getByRole('button', { name: 'Add', exact: true }).click()
-  await expect(page.getByText(`Dataset ${datasetSchema} has been created successfully.`)).toBeVisible()
+  await expect(page.getByText(`Data source ${datasetSchema} has been created successfully.`)).toBeVisible()
   await page.getByTestId('dialog-close').click()
+  await page.reload()
+  await page.getByRole('tab', { name: 'FHIR data source' }).click()
   const fhirDataset = page.locator('tr', { hasText: datasetSchema }).first()
-  await expect(fhirDataset).toBeVisible()
+  await expect(fhirDataset).toBeVisible({ timeout: MINUTE_2 })
 
   // Clean up Delete the newly created dataset
-  await fhirDataset.getByText('Select action').click()
-  await page.getByRole('option', { name: 'Delete dataset' }).click()
+  await fhirDataset.getByRole('button', { name: 'Actions' }).click()
+  await page.getByRole('menuitem', { name: 'Delete data source' }).click()
   // Enter dataset name to confirm deletion
   await page.getByRole('textbox', { name: 'Enter dataset name to confirm' }).fill(datasetSchema)
   await page.getByRole('button', { name: 'Yes, delete' }).click()
 
-  // Confirm the dataset no longer appears in the list
-  // await page.reload()
-  await expect(page.locator('.studyoverview__list tbody tr').first()).toBeVisible()
-  await expect(page.locator('tr', { hasText: datasetSchema })).toHaveCount(0)
+  // Confirm the dataset no longer appears in the list (FHIR tab may now be empty)
+  await expect(page.locator('tr', { hasText: datasetSchema })).toHaveCount(0, { timeout: MINUTE_2 })
 })

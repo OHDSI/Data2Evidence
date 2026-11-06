@@ -9,11 +9,14 @@ export interface NotebookRow {
   description: string;
   content: unknown;
   deletedAt: string | null;
+  // The owning trex subject; null for shared notebooks (see the notebook
+  // schema's V5 migration).
+  createdBy: string | null;
 }
 
 export async function readNotebook(id: string): Promise<NotebookRow | null> {
   const { rows } = await query(
-    `SELECT id, name, description, content, deleted_at
+    `SELECT id, name, description, content, deleted_at, created_by
        FROM _config.notebook.document WHERE id = ${lit(id)}`,
   );
   const r = rows[0];
@@ -24,6 +27,7 @@ export async function readNotebook(id: string): Promise<NotebookRow | null> {
     description: String(r.description ?? ""),
     content: typeof r.content === "string" ? safeParse(r.content) : r.content,
     deletedAt: r.deleted_at ? String(r.deleted_at) : null,
+    createdBy: r.created_by ? String(r.created_by) : null,
   };
 }
 

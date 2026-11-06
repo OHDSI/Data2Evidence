@@ -29,7 +29,7 @@
             {{ section.title }}
           </h3>
           <div class="section-content">
-            <div v-for="group in section.groups" :key="group.id" class="form-group">
+            <div v-for="group in section.groups" :id="getGroupElementId(group.id)" :key="group.id" class="form-group">
               <div v-if="group.label" class="group-header">
                 <div class="group-title-row">
                   <h4 :aria-label="isGroupRequired(group) ? `${group.label}, required group` : undefined">
@@ -83,12 +83,15 @@
 
                   <div class="field-input-wrapper">
                     <!-- Date types -->
-                    <template v-if="isDateType(field.type)">
+                    <template v-if="isDateFieldType(field.type)">
                       <div class="date-range-group">
                         <input
                           :id="`${field.id}_from`"
                           class="form-control"
+                          :class="{ 'is-invalid': isInputInvalid(`${field.id}_from`) }"
                           type="date"
+                          :aria-invalid="getAriaInvalid(`${field.id}_from`)"
+                          :aria-describedby="getDescribedBy(group, field.id)"
                           v-model="formValues[field.id].from"
                           @change="markFieldDirty(field.id)"
                         />
@@ -96,11 +99,17 @@
                         <input
                           :id="`${field.id}_to`"
                           class="form-control"
+                          :class="{ 'is-invalid': isInputInvalid(`${field.id}_to`) }"
                           type="date"
+                          :aria-invalid="getAriaInvalid(`${field.id}_to`)"
+                          :aria-describedby="getDescribedBy(group, field.id)"
                           v-model="formValues[field.id].to"
                           @change="markFieldDirty(field.id)"
                         />
                       </div>
+                      <p v-if="fieldErrors[field.id]" :id="getErrorId(field.id)" class="field-error" role="alert">
+                        {{ fieldErrors[field.id] }}
+                      </p>
                     </template>
 
                     <!-- Year Range - matches Wizards implementation -->
@@ -110,8 +119,9 @@
                           :id="`${field.id}_from`"
                           v-model="formValues[`${field.id}_from` as string]"
                           class="form-control"
-                          :class="{ 'is-invalid': yearErrors[field.id] }"
-                          @blur="validateYearRange(field.id)"
+                          :class="{ 'is-invalid': isInputInvalid(`${field.id}_from`) }"
+                          :aria-invalid="getAriaInvalid(`${field.id}_from`)"
+                          :aria-describedby="getDescribedBy(group, field.id)"
                           @change="markFieldDirty(`${field.id}_from`)"
                         >
                           <option value="">{{ getText('MRI_PA_YEAR_FROM_PLACEHOLDER') }}</option>
@@ -124,8 +134,9 @@
                           :id="`${field.id}_to`"
                           v-model="formValues[`${field.id}_to` as string]"
                           class="form-control"
-                          :class="{ 'is-invalid': yearErrors[field.id] }"
-                          @blur="validateYearRange(field.id)"
+                          :class="{ 'is-invalid': isInputInvalid(`${field.id}_to`) }"
+                          :aria-invalid="getAriaInvalid(`${field.id}_to`)"
+                          :aria-describedby="getDescribedBy(group, field.id)"
                           @change="markFieldDirty(`${field.id}_to`)"
                         >
                           <option value="">{{ getText('MRI_PA_YEAR_TO_PLACEHOLDER') }}</option>
@@ -134,7 +145,9 @@
                           </option>
                         </select>
                       </div>
-                      <p v-if="yearErrors[field.id]" class="field-error">{{ yearErrors[field.id] }}</p>
+                      <p v-if="fieldErrors[field.id]" :id="getErrorId(field.id)" class="field-error" role="alert">
+                        {{ fieldErrors[field.id] }}
+                      </p>
                     </template>
 
                     <!-- Numeric input with operator support -->
@@ -147,14 +160,20 @@
                         <input
                           :id="field.id"
                           class="form-control"
-                          :class="{ 'is-invalid': numericErrors[field.id] }"
+                          :class="{ 'is-invalid': isInputInvalid(field.id) }"
                           type="text"
                           :placeholder="field.placeholder || getText('MRI_PA_NUMERIC_INPUT_PLACEHOLDER')"
                           :disabled="isFieldDisabled(group, field.id)"
-                          :aria-describedby="isFieldDisabled(group, field.id) ? `${field.id}-limit-help` : undefined"
+                          :aria-invalid="getAriaInvalid(field.id)"
+                          :aria-describedby="
+                            getDescribedBy(
+                              group,
+                              field.id,
+                              isFieldDisabled(group, field.id) ? `${field.id}-limit-help` : undefined
+                            )
+                          "
                           v-model="formValues[field.id]"
-                          @input="onNumericInput(field.id)"
-                          @blur="validateNumericField(field.id, formValues[field.id])"
+                          @input="markFieldDirty(field.id)"
                         />
                         <span
                           v-if="isFieldDisabled(group, field.id)"
@@ -166,7 +185,9 @@
                           <span>{{ getGroupLimitBody(group) }}</span>
                         </span>
                       </div>
-                      <p v-if="numericErrors[field.id]" class="field-error">{{ numericErrors[field.id] }}</p>
+                      <p v-if="fieldErrors[field.id]" :id="getErrorId(field.id)" class="field-error" role="alert">
+                        {{ fieldErrors[field.id] }}
+                      </p>
                     </template>
 
                     <!-- Typeahead for conceptSet or text with configPath -->
@@ -181,6 +202,8 @@
                           :placeholder="field.placeholder"
                           :model-value="formValues[field.id]"
                           :display-value="displayValues[field.id]"
+                          :invalid="isInputInvalid(field.id)"
+                          :described-by="getDescribedBy(group, field.id)"
                           @update:model-value="
                             (val: string | null) => {
                               formValues[field.id] = val
@@ -200,6 +223,9 @@
                           </label>
                         </div>
                       </div>
+                      <p v-if="fieldErrors[field.id]" :id="getErrorId(field.id)" class="field-error" role="alert">
+                        {{ fieldErrors[field.id] }}
+                      </p>
                     </template>
 
                     <!-- Plain text input -->
@@ -207,15 +233,24 @@
                       <input
                         :id="field.id"
                         class="form-control"
+                        :class="{ 'is-invalid': isInputInvalid(field.id) }"
                         type="text"
                         :placeholder="field.placeholder || getText('MRI_PA_SEARCH_PLACEHOLDER', field.label)"
+                        :aria-invalid="getAriaInvalid(field.id)"
+                        :aria-describedby="getDescribedBy(group, field.id)"
                         v-model="formValues[field.id]"
                         @input="markFieldDirty(field.id)"
                       />
+                      <p v-if="fieldErrors[field.id]" :id="getErrorId(field.id)" class="field-error" role="alert">
+                        {{ fieldErrors[field.id] }}
+                      </p>
                     </template>
                   </div>
                 </div>
               </div>
+              <p v-if="groupErrors[group.id]" :id="getGroupErrorId(group.id)" class="field-error" role="alert">
+                {{ groupErrors[group.id] }}
+              </p>
             </div>
           </div>
         </section>
@@ -231,7 +266,7 @@
       >
         {{ getText('MRI_PA_BUTTON_CANCEL') }}
       </D2eButton>
-      <D2eButton :disabled="loading || !isFormValid" data-testid="pa-required-filters-apply-btn" @click="handleSubmit">
+      <D2eButton :disabled="loading" data-testid="pa-required-filters-apply-btn" @click="handleSubmit">
         {{ getText('MRI_PA_APPLY_FILTERS_BUTTON') }}
       </D2eButton>
     </template>
@@ -239,7 +274,7 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, reactive, watch } from 'vue'
+import { computed, nextTick, reactive, ref, watch } from 'vue'
 import { useStore } from 'vuex'
 import { D2eButton, D2eDialog } from '@d2e/ui'
 import ConceptSetTypeaheadField from './ConceptSetTypeaheadField.vue'
@@ -251,7 +286,6 @@ import type {
 } from '@/utils/dashboardFlowUtils'
 import {
   getWizardGroupCompletionHint,
-  getWizardGroupValidationMessage,
   isWizardFieldDisabledByGroupLimit,
   isConditionField,
   numericFilterContainsNegativeValue,
@@ -261,6 +295,7 @@ import {
 import InputParser from '@/lib/utils/InputParser'
 import RangeConstraintTokenDefinition from '@/lib/utils/RangeConstraintTokenDefinition'
 import RangeConstraintPatternDefinition from '@/lib/utils/RangeConstraintPatternDefinition'
+import { isDateFieldType, validateRequiredFilters, type NumericValidationStatus } from './requiredFiltersValidation'
 
 const store = useStore()
 const getText = (key: string, param?: string | string[]) => store.getters.getText(key, param)
@@ -288,8 +323,7 @@ const emit = defineEmits<{
 
 const formValues = reactive<Record<string, any>>({})
 const displayValues = reactive<Record<string, string>>({})
-const yearErrors = reactive<Record<string, string>>({})
-const numericErrors = reactive<Record<string, string>>({})
+const submitAttempted = ref(false)
 const dirtyFields = reactive<Set<string>>(new Set())
 const initialSnapshot = reactive<Record<string, any>>({})
 
@@ -362,19 +396,58 @@ function getGroupLimitBody(group: ResolvedWizardFieldGroup): string {
   return `(${group.fields.map(field => field.label || field.id).join(', ')}) can be filled in at the same time.`
 }
 
-const hasGroupValidationErrors = computed(() =>
-  resolvedLayout.value.sections.some(section =>
-    section.groups.some(group => getWizardGroupValidationMessage(group, formValues) !== null)
-  )
+const validation = computed(() =>
+  validateRequiredFilters({
+    fields: props.allFields,
+    formValues,
+    groups: resolvedLayout.value.sections.flatMap(section => section.groups),
+    validateNumeric: validateNumericValue,
+    getText,
+  })
 )
+const isFormValid = computed(
+  () => Object.keys(validation.value.fieldErrors).length === 0 && Object.keys(validation.value.groupErrors).length === 0
+)
+const fieldErrors = computed<Record<string, string>>(() => (submitAttempted.value ? validation.value.fieldErrors : {}))
+const groupErrors = computed<Record<string, string>>(() => (submitAttempted.value ? validation.value.groupErrors : {}))
+const invalidInputIds = computed(
+  () => new Set(submitAttempted.value ? Object.values(validation.value.invalidInputIds).flat() : [])
+)
+
+function getGroupElementId(groupId: string): string {
+  return `required-filters-group-${groupId}`
+}
+
+function getErrorId(fieldId: string): string {
+  return `${fieldId}-error`
+}
+
+function getGroupErrorId(groupId: string): string {
+  return `${getGroupElementId(groupId)}-error`
+}
+
+function isInputInvalid(inputId: string): boolean {
+  return invalidInputIds.value.has(inputId)
+}
+
+function getAriaInvalid(inputId: string): 'true' | undefined {
+  return isInputInvalid(inputId) ? 'true' : undefined
+}
+
+function getDescribedBy(group: ResolvedWizardFieldGroup, fieldId: string, extraId?: string): string | undefined {
+  const ids = [
+    fieldErrors.value[fieldId] ? getErrorId(fieldId) : undefined,
+    groupErrors.value[group.id] ? getGroupErrorId(group.id) : undefined,
+    extraId,
+  ].filter(Boolean)
+  return ids.length > 0 ? ids.join(' ') : undefined
+}
 
 // Initialize InputParser for numeric field validation
 const numericParser = new InputParser(
   RangeConstraintTokenDefinition.tokenDefinitions,
   RangeConstraintPatternDefinition.acceptedPatterns
 )
-
-type NumericValidationStatus = 'valid' | 'invalid-format' | 'negative-not-allowed'
 
 const currentYear = new Date().getFullYear()
 const yearOptions = computed(() => {
@@ -392,166 +465,6 @@ function normalizeInputValue(value: unknown): string {
   return typeof value === 'string' ? value : String(value)
 }
 
-// Validate all fields and set error messages - call this before checking isFormValid
-function validateAllFields(): boolean {
-  // Clear year errors
-  Object.keys(yearErrors).forEach(key => delete yearErrors[key])
-
-  let isValid = !hasGroupValidationErrors.value
-
-  for (const field of props.allFields) {
-    // yearRange validation - matches Wizards
-    if (field.type === 'yearRange') {
-      const from = formValues[`${field.id}_from`]
-      const to = formValues[`${field.id}_to`]
-
-      // If required, both must be filled
-      if (field.required !== false) {
-        if (!from || !to) {
-          isValid = false
-          continue
-        }
-      }
-
-      // If either is set, both must be set
-      if ((from && !to) || (!from && to)) {
-        if (from && !to) {
-          yearErrors[field.id] = getText('MRI_PA_TO_YEAR_REQUIRED')
-        } else {
-          yearErrors[field.id] = getText('MRI_PA_FROM_YEAR_REQUIRED')
-        }
-        isValid = false
-        continue
-      }
-
-      // Validate range
-      if (from && to) {
-        const fromNum = Number(from)
-        const toNum = Number(to)
-        if (toNum < fromNum) {
-          yearErrors[field.id] = getText('MRI_PA_YEAR_RANGE_INVALID')
-          isValid = false
-          continue
-        }
-      }
-      continue
-    }
-
-    const value = formValues[field.id]
-
-    // Numeric types validate any provided value, including optional fields.
-    if (field.type === 'num') {
-      const hasValue = normalizeInputValue(value).trim().length > 0
-      if (!hasValue) {
-        if (field.required !== false) isValid = false
-        continue
-      }
-      if (validateNumericValue(value, field.allowNegative === true) !== 'valid') {
-        isValid = false
-      }
-      continue
-    }
-
-    // Skip validation for other non-required fields
-    if (field.required === false) {
-      continue
-    }
-
-    // Date types
-    if (isDateType(field.type)) {
-      if (!value || (!value.from && !value.to)) {
-        isValid = false
-      }
-      continue
-    }
-
-    // Other types - check for non-empty value
-    const stringValue = typeof value === 'string' ? value.trim() : value
-    if (!stringValue && stringValue !== 0) {
-      isValid = false
-    }
-  }
-
-  return isValid
-}
-
-// Check if all required fields are filled correctly (pure computed, no side effects)
-const isFormValid = computed(() => {
-  if (hasGroupValidationErrors.value) {
-    return false
-  }
-
-  if (!props.allFields.length) {
-    return true
-  }
-
-  for (const field of props.allFields) {
-    // yearRange validation - matches Wizards
-    if (field.type === 'yearRange') {
-      const from = formValues[`${field.id}_from`]
-      const to = formValues[`${field.id}_to`]
-
-      // If required, both must be filled
-      if (field.required !== false) {
-        if (!from || !to) {
-          return false
-        }
-      }
-
-      // If either is set, both must be set
-      if ((from && !to) || (!from && to)) {
-        return false
-      }
-
-      // Validate range
-      if (from && to) {
-        const fromNum = Number(from)
-        const toNum = Number(to)
-        if (toNum < fromNum) {
-          return false
-        }
-      }
-      continue
-    }
-
-    const value = formValues[field.id]
-
-    // Numeric types validate any provided value, including optional fields.
-    if (field.type === 'num') {
-      const hasValue = normalizeInputValue(value).trim().length > 0
-      if (!hasValue) {
-        if (field.required !== false) return false
-        continue
-      }
-      if (validateNumericValue(value, field.allowNegative === true) !== 'valid') {
-        return false
-      }
-      continue
-    }
-
-    // Skip validation for other non-required fields
-    if (field.required === false) {
-      continue
-    }
-
-    // Date types
-    if (isDateType(field.type)) {
-      if (!value || (!value.from && !value.to)) {
-        return false
-      }
-      continue
-    }
-
-    // Other types - check for non-empty value
-    const stringValue = typeof value === 'string' ? value.trim() : value
-    if (!stringValue && stringValue !== 0) {
-      return false
-    }
-  }
-
-  return true
-})
-
 // Initialize form values when modal opens
 watch(
   () => [props.isOpen, props.allFields, props.initialValues],
@@ -563,10 +476,9 @@ watch(
     // Clear all form values and tracking
     Object.keys(formValues).forEach(key => delete formValues[key])
     Object.keys(displayValues).forEach(key => delete displayValues[key])
-    Object.keys(yearErrors).forEach(key => delete yearErrors[key])
-    Object.keys(numericErrors).forEach(key => delete numericErrors[key])
     Object.keys(initialSnapshot).forEach(key => delete initialSnapshot[key])
     dirtyFields.clear()
+    submitAttempted.value = false
 
     // Copy initial display values
     Object.assign(displayValues, props.initialDisplayValues)
@@ -575,7 +487,7 @@ watch(
     props.allFields.forEach(field => {
       const initialValue = props.initialValues[field.id]
 
-      if (isDateType(field.type)) {
+      if (isDateFieldType(field.type)) {
         // Date range uses object structure
         formValues[field.id] = initialValue || { from: '', to: '' }
         initialSnapshot[field.id] = formValues[field.id]
@@ -610,10 +522,6 @@ watch(
   },
   { immediate: true }
 )
-
-function isDateType(type?: string) {
-  return type === 'time' || type === 'datetime' || type === 'date'
-}
 
 function shouldUseTypeahead(field: WizardFieldDefinition): boolean {
   if (field.type === 'conceptSet') {
@@ -670,11 +578,31 @@ function handleCancel() {
   emit('cancel')
 }
 
-function handleSubmit() {
-  // Run validation to set error messages, then check if form is valid
-  validateAllFields()
+function getFirstInvalidElement(): HTMLElement | null {
+  for (const section of displaySections.value) {
+    for (const group of section.groups) {
+      const invalidField = group.fields.find(field => fieldErrors.value[field.id])
+      if (invalidField) {
+        const [firstInputId] = validation.value.invalidInputIds[invalidField.id] ?? [invalidField.id]
+        return document.getElementById(firstInputId)
+      }
+      if (groupErrors.value[group.id]) {
+        return (
+          document
+            .getElementById(getGroupElementId(group.id))
+            ?.querySelector<HTMLElement>('input:not(:disabled), select:not(:disabled)') ?? null
+        )
+      }
+    }
+  }
+  return null
+}
+
+async function handleSubmit() {
+  submitAttempted.value = true
   if (!isFormValid.value) {
-    console.warn('[Modal] handleSubmit - Form invalid, cannot submit')
+    await nextTick()
+    getFirstInvalidElement()?.focus()
     return
   }
 
@@ -685,7 +613,7 @@ function handleSubmit() {
       // yearRange: include _from and _to values
       payload[`${field.id}_from`] = formValues[`${field.id}_from`]
       payload[`${field.id}_to`] = formValues[`${field.id}_to`]
-    } else if (isDateType(field.type)) {
+    } else if (isDateFieldType(field.type)) {
       // Date range: keep object structure
       payload[field.id] = formValues[field.id]
     } else {
@@ -729,60 +657,6 @@ function validateNumericValue(value: unknown, allowNegative: boolean): NumericVa
   if (hasInvalidFormat) return 'invalid-format'
   if (!allowNegative && hasNegativeValue) return 'negative-not-allowed'
   return 'valid'
-}
-
-/**
- * Validates a numeric field and sets/clears error message
- * Called on input and blur events
- */
-function validateNumericField(fieldId: string, value: unknown): void {
-  const normalizedValue = normalizeInputValue(value).trim()
-
-  if (!normalizedValue) {
-    // Clear error if field is empty
-    delete numericErrors[fieldId]
-    return
-  }
-
-  const field = props.allFields.find(candidate => candidate.id === fieldId)
-  const validationStatus = validateNumericValue(normalizedValue, field?.allowNegative === true)
-  if (validationStatus === 'valid') {
-    delete numericErrors[fieldId]
-  } else if (validationStatus === 'negative-not-allowed') {
-    numericErrors[fieldId] = getText('MRI_PA_NEGATIVE_VALUES_NOT_ALLOWED', field?.label || fieldId)
-  } else {
-    numericErrors[fieldId] = getText('MRI_PA_NUMERIC_EXPRESSION_INVALID')
-  }
-}
-
-/**
- * Validates a numeric field on input
- * Called from template @input handler
- */
-function onNumericInput(fieldId: string): void {
-  validateNumericField(fieldId, formValues[fieldId])
-  markFieldDirty(fieldId)
-}
-
-/**
- * Validates a year range field and sets/clears error message
- * Called on blur event from either year select
- */
-function validateYearRange(fieldId: string): void {
-  const from = formValues[`${fieldId}_from`]
-  const to = formValues[`${fieldId}_to`]
-
-  // Clear existing error
-  delete yearErrors[fieldId]
-
-  // Only validate if both values are present
-  if (from && to) {
-    const fromNum = Number(from)
-    const toNum = Number(to)
-    if (toNum < fromNum) {
-      yearErrors[fieldId] = getText('MRI_PA_YEAR_RANGE_INVALID')
-    }
-  }
 }
 </script>
 
