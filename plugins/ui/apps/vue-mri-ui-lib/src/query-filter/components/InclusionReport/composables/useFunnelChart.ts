@@ -11,10 +11,12 @@ import {
   FUNNEL_LABEL_MAX_WIDTH,
   FUNNEL_HOVER_MAX_WIDTH,
   FUNNEL_HOVER_FONT_SIZE,
+  FUNNEL_Y_AUTORANGE,
 } from '../constants'
 import type { InclusionReportResponse, RuleFilterCardDetails } from '@/query-filter/types/InclusionReportTypes'
 import { getRuleDisplayName } from '@/utils/filterCardUtils'
 import { wrapTextByWidth, wrapTextToLineLimit } from '@/utils/ExportUtils'
+import { createResetViewButton, ignoreNonPrimaryDrag } from '@/utils/plotlyResetView'
 
 export interface FunnelChartData {
   /** One y axis label per funnel point, each distinct from the rest - see `labelPoints` */
@@ -244,7 +246,7 @@ export function useFunnelChart(
       height: 800,
       yaxis: {
         automargin: true,
-        autorange: 'reversed',
+        autorange: FUNNEL_Y_AUTORANGE,
         showgrid: false,
         zeroline: false,
       },
@@ -271,9 +273,14 @@ export function useFunnelChart(
       },
     }
 
+    const resetView = (graphDiv: HTMLElement) =>
+      plotly.relayout(graphDiv, { 'xaxis.autorange': true, 'yaxis.autorange': FUNNEL_Y_AUTORANGE })
+
     const chartConfig = {
       responsive: true,
-      displayModeBar: false,
+      displaylogo: false,
+      displayModeBar: true,
+      modeBarButtons: [[createResetViewButton(resetView)]],
       // The drag handles plotly puts along each axis sit on top of the last 20px of every tick
       // label; without them the label tooltips are hoverable across their full width.
       showAxisDragHandles: false,
@@ -284,6 +291,7 @@ export function useFunnelChart(
     plotly
       .newPlot(funnelChartRef.value, [trace, ...legendTraces], layout, chartConfig)
       .then((graphDiv: PlotlyGraphDiv) => {
+        graphDiv.addEventListener('mousedown', ignoreNonPrimaryDrag, true)
         attachLabelHovers(graphDiv, labelPoints)
         // A responsive resize redraws the tick labels and takes the handlers with them, so they
         // are re-attached after every redraw.
