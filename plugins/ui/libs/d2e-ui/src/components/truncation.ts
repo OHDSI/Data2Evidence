@@ -18,14 +18,14 @@ export interface TruncationMetrics {
 /**
  * True when the element's content is wider than its box.
  *
- * scrollWidth and clientWidth are rounded, so a 1px overhang can be rounding
- * or a real overflow. In that band the unrounded text and box widths decide;
- * without them the overhang counts as rounding.
+ * scrollWidth and clientWidth are rounded, so within 1px of each other the
+ * content may or may not overflow. In that band the unrounded text and box
+ * widths decide; without them the content counts as fitting.
  */
 export function isTruncated(metrics: TruncationMetrics): boolean {
   const { scrollWidth, clientWidth, textWidth, boxWidth } = metrics;
-  if (scrollWidth <= clientWidth) return false;
   if (scrollWidth > clientWidth + 1) return true;
+  if (scrollWidth < clientWidth - 1) return false;
   if (textWidth === undefined || boxWidth === undefined) return false;
   return textWidth > boxWidth;
 }

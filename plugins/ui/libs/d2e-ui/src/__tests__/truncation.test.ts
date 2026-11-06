@@ -15,6 +15,14 @@ describe('isTruncated', () => {
     expect(isTruncated({ scrollWidth: 165, clientWidth: 164, textWidth: 164.64, boxWidth: 164 })).toBe(true)
   })
 
+  it('is true when the rounded widths are equal but the measured text is wider than its box', () => {
+    expect(isTruncated({ scrollWidth: 165, clientWidth: 165, textWidth: 164.64, boxWidth: 164.5 })).toBe(true)
+  })
+
+  it('is false when the rounded widths are equal and the measured text fits its box', () => {
+    expect(isTruncated({ scrollWidth: 165, clientWidth: 165, textWidth: 164.2, boxWidth: 164.5 })).toBe(false)
+  })
+
   it('is false for a 1px overhang when the measured text fits its box', () => {
     expect(isTruncated({ scrollWidth: 101, clientWidth: 100, textWidth: 99.8, boxWidth: 100 })).toBe(false)
   })
