@@ -44,25 +44,36 @@ jest.mock("../../../axios/api", () => ({
 }));
 
 jest.mock(
-  "@portal/components",
+  "ui-react",
   () => {
     const MockReact = require("react");
+    const passthrough = (tag: string) => (props: any) => MockReact.createElement(tag, null, props.children);
     return {
-      Button: (props: any) => MockReact.createElement("button", { onClick: props.onClick }, props.text),
-      IconButton: (props: any) => MockReact.createElement("button", { onClick: props.onClick, title: props.title }),
-      Loader: () => MockReact.createElement("div", null, "loading"),
-      TableCell: (props: any) => MockReact.createElement("td", null, props.children),
-      TableRow: (props: any) => MockReact.createElement("tr", null, props.children),
-      EditIcon: () => null,
-      TrashIcon: () => null,
+      buildMuiTheme: () => ({}),
+      Button: (props: any) => MockReact.createElement("button", { onClick: props.onClick }, props.children),
+      Chip: (props: any) => MockReact.createElement("span", null, props.label),
+      EmptyState: (props: any) => MockReact.createElement("div", null, props.title),
+      PageHeader: (props: any) => MockReact.createElement("div", null, props.title, props.actions),
+      Pagination: () => null,
+      Spinner: () => MockReact.createElement("div", null, "loading"),
+      Table: passthrough("table"),
+      TableHead: passthrough("thead"),
+      TableBody: passthrough("tbody"),
+      TableRow: passthrough("tr"),
+      TableCell: passthrough("td"),
+      TextField: () => null,
+      FilterPanel: () => null,
+      useFilters: () => ({ state: {}, options: {}, setState: jest.fn() }),
     };
-    // virtual: the package's dist build may not exist in the test environment
   },
   { virtual: true }
 );
 
 jest.mock("./AddUserDialog/AddUserDialog", () => () => null);
 jest.mock("./DeleteUserDialog/DeleteUserDialog", () => () => null);
+jest.mock("./DataSourcePermissionDialog/DataSourcePermissionDialog", () => ({
+  DataSourcePermissionDialog: () => null,
+}));
 jest.mock("./EditTenantRoleDialog/EditTenantRoleDialog", () => {
   const MockReact = require("react");
   return {
@@ -139,8 +150,7 @@ test("shows only the success toast when mutation and refresh succeed", async () 
 test("shows the success toast with the edited user's name after a role edit succeeds", async () => {
   render(<UserOverview {...({} as any)} />);
 
-  // Open the Edit Roles dialog for alice (IconButton mock exposes the title).
-  fireEvent.click(await screen.findByTitle("USER_OVERVIEW__EDIT"));
+  fireEvent.click(await screen.findByText("USER_OVERVIEW__EDIT"));
 
   // Stubbed dialog reports a successful save.
   fireEvent.click(screen.getByText("mock-save-success"));

@@ -129,13 +129,13 @@ describe("deriveOptions", () => {
 });
 
 describe("activeFilterCount", () => {
-  it("sums multi-select values and counts other active facets once", () => {
+  it("counts each active filter field once, regardless of how many values it holds", () => {
     const count = activeFilterCount({
       category: { op: "in", values: ["Plausibility", "Conformance"] },
       violated: { op: "range", min: 1 },
       table: { op: "in", values: [] },
     });
-    expect(count).toBe(3);
+    expect(count).toBe(2);
   });
 });
 
