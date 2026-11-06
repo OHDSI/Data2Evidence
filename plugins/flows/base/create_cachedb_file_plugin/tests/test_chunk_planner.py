@@ -628,8 +628,9 @@ def test_a_small_table_is_never_failed_by_its_null_count():
 # The interval_count < 2 guard only catches a plan that collapsed all the way
 # to one predicate. Three distinct values give two chunks, one of them holding
 # most of the table, and that passed every guard and was logged as CHUNKED.
-# CHUNK_COLUMN_MAP has real examples -- fact_relationship -> domain_concept_id_1
-# (2-4 distinct values), drug_strength -> drug_concept_id -- and on BigQuery
+# CHUNK_COLUMN_MAP has had real examples -- fact_relationship ->
+# domain_concept_id_1 (2-4 distinct values, since moved to fact_id_1),
+# drug_strength -> drug_concept_id -- and on BigQuery
 # pick_bq_candidate actively *prefers* the partition column, so a table
 # partitioned on a handful of dates has exactly this shape.
 
@@ -646,6 +647,18 @@ def test_a_three_valued_chunk_column_is_rejected():
     assert "3 distinct" in message, "and the distinct boundary count"
     assert "450,000,000" in message, "and the per-chunk estimate"
     assert "5,000,000" in message, "and the target it is measured against"
+
+
+def test_fact_relationship_is_not_mapped_to_its_domain_column():
+    """A large fact_relationship failed planning on domain_concept_id_1 (issue 3576).
+
+    That column holds the domain of the first fact, so a CDM has only a few
+    distinct values in it and every table over small_table_threshold collapsed
+    to a single interval. fact_id_1 points at individual records instead.
+    """
+    from create_cachedb_file_plugin.filter import CHUNK_COLUMN_MAP
+
+    assert CHUNK_COLUMN_MAP["fact_relationship"] == "fact_id_1"
 
 
 def test_a_handful_of_partition_dates_is_rejected():
@@ -759,3 +772,48 @@ def test_chunk_progress_reports_a_zero_row_chunk_as_zero():
     line = describe_chunk_progress("measurement", 0, 4, 0, 0.2)
     assert "0 rows" in line
     assert "unknown" not in line.lower()
+
+
+# ---------------------------------------------------------------------------
+# Skew: one value holding more rows than a chunk may
+# ---------------------------------------------------------------------------
+
+from create_cachedb_file_plugin.chunk_utils import estimate_largest_chunk_rows
+
+
+def test_distinct_cuts_estimate_the_average_chunk():
+    assert estimate_largest_chunk_rows(range(11), 1_000) == 100
+
+
+def test_two_equal_neighbouring_cuts_are_not_skew():
+    """Normal for a high-cardinality column; must not read as one heavy value."""
+    assert estimate_largest_chunk_rows([0, 1, 2, 2, 3, 4], 500) == 100
+
+
+def test_a_value_filling_most_cuts_is_estimated_as_one_huge_chunk():
+    cuts = [1, 2, 3] + [4] * 8
+    # 8 equal cuts span 7 of the 10 steps.
+    assert estimate_largest_chunk_rows(cuts, 1_000) == 700
+
+
+def test_a_skewed_column_plans_but_is_flagged():
+    """plan_chunks keeps the plan (it is what runs today); plan_table looks for better."""
+    config = ChunkConfig(target_chunk_rows=5_000_000)
+    stats = _stats(900_000_000, list(range(81)) + [500] * 100)
+    plan = plan_chunks("postgres", "cdm", "achilles_results", stats, config)
+    assert plan.strategy is ChunkStrategy.CHUNKED
+    assert plan.is_skewed
+    assert plan.estimated_largest_chunk_rows > plan.max_chunk_rows
+
+
+def test_an_evenly_spread_column_is_not_flagged():
+    config = ChunkConfig(target_chunk_rows=5_000_000)
+    plan = plan_chunks("postgres", "cdm", "measurement", _stats(900_000_000, range(181)), config)
+    assert not plan.is_skewed
+
+
+def test_a_single_statement_plan_is_never_skewed():
+    config = ChunkConfig(target_chunk_rows=5_000_000)
+    plan = plan_chunks("postgres", "cdm", "measurement", _stats(1_000, (1, 1, 1)), config)
+    assert plan.strategy is ChunkStrategy.SINGLE_STATEMENT
+    assert not plan.is_skewed

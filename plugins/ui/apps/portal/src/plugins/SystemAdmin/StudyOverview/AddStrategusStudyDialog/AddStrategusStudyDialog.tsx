@@ -1,7 +1,5 @@
-import React, { FC, useState, useCallback } from "react";
-import Divider from "@mui/material/Divider";
-import FormHelperText from "@mui/material/FormHelperText";
-import { Dialog, Button, TextField } from "@portal/components";
+import { FC, useState, useCallback } from "react";
+import { Dialog, Button, TextField, Alert } from "ui-react";
 import { Feedback } from "../../../../types";
 import { api } from "../../../../axios/api";
 import { useTenant } from "../../../../hooks";
@@ -55,10 +53,7 @@ const AddStrategusStudyDialog: FC<AddStrategusStudyDialogProps> = ({ open, onClo
 
   const tokenIsValid = useCallback((token: string) => {
     const tokenFormat = /^[a-zA-Z0-9_]{1,80}$/;
-    if (token.match(tokenFormat)) {
-      return true;
-    }
-    return false;
+    return !!token.match(tokenFormat);
   }, []);
 
   const validateForm = useCallback(() => {
@@ -127,90 +122,98 @@ const AddStrategusStudyDialog: FC<AddStrategusStudyDialogProps> = ({ open, onClo
       console.error("Error creating strategus study:", err);
       setFeedback({
         type: "error",
-        message: err?.response?.data?.message || err?.message || getText(i18nKeys.ADD_STRATEGUS_STUDY_DIALOG__ERROR_CREATE),
+        message:
+          err?.response?.data?.message ||
+          err?.message ||
+          getText(i18nKeys.ADD_STRATEGUS_STUDY_DIALOG__ERROR_CREATE),
       });
     } finally {
       setLoading(false);
     }
   }, [studyName, tokenStudyCode, analysisSpec, tenant, onClose, validateForm, getText]);
 
+  const studyNameError = formError.studyName.required
+    ? getText(i18nKeys.ADD_STRATEGUS_STUDY_DIALOG__STUDY_NAME_REQUIRED)
+    : formError.studyName.invalid
+      ? getText(i18nKeys.ADD_STRATEGUS_STUDY_DIALOG__STUDY_NAME_INVALID)
+      : undefined;
+
+  const tokenError = formError.tokenStudyCode.required
+    ? getText(i18nKeys.ADD_STRATEGUS_STUDY_DIALOG__TOKEN_DATASET_CODE_REQUIRED)
+    : formError.tokenStudyCode.invalid
+      ? getText(i18nKeys.ADD_STRATEGUS_STUDY_DIALOG__TOKEN_DATASET_CODE_INVALID)
+      : undefined;
+
   return (
     <Dialog
-      className="add-strategus-study-dialog"
       title={getText(i18nKeys.ADD_STRATEGUS_STUDY_DIALOG__TITLE)}
-      closable
-      fullWidth
-      maxWidth="md"
+      size="l"
       open={open}
+      busy={loading}
       onClose={handleClose}
-      feedback={feedback}
+      actions={
+        <>
+          <Button variant="secondary" onClick={handleClose} disabled={loading}>
+            {getText(i18nKeys.ADD_STRATEGUS_STUDY_DIALOG__CANCEL)}
+          </Button>
+          <Button variant="primary" onClick={handleSubmit} loading={loading}>
+            {getText(i18nKeys.ADD_STRATEGUS_STUDY_DIALOG__CREATE)}
+          </Button>
+        </>
+      }
     >
-      <Divider />
       <div className="add-strategus-study-dialog__content">
-        <div style={{ marginTop: "32px", fontWeight: "bold" }}>{getText(i18nKeys.ADD_STRATEGUS_STUDY_DIALOG__STUDY_INFORMATION)}</div>
-        <div style={{ marginBottom: "32px" }}>
+        {feedback?.message && (
+          <Alert severity={feedback.type ?? "error"} variant="banner">
+            {feedback.message}
+          </Alert>
+        )}
+        <div style={{ fontWeight: "bold" }}>
+          {getText(i18nKeys.ADD_STRATEGUS_STUDY_DIALOG__STUDY_INFORMATION)}
+        </div>
+        <div>
           <TextField
-            fullWidth
-            variant="standard"
             label={getText(i18nKeys.ADD_STRATEGUS_STUDY_DIALOG__STUDY_NAME)}
             value={studyName}
-            onChange={(event) => setStudyName(event.target.value)}
-            error={formError.studyName.required || formError.studyName.invalid}
+            onChange={setStudyName}
+            errorMessages={studyNameError}
             disabled={loading}
           />
-          {formError.studyName.required && <FormHelperText error={true}>{getText(i18nKeys.ADD_STRATEGUS_STUDY_DIALOG__STUDY_NAME_REQUIRED)}</FormHelperText>}
-          {formError.studyName.invalid && (
-            <FormHelperText error={true}>
-              {getText(i18nKeys.ADD_STRATEGUS_STUDY_DIALOG__STUDY_NAME_INVALID)}
-            </FormHelperText>
-          )}
-          <FormHelperText>{getText(i18nKeys.ADD_STRATEGUS_STUDY_DIALOG__STUDY_NAME_HELPER)}</FormHelperText>
+          <div className="add-strategus-study-dialog__field-hint">
+            {getText(i18nKeys.ADD_STRATEGUS_STUDY_DIALOG__STUDY_NAME_HELPER)}
+          </div>
         </div>
-        <div style={{ marginBottom: "32px" }}>
+        <div>
           <TextField
-            fullWidth
-            variant="standard"
             label={getText(i18nKeys.ADD_STRATEGUS_STUDY_DIALOG__TOKEN_DATASET_CODE)}
             value={tokenStudyCode}
-            onChange={(event) => setTokenStudyCode(event.target.value)}
-            inputProps={{ maxLength: 80 }}
-            error={formError.tokenStudyCode.required || formError.tokenStudyCode.invalid}
+            onChange={setTokenStudyCode}
+            maxlength={80}
+            errorMessages={tokenError}
             disabled={loading}
           />
-          {formError.tokenStudyCode.required && (
-            <FormHelperText error={true}>{getText(i18nKeys.ADD_STRATEGUS_STUDY_DIALOG__TOKEN_DATASET_CODE_REQUIRED)}</FormHelperText>
-          )}
-          {formError.tokenStudyCode.invalid && (
-            <FormHelperText error={true}>
-              {getText(i18nKeys.ADD_STRATEGUS_STUDY_DIALOG__TOKEN_DATASET_CODE_INVALID)}
-            </FormHelperText>
-          )}
-          <FormHelperText>
+          <div className="add-strategus-study-dialog__field-hint">
             {getText(i18nKeys.ADD_STRATEGUS_STUDY_DIALOG__TOKEN_DATASET_CODE_HELPER)}
-          </FormHelperText>
+          </div>
         </div>
-        <div style={{ marginBottom: "32px" }}>
+        <div>
           <TextField
-            fullWidth
-            variant="standard"
             label={getText(i18nKeys.ADD_STRATEGUS_STUDY_DIALOG__ANALYSIS_SPEC)}
             multiline
             rows={4}
             value={analysisSpec}
-            onChange={(event) => setAnalysisSpec(event.target.value)}
-            error={formError.analysisSpec.invalid}
+            onChange={setAnalysisSpec}
+            errorMessages={
+              formError.analysisSpec.invalid
+                ? getText(i18nKeys.ADD_STRATEGUS_STUDY_DIALOG__ANALYSIS_SPEC_INVALID)
+                : undefined
+            }
             disabled={loading}
           />
-          {formError.analysisSpec.invalid && (
-            <FormHelperText error={true}>{getText(i18nKeys.ADD_STRATEGUS_STUDY_DIALOG__ANALYSIS_SPEC_INVALID)}</FormHelperText>
-          )}
-          <FormHelperText>{getText(i18nKeys.ADD_STRATEGUS_STUDY_DIALOG__ANALYSIS_SPEC_HELPER)}</FormHelperText>
+          <div className="add-strategus-study-dialog__field-hint">
+            {getText(i18nKeys.ADD_STRATEGUS_STUDY_DIALOG__ANALYSIS_SPEC_HELPER)}
+          </div>
         </div>
-      </div>
-      <Divider />
-      <div className="button-group-actions">
-        <Button text={getText(i18nKeys.ADD_STRATEGUS_STUDY_DIALOG__CANCEL)} onClick={handleClose} variant="outlined" block disabled={loading} />
-        <Button text={getText(i18nKeys.ADD_STRATEGUS_STUDY_DIALOG__CREATE)} onClick={handleSubmit} block loading={loading} />
       </div>
     </Dialog>
   );

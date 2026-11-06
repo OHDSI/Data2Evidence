@@ -1,8 +1,6 @@
-import React, { FC, useCallback, useEffect, useState } from "react";
+import { FC, useCallback, useEffect, useState } from "react";
+import { Button, Dialog, TextField } from "ui-react";
 import { CloseDialogType, Study } from "../../../../types";
-import { Dialog, Button } from "@portal/components";
-import Divider from "@mui/material/Divider";
-import TextField from "@mui/material/TextField";
 import "./SourceInformationDialog.scss";
 import { useTranslation } from "../../../../contexts";
 import { i18nKeys } from "../../../../contexts/app-context/states";
@@ -77,50 +75,47 @@ const SourceInformationDialog: FC<SourceInformationDialogProps> = ({ dataset, op
 
   return (
     <Dialog
-      className="source-information-dialog"
       title={getText(i18nKeys.SOURCE_INFORMATION_DIALOG__TITLE)}
-      closable
+      size="l"
       open={open}
       onClose={() => handleClose("cancelled")}
-      maxWidth="md"
+      actions={
+        <Button variant="secondary" onClick={() => handleClose("cancelled")}>
+          {getText(i18nKeys.UPDATE_DATA_SOURCE_DIALOG__CANCEL)}
+        </Button>
+      }
     >
-      <Divider />
       <div className="source-information-dialog__content">
-        <div style={{ marginTop: "32px", fontWeight: "bold" }}>{getText(i18nKeys.SOURCE_INFORMATION_DIALOG__DATASET_NAME)}</div>
-        <div style={{ marginBottom: "32px" }}>
-          <TextField disabled fullWidth variant="standard" value={dataset?.studyDetail?.name} />
+        <div>
+          <TextField
+            disabled
+            label={getText(i18nKeys.SOURCE_INFORMATION_DIALOG__DATA_SOURCE_NAME)}
+            value={dataset?.studyDetail?.name ?? ""}
+          />
         </div>
-
-        <div style={{ marginTop: "32px", fontWeight: "bold" }}>{getText(i18nKeys.SOURCE_INFORMATION_DIALOG__DATABASE_CODE)}</div>
-        <div style={{ marginBottom: "32px" }}>
-          <TextField disabled fullWidth variant="standard" value={dataset?.databaseCode} />
+        <div>
+          <TextField
+            disabled
+            label={getText(i18nKeys.SOURCE_INFORMATION_DIALOG__DATABASE_CODE)}
+            value={dataset?.databaseCode ?? ""}
+          />
         </div>
-
-        <div style={{ marginTop: "32px", fontWeight: "bold" }}>{getText(i18nKeys.SOURCE_INFORMATION_DIALOG__TOKEN_CODE)}</div>
-        <div style={{ marginBottom: "32px" }}>
-          <TextField disabled fullWidth variant="standard" value={dataset?.tokenStudyCode} />
+        <div>
+          <TextField
+            disabled
+            label={getText(i18nKeys.SOURCE_INFORMATION_DIALOG__TOKEN_CODE)}
+            value={dataset?.tokenStudyCode ?? ""}
+          />
         </div>
-
         {dataset?.type === "webapi" && (
-          <>
-            <div style={{ marginTop: "32px", fontWeight: "bold" }}>
-              {getText(i18nKeys.SOURCE_INFORMATION_DIALOG__CACHE_SECTION)}
-            </div>
-            <div style={{ marginBottom: "32px" }}>
-              <TextField disabled fullWidth variant="standard" value={cacheStatusText} />
-            </div>
-          </>
+          <div>
+            <TextField
+              disabled
+              label={getText(i18nKeys.SOURCE_INFORMATION_DIALOG__CACHE_SECTION)}
+              value={cacheStatusText}
+            />
+          </div>
         )}
-      </div>
-
-      <Divider />
-      <div className="button-group-actions">
-        <Button
-          text={getText(i18nKeys.UPDATE_STUDY_DIALOG__CANCEL)}
-          onClick={() => handleClose("cancelled")}
-          variant="outlined"
-          block
-        />
       </div>
     </Dialog>
   );

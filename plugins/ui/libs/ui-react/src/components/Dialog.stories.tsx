@@ -41,6 +41,7 @@ export const Showcase: Story = {
         {trigger("confirm", "Confirm on close")}
         {trigger("one", "1 action")}
         {trigger("three", "3 actions")}
+        {trigger("leading", "Leading action")}
 
         <Dialog open={open === "s"} size="s" title="Small modal (540)" onClose={close} actions={cancelConfirm}>
           <p>Small dialogs split their action buttons full-width.</p>
@@ -102,6 +103,16 @@ export const Showcase: Story = {
           }
         >
           <p>A three-action layout.</p>
+        </Dialog>
+        <Dialog
+          open={open === "leading"}
+          size="l"
+          title="Leading action"
+          onClose={close}
+          leadingActions={<Button variant="ghost" onClick={close}>Cancel</Button>}
+          actions={<Button variant="primary" onClick={close}>Import</Button>}
+        >
+          <p>leadingActions sit on the left; the footer becomes space-between.</p>
         </Dialog>
       </div>
     );

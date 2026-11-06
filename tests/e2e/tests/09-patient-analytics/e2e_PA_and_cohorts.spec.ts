@@ -36,10 +36,10 @@ async function createUser(page, username) {
 }
 
 async function grantDatasetAccess(page, username) {
-  await page.getByRole('link', { name: 'Datasets' }).click()
+  await page.getByRole('link', { name: 'Data sources' }).click()
   const demoRow = page.locator('tr', { hasText: 'Demo dataset' }).first()
-  await demoRow.getByText('Select action').click()
-  await page.getByRole('option', { name: 'Permissions' }).click()
+  await demoRow.getByRole('button', { name: 'Actions' }).click()
+  await page.getByRole('menuitem', { name: 'Update permissions' }).click()
   await page.getByRole('tab', { name: 'Access' }).click()
   const addButton = page.getByTestId('dialog').getByTestId('button')
   await expect(addButton).toBeVisible()
@@ -114,7 +114,7 @@ test(TEST_NAME, async ({ page }) => {
   // Grant both users access to Demo dataset
   await grantDatasetAccess(page, RESEARCHER_1)
   // Re-open permissions dialog for second user
-  await page.getByRole('link', { name: 'Datasets' }).click()
+  await page.getByRole('link', { name: 'Data sources' }).click()
   await grantDatasetAccess(page, RESEARCHER_2)
 
   // Logout admin

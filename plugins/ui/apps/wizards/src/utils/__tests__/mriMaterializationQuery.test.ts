@@ -45,10 +45,20 @@ describe("buildMriMaterializationQuery", () => {
     if (filterCard.type !== "FilterCard") {
       throw new Error("Expected an interaction filter card");
     }
-    expect(filterCard.attributes.content[0].constraints.content).toEqual([
-      { type: "Expression", operator: ">=", value: 50 },
-      { type: "Expression", operator: "<=", value: 80 },
-    ]);
+    expect(filterCard.attributes.content[0].constraints).toEqual({
+      type: "BooleanContainer",
+      op: "OR",
+      content: [
+        {
+          type: "BooleanContainer",
+          op: "AND",
+          content: [
+            { type: "Expression", operator: ">=", value: 50 },
+            { type: "Expression", operator: "<=", value: 80 },
+          ],
+        },
+      ],
+    });
   });
 
   it("does not include chart or dashboard presentation settings", () => {

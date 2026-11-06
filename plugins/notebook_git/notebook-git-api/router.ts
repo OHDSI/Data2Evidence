@@ -71,7 +71,7 @@ export async function handleRequest(req: Request, deps: RouterDeps): Promise<Res
 
     const over = path.match(/^\/([^/]+)\/overwrite-from-remote$/);
     if (over && req.method === "POST") {
-      return await doOverwrite(decodeURIComponent(over[1]), deps);
+      return await doOverwrite(decodeURIComponent(over[1]), deps, req);
     }
 
     if (path === "/overwrite-all-from-remote" && req.method === "POST") {
@@ -140,7 +140,7 @@ async function doDiffCheck(id: string, deps: RouterDeps): Promise<Response> {
 }
 
 // POST /:id/overwrite-from-remote — take the repo's version, if it differs.
-async function doOverwrite(id: string, deps: RouterDeps): Promise<Response> {
+async function doOverwrite(id: string, deps: RouterDeps, req: Request): Promise<Response> {
   const cfg = await deps.loadConfig();
   if (!cfg) {
     return json({ message: "Git config not set, skip git operations", overwritten: false, notebookId: id });
@@ -148,6 +148,13 @@ async function doOverwrite(id: string, deps: RouterDeps): Promise<Response> {
 
   const row = await deps.readNotebook(id);
   if (!row) return json({ error: "NOT_FOUND" }, 404);
+  // This write goes through the privileged _config attach, which row-level
+  // security does not cover, so it repeats the GraphQL rule here: only the
+  // owner or an admin may change a notebook. Shared notebooks (no owner) are
+  // admin-only. trex sets both headers from the verified identity.
+  if (req.headers.get("x-user-role") !== "admin" && row.createdBy !== req.headers.get("x-user-id")) {
+    return json({ error: "FORBIDDEN" }, 403);
+  }
 
   const git = deps.makeGit(cfg);
   // readFile() calls ensureRepositoryReady() itself, so an explicit
