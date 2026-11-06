@@ -30,7 +30,7 @@ withDefaults(defineProps<Props>(), {
 <style scoped lang="scss">
 .d2e-page-header {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   gap: var(--d2e-spacing-xl);
   font-family: var(--d2e-font-family);
 

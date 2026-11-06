@@ -44,8 +44,14 @@
           @focus="activeIndex = index"
         >
           <v-icon
-            v-if="item.icon"
+            v-if="typeof item.icon === 'string'"
             :icon="item.icon"
+            :size="density === 'compact' ? 18 : 20"
+            class="d2e-menu__item-icon"
+          />
+          <component
+            :is="item.icon"
+            v-else-if="item.icon"
             :size="density === 'compact' ? 18 : 20"
             class="d2e-menu__item-icon"
           />
@@ -71,6 +77,7 @@ import {
   ref,
   useSlots,
   watch,
+  type Component,
   type ComponentPublicInstance,
 } from "vue";
 import {
@@ -82,7 +89,7 @@ import {
 export interface D2eMenuItem {
   label: string;
   value: string;
-  icon?: string;
+  icon?: string | Component;
   selected?: boolean;
   disabled?: boolean;
   /** Destructive action: the label and icon paint in the alarm colour. */
@@ -363,6 +370,7 @@ function onSelect(item: D2eMenuItem) {
   }
 
   &__item-icon {
+    flex-shrink: 0;
     color: currentColor;
   }
 
