@@ -8,13 +8,38 @@
  * when the element actually overflows.
  */
 
+export interface TruncationMetrics {
+  scrollWidth: number;
+  clientWidth: number;
+  textWidth?: number;
+  boxWidth?: number;
+}
+
 /**
  * True when the element's content is wider than its box.
  *
- * The 1px allowance absorbs sub-pixel rounding: a fitting element can report a
- * scrollWidth a fraction larger than its clientWidth after layout scaling, and
- * without it every row would claim to be truncated.
+ * scrollWidth and clientWidth are rounded, so a 1px overhang can be rounding
+ * or a real overflow. In that band the unrounded text and box widths decide;
+ * without them the overhang counts as rounding.
  */
-export function isTruncated(el: Pick<HTMLElement, "scrollWidth" | "clientWidth">): boolean {
-  return el.scrollWidth > el.clientWidth + 1;
+export function isTruncated(metrics: TruncationMetrics): boolean {
+  const { scrollWidth, clientWidth, textWidth, boxWidth } = metrics;
+  if (scrollWidth <= clientWidth) return false;
+  if (scrollWidth > clientWidth + 1) return true;
+  if (textWidth === undefined || boxWidth === undefined) return false;
+  return textWidth > boxWidth;
+}
+
+export function measureTruncation(el: HTMLElement): TruncationMetrics {
+  const range = document.createRange();
+  range.selectNodeContents(el);
+  const style = getComputedStyle(el);
+  const padding =
+    parseFloat(style.paddingLeft) + parseFloat(style.paddingRight);
+  return {
+    scrollWidth: el.scrollWidth,
+    clientWidth: el.clientWidth,
+    textWidth: range.getBoundingClientRect().width,
+    boxWidth: el.getBoundingClientRect().width - padding,
+  };
 }

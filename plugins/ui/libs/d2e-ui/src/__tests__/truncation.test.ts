@@ -11,6 +11,14 @@ describe('isTruncated', () => {
     expect(isTruncated({ scrollWidth: 101, clientWidth: 100 })).toBe(false)
   })
 
+  it('is true for a 1px overhang when the measured text is wider than its box', () => {
+    expect(isTruncated({ scrollWidth: 165, clientWidth: 164, textWidth: 164.64, boxWidth: 164 })).toBe(true)
+  })
+
+  it('is false for a 1px overhang when the measured text fits its box', () => {
+    expect(isTruncated({ scrollWidth: 101, clientWidth: 100, textWidth: 99.8, boxWidth: 100 })).toBe(false)
+  })
+
   it('is true once the content genuinely overflows', () => {
     expect(isTruncated({ scrollWidth: 102, clientWidth: 100 })).toBe(true)
     expect(isTruncated({ scrollWidth: 400, clientWidth: 100 })).toBe(true)
