@@ -10,10 +10,10 @@ import { RequestContextMiddleware } from "../common/request-context.middleware.t
 import { RequestContextService } from "../common/request-context.service.ts";
 import { DATABASE } from "../database/module.ts";
 import { env } from "../env.ts";
-import { AiProviderConfigController } from "./ai-provider-config.controller.ts";
-import { AiProviderConfigService } from "./ai-provider-config.service.ts";
-import { bedrock, FakeDb, KEY_A } from "./ai-provider-config.test-utils.ts";
-import { AiProviderConfigRepository } from "./repository/ai-provider-config.repository.ts";
+import { AiConfigController } from "./ai-config.controller.ts";
+import { AiConfigService } from "./ai-config.service.ts";
+import { bedrock, FakeDb, KEY_A } from "./ai-config.test-utils.ts";
+import { AiConfigRepository } from "./repository/ai-config.repository.ts";
 
 const db = new FakeDb();
 db.allowPool = true;
@@ -29,10 +29,10 @@ class FakePostgresService {
 }
 
 @Module({
-  controllers: [AiProviderConfigController],
+  controllers: [AiConfigController],
   injectables: [
-    AiProviderConfigService,
-    AiProviderConfigRepository,
+    AiConfigService,
+    AiConfigRepository,
     RequestContextService,
     RequestContextMiddleware,
     new TokenInjector(FakePostgresService, DATABASE),
@@ -46,18 +46,18 @@ function token(sub: string) {
 }
 
 Deno.test(
-  "HTTP: routes, verbs and paths; duplicate create -> 409 with code",
+  "HTTP: routes, verbs and paths; duplicate name -> 409 with code and field",
   async () => {
-    const previous = env.AI_PROVIDER_CONFIG_ENCRYPTION_KEY;
+    const previous = env.AI_CONFIG_ENCRYPTION_KEY;
     // @ts-ignore env is a plain object snapshot; tests may set it
-    env.AI_PROVIDER_CONFIG_ENCRYPTION_KEY = KEY_A;
+    env.AI_CONFIG_ENCRYPTION_KEY = KEY_A;
     try {
       const app = new DanetApplication();
       await app.init(TestModule);
       const call = async (method: string, path: string, body?: unknown) => {
         const res = await app.router.fetch(
           new Request(
-            `http://localhost/system-portal/ai-provider-config${path}`,
+            `http://localhost/system-portal/ai-config${path}`,
             {
               method,
               headers: {
@@ -80,27 +80,28 @@ Deno.test(
 
       assertEquals((await call("GET", "")).body, []);
 
-      const created = await call("POST", "", bedrock());
+      const created = await call("POST", "", bedrock({ name: "Prod" }));
       assertEquals(created.status, 200); // Danet 2.4.3 @Post() default, not 201
       assertEquals(created.body.id, 1);
-      assertEquals(created.body.isSelected, true);
+      assertEquals(created.body.name, "Prod");
+      assertEquals(created.body.isActive, true);
       assertEquals(created.body.apiKey, "***REDACTED***");
       assertEquals(db.rows[0].createdBy, "admin-1");
 
-      const dup = await call("POST", "", bedrock());
+      const dup = await call("POST", "", bedrock({ name: "Prod", region: "eu-west-1" }));
       assertEquals(dup.status, 409);
-      assertEquals(dup.body.code, "AI_PROVIDER_CONFIG_DUPLICATE");
-      assertEquals(dup.body.name, "AiProviderConfigError");
-      assertEquals("field" in dup.body, false);
+      assertEquals(dup.body.code, "AI_CONFIG_DUPLICATE");
+      assertEquals(dup.body.name, "AiConfigError");
+      assertEquals(dup.body.field, "name");
 
       const bad = await call("POST", "", bedrock({ region: "" }));
       assertEquals(
         [bad.status, bad.body.code, bad.body.field],
-        [400, "AI_PROVIDER_CONFIG_INVALID", "region"],
+        [400, "AI_CONFIG_INVALID", "region"],
       );
 
       const second = await call("POST", "", bedrock({ region: "eu-west-1" }));
-      assertEquals(second.body.isSelected, false);
+      assertEquals(second.body.isActive, false);
 
       assertEquals(
         (await call("GET", "")).body.map((r: { id: number }) => r.id),
@@ -110,7 +111,7 @@ Deno.test(
       assertEquals((await call("GET", "/abc")).status, 404);
       assertEquals(
         (await call("GET", "/abc")).body.code,
-        "AI_PROVIDER_CONFIG_NOT_FOUND",
+        "AI_CONFIG_NOT_FOUND",
       );
 
       const put = await call(
@@ -119,20 +120,20 @@ Deno.test(
         bedrock({ region: "eu-west-1", model: "m2", apiKey: "***REDACTED***" }),
       );
       assertEquals([put.status, put.body.model], [200, "m2"]);
-      const putSel = await call("PUT", "/2", {
+      const putActive = await call("PUT", "/2", {
         ...bedrock(),
-        isSelected: true,
+        isActive: true,
       });
-      assertEquals([putSel.status, putSel.body.field], [400, "isSelected"]);
+      assertEquals([putActive.status, putActive.body.field], [400, "isActive"]);
 
-      const sel = await call("POST", "/2/select");
-      assertEquals([sel.status, sel.body.isSelected], [200, true]);
-      assertEquals((await call("GET", "/1")).body.isSelected, false);
+      const act = await call("POST", "/2/activate");
+      assertEquals([act.status, act.body.isActive], [200, true]);
+      assertEquals((await call("GET", "/1")).body.isActive, false);
 
-      const delSelected = await call("DELETE", "/2");
+      const delActive = await call("DELETE", "/2");
       assertEquals(
-        [delSelected.status, delSelected.body.code],
-        [400, "AI_PROVIDER_CONFIG_SELECTED_DELETE"],
+        [delActive.status, delActive.body.code],
+        [400, "AI_CONFIG_ACTIVE_DELETE"],
       );
       assertEquals(await call("DELETE", "/1"), {
         status: 200,
@@ -143,10 +144,10 @@ Deno.test(
       assertEquals((await call("PATCH", "/2")).status, 404);
       assertEquals((await call("PUT", "")).status, 404);
       assertEquals((await call("DELETE", "")).status, 404);
-      assertEquals((await call("GET", "/2/select")).status, 404);
+      assertEquals((await call("GET", "/2/activate")).status, 404);
     } finally {
       // @ts-ignore see above
-      env.AI_PROVIDER_CONFIG_ENCRYPTION_KEY = previous;
+      env.AI_CONFIG_ENCRYPTION_KEY = previous;
     }
   },
 );

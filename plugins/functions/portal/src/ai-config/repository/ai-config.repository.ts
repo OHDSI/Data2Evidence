@@ -2,7 +2,7 @@ import { Inject, Injectable } from "@danet/core";
 import { EntityManager } from "npm:typeorm";
 import { DATABASE } from "../../database/module.ts";
 import { PostgresService } from "../../database/postgres.service.ts";
-import { AiProviderConfig } from "../entity/ai-provider-config.entity.ts";
+import { AiConfig } from "../entity/ai-config.entity.ts";
 
 /**
  * Two groups of methods, deliberately kept apart:
@@ -14,77 +14,77 @@ import { AiProviderConfig } from "../entity/ai-provider-config.entity.ts";
  *   connection.
  */
 @Injectable()
-export class AiProviderConfigRepository {
+export class AiConfigRepository {
   constructor(@Inject(DATABASE) private readonly postgresService: PostgresService) {}
 
   // ---- pool-bound (GET routes only) ----
 
-  findAll(): Promise<AiProviderConfig[]> {
+  findAll(): Promise<AiConfig[]> {
     return this.postgresService
       .getDataSource()
-      .getRepository(AiProviderConfig)
+      .getRepository(AiConfig)
       .find({ order: { id: "ASC" } });
   }
 
-  findById(id: number): Promise<AiProviderConfig | null> {
+  findById(id: number): Promise<AiConfig | null> {
     return this.postgresService
       .getDataSource()
-      .getRepository(AiProviderConfig)
+      .getRepository(AiConfig)
       .findOneBy({ id });
   }
 
   // ---- transaction-bound ----
 
-  listTx(manager: EntityManager): Promise<AiProviderConfig[]> {
-    return manager.find(AiProviderConfig, { order: { id: "ASC" } });
+  listTx(manager: EntityManager): Promise<AiConfig[]> {
+    return manager.find(AiConfig, { order: { id: "ASC" } });
   }
 
   findByIdTx(
     manager: EntityManager,
     id: number,
-  ): Promise<AiProviderConfig | null> {
-    return manager.findOneBy(AiProviderConfig, { id });
+  ): Promise<AiConfig | null> {
+    return manager.findOneBy(AiConfig, { id });
   }
 
   async insertTx(
     manager: EntityManager,
-    entity: Partial<AiProviderConfig>,
+    entity: Partial<AiConfig>,
   ): Promise<number> {
-    const result = await manager.insert(AiProviderConfig, entity);
+    const result = await manager.insert(AiConfig, entity);
     return result.identifiers[0].id as number;
   }
 
   async updateTx(
     manager: EntityManager,
     id: number,
-    entity: Partial<AiProviderConfig>,
+    entity: Partial<AiConfig>,
   ): Promise<void> {
-    await manager.update(AiProviderConfig, { id }, entity);
+    await manager.update(AiConfig, { id }, entity);
   }
 
   // Both bump modified_date (@UpdateDateColumn), so they set modified_by too.
-  async clearSelectedTx(
+  async clearActiveTx(
     manager: EntityManager,
     modifiedBy: string,
   ): Promise<void> {
-    await manager.update(AiProviderConfig, { isSelected: true }, {
-      isSelected: false,
+    await manager.update(AiConfig, { isActive: true }, {
+      isActive: false,
       modifiedBy,
     });
   }
 
-  async setSelectedTx(
+  async setActiveTx(
     manager: EntityManager,
     id: number,
     modifiedBy: string,
   ): Promise<void> {
-    await manager.update(AiProviderConfig, { id }, {
-      isSelected: true,
+    await manager.update(AiConfig, { id }, {
+      isActive: true,
       modifiedBy,
     });
   }
 
   async deleteTx(manager: EntityManager, id: number): Promise<void> {
-    await manager.delete(AiProviderConfig, { id });
+    await manager.delete(AiConfig, { id });
   }
 }

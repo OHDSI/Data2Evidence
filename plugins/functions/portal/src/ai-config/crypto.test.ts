@@ -57,7 +57,7 @@ Deno.test("getEncryptionKeyFromEnv agrees with the env snapshot", () => {
   // env is snapshotted at module load, so assert consistency rather than mutate it.
   assertEquals(
     getEncryptionKeyFromEnv(),
-    parseEncryptionKey(Deno.env.get("AI_PROVIDER_CONFIG_ENCRYPTION_KEY")),
+    parseEncryptionKey(Deno.env.get("AI_CONFIG_ENCRYPTION_KEY")),
   );
 });
 

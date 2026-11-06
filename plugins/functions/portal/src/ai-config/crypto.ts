@@ -27,7 +27,7 @@ export function parseEncryptionKey(raw: string | undefined | null): Buffer | nul
  * environment at module load (so a changed env var needs a restart).
  */
 export function getEncryptionKeyFromEnv(): Buffer | null {
-  return parseEncryptionKey(env.AI_PROVIDER_CONFIG_ENCRYPTION_KEY);
+  return parseEncryptionKey(env.AI_CONFIG_ENCRYPTION_KEY);
 }
 
 function assertKeyLength(key: Buffer): void {

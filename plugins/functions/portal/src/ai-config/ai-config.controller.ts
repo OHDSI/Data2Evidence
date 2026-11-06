@@ -9,12 +9,12 @@ import {
   Put,
 } from "@danet/core";
 import { RequestContextMiddleware } from "../common/request-context.middleware.ts";
-import { AiProviderConfigService } from "./ai-provider-config.service.ts";
+import { AiConfigService } from "./ai-config.service.ts";
 
 @Middleware(RequestContextMiddleware)
-@Controller("system-portal/ai-provider-config")
-export class AiProviderConfigController {
-  constructor(private readonly service: AiProviderConfigService) {}
+@Controller("system-portal/ai-config")
+export class AiConfigController {
+  constructor(private readonly service: AiConfigService) {}
 
   @Get()
   async list() {
@@ -31,9 +31,9 @@ export class AiProviderConfigController {
     return await this.service.create(body);
   }
 
-  @Post(":id/select")
-  async select(@Param("id") id: string) {
-    return await this.service.select(id);
+  @Post(":id/activate")
+  async activate(@Param("id") id: string) {
+    return await this.service.activate(id);
   }
 
   @Put(":id")

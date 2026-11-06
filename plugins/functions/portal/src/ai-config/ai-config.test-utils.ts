@@ -1,4 +1,4 @@
-// Test helpers for the AI provider config module (not a test file itself).
+// Test helpers for the AI config module (not a test file itself).
 //
 // Running these tests needs PG__SSL set (CI sets PG__SSL=false) because the service
 // imports PostgresService, which reads it at load. SERVICE_ROUTES must be unset or valid
@@ -6,9 +6,9 @@
 // key at load, so tests cannot simulate "key unset" through the environment: they
 // override `getKey()` through TestService instead.
 import { Buffer } from "node:buffer";
-import { AiProviderConfigService } from "./ai-provider-config.service.ts";
+import { AiConfigService } from "./ai-config.service.ts";
 import { parseEncryptionKey } from "./crypto.ts";
-import { AiProviderConfigRepository } from "./repository/ai-provider-config.repository.ts";
+import { AiConfigRepository } from "./repository/ai-config.repository.ts";
 
 export const KEY_A = Buffer.alloc(32, 7).toString("base64");
 export const KEY_B = Buffer.alloc(32, 9).toString("base64");
@@ -27,7 +27,7 @@ function pgError(constraint: string) {
 
 /**
  * In-memory stand-in for the table with the semantics the service relies on: both
- * unique indexes (the COALESCE one treats NULL == '' == NULL), SERIAL ids, and a
+ * unique indexes (name, case-sensitive; at most one active row), SERIAL ids, and a
  * transaction that is rolled back by restoring a snapshot.
  */
 export class FakeDb {
@@ -45,25 +45,14 @@ export class FakeDb {
 
   private snapshot: { rows: Row[]; nextId: number } | null = null;
 
-  private uniqueKey(r: Row) {
-    return JSON.stringify([
-      r.host,
-      r.model,
-      r.baseUrl ?? "",
-      r.region ?? "",
-      r.workspaceId ?? "",
-    ]);
-  }
-
   private checkIndexes(rows: Row[]) {
     const seen = new Set<string>();
     for (const r of rows) {
-      const k = this.uniqueKey(r);
-      if (seen.has(k)) throw pgError("ai_provider_config_unique_idx");
-      seen.add(k);
+      if (seen.has(r.name)) throw pgError("ai_config_name_idx");
+      seen.add(r.name);
     }
-    if (rows.filter((r) => r.isSelected).length > 1) {
-      throw pgError("ai_provider_config_selected_idx");
+    if (rows.filter((r) => r.isActive).length > 1) {
+      throw pgError("ai_config_active_idx");
     }
   }
 
@@ -209,7 +198,7 @@ export class FakeDb {
   }
 }
 
-export class TestService extends AiProviderConfigService {
+export class TestService extends AiConfigService {
   constructor(
     public db: FakeDb,
     public rawKey: string | undefined | null,
@@ -217,7 +206,7 @@ export class TestService extends AiProviderConfigService {
   ) {
     super(
       // deno-lint-ignore no-explicit-any
-      new AiProviderConfigRepository(db.postgresService as any),
+      new AiConfigRepository(db.postgresService as any),
       // deno-lint-ignore no-explicit-any
       db.postgresService as any,
       // deno-lint-ignore no-explicit-any
@@ -236,23 +225,32 @@ export function setup(rawKey: string | undefined | null = KEY_A) {
   return { db, svc };
 }
 
-export const bedrock = (over: Row = {}) => ({
-  host: "bedrock",
-  region: "us-east-1",
-  model: "m1",
-  apiKey: "sk-secret-1",
-  ...over,
-});
-export const anthropic = (over: Row = {}) => ({
-  host: "anthropic",
-  model: "claude",
-  apiKey: "sk-secret-2",
-  ...over,
-});
-export const openai = (over: Row = {}) => ({
-  host: "openai-compatible",
-  baseUrl: "https://x/v1",
-  model: "gpt",
-  apiKey: "sk-secret-3",
-  ...over,
-});
+// Every body gets a fresh name unless the test passes one, so two rows only clash
+// by name when a test asks for it. Passing an update body without `name` renames
+// the row, which is allowed.
+let nameSeq = 0;
+const named = (body: Row) => ({ name: `Config ${++nameSeq}`, ...body });
+
+export const bedrock = (over: Row = {}) =>
+  named({
+    provider: "bedrock",
+    region: "us-east-1",
+    model: "m1",
+    apiKey: "sk-secret-1",
+    ...over,
+  });
+export const anthropic = (over: Row = {}) =>
+  named({
+    provider: "anthropic",
+    model: "claude",
+    apiKey: "sk-secret-2",
+    ...over,
+  });
+export const openai = (over: Row = {}) =>
+  named({
+    provider: "openai-compatible",
+    baseUrl: "https://x/v1",
+    model: "gpt",
+    apiKey: "sk-secret-3",
+    ...over,
+  });

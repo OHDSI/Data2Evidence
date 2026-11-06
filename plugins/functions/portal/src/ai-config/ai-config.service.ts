@@ -11,22 +11,22 @@ import {
   getEncryptionKeyFromEnv,
 } from "./crypto.ts";
 import {
-  AI_PROVIDER_HOSTS,
-  AiProviderConfigResponse,
-  AiProviderHost,
-  NormalisedAiProviderConfig,
-} from "./dto/ai-provider-config.dto.ts";
-import { AiProviderConfig } from "./entity/ai-provider-config.entity.ts";
+  AI_CONFIG_PROVIDERS,
+  AiConfigProvider,
+  AiConfigResponse,
+  NormalisedAiConfig,
+} from "./dto/ai-config.dto.ts";
+import { AiConfig } from "./entity/ai-config.entity.ts";
 import {
-  AI_PROVIDER_CONFIG_DUPLICATE,
-  AI_PROVIDER_CONFIG_ENCRYPTION_KEY_NOT_CONFIGURED,
-  AI_PROVIDER_CONFIG_INVALID,
-  AI_PROVIDER_CONFIG_KEY_REQUIRED,
-  AI_PROVIDER_CONFIG_NOT_FOUND,
-  AI_PROVIDER_CONFIG_SELECTED_DELETE,
-  AiProviderConfigError,
+  AI_CONFIG_ACTIVE_DELETE,
+  AI_CONFIG_DUPLICATE,
+  AI_CONFIG_ENCRYPTION_KEY_NOT_CONFIGURED,
+  AI_CONFIG_INVALID,
+  AI_CONFIG_KEY_REQUIRED,
+  AI_CONFIG_NOT_FOUND,
+  AiConfigError,
 } from "./errors.ts";
-import { AiProviderConfigRepository } from "./repository/ai-provider-config.repository.ts";
+import { AiConfigRepository } from "./repository/ai-config.repository.ts";
 
 /**
  * Key of the transaction-level advisory lock taken first by every write. The value is
@@ -34,18 +34,18 @@ import { AiProviderConfigRepository } from "./repository/ai-provider-config.repo
  * It is kept above int4 max so it cannot collide with hashtext()-based advisory keys, which
  * Trex's auth code takes in the same database.
  */
-export const AI_PROVIDER_CONFIG_LOCK_KEY = 3561003561n;
-export const AI_PROVIDER_CONFIG_UNIQUE_INDEX = "ai_provider_config_unique_idx";
+export const AI_CONFIG_LOCK_KEY = 3561003561n;
+export const AI_CONFIG_NAME_INDEX = "ai_config_name_idx";
 
 const MAX_INT4 = 2147483647;
 
 @Injectable({ scope: SCOPE.REQUEST })
-export class AiProviderConfigService {
+export class AiConfigService {
   // Audit subject only (created_by / modified_by). Never used for authorisation.
   private readonly userId: string;
 
   constructor(
-    private readonly repo: AiProviderConfigRepository,
+    private readonly repo: AiConfigRepository,
     @Inject(DATABASE) private readonly postgresService: PostgresService,
     private readonly requestContextService: RequestContextService,
   ) {
@@ -63,14 +63,14 @@ export class AiProviderConfigService {
 
   // ---------------------------------------------------------------- reads (pool)
 
-  async list(): Promise<AiProviderConfigResponse[]> {
+  async list(): Promise<AiConfigResponse[]> {
     await this.initDataSource();
     const key = this.getKey();
     const rows = await this.repo.findAll();
     return rows.map((row) => this.toResponse(row, key));
   }
 
-  async get(rawId: string): Promise<AiProviderConfigResponse> {
+  async get(rawId: string): Promise<AiConfigResponse> {
     const id = this.parseId(rawId);
     await this.initDataSource();
     const row = await this.repo.findById(id);
@@ -80,7 +80,7 @@ export class AiProviderConfigService {
 
   // --------------------------------------------------------------- writes (lock)
 
-  async create(body: unknown): Promise<AiProviderConfigResponse> {
+  async create(body: unknown): Promise<AiConfigResponse> {
     const key = this.requireKey(); // first, so a missing key fails before any input handling
     const input = this.validate(body);
     if (input.apiKey === REDACTED_TEXT) {
@@ -88,17 +88,18 @@ export class AiProviderConfigService {
     }
     return await this.withLock(async (manager) => {
       const rows = await this.repo.listTx(manager);
-      if (rows.some((row) => this.sameIdentity(row, input))) {
+      if (rows.some((row) => row.name === input.name)) {
         throw this.duplicate();
       }
       const id = await this.repo.insertTx(manager, {
-        host: input.host,
+        name: input.name,
+        provider: input.provider,
         model: input.model,
         baseUrl: input.baseUrl,
         region: input.region,
         workspaceId: input.workspaceId,
         apiKeyEncrypted: encryptApiKey(input.apiKey, key),
-        isSelected: !rows.some((row) => row.isSelected),
+        isActive: !rows.some((row) => row.isActive),
         createdBy: this.userId,
         modifiedBy: this.userId,
       });
@@ -106,16 +107,16 @@ export class AiProviderConfigService {
     });
   }
 
-  async update(rawId: string, body: unknown): Promise<AiProviderConfigResponse> {
+  async update(rawId: string, body: unknown): Promise<AiConfigResponse> {
     const key = this.requireKey(); // first, so a missing key fails before :id parsing and validation
     const id = this.parseId(rawId);
     if (
       body !== null && typeof body === "object" &&
-      Object.prototype.hasOwnProperty.call(body, "isSelected")
+      Object.prototype.hasOwnProperty.call(body, "isActive")
     ) {
       throw this.invalid(
-        "isSelected",
-        "Field `isSelected` cannot be set here; use the select endpoint",
+        "isActive",
+        "Field `isActive` cannot be set here; use the activate endpoint",
       );
     }
     const input = this.validate(body);
@@ -126,13 +127,13 @@ export class AiProviderConfigService {
 
       let apiKeyEncrypted: string;
       if (input.apiKey === REDACTED_TEXT) {
-        const keepable = existing.host === input.host &&
+        const keepable = existing.provider === input.provider &&
           existing.baseUrl === input.baseUrl &&
           decryptApiKey(existing.apiKeyEncrypted, key) !== null;
         if (!keepable) {
-          throw new AiProviderConfigError(
+          throw new AiConfigError(
             400,
-            AI_PROVIDER_CONFIG_KEY_REQUIRED,
+            AI_CONFIG_KEY_REQUIRED,
             "A new API key is required",
           );
         }
@@ -141,11 +142,12 @@ export class AiProviderConfigService {
         apiKeyEncrypted = encryptApiKey(input.apiKey, key);
       }
 
-      if (rows.some((row) => row.id !== id && this.sameIdentity(row, input))) {
+      if (rows.some((row) => row.id !== id && row.name === input.name)) {
         throw this.duplicate();
       }
       await this.repo.updateTx(manager, id, {
-        host: input.host,
+        name: input.name,
+        provider: input.provider,
         model: input.model,
         baseUrl: input.baseUrl,
         region: input.region,
@@ -157,16 +159,16 @@ export class AiProviderConfigService {
     });
   }
 
-  async select(rawId: string): Promise<AiProviderConfigResponse> {
+  async activate(rawId: string): Promise<AiConfigResponse> {
     const id = this.parseId(rawId);
     return await this.withLock(async (manager) => {
       const row = await this.repo.findByIdTx(manager, id);
       if (!row) throw this.notFound(); // before any change
-      if (!row.isSelected) {
-        // Two statements: a single UPDATE ... SET is_selected = (id = :id) trips the
+      if (!row.isActive) {
+        // Two statements: a single UPDATE ... SET is_active = (id = :id) trips the
         // unique partial index mid-statement.
-        await this.repo.clearSelectedTx(manager, this.userId);
-        await this.repo.setSelectedTx(manager, id, this.userId);
+        await this.repo.clearActiveTx(manager, this.userId);
+        await this.repo.setActiveTx(manager, id, this.userId);
       }
       return this.toResponse(await this.reload(manager, id), this.getKey());
     });
@@ -178,11 +180,11 @@ export class AiProviderConfigService {
       const rows = await this.repo.listTx(manager);
       const row = rows.find((r) => r.id === id);
       if (!row) throw this.notFound();
-      if (row.isSelected && rows.length > 1) {
-        throw new AiProviderConfigError(
+      if (row.isActive && rows.length > 1) {
+        throw new AiConfigError(
           400,
-          AI_PROVIDER_CONFIG_SELECTED_DELETE,
-          "The selected configuration cannot be deleted while others exist",
+          AI_CONFIG_ACTIVE_DELETE,
+          "The active configuration cannot be deleted while others exist",
         );
       }
       await this.repo.deleteTx(manager, id);
@@ -195,7 +197,7 @@ export class AiProviderConfigService {
    * every error but two into a 500 (so a 404 or 409 would come out as 500). An
    * advisory lock is taken first, so concurrent writes are serialised even on an
    * empty table, where row locks would lock nothing. Errors from `fn` are rethrown
-   * unchanged, except a 23505 on the uniqueness index, which becomes 409 `_DUPLICATE`.
+   * unchanged, except a 23505 on the name index, which becomes 409 `_DUPLICATE`.
    */
   async withLock<T>(fn: (manager: EntityManager) => Promise<T>): Promise<T> {
     const dataSource = await this.initDataSource();
@@ -206,7 +208,7 @@ export class AiProviderConfigService {
       try {
         // Must stay the first statement of the transaction.
         await queryRunner.query(
-          `SELECT pg_advisory_xact_lock(${AI_PROVIDER_CONFIG_LOCK_KEY})`,
+          `SELECT pg_advisory_xact_lock(${AI_CONFIG_LOCK_KEY})`,
         );
         const result = await fn(queryRunner.manager);
         await queryRunner.commitTransaction();
@@ -217,7 +219,7 @@ export class AiProviderConfigService {
         } catch {
           // keep the original error
         }
-        if (this.isUniqueIndexViolation(error)) throw this.duplicate();
+        if (this.isNameIndexViolation(error)) throw this.duplicate();
         throw error;
       }
     } finally {
@@ -235,27 +237,27 @@ export class AiProviderConfigService {
   private requireKey(): Buffer {
     const key = this.getKey();
     if (!key) {
-      throw new AiProviderConfigError(
+      throw new AiConfigError(
         500,
-        AI_PROVIDER_CONFIG_ENCRYPTION_KEY_NOT_CONFIGURED,
-        "The AI provider encryption key is not configured",
+        AI_CONFIG_ENCRYPTION_KEY_NOT_CONFIGURED,
+        "The AI configuration encryption key is not configured",
       );
     }
     return key;
   }
 
-  private isUniqueIndexViolation(error: unknown): boolean {
+  private isNameIndexViolation(error: unknown): boolean {
     // deno-lint-ignore no-explicit-any
     const e = error as any;
     const code = e?.code ?? e?.driverError?.code;
     const constraint = e?.constraint ?? e?.driverError?.constraint;
-    return code === "23505" && constraint === AI_PROVIDER_CONFIG_UNIQUE_INDEX;
+    return code === "23505" && constraint === AI_CONFIG_NAME_INDEX;
   }
 
   private async reload(
     manager: EntityManager,
     id: number,
-  ): Promise<AiProviderConfig> {
+  ): Promise<AiConfig> {
     const row = await this.repo.findByIdTx(manager, id);
     if (!row) throw this.notFound();
     return row;
@@ -271,56 +273,47 @@ export class AiProviderConfigService {
     return id;
   }
 
-  private sameIdentity(
-    row: AiProviderConfig,
-    input: NormalisedAiProviderConfig,
-  ): boolean {
-    // NULL == NULL, like the COALESCE(x, '') unique index. Stored values are never ''.
-    return row.host === input.host && row.model === input.model &&
-      (row.baseUrl ?? null) === input.baseUrl &&
-      (row.region ?? null) === input.region &&
-      (row.workspaceId ?? null) === input.workspaceId;
-  }
-
   private toResponse(
-    row: AiProviderConfig,
+    row: AiConfig,
     key: Buffer | null,
-  ): AiProviderConfigResponse {
+  ): AiConfigResponse {
     const readable = key !== null &&
       decryptApiKey(row.apiKeyEncrypted, key) !== null;
     return {
       id: row.id,
-      host: row.host,
+      name: row.name,
+      provider: row.provider,
       model: row.model,
       baseUrl: row.baseUrl ?? null,
       region: row.region ?? null,
       workspaceId: row.workspaceId ?? null,
       apiKey: REDACTED_TEXT,
       ...(readable ? {} : { keyReadable: false as const }),
-      isSelected: row.isSelected,
+      isActive: row.isActive,
     };
   }
 
-  private notFound(): AiProviderConfigError {
-    return new AiProviderConfigError(
+  private notFound(): AiConfigError {
+    return new AiConfigError(
       404,
-      AI_PROVIDER_CONFIG_NOT_FOUND,
-      "AI provider configuration not found",
+      AI_CONFIG_NOT_FOUND,
+      "AI configuration not found",
     );
   }
 
-  private duplicate(): AiProviderConfigError {
-    return new AiProviderConfigError(
+  private duplicate(): AiConfigError {
+    return new AiConfigError(
       409,
-      AI_PROVIDER_CONFIG_DUPLICATE,
-      "An identical AI provider configuration already exists",
+      AI_CONFIG_DUPLICATE,
+      "An AI configuration with this name already exists",
+      "name",
     );
   }
 
-  private invalid(field: string, description: string): AiProviderConfigError {
-    return new AiProviderConfigError(
+  private invalid(field: string, description: string): AiConfigError {
+    return new AiConfigError(
       400,
-      AI_PROVIDER_CONFIG_INVALID,
+      AI_CONFIG_INVALID,
       description,
       field,
     );
@@ -340,14 +333,19 @@ export class AiProviderConfigService {
     return trimmed === "" ? null : trimmed;
   }
 
-  private validate(rawBody: unknown): NormalisedAiProviderConfig {
+  private validate(rawBody: unknown): NormalisedAiConfig {
     const body = (rawBody !== null && typeof rawBody === "object"
       ? rawBody
       : {}) as Record<string, unknown>;
 
-    const host = typeof body.host === "string" ? body.host.trim() : "";
-    if (!(AI_PROVIDER_HOSTS as readonly string[]).includes(host)) {
-      throw this.invalid("host", "Unknown host");
+    const name = this.optional(body, "name");
+    if (name === null) {
+      throw this.invalid("name", "Field `name` is required");
+    }
+
+    const provider = typeof body.provider === "string" ? body.provider.trim() : "";
+    if (!(AI_CONFIG_PROVIDERS as readonly string[]).includes(provider)) {
+      throw this.invalid("provider", "Unknown provider");
     }
 
     const model = this.optional(body, "model");
@@ -359,12 +357,12 @@ export class AiProviderConfigService {
     const region = this.optional(body, "region");
     const workspaceId = this.optional(body, "workspaceId");
 
-    const applies: Record<AiProviderHost, string[]> = {
+    const applies: Record<AiConfigProvider, string[]> = {
       bedrock: ["region"],
       anthropic: ["workspaceId"],
       "openai-compatible": ["baseUrl"],
     };
-    const required: Record<AiProviderHost, string | null> = {
+    const required: Record<AiConfigProvider, string | null> = {
       bedrock: "region",
       anthropic: null,
       "openai-compatible": "baseUrl",
@@ -375,14 +373,14 @@ export class AiProviderConfigService {
       workspaceId,
     };
     for (const field of ["baseUrl", "region", "workspaceId"]) {
-      if (applies[host as AiProviderHost].includes(field)) {
-        if (required[host as AiProviderHost] === field && values[field] === null) {
+      if (applies[provider as AiConfigProvider].includes(field)) {
+        if (required[provider as AiConfigProvider] === field && values[field] === null) {
           throw this.invalid(field, `Field \`${field}\` is required`);
         }
       } else if (values[field] !== null) {
         throw this.invalid(
           field,
-          `Field \`${field}\` does not apply to host \`${host}\``,
+          `Field \`${field}\` does not apply to provider \`${provider}\``,
         );
       }
     }
@@ -407,7 +405,8 @@ export class AiProviderConfigService {
     }
 
     return {
-      host: host as AiProviderHost,
+      name,
+      provider: provider as AiConfigProvider,
       model,
       baseUrl,
       region,

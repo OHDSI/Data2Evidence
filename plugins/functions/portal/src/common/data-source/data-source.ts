@@ -10,7 +10,7 @@ import { DatasetRelease } from "../../dataset/entity/dataset-release.entity.ts";
 import { DatasetTagConfig } from "../../dataset/entity/dataset-tag-config.entity.ts";
 import { DatasetTag } from "../../dataset/entity/dataset-tag.entity.ts";
 import { Dataset } from "../../dataset/entity/dataset.entity.ts";
-import { AiProviderConfig } from "../../ai-provider-config/entity/ai-provider-config.entity.ts";
+import { AiConfig } from "../../ai-config/entity/ai-config.entity.ts";
 import { Feature } from "../../feature/entity/feature.entity.ts";
 import { Notebook } from "../../notebook/entity/notebook.entity.ts";
 import { UserArtifactGroup } from "../../user-artifact/entity/user-artifact-group.entity.ts";
@@ -46,7 +46,7 @@ export const dataSourceOptions: DataSourceOptions & SeederOptions = {
     idleTimeoutMillis: parseInt(_env.PG__IDLE_TIMEOUT_IN_MS) || 30000,
   },
   entities: [
-    AiProviderConfig,
+    AiConfig,
     Config,
     DatasetAttributeConfig,
     DatasetAttribute,
