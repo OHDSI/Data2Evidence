@@ -22,7 +22,7 @@ const Harness: React.FC<{
   open: boolean;
   codeType: "dashboard" | "cohort";
 }> = ({ strategy, open, codeType }) => {
-  const { name, code, initialLoading, updateName, updateCode } = useViewerData({
+  const { name, code, language, initialLoading, updateName, updateCode, updateLanguage, selectCode } = useViewerData({
     open,
     configId: "cfg-1",
     configType: "dashboard",
@@ -33,6 +33,7 @@ const Harness: React.FC<{
     <>
       <div data-testid="name">{name}</div>
       <div data-testid="code">{code}</div>
+      <div data-testid="language">{language}</div>
       <div data-testid="loading">{String(initialLoading)}</div>
       <button data-testid="type-name" onClick={() => updateName(DASHBOARD_NAME)}>
         type name
@@ -40,9 +41,23 @@ const Harness: React.FC<{
       <button data-testid="type-code" onClick={() => updateCode("print('hi')")}>
         type code
       </button>
+      <button data-testid="pick-r" onClick={() => updateLanguage("r")}>
+        pick r
+      </button>
+      <button data-testid="select-r-app" onClick={() => selectCode("r-app")}>
+        select r-app
+      </button>
+      <button data-testid="select-new" onClick={() => selectCode("__new__")}>
+        select new
+      </button>
     </>
   );
 };
+
+const PYTHON_AND_R_CODES = [
+  { datasetId: "ds-1", name: "python-app", code: "python code", type: "dashboard", language: "python", queries: [] },
+  { datasetId: "ds-1", name: "r-app", code: "r code", type: "dashboard", language: "r", queries: [] },
+];
 
 describe("useViewerData", () => {
   it("keeps a name the user typed while the initial fetch is still in flight", async () => {
@@ -188,5 +203,46 @@ describe("useViewerData", () => {
     });
 
     expect(screen.getByTestId("name")).toHaveTextContent("second-result");
+  });
+
+  it("loads the language saved with the first code on open", async () => {
+    const strategy = makeStrategy({ fetchCodes: jest.fn().mockResolvedValue(PYTHON_AND_R_CODES) });
+
+    render(<Harness strategy={strategy} open codeType="dashboard" />);
+    await act(async () => undefined);
+
+    expect(screen.getByTestId("name")).toHaveTextContent("python-app");
+    expect(screen.getByTestId("language")).toHaveTextContent("python");
+  });
+
+  it("switches to the language saved with the selected code", async () => {
+    const strategy = makeStrategy({ fetchCodes: jest.fn().mockResolvedValue(PYTHON_AND_R_CODES) });
+
+    render(<Harness strategy={strategy} open codeType="dashboard" />);
+    await act(async () => undefined);
+
+    fireEvent.click(screen.getByTestId("select-r-app"));
+    expect(screen.getByTestId("language")).toHaveTextContent(/^r$/);
+
+    fireEvent.click(screen.getByTestId("select-new"));
+    expect(screen.getByTestId("language")).toBeEmptyDOMElement();
+  });
+
+  it("keeps a language the user picked while the initial fetch is still in flight", async () => {
+    let resolveCodes: (value: typeof PYTHON_AND_R_CODES) => void = () => undefined;
+    const codesPromise = new Promise<typeof PYTHON_AND_R_CODES>((resolve) => {
+      resolveCodes = resolve;
+    });
+    const strategy = makeStrategy({ fetchCodes: jest.fn(() => codesPromise as never) });
+
+    render(<Harness strategy={strategy} open codeType="dashboard" />);
+
+    fireEvent.click(screen.getByTestId("pick-r"));
+
+    await act(async () => {
+      resolveCodes(PYTHON_AND_R_CODES);
+    });
+
+    expect(screen.getByTestId("language")).toHaveTextContent(/^r$/);
   });
 });
