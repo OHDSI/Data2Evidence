@@ -51,29 +51,33 @@ jest.mock("./useUserDataSourcePermissions", () => ({
 
 jest.mock("./AddDataSourceMenu", () => ({ AddDataSourceMenu: () => null }));
 
-jest.mock("ui-react", () => {
-  const MockReact = require("react");
-  const filterFns = { setState: jest.fn(), clear: jest.fn() };
-  const passthrough = (tag: string) => (props: any) => MockReact.createElement(tag, null, props.children);
-  return {
-    Button: (props: any) =>
-      MockReact.createElement("button", { onClick: props.onClick, disabled: props.disabled }, props.children),
-    Chip: (props: any) => MockReact.createElement("span", null, props.label),
-    Dialog: (props: any) =>
-      props.open ? MockReact.createElement("div", null, props.title, props.children, props.actions) : null,
-    EmptyState: (props: any) =>
-      MockReact.createElement("div", null, MockReact.createElement("p", null, props.title), props.description),
-    FilterPanel: () => null,
-    Spinner: () => null,
-    Table: passthrough("table"),
-    TableHead: passthrough("thead"),
-    TableBody: passthrough("tbody"),
-    TableRow: passthrough("tr"),
-    TableCell: passthrough("td"),
-    TextField: () => null,
-    useFilters: ({ rows }: any) => ({ state: {}, options: {}, ...filterFns, result: rows }),
-  };
-});
+jest.mock(
+  "ui-react",
+  () => {
+    const MockReact = require("react");
+    const filterFns = { setState: jest.fn(), clear: jest.fn() };
+    const passthrough = (tag: string) => (props: any) => MockReact.createElement(tag, null, props.children);
+    return {
+      Button: (props: any) =>
+        MockReact.createElement("button", { onClick: props.onClick, disabled: props.disabled }, props.children),
+      Chip: (props: any) => MockReact.createElement("span", null, props.label),
+      Dialog: (props: any) =>
+        props.open ? MockReact.createElement("div", null, props.title, props.children, props.actions) : null,
+      EmptyState: (props: any) =>
+        MockReact.createElement("div", null, MockReact.createElement("p", null, props.title), props.description),
+      FilterPanel: () => null,
+      Spinner: () => null,
+      Table: passthrough("table"),
+      TableHead: passthrough("thead"),
+      TableBody: passthrough("tbody"),
+      TableRow: passthrough("tr"),
+      TableCell: passthrough("td"),
+      TextField: () => null,
+      useFilters: ({ rows }: any) => ({ state: {}, options: {}, ...filterFns, result: rows }),
+    };
+  },
+  { virtual: true }
+);
 
 const user = { userId: "u1", username: "alice" } as any;
 

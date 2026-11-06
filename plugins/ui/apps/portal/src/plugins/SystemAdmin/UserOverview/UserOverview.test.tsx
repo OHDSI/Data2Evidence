@@ -43,27 +43,31 @@ jest.mock("../../../axios/api", () => ({
   },
 }));
 
-jest.mock("ui-react", () => {
-  const MockReact = require("react");
-  const passthrough = (tag: string) => (props: any) => MockReact.createElement(tag, null, props.children);
-  return {
-    buildMuiTheme: () => ({}),
-    Button: (props: any) => MockReact.createElement("button", { onClick: props.onClick }, props.children),
-    Chip: (props: any) => MockReact.createElement("span", null, props.label),
-    EmptyState: (props: any) => MockReact.createElement("div", null, props.title),
-    PageHeader: (props: any) => MockReact.createElement("div", null, props.title, props.actions),
-    Pagination: () => null,
-    Spinner: () => MockReact.createElement("div", null, "loading"),
-    Table: passthrough("table"),
-    TableHead: passthrough("thead"),
-    TableBody: passthrough("tbody"),
-    TableRow: passthrough("tr"),
-    TableCell: passthrough("td"),
-    TextField: () => null,
-    FilterPanel: () => null,
-    useFilters: () => ({ state: {}, options: {}, setState: jest.fn() }),
-  };
-});
+jest.mock(
+  "ui-react",
+  () => {
+    const MockReact = require("react");
+    const passthrough = (tag: string) => (props: any) => MockReact.createElement(tag, null, props.children);
+    return {
+      buildMuiTheme: () => ({}),
+      Button: (props: any) => MockReact.createElement("button", { onClick: props.onClick }, props.children),
+      Chip: (props: any) => MockReact.createElement("span", null, props.label),
+      EmptyState: (props: any) => MockReact.createElement("div", null, props.title),
+      PageHeader: (props: any) => MockReact.createElement("div", null, props.title, props.actions),
+      Pagination: () => null,
+      Spinner: () => MockReact.createElement("div", null, "loading"),
+      Table: passthrough("table"),
+      TableHead: passthrough("thead"),
+      TableBody: passthrough("tbody"),
+      TableRow: passthrough("tr"),
+      TableCell: passthrough("td"),
+      TextField: () => null,
+      FilterPanel: () => null,
+      useFilters: () => ({ state: {}, options: {}, setState: jest.fn() }),
+    };
+  },
+  { virtual: true }
+);
 
 jest.mock("./AddUserDialog/AddUserDialog", () => () => null);
 jest.mock("./DeleteUserDialog/DeleteUserDialog", () => () => null);
