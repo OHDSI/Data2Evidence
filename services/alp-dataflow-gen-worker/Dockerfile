@@ -30,6 +30,9 @@
 # duckdb / openblas once per env. Only building the whole tree in one RUN could
 # collapse it, at the cost of the per-stage registry cache.
 
+
+FROM ghcr.io/data2evidence/whiterabbit:master AS whiterabbit_base
+
 FROM ubuntu:24.04 AS staging
 RUN apt-get update && apt-get install -y --no-install-recommends python3 \
     && rm -rf /var/lib/apt/lists/*
@@ -250,6 +253,12 @@ COPY --from=staging /staged/search-embedding-flow /var/lib/d2e-flows/search-embe
 COPY --from=staging /staged/hades-flow /var/lib/d2e-flows/hades-flow
 COPY --from=staging /staged/data-transformation-flow /var/lib/d2e-flows/data-transformation-flow
 COPY --from=staging /staged/d2e-flows /var/lib/d2e-flows/d2e-flows
+
+# WhiteRabbit distribution for white_rabbit_plugin (WHITERABBIT_DIR_PATH in
+# white_rabbit_plugin/types.py). The plugin writes config.ini, scan reports and
+# downloaded CSVs (csvfiles/) alongside the dist at runtime.
+COPY --from=whiterabbit_base /dist /var/lib/d2e-flows/data-transformation-flow/baked/flows/white_rabbit_plugin/dist
+RUN mkdir -p /var/lib/d2e-flows/data-transformation-flow/baked/flows/white_rabbit_plugin/csvfiles
 
 WORKDIR /app
 ENTRYPOINT ["/entrypoint.sh"]
