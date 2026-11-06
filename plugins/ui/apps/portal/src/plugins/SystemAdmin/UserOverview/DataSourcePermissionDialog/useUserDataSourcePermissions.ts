@@ -149,7 +149,7 @@ export const useUserDataSourcePermissions = (user?: UserWithRolesInfoExt) => {
   );
 
   const assignableDatasets = useMemo(() => {
-    const assigned = new Set(rows.filter((r) => r.status === "access").map((r) => r.studyId));
+    const assigned = new Set(rows.map((r) => r.studyId));
     return datasets.filter((d) => !assigned.has(d.id));
   }, [datasets, rows]);
 
