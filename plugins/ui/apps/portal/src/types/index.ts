@@ -1,3 +1,4 @@
+import { ReactNode } from "react";
 import { PluginDropdownItem } from "@portal/plugin";
 import { LanguageMappings } from "../contexts";
 
@@ -114,6 +115,8 @@ export interface DeleteMutationResponse {
 export interface Feedback {
   type?: "error" | "success";
   message?: string;
+  // Alert toast only: rendered in place of `message` (e.g. with bold names).
+  richMessage?: ReactNode;
   description?: string;
   autoClose?: number;
   // Opt-in to the new Alert toast (default/undefined renders the legacy Snackbar).

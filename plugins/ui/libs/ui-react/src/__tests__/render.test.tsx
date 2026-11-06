@@ -197,8 +197,8 @@ describe("render smoke", () => {
         onChange={(s) => (state = s)}
       />,
     );
-    // The two selected values surface as "(2)" on the trigger.
-    const trigger = screen.getByRole("button", { name: /Filters \(2\)/ });
+    // One active field counts once, even with two selected values.
+    const trigger = screen.getByRole("button", { name: /Filters \(1\)/ });
     fireEvent.click(trigger);
     // A range field renders an uppercase group heading (raw text "Created").
     expect(screen.getByText("Created")).toBeTruthy();

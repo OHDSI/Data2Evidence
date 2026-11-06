@@ -34,6 +34,22 @@ export class StudyAccessRequestRouter {
       }
     })
 
+    this.router.get('/user/:userId', async (req: IAppRequest, res: Response, next: NextFunction) => {
+      const { userId } = req.params || {}
+      this.logger.info(`Get study access requests of user ${userId}`)
+
+      try {
+        const accessRequests = await this.studyAccessRequestService.getStudyAccessRequestList({
+          user_id: userId,
+          status: null
+        })
+        return res.status(200).json(accessRequests)
+      } catch (err) {
+        this.logger.error(`Error when getting study access requests of user ${userId}: ${JSON.stringify(err)}`)
+        return next(err)
+      }
+    })
+
     this.router.post('/', async (req: IAppRequest, res: Response, next: NextFunction) => {
       const tenantId = env.APP_TENANT_ID
       const { userId, studyId, role } = req.body || {}

@@ -41,14 +41,10 @@ export function isActive(value: FilterValue | undefined): boolean {
 }
 
 /**
- * The button badge count: a multi-select contributes one per selected value,
- * every other active filter contributes one.
+ * The button badge count: one per active filter field, however many values it holds.
  */
 export function activeFilterCount(state: FilterState): number {
-  return Object.values(state).reduce((total, value) => {
-    if (!isActive(value)) return total;
-    return total + (value.op === "in" ? value.values.length : 1);
-  }, 0);
+  return Object.values(state).filter(isActive).length;
 }
 
 export function matchesFilter<Row>(

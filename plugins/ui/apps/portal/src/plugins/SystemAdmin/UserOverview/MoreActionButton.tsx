@@ -1,54 +1,75 @@
-import React, { FC, useCallback, useState } from "react";
-import CircularProgress from "@mui/material/CircularProgress";
+import React, { FC, useCallback, useMemo, useState } from "react";
+import MoreVertIcon from "@mui/icons-material/MoreVert";
+import { IconButton, Menu, Spinner, type MenuItem } from "ui-react";
 import { UserWithRolesInfoExt } from "../../../types";
-import { EllipsisVerticalIcon, IconButton, Menu, MenuItem } from "@portal/components";
 import { useTranslation } from "../../../contexts";
 
 interface MoreActionButtonProps {
   user: UserWithRolesInfoExt;
+  canDelete: boolean;
   onActivateClick: () => Promise<void> | void;
   onChangePasswordClick: () => void;
+  onDeleteClick: () => void;
+  onDataSourcePermissionClick: () => void;
 }
 
-export const MoreActionButton: FC<MoreActionButtonProps> = ({ user, onActivateClick, onChangePasswordClick }) => {
+export const MoreActionButton: FC<MoreActionButtonProps> = ({
+  user,
+  canDelete,
+  onActivateClick,
+  onChangePasswordClick,
+  onDeleteClick,
+  onDataSourcePermissionClick,
+}) => {
   const { getText, i18nKeys } = useTranslation();
-  const [actionEl, setActionEl] = useState<null | HTMLElement>(null);
   const [activating, setActivating] = useState(false);
 
-  const handleOpenAction = useCallback((event: React.MouseEvent<HTMLButtonElement>) => {
-    setActionEl(event.currentTarget);
-  }, []);
-
-  const handleCloseAction = useCallback(() => {
-    setActionEl(null);
-  }, []);
-
-  const handleActivate = useCallback(async () => {
-    setActionEl(null);
-    try {
-      setActivating(true);
-      await onActivateClick();
-    } finally {
-      setActivating(false);
+  const items: MenuItem[] = useMemo(() => {
+    const list: MenuItem[] = [
+      { value: "permission", label: getText(i18nKeys.USER_OVERVIEW__DATA_SOURCE_PERMISSION) },
+      { value: "password", label: getText(i18nKeys.MORE_ACTION_BUTTON__CHANGE_PASSWORD) },
+      {
+        value: "activate",
+        label: getText(user.active ? i18nKeys.USER_OVERVIEW__DEACTIVATE : i18nKeys.USER_OVERVIEW__ACTIVATE),
+      },
+    ];
+    if (canDelete) {
+      list.push({ value: "delete", label: getText(i18nKeys.USER_OVERVIEW__DELETE), danger: true });
     }
-  }, [onActivateClick]);
+    return list;
+  }, [user.active, canDelete, getText, i18nKeys]);
 
-  const handleChangePassword = useCallback(() => {
-    setActionEl(null);
-    onChangePasswordClick();
-  }, [onChangePasswordClick]);
+  const handleSelect = useCallback(
+    async (value: string) => {
+      if (value === "permission") return onDataSourcePermissionClick();
+      if (value === "password") return onChangePasswordClick();
+      if (value === "delete") return onDeleteClick();
+      if (value === "activate") {
+        try {
+          setActivating(true);
+          await onActivateClick();
+        } finally {
+          setActivating(false);
+        }
+      }
+    },
+    [onActivateClick, onChangePasswordClick, onDeleteClick, onDataSourcePermissionClick]
+  );
 
   return (
-    <>
-      <IconButton
-        startIcon={activating ? <CircularProgress size={16} /> : <EllipsisVerticalIcon />}
-        onClick={handleOpenAction}
-        disabled={activating}
-      />
-      <Menu anchorEl={actionEl} open={Boolean(actionEl)} onClose={handleCloseAction}>
-        <MenuItem onClick={handleActivate}>{user.active ? "Deactivate" : "Activate"}</MenuItem>
-        <MenuItem onClick={handleChangePassword}>{getText(i18nKeys.MORE_ACTION_BUTTON__CHANGE_PASSWORD)}</MenuItem>
-      </Menu>
-    </>
+    <Menu
+      items={items}
+      width={276}
+      onSelect={handleSelect}
+      activator={({ open }) => (
+        <IconButton
+          category="no-stroke"
+          icon={activating ? <Spinner size={16} /> : <MoreVertIcon />}
+          ariaLabel={getText(i18nKeys.USER_OVERVIEW__ACTIONS)}
+          disabled={activating}
+          onClick={open}
+        />
+      )}
+    />
   );
 };
