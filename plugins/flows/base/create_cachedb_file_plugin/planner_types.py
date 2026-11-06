@@ -17,6 +17,9 @@ class ColumnKind(str, Enum):
     CLUSTER = "CLUSTER"
     PRIMARY_KEY = "PRIMARY_KEY"
     MAPPED_ID = "MAPPED_ID"
+    #: Chosen from the source's column statistics (Postgres ``pg_stats``),
+    #: for a table with no primary key and no usable mapped column.
+    STATISTICS = "STATISTICS"
 
 
 class ChunkStrategy(str, Enum):
@@ -104,3 +107,23 @@ class ChunkPlan:
     predicates: tuple[str, ...]
     estimated_rows_per_chunk: int
     includes_null_chunk: bool
+    #: Rows in the biggest chunk, judged from repeated quantile cuts. Equal to
+    #: ``estimated_rows_per_chunk`` unless one value dominates the column.
+    estimated_largest_chunk_rows: int = 0
+    #: The size above which a chunk is too large; see MAX_CHUNK_SIZE_MULTIPLE.
+    max_chunk_rows: int = 0
+
+    @property
+    def is_skewed(self) -> bool:
+        """A single value holds more rows than one chunk may.
+
+        The average-size guard in ``plan_chunks`` cannot see this: a column
+        where a few values hold most of the table (``analysis_id`` in
+        ``achilles_results``) can average out under the limit while one chunk
+        holds a single huge value that no predicate can split.
+        """
+        return (
+            self.strategy is ChunkStrategy.CHUNKED
+            and self.max_chunk_rows > 0
+            and self.estimated_largest_chunk_rows > self.max_chunk_rows
+        )

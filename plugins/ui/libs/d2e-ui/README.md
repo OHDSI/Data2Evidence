@@ -1,14 +1,16 @@
 # `@d2e/ui`
 
 Vue 3 and Vuetify components for D2E, with the design tokens from the D2E
-design system. The application reads the source directly through vite aliases.
-Every other consumer uses the built artifact — see below.
+design system. The application and the Atlas data-quality plugin read the
+source directly through vite aliases. Every other consumer uses the built
+artifact — see below.
 
 ## Consuming the built package
 
 The application consumes this package as **source**, through aliases in
-`apps/vue-mri-ui-lib/vite.config*.ts`. Any other consumer should use the built
-artifact:
+`apps/vue-mri-ui-lib/vite.config*.ts`, and so does the Atlas data-quality
+plugin, through `plugins/atlas/subplugins/data-quality/vite.config.mjs`. Any
+other consumer should use the built artifact:
 
 ```ts
 import { D2eButton, D2eDialog } from "@d2e/ui";

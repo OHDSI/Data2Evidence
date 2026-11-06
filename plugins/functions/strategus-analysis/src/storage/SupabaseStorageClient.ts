@@ -6,6 +6,18 @@ export interface StorageUploadFile {
   mimetype: string;
 }
 
+function isBucketAlreadyExists(status: number, body: string): boolean {
+  if (status === 409) {
+    return true;
+  }
+  try {
+    const parsed = JSON.parse(body);
+    return String(parsed?.statusCode) === "409" || parsed?.error === "Duplicate";
+  } catch {
+    return false;
+  }
+}
+
 export class StorageError extends Error {
   public readonly statusCode: number;
 
@@ -119,12 +131,13 @@ export class SupabaseStorageClient {
       body: JSON.stringify({ name, public: isPublic }),
     });
 
-    // 409 means the bucket already exists, which is the normal case on every
-    // boot after the first.
-    if (!response.ok && response.status !== 409) {
+    // An existing bucket is the normal case on every boot after the first.
+    // storage-api reports it as HTTP 400 with {"statusCode":"409","error":
+    // "Duplicate"} in the body; older versions send a plain 409.
+    const body = response.ok ? "" : await response.text();
+    if (!response.ok && !isBucketAlreadyExists(response.status, body)) {
       throw new StorageError(
-        `Failed to create bucket ${name}: ${response.status} ${await response
-          .text()}`,
+        `Failed to create bucket ${name}: ${response.status} ${body}`,
         502,
       );
     }

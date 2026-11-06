@@ -30,6 +30,8 @@ describe("tokens.css generator", () => {
   it("emits color, family and elevation tokens", () => {
     const css = generateTokensCss();
     expect(css).toContain("--d2e-color-danger: #A3293D;");
+    expect(css).toContain("--d2e-color-support-violet-light: #E3D6DF;");
+    expect(css).toContain("--d2e-color-support-violet-text: #461A37;");
     expect(css).toContain("--d2e-font-family:");
     expect(css).toContain("--d2e-elevation-e16:");
   });

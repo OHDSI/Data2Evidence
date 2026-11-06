@@ -219,3 +219,18 @@ Deno.test("upload targets the real bucket/path even after URL parsing, for a ben
     f.restore();
   }
 });
+
+Deno.test("createBucket treats storage-api's 400 Duplicate as success", async () => {
+  const client = new SupabaseStorageClient();
+  const f = fetchStub(() =>
+    new Response(
+      '{"statusCode":"409","error":"Duplicate","message":"The resource already exists"}',
+      { status: 400 },
+    )
+  );
+  try {
+    await client.createBucket("strategus-results-store");
+  } finally {
+    f.restore();
+  }
+});

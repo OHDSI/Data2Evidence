@@ -11,6 +11,7 @@ import D2eStatusChip from "./D2eStatusChip.vue";
         <D2eStatusChip variant="negative" label="Negative" />
         <D2eStatusChip variant="neutral" label="Neutral" />
         <D2eStatusChip variant="multiselect" label="Multiselect" />
+        <D2eStatusChip variant="category" label="Plausibility" />
       </div>
     </Variant>
 

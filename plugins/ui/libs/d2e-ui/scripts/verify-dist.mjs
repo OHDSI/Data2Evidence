@@ -29,6 +29,7 @@ const EXPECTED = [
   "D2eCard",
   "D2eDialog",
   "D2eExplorationCard",
+  "D2eExplorationCardStatus",
   "D2eIconButton",
   "D2eMenu",
   "D2eStatusChip",

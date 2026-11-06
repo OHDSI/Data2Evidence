@@ -31,8 +31,11 @@ defineProps<{ title: string; description: string; logoUrl?: string }>()
   background: var(--ds-hero-bg, #fafafd);
 }
 .ds-banner__logo {
-  height: 160px;
   width: auto;
+  height: auto;
+  max-width: 320px;
+  max-height: 160px;
+  object-fit: contain;
   flex: none;
 }
 .ds-banner__text {
@@ -60,13 +63,13 @@ defineProps<{ title: string; description: string; logoUrl?: string }>()
 }
 @media (max-width: 1100px) {
   .ds-banner { padding: 32px 40px; gap: 28px; }
-  .ds-banner__logo { height: 112px; }
+  .ds-banner__logo { max-width: 224px; max-height: 112px; }
   .ds-banner__title { font-size: 32px; }
   .ds-banner__desc { font-size: 16px; }
 }
 @media (max-width: 640px) {
   .ds-banner { flex-direction: column; align-items: flex-start; padding: 24px; gap: 20px; }
-  .ds-banner__logo { height: 80px; }
+  .ds-banner__logo { max-width: 160px; max-height: 80px; }
   .ds-banner__title { font-size: 26px; }
 }
 </style>

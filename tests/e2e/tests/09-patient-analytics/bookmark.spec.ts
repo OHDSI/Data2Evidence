@@ -406,9 +406,9 @@ test(TEST_NAME, async ({ page }) => {
     await expect(page.getByRole('heading', { name: 'Users' })).toBeVisible()
     await expect(page.getByRole('cell', { name: NAME.testUserB })).toBeVisible()
     //Grant permissions to testuserB
-    await page.getByRole('link', { name: 'Datasets' }).click()
-    await page.locator('tr', { hasText: 'Demo dataset' }).first().getByText('Select action').click()
-    await page.getByRole('option', { name: 'Permissions' }).click()
+    await page.getByRole('link', { name: 'Data sources' }).click()
+    await page.locator('tr', { hasText: 'Demo dataset' }).first().getByRole('button', { name: 'Actions' }).click()
+    await page.getByRole('menuitem', { name: 'Update permissions' }).click()
     await page.getByRole('tab', { name: 'Access' }).click()
     await page.getByTestId('dialog').getByTestId('button').click()
     await expect(page.getByRole('menuitem', { name: NAME.testUserB })).toBeVisible({ timeout: 30_000 })

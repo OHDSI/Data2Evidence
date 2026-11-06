@@ -25,7 +25,7 @@
           hide-details
           :ripple="false"
           :aria-label="resolvedCheckboxLabel"
-          @update:model-value="$emit('update:selected', $event)"
+          @update:model-value="$emit('update:selected', Boolean($event))"
         />
       </div>
 

@@ -318,6 +318,30 @@ describe("deepLinks", () => {
       expect(decompress(hashParams.get("wizards")!)).toEqual(directPayload.wizardConfig);
     });
 
+    it("carries a closed age range as one AND group in the payload and the deep link", () => {
+      const formData = { age: "[40-100]" };
+      const directPayload = buildWizardSubmitPayload(defaultFields, formData, defaultMeta, "dataset-123");
+      const deepLink = generateFormSubmitDeepLink(defaultFields, formData, defaultMeta, "dataset-123");
+      const linkedBookmark = decompress<any>(new URL(deepLink, "https://example.com").searchParams.get("query")!);
+
+      for (const bookmark of [directPayload.bookmark as any, linkedBookmark]) {
+        expect(bookmark.filter.cards.content[0].content[0].attributes.content[0].constraints).toEqual({
+          type: "BooleanContainer",
+          op: "OR",
+          content: [
+            {
+              type: "BooleanContainer",
+              op: "AND",
+              content: [
+                { type: "Expression", operator: ">=", value: 40 },
+                { type: "Expression", operator: "<=", value: 100 },
+              ],
+            },
+          ],
+        });
+      }
+    });
+
     it("should generate URL with correct format", () => {
       const formData = { age: 65 };
       const datasetId = "dataset-123";
