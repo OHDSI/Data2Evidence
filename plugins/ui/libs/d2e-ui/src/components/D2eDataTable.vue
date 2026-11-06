@@ -298,10 +298,6 @@ const rowProps = computed(() => {
       text-align: start;
     }
 
-    .d2e-data-table__sort-label {
-      min-width: 0;
-    }
-
     .d2e-data-table__sort > :not(.d2e-data-table__sort-label) {
       flex-shrink: 0;
     }
