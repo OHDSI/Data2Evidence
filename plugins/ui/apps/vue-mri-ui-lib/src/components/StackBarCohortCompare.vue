@@ -196,7 +196,7 @@ export default {
             category.name = `${filterCardName} - ${attributeName}`
           }
         } else {
-          category.name = this.getText('MRI_PA_VIEW_COHORT_TITLE')
+          category.name = this.getText('MRI_PA_EXPLORATIONS_TITLE')
           category.id = 'cohortName' // Use saved name for bar label
         }
       })
