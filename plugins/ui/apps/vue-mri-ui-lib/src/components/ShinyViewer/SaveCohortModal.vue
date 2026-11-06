@@ -595,7 +595,6 @@ export default {
   display: flex;
   flex-direction: column;
   gap: 14px;
-  min-height: 156px;
 }
 
 .cohort-label {
