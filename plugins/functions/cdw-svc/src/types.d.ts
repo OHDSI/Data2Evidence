@@ -314,7 +314,12 @@ declare global {
     order: number;
     parentInteraction?: string[];
     parentInteractionLabel?: string;
-    parentInteractionsMapping?: [];
+    parentInteractionsMapping?: {
+      parentMappingInteractionLabel: string;
+      parentInteraction: string;
+      parentMappingInteraction: string;
+      currentMappingInteractionId?: string;
+    }[];
     from?: Partial<PholderTableMapType>;
     attributes: SMap<CDMConfigAttributeType>;
   }
