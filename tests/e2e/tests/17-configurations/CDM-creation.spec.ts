@@ -379,7 +379,7 @@ test(TEST_NAME, async ({ page }, testInfo) => {
     await page.getByRole('link', { name: 'Setup' }).click()
     await page
       .locator('div')
-      .filter({ hasText: /^Cohort builder configConfigure cohort builderConfigure$/ })
+      .filter({ hasText: /^Data exploration configurationConfigure data explorationConfigure$/ })
       .getByTestId('button')
       .click()
 
@@ -464,7 +464,7 @@ test(TEST_NAME, async ({ page }, testInfo) => {
     await page.getByRole('link', { name: 'Data sources' }).click()
     await page.getByRole('row').filter({ hasText: 'Demo dataset' }).getByRole('button', { name: 'Actions' }).click()
     await page.getByRole('menuitem', { name: 'Edit data source' }).click()
-    await page.getByRole('combobox', { name: 'Data exploration config' }).click()
+    await page.getByRole('combobox', { name: 'Data exploration configuration' }).click()
     await page.getByRole('option', { name: 'CDM-Test101-PA' }).click()
     await page.getByRole('button', { name: 'Save' }).click()
   })
@@ -504,7 +504,7 @@ test(TEST_NAME, async ({ page }, testInfo) => {
     await page.getByRole('link', { name: 'Setup' }).click()
     await page
       .locator('div')
-      .filter({ hasText: /^Cohort builder configConfigure cohort builderConfigure$/ })
+      .filter({ hasText: /^Data exploration configurationConfigure data explorationConfigure$/ })
       .getByTestId('button')
       .click()
     await page.reload()
@@ -580,7 +580,7 @@ test(TEST_NAME, async ({ page }, testInfo) => {
     await page.getByRole('link', { name: 'Setup' }).click()
     await page
       .locator('div')
-      .filter({ hasText: /^Cohort builder configConfigure cohort builderConfigure$/ })
+      .filter({ hasText: /^Data exploration configurationConfigure data explorationConfigure$/ })
       .getByTestId('button')
       .click()
     await page.reload()

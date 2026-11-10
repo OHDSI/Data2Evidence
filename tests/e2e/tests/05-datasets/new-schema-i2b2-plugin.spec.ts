@@ -35,7 +35,7 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByRole('textbox', { name: 'Result Schema Name' }).fill(`result_schema_${randomString}`)
   await page.getByRole('combobox', { name: 'Data model option', exact: true }).click()
   await page.getByRole('option', { name: 'v1.8.1 [i2b2_plugin]' }).click()
-  await page.getByRole('combobox', { name: 'Data exploration config' }).click()
+  await page.getByRole('combobox', { name: 'Data exploration configuration' }).click()
   await page.getByRole('option', { name: 'OMOP', exact: true }).click()
   await page.getByRole('textbox', { name: 'Token data source code' }).click()
   await page.getByRole('textbox', { name: 'Token data source code' }).fill(randomString)

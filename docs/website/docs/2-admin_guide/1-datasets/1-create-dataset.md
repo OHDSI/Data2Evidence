@@ -13,7 +13,7 @@ Schema Name field | e.g. cdmdefault | name of the cdm schema that was used for s
 Vocab schema name | e.g. cdmvocab
 Result Schema Name | e.g. cdmdefaultresults | For creating cohort and cohort definition tables. Must be different from Schema Name
 Data Model Option | omop5-4 [datamodel-plugin]
-Data exploration config | OMOP
+Data exploration configuration | OMOP
 Token dataset code | e.g. DemoDataset
 Cache Dataset Name | e.g. Demo Cache
 Cache dataset type | OMOP
