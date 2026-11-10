@@ -9,11 +9,15 @@
       :token="authContext?.token ?? null"
     />
 
-    <!-- Catalog / overview: mounted as a full page (no sourceKey). Clicking a
-         card opens Atlas3's native Data Sources report view for that source,
-         straight to this same plugin's Description mount in the sidebar. -->
+    <DatasourceSourcePage
+      v-else-if="pluginSourceKey && tokenReady"
+      :source-key="pluginSourceKey"
+      :token="catalogToken"
+      :has-permission="authContext?.hasPermission"
+    />
+
     <DatasourceCatalog
-      v-else
+      v-else-if="!pluginSourceKey"
       :token="catalogToken"
       :on-select="openSource"
     />
@@ -21,14 +25,17 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onBeforeUnmount } from 'vue'
 import DatasourceDescription from './views/DatasourceDescription.vue'
 import DatasourceCatalog from './views/DatasourceCatalog.vue'
+import DatasourceSourcePage from './views/DatasourceSourcePage.vue'
+import { DESCRIPTION_REPORT, parseAtlasReportType, parsePluginSourceKey, pluginSourceHash } from './utils/routes'
 
 interface AuthContext {
   isAuthenticated: boolean
   token?: string | null
   user?: { id: number; username: string; permissions: string[] }
+  hasPermission?: (permission: string) => boolean
 }
 interface HostContext {
   surface: string
@@ -46,12 +53,31 @@ const props = defineProps<{
 }>()
 
 const catalogToken = ref<string | null>(props.authContext?.token ?? null)
+const tokenReady = ref(!props.getToken)
+const pluginSourceKey = ref<string | null>(parsePluginSourceKey(window.location.hash))
+
+function syncRoute(): void {
+  const key = parsePluginSourceKey(window.location.hash)
+  if (key === pluginSourceKey.value) return
+  pluginSourceKey.value = key
+  window.scrollTo(0, 0)
+}
+
 onMounted(async () => {
+  if (props.hostContext?.sourceKey && parseAtlasReportType(window.location.hash) === DESCRIPTION_REPORT) {
+    window.location.replace(pluginSourceHash(props.hostContext.sourceKey))
+  }
+  window.addEventListener('hashchange', syncRoute)
+  window.addEventListener('popstate', syncRoute)
   if (props.getToken) catalogToken.value = (await props.getToken()) || null
+  tokenReady.value = true
+})
+onBeforeUnmount(() => {
+  window.removeEventListener('hashchange', syncRoute)
+  window.removeEventListener('popstate', syncRoute)
 })
 
-// Atlas3 route: /datasources/:sourceKey?/:reportType?
 function openSource(sourceKey: string): void {
-  window.location.hash = `#/datasources/${encodeURIComponent(sourceKey)}/plugin:datasources:datasource`
+  window.location.hash = pluginSourceHash(sourceKey)
 }
 </script>

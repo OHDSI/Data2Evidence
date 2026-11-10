@@ -86,6 +86,21 @@ export function filterCards(list: DatasourceCardVM[], query: string): Datasource
   return list.filter(x => x.name.toLowerCase().includes(q) || x.description.toLowerCase().includes(q))
 }
 
+export async function fetchResearcherSources(token: string, idpUserId: string): Promise<DatasourceCardVM[]> {
+  const [datasets, groupList, pending, publicIds] = await Promise.all([
+    getDatasetList(token),
+    getUserGroupList(idpUserId, token),
+    getMyStudyAccessRequests(token),
+    getPublicDatasetIds().catch(() => [] as string[]),
+  ])
+  const rSet = new Set(groupList.alp_role_study_researcher)
+  const pSet = new Set(pending.filter(r => r.role === STUDY_RESEARCHER_ROLE).map(r => r.studyId))
+  // visibilityStatus isn't on the researcher list, so a dataset is public
+  // iff it also appears in the public list (by id).
+  const publicSet = new Set(publicIds)
+  return datasets.map(d => toCardVM(d, resolveAccess(d, rSet, pSet, true), publicSet.has(d.id)))
+}
+
 export function useDatasourceCatalog(getToken: () => string | null) {
   const sources: Ref<DatasourceCardVM[]> = ref([])
   const banner = ref<BannerConfig>({ ...DEFAULT_BANNER })
@@ -123,19 +138,8 @@ export function useDatasourceCatalog(getToken: () => string | null) {
     sortMode.value = idpUserId ? 'access' : 'name-asc'
     try {
       await loadBanner()
-      if (idpUserId) {
-        const [datasets, groupList, pending, publicIds] = await Promise.all([
-          getDatasetList(token),
-          getUserGroupList(idpUserId, token),
-          getMyStudyAccessRequests(token),
-          getPublicDatasetIds().catch(() => [] as string[]),
-        ])
-        const rSet = new Set(groupList.alp_role_study_researcher)
-        const pSet = new Set(pending.filter(r => r.role === STUDY_RESEARCHER_ROLE).map(r => r.studyId))
-        // visibilityStatus isn't on the researcher list, so a dataset is public
-        // iff it also appears in the public list (by id).
-        const publicSet = new Set(publicIds)
-        sources.value = datasets.map(d => toCardVM(d, resolveAccess(d, rSet, pSet, true), publicSet.has(d.id)))
+      if (idpUserId && token) {
+        sources.value = await fetchResearcherSources(token, idpUserId)
       } else {
         const datasets = await getPublicDatasetList()
         // Everything from the public list is public by definition.
