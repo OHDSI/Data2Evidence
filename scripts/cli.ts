@@ -351,6 +351,9 @@ class D2ECli {
       // trexsql entrypoint refuses to start without it (must be valid base64 of
       // >=32 bytes, i.e. >=40 chars); 32 random bytes -> 44-char base64.
       TREX_ROOT_KEY: crypto.randomBytes(32).toString("base64"),
+      // Encrypts stored AI provider API keys (AES-256-GCM), so it must be base64
+      // of exactly 32 random bytes.
+      AI_CONFIG_ENCRYPTION_KEY: crypto.randomBytes(32).toString("base64"),
       JASYPT_ENCRYPTOR_ENABLED: `true`,
       JASYPT_ENCRYPTOR_PASSWORD: `${this.generate_random_password(
         this.DEFAULT_PASSWORD_LENGTH,

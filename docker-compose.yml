@@ -495,6 +495,7 @@ services:
       STORAGE_FILE_BACKEND_PATH: ${STORAGE_FILE_BACKEND_PATH:-/usr/src/data/storage}
       TREX_STORAGE_URL: ${TREX_STORAGE_URL_INTERNAL:-http://localhost:33001/plugins/trex/storage-api}
       TREX_STORAGE_SERVICE_KEY: ${TREX_STORAGE_SERVICE_KEY:-}
+      AI_CONFIG_ENCRYPTION_KEY: ${AI_CONFIG_ENCRYPTION_KEY:-}
       DB_CREDENTIALS__PUBLIC_KEYS: |-
         {
          "DataPlatform": "",
