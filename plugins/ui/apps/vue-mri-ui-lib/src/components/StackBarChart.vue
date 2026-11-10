@@ -148,7 +148,7 @@ export default {
           ({ cancelToken }) =>
             this.fireQuery({
               url: '/analytics-svc/api/services/population/json/barchart',
-              params: { mriquery: JSON.stringify(this.getBookmarksData), datasetId: this.getBookmarksData.datasetId },
+              params: { mriquery: JSON.stringify(this.getBookmarksData), datasetId: this.getSelectedDataset.id },
               cancelToken,
             }),
           response => {
@@ -265,6 +265,7 @@ export default {
       'isFireRequestHeld',
       'getHasAssignedConfig',
       'getBookmarksData',
+      'getSelectedDataset',
       'getChartableFilterCardByInstanceId',
       'sortProperty',
       'processResponse',

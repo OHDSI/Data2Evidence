@@ -30,7 +30,7 @@ export interface ChartQueryInput {
   bookmarksData: unknown
   /** `getPLRequest({ useLimit: true })`, only needed for the patient list. */
   patientListRequest?: unknown
-  /** `getSelectedDataset?.id`, only needed for the patient list. */
+  /** `getSelectedDataset?.id`, sent as the top-level `datasetId` of every query. */
   datasetId?: string
 }
 
@@ -50,41 +50,35 @@ export function chartQueryFor(
 ): ChartQuery | null {
   const bookmark = input.bookmarksData as Record<string, unknown> | null | undefined
   if (!bookmark || Object.keys(bookmark).length === 0) return null
+  if (!input.datasetId) return null
 
   const mriquery = JSON.stringify(bookmark)
+  const datasetId = input.datasetId
 
   switch (chartType) {
     case 'list': {
       // The patient list sends its own request shape, not the bookmark, and
       // `fireQuery` builds the SQL client-side by joining the rows' own `sql`.
-      if (!input.patientListRequest || !input.datasetId) return null
+      if (!input.patientListRequest) return null
       return {
         url: '/analytics-svc/api/services/patient',
         params: {
           mriquery: JSON.stringify(input.patientListRequest),
-          datasetId: input.datasetId,
+          datasetId,
         },
       }
     }
     case 'boxplot':
-      return { url: `${POPULATION}/boxplot`, params: { mriquery } }
+      return { url: `${POPULATION}/boxplot`, params: { mriquery, datasetId } }
     case 'km':
-      return { url: `${POPULATION}/kaplanmeier`, params: { mriquery } }
+      return { url: `${POPULATION}/kaplanmeier`, params: { mriquery, datasetId } }
     // A bookmark saved before the chart type was recorded restores as the
     // stacked bar chart, which is also the app's default view.
     case 'stacked':
     case undefined:
     case null:
     case '':
-      return {
-        url: `${POPULATION}/barchart`,
-        params: {
-          mriquery,
-          // Only the bar chart passes a datasetId, and it takes it off the
-          // bookmark rather than the selected dataset.
-          ...(typeof bookmark.datasetId === 'string' ? { datasetId: bookmark.datasetId } : {}),
-        },
-      }
+      return { url: `${POPULATION}/barchart`, params: { mriquery, datasetId } }
     default:
       return null
   }
