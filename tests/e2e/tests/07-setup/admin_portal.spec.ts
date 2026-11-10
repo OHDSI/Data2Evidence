@@ -1,4 +1,4 @@
-import { test, expect } from '../fixtures'
+import { test, expect, openAdminPortalFromAtlas } from '../fixtures'
 
 test('Switch to admin portal', async ({ page }) => {
   await page.goto('/d2e/portal')
@@ -6,8 +6,7 @@ test('Switch to admin portal', async ({ page }) => {
   await page.locator('input[name="password"]').fill('Updatepassword12345')
   await page.getByRole('button', { name: 'Sign in' }).click()
 
-  await page.getByTestId('button').nth(1).click()
-  await page.getByRole('button', { name: 'Switch to Admin portal' }).click()
+  await openAdminPortalFromAtlas(page)
 
   await expect(page.getByRole('heading')).toContainText('Users')
   await expect(page.getByTestId('button')).toContainText('Add user')
