@@ -33,6 +33,9 @@ export class ConceptMappingSuggestion extends Audit {
   @Column({ name: "vocabulary_id", nullable: true })
   vocabularyId: string;
 
+  @Column({ name: "score", type: "double precision", nullable: true })
+  score: number | null;
+
   @Column({ name: "suggested_by" })
   suggestedBy: string;
 

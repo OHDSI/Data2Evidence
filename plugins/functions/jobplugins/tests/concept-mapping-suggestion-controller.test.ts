@@ -74,6 +74,67 @@ Deno.test("POST / passes the caller's username through to addSuggestion", async 
   }
 });
 
+Deno.test("POST / passes concept.score through to addSuggestion", async () => {
+  const addSuggestion = stub(
+    ConceptMappingSuggestionService.prototype,
+    "addSuggestion",
+    // deno-lint-ignore no-explicit-any
+    () => Promise.resolve({ id: SUGGESTION_ID } as any),
+  );
+  try {
+    const chain = findHandlerChain(new ConceptMappingSuggestionController().router, "post", "/");
+    const { res } = createMockResponse();
+
+    await run(
+      chain,
+      requestWith({
+        body: {
+          dataflowId: "df-1",
+          nodeId: "node-1",
+          sourceRowId: "row-1",
+          concept: { conceptId: 42, score: 0.5 },
+        },
+      }),
+      res,
+    );
+
+    assertEquals(addSuggestion.calls[0].args[3].score, 0.5);
+  } finally {
+    addSuggestion.restore();
+  }
+});
+
+Deno.test("POST / rejects a non-numeric concept.score with 400", async () => {
+  const addSuggestion = stub(
+    ConceptMappingSuggestionService.prototype,
+    "addSuggestion",
+    // deno-lint-ignore no-explicit-any
+    () => Promise.resolve({ id: SUGGESTION_ID } as any),
+  );
+  try {
+    const chain = findHandlerChain(new ConceptMappingSuggestionController().router, "post", "/");
+    const { res, captured } = createMockResponse();
+
+    await run(
+      chain,
+      requestWith({
+        body: {
+          dataflowId: "df-1",
+          nodeId: "node-1",
+          sourceRowId: "row-1",
+          concept: { conceptId: 42, score: "high" },
+        },
+      }),
+      res,
+    );
+
+    assertEquals(captured.statusCode, 400);
+    assertEquals(addSuggestion.calls.length, 0);
+  } finally {
+    addSuggestion.restore();
+  }
+});
+
 Deno.test("POST /:id/approve passes the caller's username through to approve", async () => {
   const approve = stub(
     ConceptMappingSuggestionService.prototype,

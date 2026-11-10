@@ -12,7 +12,7 @@ import { GetConceptFilterOptions } from "./responseTypes.ts";
 export const getConcepts = async (
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   console.info("Get list of concepts");
   try {
@@ -32,7 +32,7 @@ export const getConcepts = async (
 
     const cachedbService = await CachedbService.createCacheDBService(
       req,
-      datasetId
+      datasetId,
     );
 
     const concepts = await cachedbService.getConcepts(
@@ -53,7 +53,7 @@ export const getConcepts = async (
 export const getConceptIds = async (
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   try {
     const {
@@ -62,7 +62,7 @@ export const getConceptIds = async (
 
     const cachedbService = await CachedbService.createCacheDBService(
       req,
-      datasetId
+      datasetId,
     );
 
     const ids = await cachedbService.getConceptIds(searchText, filter);
@@ -76,7 +76,7 @@ export const getConceptIds = async (
 export const getConceptsCount = async (
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   console.info("Get count of concepts based on search text and filter");
   try {
@@ -86,12 +86,12 @@ export const getConceptsCount = async (
 
     const cachedbService = await CachedbService.createCacheDBService(
       req,
-      datasetId
+      datasetId,
     );
 
     const conceptsCount = await cachedbService.getConceptsCount(
       searchText,
-      filter
+      filter,
     );
     res.send(conceptsCount);
   } catch (e) {
@@ -103,7 +103,7 @@ export const getConceptsCount = async (
 export const searchConceptByName = async (
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   console.info("Get concept by name");
   try {
@@ -113,11 +113,11 @@ export const searchConceptByName = async (
 
     const cachedbService = await CachedbService.createCacheDBService(
       req,
-      datasetId
+      datasetId,
     );
     const concepts = await cachedbService.getExactConcept(
       conceptName,
-      "concept_name"
+      "concept_name",
     );
     res.send(concepts);
   } catch (e) {
@@ -129,7 +129,7 @@ export const searchConceptByName = async (
 export const searchConceptById = async (
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   console.info("Get concept by id");
   try {
@@ -139,11 +139,11 @@ export const searchConceptById = async (
 
     const cachedbService = await CachedbService.createCacheDBService(
       req,
-      datasetId
+      datasetId,
     );
     const concepts = await cachedbService.getExactConcept(
       conceptId,
-      "concept_id"
+      "concept_id",
     );
     res.send(concepts);
   } catch (e) {
@@ -155,7 +155,7 @@ export const searchConceptById = async (
 export const searchConceptByCode = async (
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   console.info("Get concept by code");
   try {
@@ -165,11 +165,11 @@ export const searchConceptByCode = async (
 
     const cachedbService = await CachedbService.createCacheDBService(
       req,
-      datasetId
+      datasetId,
     );
     const concepts = await cachedbService.getExactConcept(
       conceptCode,
-      "concept_code"
+      "concept_code",
     );
     res.send(concepts);
   } catch (e) {
@@ -181,7 +181,7 @@ export const searchConceptByCode = async (
 export const getRecommendedConcepts = async (
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   console.info("Get concept by code");
   try {
@@ -191,7 +191,7 @@ export const getRecommendedConcepts = async (
 
     const cachedbService = await CachedbService.createCacheDBService(
       req,
-      datasetId
+      datasetId,
     );
     const concepts = await cachedbService.getRecommendedConcepts(conceptIds);
     res.send(concepts);
@@ -204,7 +204,7 @@ export const getRecommendedConcepts = async (
 export const getConceptFilterOptions = async (
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   console.info("Get concept filter options");
   try {
@@ -214,11 +214,11 @@ export const getConceptFilterOptions = async (
 
     const cachedbService = await CachedbService.createCacheDBService(
       req,
-      datasetId
+      datasetId,
     );
     const filterOptions = await cachedbService.getConceptFilterOptionsFaceted(
       searchText,
-      filter
+      filter,
     );
     const response: GetConceptFilterOptions = { filterOptions };
     res.send(response);
@@ -230,7 +230,7 @@ export const getConceptFilterOptions = async (
 export const getTerminologyDetailsWithRelationships = async (
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   console.info("Get list of concept details and connections");
   try {
@@ -239,11 +239,10 @@ export const getTerminologyDetailsWithRelationships = async (
     } = schemas.getTerminologyDetailsWithRelationships.parse(req);
     const cachedbService = await CachedbService.createCacheDBService(
       req,
-      datasetId
+      datasetId,
     );
-    const details = await cachedbService.getTerminologyDetailsWithRelationships(
-      conceptId
-    );
+    const details =
+      await cachedbService.getTerminologyDetailsWithRelationships(conceptId);
     res.send(details);
   } catch (e) {
     next(e);
@@ -253,7 +252,7 @@ export const getTerminologyDetailsWithRelationships = async (
 export const getConceptHierarchy = async (
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   try {
     const {
@@ -261,7 +260,7 @@ export const getConceptHierarchy = async (
     } = schemas.getConceptHierarchy.parse(req);
     const cachedbService = await CachedbService.createCacheDBService(
       req,
-      datasetId
+      datasetId,
     );
 
     const promises = [
@@ -305,7 +304,7 @@ export const getConceptHierarchy = async (
 export const getStandardConcepts = async (
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   try {
     const {
@@ -327,18 +326,18 @@ export const getStandardConcepts = async (
         try {
           const cachedbService = await CachedbService.createCacheDBService(
             req,
-            datasetId
+            datasetId,
           );
           if (domainId) {
             const domainIdFacets = (
               await cachedbService.getConceptFilterOptionsFaceted(
                 dataItem.searchText,
-                filters
+                filters,
               )
             ).domainId;
 
             const keyExists = Object.keys(domainIdFacets).some(
-              (objKey) => objKey.toUpperCase() === domainId.toUpperCase()
+              (objKey) => objKey.toUpperCase() === domainId.toUpperCase(),
             );
 
             if (keyExists) {
@@ -350,7 +349,7 @@ export const getStandardConcepts = async (
             0,
             1,
             searchText,
-            filters
+            filters,
           );
 
           if (!concepts?.expansion.contains?.length) {
@@ -366,12 +365,13 @@ export const getStandardConcepts = async (
             conceptCode: conceptResults.code,
             domainId: conceptResults.domainId,
             vocabularyId: conceptResults.system,
+            score: conceptResults.score,
           };
         } catch (error) {
           console.error(error);
           throw error;
         }
-      })
+      }),
     );
 
     res.send(results);
@@ -383,11 +383,16 @@ export const getStandardConcepts = async (
 export const checkConceptCoverage = async (
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   try {
-    const { body: { datasetId, conceptIds } } = schemas.checkConceptCoverage.parse(req);
-    const cachedbService = await CachedbService.createCacheDBService(req, datasetId);
+    const {
+      body: { datasetId, conceptIds },
+    } = schemas.checkConceptCoverage.parse(req);
+    const cachedbService = await CachedbService.createCacheDBService(
+      req,
+      datasetId,
+    );
     const foundConcepts = await cachedbService.getConceptsByIds(conceptIds);
     const foundIds = new Set(foundConcepts.map((c) => c.conceptId));
     res.send({

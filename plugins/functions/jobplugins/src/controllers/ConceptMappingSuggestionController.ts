@@ -75,7 +75,7 @@ export class ConceptMappingSuggestionController {
           message: "dataflowId, nodeId, sourceRowId and concept are required",
         });
       }
-      const { conceptId, conceptName, conceptCode, domainId, vocabularyId } =
+      const { conceptId, conceptName, conceptCode, domainId, vocabularyId, score } =
         concept as ConceptInput;
       // conceptName/conceptCode/domainId/vocabularyId are nullable on the
       // entity (a client-only concept - e.g. one typed in before a
@@ -87,12 +87,18 @@ export class ConceptMappingSuggestionController {
         });
       }
 
+      if (score != null && (typeof score !== "number" || !Number.isFinite(score))) {
+        return res.status(400).send({
+          message: "concept.score must be a finite number when provided",
+        });
+      }
+
       const sub = this.getSub(req);
       const result = await this.service.addSuggestion(
         dataflowId,
         nodeId,
         sourceRowId,
-        { conceptId, conceptName, conceptCode, domainId, vocabularyId },
+        { conceptId, conceptName, conceptCode, domainId, vocabularyId, score: score ?? undefined },
         sub,
         req.username,
       );
