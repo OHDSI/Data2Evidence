@@ -7,7 +7,6 @@ import {
     CohortDefinitionType,
     IMRIRequest,
     PluginEndpointFormatType,
-    PluginEndpointRequestType,
     PluginEndpointResultType,
     PluginEndpointStreamResultType,
     RecontactPatientListRequestType,
@@ -30,6 +29,7 @@ import * as parquet from "parquetjs";
 import { pipeline, Readable, Transform } from "stream";
 import { Buffer } from "node:buffer";
 import PortalServerAPI from "../PortalServerAPI";
+import { getRequestDatasetId } from "../../utils/requestDataset";
 import PsConfigServerAPI from "../PsConfigServerAPI";
 import { PluginEndpoint } from "../../mri/endpoint/PluginEndpoint";
 
@@ -123,9 +123,7 @@ async function streamDataset(req: IMRIRequest, callback: CallBackInterface) {
     let releaseDate: string = req.query.releaseDate;
     const { analyticsConnection } = req.dbConnections;
 
-    let { datasetId }: PluginEndpointRequestType = {
-        ...convertZlibBase64ToJson(req.query.mriquery),
-    };
+    const datasetId = getRequestDatasetId(req);
 
     analyticsConnection.setTemporalSystemTimeToDbSession(
         releaseDate,
@@ -546,7 +544,7 @@ export async function getRecontactPatientList(req: IMRIRequest, res) {
     };
     let cohortName = body.name;
     try {
-        const study = await new PortalServerAPI().getStudy(body.datasetId);
+        const study = await new PortalServerAPI().getStudy(getRequestDatasetId(req));
         const { attributes } = study;
         let queryParams = formatQueryParams(
             body.cohortDefinition.cards.content
