@@ -1,11 +1,40 @@
-import { test, expect } from '../fixtures'
+import { test, expect, openAdminPortalFromAtlas } from '../fixtures'
+import type { Page } from '@playwright/test'
 import { MINUTE_2, MINUTE_10 } from '../const'
 
 const TEST_NAME = 'dataset-new-schema-omop-cdm-plugin-53'
 const SHOULD_SKIP = false
 test.fixme(SHOULD_SKIP, `${TEST_NAME} test is temporarily disabled.`)
+const DATASET_NAME = 'Test Study'
 
 const randomString = 'omop53' + Math.random().toString(36).substring(2, 10)
+
+async function deleteDatasetIfPresent(page: Page) {
+  await page.goto('/d2e/portal')
+  const identifier = page.locator('input[name="identifier"]')
+  if (await identifier.isVisible().catch(() => false)) {
+    await identifier.fill('admin')
+    await page.locator('input[name="password"]').fill('Updatepassword12345')
+    await page.getByRole('button', { name: 'Sign in' }).click()
+  }
+  await openAdminPortalFromAtlas(page)
+  await page.getByRole('link', { name: 'Data sources' }).click()
+
+  const datasetRow = page.getByRole('row').filter({
+    has: page.getByRole('cell', { name: DATASET_NAME, exact: true })
+  })
+  if (await datasetRow.count() === 0) return
+
+  await datasetRow.first().getByRole('button', { name: 'Actions' }).click()
+  await page.getByRole('menuitem', { name: 'Delete data source' }).click()
+  await page.getByRole('textbox', { name: 'Enter dataset name to confirm' }).fill(DATASET_NAME)
+  await page.getByRole('button', { name: 'Yes, delete' }).click()
+  await expect(page.getByRole('textbox', { name: 'Enter dataset name to confirm' })).toBeHidden({ timeout: MINUTE_2 })
+}
+
+test.afterEach(async ({ page }) => {
+  await deleteDatasetIfPresent(page)
+})
 
 test(TEST_NAME, async ({ page }) => {
   test.setTimeout(MINUTE_10)
@@ -15,12 +44,11 @@ test(TEST_NAME, async ({ page }) => {
   await page.locator('input[name="password"]').click()
   await page.locator('input[name="password"]').fill('Updatepassword12345')
   await page.getByRole('button', { name: 'Sign in' }).click()
-  await page.getByTestId('button').nth(1).click()
-  await page.getByRole('button', { name: 'Switch to Admin portal' }).click()
+  await openAdminPortalFromAtlas(page)
   await page.getByRole('link', { name: 'Data sources' }).click()
   await page.getByRole('button', { name: 'Add data source' }).click()
   await page.getByRole('textbox', { name: 'Data source name - Displayed on' }).click()
-  await page.getByRole('textbox', { name: 'Data source name - Displayed on' }).fill('Test Study')
+  await page.getByRole('textbox', { name: 'Data source name - Displayed on' }).fill(DATASET_NAME)
   await page.getByRole('textbox', { name: 'Data source summary' }).click()
   await page.getByRole('textbox', { name: 'Data source summary' }).fill('Test Summary')
   // Use the test ID selector
@@ -41,7 +69,7 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByRole('button', { name: 'Add', exact: true }).click()
   // Close the "Dataset Created" notification dialog
   await page.getByRole('button', { name: 'Close', exact: true }).click({ timeout: MINUTE_2 })
-  await expect(page.locator('tr', { hasText: 'Test Study' }).first()).toBeVisible({ timeout: MINUTE_2 })
+  await expect(page.locator('tr', { hasText: DATASET_NAME }).first()).toBeVisible({ timeout: MINUTE_2 })
   // Wait for job container to stabilize before navigating to Jobs page
   await page.waitForTimeout(20000)
   await page.getByRole('link', { name: 'Jobs' }).click()
@@ -55,11 +83,11 @@ test(TEST_NAME, async ({ page }) => {
   await expect(stateBadge).toHaveText(/Completed/, { timeout: MINUTE_10 })
   await page.getByRole('link', { name: 'Data sources' }).click()
   await expect(page.locator('.d2e-table tbody tr').first()).toBeVisible()
-  const testStudyDataset = page.locator('tr', { hasText: 'Test Study' }).first()
+  const testStudyDataset = page.locator('tr', { hasText: DATASET_NAME }).first()
   await expect(testStudyDataset).toBeVisible({ timeout: MINUTE_2 })
   await testStudyDataset.getByRole('button', { name: 'Actions' }).click()
   await page.getByRole('menuitem', { name: 'Delete data source' }).click()
   // Enter dataset name to confirm deletion
-  await page.getByRole('textbox', { name: 'Enter dataset name to confirm' }).fill('Test Study')
+  await page.getByRole('textbox', { name: 'Enter dataset name to confirm' }).fill(DATASET_NAME)
   await page.getByRole('button', { name: 'Yes, delete' }).click()
 })

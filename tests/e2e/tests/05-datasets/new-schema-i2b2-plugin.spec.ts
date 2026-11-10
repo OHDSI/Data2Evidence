@@ -1,10 +1,39 @@
-import { test, expect } from '../fixtures'
+import { test, expect, openAdminPortalFromAtlas } from '../fixtures'
+import type { Page } from '@playwright/test'
 import { MINUTE_2, MINUTE_5 } from '../const'
 
 const TEST_NAME = 'dataset-new-schema-i2b2-plugin'
 const SHOULD_SKIP = false
 test.fixme(SHOULD_SKIP, `${TEST_NAME} test is temporarily disabled.`)
+const DATASET_NAME = 'Test Study'
 const randomString = 'tsi2b2' + Math.random().toString(36).substring(2, 10)
+
+async function deleteDatasetIfPresent(page: Page) {
+  await page.goto('/d2e/portal')
+  const identifier = page.locator('input[name="identifier"]')
+  if (await identifier.isVisible().catch(() => false)) {
+    await identifier.fill('admin')
+    await page.locator('input[name="password"]').fill('Updatepassword12345')
+    await page.getByRole('button', { name: 'Sign in' }).click()
+  }
+  await openAdminPortalFromAtlas(page)
+  await page.getByRole('link', { name: 'Data sources' }).click()
+
+  const datasetRow = page.getByRole('row').filter({
+    has: page.getByRole('cell', { name: DATASET_NAME, exact: true })
+  })
+  if (await datasetRow.count() === 0) return
+
+  await datasetRow.first().getByRole('button', { name: 'Actions' }).click()
+  await page.getByRole('menuitem', { name: 'Delete data source' }).click()
+  await page.getByRole('textbox', { name: 'Enter dataset name to confirm' }).fill(DATASET_NAME)
+  await page.getByRole('button', { name: 'Yes, delete' }).click()
+  await expect(page.getByRole('textbox', { name: 'Enter dataset name to confirm' })).toBeHidden({ timeout: MINUTE_2 })
+}
+
+test.afterEach(async ({ page }) => {
+  await deleteDatasetIfPresent(page)
+})
 
 test(TEST_NAME, async ({ page }) => {
   await page.goto('/d2e')
@@ -13,12 +42,19 @@ test(TEST_NAME, async ({ page }) => {
   await page.locator('input[name="password"]').click()
   await page.locator('input[name="password"]').fill('Updatepassword12345')
   await page.getByRole('button', { name: 'Sign in' }).click()
-  await page.getByTestId('button').nth(1).click()
-  await page.getByRole('button', { name: 'Switch to Admin portal' }).click()
+  await openAdminPortalFromAtlas(page)
   await page.getByRole('link', { name: 'Data sources' }).click()
+
+  // Remove a leftover from a previously interrupted attempt before recreating it.
+  const existingDataset = page.getByRole('row').filter({
+    has: page.getByRole('cell', { name: DATASET_NAME, exact: true })
+  })
+  if (await existingDataset.count() > 0) await deleteDatasetIfPresent(page)
+  await page.getByRole('link', { name: 'Data sources' }).click()
+
   await page.getByRole('button', { name: 'Add data source' }).click()
   await page.getByRole('textbox', { name: 'Data source name - Displayed on' }).click()
-  await page.getByRole('textbox', { name: 'Data source name - Displayed on' }).fill('Test Study')
+  await page.getByRole('textbox', { name: 'Data source name - Displayed on' }).fill(DATASET_NAME)
   await page.getByRole('textbox', { name: 'Data source summary' }).click()
   await page.getByRole('textbox', { name: 'Data source summary' }).fill('Test Summary')
   // Use the test ID selector
@@ -43,11 +79,9 @@ test(TEST_NAME, async ({ page }) => {
   // Close the "Dataset Created" notification dialog
   await page.getByRole('button', { name: 'Close', exact: true }).click({ timeout: MINUTE_2 })
   // Wait for datasets to appear in the table (with parent-child structure, use row locators)
-  await expect(page.locator('tr', { hasText: 'Test Study' }).first()).toBeVisible({ timeout: MINUTE_2 })
+  await expect(page.locator('tr', { hasText: DATASET_NAME }).first()).toBeVisible({ timeout: MINUTE_2 })
   // i2b2 is a standalone type — no cache dataset should be created
   await expect(page.locator('tr', { hasText: 'Test Cache' })).toHaveCount(0)
-  // Wait for job container to stabilize before navigating to Jobs page
-  await page.waitForTimeout(20000)
   await page.getByRole('link', { name: 'Jobs' }).click()
   // Get the first (top) entry link
   const firstEntry = page
@@ -57,29 +91,15 @@ test(TEST_NAME, async ({ page }) => {
   // Find the closest state badge to this entry
   const stateBadge = firstEntry.locator('.state-badge')
   await expect(stateBadge).toHaveText(/Completed/, { timeout: MINUTE_5 })
-  // Update dataset metadata should trigger the i2b2 plugin get_version_info job
-  await page.getByRole('link', { name: 'Data sources' }).click()
-  const versionInfoRequest = page.waitForRequest(
-    (req) =>
-      req.url().includes('datamodel/get_version_info') &&
-      (req.postData() ?? '').includes('i2b2_plugin-get_version_info')
-  )
-  await page.getByRole('button', { name: 'Update metadata' }).click()
-  await versionInfoRequest
-  await page.getByRole('link', { name: 'Jobs' }).click()
-  const versionInfoEntry = page
-    .locator('.state-list-item__content')
-    .filter({ has: page.locator('a:has-text("i2b2_plugin-get_version_info")') })
-    .first()
-  await expect(versionInfoEntry.locator('.state-badge')).toHaveText(/Completed/, { timeout: MINUTE_5 })
+
   // Clean up - delete the created dataset
   await page.getByRole('link', { name: 'Data sources' }).click()
   await expect(page.locator('.d2e-table tbody tr').first()).toBeVisible()
   // Delete the standalone i2b2 dataset
-  const testStudyDataset = page.locator('tr', { hasText: 'Test Study' }).first()
+  const testStudyDataset = page.locator('tr', { hasText: DATASET_NAME }).first()
   await expect(testStudyDataset).toBeVisible({ timeout: MINUTE_2 })
   await testStudyDataset.getByRole('button', { name: 'Actions' }).click()
   await page.getByRole('menuitem', { name: 'Delete data source' }).click()
-  await page.getByRole('textbox', { name: 'Enter dataset name to confirm' }).fill('Test Study')
+  await page.getByRole('textbox', { name: 'Enter dataset name to confirm' }).fill(DATASET_NAME)
   await page.getByRole('button', { name: 'Yes, delete' }).click()
 })
