@@ -151,8 +151,14 @@ export async function fetchAttributeValues(
     },
   });
 
-  const items: Array<{ value: string; text: string }> = response.data?.data || [];
-  return items.map((item) => ({ label: item.text || item.value, value: item.value }));
+  const items: Array<{ value: unknown; text?: string | null }> = response.data?.data || [];
+  return items
+    .filter((item) => item.value !== null && item.value !== undefined && String(item.value) !== "")
+    .map((item) => {
+      const value = String(item.value);
+      const text = item.text && item.text !== "NoValue" ? String(item.text) : "";
+      return { label: text || value, value };
+    });
 }
 
 export function getAttributeByPath(config: CdwConfig, path: string): CdwAttributeConfig | undefined {
