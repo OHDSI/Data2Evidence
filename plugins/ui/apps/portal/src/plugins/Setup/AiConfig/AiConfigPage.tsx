@@ -1,10 +1,16 @@
 import React, { FC, useEffect, useState } from "react";
 import AddIcon from "@mui/icons-material/Add";
-import { Button, Loader, Title } from "@portal/components";
+import { ThemeProvider } from "@mui/material";
+import { Loader } from "@portal/components";
+import { Button, PageHeader, buildMuiTheme } from "ui-react";
+import "ui-react/tokens.css";
+import "ui-react/style.css";
 import { api } from "../../../axios/api";
 import { useFeedback, useTranslation } from "../../../contexts";
 import { AiConfig } from "../../../types";
 import "./AiConfigPage.scss";
+
+const d2eTheme = buildMuiTheme();
 
 export const AiConfigPage: FC = () => {
   const { getText, i18nKeys } = useTranslation();
@@ -32,26 +38,30 @@ export const AiConfigPage: FC = () => {
   }, [getText, i18nKeys, setFeedback]);
 
   return (
-    <div className="ai-config">
-      <div className="ai-config__header">
-        <div className="ai-config__heading">
-          <div className="ai-config__eyebrow">{getText(i18nKeys.AI_CONFIG__EYEBROW)}</div>
-          <Title>{getText(i18nKeys.AI_CONFIG__TITLE)}</Title>
-          <p className="ai-config__subtitle">{getText(i18nKeys.AI_CONFIG__SUBTITLE)}</p>
-        </div>
-        {/* shortcut: disabled until the Add dialog exists. */}
-        <Button text={getText(i18nKeys.AI_CONFIG__ADD)} startIcon={<AddIcon />} disabled />
+    <ThemeProvider theme={d2eTheme}>
+      <div className="ai-config">
+        <PageHeader
+          overline={getText(i18nKeys.AI_CONFIG__EYEBROW)}
+          title={getText(i18nKeys.AI_CONFIG__TITLE)}
+          description={getText(i18nKeys.AI_CONFIG__SUBTITLE)}
+          actions={
+            // shortcut: disabled until the Add dialog exists.
+            <Button prependIcon={<AddIcon />} disabled>
+              {getText(i18nKeys.AI_CONFIG__ADD)}
+            </Button>
+          }
+        />
+        {loading ? (
+          <Loader />
+        ) : (
+          // shortcut: names only; the full list with actions and the empty state replaces this.
+          <ul className="ai-config__list">
+            {configs.map((config) => (
+              <li key={config.id}>{config.name}</li>
+            ))}
+          </ul>
+        )}
       </div>
-      {loading ? (
-        <Loader />
-      ) : (
-        // shortcut: names only; the full list with actions and the empty state replaces this.
-        <ul className="ai-config__list">
-          {configs.map((config) => (
-            <li key={config.id}>{config.name}</li>
-          ))}
-        </ul>
-      )}
-    </div>
+    </ThemeProvider>
   );
 };

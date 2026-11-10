@@ -2,32 +2,4 @@
   padding: 2em 2.5em 2.5em;
   max-width: 1000px;
   margin: 0 auto;
-
-  &__header {
-    display: flex;
-    align-items: flex-start;
-    gap: 16px;
-    padding-bottom: 16px;
-  }
-
-  &__heading {
-    flex: 1;
-
-    .alp-title {
-      margin: 0;
-    }
-  }
-
-  &__eyebrow {
-    font-size: 12px;
-    font-weight: 500;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: var(--color-neutral);
-  }
-
-  &__subtitle {
-    margin: 4px 0 0;
-    color: var(--color-neutral);
-  }
 }

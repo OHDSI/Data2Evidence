@@ -72,7 +72,11 @@ describe("SystemPortal AI config client", () => {
     });
     afterEach(() => spies.forEach((spy) => spy.mockRestore()));
 
-    const loggedText = () => spies.flatMap((spy) => spy.mock.calls).map((args) => JSON.stringify(args)).join("\n");
+    const loggedText = () =>
+      spies
+        .flatMap((spy) => spy.mock.calls)
+        .map((args) => JSON.stringify(args))
+        .join("\n");
     const config = { method: "post", url: "ai-config", data: JSON.stringify(body) };
 
     it("keeps the request body out of the console when a write fails", async () => {

@@ -1,5 +1,5 @@
 import React from "react";
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import { AiConfigPage } from "./AiConfigPage";
 import { api } from "../../../axios/api";
 import { i18nDefault } from "../../../contexts/app-context/states/translation-state";
@@ -31,9 +31,11 @@ describe("AiConfigPage", () => {
     render(<AiConfigPage />);
 
     expect(screen.getByText("AI_CONFIG__EYEBROW")).toBeInTheDocument();
-    expect(screen.getByText("AI_CONFIG__TITLE")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 1, name: "AI_CONFIG__TITLE" })).toBeInTheDocument();
     expect(screen.getByText("AI_CONFIG__SUBTITLE")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "AI_CONFIG__ADD" })).toBeDisabled();
+    const addButton = screen.getByRole("button", { name: "AI_CONFIG__ADD" });
+    expect(addButton).toBeDisabled();
+    expect(within(addButton).getByTestId("AddIcon")).toBeInTheDocument();
     expect(await screen.findByText("Prod")).toBeInTheDocument();
     expect(listAiConfigs).toHaveBeenCalledTimes(1);
   });
