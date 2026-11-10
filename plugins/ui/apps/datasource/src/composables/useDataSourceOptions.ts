@@ -1,10 +1,10 @@
 import { ref, watch, type Ref } from 'vue'
-import { fetchResearcherSources, resolveAccess, sortCards, toCardVM, type DatasourceCardVM } from './useDatasourceCatalog'
+import { fetchResearcherSources, resolveAccess, sortCards, toCardVM, type DataSourceCardVM } from './useDataSourceCatalog'
 import { getPublicDatasetList } from '../api/systemPortal'
 import { getIdpUserId } from '../utils/jwt'
 
-export function useDatasourceOptions(getToken: () => string | null) {
-  const sources: Ref<DatasourceCardVM[]> = ref([])
+export function useDataSourceOptions(getToken: () => string | null) {
+  const sources: Ref<DataSourceCardVM[]> = ref([])
   const loading = ref(true)
   let requestId = 0
 

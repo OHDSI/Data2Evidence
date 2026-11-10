@@ -10,18 +10,18 @@
 <script setup lang="ts">
 import { computed, watch } from 'vue'
 import DataSourcePicker from './DataSourcePicker.vue'
-import { useDatasourceOptions } from '../composables/useDatasourceOptions'
-import type { DatasourceCardVM } from '../composables/useDatasourceCatalog'
+import { useDataSourceOptions } from '../composables/useDataSourceOptions'
+import type { DataSourceCardVM } from '../composables/useDataSourceCatalog'
 
 const props = defineProps<{
   currentKey: string | null
   token: string | null
-  onSelect: (source: DatasourceCardVM) => void
-  onUnavailable?: (source: DatasourceCardVM) => void
+  onSelect: (source: DataSourceCardVM) => void
+  onUnavailable?: (source: DataSourceCardVM) => void
   onFallback?: () => void
 }>()
 
-const opts = useDatasourceOptions(() => props.token)
+const opts = useDataSourceOptions(() => props.token)
 
 const current = computed(() => opts.sources.value.find(s => s.id === props.currentKey) ?? null)
 watch(current, source => {

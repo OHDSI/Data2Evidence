@@ -49,7 +49,7 @@
           />
         </div>
         <AtlasCard padding="md">
-          <DatasourceDescription
+          <DataSourceDescription
             :source-key="sourceKey"
             :token="token"
           />
@@ -62,10 +62,10 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { AtlasCard, AtlasList, AtlasListItem, AtlasPageShell } from '@ohdsi/atlas-ui'
-import DatasourceDescription from './DatasourceDescription.vue'
+import DataSourceDescription from './DataSourceDescription.vue'
 import DataSourcePicker from '../components/DataSourcePicker.vue'
-import { useDatasourceOptions } from '../composables/useDatasourceOptions'
-import type { DatasourceCardVM } from '../composables/useDatasourceCatalog'
+import { useDataSourceOptions } from '../composables/useDataSourceOptions'
+import type { DataSourceCardVM } from '../composables/useDataSourceCatalog'
 import { useSidebarGroups } from '../composables/useSidebarGroups'
 import { DESCRIPTION_REPORT, atlasSourceHash, pluginSourceHash } from '../utils/routes'
 
@@ -75,7 +75,7 @@ const props = defineProps<{
   hasPermission?: (permission: string) => boolean
 }>()
 
-const opts = useDatasourceOptions(() => props.token)
+const opts = useDataSourceOptions(() => props.token)
 const sidebar = useSidebarGroups(props.hasPermission)
 
 const current = computed(() => opts.sources.value.find(s => s.id === props.sourceKey) ?? null)
@@ -91,7 +91,7 @@ function openReport(id: string): void {
   if (id !== DESCRIPTION_REPORT) window.location.hash = atlasSourceHash(props.sourceKey, id)
 }
 
-function onSelect(source: DatasourceCardVM): void {
+function onSelect(source: DataSourceCardVM): void {
   window.location.hash = pluginSourceHash(source.id)
 }
 </script>

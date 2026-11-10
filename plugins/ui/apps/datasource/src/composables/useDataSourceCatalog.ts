@@ -2,11 +2,11 @@ import { ref, computed, watch, type Ref } from 'vue'
 import { getDatasetList, getPublicDatasetList, getPublicDatasetIds, getPublicHeaderImage, getPublicOverviewDescription, type DatasetListItem } from '../api/systemPortal'
 import { getUserGroupList, getMyStudyAccessRequests, STUDY_RESEARCHER_ROLE } from '../api/userMgmt'
 import { getIdpUserId } from '../utils/jwt'
-import type { AccessState } from './useDatasourceAccess'
+import type { AccessState } from './useDataSourceAccess'
 
 export type SortMode = 'access' | 'name-asc' | 'name-desc'
 
-export interface DatasourceCardVM {
+export interface DataSourceCardVM {
   id: string
   name: string
   description: string
@@ -49,7 +49,7 @@ export function resolveAccess(
   return d.studyDetail?.showRequestAccess ? 'no-access' : 'restricted'
 }
 
-export function toCardVM(d: DatasetListItem, access: AccessState, isPublic?: boolean): DatasourceCardVM {
+export function toCardVM(d: DatasetListItem, access: AccessState, isPublic?: boolean): DataSourceCardVM {
   const rawCount = attr(d, 'patient_count')
   const count = Number(rawCount)
   const created = attr(d, 'created_date')
@@ -71,8 +71,8 @@ export function toCardVM(d: DatasetListItem, access: AccessState, isPublic?: boo
   }
 }
 
-export function sortCards(list: DatasourceCardVM[], mode: SortMode): DatasourceCardVM[] {
-  const byName = (a: DatasourceCardVM, b: DatasourceCardVM): number =>
+export function sortCards(list: DataSourceCardVM[], mode: SortMode): DataSourceCardVM[] {
+  const byName = (a: DataSourceCardVM, b: DataSourceCardVM): number =>
     a.name.localeCompare(b.name, 'en', { sensitivity: 'base' })
   const copy = [...list]
   if (mode === 'name-asc') return copy.sort(byName)
@@ -80,13 +80,13 @@ export function sortCards(list: DatasourceCardVM[], mode: SortMode): DatasourceC
   return copy.sort((a, b) => ACCESS_ORDER[a.access] - ACCESS_ORDER[b.access] || byName(a, b))
 }
 
-export function filterCards(list: DatasourceCardVM[], query: string): DatasourceCardVM[] {
+export function filterCards(list: DataSourceCardVM[], query: string): DataSourceCardVM[] {
   const q = query.trim().toLowerCase()
   if (!q) return list
   return list.filter(x => x.name.toLowerCase().includes(q) || x.description.toLowerCase().includes(q))
 }
 
-export async function fetchResearcherSources(token: string, idpUserId: string): Promise<DatasourceCardVM[]> {
+export async function fetchResearcherSources(token: string, idpUserId: string): Promise<DataSourceCardVM[]> {
   const [datasets, groupList, pending, publicIds] = await Promise.all([
     getDatasetList(token),
     getUserGroupList(idpUserId, token),
@@ -101,8 +101,8 @@ export async function fetchResearcherSources(token: string, idpUserId: string): 
   return datasets.map(d => toCardVM(d, resolveAccess(d, rSet, pSet, true), publicSet.has(d.id)))
 }
 
-export function useDatasourceCatalog(getToken: () => string | null) {
-  const sources: Ref<DatasourceCardVM[]> = ref([])
+export function useDataSourceCatalog(getToken: () => string | null) {
+  const sources: Ref<DataSourceCardVM[]> = ref([])
   const banner = ref<BannerConfig>({ ...DEFAULT_BANNER })
   const loading = ref(true)
   const error = ref<string | null>(null)
@@ -154,7 +154,7 @@ export function useDatasourceCatalog(getToken: () => string | null) {
 
   const visible = computed(() => sortCards(filterCards(sources.value, query.value), sortMode.value))
 
-  // Mirrors useDatasourceAccess: re-fetch when the token changes (Atlas3 may
+  // Mirrors useDataSourceAccess: re-fetch when the token changes (Atlas3 may
   // update props via the parcel `update` hook rather than remounting).
   watch(getToken, () => void load(), { immediate: true })
 

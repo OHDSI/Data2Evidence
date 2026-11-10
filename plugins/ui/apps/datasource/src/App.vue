@@ -3,20 +3,20 @@
   <v-theme-provider theme="light">
     <!-- Native detail: Atlas3's DataSourcesView mounts this in the
          `datasource-sidebar` surface with a sourceKey (his PR — unchanged). -->
-    <DatasourceDescription
+    <DataSourceDescription
       v-if="hostContext?.sourceKey"
       :source-key="hostContext.sourceKey"
       :token="authContext?.token ?? null"
     />
 
-    <DatasourceSourcePage
+    <DataSourcePage
       v-else-if="pluginSourceKey && tokenReady"
       :source-key="pluginSourceKey"
       :token="catalogToken"
       :has-permission="authContext?.hasPermission"
     />
 
-    <DatasourceCatalog
+    <DataSourceCatalog
       v-else-if="!pluginSourceKey"
       :token="catalogToken"
       :on-select="openSource"
@@ -26,9 +26,9 @@
 
 <script setup lang="ts">
 import { ref, onMounted, onBeforeUnmount } from 'vue'
-import DatasourceDescription from './views/DatasourceDescription.vue'
-import DatasourceCatalog from './views/DatasourceCatalog.vue'
-import DatasourceSourcePage from './views/DatasourceSourcePage.vue'
+import DataSourceDescription from './views/DataSourceDescription.vue'
+import DataSourceCatalog from './views/DataSourceCatalog.vue'
+import DataSourcePage from './views/DataSourcePage.vue'
 import { DESCRIPTION_REPORT, parseAtlasReportType, parsePluginSourceKey, pluginSourceHash } from './utils/routes'
 
 interface AuthContext {

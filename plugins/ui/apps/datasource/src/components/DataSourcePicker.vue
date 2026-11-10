@@ -19,15 +19,15 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { AtlasSelect } from '@ohdsi/atlas-ui'
-import type { DatasourceCardVM } from '../composables/useDatasourceCatalog'
+import type { DataSourceCardVM } from '../composables/useDataSourceCatalog'
 
 const props = defineProps<{
   currentKey: string | null
-  sources: DatasourceCardVM[]
+  sources: DataSourceCardVM[]
   loading?: boolean
 }>()
 
-const emit = defineEmits<{ select: [source: DatasourceCardVM] }>()
+const emit = defineEmits<{ select: [source: DataSourceCardVM] }>()
 
 const items = computed(() => props.sources.map(s => ({ label: s.name, value: s.id })))
 

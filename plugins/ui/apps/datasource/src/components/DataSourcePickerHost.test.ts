@@ -4,18 +4,18 @@ import { ref } from 'vue'
 import { createVuetify } from 'vuetify'
 import { buildVuetifyOptions } from '@ohdsi/atlas-ui'
 import DataSourcePickerHost from './DataSourcePickerHost.vue'
-import type { DatasourceCardVM } from '../composables/useDatasourceCatalog'
+import type { DataSourceCardVM } from '../composables/useDataSourceCatalog'
 
-const sources = ref<DatasourceCardVM[]>([])
+const sources = ref<DataSourceCardVM[]>([])
 const loading = ref(true)
 
-vi.mock('../composables/useDatasourceOptions', () => ({
-  useDatasourceOptions: () => ({ sources, loading, reload: vi.fn() }),
+vi.mock('../composables/useDataSourceOptions', () => ({
+  useDataSourceOptions: () => ({ sources, loading, reload: vi.fn() }),
 }))
 
 const vuetify = createVuetify(buildVuetifyOptions())
 
-const source = (id: string, access: DatasourceCardVM['access']): DatasourceCardVM => ({
+const source = (id: string, access: DataSourceCardVM['access']): DataSourceCardVM => ({
   id,
   name: id,
   description: '',

@@ -7,7 +7,7 @@ import '@d2e/ui/tokens.css'
 import './styles/style.css'
 import App from './App.vue'
 import DataSourcePickerHost from './components/DataSourcePickerHost.vue'
-import type { DatasourceCardVM } from './composables/useDatasourceCatalog'
+import type { DataSourceCardVM } from './composables/useDataSourceCatalog'
 import { DESCRIPTION_REPORT, pluginSourceHash, sourceTargetHash } from './utils/routes'
 
 export interface PluginProps {
@@ -74,10 +74,10 @@ export function mountPicker(el: Element, opts: PickerOptions): PickerHandle {
       h(DataSourcePickerHost, {
         currentKey: state.currentKey,
         token: state.token,
-        onSelect: (source: DatasourceCardVM) => {
+        onSelect: (source: DataSourceCardVM) => {
           window.location.hash = sourceTargetHash(source.id, source.access, window.location.hash)
         },
-        onUnavailable: (source: DatasourceCardVM) => window.location.replace(pluginSourceHash(source.id)),
+        onUnavailable: (source: DataSourceCardVM) => window.location.replace(pluginSourceHash(source.id)),
         onFallback: opts.onFallback,
       }),
   })

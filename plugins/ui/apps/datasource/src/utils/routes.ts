@@ -1,4 +1,4 @@
-import type { AccessState } from '../composables/useDatasourceAccess'
+import type { AccessState } from '../composables/useDataSourceAccess'
 
 export const DESCRIPTION_REPORT = 'plugin:datasources:description'
 

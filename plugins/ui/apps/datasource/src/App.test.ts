@@ -3,12 +3,12 @@ import { mount, flushPromises } from '@vue/test-utils'
 import { createVuetify } from 'vuetify'
 import { buildVuetifyOptions } from '@ohdsi/atlas-ui'
 import App from './App.vue'
-import DatasourceCatalog from './views/DatasourceCatalog.vue'
+import DataSourceCatalog from './views/DataSourceCatalog.vue'
 
 const vuetify = createVuetify(buildVuetifyOptions())
 
 describe('App (main-nav / catalog mount)', () => {
-  it('passes the live getToken() result to DatasourceCatalog, not the (possibly stale) authContext.token', async () => {
+  it('passes the live getToken() result to DataSourceCatalog, not the (possibly stale) authContext.token', async () => {
     const getToken = vi.fn().mockResolvedValue('fresh-token')
 
     const wrapper = mount(App, {
@@ -20,13 +20,13 @@ describe('App (main-nav / catalog mount)', () => {
       },
       global: {
         plugins: [vuetify],
-        stubs: { DatasourceCatalog: true },
+        stubs: { DataSourceCatalog: true },
       },
     })
     await flushPromises()
 
     expect(getToken).toHaveBeenCalled()
-    const catalog = wrapper.findComponent(DatasourceCatalog)
+    const catalog = wrapper.findComponent(DataSourceCatalog)
     expect(catalog.props('token')).toBe('fresh-token')
   })
 
@@ -41,12 +41,12 @@ describe('App (main-nav / catalog mount)', () => {
       },
       global: {
         plugins: [vuetify],
-        stubs: { DatasourceCatalog: true },
+        stubs: { DataSourceCatalog: true },
       },
     })
     await flushPromises()
 
-    const catalog = wrapper.findComponent(DatasourceCatalog)
+    const catalog = wrapper.findComponent(DataSourceCatalog)
     catalog.props('onSelect')('7540953c-7c63-4746-ab47-9b111b2b0695')
 
     expect(window.location.hash).toBe('#/plugins/datasources/7540953c-7c63-4746-ab47-9b111b2b0695')
@@ -63,13 +63,13 @@ describe('App (main-nav / catalog mount)', () => {
       },
       global: {
         plugins: [vuetify],
-        stubs: { DatasourceCatalog: true, DatasourceSourcePage: true },
+        stubs: { DataSourceCatalog: true, DataSourcePage: true },
       },
     })
     await flushPromises()
 
-    expect(wrapper.findComponent(DatasourceCatalog).exists()).toBe(false)
-    expect(wrapper.findComponent({ name: 'DatasourceSourcePage' }).props('sourceKey')).toBe('7540953c')
+    expect(wrapper.findComponent(DataSourceCatalog).exists()).toBe(false)
+    expect(wrapper.findComponent({ name: 'DataSourcePage' }).props('sourceKey')).toBe('7540953c')
     window.location.hash = ''
   })
 
@@ -84,7 +84,7 @@ describe('App (main-nav / catalog mount)', () => {
       },
       global: {
         plugins: [vuetify],
-        stubs: { DatasourceCatalog: true, DatasourceSourcePage: true },
+        stubs: { DataSourceCatalog: true, DataSourcePage: true },
       },
     })
     await flushPromises()
@@ -93,7 +93,7 @@ describe('App (main-nav / catalog mount)', () => {
     window.dispatchEvent(new PopStateEvent('popstate'))
     await flushPromises()
 
-    expect(wrapper.findComponent(DatasourceCatalog).exists()).toBe(true)
+    expect(wrapper.findComponent(DataSourceCatalog).exists()).toBe(true)
     wrapper.unmount()
     window.location.hash = ''
   })
@@ -110,7 +110,7 @@ describe('App (main-nav / catalog mount)', () => {
       },
       global: {
         plugins: [vuetify],
-        stubs: { DatasourceCatalog: true, DatasourceSourcePage: true },
+        stubs: { DataSourceCatalog: true, DataSourcePage: true },
       },
     })
     await flushPromises()
@@ -139,16 +139,16 @@ describe('App (main-nav / catalog mount)', () => {
       },
       global: {
         plugins: [vuetify],
-        stubs: { DatasourceCatalog: true, DatasourceSourcePage: true },
+        stubs: { DataSourceCatalog: true, DataSourcePage: true },
       },
     })
     await flushPromises()
-    expect(wrapper.findComponent({ name: 'DatasourceSourcePage' }).exists()).toBe(false)
-    expect(wrapper.findComponent(DatasourceCatalog).exists()).toBe(false)
+    expect(wrapper.findComponent({ name: 'DataSourcePage' }).exists()).toBe(false)
+    expect(wrapper.findComponent(DataSourceCatalog).exists()).toBe(false)
 
     resolveToken('fresh-token')
     await flushPromises()
-    expect(wrapper.findComponent({ name: 'DatasourceSourcePage' }).props('token')).toBe('fresh-token')
+    expect(wrapper.findComponent({ name: 'DataSourcePage' }).props('token')).toBe('fresh-token')
     wrapper.unmount()
     window.location.hash = ''
   })

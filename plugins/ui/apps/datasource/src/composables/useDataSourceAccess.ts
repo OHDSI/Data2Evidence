@@ -10,7 +10,7 @@ import { getIdpUserId } from "../utils/jwt";
 
 export type AccessState = "approved" | "pending" | "no-access" | "restricted";
 
-export interface UseDatasourceAccessResult {
+export interface UseDataSourceAccessResult {
   dataset: Ref<Dataset | null>;
   accessState: Ref<AccessState>;
   // True only when resolving access itself failed (network/server error) —
@@ -24,10 +24,10 @@ export interface UseDatasourceAccessResult {
   requestAccess: () => Promise<void>;
 }
 
-export function useDatasourceAccess(
+export function useDataSourceAccess(
   getSourceKey: () => string,
   getToken: () => string | null,
-): UseDatasourceAccessResult {
+): UseDataSourceAccessResult {
   const dataset = ref<Dataset | null>(null);
   const accessState = ref<AccessState>("no-access");
   const loading = ref(true);

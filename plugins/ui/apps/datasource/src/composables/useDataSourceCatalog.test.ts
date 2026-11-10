@@ -1,8 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import {
-  resolveAccess, toCardVM, sortCards, filterCards, useDatasourceCatalog,
-  type DatasourceCardVM,
-} from './useDatasourceCatalog'
+  resolveAccess, toCardVM, sortCards, filterCards, useDataSourceCatalog,
+  type DataSourceCardVM,
+} from './useDataSourceCatalog'
 import type { DatasetListItem } from '../api/systemPortal'
 import * as systemPortal from '../api/systemPortal'
 import * as userMgmt from '../api/userMgmt'
@@ -55,7 +55,7 @@ describe('toCardVM', () => {
 })
 
 describe('sortCards / filterCards', () => {
-  const mk = (id: string, name: string, access: DatasourceCardVM['access']) => ({ id, name, access } as DatasourceCardVM)
+  const mk = (id: string, name: string, access: DataSourceCardVM['access']) => ({ id, name, access } as DataSourceCardVM)
   it('access order: approved, pending, no-access, restricted, then name', () => {
     const out = sortCards([mk('1', 'Z', 'no-access'), mk('2', 'A', 'approved'), mk('3', 'B', 'pending'), mk('4', 'C', 'restricted')], 'access')
     expect(out.map(x => x.id)).toEqual(['2', '3', '1', '4'])
@@ -67,8 +67,8 @@ describe('sortCards / filterCards', () => {
   })
   it('filters by name or description, case-insensitive', () => {
     const list = [
-      { id: '1', name: 'EHR Primary', description: 'cardiology' } as DatasourceCardVM,
-      { id: '2', name: 'MIMIC', description: 'icu notes' } as DatasourceCardVM,
+      { id: '1', name: 'EHR Primary', description: 'cardiology' } as DataSourceCardVM,
+      { id: '2', name: 'MIMIC', description: 'icu notes' } as DataSourceCardVM,
     ]
     expect(filterCards(list, 'ehr').map(x => x.id)).toEqual(['1'])
     expect(filterCards(list, 'ICU').map(x => x.id)).toEqual(['2'])
@@ -76,7 +76,7 @@ describe('sortCards / filterCards', () => {
   })
 })
 
-describe('useDatasourceCatalog', () => {
+describe('useDataSourceCatalog', () => {
   beforeEach(() => { vi.restoreAllMocks() })
 
   it('logged-in: loads researcher list, resolves access, default sort=access', async () => {
@@ -90,7 +90,7 @@ describe('useDatasourceCatalog', () => {
     vi.spyOn(userMgmt, 'getUserGroupList').mockResolvedValue({ userId: 'u1', alp_role_study_researcher: ['a'] })
     vi.spyOn(userMgmt, 'getMyStudyAccessRequests').mockResolvedValue([])
 
-    const cat = useDatasourceCatalog(() => 'tok')
+    const cat = useDataSourceCatalog(() => 'tok')
     await flushPromises()
 
     expect(cat.sortMode.value).toBe('access')
@@ -105,7 +105,7 @@ describe('useDatasourceCatalog', () => {
     const pub = vi.spyOn(systemPortal, 'getPublicDatasetList').mockResolvedValue([base])
     const grp = vi.spyOn(userMgmt, 'getUserGroupList')
 
-    const cat = useDatasourceCatalog(() => null)
+    const cat = useDataSourceCatalog(() => null)
     await flushPromises()
 
     expect(pub).toHaveBeenCalled()

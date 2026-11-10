@@ -1,19 +1,19 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { flushPromises } from '@vue/test-utils'
 import { ref } from 'vue'
-import { useDatasourceOptions } from './useDatasourceOptions'
+import { useDataSourceOptions } from './useDataSourceOptions'
 
 const getPublicDatasetList = vi.fn()
 const fetchResearcherSources = vi.fn()
 
 vi.mock('../api/systemPortal', () => ({ getPublicDatasetList: () => getPublicDatasetList() }))
-vi.mock('./useDatasourceCatalog', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('./useDatasourceCatalog')>()),
+vi.mock('./useDataSourceCatalog', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('./useDataSourceCatalog')>()),
   fetchResearcherSources: (...args: unknown[]) => fetchResearcherSources(...args),
 }))
 vi.mock('../utils/jwt', () => ({ getIdpUserId: (t: string | null) => (t ? 'idp-user' : null) }))
 
-describe('useDatasourceOptions', () => {
+describe('useDataSourceOptions', () => {
   beforeEach(() => {
     getPublicDatasetList.mockReset()
     fetchResearcherSources.mockReset()
@@ -21,7 +21,7 @@ describe('useDatasourceOptions', () => {
 
   it('lists public datasets as no-access when signed out', async () => {
     getPublicDatasetList.mockResolvedValue([{ id: 'p1', type: 'webapi', visibilityStatus: '', dataModel: 'omop', studyDetail: { name: 'Public one' } }])
-    const opts = useDatasourceOptions(() => null)
+    const opts = useDataSourceOptions(() => null)
     await flushPromises()
     expect(fetchResearcherSources).not.toHaveBeenCalled()
     expect(opts.sources.value).toEqual([expect.objectContaining({ id: 'p1', name: 'Public one', access: 'no-access', isPublic: true })])
@@ -31,7 +31,7 @@ describe('useDatasourceOptions', () => {
   it('reloads when the token changes', async () => {
     fetchResearcherSources.mockResolvedValue([])
     const token = ref<string | null>('t1')
-    useDatasourceOptions(() => token.value)
+    useDataSourceOptions(() => token.value)
     await flushPromises()
     token.value = 't2'
     await flushPromises()
