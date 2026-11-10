@@ -6,42 +6,18 @@ import {
     StudyAnalyticsCredential,
     StudyDbMetadata,
 } from "../types";
-import { convertZlibBase64ToJson } from "@alp/alp-base-utils";
 import PortalServerAPI from "../api/PortalServerAPI";
 import { env } from "../env";
 const log = Logger.CreateLogger("analytics-log");
 
 export default async (req: IMRIRequest, res, next) => {
     log.addRequestCorrelationID(req);
-    const getDatasetIdFromMriquery = (): string => {
-        const base64EncodedMriQuery = req.query.mriquery;
-        const base64DecodedMriQueryJson = base64EncodedMriQuery
-            ? convertZlibBase64ToJson(base64EncodedMriQuery.toString())
-            : "";
-        if (base64DecodedMriQueryJson) {
-            return base64DecodedMriQueryJson.datasetId;
-        }
-        // createEndpointFromRequest also reads body.mriquery, so its dataset
-        // must pass the same check. Cohort POSTs send it as plain JSON.
-        const bodyMriQuery = req.body?.mriquery;
-        if (typeof bodyMriQuery !== "string" || !bodyMriQuery) {
-            return "";
-        }
-        for (const decode of [
-            convertZlibBase64ToJson,
-            (s: string) => JSON.parse(s),
-        ]) {
-            try {
-                const decoded = decode(bodyMriQuery);
-                if (decoded?.datasetId) return String(decoded.datasetId);
-            } catch {
-                // try the next encoding
-            }
-        }
-        return "";
-    };
+
+    const hasMriquery = (): boolean =>
+        Boolean(req.query?.mriquery) || Boolean(req.body?.mriquery);
 
     const getDatasetIdFromRequest = (): string => {
+        // Look for datasetId from request query or body
         if (req.query.datasetId) {
             return req.query.datasetId.toString();
         } else if (req.body.datasetId) {
@@ -300,9 +276,18 @@ export default async (req: IMRIRequest, res, next) => {
     try {
         if (req.url === "/check-readiness") {
             getDefaultDbConnection();
-        } else if (utils.isClientCredReq(req)) {
-            if (req.query.datasetId) {
-                const datasetId: string = String(req.query.datasetId);
+            return next();
+        }
+        const datasetId = getDatasetIdFromRequest();
+        if (hasMriquery() && !datasetId) {
+            const badRequest = new Error("datasetId is required") as Error & {
+                status: number;
+            };
+            badRequest.status = 400;
+            throw badRequest;
+        }
+        if (utils.isClientCredReq(req)) {
+            if (datasetId) {
                 log.info(`Selected study ID ${datasetId}`);
 
                 const portalServerAPI = new PortalServerAPI();
@@ -324,11 +309,6 @@ export default async (req: IMRIRequest, res, next) => {
                 getDefaultDbConnection();
             }
         } else {
-            let datasetId: string = getDatasetIdFromMriquery();
-            // If datasetId is not found from mriquery, try and find datasetId from request query or body
-            if (!datasetId) {
-                datasetId = getDatasetIdFromRequest();
-            }
             const studyMetadata: StudyDbMetadata =
                 req.studiesDbMetadata.studies.find(
                     (o) => o.id === datasetId || o.tokenStudyCode === datasetId
@@ -340,12 +320,9 @@ export default async (req: IMRIRequest, res, next) => {
                 forbidden.status = 403;
                 throw forbidden;
             }
-            // Set req.selectedstudyDbMetadata if it does not already exist
-            if (!req.selectedstudyDbMetadata) {
-                req.selectedstudyDbMetadata = studyMetadata;
-            }
+            req.selectedstudyDbMetadata = studyMetadata;
             getDbConnectionByStudyMetadata(studyMetadata);
-            await addConfigMetadataToReq(datasetId);
+            await addConfigMetadataToReq(studyMetadata?.id);
         }
         next();
     } catch (err) {
