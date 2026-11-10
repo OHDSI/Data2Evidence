@@ -129,6 +129,12 @@ export const i18nDefault = {
     ADD_USER_DIALOG__SUCCESS: "User added successfully",
     ADD_USER_DIALOG__USERNAME: "Username",
     ADD_USER_DIALOG__USERNAME_HELPER: "Username should only contain letters, numbers, or underscore.",
+    AI_CONFIG__ADD: "Add AI configuration",
+    AI_CONFIG__EYEBROW: "Admin · Advanced settings",
+    AI_CONFIG__LOAD_ERROR: "The AI configurations could not be loaded.",
+    AI_CONFIG__SUBTITLE:
+      "Connect AI providers and choose their models. You can add as many configurations as you need, but only one is active at a time.",
+    AI_CONFIG__TITLE: "AI configuration",
     ANALYSIS_DIALOG__CANCEL: "Cancel",
     ANALYSIS_DIALOG__COMMENT: "Comment",
     ANALYSIS_DIALOG__DATA_CHARACTERIZATION: "Data characterization",
@@ -1205,6 +1211,7 @@ export const i18nDefault = {
     TRIGGER_PLUGIN_UPLOAD_DIALOG__DESCRIPTION:
       "Please try again. To report the error, please send an email to your administrator.",
     TRIGGER_PLUGIN_UPLOAD_DIALOG__TITLE: "Install default plugins",
+    UI_PLUGIN_AI_CONFIG: "AI configuration",
     UI_PLUGIN_ANALYSIS: "Analysis",
     UI_PLUGIN_CDM_CONFIG: "CDM configuration",
     UI_PLUGIN_COHORTS: "Cohorts",
@@ -1225,6 +1232,7 @@ export const i18nDefault = {
     UI_PLUGIN_PATIENT_ANALYTICS_CONFIG: "Cohort builder config",
     UI_PLUGIN_PLUGINS: "Plugins",
     UI_PLUGIN_SETUP: "Setup",
+    UI_PLUGIN_SETUP_AI_CONFIG_DESCRIPTION: "Connect and manage the AI providers used by the AI assistant",
     UI_PLUGIN_SETUP_CDM_DESCRIPTION: "Configure CDM",
     UI_PLUGIN_SETUP_DB_DESCRIPTION: "Database connection and credentials",
     UI_PLUGIN_SETUP_DEMO_DESCRIPTION: "Setting up demo dataset",

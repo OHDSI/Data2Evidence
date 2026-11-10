@@ -1,4 +1,4 @@
-import { request } from "./request";
+import { request, requestNoCache } from "./request";
 import {
   NewStudyDetailInput,
   Study,
@@ -18,6 +18,8 @@ import {
   ViewerCode,
   ViewerCodeQuery,
   ViewerCodeWithQueries,
+  AiConfig,
+  AiConfigInput,
 } from "../types";
 import { ConfigTypes, LogResponseType } from "../constant";
 const SYSTEM_PORTAL_URL = "system-portal/";
@@ -432,6 +434,57 @@ export class SystemPortal {
       url: "dataset/dashboard-codes",
       method: "GET",
       params: { datasetId, type },
+    });
+  }
+
+  public listAiConfigs() {
+    return request<AiConfig[]>({
+      baseURL: SYSTEM_PORTAL_URL,
+      url: "ai-config",
+      method: "GET",
+    });
+  }
+
+  public getAiConfig(id: number) {
+    return request<AiConfig>({
+      baseURL: SYSTEM_PORTAL_URL,
+      url: `ai-config/${id}`,
+      method: "GET",
+    });
+  }
+
+  // Writes skip the 800 ms memoize: a repeated identical write (e.g. a second activate) must reach the server.
+  public createAiConfig(data: AiConfigInput) {
+    return requestNoCache<AiConfig>({
+      baseURL: SYSTEM_PORTAL_URL,
+      url: "ai-config",
+      method: "POST",
+      data,
+    });
+  }
+
+  public updateAiConfig(id: number, data: AiConfigInput) {
+    return requestNoCache<AiConfig>({
+      baseURL: SYSTEM_PORTAL_URL,
+      url: `ai-config/${id}`,
+      method: "PUT",
+      data,
+    });
+  }
+
+  public deleteAiConfig(id: number) {
+    return requestNoCache<{ id: number }>({
+      baseURL: SYSTEM_PORTAL_URL,
+      url: `ai-config/${id}`,
+      method: "DELETE",
+    });
+  }
+
+  public activateAiConfig(id: number) {
+    return requestNoCache<AiConfig>({
+      baseURL: SYSTEM_PORTAL_URL,
+      url: `ai-config/${id}/activate`,
+      method: "POST",
     });
   }
 }

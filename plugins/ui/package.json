@@ -421,6 +421,15 @@
             "notes": "",
             "pluginPath": "plugins/Setup/MigrateUserArtifacts/module",
             "route": "migrate-user-artifacts"
+          },
+          {
+            "description": "Connect and manage the AI providers used by the AI assistant",
+            "descriptionI18nKey": "UI_PLUGIN_SETUP_AI_CONFIG_DESCRIPTION",
+            "visible": true,
+            "name": "AI configuration",
+            "nameI18nKey": "UI_PLUGIN_AI_CONFIG",
+            "pluginPath": "plugins/Setup/AiConfig/module",
+            "route": "ai-config"
           }
         ],
         "systemadmin": [
