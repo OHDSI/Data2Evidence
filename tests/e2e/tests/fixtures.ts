@@ -167,3 +167,23 @@ export async function openAdminPortalFromAtlas(page: Page) {
   await page.getByRole('button', { name: 'Switch to Admin portal' }).click()
   await page.getByRole('heading', { name: 'Users' }).waitFor({ state: 'visible' })
 }
+
+export async function cleanupTestDataflows(page: Page, namePatterns: RegExp[]) {
+  const bearerToken = (await page.context().cookies()).find(cookie => cookie.name === 'bearerToken')?.value
+  if (!bearerToken) throw new Error('Cannot clean up dataflows: bearerToken cookie is missing')
+
+  const headers = { authorization: `Bearer ${bearerToken}` }
+  const response = await page.request.get('/d2e/jobplugins/dataflow/list', { headers })
+  if (!response.ok()) {
+    throw new Error(`Cannot clean up dataflows: list request returned ${response.status()}`)
+  }
+
+  const dataflows = (await response.json()) as { id: string; name: string }[]
+  for (const dataflow of dataflows) {
+    if (!namePatterns.some(pattern => pattern.test(dataflow.name))) continue
+    const deleteResponse = await page.request.delete(`/d2e/jobplugins/dataflow/${dataflow.id}`, { headers })
+    if (!deleteResponse.ok()) {
+      throw new Error(`Cannot clean up dataflow "${dataflow.name}": delete returned ${deleteResponse.status()}`)
+    }
+  }
+}
