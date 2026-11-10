@@ -228,7 +228,7 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByRole('menuitem', { name: 'Edit data source' }).click()
   await page.getByRole('button', { name: 'OMOP' }).click()
   await page.getByRole('option', { name: 'Testerson MRI Config' }).click()
-  await expect(page.getByRole('dialog')).toContainText('PA Config')
+  await expect(page.getByRole('dialog')).toContainText('Data exploration config')
   await expect(page.getByLabel('Testerson MRI Config')).toContainText('Testerson MRI Config')
   await page.locator('.MuiBackdrop-root.MuiBackdrop-invisible').click()
   await page.getByRole('link', { name: 'Account' }).click()

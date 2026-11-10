@@ -105,7 +105,7 @@ test(TEST_NAME, async ({ page }) => {
     await page.getByRole('textbox', { name: 'Result Schema Name' }).fill(`result_schema_${randomString}`)
     await page.getByRole('combobox', { name: 'Data model option', exact: true }).click()
     await page.getByRole('option', { name: 'waveform [data_management_plugin]' }).click()
-    await page.getByRole('combobox', { name: 'PA config' }).click()
+    await page.getByRole('combobox', { name: 'Data exploration config' }).click()
     await page.getByRole('option', { name: PA_CONFIG_NAME, exact: true }).click()
     await page.getByRole('textbox', { name: 'Token data source code' }).click()
     await page.getByRole('textbox', { name: 'Token data source code' }).fill(randomString)
