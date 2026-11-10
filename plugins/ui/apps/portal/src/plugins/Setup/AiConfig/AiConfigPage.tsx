@@ -1,13 +1,13 @@
 import React, { FC, useEffect, useState } from "react";
 import AddIcon from "@mui/icons-material/Add";
 import { ThemeProvider } from "@mui/material";
-import { Loader } from "@portal/components";
-import { Button, PageHeader, buildMuiTheme } from "ui-react";
+import { Button, PageHeader, Spinner, buildMuiTheme } from "ui-react";
 import "ui-react/tokens.css";
 import "ui-react/style.css";
 import { api } from "../../../axios/api";
 import { useFeedback, useTranslation } from "../../../contexts";
 import { AiConfig } from "../../../types";
+import { AiConfigDialog } from "./AiConfigDialog";
 import "./AiConfigPage.scss";
 
 const d2eTheme = buildMuiTheme();
@@ -17,6 +17,7 @@ export const AiConfigPage: FC = () => {
   const { setFeedback } = useFeedback();
   const [configs, setConfigs] = useState<AiConfig[]>([]);
   const [loading, setLoading] = useState(true);
+  const [adding, setAdding] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -45,14 +46,13 @@ export const AiConfigPage: FC = () => {
           title={getText(i18nKeys.AI_CONFIG__TITLE)}
           description={getText(i18nKeys.AI_CONFIG__SUBTITLE)}
           actions={
-            // shortcut: disabled until the Add dialog exists.
-            <Button prependIcon={<AddIcon />} disabled>
+            <Button prependIcon={<AddIcon />} disabled={loading} onClick={() => setAdding(true)}>
               {getText(i18nKeys.AI_CONFIG__ADD)}
             </Button>
           }
         />
         {loading ? (
-          <Loader />
+          <Spinner center />
         ) : (
           // shortcut: names only; the full list with actions and the empty state replaces this.
           <ul className="ai-config__list">
@@ -60,6 +60,16 @@ export const AiConfigPage: FC = () => {
               <li key={config.id}>{config.name}</li>
             ))}
           </ul>
+        )}
+        {adding && (
+          <AiConfigDialog
+            onClose={() => setAdding(false)}
+            // The write response is the new row; the list is not re-fetched.
+            onSaved={(saved) => {
+              setConfigs((rows) => [...rows, saved]);
+              setAdding(false);
+            }}
+          />
         )}
       </div>
     </ThemeProvider>

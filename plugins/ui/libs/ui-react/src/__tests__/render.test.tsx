@@ -39,6 +39,18 @@ function mount(ui: React.ReactNode) {
 
 afterEach(cleanup);
 
+describe("Select required", () => {
+  const items = [{ label: "A", value: "a" }];
+
+  it.each([
+    ["plain", false],
+    ["searchable", true],
+  ])("sets aria-required on the %s combobox", (_name, searchable) => {
+    mount(<Select label="Provider" items={items} required searchable={searchable} />);
+    expect(screen.getByRole("combobox").getAttribute("aria-required")).toBe("true");
+  });
+});
+
 describe("render smoke", () => {
   it("renders a button and fires onClick", () => {
     let clicks = 0;
