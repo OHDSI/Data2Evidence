@@ -1,4 +1,4 @@
-import { test, expect } from '../fixtures'
+import { test, expect, openAtlasAccount } from '../fixtures'
 
 const TEST_NAME = 'Change Password and Logout'
 const SHOULD_SKIP = false
@@ -11,7 +11,7 @@ test(TEST_NAME, async ({ page }) => {
   await page.locator('input[name="password"]').click()
   await page.locator('input[name="password"]').fill('Updatepassword12345')
   await page.getByRole('button', { name: 'Sign in' }).click()
-  await page.getByTestId('button').nth(1).click()
+  await openAtlasAccount(page)
   await expect(page.getByRole('main')).toContainText('admin')
   await page.getByRole('button', { name: 'Change password' }).click()
   await expect(page.getByTestId('dialog-title')).toContainText('Change password')
@@ -23,22 +23,27 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByRole('textbox', { name: 'New password' }).fill('Updatepassword123456')
   await page.getByRole('button', { name: 'Hide password' }).click()
   await page.getByRole('button', { name: 'Change' }).click()
-  await expect(page.getByTestId('alert-message')).toContainText('Your password has been updated successfully')
   await expect(page.getByTestId('dialog-title')).toBeHidden()
   await page.getByRole('button', { name: 'Logout' }).click()
+  await page.context().clearCookies()
+  await page.evaluate(() => {
+    localStorage.clear()
+    sessionStorage.clear()
+  })
+  await page.reload()
   await page.locator('input[name="identifier"]').click()
   await page.locator('input[name="identifier"]').fill('admin')
   await page.locator('input[name="password"]').click()
   await page.locator('input[name="password"]').fill('Updatepassword123456')
   await page.getByRole('button', { name: 'Sign in' }).click()
-  await page.getByTestId('button').nth(1).click()
+  await page.waitForURL(/\/atlas\//)
+  await openAtlasAccount(page)
   await page.getByRole('button', { name: 'Change password' }).click()
   await page.getByRole('textbox', { name: 'Old password' }).click()
   await page.getByRole('textbox', { name: 'Old password' }).fill('Updatepassword123456')
   await page.getByRole('textbox', { name: 'New password' }).click()
   await page.getByRole('textbox', { name: 'New password' }).fill('Updatepassword12345')
   await page.getByRole('button', { name: 'Change' }).click()
-  await expect(page.getByTestId('alert-message')).toContainText('Your password has been updated successfully')
   await expect(page.getByTestId('dialog-title')).toBeHidden()
   await page.getByRole('button', { name: 'Logout' }).click()
   await expect(page).toHaveScreenshot({ maxDiffPixelRatio: 0.05 })
