@@ -1,5 +1,5 @@
 import { describe, it } from '@std/testing/bdd'
-import { assertEquals } from '@std/assert'
+import { assertEquals, assertRejects } from '@std/assert'
 import { WebApiSourceService } from './webapi-source.service.ts'
 import type { WebApiSourceApi } from './webapi-source.api.ts'
 import type { Dataset } from '../dataset/entity/index.ts'
@@ -435,5 +435,164 @@ describe('WebApiSourceService.getCacheStatus via flow run', () => {
     const status = await svc.getCacheStatus('never-built', 'tok')
     assertEquals(status.ready, false)
     assertEquals(status.activeJobStatus, null)
+  })
+})
+
+describe('WebApiSourceService trexsql cache sources', () => {
+  const CACHE_ID = '_5ec7c9fe_1e4c_4c71_8a8d_921ba37875f7'
+
+  function cachedDataset(overrides: Partial<Dataset> = {}): Dataset {
+    return {
+      id: '5ec7c9fe-1e4c-4c71-8a8d-921ba37875f7',
+      dialect: 'postgres',
+      cacheId: CACHE_ID,
+      schemaName: 'demo_cdm',
+      vocabSchemaName: 'demo_cdm',
+      resultsSchemaName: 'demo_cdm_results',
+      ...overrides,
+    } as Dataset
+  }
+
+  function withToken<T>(token: string | undefined, fn: () => Promise<T>): Promise<T> {
+    const previous = Deno.env.get('TREX__SQL_TOKEN')
+    if (token === undefined) Deno.env.delete('TREX__SQL_TOKEN')
+    else Deno.env.set('TREX__SQL_TOKEN', token)
+    return fn().finally(() => {
+      if (previous === undefined) Deno.env.delete('TREX__SQL_TOKEN')
+      else Deno.env.set('TREX__SQL_TOKEN', previous)
+    })
+  }
+
+  type Request = {
+    dialect: string
+    connectionString: string
+    username: string
+    password: string
+    daimons: { daimonType: string; tableQualifier: string; priority: number }[]
+  }
+
+  async function createdRequest(dataset: Dataset, token: string | undefined = 'quack-token') {
+    const { api, jobPlugins, calls } = createApiStub()
+    const service = new WebApiSourceService(api as never, jobPlugins as never)
+    await withToken(token, () => service.syncSourceForDataset(dataset, detail, credentials))
+    return calls.find((c) => c.method === 'createSource')?.args[0] as Request | undefined
+  }
+
+  it('points a cached postgres dataset at the trexsql cache catalog', async () => {
+    const request = (await createdRequest(cachedDataset()))!
+    assertEquals(request.dialect, 'trexsql')
+    assertEquals(request.connectionString, 'jdbc:trexsql://127.0.0.1:9494?disable_ssl=true')
+    assertEquals(request.username, '')
+    assertEquals(request.password, 'quack-token')
+    assertEquals(
+      request.daimons.map((d) => [d.daimonType, d.tableQualifier, d.priority]),
+      [
+        ['CDM', `${CACHE_ID}.demo_cdm`, 1],
+        ['Vocabulary', `${CACHE_ID}.demo_cdm`, 1],
+        ['Results', `${CACHE_ID}.demo_cdm_results`, 1],
+      ],
+    )
+  })
+
+  it('registers a cached duckdb dataset through trexsql', async () => {
+    const request = (await createdRequest(cachedDataset({ dialect: 'duckdb' as never })))!
+    assertEquals(request.dialect, 'trexsql')
+  })
+
+  it('keeps the direct JDBC request for a dataset without a cacheId', async () => {
+    const request = (await createdRequest(cachedDataset({ cacheId: null })))!
+    assertEquals(request.dialect, 'postgresql')
+    assertEquals(request.connectionString, 'jdbc:postgresql://db:5432/alp')
+    assertEquals(request.username, 'u')
+    assertEquals(request.password, 'p')
+    assertEquals(
+      request.daimons.map((d) => d.tableQualifier),
+      ['demo_cdm', 'demo_cdm', 'demo_cdm_results'],
+    )
+  })
+
+  it('keeps the direct JDBC request without a token when the dataset has no cacheId', async () => {
+    const request = (await createdRequest(cachedDataset({ cacheId: null }), undefined))!
+    assertEquals(request.dialect, 'postgresql')
+  })
+
+  it('still registers no source for a hana dataset that names a cacheId', async () => {
+    const request = await createdRequest(cachedDataset({ dialect: 'hana' as never, cacheId: 'HANA_DB' }))
+    assertEquals(request, undefined)
+  })
+
+  it('refuses to register a cached dataset when TREX__SQL_TOKEN is not set', async () => {
+    const { api, jobPlugins, methods } = createApiStub()
+    const service = new WebApiSourceService(api as never, jobPlugins as never)
+    await withToken(undefined, async () => {
+      await assertRejects(
+        () => service.syncSourceForDataset(cachedDataset(), detail, credentials),
+        Error,
+        'TREX__SQL_TOKEN is not set',
+      )
+    })
+    assertEquals(methods().includes('createSource'), false)
+  })
+
+  // The source is registered before the cache flow finishes; generation in that
+  // window fails in WebAPI, and getCacheStatus is what callers poll for readiness.
+  it('registers the source immediately and leaves readiness to getCacheStatus', async () => {
+    const { api, calls, methods } = createApiStub()
+    const jobPlugins = {
+      createCacheFlowRun: () => Promise.resolve({ flowRunId: 'run-1' }),
+      getFlowRunState: () => Promise.resolve({ state: 'RUNNING', endTime: null }),
+    }
+    const service = new WebApiSourceService(api as never, jobPlugins as never)
+    const dataset = cachedDataset()
+    await withToken('quack-token', () => service.syncSourceForDataset(dataset, detail, credentials))
+
+    assertEquals(methods().includes('createSource'), true)
+    assertEquals((calls.find((c) => c.method === 'createSource')!.args[0] as Request).dialect, 'trexsql')
+    assertEquals((await service.getCacheStatus(dataset.id)).ready, false)
+  })
+})
+
+describe('WebApiSourceService.resyncAllSources', () => {
+  it('reports a WebAPI error for one dataset and continues', async () => {
+    const { api, jobPlugins } = createApiStub()
+    let n = 0
+    api.createSource = () => (++n === 1 ? Promise.reject(new Error('500 boom')) : Promise.resolve(undefined as never))
+    const targets = ['a', 'b'].map((id) => ({
+      dataset: { ...datasetWithDialect('postgres'), id },
+      detail,
+      credentials,
+    }))
+    const loader = { listSyncTargets: () => Promise.resolve(targets) }
+    const service = new WebApiSourceService(api as never, jobPlugins as never, loader as never)
+
+    const result = await service.resyncAllSources()
+
+    assertEquals(result.synced, ['b'])
+    assertEquals(result.failed.length, 1)
+    assertEquals(result.failed[0].id, 'a')
+    assertEquals(result.failed[0].error.includes('500 boom'), true)
+    // The logged sync error is flushed by winston on a timer; let it run.
+    await new Promise((resolve) => setTimeout(resolve, 0))
+  })
+
+  it('reports a failing dataset without aborting the others', async () => {
+    const { api, jobPlugins, calls } = createApiStub()
+    const targets = [
+      { dataset: { ...datasetWithDialect('postgres'), id: 'ok-1' }, detail, credentials },
+      { dataset: { ...datasetWithDialect('postgres'), id: 'no-creds' }, detail, credentials: null },
+      { dataset: { ...datasetWithDialect('postgres'), id: 'ok-2' }, detail, credentials },
+    ]
+    const loader = { listSyncTargets: () => Promise.resolve(targets) }
+    const service = new WebApiSourceService(api as never, jobPlugins as never, loader as never)
+
+    const result = await service.resyncAllSources('tok')
+
+    assertEquals(result.synced, ['ok-1', 'ok-2'])
+    assertEquals(result.failed.map((f) => f.id), ['no-creds'])
+    assertEquals(result.failed[0].error.includes('credentials'), true)
+    const keys = calls
+      .filter((c) => c.method === 'createSource')
+      .map((c) => (c.args[0] as { key: string }).key)
+    assertEquals(keys, ['ok-1', 'ok-2'])
   })
 })

@@ -1576,6 +1576,15 @@
           ]
         },
         {
+          "path": "^/system-portal/webapi/resync-sources$",
+          "scopes": [
+            "portal.dataset.update"
+          ],
+          "httpMethods": [
+            "POST"
+          ]
+        },
+        {
           "path": "^/system-portal/dataset/(.*)/cache-status$",
           "scopes": [
             "portal.dataset.read"
