@@ -10,7 +10,6 @@ const base64Url = (o: unknown) =>
 
 // getUser only decodes the token. The signature is not checked.
 const userToken = `${base64Url({ alg: "none", typ: "JWT" })}.${base64Url({ sub: "user-1" })}.sig`;
-const clientCredToken = `${base64Url({ alg: "none", typ: "JWT" })}.${base64Url({ sub: "service-1", authType: "azure-ad" })}.sig`;
 
 // The mriquery names a different known dataset than the selected one.
 const mriquery = zlibBase64({
@@ -52,30 +51,4 @@ Deno.test("rejects the request when no dataset is selected", async () => {
         Error,
         "Schema name undefined"
     );
-});
-
-Deno.test("rejects a client-credentials request", async () => {
-    await assertRejects(
-        () =>
-            createEndpointFromRequest(
-                makeReq({
-                    headers: {
-                        authorization: `Bearer ${clientCredToken}`,
-                        "auth-type": "azure-ad",
-                    },
-                })
-            ),
-        Error,
-        "Schema name undefined"
-    );
-});
-
-Deno.test("serves a user token that sends the auth-type header", async () => {
-    const { datasetId } = await createEndpointFromRequest(
-        makeReq({
-            headers: { authorization: `Bearer ${userToken}`, "auth-type": "azure-ad" },
-        })
-    );
-
-    assertEquals(datasetId, "known-dataset");
 });

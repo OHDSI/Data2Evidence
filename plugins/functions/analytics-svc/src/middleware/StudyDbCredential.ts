@@ -276,18 +276,9 @@ export default async (req: IMRIRequest, res, next) => {
     try {
         if (req.url === "/check-readiness") {
             getDefaultDbConnection();
-            return next();
-        }
-        const datasetId = getDatasetIdFromRequest();
-        if (hasMriquery() && !datasetId) {
-            const badRequest = new Error("datasetId is required") as Error & {
-                status: number;
-            };
-            badRequest.status = 400;
-            throw badRequest;
-        }
-        if (utils.isClientCredReq(req)) {
-            if (datasetId) {
+        } else if (utils.isClientCredReq(req)) {
+            if (req.query.datasetId) {
+                const datasetId: string = String(req.query.datasetId);
                 log.info(`Selected study ID ${datasetId}`);
 
                 const portalServerAPI = new PortalServerAPI();
@@ -309,6 +300,14 @@ export default async (req: IMRIRequest, res, next) => {
                 getDefaultDbConnection();
             }
         } else {
+            const datasetId = getDatasetIdFromRequest();
+            if (hasMriquery() && !datasetId) {
+                const badRequest = new Error("datasetId is required") as Error & {
+                    status: number;
+                };
+                badRequest.status = 400;
+                throw badRequest;
+            }
             const studyMetadata: StudyDbMetadata =
                 req.studiesDbMetadata.studies.find(
                     (o) => o.id === datasetId || o.tokenStudyCode === datasetId

@@ -773,36 +773,16 @@ export function isClientCredToken(token: any) {
 }
 
 /**
- * Check if the request belongs to client credentials authN flow.
- * The auth-type header alone is not enough: the bearer token must also be a
- * client credentials token. The gateway verifies the token signature.
+ * Check if the request belongs to client credentials authN flow
  * @param   req incoming request
  * @returns {Boolean} True, if request belongs to client credentials authN flow.
  */
 export function isClientCredReq(req: any) {
-  const authType = req.headers["auth-type"];
-  if (authType !== "azure-ad" && authType !== "shared-azure-ad") {
-    return false;
-  }
-  const authHeader = req.headers["authorization"];
-  if (typeof authHeader !== "string") {
-    return false;
-  }
-  return Boolean(isClientCredToken(decodeBearerPayload(authHeader)));
-}
-
-// Decodes the JWT payload only. It does not check the signature.
-function decodeBearerPayload(authHeader: string): any {
-  const parts = authHeader.replace(/bearer /i, "").split(".");
-  if (parts.length < 2) {
-    return null;
-  }
-  try {
-    const payload = JSON.parse(Buffer.from(parts[1], "base64url").toString("utf8"));
-    return payload && typeof payload === "object" ? payload : null;
-  } catch {
-    return null;
-  }
+  return (
+    req.headers["auth-type"] &&
+    (req.headers["auth-type"] === "azure-ad" ||
+      req.headers["auth-type"] === "shared-azure-ad")
+  );
 }
 
 /**

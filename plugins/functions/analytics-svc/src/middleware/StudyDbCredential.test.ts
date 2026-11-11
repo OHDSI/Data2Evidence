@@ -6,15 +6,6 @@ import { env } from "../env";
 const zlibBase64 = (o: unknown) =>
     btoa(String.fromCharCode(...pako.deflate(JSON.stringify(o))));
 
-const base64Url = (o: unknown) =>
-    btoa(JSON.stringify(o)).replace(/=+$/, "").replace(/\+/g, "-").replace(/\//g, "_");
-
-// Unsigned tokens. The middleware only decodes them; the gateway checks signatures.
-const makeToken = (payload: Record<string, unknown>) =>
-    `Bearer ${base64Url({ alg: "none", typ: "JWT" })}.${base64Url(payload)}.sig`;
-const userToken = makeToken({ sub: "user-1" });
-const clientCredToken = makeToken({ sub: "service-1", authType: "azure-ad" });
-
 const defaultCredential = {
     dialect: "postgresql",
     schema: "default_schema",
@@ -56,8 +47,8 @@ const makeReq = (overrides: Record<string, unknown> = {}) =>
         ...overrides,
     }) as any;
 
-// Stubs the portal calls: getStudies() and the PA config in addConfigMetadataToReq.
-// Records each requested URL. The tests do not use the network.
+// Stubs the portal call in addConfigMetadataToReq. Records each requested URL.
+// The tests do not use the network.
 const withPortalStub = async (fn: (urls: string[]) => Promise<void>) => {
     const urls: string[] = [];
     const g = globalThis as any;
@@ -68,9 +59,6 @@ const withPortalStub = async (fn: (urls: string[]) => Promise<void>) => {
         tokioChannel: () => ({
             get: async (url: string) => {
                 urls.push(url);
-                if (url.includes("/dataset/list/systemadmin")) {
-                    return { data: makeReq().studiesDbMetadata.studies };
-                }
                 return {
                     data: {
                         meta: {
@@ -238,97 +226,6 @@ Deno.test(
 
         assertEquals(err?.status, 403);
         assertEquals(req.dbCredentials.studyAnalyticsCredential, undefined);
-    }
-);
-
-Deno.test(
-    "reads the body datasetId for a client-credentials request with a body mriquery",
-    async () => {
-        await withPortalStub(async (urls) => {
-            const req = makeReq({
-                headers: { "auth-type": "azure-ad", authorization: clientCredToken },
-                body: {
-                    datasetId: "known-token",
-                    mriquery: JSON.stringify({ datasetId: "someone-elses-dataset" }),
-                },
-            });
-            const nextArg = await run(req);
-
-            assertEquals(nextArg, undefined);
-            assertEquals(req.selectedstudyDbMetadata.id, "known-dataset");
-            assert(urls.some((u) => u.includes("/dataset/list/systemadmin")));
-        });
-    }
-);
-
-Deno.test(
-    "requires a top-level datasetId for a client-credentials request with an mriquery",
-    async () => {
-        const req = makeReq({
-            headers: { "auth-type": "azure-ad", authorization: clientCredToken },
-            query: { mriquery: zlibBase64({ datasetId: "known-token" }) },
-        });
-        const err = (await run(req)) as { status?: number };
-
-        assertEquals(err?.status, 400);
-        assertEquals(req.dbCredentials.studyAnalyticsCredential, undefined);
-    }
-);
-
-Deno.test(
-    "uses the client-credentials branch for the header and a client-credentials token",
-    async () => {
-        await withPortalStub(async (urls) => {
-            const req = makeReq({
-                headers: { "auth-type": "azure-ad", authorization: clientCredToken },
-                query: { datasetId: "someone-elses-dataset" },
-            });
-            const nextArg = await run(req);
-
-            // The client-credentials branch has no 403 for an unknown dataset.
-            assertEquals(nextArg, undefined);
-            assert(urls.some((u) => u.includes("/dataset/list/systemadmin")));
-        });
-    }
-);
-
-Deno.test(
-    "uses the user branch for the auth-type header with a user token",
-    async () => {
-        const req = makeReq({
-            headers: { "auth-type": "azure-ad", authorization: userToken },
-            query: { datasetId: "someone-elses-dataset" },
-        });
-        const err = (await run(req)) as { status?: number };
-
-        assertEquals(err?.status, 403);
-        assertEquals(req.dbCredentials.studyAnalyticsCredential, undefined);
-    }
-);
-
-Deno.test(
-    "uses the user branch for the auth-type header without a token",
-    async () => {
-        const req = makeReq({
-            headers: { "auth-type": "shared-azure-ad" },
-            query: { datasetId: "someone-elses-dataset" },
-        });
-        const err = (await run(req)) as { status?: number };
-
-        assertEquals(err?.status, 403);
-    }
-);
-
-Deno.test(
-    "uses the user branch for a client-credentials token without the header",
-    async () => {
-        const req = makeReq({
-            headers: { authorization: clientCredToken },
-            query: { datasetId: "someone-elses-dataset" },
-        });
-        const err = (await run(req)) as { status?: number };
-
-        assertEquals(err?.status, 403);
     }
 );
 

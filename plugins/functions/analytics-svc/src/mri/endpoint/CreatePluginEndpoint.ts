@@ -1,4 +1,4 @@
-import { convertZlibBase64ToJson, getUser, utils } from "@alp/alp-base-utils";
+import { convertZlibBase64ToJson, getUser } from "@alp/alp-base-utils";
 import {
     BackendConfigWithCDMConfigMetaDataType,
     CohortDefinitionType,
@@ -47,11 +47,7 @@ export async function createEndpointFromRequest(req: IMRIRequest): Promise<{
             }
         }
         const datasetId = getRequestDatasetId(req);
-
-        // Temp guard for Client-credentials requests.s
-        const studySchemaName = utils.isClientCredReq(req)
-            ? undefined
-            : req.selectedstudyDbMetadata?.schemaName;
+        const studySchemaName = req.selectedstudyDbMetadata?.schemaName;
 
         if (studySchemaName) {
             //Use schemaname from analyticsConnection, since duckdb doesnt follow the same naming convention as other dbs
