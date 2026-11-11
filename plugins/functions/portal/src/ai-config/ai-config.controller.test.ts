@@ -135,10 +135,22 @@ Deno.test(
         [delActive.status, delActive.body.code],
         [400, "AI_CONFIG_ACTIVE_DELETE"],
       );
+      const delBad = await call("DELETE", "/2?newActiveId=2");
+      assertEquals(
+        [delBad.status, delBad.body.code, delBad.body.field],
+        [400, "AI_CONFIG_INVALID", "newActiveId"],
+      );
       assertEquals(await call("DELETE", "/1"), {
         status: 200,
-        body: { id: 1 },
+        body: { id: 1, featureFlagTurnedOff: false },
       });
+      // the query parameter reaches the service: replace the active row 2 with 3
+      await call("POST", "", bedrock({ region: "ap-1" }));
+      assertEquals(await call("DELETE", "/2?newActiveId=3"), {
+        status: 200,
+        body: { id: 2, featureFlagTurnedOff: false },
+      });
+      assertEquals((await call("GET", "/3")).body.isActive, true);
 
       // verbs that are not routes
       assertEquals((await call("PATCH", "/2")).status, 404);

@@ -20,7 +20,7 @@ export type AiConfigErrorCode =
  * Response body (Danet 2.4.3 default handler): { status, name, code, field?, message }.
  * Keep `code` and `field` as constructor parameter properties; errors.test.ts checks
  * that they reach the response body.
- * `field` is set only for AI_CONFIG_INVALID and AI_CONFIG_DUPLICATE.
+ * `field` is set only for AI_CONFIG_INVALID (including `newActiveId` on delete) and AI_CONFIG_DUPLICATE.
  */
 export class AiConfigError extends HttpException {
   constructor(

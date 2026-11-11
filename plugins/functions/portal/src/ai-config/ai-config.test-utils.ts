@@ -6,6 +6,7 @@
 // key at load, so tests cannot simulate "key unset" through the environment: they
 // override `getKey()` through TestService instead.
 import { Buffer } from "node:buffer";
+import { Feature } from "../feature/entity/feature.entity.ts";
 import { AiConfigService } from "./ai-config.service.ts";
 import { parseEncryptionKey } from "./crypto.ts";
 import { AiConfigRepository } from "./repository/ai-config.repository.ts";
@@ -32,6 +33,8 @@ function pgError(constraint: string) {
  */
 export class FakeDb {
   rows: Row[] = [];
+  /** `portal.feature` rows; manager calls with the Feature entity act on these. */
+  features: Row[] = [];
   nextId = 1;
   /** Everything the runner/manager was asked to do, in order. */
   queries: string[] = [];
@@ -42,8 +45,10 @@ export class FakeDb {
   poolCalls: string[] = [];
   /** Throw this from the next manager.insert (to simulate a Postgres error). */
   failNextInsertWith: Error | null = null;
+  /** Throw this from the next manager.update on the Feature entity. */
+  failNextFeatureUpdateWith: Error | null = null;
 
-  private snapshot: { rows: Row[]; nextId: number } | null = null;
+  private snapshot: { rows: Row[]; features: Row[]; nextId: number } | null = null;
 
   private checkIndexes(rows: Row[]) {
     const seen = new Set<string>();
@@ -67,8 +72,13 @@ export class FakeDb {
       if (opts?.order?.id === "ASC") out.sort((a, b) => a.id - b.id);
       return Promise.resolve(out);
     },
-    findOneBy: (_e: unknown, criteria: Row) => {
+    findOneBy: (e: unknown, criteria: Row) => {
       this.queries.push("manager.findOneBy");
+      if (e === Feature) {
+        this.queries.push("feature.findOneBy");
+        const f = this.features.find((x) => this.match(x, criteria));
+        return Promise.resolve(f ? { ...f } : null);
+      }
       const r = this.rows.find((x) => this.match(x, criteria));
       return Promise.resolve(r ? { ...r } : null);
     },
@@ -93,8 +103,20 @@ export class FakeDb {
       this.rows = next;
       return Promise.resolve({ identifiers: [{ id: row.id }] });
     },
-    update: (_e: unknown, criteria: Row, partial: Row) => {
+    update: (e: unknown, criteria: Row, partial: Row) => {
       this.queries.push("manager.update");
+      if (e === Feature) {
+        this.queries.push("feature.update");
+        if (this.failNextFeatureUpdateWith) {
+          const err = this.failNextFeatureUpdateWith;
+          this.failNextFeatureUpdateWith = null;
+          return Promise.reject(err);
+        }
+        this.features = this.features.map((f) =>
+          this.match(f, criteria) ? { ...f, ...partial } : f
+        );
+        return Promise.resolve({});
+      }
       const next = this.rows.map((r) =>
         this.match(r, criteria) ? { ...r, ...partial } : r
       );
@@ -125,6 +147,7 @@ export class FakeDb {
         startTransaction: () => {
           this.snapshot = {
             rows: this.rows.map((r) => ({ ...r })),
+            features: this.features.map((r) => ({ ...r })),
             nextId: this.nextId,
           };
           return Promise.resolve();
@@ -142,6 +165,7 @@ export class FakeDb {
           this.rollbacks++;
           if (this.snapshot) {
             this.rows = this.snapshot.rows;
+            this.features = this.snapshot.features;
             this.nextId = this.snapshot.nextId;
           }
           this.snapshot = null;

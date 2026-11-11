@@ -16,6 +16,7 @@ import {
   AiConfigResponse,
   NormalisedAiConfig,
 } from "./dto/ai-config.dto.ts";
+import { Feature } from "../feature/entity/feature.entity.ts";
 import { AiConfig } from "./entity/ai-config.entity.ts";
 import {
   AI_CONFIG_ACTIVE_DELETE,
@@ -35,6 +36,7 @@ import { AiConfigRepository } from "./repository/ai-config.repository.ts";
  * Trex's auth code takes in the same database.
  */
 export const AI_CONFIG_LOCK_KEY = 3561003561n;
+export const AI_CONFIG_FEATURE_FLAG = "pythia";
 export const AI_CONFIG_NAME_INDEX = "ai_config_name_idx";
 
 const MAX_INT4 = 2147483647;
@@ -174,21 +176,50 @@ export class AiConfigService {
     });
   }
 
-  async delete(rawId: string): Promise<{ id: number }> {
+  async delete(
+    rawId: string,
+    rawNewActiveId: string | undefined,
+  ): Promise<{ id: number; featureFlagTurnedOff: boolean }> {
     const id = this.parseId(rawId);
+    // An empty string counts as absent.
+    const newActiveId = rawNewActiveId ? this.parseNewActiveId(rawNewActiveId) : null;
     return await this.withLock(async (manager) => {
       const rows = await this.repo.listTx(manager);
       const row = rows.find((r) => r.id === id);
       if (!row) throw this.notFound();
-      if (row.isActive && rows.length > 1) {
+      if (
+        newActiveId !== null &&
+        (newActiveId === id || !rows.some((r) => r.id === newActiveId))
+      ) {
+        throw this.invalid("newActiveId", "newActiveId must be another existing configuration");
+      }
+      if (newActiveId === null && row.isActive && rows.length > 1) {
         throw new AiConfigError(
           400,
           AI_CONFIG_ACTIVE_DELETE,
-          "The active configuration cannot be deleted while others exist",
+          "Choose a new active configuration when deleting the active one",
         );
       }
       await this.repo.deleteTx(manager, id);
-      return { id };
+      if (newActiveId !== null) {
+        // Also when the deleted row was no longer active: the caller's choice wins.
+        // Two statements, as in activate().
+        await this.repo.clearActiveTx(manager, this.userId);
+        await this.repo.setActiveTx(manager, newActiveId, this.userId);
+      }
+      let featureFlagTurnedOff = false;
+      if (rows.length === 1) {
+        // Deliberately not FeatureService: its reads use the pool, outside this transaction.
+        const flag = await manager.findOneBy(Feature, { feature: AI_CONFIG_FEATURE_FLAG });
+        if (flag?.isEnabled) {
+          await manager.update(Feature, { id: flag.id }, {
+            isEnabled: false,
+            modifiedBy: this.userId,
+          });
+          featureFlagTurnedOff = true;
+        }
+      }
+      return { id, featureFlagTurnedOff };
     });
   }
 
@@ -263,13 +294,23 @@ export class AiConfigService {
     return row;
   }
 
-  /** Positive integer in int4 range, else 404 without touching Postgres. */
-  private parseId(raw: string): number {
-    if (typeof raw !== "string" || !/^[1-9]\d{0,9}$/.test(raw)) {
-      throw this.notFound();
-    }
+  /** Positive integer in int4 range, else null. */
+  private parseInt4(raw: string): number | null {
+    if (typeof raw !== "string" || !/^[1-9]\d{0,9}$/.test(raw)) return null;
     const id = Number(raw);
-    if (id > MAX_INT4) throw this.notFound();
+    return id > MAX_INT4 ? null : id;
+  }
+
+  /** `:id`: else 404 without touching Postgres. */
+  private parseId(raw: string): number {
+    const id = this.parseInt4(raw);
+    if (id === null) throw this.notFound();
+    return id;
+  }
+
+  private parseNewActiveId(raw: string): number {
+    const id = this.parseInt4(raw);
+    if (id === null) throw this.invalid("newActiveId", "newActiveId is not a valid id");
     return id;
   }
 

@@ -7,6 +7,7 @@ import {
   Param,
   Post,
   Put,
+  Query,
 } from "@danet/core";
 import { RequestContextMiddleware } from "../common/request-context.middleware.ts";
 import { AiConfigService } from "./ai-config.service.ts";
@@ -42,7 +43,10 @@ export class AiConfigController {
   }
 
   @Delete(":id")
-  async delete(@Param("id") id: string) {
-    return await this.service.delete(id);
+  async delete(
+    @Param("id") id: string,
+    @Query("newActiveId") newActiveId: string | undefined,
+  ) {
+    return await this.service.delete(id, newActiveId);
   }
 }
