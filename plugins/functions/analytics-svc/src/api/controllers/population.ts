@@ -3,7 +3,6 @@ import { PatientCountEndpoint } from "../../mri/endpoint/PatientCountEndpoint";
 import { PatientListEndpoint } from "../../mri/endpoint/PatientListEndpoint";
 import { InclusionReportEndpoint } from "../../mri/endpoint/InclusionReportEndpoint";
 import { getUser, EnvVarUtils, QueryObject } from "@alp/alp-base-utils";
-import { getRequestDatasetId } from "../../utils/requestDataset";
 import { IMRIRequest } from "../../types";
 
 import { DBError as dbe } from "@alp/alp-base-utils";
@@ -98,7 +97,7 @@ export async function populationQuery(req: IMRIRequest, res, next) {
                         }
 
                         try {
-                            const datasetId = getRequestDatasetId(req);
+                            const datasetId = req.query.datasetId;
                             let sFilename: string =
                                 <string>req.query.name ||
                                 "MRI_CSV_" + new Date().toISOString() + ".csv";

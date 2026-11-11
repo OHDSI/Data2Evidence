@@ -4,9 +4,9 @@ import {
     CohortDefinitionType,
     PluginEndpointRequestType,
     IMRIRequest,
+    StudyDbMetadata,
 } from "../../types";
 import { PluginEndpoint } from "./PluginEndpoint";
-import { getRequestDatasetId } from "../../utils/requestDataset";
 
 export async function createEndpointFromRequest(req: IMRIRequest): Promise<{
     cohortDefinition: CohortDefinitionType;
@@ -46,8 +46,10 @@ export async function createEndpointFromRequest(req: IMRIRequest): Promise<{
                 }
             }
         }
-        const datasetId = getRequestDatasetId(req);
-        const studySchemaName = req.selectedstudyDbMetadata?.schemaName;
+        let datasetId = req.query.datasetId || req.body.datasetId;
+        const studyMetadata: StudyDbMetadata =
+            req.studiesDbMetadata.studies.find((o) => o.id === datasetId);
+        const studySchemaName = studyMetadata?.schemaName;
 
         if (studySchemaName) {
             //Use schemaname from analyticsConnection, since duckdb doesnt follow the same naming convention as other dbs

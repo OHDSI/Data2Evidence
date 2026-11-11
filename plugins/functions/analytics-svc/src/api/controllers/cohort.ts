@@ -15,7 +15,6 @@ import { CohortEndpoint } from "../../mri/endpoint/CohortEndpoint";
 import { generateQuery } from "../../utils/QueryGenSvcProxy";
 import { createEndpointFromRequest } from "../../mri/endpoint/CreatePluginEndpoint";
 import PortalServerAPI from "../PortalServerAPI";
-import { getRequestDatasetId } from "../../utils/requestDataset";
 import { convertIFRToExtCohort } from "../../ifr-to-extcohort/main";
 import { dataflowRequest } from "../../utils/DataflowMgmtProxy";
 import { env } from "../../env";
@@ -161,7 +160,7 @@ export async function getFilteredCohorts(req: IMRIRequest, res: Response) {
 export async function createCohort(req: IMRIRequest, res: Response) {
     let cohortWriteStarted = false;
     try {
-        const datasetId = getRequestDatasetId(req);
+        const datasetId = req.body.datasetId;
         const token = req.headers.authorization;
         const { bookmarkId } = JSON.parse(req.body.syntax);
         const analyticsConnection = getCohortAnalyticsConnection(req);
@@ -411,7 +410,7 @@ export async function generateCohortDefinition(
     res: Response
 ) {
     try {
-        const datasetId = getRequestDatasetId(req);
+        const datasetId = req.body.datasetId;
         const language = getUser(req).lang;
         // Remap mriquery for use in createEndpointFromRequest
         const { cohortDefinition } = await createEndpointFromRequest(req);

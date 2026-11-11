@@ -319,7 +319,10 @@ export default async (req: IMRIRequest, res, next) => {
                 forbidden.status = 403;
                 throw forbidden;
             }
-            req.selectedstudyDbMetadata = studyMetadata;
+            // Set req.selectedstudyDbMetadata if it does not already exist
+            if (!req.selectedstudyDbMetadata) {
+                req.selectedstudyDbMetadata = studyMetadata;
+            }
             getDbConnectionByStudyMetadata(studyMetadata);
             await addConfigMetadataToReq(datasetId);
         }

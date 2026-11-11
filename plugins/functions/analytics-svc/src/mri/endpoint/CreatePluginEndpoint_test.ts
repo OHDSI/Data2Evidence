@@ -23,7 +23,7 @@ const mriquery = zlibBase64({
 const makeReq = (overrides: Record<string, unknown> = {}) =>
     ({
         headers: { authorization: `Bearer ${userToken}` },
-        query: { mriquery },
+        query: { mriquery, datasetId: "known-dataset" },
         body: {},
         dbConnections: {
             analyticsConnection: { dialect: "POSTGRES", schemaName: "cdm" },
@@ -34,20 +34,19 @@ const makeReq = (overrides: Record<string, unknown> = {}) =>
                 { id: "other-dataset", schemaName: "other_cdm" },
             ],
         },
-        selectedstudyDbMetadata: { id: "known-dataset", schemaName: "cdm" },
         ...overrides,
     }) as any;
 
-Deno.test("returns the selected dataset, not the mriquery dataset", async () => {
+Deno.test("returns the request datasetId, not the mriquery dataset", async () => {
     const { datasetId, cohortDefinition } = await createEndpointFromRequest(makeReq());
 
     assertEquals(datasetId, "known-dataset");
     assertEquals(cohortDefinition.configData.configId, "c");
 });
 
-Deno.test("rejects the request when no dataset is selected", async () => {
+Deno.test("rejects the request when it names no dataset", async () => {
     await assertRejects(
-        () => createEndpointFromRequest(makeReq({ selectedstudyDbMetadata: undefined })),
+        () => createEndpointFromRequest(makeReq({ query: { mriquery } })),
         Error,
         "Schema name undefined"
     );
