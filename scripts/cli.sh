@@ -294,6 +294,7 @@ EOF
             echo "SUPABASE_STORAGE_JWT_TOKEN=$JWT_TOKEN" >> $DOTENV_FILE
             echo PROJECT_NAME=$PROJECT_NAME >> $DOTENV_FILE
             echo TREX__SQL__PASSWORD=$(random-password $DEFAULT_PASSWORD_LENGTH) >> $DOTENV_FILE
+            echo TREX__SQL_TOKEN=$(random-password $DEFAULT_PASSWORD_LENGTH) >> $DOTENV_FILE
             # Both are hard requirements in docker-compose.yml (${VAR:?...}): trex
             # refuses to boot without a root key, and the OIDC client secret is
             # shared between the provider and WebAPI. Without these the generated

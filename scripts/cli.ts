@@ -330,6 +330,9 @@ class D2ECli {
       TREX__SQL__PASSWORD: `${this.generate_random_password(
         this.DEFAULT_PASSWORD_LENGTH,
       )}`,
+      TREX__SQL_TOKEN: `${this.generate_random_password(
+        this.DEFAULT_PASSWORD_LENGTH,
+      )}`,
       // Which IdP the stack authenticates against. Read by the container
       // (d2e-compat) and by the setup scripts, which run on the host -- so it
       // lives in the env file rather than only in compose, or the two disagree.
