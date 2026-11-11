@@ -1,4 +1,4 @@
-import React, { FC, useCallback, useState } from "react";
+import React, { FC, useCallback, useMemo, useState } from "react";
 import { SxProps } from "@mui/system";
 import Divider from "@mui/material/Divider";
 import FormControl from "@mui/material/FormControl";
@@ -7,13 +7,17 @@ import Grid from "@mui/material/Grid";
 import { Button, Dialog, TermsOfUseIcon } from "@portal/components";
 import { api } from "../../../../../axios/api";
 import { getFileSizeDisplay, getFileExtension } from "../../../../../utils";
-import { CloseDialogType, DatasetResource, Feedback } from "../../../../../types";
+import { formatFileTypeList, validateResourceFile } from "../../../../../utils/resourceUpload";
+import { CloseDialogType, DatasetResource, Feedback, ResourceUploadConfig } from "../../../../../types";
 import "./DatasetResourceUploadConfirmDialog.scss";
 import { useTranslation } from "../../../../../contexts";
 
 interface DatasetResourceUploadConfirmDialogProps {
   datasetId: string;
   file?: File;
+  // Upload rules from the backend. When missing, the dialog skips its own
+  // check and relies on the backend's.
+  uploadConfig?: ResourceUploadConfig;
   open: boolean;
   onClose?: (type: CloseDialogType, resource?: DatasetResource) => void;
 }
@@ -40,6 +44,7 @@ const styles: SxProps = {
 const DatasetResourceUploadConfirmDialog: FC<DatasetResourceUploadConfirmDialogProps> = ({
   datasetId,
   file,
+  uploadConfig,
   open,
   onClose,
 }) => {
@@ -47,6 +52,20 @@ const DatasetResourceUploadConfirmDialog: FC<DatasetResourceUploadConfirmDialogP
   const [feedback, setFeedback] = useState<Feedback>({});
   const extension = getFileExtension(file?.name).toUpperCase();
   const [loading, setLoading] = useState(false);
+
+  // Checked as soon as the file is picked, before anything is uploaded.
+  const validationError = useMemo(() => {
+    if (!file || !uploadConfig) return undefined;
+    if (validateResourceFile(file, uploadConfig) === "type") {
+      return getText(i18nKeys.DATASET_RESOURCE_UPLOAD_CONFIRM_DIALOG__ERROR_TYPE, [
+        formatFileTypeList(
+          uploadConfig.allowedExtensions,
+          getText(i18nKeys.DATASET_RESOURCE_UPLOAD_CONFIRM_DIALOG__OR)
+        ),
+      ]);
+    }
+    return undefined;
+  }, [file, uploadConfig, getText, i18nKeys]);
 
   const mapFileToResource = useCallback(
     (file: File): DatasetResource => ({
@@ -74,7 +93,8 @@ const DatasetResourceUploadConfirmDialog: FC<DatasetResourceUploadConfirmDialogP
           console.error(error);
 
           if (error.data?.message) {
-            setFeedback({ type: "error", message: error.data.message });
+            // The API prefixes messages with the status code ("400 - ...").
+            setFeedback({ type: "error", message: String(error.data.message).replace(/^\d{3} - /, "") });
           } else {
             setFeedback({
               type: "error",
@@ -97,13 +117,18 @@ const DatasetResourceUploadConfirmDialog: FC<DatasetResourceUploadConfirmDialogP
       closable
       open={open}
       onClose={() => handleClose("cancelled")}
-      feedback={feedback}
+      feedback={validationError ? { type: "error", message: validationError } : feedback}
     >
       <Divider />
       <div className="dataset-resource-upload-confirm-dialog__content">
         <FormControl sx={styles} className="metadata-form" variant="standard" fullWidth>
           <FormLabel>{getText(i18nKeys.DATASET_RESOURCE_UPLOAD_CONFIRM_DIALOG__FILE)}</FormLabel>
-          <Grid container className="dataset-resource-upload-confirm-dialog__file">
+          <Grid
+            container
+            className={`dataset-resource-upload-confirm-dialog__file${
+              validationError ? " dataset-resource-upload-confirm-dialog__file--error" : ""
+            }`}
+          >
             <Grid item xs={7}>
               <TermsOfUseIcon style={{ marginRight: 10 }} />
               {file?.name || getText(i18nKeys.DATASET_RESOURCE_UPLOAD_CONFIRM_DIALOG__UNTITLED)}
@@ -118,7 +143,7 @@ const DatasetResourceUploadConfirmDialog: FC<DatasetResourceUploadConfirmDialogP
         </FormControl>
       </div>
       <Divider />
-      <div className="button-group-actions">
+      <div className={`button-group-actions${validationError ? " button-group-actions--single" : ""}`}>
         <Button
           text={getText(i18nKeys.DATASET_RESOURCE_UPLOAD_CONFIRM_DIALOG__CANCEL)}
           onClick={() => handleClose("cancelled")}
@@ -126,12 +151,15 @@ const DatasetResourceUploadConfirmDialog: FC<DatasetResourceUploadConfirmDialogP
           block
           disabled={loading}
         />
-        <Button
-          text={getText(i18nKeys.DATASET_RESOURCE_UPLOAD_CONFIRM_DIALOG__ADD)}
-          onClick={() => handleClose("success")}
-          block
-          loading={loading}
-        />
+        {/* A file that fails the check can only be cancelled. */}
+        {!validationError && (
+          <Button
+            text={getText(i18nKeys.DATASET_RESOURCE_UPLOAD_CONFIRM_DIALOG__ADD)}
+            onClick={() => handleClose("success")}
+            block
+            loading={loading}
+          />
+        )}
       </div>
     </Dialog>
   );

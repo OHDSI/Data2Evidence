@@ -11,6 +11,7 @@ import {
 import { Buffer } from "node:buffer";
 import { ResourceService } from "./resource.service.ts";
 import { getResourceUploadConfig } from "./resource-upload.config.ts";
+import { validateResourceFile } from "./resource-upload.validation.ts";
 
 @Controller("system-portal/dataset/resource")
 export class ResourceController {
@@ -37,7 +38,16 @@ export class ResourceController {
     @Req() request: Request
   ) {
     const formData = await request.formData();
-    const file = formData.get("file") as File;
+    const file = formData.get("file");
+    if (!(file instanceof File)) {
+      throw new HttpException(400, "No file was uploaded");
+    }
+
+    // Same rules as the Add file dialog, in case its check was bypassed.
+    const validationError = validateResourceFile(file, getResourceUploadConfig());
+    if (validationError) {
+      throw new HttpException(400, validationError);
+    }
 
     const uploadedFile = {
       originalname: file.name,

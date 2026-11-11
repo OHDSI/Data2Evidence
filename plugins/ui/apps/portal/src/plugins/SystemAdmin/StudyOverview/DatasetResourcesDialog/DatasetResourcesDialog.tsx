@@ -259,6 +259,7 @@ const DatasetResourcesDialog: FC<DatasetResourcesDialogProps> = ({ study, open, 
         <DatasetResourceUploadConfirmDialog
           datasetId={study.id}
           file={selectedFile}
+          uploadConfig={uploadConfig}
           open={showConfirmDialog}
           onClose={handleConfirmUploadClose}
         />

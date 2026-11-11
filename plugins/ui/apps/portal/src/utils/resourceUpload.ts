@@ -17,3 +17,17 @@ export const formatMaxFileSize = (maxFileSizeBytes: number): string => {
   const mb = maxFileSizeBytes / BYTES_PER_MB;
   return `${Number.isInteger(mb) ? mb : Number(mb.toFixed(1))} MB`;
 };
+
+export type ResourceFileError = "type";
+
+// Checks a picked file against the upload rules. Mirrors the backend check in
+// plugins/functions/portal/src/dataset/resource/resource-upload.validation.ts.
+export const validateResourceFile = (
+  file: { name: string },
+  config: { allowedExtensions: string[] }
+): ResourceFileError | undefined => {
+  const lastDot = file.name.lastIndexOf(".");
+  const extension = lastDot > 0 ? file.name.slice(lastDot + 1).toLowerCase() : "";
+  if (!config.allowedExtensions.includes(extension)) return "type";
+  return undefined;
+};

@@ -360,6 +360,8 @@ export const i18nDefault = {
     DATASET_RESOURCE_UPLOAD_CONFIRM_DIALOG__ERROR_DESCRIPTION:
       "Please try again. To report the error, please send an email to your administrator.",
     DATASET_RESOURCE_UPLOAD_CONFIRM_DIALOG__FILE: "File",
+    DATASET_RESOURCE_UPLOAD_CONFIRM_DIALOG__ERROR_TYPE: "This file type isn't supported. Upload a {0} file.",
+    DATASET_RESOURCE_UPLOAD_CONFIRM_DIALOG__OR: "or",
     DATASET_RESOURCE_UPLOAD_CONFIRM_DIALOG__UNTITLED: "Untitled",
     DATASET_SELECTOR__SELECT_STUDY: "Select study",
     DATA_CHARACTERIZATION_REPORTS__REPORT_SELECTOR_LABEL: "Select data characterization report",

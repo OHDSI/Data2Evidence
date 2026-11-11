@@ -1,4 +1,4 @@
-import { formatFileTypeList, formatMaxFileSize, toAcceptAttribute } from "../resourceUpload";
+import { formatFileTypeList, formatMaxFileSize, toAcceptAttribute, validateResourceFile } from "../resourceUpload";
 
 const MB = 1024 * 1024;
 const ALL_TYPES = ["pdf", "csv", "json", "xlsx", "docx", "sql", "md", "txt"];
@@ -35,4 +35,20 @@ describe("resourceUpload utils", () => {
       expect(formatMaxFileSize(Math.floor(2.25 * MB))).toBe("2.3 MB");
     });
   });
+});
+
+describe("validateResourceFile", () => {
+  const config = { allowedExtensions: ALL_TYPES };
+
+  it("accepts allowed extensions in any case", () => {
+    expect(validateResourceFile({ name: "data.CSV" }, config)).toBeUndefined();
+    expect(validateResourceFile({ name: "report.Pdf" }, config)).toBeUndefined();
+  });
+
+  it.each(["a.exe", "a.sh", "a.bat", "a.js", "a.html", "a.R", "a.EXE", "report.pdf.exe", "Makefile", ".env"])(
+    "rejects %s as the wrong type",
+    (name) => {
+      expect(validateResourceFile({ name }, config)).toBe("type");
+    }
+  );
 });
