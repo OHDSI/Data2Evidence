@@ -129,6 +129,11 @@ export const i18nDefault = {
     ADD_USER_DIALOG__SUCCESS: "User added successfully",
     ADD_USER_DIALOG__USERNAME: "Username",
     ADD_USER_DIALOG__USERNAME_HELPER: "Username should only contain letters, numbers, or underscore.",
+    AI_CONFIG__ACTION_ERROR: "The action could not be completed. Try again.",
+    AI_CONFIG__ACTIVATED_TOAST: "{0} is now the active AI configuration.",
+    AI_CONFIG__ACTIVATE_BODY:
+      'The AI assistant will switch from "{0}" to "{1}" ({2}) for everyone in your organization.',
+    AI_CONFIG__ACTIVATE_TITLE: 'Set "{0}" as active?',
     AI_CONFIG__ACTIVE: "Active",
     AI_CONFIG__ADD: "Add AI configuration",
     AI_CONFIG__ADD_TITLE: "Add AI configuration",
@@ -150,10 +155,19 @@ export const i18nDefault = {
     AI_CONFIG__COLUMN_PROVIDER: "Provider",
     AI_CONFIG__CONNECTION_API_KEY: "API key",
     AI_CONFIG__CONNECTION_WORKSPACE: "Workspace",
+    AI_CONFIG__DELETE: "Delete",
+    AI_CONFIG__DELETED_TOAST: "{0} AI configuration has been deleted successfully.",
+    AI_CONFIG__DELETE_BODY:
+      "Are you sure you want to delete this AI configuration: {0}? This action cannot be undone.",
+    AI_CONFIG__DELETE_CONFIRM: "Yes, delete",
+    AI_CONFIG__DELETE_DISABLED_HINT: "Set another configuration as active first",
+    AI_CONFIG__DELETE_TITLE: "Delete configuration?",
     AI_CONFIG__EDIT: "Edit",
     AI_CONFIG__EDIT_TITLE: "Edit AI configuration",
     AI_CONFIG__EMPTY_DESCRIPTION: "Add a configuration to connect an AI provider and choose its models.",
     AI_CONFIG__EMPTY_TITLE: "No AI configurations yet",
+    AI_CONFIG__ERROR__ACTIVE_DELETE:
+      "The active configuration cannot be deleted while others exist. Set another configuration as active first.",
     AI_CONFIG__ERROR__DUPLICATE: "A configuration with this name already exists.",
     AI_CONFIG__ERROR__ENCRYPTION_KEY_NOT_CONFIGURED:
       "The server has no encryption key configured for AI configurations. Ask an administrator to set it.",
@@ -165,6 +179,7 @@ export const i18nDefault = {
     AI_CONFIG__HIDE_KEY: "Hide API key",
     AI_CONFIG__LOAD_ERROR: "The AI configurations could not be loaded.",
     AI_CONFIG__MODEL_LABEL: "Model",
+    AI_CONFIG__MORE_ACTIONS: "More actions",
     AI_CONFIG__NAME_LABEL: "Configuration name",
     AI_CONFIG__PROVIDER_ANTHROPIC: "Anthropic API",
     AI_CONFIG__PROVIDER_BEDROCK: "AWS Bedrock",
@@ -174,6 +189,7 @@ export const i18nDefault = {
     AI_CONFIG__REGION_LABEL: "Region",
     AI_CONFIG__SAVE: "Save configuration",
     AI_CONFIG__SECTION_CONFIGURATION: "Configuration",
+    AI_CONFIG__SET_ACTIVE: "Set as active",
     AI_CONFIG__SHOW_KEY: "Show API key",
     AI_CONFIG__SUBTITLE:
       "Connect AI providers and choose their models. You can add as many configurations as you need, but only one is active at a time.",

@@ -155,6 +155,22 @@ describe("render smoke", () => {
     expect(closed).toBe(1);
   });
 
+  it("describes a tooltip item through aria-describedby, not an aria-label on the wrapper", () => {
+    mount(
+      <Menu
+        items={[
+          { label: "Delete", value: "delete", disabled: true, tooltip: "Pick another first" },
+          { label: "Rename", value: "rename" },
+        ]}
+      />,
+    );
+    const del = screen.getByRole("menuitem", { name: "Delete" });
+    const hint = document.getElementById(del.getAttribute("aria-describedby") as string);
+    expect(hint?.textContent).toBe("Pick another first");
+    expect(del.closest(".d2e-menu__item-wrap")?.hasAttribute("aria-label")).toBe(false);
+    expect(screen.getByRole("menuitem", { name: "Rename" }).hasAttribute("aria-describedby")).toBe(false);
+  });
+
   it("renders the inline menu as a roving-tabindex list", () => {
     mount(
       <Menu

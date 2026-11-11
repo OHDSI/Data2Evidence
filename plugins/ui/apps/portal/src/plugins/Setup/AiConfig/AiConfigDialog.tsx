@@ -5,6 +5,7 @@ import { Alert, Button, Dialog, IconButton, Select, TextField } from "ui-react";
 import { api } from "../../../axios/api";
 import { useTranslation } from "../../../contexts";
 import { AiConfig, AiConfigInput, AiConfigProvider } from "../../../types/aiConfig";
+import { aiConfigErrorKey } from "./aiConfigList";
 import "./AiConfigDialog.scss";
 
 const KEY_PLACEHOLDER = "***REDACTED***";
@@ -93,7 +94,9 @@ export const AiConfigDialog: FC<Props> = ({ config, onClose, onSaved }) => {
     setSaving(true);
     setError(null);
     try {
-      const saved = config ? await api.systemPortal.updateAiConfig(config.id, body) : await api.systemPortal.createAiConfig(body);
+      const saved = config
+        ? await api.systemPortal.updateAiConfig(config.id, body)
+        : await api.systemPortal.createAiConfig(body);
       onSaved(saved);
     } catch (err: any) {
       // The rejection holds the request body (with the API key), so only the code and field are read from it.
@@ -104,12 +107,14 @@ export const AiConfigDialog: FC<Props> = ({ config, onClose, onSaved }) => {
     }
   };
 
-  const errorKey = error ? `AI_CONFIG__ERROR__${(error.code ?? "").replace(/^AI_CONFIG_/, "")}` : "";
-  const errorText = error ? // The key is built from the error code at runtime, so it is not statically known.
-    getText(errorKey in i18nKeys ? (errorKey as keyof typeof i18nKeys) : i18nKeys.AI_CONFIG__ERROR__GENERIC) : "";
-  const inlineField = error && (error.code === "AI_CONFIG_INVALID" || error.code === "AI_CONFIG_DUPLICATE") ? error.field : undefined;
+  const errorText = error ? getText(aiConfigErrorKey(error.code, i18nKeys, i18nKeys.AI_CONFIG__ERROR__GENERIC)) : "";
+  const inlineField =
+    error && (error.code === "AI_CONFIG_INVALID" || error.code === "AI_CONFIG_DUPLICATE") ? error.field : undefined;
   const fieldError = (field: string) => (inlineField === field ? errorText : undefined);
-  const dialogError = error && (!inlineField || (inlineField !== "name" && inlineField !== "provider" && !fields.includes(inlineField as FieldName)));
+  const dialogError =
+    error &&
+    (!inlineField ||
+      (inlineField !== "name" && inlineField !== "provider" && !fields.includes(inlineField as FieldName)));
 
   const keyLabel = {
     "openai-compatible": "AI_CONFIG__API_KEY_LABEL",
@@ -128,19 +133,21 @@ export const AiConfigDialog: FC<Props> = ({ config, onClose, onSaved }) => {
             value={baseUrl}
             onChange={edit(setBaseUrl)}
             hint={getText(i18nKeys.AI_CONFIG__BASE_URL_HINT)}
-            errorMessages={fieldError("baseUrl") ?? (baseUrlInvalid ? getText(i18nKeys.AI_CONFIG__BASE_URL_INVALID) : undefined)}
+            errorMessages={
+              fieldError("baseUrl") ?? (baseUrlInvalid ? getText(i18nKeys.AI_CONFIG__BASE_URL_INVALID) : undefined)
+            }
           />
         );
       case "apiKey": {
         const hint = keyGiven
           ? undefined
           : config?.keyReadable === false
-            ? getText(i18nKeys.AI_CONFIG__API_KEY_UNREADABLE_HINT)
-            : keepable
-              ? getText(i18nKeys.AI_CONFIG__API_KEY_KEEP_HINT)
-              : config
-                ? getText(i18nKeys.AI_CONFIG__API_KEY_REENTER_HINT)
-                : undefined;
+          ? getText(i18nKeys.AI_CONFIG__API_KEY_UNREADABLE_HINT)
+          : keepable
+          ? getText(i18nKeys.AI_CONFIG__API_KEY_KEEP_HINT)
+          : config
+          ? getText(i18nKeys.AI_CONFIG__API_KEY_REENTER_HINT)
+          : undefined;
         return (
           <TextField
             key={field}
@@ -229,7 +236,13 @@ export const AiConfigDialog: FC<Props> = ({ config, onClose, onSaved }) => {
             {errorText}
           </Alert>
         ) : null}
-        <TextField inputProps={{ "aria-required": true }} label={getText(i18nKeys.AI_CONFIG__NAME_LABEL)} value={name} onChange={edit(setName)} errorMessages={fieldError("name")} />
+        <TextField
+          inputProps={{ "aria-required": true }}
+          label={getText(i18nKeys.AI_CONFIG__NAME_LABEL)}
+          value={name}
+          onChange={edit(setName)}
+          errorMessages={fieldError("name")}
+        />
         <Select
           required
           label={getText(i18nKeys.AI_CONFIG__PROVIDER_LABEL)}
@@ -249,7 +262,11 @@ export const AiConfigDialog: FC<Props> = ({ config, onClose, onSaved }) => {
           <div className="ai-config-dialog__section-header">
             <span>{getText(i18nKeys.AI_CONFIG__SECTION_CONFIGURATION)}</span>
           </div>
-          {provider ? fields.map(renderField) : <p className="ai-config-dialog__empty">{getText(i18nKeys.AI_CONFIG__CHOOSE_PROVIDER_FIRST)}</p>}
+          {provider ? (
+            fields.map(renderField)
+          ) : (
+            <p className="ai-config-dialog__empty">{getText(i18nKeys.AI_CONFIG__CHOOSE_PROVIDER_FIRST)}</p>
+          )}
         </section>
       </div>
     </Dialog>

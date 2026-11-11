@@ -64,6 +64,20 @@
     background: rgba(0, 0, 0, 0.12);
   }
 
+  // Tooltip anchor around an item; keeps the item full width.
+  &__item-wrap {
+    display: block;
+  }
+
+  &__sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+
   &__item-icon {
     display: inline-flex;
     color: currentColor;

@@ -26,3 +26,17 @@ export const connectionSummary = (config: AiConfig, labels: { apiKey: string; wo
   })();
   return detail ? `${labels.apiKey} · ${detail}` : labels.apiKey;
 };
+
+/** The one place that decides deletability: the active row can be deleted only when it is the last row. */
+export const canDeleteAiConfig = (config: AiConfig, configs: AiConfig[]): boolean =>
+  !config.isActive || configs.length === 1;
+
+/** Maps a server error code (`AI_CONFIG_<SUFFIX>`) to its `AI_CONFIG__ERROR__<SUFFIX>` key, else the fallback. */
+export const aiConfigErrorKey = <T extends Record<string, string>>(
+  code: string | undefined,
+  i18nKeys: T,
+  fallback: T[keyof T]
+): T[keyof T] => {
+  const key = `AI_CONFIG__ERROR__${(code ?? "").replace(/^AI_CONFIG_/, "")}`;
+  return key in i18nKeys ? (i18nKeys[key] as T[keyof T]) : fallback;
+};
