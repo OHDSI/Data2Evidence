@@ -54,6 +54,21 @@ jest.mock("../../../contexts", () => ({
 
 const listAiConfigs = api.systemPortal.listAiConfigs as jest.Mock;
 
+// TEMP diagnostic for the CI-only flake; revert after one CI run. Call the returned function at the
+// top of a waitFor callback: each attempt logs what the root looked like, so CI shows whether it retried.
+const probe = (label: string) => {
+  let attempt = 0;
+  return () => {
+    attempt += 1;
+    // stderr, not console: setupTests replaces the global console.
+    process.stderr.write(
+      `[flake-probe] ${expect.getState().currentTestName} | ${label} | attempt ${attempt} | ` +
+        `root aria-hidden=${document.body.firstElementChild?.getAttribute("aria-hidden")} | ` +
+        `body overflow=${document.body.style.overflow || "-"}\n`
+    );
+  };
+};
+
 beforeEach(() => {
   listAiConfigs.mockReset();
   mockSetFeedback.mockReset();
@@ -199,11 +214,13 @@ describe("AiConfigPage list", () => {
     await userEvent.click(screen.getByRole("button", { name: "AI_CONFIG__SAVE" }));
     await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
     // Retry: MUI can leave the root aria-hidden for a moment after the dialog unmounts (seen on slow CI runners).
-    await waitFor(() =>
+    const p = probe("edit rows");
+    await waitFor(() => {
+      p();
       expect(
         screen.getAllByRole("listitem").map((li) => within(li).getByText(/^(Active|Zulu|Beta)$/).textContent)
-      ).toEqual(["Active", "Beta", "Zulu"])
-    );
+      ).toEqual(["Active", "Beta", "Zulu"]);
+    });
     expect(listAiConfigs).toHaveBeenCalledTimes(1);
   });
 });
@@ -226,8 +243,20 @@ describe("AiConfigPage row actions", () => {
     screen.getAllByRole("listitem").map((li) => within(li).getByText(new RegExp(`^(${all.join("|")})$`)).textContent);
   // Row checks after a dialog closes retry: MUI can leave the root aria-hidden for a moment after the dialog
   // unmounts (seen on slow CI runners), and role queries skip aria-hidden content.
-  const expectNames = (all: string[], expected: string[]) => waitFor(() => expect(names(all)).toEqual(expected));
-  const expectRowCount = (n: number) => waitFor(() => expect(screen.getAllByRole("listitem")).toHaveLength(n));
+  const expectNames = (all: string[], expected: string[]) => {
+    const p = probe("names");
+    return waitFor(() => {
+      p();
+      expect(names(all)).toEqual(expected);
+    });
+  };
+  const expectRowCount = (n: number) => {
+    const p = probe("row count");
+    return waitFor(() => {
+      p();
+      expect(screen.getAllByRole("listitem")).toHaveLength(n);
+    });
+  };
   const openMenu = async (name: string) =>
     userEvent.click(await screen.findByRole("button", { name: `AI_CONFIG__MORE_ACTIONS ${name}` }));
   // The toast content is a React node; render it to inspect the DOM it produces.
