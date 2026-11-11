@@ -76,6 +76,14 @@ else
     dev="--env-file $env"
 fi
 ENVFILE=$env
+# Backfill TREX__SQL_TOKEN for env files written before it existed; compose
+# refuses to interpolate without it. Never echo the value.
+if [ -f "$env" ] && [ -z "$(sed -n 's/^TREX__SQL_TOKEN=\(.\)/\1/p' "$env" | head -n1)" ]; then
+    DOTENV_FILE=$env source $node_modules_path/scripts/lib.sh
+    sed -i.bak -e '/^TREX__SQL_TOKEN=/d' "$env" && rm -f "$env.bak"
+    [ -n "$(tail -c1 "$env")" ] && echo >> "$env"
+    echo TREX__SQL_TOKEN=$(random-password $DEFAULT_PASSWORD_LENGTH) >> "$env"
+fi
 # export PROJECT_NAME=${PROJECT_NAME:-d2e}
 
 if [[ $version = "develop" ]]; then

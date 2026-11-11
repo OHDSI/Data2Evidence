@@ -25,6 +25,7 @@ import {
   idpModeOf,
   InvalidIdpModeError,
   LOGTO_FEDERATION_COMPOSE_FILE,
+  backfillEnvKey,
   upgradeEnvForIdpMode,
 } from "./idp-mode-env";
 
@@ -595,6 +596,7 @@ class D2ECli {
     // through `start`: a remote deploy runs `pull` first, and that pull died on
     // exactly that guard. Idempotent, and it also decides the overlay below.
     this.upgrade_env_for_idp_mode();
+    this.backfill_env_key("TREX__SQL_TOKEN");
     const dockerbasecmd = ["docker"];
     dockerbasecmd.push("--log-level", this.DOCKER_LOG_LEVEL);
     dockerbasecmd.push("compose");
@@ -958,6 +960,21 @@ class D2ECli {
     } else {
       console.log(`Recorded D2E_IDP_MODE=trex in ${this.ENVFILE}.`);
     }
+  }
+
+  // Same atomic rewrite as upgrade_env_for_idp_mode; never prints the value.
+  backfill_env_key(key: string): void {
+    if (!fs.existsSync(this.ENVFILE)) return;
+    const out = backfillEnvKey(
+      fs.readFileSync(this.ENVFILE, "utf-8"),
+      key,
+      () => this.generate_random_password(this.DEFAULT_PASSWORD_LENGTH),
+    );
+    if (!out.added) return;
+    const tmp = `${this.ENVFILE}.tmp-${process.pid}-${Date.now()}`;
+    fs.writeFileSync(tmp, out.content);
+    fs.renameSync(tmp, this.ENVFILE);
+    console.log(`Added ${key} to ${this.ENVFILE}.`);
   }
 
   isFullStart(opts: CliOptions): boolean {
