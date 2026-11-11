@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test'
+import { test, expect, openAdminPortalFromAtlas } from '../fixtures'
 
 const TEST_NAME = 'jobs-execute-view-log-and-result'
 const SHOULD_SKIP = false
@@ -15,8 +15,7 @@ test(TEST_NAME, async ({ page, context }) => {
   await page.locator('input[name="password"]').click()
   await page.locator('input[name="password"]').fill('Updatepassword12345')
   await page.getByRole('button', { name: 'Sign in' }).click()
-  await page.getByTestId('button').nth(1).click()
-  await page.getByRole('button', { name: 'Switch to Admin portal' }).click()
+  await openAdminPortalFromAtlas(page)
   await page.getByRole('link', { name: 'Data sources' }).click()
   await expect(page.getByText('Demo dataset')).toBeVisible()
   const demoRow = page.getByRole('row', { name: /Demo dataset/ })
@@ -104,7 +103,6 @@ test(TEST_NAME, async ({ page, context }) => {
   await expect(page.getByRole('link', { name: 'dqd_demo' }).first()).toBeVisible({ timeout: 60000 })
 
   // Jobs: View Logs - Check job logs for job: dqd_demo
-  await page.waitForTimeout(50000)
   await page.getByRole('link', { name: 'dqd_demo' }).first().click()
   await page.waitForTimeout(5000)
   await page.locator('li#logs.p-tab.p-tab__active').waitFor({ state: 'visible' })
