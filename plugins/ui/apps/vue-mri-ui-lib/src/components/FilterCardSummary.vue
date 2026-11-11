@@ -290,7 +290,7 @@ export default {
       // 0-byte .sql file that looks like a successful export, so refuse and
       // say why instead.
       if (!content) {
-        this.notificationStore.setToastMessage({ text: this.getText('MRI_PA_FILTER_SUMMARY_SQL_UNAVAILABLE') })
+        this.notificationStore.setToastMessage({ text: this.getText('MRI_PA_FILTER_SUMMARY_SQL_DOWNLOAD_FAILED') })
         return
       }
       const blob = new Blob([content], { type: 'text/sql' })
@@ -300,6 +300,7 @@ export default {
       document.body.appendChild(link)
       link.click()
       document.body.removeChild(link)
+      this.notificationStore.setToastMessage({ text: this.getText('MRI_PA_FILTER_SUMMARY_SQL_DOWNLOADED') })
     },
     async onClickCopySql() {
       const content = this.getResponse()?.data?.sql || ''
