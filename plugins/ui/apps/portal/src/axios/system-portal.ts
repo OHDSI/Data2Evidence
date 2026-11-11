@@ -18,9 +18,8 @@ import {
   ViewerCode,
   ViewerCodeQuery,
   ViewerCodeWithQueries,
-  AiConfig,
-  AiConfigInput,
 } from "../types";
+import { AiConfig, AiConfigInput } from "../types/aiConfig";
 import { ConfigTypes, LogResponseType } from "../constant";
 const SYSTEM_PORTAL_URL = "system-portal/";
 

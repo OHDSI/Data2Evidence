@@ -1,6 +1,6 @@
 import axios from "axios";
 import { SystemPortal } from "./system-portal";
-import { AiConfigInput } from "../types";
+import { AiConfigInput } from "../types/aiConfig";
 import { request } from "./request";
 
 // The real request module runs; only the axios client underneath it is faked,

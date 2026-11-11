@@ -4,7 +4,7 @@ import userEvent from "@testing-library/user-event";
 import { AiConfigDialog } from "./AiConfigDialog";
 import { api } from "../../../axios/api";
 import { i18nDefault } from "../../../contexts/app-context/states/translation-state";
-import { AiConfig } from "../../../types";
+import { AiConfig } from "../../../types/aiConfig";
 
 jest.mock("../../../axios/api", () => ({
   api: { systemPortal: { createAiConfig: jest.fn(), updateAiConfig: jest.fn() } },

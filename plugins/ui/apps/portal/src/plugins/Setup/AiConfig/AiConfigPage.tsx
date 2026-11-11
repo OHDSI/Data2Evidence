@@ -6,7 +6,7 @@ import "ui-react/tokens.css";
 import "ui-react/style.css";
 import { api } from "../../../axios/api";
 import { useFeedback, useTranslation } from "../../../contexts";
-import { AiConfig } from "../../../types";
+import { AiConfig } from "../../../types/aiConfig";
 import { AiConfigDialog } from "./AiConfigDialog";
 import "./AiConfigPage.scss";
 

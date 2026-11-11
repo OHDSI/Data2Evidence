@@ -4,7 +4,7 @@ import VisibilityOff from "@mui/icons-material/VisibilityOff";
 import { Alert, Button, Dialog, IconButton, Select, TextField } from "ui-react";
 import { api } from "../../../axios/api";
 import { useTranslation } from "../../../contexts";
-import { AiConfig, AiConfigInput, AiConfigProvider } from "../../../types";
+import { AiConfig, AiConfigInput, AiConfigProvider } from "../../../types/aiConfig";
 import "./AiConfigDialog.scss";
 
 const KEY_PLACEHOLDER = "***REDACTED***";
