@@ -364,23 +364,108 @@ describe("AiConfigPage row actions", () => {
     await expectRowCount(1);
   });
 
-  it("falls back to the generic action error for an unknown activate failure", async () => {
+  const openActivate = async (name: string) => {
+    await openMenu(name);
+    await userEvent.click(await screen.findByRole("menuitem", { name: "AI_CONFIG__SET_ACTIVE" }));
+    return screen.findByRole("dialog");
+  };
+
+  it("shows the switching state without a dropdown and ignores a second click while pending", async () => {
+    listAiConfigs.mockResolvedValue([row(1, "Zed", true), row(2, "Beta")]);
+    let resolve!: (r: unknown) => void;
+    activateMock.mockReturnValue(new Promise((r) => (resolve = r)));
+    render(<AiConfigPage />);
+    const dialog = await openActivate("Beta");
+    const primary = within(dialog).getByRole("button", { name: "AI_CONFIG__SET_ACTIVE" });
+    await userEvent.click(primary);
+
+    expect(await within(dialog).findByRole("heading", { name: "AI_CONFIG__SWITCHING_TITLE" })).toBeInTheDocument();
+    expect(dialog).toHaveTextContent("Switching from Zed to Beta (model-Beta) for everyone in your organization.");
+    expect([...dialog.querySelectorAll("strong")].map((e) => e.textContent)).toEqual(["Zed", "Beta"]);
+    expect(within(dialog).getByRole("status")).toHaveTextContent("AI_CONFIG__SWITCHING");
+    expect(within(dialog).getByRole("button", { name: "AI_CONFIG__SWITCHING_BUTTON" })).toBeDisabled();
+    expect(within(dialog).getByRole("button", { name: "AI_CONFIG__CANCEL" })).toBeDisabled();
+    expect(within(dialog).queryByRole("button", { name: "AI_CONFIG__CLOSE" })).not.toBeInTheDocument();
+    expect(within(dialog).queryByRole("combobox")).not.toBeInTheDocument();
+    // The primary is disabled now, so a second click cannot send a second request.
+    await userEvent.click(within(dialog).getByRole("button", { name: "AI_CONFIG__SWITCHING_BUTTON" }), undefined, {
+      skipPointerEventsCheck: true,
+    });
+    expect(activateMock).toHaveBeenCalledTimes(1);
+
+    await act(async () => resolve(row(2, "Beta", true)));
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+  });
+
+  it("keeps the dialog open when activate fails, then retries and can be cancelled", async () => {
+    listAiConfigs.mockResolvedValue([row(1, "Zed", true), row(2, "Beta")]);
+    activateMock.mockRejectedValueOnce({ status: 500 });
+    render(<AiConfigPage />);
+    const dialog = await openActivate("Beta");
+    await userEvent.click(within(dialog).getByRole("button", { name: "AI_CONFIG__SET_ACTIVE" }));
+
+    expect(await within(dialog).findByRole("heading", { name: "AI_CONFIG__SWITCH_FAILED_TITLE" })).toBeInTheDocument();
+    expect(dialog).toHaveTextContent("Zed is still active. No changes were applied for your organization.");
+    expect(dialog.querySelector("strong")).toHaveTextContent("Zed");
+    expect(within(dialog).getByText("AI_CONFIG__SWITCH_FAILED")).toBeInTheDocument();
+    expect(within(dialog).queryByRole("combobox")).not.toBeInTheDocument();
+    expect(within(dialog).getByRole("button", { name: "AI_CONFIG__CLOSE" })).toBeInTheDocument();
+    expect(mockSetFeedback).not.toHaveBeenCalled();
+
+    activateMock.mockResolvedValueOnce(row(2, "Beta", true));
+    await userEvent.click(within(dialog).getByRole("button", { name: "AI_CONFIG__TRY_AGAIN" }));
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+    expect(activateMock).toHaveBeenCalledTimes(2);
+    await expectNames(["Zed", "Beta"], ["Beta", "Zed"]);
+  });
+
+  it("closes a failed activate dialog with Cancel and changes nothing", async () => {
+    listAiConfigs.mockResolvedValue([row(1, "Zed", true), row(2, "Beta")]);
+    activateMock.mockRejectedValue(new Error("network"));
+    render(<AiConfigPage />);
+    const dialog = await openActivate("Beta");
+    await userEvent.click(within(dialog).getByRole("button", { name: "AI_CONFIG__SET_ACTIVE" }));
+    await within(dialog).findByRole("heading", { name: "AI_CONFIG__SWITCH_FAILED_TITLE" });
+    await userEvent.click(within(dialog).getByRole("button", { name: "AI_CONFIG__CANCEL" }));
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+    await expectNames(["Zed", "Beta"], ["Zed", "Beta"]);
+    expect(activateMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("keeps the delete dialog open on a generic failure with a banner and Try again", async () => {
     listAiConfigs.mockResolvedValue([row(1, "Active", true), row(2, "Beta")]);
-    activateMock.mockRejectedValue({ status: 500 });
+    deleteMock.mockRejectedValueOnce({ status: 500 });
     render(<AiConfigPage />);
     await openMenu("Beta");
-    await userEvent.click(await screen.findByRole("menuitem", { name: "AI_CONFIG__SET_ACTIVE" }));
-    await userEvent.click(
-      within(await screen.findByRole("dialog")).getByRole("button", { name: "AI_CONFIG__SET_ACTIVE" })
-    );
-    await waitFor(() =>
-      expect(mockSetFeedback).toHaveBeenCalledWith({
-        type: "error",
-        variant: "alert",
-        message: "AI_CONFIG__ACTION_ERROR",
-      })
-    );
-    await expectNames(["Active", "Beta"], ["Active", "Beta"]);
+    await userEvent.click(await screen.findByRole("menuitem", { name: "AI_CONFIG__DELETE" }));
+    const dialog = await screen.findByRole("dialog");
+    await userEvent.click(within(dialog).getByRole("button", { name: "AI_CONFIG__DELETE_CONFIRM" }));
+
+    expect(await within(dialog).findByText("AI_CONFIG__ACTION_ERROR")).toBeInTheDocument();
+    expect(within(dialog).getByRole("heading", { name: "AI_CONFIG__DELETE_TITLE" })).toBeInTheDocument();
+    expect(mockSetFeedback).not.toHaveBeenCalled();
+
+    deleteMock.mockResolvedValueOnce({ id: 2 });
+    await userEvent.click(within(dialog).getByRole("button", { name: "AI_CONFIG__TRY_AGAIN" }));
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+    expect(deleteMock).toHaveBeenCalledTimes(2);
+    await expectRowCount(1);
+  });
+
+  it("closes the delete dialog with the mapped toast when the row turned active meanwhile", async () => {
+    listAiConfigs.mockResolvedValue([row(1, "Active", true), row(2, "Beta")]);
+    deleteMock.mockRejectedValue({ data: { code: "AI_CONFIG_ACTIVE_DELETE" } });
+    render(<AiConfigPage />);
+    await openMenu("Beta");
+    await userEvent.click(await screen.findByRole("menuitem", { name: "AI_CONFIG__DELETE" }));
+    await userEvent.click(await screen.findByRole("button", { name: "AI_CONFIG__DELETE_CONFIRM" }));
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+    expect(mockSetFeedback).toHaveBeenCalledWith({
+      type: "error",
+      variant: "alert",
+      message: "AI_CONFIG__ERROR__ACTIVE_DELETE",
+    });
+    await expectRowCount(2);
   });
 
   it.each([
