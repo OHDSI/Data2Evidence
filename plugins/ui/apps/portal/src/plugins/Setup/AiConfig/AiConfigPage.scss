@@ -1,5 +1,100 @@
+// Page content sits in a white card on a light grey page; each configuration is
+// its own bordered card inside it.
 .ai-config {
-  padding: 2em 2.5em 2.5em;
-  max-width: 1000px;
-  margin: 0 auto;
+  box-sizing: border-box;
+  min-height: 100%;
+  padding: var(--d2e-spacing-m);
+  background: var(--d2e-color-neutral-xtra-lightest);
+}
+
+.ai-config__card {
+  box-sizing: border-box;
+  padding-bottom: var(--d2e-spacing-m);
+  border-radius: var(--d2e-radius-l);
+  background: var(--d2e-color-white);
+}
+
+.ai-config__list,
+.ai-config__empty {
+  margin: 0 var(--d2e-spacing-m);
+}
+
+.ai-config__list {
+  list-style: none;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--d2e-spacing-xs);
+}
+
+.ai-config__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--d2e-spacing-s);
+  padding: var(--d2e-spacing-s) var(--d2e-spacing-m);
+  border: 1px solid var(--d2e-color-neutral-lighter);
+  border-radius: var(--d2e-radius-sm);
+  background: var(--d2e-color-neutral-xtra-lightest);
+}
+
+.ai-config__main {
+  flex: 1 1 20em;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--d2e-spacing-xxs);
+  overflow-wrap: anywhere;
+}
+
+.ai-config__name {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+// Three captioned columns; they stack on narrow widths.
+.ai-config__fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(10em, 14em));
+  gap: var(--d2e-spacing-xs) var(--d2e-spacing-m);
+  margin: 0;
+}
+
+.ai-config__field {
+  min-width: 0;
+  font-size: 14px;
+
+  dt {
+    font-size: 12px;
+    color: var(--d2e-color-neutral);
+  }
+
+  dd {
+    margin: 0;
+  }
+}
+
+.ai-config__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--d2e-spacing-s);
+  margin-left: auto;
+}
+
+.ai-config__empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 460px;
+  padding: var(--d2e-spacing-m);
+  border: 1px solid var(--d2e-color-neutral-lighter);
+  border-radius: var(--d2e-radius-sm);
+
+  // Extra class beats ui-react's same-specificity size rule regardless of CSS order.
+  .d2e-empty-state .d2e-empty-state__icon {
+    width: 68px;
+    height: 68px;
+    font-size: 68px;
+  }
 }

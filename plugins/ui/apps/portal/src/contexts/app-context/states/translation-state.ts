@@ -129,6 +129,7 @@ export const i18nDefault = {
     ADD_USER_DIALOG__SUCCESS: "User added successfully",
     ADD_USER_DIALOG__USERNAME: "Username",
     ADD_USER_DIALOG__USERNAME_HELPER: "Username should only contain letters, numbers, or underscore.",
+    AI_CONFIG__ACTIVE: "Active",
     AI_CONFIG__ADD: "Add AI configuration",
     AI_CONFIG__ADD_TITLE: "Add AI configuration",
     AI_CONFIG__ANTHROPIC_API_KEY_LABEL: "Anthropic API key",
@@ -144,7 +145,15 @@ export const i18nDefault = {
     AI_CONFIG__CHOOSE_PROVIDER_FIRST:
       "Choose a provider first to see its connection fields and available models.",
     AI_CONFIG__CLOSE: "Close dialog",
+    AI_CONFIG__COLUMN_CONNECTION: "Connection",
+    AI_CONFIG__COLUMN_MODEL: "Model",
+    AI_CONFIG__COLUMN_PROVIDER: "Provider",
+    AI_CONFIG__CONNECTION_API_KEY: "API key",
+    AI_CONFIG__CONNECTION_WORKSPACE: "Workspace",
+    AI_CONFIG__EDIT: "Edit",
     AI_CONFIG__EDIT_TITLE: "Edit AI configuration",
+    AI_CONFIG__EMPTY_DESCRIPTION: "Add a configuration to connect an AI provider and choose its models.",
+    AI_CONFIG__EMPTY_TITLE: "No AI configurations yet",
     AI_CONFIG__ERROR__DUPLICATE: "A configuration with this name already exists.",
     AI_CONFIG__ERROR__ENCRYPTION_KEY_NOT_CONFIGURED:
       "The server has no encryption key configured for AI configurations. Ask an administrator to set it.",
