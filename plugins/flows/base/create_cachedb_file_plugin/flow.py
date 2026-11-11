@@ -46,7 +46,7 @@ def create_results_cache_flow(options: CreateCacheOptions):
     new_options = update_parameters(new_options, 'vocab_schema_name', None)
     new_options = update_parameters(new_options, 'snapshot_copy_config', None)
     final_options = update_parameters(new_options, 'snapshot_schema_name', new_options.schema_name)
-    create_cache_flow(final_options)
+    create_cache_flow(final_options, protect_webapi_results=True)
 
 def normalize_columns_to_lowercase(file_conn, copy_params: CopyParameters, logger):
     """
@@ -80,7 +80,7 @@ def normalize_columns_to_lowercase(file_conn, copy_params: CopyParameters, logge
     )
 
 
-def create_cache_flow(options: CreateCacheOptions):
+def create_cache_flow(options: CreateCacheOptions, protect_webapi_results: bool = False):
     logger = get_run_logger()
     # Log parameters excluding sensitive patient and timestamp data
     log_data = options.model_dump(exclude={
@@ -117,7 +117,8 @@ def create_cache_flow(options: CreateCacheOptions):
         vocab_schema=options.vocab_schema_name,
         chunk_size=options.chunk_size,
         fresh_copy=bool(options.fresh_copy),
-        dry_run=bool(options.dry_run)
+        dry_run=bool(options.dry_run),
+        protect_webapi_results=protect_webapi_results,
     )
 
     duckdb_file_path = resolve_duckdb_file_path(

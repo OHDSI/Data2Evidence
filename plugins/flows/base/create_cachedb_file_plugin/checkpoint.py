@@ -50,7 +50,7 @@ REQUIRED_STATUS_COLUMNS = {
 # trexsql. A refresh must never discard or re-copy them; achilles_*, heracles_*
 # and concept_hierarchy are ordinary copied tables and are not listed.
 WEBAPI_RESULT_TABLES = frozenset({
-    "cohort", "cohort_cache", "cohort_definition", "cohort_sample_element",
+    "cohort", "cohort_cache", "cohort_sample_element",
     "cohort_censor_stats", "cohort_censor_stats_cache",
     "cohort_inclusion", "cohort_inclusion_result", "cohort_inclusion_result_cache",
     "cohort_inclusion_stats", "cohort_inclusion_stats_cache",
@@ -392,6 +392,7 @@ def apply_fresh_copy(
     flow_run_id: str,
     dry_run: bool,
     logger,
+    protected: frozenset[str] = frozenset(),
 ) -> list[str]:
     """Discard every non-COMPLETE table in ``schema``, at most once per run.
 
@@ -452,10 +453,9 @@ def apply_fresh_copy(
             f"WHERE status IS DISTINCT FROM {_sql_string(STATUS_COMPLETE)} "
             "ORDER BY table_name"
         )
-        # WebAPI owns these once the source is trexsql; never discard them.
-        tables = [
-            row[0] for row in conn.fetchall() if row[0] not in WEBAPI_RESULT_TABLES
-        ]
+        # ``protected`` is WEBAPI_RESULT_TABLES for the results-schema pass only:
+        # the CDM schema has its own cohort tables that must refresh normally.
+        tables = [row[0] for row in conn.fetchall() if row[0] not in protected]
 
         if dry_run:
             logger.info(
