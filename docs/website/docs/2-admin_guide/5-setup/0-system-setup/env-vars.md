@@ -32,3 +32,25 @@ All of the following environment varialbles are required to operate the system.
 | `D2E_CPU_LIMIT`                                 | string         | Dynamically calculated limit                                                         |
 | `D2E_MEMORY_LIMIT`                              | string         | Dynamically calculated limit                                                         |
 | `D2E_SWAP_LIMIT`                                | string         | Dynamically calculated limit                                                         |
+| `RESOURCE_UPLOAD_MAX_FILE_SIZE_MB`              | number         | Optional. Max size per resource file in MB (default `25`)                            |
+| `RESOURCE_UPLOAD_ALLOWED_EXTENSIONS`            | string         | Optional. Accepted resource file types (default `pdf,csv,json,xlsx,docx,sql,md,txt`) |
+
+## Resource upload rules
+
+Admins can attach files to a data source under **Admin > Data sources > Resources**. Two variables control which files are accepted. Both the upload dialog and the backend read them, so the rules shown to users always match the rules enforced.
+
+- `RESOURCE_UPLOAD_MAX_FILE_SIZE_MB`: the largest file allowed, in MB. Empty files are always rejected.
+- `RESOURCE_UPLOAD_ALLOWED_EXTENSIONS`: a comma-separated list of file extensions, without dots. Case doesn't matter.
+
+Only these types can be enabled: `pdf`, `csv`, `json`, `xlsx`, `docx`, `sql`, `md` and `txt`. Any other value (for example `exe` or `html`) is ignored and logged as a warning. You can narrow the list but not widen it.
+
+To change the rules:
+
+- **Docker Compose:** edit the values in `.env.local` (or your `.env` file), then restart with `d2e stop` and `d2e start`.
+- **Helm:** set `config.RESOURCE_UPLOAD_MAX_FILE_SIZE_MB` and `config.RESOURCE_UPLOAD_ALLOWED_EXTENSIONS` in your values file, then redeploy.
+
+```bash
+# Example: allow only PDF and CSV files up to 10 MB
+RESOURCE_UPLOAD_MAX_FILE_SIZE_MB=10
+RESOURCE_UPLOAD_ALLOWED_EXTENSIONS=pdf,csv
+```

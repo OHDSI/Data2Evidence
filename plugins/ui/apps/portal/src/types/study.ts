@@ -299,6 +299,13 @@ export interface DatasetResource {
   type: string;
 }
 
+// Upload rules served by the backend, which enforces the same values.
+export interface ResourceUploadConfig {
+  maxFileSizeBytes: number;
+  // Lower case, without the leading dot, e.g. "pdf".
+  allowedExtensions: string[];
+}
+
 export interface SchemasVersionInformation {
   schemaName: string;
   dataModel: string;

@@ -2,16 +2,40 @@ import Divider from "@mui/material/Divider";
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
 import TableHead from "@mui/material/TableHead";
-import { Button, Dialog, DownloadIcon, IconButton, Loader, TableCell, TableRow, TrashIcon } from "@portal/components";
+import {
+  Button,
+  Dialog,
+  DownloadIcon,
+  IconButton,
+  Loader,
+  TableCell,
+  TableRow,
+  Tooltip,
+  TrashIcon,
+} from "@portal/components";
 import React, { ChangeEvent, FC, useCallback, useState } from "react";
 import { api } from "../../../../axios/api";
 import { useTranslation } from "../../../../contexts";
-import { useDatasetResources, useDialogHelper } from "../../../../hooks";
+import { useDatasetResources, useDialogHelper, useResourceUploadConfig } from "../../../../hooks";
 import { CloseDialogType, DatasetResource, Feedback, Study } from "../../../../types";
 import { downloadFromJsonResponse } from "../../../../utils/downloadResource";
+import { formatFileTypeList, formatMaxFileSize, toAcceptAttribute } from "../../../../utils/resourceUpload";
 import DatasetDeleteResourceDialog from "./DatasetDeleteResourceDialog/DatasetDeleteResourceDialog";
 import "./DatasetResourcesDialog.scss";
 import DatasetResourceUploadConfirmDialog from "./DatasetResourceUploadConfirmDialog/DatasetResourceUploadConfirmDialog";
+
+// Light tooltip from the design. pre-line keeps the line break from the
+// translation text.
+const addFileTooltipSx = {
+  backgroundColor: "#fff",
+  color: "#5f6368",
+  fontSize: 12,
+  lineHeight: 1.5,
+  maxWidth: 240,
+  padding: "8px 12px",
+  boxShadow: "0 2px 8px rgba(0, 0, 0, 0.15)",
+  whiteSpace: "pre-line",
+} as const;
 
 interface DatasetResourcesDialogProps {
   study?: Study;
@@ -32,6 +56,7 @@ const DatasetResourcesDialog: FC<DatasetResourcesDialogProps> = ({ study, open, 
   const [selectedFile, setSelectedFile] = useState<File>();
   const [activeResource, setActiveResource] = useState<DatasetResource>();
   const [downloading, setDownloading] = useState<string>();
+  const [uploadConfig] = useResourceUploadConfig();
 
   const handleClose = useCallback(() => {
     setFeedback({});
@@ -136,10 +161,27 @@ const DatasetResourcesDialog: FC<DatasetResourcesDialogProps> = ({ study, open, 
         <Divider />
         <div className="dataset-resources-dialog__content">
           <div className="dataset-resources-dialog__content-header">
-            <Button text={getText(i18nKeys.DATASET_RESOURCES_DIALOG__ADD_FILE)} onClick={handleAddFile} />
+            <Tooltip
+              title={
+                uploadConfig
+                  ? getText(i18nKeys.DATASET_RESOURCES_DIALOG__ADD_FILE_TOOLTIP, [
+                      formatFileTypeList(uploadConfig.allowedExtensions),
+                      formatMaxFileSize(uploadConfig.maxFileSizeBytes),
+                    ])
+                  : ""
+              }
+              placement="bottom-end"
+              arrow
+              slotProps={{ tooltip: { sx: addFileTooltipSx }, arrow: { sx: { color: "#fff" } } }}
+            >
+              <span>
+                <Button text={getText(i18nKeys.DATASET_RESOURCES_DIALOG__ADD_FILE)} onClick={handleAddFile} />
+              </span>
+            </Tooltip>
             <input
               type="file"
               name="resourceFile"
+              accept={uploadConfig ? toAcceptAttribute(uploadConfig.allowedExtensions) : undefined}
               ref={hiddenFileInput}
               onChange={handleConfirmUpload}
               onClick={() => {

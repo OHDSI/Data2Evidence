@@ -363,6 +363,11 @@ class D2ECli {
         DB_CREDENTIALS__INTERNAL__DECRYPT_PRIVATE_KEY.trim(),
       DB_CREDENTIALS__INTERNAL__PUBLIC_KEY:
         DB_CREDENTIALS__INTERNAL__PUBLIC_KEY.trim(),
+      // Resource uploads (Admin > Data sources > Resources). Written out so
+      // operators can see and change the rules here; the backend can only
+      // narrow the type list, never add executable or script types.
+      RESOURCE_UPLOAD_MAX_FILE_SIZE_MB: `25`,
+      RESOURCE_UPLOAD_ALLOWED_EXTENSIONS: `pdf,csv,json,xlsx,docx,sql,md,txt`,
     };
 
     const envContent = Object.entries(envVariables)

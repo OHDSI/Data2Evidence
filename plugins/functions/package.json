@@ -513,6 +513,8 @@
           "SUPABASE_STORAGE_JWT_SECRET": "${SUPABASE_STORAGE_JWT_SECRET}",
           "SUPABASE_STORAGE_JWT_TOKEN": "${SUPABASE_STORAGE_JWT_TOKEN}",
           "DATA_TRANSFORMATION_BUCKET": "data-transformation",
+          "RESOURCE_UPLOAD_MAX_FILE_SIZE_MB": "${RESOURCE_UPLOAD_MAX_FILE_SIZE_MB:-25}",
+          "RESOURCE_UPLOAD_ALLOWED_EXTENSIONS": "${RESOURCE_UPLOAD_ALLOWED_EXTENSIONS:-pdf,csv,json,xlsx,docx,sql,md,txt}",
           "NOTEBOOK_TEMPLATE_REPO_URL": "${NOTEBOOK_TEMPLATE_REPO_URL:-https://github.com/data2evidence/templates.git}",
           "NOTEBOOK_TEMPLATE_REPO_BRANCH": "${NOTEBOOK_TEMPLATE_REPO_BRANCH:-main}",
           "GIT_STUDIES_REPO_URL": "${GIT_STUDIES_REPO_URL:-https://github.com/data2evidence/studies.git}",
@@ -1613,6 +1615,15 @@
         },
         {
           "path": "^/system-portal/dataset/resource/list$",
+          "scopes": [
+            "portal.dataset.resource.read"
+          ],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
+          "path": "^/system-portal/dataset/resource/config$",
           "scopes": [
             "portal.dataset.resource.read"
           ],

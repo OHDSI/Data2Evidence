@@ -18,6 +18,7 @@ import {
   ViewerCode,
   ViewerCodeQuery,
   ViewerCodeWithQueries,
+  ResourceUploadConfig,
 } from "../types";
 import { ConfigTypes, LogResponseType } from "../constant";
 const SYSTEM_PORTAL_URL = "system-portal/";
@@ -167,6 +168,14 @@ export class SystemPortal {
       url: `dataset/resource/list`,
       method: "GET",
       params: { datasetId: datasetId },
+    });
+  }
+
+  public getResourceUploadConfig() {
+    return request<ResourceUploadConfig>({
+      baseURL: SYSTEM_PORTAL_URL,
+      url: `dataset/resource/config`,
+      method: "GET",
     });
   }
 

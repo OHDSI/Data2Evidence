@@ -10,6 +10,7 @@ import {
 } from "@danet/core";
 import { Buffer } from "node:buffer";
 import { ResourceService } from "./resource.service.ts";
+import { getResourceUploadConfig } from "./resource-upload.config.ts";
 
 @Controller("system-portal/dataset/resource")
 export class ResourceController {
@@ -21,6 +22,13 @@ export class ResourceController {
       throw new HttpException(400, "Invalid datasetId");
     }
     return await this.resourceService.getResources(datasetId);
+  }
+
+  // Upload rules for the Add file dialog, so the UI always matches what the
+  // backend enforces.
+  @Get("config")
+  getUploadConfig() {
+    return getResourceUploadConfig();
   }
 
   @Post()

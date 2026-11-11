@@ -560,6 +560,16 @@ spec:
                 configMapKeyRef:
                   name: "{{ .Release.Name }}-{{ .Chart.Name }}"
                   key: COHORT_CACHE_MAX_AGE_DAYS
+            - name: RESOURCE_UPLOAD_MAX_FILE_SIZE_MB
+              valueFrom:
+                configMapKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: RESOURCE_UPLOAD_MAX_FILE_SIZE_MB
+            - name: RESOURCE_UPLOAD_ALLOWED_EXTENSIONS
+              valueFrom:
+                configMapKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: RESOURCE_UPLOAD_ALLOWED_EXTENSIONS
             - name: DATABASE_CREDENTIALS
               value: "{}"
             - name: DB_CREDENTIALS_MGR__API_URL
