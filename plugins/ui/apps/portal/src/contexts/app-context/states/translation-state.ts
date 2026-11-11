@@ -171,7 +171,8 @@ export const i18nDefault = {
     AI_CONFIG__ERROR__DUPLICATE: "This name is already in use. Choose a different name.",
     AI_CONFIG__ERROR__ENCRYPTION_KEY_NOT_CONFIGURED:
       "The server has no encryption key configured for AI configurations. Ask an administrator to set it.",
-    AI_CONFIG__ERROR__GENERIC: "The configuration could not be saved. Try again.",
+    AI_CONFIG__ERROR__GENERIC:
+      "Couldn’t save the configuration. Your entries are preserved. Check your connection and try again.",
     AI_CONFIG__ERROR__INVALID: "This value is not valid.",
     AI_CONFIG__ERROR__KEY_REQUIRED: "Enter the API key again.",
     AI_CONFIG__ERROR__NOT_FOUND: "This configuration no longer exists.",
@@ -193,12 +194,15 @@ export const i18nDefault = {
     AI_CONFIG__REQUIRED_NAME: "Enter a configuration name.",
     AI_CONFIG__REQUIRED_REGION: "Enter the AWS region.",
     AI_CONFIG__SAVE: "Save configuration",
+    AI_CONFIG__SAVING: "Saving configuration... Please wait before closing this dialog.",
+    AI_CONFIG__SAVING_BUTTON: "Saving...",
     AI_CONFIG__SECTION_CONFIGURATION: "Configuration",
     AI_CONFIG__SET_ACTIVE: "Set as active",
     AI_CONFIG__SHOW_KEY: "Show API key",
     AI_CONFIG__SUBTITLE:
       "Connect AI providers and choose their models. You can add as many configurations as you need, but only one is active at a time.",
     AI_CONFIG__TITLE: "AI configuration",
+    AI_CONFIG__TRY_AGAIN: "Try again",
     AI_CONFIG__WORKSPACE_ID_HINT: "Optional. Find it in the Claude Console where you created your API key.",
     AI_CONFIG__WORKSPACE_ID_LABEL: "Anthropic Workspace ID",
     ANALYSIS_DIALOG__CANCEL: "Cancel",

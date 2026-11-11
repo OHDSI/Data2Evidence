@@ -228,6 +228,12 @@ export const AiConfigPage: FC = () => {
           <AiConfigDialog
             config={editing}
             onClose={() => setEditing(null)}
+            // Another admin deleted it: drop the stale row and tell the admin, as the confirm dialogs do.
+            onNotFound={() => {
+              setConfigs((rows) => rows.filter((r) => r.id !== editing.id));
+              setEditing(null);
+              setFeedback({ type: "error", variant: "alert", message: getText(i18nKeys.AI_CONFIG__ERROR__NOT_FOUND) });
+            }}
             onSaved={(saved) => {
               setConfigs((rows) => sortAiConfigs(upsertAiConfig(rows, saved)));
               setEditing(null);

@@ -1,4 +1,4 @@
-import React, { FC, useState } from "react";
+import React, { FC, useRef, useState } from "react";
 import Visibility from "@mui/icons-material/Visibility";
 import VisibilityOff from "@mui/icons-material/VisibilityOff";
 import { Alert, Button, Dialog, IconButton, Select, TextField } from "ui-react";
@@ -6,6 +6,7 @@ import { api } from "../../../axios/api";
 import { useTranslation } from "../../../contexts";
 import { AiConfig, AiConfigInput, AiConfigProvider } from "../../../types/aiConfig";
 import { aiConfigErrorKey } from "./aiConfigList";
+import { PendingBanner } from "./PendingBanner";
 import "./AiConfigDialog.scss";
 
 const KEY_PLACEHOLDER = "***REDACTED***";
@@ -34,6 +35,8 @@ interface Props {
   onClose: () => void;
   /** Called with the write response once the save succeeded. */
   onSaved: (config: AiConfig) => void;
+  /** Edit only: the configuration was deleted by someone else while the dialog was open. */
+  onNotFound?: () => void;
 }
 
 interface SaveError {
@@ -41,7 +44,7 @@ interface SaveError {
   field?: string;
 }
 
-export const AiConfigDialog: FC<Props> = ({ config, onClose, onSaved }) => {
+export const AiConfigDialog: FC<Props> = ({ config, onClose, onSaved, onNotFound }) => {
   const { getText, i18nKeys } = useTranslation();
 
   const [name, setName] = useState(config?.name ?? DEFAULT_NAME);
@@ -53,6 +56,8 @@ export const AiConfigDialog: FC<Props> = ({ config, onClose, onSaved }) => {
   const [apiKey, setApiKey] = useState("");
   const [showKey, setShowKey] = useState(false);
   const [saving, setSaving] = useState(false);
+  // State updates are async, so a double click could start two saves; the ref blocks the second at once.
+  const inFlight = useRef(false);
   const [error, setError] = useState<SaveError | null>(null);
   // Fields the admin has left once; a required message never shows before that.
   const [touched, setTouched] = useState<Set<string>>(new Set());
@@ -82,7 +87,7 @@ export const AiConfigDialog: FC<Props> = ({ config, onClose, onSaved }) => {
     (provider !== "openai-compatible" || (baseUrl.trim() !== "" && !baseUrlInvalid));
 
   const save = async () => {
-    if (!provider || !canSave) return;
+    if (!provider || !canSave || inFlight.current) return;
     const body: AiConfigInput = {
       name: name.trim(),
       provider,
@@ -94,6 +99,7 @@ export const AiConfigDialog: FC<Props> = ({ config, onClose, onSaved }) => {
     if (provider === "bedrock") body.region = region.trim();
     if (provider === "anthropic") body.workspaceId = workspaceId.trim() || null;
 
+    inFlight.current = true;
     setSaving(true);
     setError(null);
     try {
@@ -104,13 +110,19 @@ export const AiConfigDialog: FC<Props> = ({ config, onClose, onSaved }) => {
     } catch (err: any) {
       // The rejection holds the request body (with the API key), so only the code and field are read from it.
       const data = typeof err === "object" && err !== null ? err.data : undefined;
+      if (config && data?.code === "AI_CONFIG_NOT_FOUND" && onNotFound) {
+        onNotFound();
+        return;
+      }
       setError({ code: data?.code, field: data?.field });
     } finally {
+      inFlight.current = false;
       setSaving(false);
     }
   };
 
-  const errorText = error ? getText(aiConfigErrorKey(error.code, i18nKeys, i18nKeys.AI_CONFIG__ERROR__GENERIC)) : "";
+  const errorKey = aiConfigErrorKey(error?.code, i18nKeys, i18nKeys.AI_CONFIG__ERROR__GENERIC);
+  const errorText = error ? getText(errorKey) : "";
   const inlineField =
     error && (error.code === "AI_CONFIG_INVALID" || error.code === "AI_CONFIG_DUPLICATE") ? error.field : undefined;
   const fieldError = (field: string) => (inlineField === field ? errorText : undefined);
@@ -121,6 +133,9 @@ export const AiConfigDialog: FC<Props> = ({ config, onClose, onSaved }) => {
     error &&
     (!inlineField ||
       (inlineField !== "name" && inlineField !== "provider" && !fields.includes(inlineField as FieldName)));
+
+  // Unknown codes and network errors are worth retrying; known ones (missing key, no server encryption key) are not.
+  const retryable = Boolean(dialogError) && errorKey === i18nKeys.AI_CONFIG__ERROR__GENERIC;
 
   const keyLabel = {
     "openai-compatible": "AI_CONFIG__API_KEY_LABEL",
@@ -138,6 +153,7 @@ export const AiConfigDialog: FC<Props> = ({ config, onClose, onSaved }) => {
             label={getText(i18nKeys.AI_CONFIG__BASE_URL_LABEL)}
             value={baseUrl}
             onChange={edit(setBaseUrl)}
+            disabled={saving}
             onBlur={touch("baseUrl")}
             hint={getText(i18nKeys.AI_CONFIG__BASE_URL_HINT)}
             errorMessages={
@@ -167,6 +183,7 @@ export const AiConfigDialog: FC<Props> = ({ config, onClose, onSaved }) => {
             autoComplete="new-password"
             value={apiKey}
             onChange={edit(setApiKey)}
+            disabled={saving}
             onBlur={touch("apiKey")}
             // The saved key is never put into the input; the keep hint explains the empty field.
             hint={hint}
@@ -175,6 +192,7 @@ export const AiConfigDialog: FC<Props> = ({ config, onClose, onSaved }) => {
               endAdornment: (
                 <IconButton
                   size="sm"
+                  disabled={saving}
                   ariaLabel={showKey ? getText(i18nKeys.AI_CONFIG__HIDE_KEY) : getText(i18nKeys.AI_CONFIG__SHOW_KEY)}
                   onClick={() => setShowKey((shown) => !shown)}
                 >
@@ -193,6 +211,7 @@ export const AiConfigDialog: FC<Props> = ({ config, onClose, onSaved }) => {
             label={getText(i18nKeys.AI_CONFIG__MODEL_LABEL)}
             value={model}
             onChange={edit(setModel)}
+            disabled={saving}
             onBlur={touch("model")}
             errorMessages={fieldMessage("model", model.trim() === "", "AI_CONFIG__REQUIRED_MODEL")}
           />
@@ -205,6 +224,7 @@ export const AiConfigDialog: FC<Props> = ({ config, onClose, onSaved }) => {
             label={getText(i18nKeys.AI_CONFIG__REGION_LABEL)}
             value={region}
             onChange={edit(setRegion)}
+            disabled={saving}
             onBlur={touch("region")}
             hint={getText(i18nKeys.AI_CONFIG__REGION_HINT)}
             errorMessages={fieldMessage("region", region.trim() === "", "AI_CONFIG__REQUIRED_REGION")}
@@ -217,6 +237,7 @@ export const AiConfigDialog: FC<Props> = ({ config, onClose, onSaved }) => {
             label={getText(i18nKeys.AI_CONFIG__WORKSPACE_ID_LABEL)}
             value={workspaceId}
             onChange={edit(setWorkspaceId)}
+            disabled={saving}
             hint={getText(i18nKeys.AI_CONFIG__WORKSPACE_ID_HINT)}
             errorMessages={fieldError("workspaceId")}
           />
@@ -231,6 +252,7 @@ export const AiConfigDialog: FC<Props> = ({ config, onClose, onSaved }) => {
       title={config ? getText(i18nKeys.AI_CONFIG__EDIT_TITLE) : getText(i18nKeys.AI_CONFIG__ADD_TITLE)}
       closeLabel={getText(i18nKeys.AI_CONFIG__CLOSE)}
       busy={saving}
+      showClose={!saving}
       onClose={onClose}
       actions={
         <>
@@ -238,27 +260,28 @@ export const AiConfigDialog: FC<Props> = ({ config, onClose, onSaved }) => {
             {getText(i18nKeys.AI_CONFIG__CANCEL)}
           </Button>
           <Button disabled={!canSave || Boolean(inlineField && !dialogError)} loading={saving} onClick={save}>
-            {getText(i18nKeys.AI_CONFIG__SAVE)}
+            {saving
+              ? getText(i18nKeys.AI_CONFIG__SAVING_BUTTON)
+              : retryable
+              ? getText(i18nKeys.AI_CONFIG__TRY_AGAIN)
+              : getText(i18nKeys.AI_CONFIG__SAVE)}
           </Button>
         </>
       }
     >
       <div className="ai-config-dialog">
-        {dialogError ? (
-          <Alert severity="error" variant="inline">
-            {errorText}
-          </Alert>
-        ) : null}
         <TextField
           inputProps={{ "aria-required": true }}
           label={getText(i18nKeys.AI_CONFIG__NAME_LABEL)}
           value={name}
           onChange={edit(setName)}
+          disabled={saving}
           onBlur={touch("name")}
           errorMessages={fieldMessage("name", name.trim() === "", "AI_CONFIG__REQUIRED_NAME")}
         />
         <Select
           required
+          disabled={saving}
           label={getText(i18nKeys.AI_CONFIG__PROVIDER_LABEL)}
           value={provider || null}
           onChange={(value) => {
@@ -282,6 +305,12 @@ export const AiConfigDialog: FC<Props> = ({ config, onClose, onSaved }) => {
             <p className="ai-config-dialog__empty">{getText(i18nKeys.AI_CONFIG__CHOOSE_PROVIDER_FIRST)}</p>
           )}
         </section>
+        {saving ? <PendingBanner>{getText(i18nKeys.AI_CONFIG__SAVING)}</PendingBanner> : null}
+        {dialogError ? (
+          <Alert severity="error" variant="inline">
+            {errorText}
+          </Alert>
+        ) : null}
       </div>
     </Dialog>
   );

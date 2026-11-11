@@ -43,6 +43,8 @@ const existing: AiConfig = {
   isActive: false,
 };
 
+const GENERIC = "Couldn’t save the configuration. Your entries are preserved. Check your connection and try again.";
+
 const onClose = jest.fn();
 const onSaved = jest.fn();
 
@@ -370,6 +372,30 @@ describe("AiConfigDialog errors", () => {
     await failSave({ status: 400, data: { code: "AI_CONFIG_KEY_REQUIRED" } });
 
     expect(await screen.findByText("Enter the API key again.")).toBeInTheDocument();
+    expect(saveButton()).toBeEnabled();
+    expect(screen.queryByRole("button", { name: "Try again" })).not.toBeInTheDocument();
+  });
+
+  it("keeps the normal Save label when the server has no encryption key", async () => {
+    await failSave({ status: 500, data: { code: "AI_CONFIG_ENCRYPTION_KEY_NOT_CONFIGURED" } });
+
+    expect(await screen.findByText(/no encryption key configured/)).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Try again" })).not.toBeInTheDocument();
+  });
+
+  it("shows the failure below the fields, keeps every value and re-sends the same body from Try again", async () => {
+    await failSave("Network Error");
+
+    const alert = await screen.findByText(GENERIC);
+    const section = document.querySelector(".ai-config-dialog__section") as HTMLElement;
+    expect(section.compareDocumentPosition(alert) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(field("Region").value).toBe("us-east-2");
+    expect(field("Model").value).toBe("m");
+    expect(field("Bedrock API key").value).toBe("sk-secret-key");
+
+    await userEvent.click(screen.getByRole("button", { name: "Try again" }));
+    await waitFor(() => expect(createAiConfig).toHaveBeenCalledTimes(2));
+    expect(createAiConfig.mock.calls[1][0]).toEqual(createAiConfig.mock.calls[0][0]);
   });
 
   it.each([
@@ -378,7 +404,7 @@ describe("AiConfigDialog errors", () => {
   ])("shows the generic string for %s and never the raw message", async (_name, rejection) => {
     await failSave(rejection);
 
-    expect(await screen.findByText("The configuration could not be saved. Try again.")).toBeInTheDocument();
+    expect(await screen.findByText(GENERIC)).toBeInTheDocument();
     expect(screen.queryByText("raw backend text")).not.toBeInTheDocument();
   });
 
@@ -399,6 +425,43 @@ describe("AiConfigDialog errors", () => {
     } finally {
       spies.forEach((spy) => spy.mockRestore());
     }
+  });
+});
+
+describe("AiConfigDialog saving", () => {
+  it("locks the dialog, shows the banner and sends one request however often the button is clicked", async () => {
+    let resolve: (value: AiConfig) => void = () => undefined;
+    updateAiConfig.mockReturnValue(new Promise<AiConfig>((r) => (resolve = r)));
+    open(existing);
+
+    const save = saveButton();
+    fireEvent.click(save);
+    fireEvent.click(save);
+
+    expect(
+      await screen.findByText("Saving configuration... Please wait before closing this dialog.")
+    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /^Saving\.\.\./ })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Cancel" })).toBeDisabled();
+    expect(screen.queryByRole("button", { name: "Close" })).not.toBeInTheDocument();
+    for (const label of ["Configuration name", "Base URL", "Model"]) expect(field(label)).toBeDisabled();
+    expect(screen.getByRole("combobox")).toHaveAttribute("aria-disabled", "true");
+    expect(screen.getByRole("button", { name: "Show API key" })).toBeDisabled();
+    expect(updateAiConfig).toHaveBeenCalledTimes(1);
+
+    resolve(saved);
+    await waitFor(() => expect(onSaved).toHaveBeenCalledWith(saved));
+  });
+
+  it("closes through onNotFound instead of showing an error when an Edit finds the row deleted", async () => {
+    const onNotFound = jest.fn();
+    updateAiConfig.mockRejectedValue({ status: 404, data: { code: "AI_CONFIG_NOT_FOUND" } });
+    render(<AiConfigDialog config={existing} onClose={onClose} onSaved={onSaved} onNotFound={onNotFound} />);
+
+    await userEvent.click(saveButton());
+
+    await waitFor(() => expect(onNotFound).toHaveBeenCalledTimes(1));
+    expect(screen.queryByText("This configuration no longer exists.")).not.toBeInTheDocument();
   });
 });
 

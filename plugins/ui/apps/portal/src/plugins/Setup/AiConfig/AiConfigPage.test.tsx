@@ -406,6 +406,23 @@ describe("AiConfigPage row actions", () => {
       expect(listAiConfigs).toHaveBeenCalledTimes(1);
     }
   );
+
+  it("drops the row, closes the Edit dialog and shows the toast when the save finds it already deleted", async () => {
+    listAiConfigs.mockResolvedValue([row(1, "Active", true), row(2, "Beta")]);
+    (api.systemPortal.updateAiConfig as jest.Mock).mockRejectedValue({ data: { code: "AI_CONFIG_NOT_FOUND" } });
+    render(<AiConfigPage />);
+    await userEvent.click(await screen.findByRole("button", { name: "AI_CONFIG__EDIT Beta" }));
+    await userEvent.click(within(await screen.findByRole("dialog")).getByRole("button", { name: "AI_CONFIG__SAVE" }));
+    await waitFor(() =>
+      expect(mockSetFeedback).toHaveBeenCalledWith({
+        type: "error",
+        variant: "alert",
+        message: "AI_CONFIG__ERROR__NOT_FOUND",
+      })
+    );
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+    await expectNames(["Active", "Beta"], ["Active"]);
+  });
 });
 
 describe("AI configuration translations", () => {
