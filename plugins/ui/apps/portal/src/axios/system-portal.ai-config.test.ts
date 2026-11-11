@@ -52,7 +52,6 @@ describe("SystemPortal AI config client", () => {
 
   it.each<[string, (sp: SystemPortal) => Promise<unknown>, object]>([
     ["listAiConfigs", (sp) => sp.listAiConfigs(), { url: "ai-config", method: "GET" }],
-    ["getAiConfig", (sp) => sp.getAiConfig(7), { url: "ai-config/7", method: "GET" }],
     ["createAiConfig", (sp) => sp.createAiConfig(body), { url: "ai-config", method: "POST", data: body }],
     ["updateAiConfig", (sp) => sp.updateAiConfig(7, body), { url: "ai-config/7", method: "PUT", data: body }],
     ["deleteAiConfig", (sp) => sp.deleteAiConfig(7), { url: "ai-config/7", method: "DELETE" }],

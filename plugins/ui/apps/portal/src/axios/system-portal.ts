@@ -444,14 +444,6 @@ export class SystemPortal {
     });
   }
 
-  public getAiConfig(id: number) {
-    return request<AiConfig>({
-      baseURL: SYSTEM_PORTAL_URL,
-      url: `ai-config/${id}`,
-      method: "GET",
-    });
-  }
-
   // Writes skip the 800 ms memoize: a repeated identical write (e.g. a second activate) must reach the server.
   public createAiConfig(data: AiConfigInput) {
     return requestNoCache<AiConfig>({
