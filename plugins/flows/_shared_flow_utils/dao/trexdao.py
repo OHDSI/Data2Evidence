@@ -158,7 +158,7 @@ class TrexDao(DaoBase):
 
     def clear_pg_cache(self) -> None:   
         try:
-            sql = '''CALL pg_clear_cache();'''
+            sql = '''CALL postgres_clear_cache();'''
             self.execute_sql(sql)
             return
         except psycopg2.Error as e:

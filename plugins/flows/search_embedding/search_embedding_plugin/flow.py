@@ -88,7 +88,7 @@ def create_embeddings_hana(dbdao_hana, database_code, schema_name, chunksize):
     db_schema = f"{database_code}_cache.{schema_name}"
 
     # Make sure the cache schema exists before writing embeddings. Mirrors create_cachedb_hana_plugin
-    cache_dao.execute_sql("CALL pg_clear_cache();")
+    cache_dao.execute_sql("CALL postgres_clear_cache();")
     cache_dao.create_schema(db_schema)
 
     # Stream HANA rows server-side
