@@ -21,7 +21,7 @@
 # Bumping this pin is how trex code reaches a d2e stack — this file vendors no
 # core. There is a SECOND pin, for the devx base, in docker-compose-local.yml;
 # both move together. See docs/trex-oidc-provider-cutover.md.
-ARG TREXSQL_REF=prod-sha-fb95427fdea5b8a6639a8d57ec1cee73b54989d5@sha256:6839dc0d2b08690a66f66b6d8407acef62310885bea751e653dea99664cfcf1e
+ARG TREXSQL_REF=prod-sha-043f3efb7ea0351a346530d0c76156bbc3994666@sha256:22320e50e257b2fe8ef35a556fe13f856835e5fcbe729f1c8993d4ae1a5db3d0
 FROM ghcr.io/ohdsi/trexsql:${TREXSQL_REF} AS base
 
 USER root
@@ -30,7 +30,7 @@ WORKDIR /usr/src
 # Selects the arch-correct DuckDB extension directory (amd64/arm64).
 ARG TARGETARCH
 
-ENV DUCKDB_VERSION=1.4.4
+ENV DUCKDB_VERSION=2.0.0
 
 # Deps not in the slim node base (node/npm/tar/unzip already present).
 # jq reads each bundled tarball's package.json, python3 runs the two-pass
@@ -42,9 +42,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # NOTE: DuckDB extensions are NOT downloaded here. The base image owns that set
 # (see the trexsql Dockerfile's DUCKDB_*_EXTENSIONS) and installs it into
 # /usr/share/trexsql/extensions; the seeding step further down puts it on the
-# per-user lookup paths. Re-fetching duplicated the binaries, and for bigquery it
-# actively regressed the image: the community build lacks the DuckDB 1.4
-# write-path backport, which is why the base compiles its own from source.
+# per-user lookup paths. Re-fetching only duplicated the binaries (bigquery
+# included, which the base now also takes from the community repository).
 #
 # To add an extension, add it to the base image rather than fetching it here.
 

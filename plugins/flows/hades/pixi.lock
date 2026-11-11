@@ -177,7 +177,6 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/0b/1c/8687de3a6c3220f4f872a9bf4bcd8dc249f2a96e7dddfa93de8bd4d16399/regex-2026.7.10-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/0b/d7/1959b9648791274998a9c3526f6d0ec8fd2233e4d4acce81bbae76b44b2a/python_dotenv-1.2.2-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/0e/a4/82b7a2fe5d8a67a59ed831b24d59a3d46ea7d207b66e1602d376541d94a6/orjson-3.11.9-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl
-      - pypi: https://files.pythonhosted.org/packages/12/78/297b838f3b9511589badc8f472f70b31cf3bbf9eb99fa0a4d6e911d3114a/duckdb-1.4.0-cp312-cp312-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/14/15/5574111ae50dd6e879456888c0eadd4c5a869959775854e18e18a6b345f3/propcache-0.5.2-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/14/8f/aa61f528fba38578ec553c145857a181384c72b98156f858ca5c8e82d9d3/websockets-15.0.1-cp312-cp312-manylinux_2_5_x86_64.manylinux1_x86_64.manylinux_2_17_x86_64.manylinux2014_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/17/83/6dba32b85f31868400440dc7ad2ca1eab94cbbf3a7b0459ed39f8311a9e2/opentelemetry_api-1.43.0-py3-none-any.whl
@@ -236,11 +235,11 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/7e/f5/f66802a942d491edb555dd61e3a9961140fd64c90bce1eafd741609d334d/httpcore-1.0.9-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/7f/3e/5db95bcf282c52709639744ca2a8b149baccf648e39c8cc87553df9eae0c/urllib3-2.7.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/81/c4/34e93fe5f5429d7570ec1fa436f1986fb1f00c3e0f43a589fe2bbcd22c3f/pytz-2025.2-py2.py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/86/c0/2851a8a55d0fea03b80fd45815069b686e032938fc68fa9d91ac776c148c/ibis_framework-11.0.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/88/39/799be3f2f0f38cc727ee3b4f1445fe6d5e4133064ec2e4115069418a5bb6/cloudpickle-3.1.2-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/8a/0e/97c33bf5009bdbac74fd2beace167cab3f978feb69cc36f1ef79360d6c4e/exceptiongroup-1.3.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/8b/7c/2e5dcf53909deddd0bf38cbe277ad9806be038276b1c6c436561b4d9b2e2/dateparser-1.4.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/8b/9d/b3589d3877982d4f2329302ef98a8026e7f4443c765c46cfecc8858c6b4b/pyyaml-6.0.3-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl
-      - pypi: https://files.pythonhosted.org/packages/8c/b9/f2c3268aee10a7295d46990fbfced3506b12b63fc1ee4481eed9b94a4f01/ibis_framework-10.0.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/8c/d1/a867c2150f9c6e7af6462637f613ba67f78a314b00db220cd26ff559d532/asyncpg-0.31.0-cp312-cp312-manylinux_2_28_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/8d/9b/d4b1e644385499c8346fa9b622a3f030dce14cd6ef8a1871c221a17a67e7/prometheus_client-0.25.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/8d/f0/49129b27c43396581a635d8710dae54a791b17dfc50c70164866bbf865e3/pydantic_core-2.27.2-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl
@@ -266,6 +265,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/bc/b1/a0ec7a5a9db730a08daef1fdfb8090435b82465abbf758a596f0ea88727e/mako-1.3.12-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/be/9c/92789c596b8df838baa98fa71844d84283302f7604ed565dafe5a6b5041a/oauthlib-3.3.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/c8/52/1f2df7e7d1be3d65ddc2936d820d4a3d9777a54f4204f5ca46b8513eff77/typer-0.20.1-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/cc/33/01ad2535ee897db2bad70cbc800655167c53afd0b955eed84f0759c2f417/duckdb-2.0.0-cp312-abi3-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/cd/83/354f75660f583469df61b9553680552240774a991c33fbd77aded9a95a8a/pydocket-0.23.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/d1/d6/3965ed04c63042e047cb6a3e6ed1a63a35087b6a609aa3a15ed8ac56c221/colorama-0.4.6-py2.py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/d3/e9/acfea54abdd66a059ff82995d3703eca3a27df3dc1bdc6afaf8a30a854fe/apprise-1.12.0-py3-none-any.whl
@@ -838,13 +838,14 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/7e/f5/f66802a942d491edb555dd61e3a9961140fd64c90bce1eafd741609d334d/httpcore-1.0.9-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/7f/3e/5db95bcf282c52709639744ca2a8b149baccf648e39c8cc87553df9eae0c/urllib3-2.7.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/81/c4/34e93fe5f5429d7570ec1fa436f1986fb1f00c3e0f43a589fe2bbcd22c3f/pytz-2025.2-py2.py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/86/c0/2851a8a55d0fea03b80fd45815069b686e032938fc68fa9d91ac776c148c/ibis_framework-11.0.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/88/39/799be3f2f0f38cc727ee3b4f1445fe6d5e4133064ec2e4115069418a5bb6/cloudpickle-3.1.2-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/89/51/3fb5fe0d32f4cf0bc982286722c729a8d6f522d2fa2d5d14a702d9fc87f8/regex-2026.9.10-cp312-cp312-manylinux2014_aarch64.manylinux_2_17_aarch64.manylinux_2_28_aarch64.whl
       - pypi: https://files.pythonhosted.org/packages/8a/0e/97c33bf5009bdbac74fd2beace167cab3f978feb69cc36f1ef79360d6c4e/exceptiongroup-1.3.1-py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/8c/b9/f2c3268aee10a7295d46990fbfced3506b12b63fc1ee4481eed9b94a4f01/ibis_framework-10.0.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/8f/83/f61505a05109ef3293dfb1ff594d13d64a2324ac3482be2cedc2be818256/frozenlist-1.8.0-cp312-cp312-manylinux2014_aarch64.manylinux_2_17_aarch64.manylinux_2_28_aarch64.whl
       - pypi: https://files.pythonhosted.org/packages/90/45/f458fa2c388e79dd9d8b9b0c99f1d31b568f27388f2fdba7bb66bbc0c6ed/cachetools-6.2.6-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/91/4c/e0ce1ef95d4000ebc1c11801f9b944fa5910ecc15b5e351865763d8657f8/graphviz-0.21-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/92/4a/985fb9d93d7f9f8e82092ddfe05ec8c9a1d0df7bdb0f562a10ced30e3e8f/duckdb-2.0.0-cp312-abi3-manylinux_2_26_aarch64.manylinux_2_28_aarch64.whl
       - pypi: https://files.pythonhosted.org/packages/96/c0/271f3e1e3502a8decb8ee5c680dbed2d8dc2cd504f5e20f7ed491d5f37e1/atpublic-7.0.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/98/2d/5d66605f76b8e344813237dc160a01f03b987201e974b46056a7fb94a874/SQLAlchemy-2.0.38-cp312-cp312-manylinux_2_17_aarch64.manylinux2014_aarch64.whl
       - pypi: https://files.pythonhosted.org/packages/99/91/8acff4f5e50511b911bbccb72b8628a49c68ce14148cd9f6431094859a90/annotated_types-0.8.0-py3-none-any.whl
@@ -863,7 +864,6 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/a6/24/4d91e05817e92e3a61c8a21e08fd0f390f5301f1c448b137c57c4bc6e543/semver-3.0.4-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/a6/a5/c0b6468d3824fe3fde30dbb5e1f687b291608f9473681bbf7dabbf5a87d7/text_unidecode-1.3-py2.py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/ae/59/911d6e5f1d7514d79c527067643376cddcf4cb8d1728e599b3b03ab51c69/openai-0.28.0-py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/b0/48/e0c1b97d76fb7567c53db5739931323238fad54a642707008104f501db37/duckdb-1.4.0-cp312-cp312-manylinux_2_27_aarch64.manylinux_2_28_aarch64.whl
       - pypi: https://files.pythonhosted.org/packages/b0/85/f95b5f322e1ae13b7ed7e97bd999160fa003424711ab4dc8344b8772c270/pandas-2.2.2-cp312-cp312-manylinux_2_17_aarch64.manylinux2014_aarch64.whl
       - pypi: https://files.pythonhosted.org/packages/b0/aa/0b7365d30fed43e7a3449aba1fe20a0a7174d9cf13e282af4e69ac825441/humanize-4.16.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/b3/38/89ba8ad64ae25be8de66a6d463314cf1eb366222074cfda9ee839c56a4b4/mdurl-0.1.2-py3-none-any.whl
@@ -10593,18 +10593,6 @@ packages:
   version: 3.11.9
   sha256: be4fa4f0af7fa18951f7ab3fc2148e223af211bf03f59e1c6034ec3f97f21d61
   requires_python: '>=3.10'
-- pypi: https://files.pythonhosted.org/packages/12/78/297b838f3b9511589badc8f472f70b31cf3bbf9eb99fa0a4d6e911d3114a/duckdb-1.4.0-cp312-cp312-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl
-  name: duckdb
-  version: 1.4.0
-  sha256: 784554e3ddfcfc5c5c7b1aa1f9925fedb7938f6628729adba48f7ea37554598f
-  requires_dist:
-  - ipython ; extra == 'all'
-  - fsspec ; extra == 'all'
-  - numpy ; extra == 'all'
-  - pandas ; extra == 'all'
-  - pyarrow ; extra == 'all'
-  - adbc-driver-manager ; extra == 'all'
-  requires_python: '>=3.9.0'
 - pypi: https://files.pythonhosted.org/packages/12/b8/4bd346e22b28902df4d651910f5242c28d84e4a5c2435ca5c3f797ed7e2e/anyio-4.15.1-py3-none-any.whl
   name: anyio
   version: 4.15.1
@@ -11776,6 +11764,155 @@ packages:
   name: pytz
   version: '2025.2'
   sha256: 5ddf76296dd8c44c26eb8f4b6f35488f3ccbf6fbbd7adee0b7262d43f0ec2f00
+- pypi: https://files.pythonhosted.org/packages/86/c0/2851a8a55d0fea03b80fd45815069b686e032938fc68fa9d91ac776c148c/ibis_framework-11.0.0-py3-none-any.whl
+  name: ibis-framework
+  version: 11.0.0
+  sha256: 92ff82a96f4eac7f86fa9b6a315e04b5a8f9ed3d186539d88f48e628363f2e72
+  requires_dist:
+  - atpublic>=2.3
+  - parsy>=2
+  - python-dateutil>=2.8.2
+  - sqlglot>=23.4,!=26.32.0
+  - toolz>=0.11
+  - typing-extensions>=4.3.0
+  - tzdata>=2022.7
+  - fsspec[s3] ; extra == 'athena'
+  - numpy>=1.23.2,<3 ; extra == 'athena'
+  - pandas>=1.5.3,<3 ; extra == 'athena'
+  - pyarrow-hotfix>=0.4 ; extra == 'athena'
+  - pyarrow>=10.0.1 ; extra == 'athena'
+  - pyathena[arrow,pandas]>=3.11.0 ; extra == 'athena'
+  - rich>=12.4.4 ; extra == 'athena'
+  - db-dtypes>=0.3 ; extra == 'bigquery'
+  - google-cloud-bigquery-storage>=2 ; extra == 'bigquery'
+  - google-cloud-bigquery>=3 ; extra == 'bigquery'
+  - numpy>=1.23.2,<3 ; extra == 'bigquery'
+  - pandas-gbq>=0.26.1 ; extra == 'bigquery'
+  - pandas>=1.5.3,<3 ; extra == 'bigquery'
+  - pyarrow-hotfix>=0.4 ; extra == 'bigquery'
+  - pyarrow>=10.0.1 ; extra == 'bigquery'
+  - pydata-google-auth>=1.4.0 ; extra == 'bigquery'
+  - rich>=12.4.4 ; extra == 'bigquery'
+  - clickhouse-connect[arrow,numpy,pandas]>=0.5.23 ; extra == 'clickhouse'
+  - numpy>=1.23.2,<3 ; extra == 'clickhouse'
+  - pandas>=1.5.3,<3 ; extra == 'clickhouse'
+  - pyarrow-hotfix>=0.4 ; extra == 'clickhouse'
+  - pyarrow>=10.0.1 ; extra == 'clickhouse'
+  - rich>=12.4.4 ; extra == 'clickhouse'
+  - databricks-sql-connector-core>=4 ; extra == 'databricks'
+  - numpy>=1.23.2,<3 ; extra == 'databricks'
+  - pandas>=1.5.3,<3 ; extra == 'databricks'
+  - pyarrow-hotfix>=0.4 ; extra == 'databricks'
+  - pyarrow>=10.0.1 ; extra == 'databricks'
+  - rich>=12.4.4 ; extra == 'databricks'
+  - datafusion>=0.6 ; extra == 'datafusion'
+  - numpy>=1.23.2,<3 ; extra == 'datafusion'
+  - packaging>=21.3 ; extra == 'datafusion'
+  - pandas>=1.5.3,<3 ; extra == 'datafusion'
+  - pyarrow-hotfix>=0.4 ; extra == 'datafusion'
+  - pyarrow>=10.0.1 ; extra == 'datafusion'
+  - rich>=12.4.4 ; extra == 'datafusion'
+  - black>=22.1.0 ; extra == 'decompiler'
+  - deltalake>=0.9.0 ; extra == 'deltalake'
+  - numpy>=1.23.2,<3 ; extra == 'druid'
+  - pandas>=1.5.3,<3 ; extra == 'druid'
+  - pyarrow-hotfix>=0.4 ; extra == 'druid'
+  - pyarrow>=10.0.1 ; extra == 'druid'
+  - pydruid>=0.6.7 ; extra == 'druid'
+  - rich>=12.4.4 ; extra == 'druid'
+  - duckdb>=0.10.3,!=1.3.0 ; extra == 'duckdb'
+  - numpy>=1.23.2,<3 ; extra == 'duckdb'
+  - packaging>=21.3 ; extra == 'duckdb'
+  - pandas>=1.5.3,<3 ; extra == 'duckdb'
+  - pyarrow-hotfix>=0.4 ; extra == 'duckdb'
+  - pyarrow>=10.0.1 ; extra == 'duckdb'
+  - rich>=12.4.4 ; extra == 'duckdb'
+  - pins[gcs]>=0.8.3 ; extra == 'examples'
+  - numpy>=1.23.2,<3 ; extra == 'exasol'
+  - pandas>=1.5.3,<3 ; extra == 'exasol'
+  - pyarrow-hotfix>=0.4 ; extra == 'exasol'
+  - pyarrow>=10.0.1 ; extra == 'exasol'
+  - pyexasol>=0.25.2 ; extra == 'exasol'
+  - rich>=12.4.4 ; extra == 'exasol'
+  - numpy>=1.23.2,<3 ; extra == 'flink'
+  - pandas>=1.5.3,<3 ; extra == 'flink'
+  - pyarrow-hotfix>=0.4 ; extra == 'flink'
+  - pyarrow>=10.0.1 ; extra == 'flink'
+  - rich>=12.4.4 ; extra == 'flink'
+  - geoarrow-types>=0.2 ; extra == 'geospatial'
+  - geopandas>=0.6 ; extra == 'geospatial'
+  - pyproj>=3.3.0 ; extra == 'geospatial'
+  - shapely>=2 ; extra == 'geospatial'
+  - impyla>=0.17 ; extra == 'impala'
+  - numpy>=1.23.2,<3 ; extra == 'impala'
+  - pandas>=1.5.3,<3 ; extra == 'impala'
+  - pyarrow-hotfix>=0.4 ; extra == 'impala'
+  - pyarrow>=10.0.1 ; extra == 'impala'
+  - rich>=12.4.4 ; extra == 'impala'
+  - numpy>=1.23.2,<3 ; extra == 'mssql'
+  - pandas>=1.5.3,<3 ; extra == 'mssql'
+  - pyarrow-hotfix>=0.4 ; extra == 'mssql'
+  - pyarrow>=10.0.1 ; extra == 'mssql'
+  - pyodbc>=4.0.39 ; extra == 'mssql'
+  - rich>=12.4.4 ; extra == 'mssql'
+  - mysqlclient>=2.2.4 ; extra == 'mysql'
+  - numpy>=1.23.2,<3 ; extra == 'mysql'
+  - pandas>=1.5.3,<3 ; extra == 'mysql'
+  - pyarrow-hotfix>=0.4 ; extra == 'mysql'
+  - pyarrow>=10.0.1 ; extra == 'mysql'
+  - rich>=12.4.4 ; extra == 'mysql'
+  - numpy>=1.23.2,<3 ; extra == 'oracle'
+  - oracledb>=1.3.1 ; extra == 'oracle'
+  - pandas>=1.5.3,<3 ; extra == 'oracle'
+  - pyarrow-hotfix>=0.4 ; extra == 'oracle'
+  - pyarrow>=10.0.1 ; extra == 'oracle'
+  - rich>=12.4.4 ; extra == 'oracle'
+  - numpy>=1.23.2,<3 ; extra == 'polars'
+  - pandas>=1.5.3,<3 ; extra == 'polars'
+  - polars>=1 ; extra == 'polars'
+  - pyarrow-hotfix>=0.4 ; extra == 'polars'
+  - pyarrow>=10.0.1 ; extra == 'polars'
+  - rich>=12.4.4 ; extra == 'polars'
+  - numpy>=1.23.2,<3 ; extra == 'postgres'
+  - pandas>=1.5.3,<3 ; extra == 'postgres'
+  - psycopg>=3.2.0 ; extra == 'postgres'
+  - pyarrow-hotfix>=0.4 ; extra == 'postgres'
+  - pyarrow>=10.0.1 ; extra == 'postgres'
+  - rich>=12.4.4 ; extra == 'postgres'
+  - numpy>=1.23.2,<3 ; extra == 'pyspark'
+  - packaging>=21.3 ; extra == 'pyspark'
+  - pandas>=1.5.3,<3 ; extra == 'pyspark'
+  - pyarrow-hotfix>=0.4 ; extra == 'pyspark'
+  - pyarrow>=10.0.1 ; extra == 'pyspark'
+  - pyspark>=3.3.3,<4 ; extra == 'pyspark'
+  - rich>=12.4.4 ; extra == 'pyspark'
+  - numpy>=1.23.2,<3 ; extra == 'risingwave'
+  - pandas>=1.5.3,<3 ; extra == 'risingwave'
+  - psycopg2>=2.8.4 ; extra == 'risingwave'
+  - pyarrow-hotfix>=0.4 ; extra == 'risingwave'
+  - pyarrow>=10.0.1 ; extra == 'risingwave'
+  - rich>=12.4.4 ; extra == 'risingwave'
+  - numpy>=1.23.2,<3 ; extra == 'snowflake'
+  - pandas>=1.5.3,<3 ; extra == 'snowflake'
+  - pyarrow-hotfix>=0.4 ; extra == 'snowflake'
+  - pyarrow>=10.0.1 ; extra == 'snowflake'
+  - rich>=12.4.4 ; extra == 'snowflake'
+  - snowflake-connector-python>=3.0.2,!=3.3.0b1 ; extra == 'snowflake'
+  - numpy>=1.23.2,<3 ; extra == 'sqlite'
+  - packaging>=21.3 ; extra == 'sqlite'
+  - pandas>=1.5.3,<3 ; extra == 'sqlite'
+  - pyarrow-hotfix>=0.4 ; extra == 'sqlite'
+  - pyarrow>=10.0.1 ; extra == 'sqlite'
+  - regex>=2021.7.6 ; extra == 'sqlite'
+  - rich>=12.4.4 ; extra == 'sqlite'
+  - numpy>=1.23.2,<3 ; extra == 'trino'
+  - pandas>=1.5.3,<3 ; extra == 'trino'
+  - pyarrow-hotfix>=0.4 ; extra == 'trino'
+  - pyarrow>=10.0.1 ; extra == 'trino'
+  - rich>=12.4.4 ; extra == 'trino'
+  - trino>=0.321 ; extra == 'trino'
+  - graphviz>=0.16 ; extra == 'visualization'
+  requires_python: '>=3.9'
 - pypi: https://files.pythonhosted.org/packages/88/39/799be3f2f0f38cc727ee3b4f1445fe6d5e4133064ec2e4115069418a5bb6/cloudpickle-3.1.2-py3-none-any.whl
   name: cloudpickle
   version: 3.1.2
@@ -11812,155 +11949,6 @@ packages:
   version: 6.0.3
   sha256: ba1cc08a7ccde2d2ec775841541641e4548226580ab850948cbfda66a1befcdc
   requires_python: '>=3.8'
-- pypi: https://files.pythonhosted.org/packages/8c/b9/f2c3268aee10a7295d46990fbfced3506b12b63fc1ee4481eed9b94a4f01/ibis_framework-10.0.0-py3-none-any.whl
-  name: ibis-framework
-  version: 10.0.0
-  sha256: 94f5c4391f14a4d7406b52d8fc12d3a52c5828badc25fa34289f56587da6f76c
-  requires_dist:
-  - atpublic>=2.3
-  - parsy>=2
-  - python-dateutil>=2.8.2
-  - pytz>=2022.7
-  - sqlglot>=23.4,<26.4
-  - toolz>=0.11
-  - typing-extensions>=4.3.0
-  - fsspec[s3] ; extra == 'athena'
-  - numpy>=1.23.2,<3 ; extra == 'athena'
-  - packaging>=21.3,<25 ; extra == 'athena'
-  - pandas>=1.5.3,<3 ; extra == 'athena'
-  - pyarrow-hotfix>=0.4,<1 ; extra == 'athena'
-  - pyarrow>=10.0.1 ; extra == 'athena'
-  - pyathena[arrow,pandas]>=3.11.0,<4 ; extra == 'athena'
-  - rich>=12.4.4,<14 ; extra == 'athena'
-  - db-dtypes>=0.3,<2 ; extra == 'bigquery'
-  - google-cloud-bigquery-storage>=2,<3 ; extra == 'bigquery'
-  - google-cloud-bigquery>=3,<4 ; extra == 'bigquery'
-  - numpy>=1.23.2,<3 ; extra == 'bigquery'
-  - pandas>=1.5.3,<3 ; extra == 'bigquery'
-  - pyarrow-hotfix>=0.4,<1 ; extra == 'bigquery'
-  - pyarrow>=10.0.1 ; extra == 'bigquery'
-  - pydata-google-auth>=1.4.0,<2 ; extra == 'bigquery'
-  - rich>=12.4.4,<14 ; extra == 'bigquery'
-  - clickhouse-connect[arrow,numpy,pandas]>=0.5.23,<1 ; extra == 'clickhouse'
-  - numpy>=1.23.2,<3 ; extra == 'clickhouse'
-  - pandas>=1.5.3,<3 ; extra == 'clickhouse'
-  - pyarrow-hotfix>=0.4,<1 ; extra == 'clickhouse'
-  - pyarrow>=10.0.1 ; extra == 'clickhouse'
-  - rich>=12.4.4,<14 ; extra == 'clickhouse'
-  - databricks-sql-connector-core>=4,<5 ; extra == 'databricks'
-  - numpy>=1.23.2,<3 ; extra == 'databricks'
-  - pandas>=1.5.3,<3 ; extra == 'databricks'
-  - pyarrow-hotfix>=0.4,<1 ; extra == 'databricks'
-  - pyarrow>=10.0.1 ; extra == 'databricks'
-  - rich>=12.4.4,<14 ; extra == 'databricks'
-  - datafusion>=0.6,<44 ; extra == 'datafusion'
-  - numpy>=1.23.2,<3 ; extra == 'datafusion'
-  - pandas>=1.5.3,<3 ; extra == 'datafusion'
-  - pyarrow-hotfix>=0.4,<1 ; extra == 'datafusion'
-  - pyarrow>=10.0.1 ; extra == 'datafusion'
-  - rich>=12.4.4,<14 ; extra == 'datafusion'
-  - black>=22.1.0,<26 ; extra == 'decompiler'
-  - deltalake>=0.9.0,<1 ; extra == 'deltalake'
-  - numpy>=1.23.2,<3 ; extra == 'druid'
-  - pandas>=1.5.3,<3 ; extra == 'druid'
-  - pyarrow-hotfix>=0.4,<1 ; extra == 'druid'
-  - pyarrow>=10.0.1 ; extra == 'druid'
-  - pydruid>=0.6.7,<1 ; extra == 'druid'
-  - rich>=12.4.4,<14 ; extra == 'druid'
-  - duckdb>=0.10,<2 ; extra == 'duckdb'
-  - numpy>=1.23.2,<3 ; extra == 'duckdb'
-  - packaging>=21.3,<25 ; extra == 'duckdb'
-  - pandas>=1.5.3,<3 ; extra == 'duckdb'
-  - pyarrow-hotfix>=0.4,<1 ; extra == 'duckdb'
-  - pyarrow>=10.0.1 ; extra == 'duckdb'
-  - rich>=12.4.4,<14 ; extra == 'duckdb'
-  - pins[gcs]>=0.8.3,<1 ; extra == 'examples'
-  - numpy>=1.23.2,<3 ; extra == 'exasol'
-  - pandas>=1.5.3,<3 ; extra == 'exasol'
-  - pyarrow-hotfix>=0.4,<1 ; extra == 'exasol'
-  - pyarrow>=10.0.1 ; extra == 'exasol'
-  - pyexasol>=0.25.2,<1 ; extra == 'exasol'
-  - rich>=12.4.4,<14 ; extra == 'exasol'
-  - numpy>=1.23.2,<3 ; extra == 'flink'
-  - pandas>=1.5.3,<3 ; extra == 'flink'
-  - pyarrow-hotfix>=0.4,<1 ; extra == 'flink'
-  - pyarrow>=10.0.1 ; extra == 'flink'
-  - rich>=12.4.4,<14 ; extra == 'flink'
-  - geoarrow-types>=0.2,<1 ; extra == 'geospatial'
-  - geopandas>=0.6,<2 ; extra == 'geospatial'
-  - pyproj>=3.3.0,<4 ; extra == 'geospatial'
-  - shapely>=2,<3 ; extra == 'geospatial'
-  - impyla>=0.17,<1 ; extra == 'impala'
-  - numpy>=1.23.2,<3 ; extra == 'impala'
-  - pandas>=1.5.3,<3 ; extra == 'impala'
-  - pyarrow-hotfix>=0.4,<1 ; extra == 'impala'
-  - pyarrow>=10.0.1 ; extra == 'impala'
-  - rich>=12.4.4,<14 ; extra == 'impala'
-  - numpy>=1.23.2,<3 ; extra == 'mssql'
-  - pandas>=1.5.3,<3 ; extra == 'mssql'
-  - pyarrow-hotfix>=0.4,<1 ; extra == 'mssql'
-  - pyarrow>=10.0.1 ; extra == 'mssql'
-  - pyodbc>=4.0.39,<6 ; extra == 'mssql'
-  - rich>=12.4.4,<14 ; extra == 'mssql'
-  - mysqlclient>=2.2.4,<3 ; extra == 'mysql'
-  - numpy>=1.23.2,<3 ; extra == 'mysql'
-  - pandas>=1.5.3,<3 ; extra == 'mysql'
-  - pyarrow-hotfix>=0.4,<1 ; extra == 'mysql'
-  - pyarrow>=10.0.1 ; extra == 'mysql'
-  - rich>=12.4.4,<14 ; extra == 'mysql'
-  - numpy>=1.23.2,<3 ; extra == 'oracle'
-  - oracledb>=1.3.1,<3 ; extra == 'oracle'
-  - packaging>=21.3,<25 ; extra == 'oracle'
-  - pandas>=1.5.3,<3 ; extra == 'oracle'
-  - pyarrow-hotfix>=0.4,<1 ; extra == 'oracle'
-  - pyarrow>=10.0.1 ; extra == 'oracle'
-  - rich>=12.4.4,<14 ; extra == 'oracle'
-  - numpy>=1.23.2,<3 ; extra == 'polars'
-  - packaging>=21.3,<25 ; extra == 'polars'
-  - pandas>=1.5.3,<3 ; extra == 'polars'
-  - polars>=1,<2 ; extra == 'polars'
-  - pyarrow-hotfix>=0.4,<1 ; extra == 'polars'
-  - pyarrow>=10.0.1 ; extra == 'polars'
-  - rich>=12.4.4,<14 ; extra == 'polars'
-  - numpy>=1.23.2,<3 ; extra == 'postgres'
-  - pandas>=1.5.3,<3 ; extra == 'postgres'
-  - psycopg[binary]>=3.2.0,<4 ; extra == 'postgres'
-  - pyarrow-hotfix>=0.4,<1 ; extra == 'postgres'
-  - pyarrow>=10.0.1 ; extra == 'postgres'
-  - rich>=12.4.4,<14 ; extra == 'postgres'
-  - numpy>=1.23.2,<3 ; extra == 'pyspark'
-  - packaging>=21.3,<25 ; extra == 'pyspark'
-  - pandas>=1.5.3,<3 ; extra == 'pyspark'
-  - pyarrow-hotfix>=0.4,<1 ; extra == 'pyspark'
-  - pyarrow>=10.0.1 ; extra == 'pyspark'
-  - pyspark>=3.3.3,<4 ; extra == 'pyspark'
-  - rich>=12.4.4,<14 ; extra == 'pyspark'
-  - numpy>=1.23.2,<3 ; extra == 'risingwave'
-  - pandas>=1.5.3,<3 ; extra == 'risingwave'
-  - psycopg2>=2.8.4,<3 ; extra == 'risingwave'
-  - pyarrow-hotfix>=0.4,<1 ; extra == 'risingwave'
-  - pyarrow>=10.0.1 ; extra == 'risingwave'
-  - rich>=12.4.4,<14 ; extra == 'risingwave'
-  - numpy>=1.23.2,<3 ; extra == 'snowflake'
-  - pandas>=1.5.3,<3 ; extra == 'snowflake'
-  - pyarrow-hotfix>=0.4,<1 ; extra == 'snowflake'
-  - pyarrow>=10.0.1 ; extra == 'snowflake'
-  - rich>=12.4.4,<14 ; extra == 'snowflake'
-  - snowflake-connector-python>=3.0.2,!=3.3.0b1,<4 ; extra == 'snowflake'
-  - numpy>=1.23.2,<3 ; extra == 'sqlite'
-  - pandas>=1.5.3,<3 ; extra == 'sqlite'
-  - pyarrow-hotfix>=0.4,<1 ; extra == 'sqlite'
-  - pyarrow>=10.0.1 ; extra == 'sqlite'
-  - regex>=2021.7.6 ; extra == 'sqlite'
-  - rich>=12.4.4,<14 ; extra == 'sqlite'
-  - numpy>=1.23.2,<3 ; extra == 'trino'
-  - pandas>=1.5.3,<3 ; extra == 'trino'
-  - pyarrow-hotfix>=0.4,<1 ; extra == 'trino'
-  - pyarrow>=10.0.1 ; extra == 'trino'
-  - rich>=12.4.4,<14 ; extra == 'trino'
-  - trino>=0.321,<1 ; extra == 'trino'
-  - graphviz>=0.16,<1 ; extra == 'visualization'
-  requires_python: '>=3.10'
 - pypi: https://files.pythonhosted.org/packages/8c/d1/a867c2150f9c6e7af6462637f613ba67f78a314b00db220cd26ff559d532/asyncpg-0.31.0-cp312-cp312-manylinux_2_28_x86_64.whl
   name: asyncpg
   version: 0.31.0
@@ -12016,6 +12004,18 @@ packages:
   - sphinx-autodoc-typehints ; extra == 'docs'
   - sphinx-rtd-theme>=0.2.5 ; extra == 'docs'
   requires_python: '>=3.9'
+- pypi: https://files.pythonhosted.org/packages/92/4a/985fb9d93d7f9f8e82092ddfe05ec8c9a1d0df7bdb0f562a10ced30e3e8f/duckdb-2.0.0-cp312-abi3-manylinux_2_26_aarch64.manylinux_2_28_aarch64.whl
+  name: duckdb
+  version: 2.0.0
+  sha256: e38daf0acbad9de7ce892d402b68409519291ee16af3c2cba85ace3b085c7eaa
+  requires_dist:
+  - ipython ; extra == 'all'
+  - fsspec ; extra == 'all'
+  - numpy ; extra == 'all'
+  - pandas ; extra == 'all'
+  - pyarrow ; extra == 'all'
+  - adbc-driver-manager ; extra == 'all'
+  requires_python: '>=3.11.0'
 - pypi: https://files.pythonhosted.org/packages/96/78/5fe6dc3a3a5b2f5a2a4faef8bfe336d5fa049a38884ab3172e0098160c01/alembic-1.18.5-py3-none-any.whl
   name: alembic
   version: 1.18.5
@@ -12211,18 +12211,6 @@ packages:
   - pandas-stubs>=1.1.0.11 ; extra == 'wandb'
   - openpyxl>=3.0.7 ; extra == 'wandb'
   requires_python: '>=3.7.1'
-- pypi: https://files.pythonhosted.org/packages/b0/48/e0c1b97d76fb7567c53db5739931323238fad54a642707008104f501db37/duckdb-1.4.0-cp312-cp312-manylinux_2_27_aarch64.manylinux_2_28_aarch64.whl
-  name: duckdb
-  version: 1.4.0
-  sha256: 0536d7c81bc506532daccf373ddbc8c6add46aeb70ef3cd5ee70ad5c2b3165ea
-  requires_dist:
-  - ipython ; extra == 'all'
-  - fsspec ; extra == 'all'
-  - numpy ; extra == 'all'
-  - pandas ; extra == 'all'
-  - pyarrow ; extra == 'all'
-  - adbc-driver-manager ; extra == 'all'
-  requires_python: '>=3.9.0'
 - pypi: https://files.pythonhosted.org/packages/b0/7b/90df4a0a816d98d6ea26f559d87836d494a2cf1fcf063be67df50a7bcc30/anyio-4.14.1-py3-none-any.whl
   name: anyio
   version: 4.14.1
@@ -12458,6 +12446,18 @@ packages:
   requires_dist:
   - typing-extensions>=4.5.0
   requires_python: '>=3.10'
+- pypi: https://files.pythonhosted.org/packages/cc/33/01ad2535ee897db2bad70cbc800655167c53afd0b955eed84f0759c2f417/duckdb-2.0.0-cp312-abi3-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl
+  name: duckdb
+  version: 2.0.0
+  sha256: ab51ec57d329d6f3df37c0287b55d71c3fc07bb54b61d1afed09104f953b1431
+  requires_dist:
+  - ipython ; extra == 'all'
+  - fsspec ; extra == 'all'
+  - numpy ; extra == 'all'
+  - pandas ; extra == 'all'
+  - pyarrow ; extra == 'all'
+  - adbc-driver-manager ; extra == 'all'
+  requires_python: '>=3.11.0'
 - pypi: https://files.pythonhosted.org/packages/cd/83/354f75660f583469df61b9553680552240774a991c33fbd77aded9a95a8a/pydocket-0.23.0-py3-none-any.whl
   name: pydocket
   version: 0.23.0

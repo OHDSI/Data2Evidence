@@ -30,6 +30,7 @@
     "./src/db/migrations/20220128063545_create_table_ConfigDbModels_UserDefaultConfig": "./src/db/migrations/20220128063545_create_table_ConfigDbModels_UserDefaultConfig.ts",
     "./src/db/migrations/20220913175044_alter_table_add_pkey_constraint_ConfigDbModels_AssignmentDetail": "./src/db/migrations/20220913175044_alter_table_add_pkey_constraint_ConfigDbModels_AssignmentDetail.ts",
     "./src/db/migrations/20220128065537_create_function_ConfigDbProcedures_GetAssignedConfigurations": "./src/db/migrations/20220128065537_create_function_ConfigDbProcedures_GetAssignedConfigurations.ts",
+    "./src/db/migrations/20261104120000_update_ConfigDbModels_Config_duckdb2_lambda_syntax": "./src/db/migrations/20261104120000_update_ConfigDbModels_Config_duckdb2_lambda_syntax.ts",
     "./src/db/knex": "./src/db/knex.ts",
     "./src/db/seeds/01_AssignmentDetail": "./src/db/seeds/01_AssignmentDetail.ts",
     "./src/db/seeds/02_AssignmentHeader": "./src/db/seeds/02_AssignmentHeader.ts",

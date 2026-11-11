@@ -22,7 +22,7 @@ Two layers:
 
 ```sh
 python3 -m venv /tmp/cachevenv
-/tmp/cachevenv/bin/pip install pytest==9.0.3 duckdb==1.4.0 pydantic==2.10.6
+/tmp/cachevenv/bin/pip install pytest==9.0.3 duckdb==2.0.0 pydantic==2.10.6
 
 cd plugins/flows/base
 PYTHONPATH="$PWD:$PWD/.." /tmp/cachevenv/bin/pytest create_cachedb_file_plugin/tests/ -v
