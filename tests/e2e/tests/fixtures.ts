@@ -1,4 +1,4 @@
-import { test as base, Page, BrowserContext } from '@playwright/test'
+import { test as base, expect, Page, BrowserContext } from '@playwright/test'
 import * as fs from 'fs'
 import * as path from 'path'
 
@@ -103,7 +103,7 @@ export const test = base.extend<{
   }
 })
 
-export { expect } from '@playwright/test'
+export { expect }
 
 export async function resetPortalSession(page: Page) {
   await page.context().clearCookies()
@@ -158,7 +158,12 @@ export async function openAtlasAccount(page: Page, username: string | RegExp = /
 }
 
 export async function openAdminPortalFromAtlas(page: Page) {
-  if (await page.getByRole('heading', { name: 'Users' }).isVisible().catch(() => false)) {
+  if (
+    await page
+      .getByRole('heading', { name: 'Users' })
+      .isVisible()
+      .catch(() => false)
+  ) {
     // Admin users may land directly in the Admin portal after login.
     return
   }
@@ -166,6 +171,53 @@ export async function openAdminPortalFromAtlas(page: Page) {
   await openAtlasAccount(page)
   await page.getByRole('button', { name: 'Switch to Admin portal' }).click()
   await page.getByRole('heading', { name: 'Users' }).waitFor({ state: 'visible' })
+}
+
+export async function openAtlasPortalFromAdmin(page: Page) {
+  await page.getByRole('link', { name: 'Account' }).click()
+  await page.getByRole('button', { name: 'Switch to ATLAS' }).click()
+  await acceptAtlasLicense(page)
+  await page.getByRole('link', { name: 'Data Exploration' }).waitFor({ state: 'visible' })
+}
+
+export async function openAtlasDataset(page: Page, datasetName = 'Demo dataset') {
+  await acceptAtlasLicense(page)
+
+  const escapedName = datasetName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  const dataset = page.getByRole('button', {
+    name: new RegExp(`^${escapedName}\\s+Have access.*Data source type:\\s+omop5-4`, 'i')
+  })
+
+  await dataset.waitFor({ state: 'visible' })
+
+  for (const panelName of ['Close jobs panel', 'Close configuration panel']) {
+    const closePanel = page.getByRole('button', { name: panelName })
+    const box = await closePanel.boundingBox().catch(() => null)
+    const viewport = page.viewportSize()
+    const isInViewport =
+      box &&
+      viewport &&
+      box.x < viewport.width &&
+      box.x + box.width > 0 &&
+      box.y < viewport.height &&
+      box.y + box.height > 0
+    if (isInViewport) {
+      await closePanel.click()
+      await expect(closePanel).not.toBeInViewport()
+    }
+  }
+
+  await dataset.click()
+  await page.getByRole('heading', { name: datasetName, exact: true }).waitFor({ state: 'visible' })
+}
+
+export async function openAtlasDataExploration(page: Page, datasetName = 'Demo dataset') {
+  await page.getByRole('link', { name: 'Data Exploration' }).click()
+  await page.getByTestId('explorations-page').waitFor({ state: 'visible' })
+  const dataSource = page.getByTestId('explorations-datasource')
+  await dataSource.click()
+  await page.getByRole('option', { name: datasetName, exact: true }).click()
+  await expect(dataSource).toContainText(datasetName)
 }
 
 export async function cleanupTestDataflows(page: Page, namePatterns: RegExp[]) {

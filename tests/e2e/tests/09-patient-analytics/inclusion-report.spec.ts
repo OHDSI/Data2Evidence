@@ -1,4 +1,4 @@
-import { test, expect } from '../fixtures'
+import { test, expect, openAtlasDataExploration } from '../fixtures'
 
 const TEST_NAME = 'inclusion-report'
 const SHOULD_SKIP = false
@@ -6,6 +6,7 @@ test.fixme(SHOULD_SKIP, `${TEST_NAME} test is temporarily disabled.`)
 
 test(TEST_NAME, async ({ page }) => {
   test.slow()
+  const conceptSetName = `E2E Chronic sinusitis ${Date.now()}`
 
   // Sign in
   await page.goto('/d2e/portal')
@@ -14,8 +15,7 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByRole('button', { name: 'Sign in' }).click()
 
   await test.step('Open Demo dataset and start a new D2E cohort', async () => {
-    await page.getByText('Demo dataset').first().click()
-    await page.getByRole('link', { name: 'Cohorts' }).click()
+    await openAtlasDataExploration(page)
     await page.getByTestId('explorations-new-btn').click()
     await expect(page.getByText('2,694 / 2,694')).toBeVisible()
     await expect(page.locator('.loading-animation-component')).not.toBeVisible()
@@ -43,32 +43,18 @@ test(TEST_NAME, async ({ page }) => {
   await test.step('Add Condition Occurrence inclusion filter (Chronic sinusitis)', async () => {
     await page.getByTitle('Add Filter Card').getByRole('button').click()
     await page.getByRole('menuitem', { name: 'Condition Occurrence' }).click()
-    await page.locator('[id="patient\\.interactions\\.conditionoccurrence\\.1"]').getByText('All').click()
-    await page.getByTitle('Condition Occurrence A -').getByPlaceholder('Enter search term').fill('Chronic sinusitis')
-    try {
-      await expect(page.getByText('Chronic sinusitis')).toBeVisible({ timeout: 2000 })
-      await page.getByText('Chronic sinusitis').click()
-    } catch {
-      await page.getByTitle('Condition Occurrence A -').getByRole('button').click()
-      await page.getByRole('textbox', { name: 'Concept set name' }).fill('Chronic sinusitis')
-      await page.getByRole('textbox', { name: 'search terms' }).fill('Chronic sinusitis')
-      await page.getByRole('button', { name: 'Search' }).click()
-      await page
-        .getByRole('row', { name: /40055000.*Chronic sinusitis/ })
-        .locator('td')
-        .first()
-        .click()
-      await page.getByRole('button', { name: 'Create' }).click()
-      await expect(page.getByRole('button', { name: 'Update' })).toBeVisible()
-      await page.getByRole('button', { name: 'Close' }).click()
-      await expect(page.locator('.loading-animation-component')).not.toBeVisible()
-      try {
-        await page.mouse.move(0, 0)
-        await page.locator('.modal-wrapper').click()
-      } catch {
-        // modal not present, continue
-      }
-    }
+    await page.getByTitle('Condition Occurrence A -').getByRole('button').click()
+    await page.getByRole('textbox', { name: 'Name' }).fill(conceptSetName)
+    await page.getByRole('textbox', { name: 'Search', exact: true }).fill('Chronic sinusitis')
+    await page.getByRole('button', { name: 'Search', exact: true }).click()
+    await page
+      .getByRole('row', { name: /40055000.*Chronic sinusitis/ })
+      .getByRole('checkbox')
+      .check()
+    await page.getByTestId('add-selected').click()
+    await page.getByRole('button', { name: 'Create' }).click()
+    await expect(page.getByRole('button', { name: 'Update' })).toBeVisible()
+    await page.getByRole('button', { name: 'Close', exact: true }).click()
     await expect(page.locator('.loading-animation-component')).not.toBeVisible()
   })
 

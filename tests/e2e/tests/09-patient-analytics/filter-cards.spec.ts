@@ -1,4 +1,4 @@
-import { test, expect } from '../fixtures'
+import { test, expect, openAtlasDataExploration } from '../fixtures'
 
 const TEST_NAME = 'pa-filter-cards'
 const SHOULD_SKIP = false
@@ -36,8 +36,7 @@ test(TEST_NAME, async ({ browser }) => {
   await page.locator('input[name="password"]').click()
   await page.locator('input[name="password"]').fill('Updatepassword12345')
   await page.getByRole('button', { name: 'Sign in' }).click()
-  await page.getByText('Demo dataset').first().click()
-  await page.getByRole('link', { name: 'Cohorts' }).click()
+  await openAtlasDataExploration(page)
   await page.getByTestId('explorations-new-btn').click()
 
   // Step 2 - Add conditional occurrence filter card
@@ -92,19 +91,27 @@ test(TEST_NAME, async ({ browser }) => {
   await page.locator('#stacked-chart').click()
   await page.getByRole('button', { name: '+' }).click()
   await expect(page.locator('.loading-animation-component')).not.toBeVisible()
-  await page.getByRole('textbox', { name: 'Concept set name' }).click()
-  await page.getByRole('textbox', { name: 'Concept set name' }).fill(conceptSetName)
-  await page.getByRole('textbox', { name: 'search terms' }).click()
-  await page.getByRole('textbox', { name: 'search terms' }).fill('260139 10509002 Acute bronchitis')
-  await page.getByRole('button', { name: 'Search' }).click()
+  await page.getByRole('textbox', { name: 'Name' }).click()
+  await page.getByRole('textbox', { name: 'Name' }).fill(conceptSetName)
+  await page.getByRole('textbox', { name: 'Search', exact: true }).click()
+  await page.getByRole('textbox', { name: 'Search', exact: true }).fill('Acute bronchitis')
+  await page.getByRole('button', { name: 'Search', exact: true }).click()
   await expect(page.locator('tbody')).toContainText('Acute bronchitis')
-  await page.getByRole('row', { name: '260139 10509002 Acute bronchitis' }).getByRole('img').click()
-  await page.getByRole('textbox', { name: 'search terms' }).fill('439777 271737000 Anemia')
-  await page.getByRole('button', { name: 'Search' }).click()
-  await page.getByRole('row', { name: '439777 271737000 Anemia' }).getByRole('img').click()
+  await page
+    .getByRole('row', { name: /260139.*10509002.*Acute bronchitis/ })
+    .getByRole('checkbox')
+    .check()
+  await page.getByTestId('add-selected').click()
+  await page.getByRole('tab', { name: 'Search', exact: true }).click()
+  await page.getByRole('textbox', { name: 'Search', exact: true }).fill('Anemia')
+  await page.getByRole('button', { name: 'Search', exact: true }).click()
+  await page
+    .getByRole('row', { name: /439777.*271737000.*Anemia/ })
+    .getByRole('checkbox')
+    .check()
+  await page.getByTestId('add-selected').click()
   await page.getByRole('button', { name: 'Create' }).click()
-  await page.getByRole('tab', { name: 'Selected concepts' }).click()
-  await page.getByRole('button', { name: 'Close' }).click()
+  await expect(page.getByTitle('Condition Occurrence A - Condition concept Set')).toContainText(conceptSetName)
 
   // Dismiss popover if present
   try {
@@ -140,14 +147,20 @@ test(TEST_NAME, async ({ browser }) => {
   expect(conditionOccuErrorBgcolor).toBe('rgb(226, 49, 1)')
 
   // Step 8 - Entering month of birth with correct input
-  await page.locator('div[title="Basic Data - Month of Birth"]').click()
-  await page.locator('div[title="Basic Data - Month of Birth"]').getByRole('textbox').fill('[1-10]')
-  await page.locator('div[title="Basic Data - Month of Birth"]').getByRole('textbox').press('Enter')
+  const basicData = page.getByRole('tab', { name: /Basic Data/ })
+  const attributeMenu = basicData.getByTitle('Select Filter Attributes')
+  await attributeMenu.click()
+  await page.getByRole('menu').getByText('Month of Birth', { exact: true }).click()
+  await attributeMenu.click()
+  const monthOfBirthFilter = page.getByTitle('Basic Data - Month of Birth')
+  await monthOfBirthFilter.click()
+  await monthOfBirthFilter.getByRole('textbox').fill('[1-10]')
+  await monthOfBirthFilter.getByRole('textbox').press('Enter')
 
   // Step 8 - Entering month of birth with incorrect input
-  await page.locator('div[title="Basic Data - Month of Birth"]').click()
-  await page.locator('div[title="Basic Data - Month of Birth"]').getByRole('textbox').fill('5.x')
-  await page.locator('div[title="Basic Data - Month of Birth"]').getByRole('textbox').press('Enter')
+  await monthOfBirthFilter.click()
+  await monthOfBirthFilter.getByRole('textbox').fill('5.x')
+  await monthOfBirthFilter.getByRole('textbox').press('Enter')
   await expect(page.getByText('Invalid input. Use a number,')).toBeVisible()
 
   // Step 9 - Remove condition occurrence filter card

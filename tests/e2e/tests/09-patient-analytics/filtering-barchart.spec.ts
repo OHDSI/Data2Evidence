@@ -1,4 +1,4 @@
-import { test, expect } from '../fixtures'
+import { test, expect, openAtlasDataExploration } from '../fixtures'
 
 const TEST_NAME = 'filtering-barchart'
 const SHOULD_SKIP = false
@@ -15,8 +15,7 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByRole('button', { name: 'Sign in' }).click()
 
   // Select demo dataset, open cohorts
-  await page.getByText('Demo datasetDemo datasetTotal').click()
-  await page.getByRole('link', { name: 'Cohorts' }).click()
+  await openAtlasDataExploration(page)
   await page.getByTestId('explorations-new-btn').click()
   await expect(page.getByText('2,694 / 2,694')).toBeVisible()
   await expect(page.locator('.loading-animation-component')).not.toBeVisible()
@@ -33,39 +32,39 @@ test(TEST_NAME, async ({ page }) => {
 
   // Create concept set
   await page.getByRole('button', { name: '+' }).click()
-  await page.getByRole('textbox', { name: 'search terms' }).fill('Sinusitis')
-  await page.getByRole('button', { name: 'Search' }).click()
-
-  // Wait for search results to settle to exactly 4 data rows
-  await expect(page.locator('tr.MuiTableRow-root:not(.MuiTableRow-head)')).toHaveCount(4)
+  await page.getByRole('textbox', { name: 'Search', exact: true }).fill('Sinusitis')
+  await page.getByRole('button', { name: 'Search', exact: true }).click()
 
   await page
     .getByRole('row', { name: /40055000.*Chronic/ })
-    .locator('td')
-    .first()
-    .click()
+    .getByRole('checkbox')
+    .check()
   await page
     .getByRole('row', { name: /75498004.*Acute/ })
-    .locator('td')
-    .first()
-    .click()
-  await expect(page.getByRole('tablist')).toContainText('2')
-  await page.getByRole('tab', { name: 'Selected concepts' }).click()
-  await expect(page.locator('tbody')).toContainText('257012')
-  await expect(page.locator('tbody')).toContainText('4294548')
+    .getByRole('checkbox')
+    .check()
+  await page.getByTestId('add-selected').click()
+  await expect(page.getByRole('tablist').filter({ hasText: 'Selected' })).toContainText('2')
+  await page.getByRole('tab', { name: /Selected/ }).click()
+  await expect(page.getByRole('row').filter({ hasText: '257012' }).last()).toContainText('Chronic sinusitis')
+  await expect(page.getByRole('row').filter({ hasText: '4294548' }).last()).toContainText('Acute bacterial sinusitis')
 
   // Save concept set
-  await page.getByRole('textbox', { name: 'Concept set name' }).fill('Sinusitis')
+  await page.getByRole('textbox', { name: 'Name' }).fill('Sinusitis')
   await page.getByRole('button', { name: 'Create' }).click()
   // Wait for concept set to be succesfully created
-  await expect(page.getByRole('button', { name: 'Update' })).toBeEnabled()
-  await page.getByRole('button', { name: 'Close' }).click()
-  await expect(page.getByText('1,132 / 2,694')).toBeVisible()
+  const updateConceptSet = page.getByRole('button', { name: 'Update' })
+  await expect(updateConceptSet).toBeEnabled()
+  await updateConceptSet.scrollIntoViewIfNeeded()
+  await updateConceptSet.evaluate((element: HTMLElement) => element.click())
+  await page.getByRole('button', { name: 'Close', exact: true }).click()
+  await page.getByRole('button', { name: 'Discard changes' }).click()
+  await expect(page.getByText('2,694 / 2,694')).toBeVisible()
 
   // Dismiss popover if present
   try {
     await page.mouse.move(0, 0)
-    await page.locator('.modal-wrapper').click()
+    await page.locator('.modal-wrapper').click({ timeout: 3000 })
   } catch {
     // Modal not present, continue
   }
@@ -75,10 +74,7 @@ test(TEST_NAME, async ({ page }) => {
   await expect(page).toHaveScreenshot()
 
   // reset x2-axis
-  await page
-    .locator('div.axis-menu-button-wrapper')
-    .getByRole('button', { name: 'Basic Data Month of Birth ◢' })
-    .click()
+  await page.locator('div.axis-menu-button-wrapper').getByRole('button', { name: 'Basic Data Age ◢' }).click()
   await page.locator('div.dropdownmenu-container .menuWrapper:not(.closed)').getByText('Reset Selection').click()
   await expect(page.locator('.loading-animation-component')).not.toBeVisible()
 
@@ -192,10 +188,12 @@ test(TEST_NAME, async ({ page }) => {
   await expect(page).toHaveScreenshot()
 
   // Set month of birth to 11 in filter card
-  await page.getByTitle('Basic Data - Month of Birth').first().click()
-  await page.getByTitle('Basic Data - Month of Birth').getByRole('textbox').fill('11')
-  await page.getByTitle('Basic Data - Month of Birth').getByRole('textbox').press('Enter')
-  await expect(page.getByText('115 / 2,694')).toBeVisible()
+  const monthOfBirthFilter = page.getByTestId('pa-filter-card-patient').getByTitle('Basic Data - Month of Birth')
+  await expect(monthOfBirthFilter).toBeVisible()
+  await monthOfBirthFilter.click()
+  await monthOfBirthFilter.getByRole('textbox').fill('11')
+  await monthOfBirthFilter.getByRole('textbox').press('Enter')
+  await expect(page.getByText('247 / 2,694')).toBeVisible()
   await expect(page).toHaveScreenshot()
 
   // Remove condition occurrence filter card

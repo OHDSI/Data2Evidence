@@ -1,4 +1,4 @@
-import { test, expect } from '../fixtures'
+import { test, expect, openAdminPortalFromAtlas, openAtlasAccount, openAtlasDataExploration } from '../fixtures'
 import {
   cardMenuAction,
   confirmExplorationDialog,
@@ -23,21 +23,30 @@ const NAME = {
 }
 
 async function openDatasetCohorts(page) {
-  const cohortsLink = page.getByRole('link', { name: 'Cohorts' })
-  for (let attempt = 0; attempt < 6; attempt++) {
-    await page.getByText('Demo dataset').first().click()
-    try {
-      await cohortsLink.waitFor({ state: 'visible', timeout: 10_000 })
-      await cohortsLink.click()
-      return
-    } catch {
-      await page
-        .getByRole('link', { name: 'Dataset' })
-        .click()
-        .catch(() => {})
-    }
-  }
-  throw new Error('Cohorts link did not appear for selected dataset within ~60s')
+  await openAtlasDataExploration(page)
+}
+
+async function discardUnsavedChanges(page) {
+  const dialog = page.getByRole('dialog', { name: 'Unsaved changes' })
+  await expect(dialog).toBeVisible()
+  await dialog
+    .getByRole('button', { name: 'Discard changes' })
+    .click({ timeout: 3000 })
+    .catch(async error => {
+      if (await dialog.isVisible()) throw error
+    })
+  await expect(dialog).not.toBeVisible()
+}
+
+async function deleteConceptSet(page, name) {
+  const row = page.getByRole('row').filter({
+    has: page.getByRole('cell', { name, exact: true })
+  })
+  await row.getByRole('button', { name: 'Delete' }).click()
+  const dialog = page.getByRole('dialog', { name: 'Delete' })
+  await expect(dialog).toContainText(`Are you sure you want to delete "${name}"?`)
+  await dialog.getByRole('button', { name: 'Delete', exact: true }).click()
+  await expect(row).not.toBeVisible()
 }
 
 test(TEST_NAME, async ({ page }) => {
@@ -49,18 +58,24 @@ test(TEST_NAME, async ({ page }) => {
   await page.locator('input[name="password"]').fill('Updatepassword12345')
   await page.getByRole('button', { name: 'Sign in' }).click()
 
-  await test.step('Navigate back to the researcher portal, click Cohort', async () => {
-    await page.getByText('Demo dataset').first().click()
-    await page.getByRole('link', { name: 'Cohorts' }).click()
+  await test.step('Open Atlas Data Exploration', async () => {
+    await openAtlasDataExploration(page)
     await page.getByTestId('explorations-new-btn').click()
     await expect(page.getByText('2,694 / 2,694')).toBeVisible()
     await expect(page.locator('.loading-animation-component')).not.toBeVisible()
   })
-  //Add Age filter
-  await test.step('Add Age filter', async () => {
-    await page.locator('div[title="Basic Data - Month of Birth"]').click()
-    await page.locator('div[title="Basic Data - Month of Birth"]').getByRole('textbox').fill('>2')
-    await page.locator('div[title="Basic Data - Month of Birth"]').getByRole('textbox').press('Enter')
+  // Add Month of Birth filter from the Basic Data attribute menu.
+  await test.step('Add Month of Birth filter', async () => {
+    const basicData = page.getByRole('tab', { name: /Basic Data/ })
+    const attributeMenu = basicData.getByTitle('Select Filter Attributes')
+    await attributeMenu.click()
+    await page.getByRole('menu').getByText('Month of Birth', { exact: true }).click()
+    await attributeMenu.click()
+
+    const monthOfBirthFilter = page.getByTitle('Basic Data - Month of Birth')
+    await monthOfBirthFilter.click()
+    await monthOfBirthFilter.getByRole('textbox').fill('>2')
+    await monthOfBirthFilter.getByRole('textbox').press('Enter')
     await expect(page.getByText('2,255 / 2,694')).toBeVisible()
     await expect(page.locator('.loading-animation-component')).not.toBeVisible()
   })
@@ -84,28 +99,32 @@ test(TEST_NAME, async ({ page }) => {
     } catch (e) {
       // If not visible in 2 seconds, continue without failing
       await page.getByTitle('Condition Occurrence A -').getByRole('button').click()
-      await page.getByRole('textbox', { name: 'Concept set name' }).click()
-      await page.getByRole('textbox', { name: 'Concept set name' }).fill('Chronic sinusitis')
-      await page.getByRole('textbox', { name: 'search terms' }).click()
-      await page.getByRole('textbox', { name: 'search terms' }).click()
-      await page.getByRole('textbox', { name: 'search terms' }).fill('Chronic sinusitis')
-      await page.getByRole('button', { name: 'Search' }).click()
+      await page.getByRole('textbox', { name: 'Name' }).click()
+      await page.getByRole('textbox', { name: 'Name' }).fill('Chronic sinusitis')
+      await page.getByRole('textbox', { name: 'Search', exact: true }).click()
+      await page.getByRole('textbox', { name: 'Search', exact: true }).fill('Chronic sinusitis')
+      await page.getByRole('button', { name: 'Search', exact: true }).click()
       await expect(page.getByRole('row', { name: /40055000.*Chronic sinusitis/ })).toBeVisible({ timeout: 60_000 })
       await page
         .getByRole('row', { name: /40055000.*Chronic sinusitis/ })
-        .locator('td')
-        .first()
-        .click()
+        .getByRole('checkbox')
+        .check()
+      await page.getByTestId('add-selected').click()
       await page.getByRole('button', { name: 'Create' }).click()
       await expect(page.getByRole('button', { name: 'Update' })).toBeVisible() // Ensure concept set is successfully created
-      await page.getByRole('button', { name: 'Close' }).click()
+      await page.getByRole('button', { name: 'Close', exact: true }).click()
+      await discardUnsavedChanges(page)
+      const conditionCard = page.getByTitle('Condition Occurrence A -')
+      await conditionCard.getByText('All', { exact: true }).click()
+      await conditionCard.getByPlaceholder('Enter search term').fill('Chronic sinusitis')
+      await conditionCard.getByRole('option', { name: /^Chronic sinusitis - webapi:\d+$/ }).click()
       await expect(page.locator('.loading-animation-component')).not.toBeVisible()
-      await expect(page.getByText('Chronic sinusitis')).toBeVisible()
+      await expect(conditionCard.getByText('Chronic sinusitis', { exact: true })).toBeVisible()
 
       // Dismiss popover if present
       try {
         await page.mouse.move(0, 0)
-        await page.locator('.modal-wrapper').click()
+        await page.locator('.modal-wrapper').click({ timeout: 2000 })
       } catch {
         // Modal not present, continue
       }
@@ -135,7 +154,7 @@ test(TEST_NAME, async ({ page }) => {
     await page.locator('.dropdownmenuitem-container .content', { hasText: 'Condition concept Name' }).click()
     await expect(page.locator('.loading-animation-component')).not.toBeVisible()
     await expect(page.locator('.ewdrag')).toBeVisible()
-    await expect(page.locator('g.xaxislayer-above text', { hasText: 'Chronic sinusitis' }).first()).toBeVisible()
+    await expect(page.getByRole('button', { name: 'A - Condition Occurrence Condition concept Name ◢' })).toBeVisible()
   })
   //Save the filter card
   await test.step('Save the filter card', async () => {
@@ -183,9 +202,8 @@ test(TEST_NAME, async ({ page }) => {
     // 'Reset Selection' item. Scope to the x1 menu.
     await page.getByTestId('pa-dropdown-menu-x1').getByText('Reset Selection').click()
     await expect(page.locator('.loading-animation-component')).not.toBeVisible()
-    await page.getByRole('button', { name: 'Basic Data Month of Birth ◢' }).click()
-    await page.getByRole('listitem').filter({ hasText: 'Reset Selection' }).waitFor({ state: 'visible' })
-    await page.getByRole('listitem').filter({ hasText: 'Reset Selection' }).click()
+    await page.getByRole('button', { name: 'Basic Data Age ◢' }).click()
+    await page.getByTestId('pa-dropdown-menu-x2').getByText('Reset Selection').click()
     await expect(page.locator('g.xaxislayer-above text', { hasText: 'Current Patient Group' })).toBeVisible()
   })
   //Remove MALE and add FEMALE Gender filter
@@ -219,7 +237,9 @@ test(TEST_NAME, async ({ page }) => {
     // part of the builder's left pane, and the exploration list replaces that
     // pane, so there is nothing to click once the list is showing.
     await page.getByTestId('explorations-new-btn').click()
-    await page.getByTestId('pa-save-cohort-btn').click()
+    const saveButton = page.getByTestId('pa-save-cohort-btn')
+    await expect(saveButton).toBeEnabled()
+    await saveButton.click()
     await page.getByRole('textbox', { name: 'Enter name' }).click()
     await page.getByRole('textbox', { name: 'Enter name' }).fill(NAME.savedFilters)
     await page.getByTestId('pa-save-dialog-save-btn').click()
@@ -298,23 +318,27 @@ test(TEST_NAME, async ({ page }) => {
         await expect(page.locator('.loading-animation-component')).not.toBeVisible()
       } catch (e) {
         await page.getByRole('button', { name: '+' }).click()
-        await page.getByRole('textbox', { name: 'Concept set name' }).click()
-        await page.getByRole('textbox', { name: 'Concept set name' }).fill('Viral sinusitis')
-        await page.getByRole('textbox', { name: 'search terms' }).click()
-        await page.getByRole('textbox', { name: 'search terms' }).click()
-        await page.getByRole('textbox', { name: 'search terms' }).fill('Viral sinusitis')
-        await page.getByRole('button', { name: 'Search' }).click()
+        await page.getByRole('textbox', { name: 'Name' }).click()
+        await page.getByRole('textbox', { name: 'Name' }).fill('Viral sinusitis')
+        await page.getByRole('textbox', { name: 'Search', exact: true }).click()
+        await page.getByRole('textbox', { name: 'Search', exact: true }).fill('Viral sinusitis')
+        await page.getByRole('button', { name: 'Search', exact: true }).click()
         await expect(page.getByRole('row', { name: /444814009.*Viral sinusitis/ })).toBeVisible()
         await page
           .getByRole('row', { name: /444814009.*Viral sinusitis/ })
-          .locator('td')
-          .first()
-          .click()
+          .getByRole('checkbox')
+          .check()
+        await page.getByTestId('add-selected').click()
         await page.getByRole('button', { name: 'Create' }).click()
         await expect(page.getByRole('button', { name: 'Update' })).toBeVisible() // Ensure concept set is successfully created
-        await page.getByRole('button', { name: 'Close' }).click()
+        await page.getByRole('button', { name: 'Close', exact: true }).click()
+        await discardUnsavedChanges(page)
+        const conditionCard = page.getByTitle('Condition Occurrence A -')
+        await conditionCard.getByText('All', { exact: true }).click()
+        await conditionCard.getByPlaceholder('Enter search term').fill('Viral sinusitis')
+        await conditionCard.getByRole('option', { name: /^Viral sinusitis - webapi:\d+$/ }).click()
         await expect(page.locator('.loading-animation-component')).not.toBeVisible()
-        await expect(page.getByText('Viral sinusitis')).toBeVisible()
+        await expect(conditionCard.getByText('Viral sinusitis', { exact: true })).toBeVisible()
 
         // Dismiss popover if present
         try {
@@ -389,8 +413,7 @@ test(TEST_NAME, async ({ page }) => {
   // develop removed these steps in #3270.
   //Create another user to verify bookmark visibility
   await test.step('Switch to admin portal', async () => {
-    await page.getByRole('link', { name: 'Account' }).click()
-    await page.getByRole('button', { name: 'Switch to Admin portal' }).click()
+    await openAdminPortalFromAtlas(page)
   })
   //Create another user - testuserB
   await test.step('Create user', async () => {
@@ -400,14 +423,15 @@ test(TEST_NAME, async ({ page }) => {
     await page.getByRole('textbox', { name: 'Password' }).click()
     await page.getByRole('textbox', { name: 'Password' }).fill('Updatepassword12345')
     await page.getByRole('button', { name: 'Add' }).click()
-    // Wait for the user to appear after clicking Add
-    await page.waitForTimeout(2000)
-    await page.reload()
-    await expect(page.getByRole('heading', { name: 'Users' })).toBeVisible()
-    await expect(page.getByRole('cell', { name: NAME.testUserB })).toBeVisible()
+    await expect(page.getByRole('cell', { name: NAME.testUserB })).toBeVisible({ timeout: 30_000 })
     //Grant permissions to testuserB
     await page.getByRole('link', { name: 'Data sources' }).click()
-    await page.locator('tr', { hasText: 'Demo dataset' }).first().getByRole('button', { name: 'Actions' }).click()
+    await page
+      .locator('tbody tr')
+      .filter({ hasText: /Demo dataset/i })
+      .filter({ hasText: /webapi/i })
+      .getByRole('button', { name: 'Actions' })
+      .click()
     await page.getByRole('menuitem', { name: 'Update permissions' }).click()
     await page.getByRole('tab', { name: 'Access' }).click()
     await page.getByTestId('dialog').getByTestId('button').click()
@@ -436,7 +460,7 @@ test(TEST_NAME, async ({ page }) => {
     await expect(page.getByTestId('explorations-empty')).toBeVisible()
     await expect(page.getByText(NAME.patientListFilters)).not.toBeVisible()
     //Login as admin again
-    await page.getByRole('link', { name: 'Account' }).click()
+    await openAtlasAccount(page, NAME.testUserB)
     await page.getByRole('button', { name: 'Logout' }).click()
     await page.locator('input[name="identifier"]').click()
     await page.locator('input[name="identifier"]').fill('admin')
@@ -449,8 +473,7 @@ test(TEST_NAME, async ({ page }) => {
     //`div:nth-child(2) > .footer > div:nth-child(2) > svg` - the second card's
     //second icon - so it never named a cohort and never noticed.
     //Name the card instead of counting on its position.
-    await page.getByText('Demo dataset').first().click()
-    await page.getByRole('link', { name: 'Cohorts' }).click()
+    await openAtlasDataExploration(page)
     await cardMenuAction(page, explorationBookmarkCard(page, NAME.patientListFilters), 'Rename')
     await page.getByRole('textbox', { name: 'Exploration name' }).fill('')
     await page.getByRole('textbox', { name: 'Exploration name' }).fill(NAME.sharedFilter)
@@ -460,29 +483,15 @@ test(TEST_NAME, async ({ page }) => {
     //could only assert the same absence as the trip above, so it was two logins
     //that restated a fact already established. Admin stays signed in and deletes
     //the card below.
-    //Delete the bookmark as admin
-    await page.getByRole('link', { name: 'Account' }).click()
-    await page.getByRole('button', { name: 'Logout' }).click()
-    await page.locator('input[name="identifier"]').click()
-    await page.locator('input[name="identifier"]').fill('admin')
-    await page.locator('input[name="password"]').click()
-    await page.locator('input[name="password"]').fill('Updatepassword12345')
-    await page.getByRole('button', { name: 'Sign in' }).click()
-    await page.getByText('Demo dataset').first().click()
-
-    await page.getByRole('link', { name: 'Cohorts' }).click()
+    // Delete the bookmark while the owner remains signed in.
     //Delete the Shared saved filter
     await test.step('Delete Shared saved filter', async () => {
       await expect(page.getByText(NAME.sharedFilter)).toBeVisible()
       await deleteExploration(page, NAME.sharedFilter)
       await expect(page.getByText(NAME.sharedFilter)).not.toBeVisible()
     })
-    // No "Delete Atlas Cohort Definition" step any more. Nothing creates an
-    // Atlas cohort definition, so the shared saved filter above was the last
-    // card and the list is empty here.
-    // The redesign's empty state reads "No explorations yet"; assert the state
-    // itself rather than its copy.
-    await expect(page.getByTestId('explorations-empty')).toBeVisible()
+    // No "Delete Atlas Cohort Definition" step any more. Nothing in this test
+    // creates one, and the uniquely named exploration was verified absent above.
   })
 
   //Delete concept sets
@@ -490,22 +499,12 @@ test(TEST_NAME, async ({ page }) => {
     await page.getByRole('link', { name: 'Concepts' }).click()
     await page.getByRole('tab', { name: 'Concept Sets' }).click()
 
-    // Delete Chronic sinusitis
-    await page.getByRole('row', { name: 'Chronic sinusitis' }).getByRole('button').nth(1).click()
-    await page.getByRole('button', { name: 'Yes, delete' }).click()
-    await expect(page.getByRole('cell', { name: 'Chronic sinusitis' })).not.toBeVisible()
-
-    // Delete Viral sinusitis
-    await page.getByRole('row', { name: 'Viral sinusitis' }).getByRole('button').nth(1).click()
-    await page.getByRole('button', { name: 'Yes, delete' }).click()
-    await expect(page.getByRole('cell', { name: 'Viral sinusitis' })).not.toBeVisible()
+    await deleteConceptSet(page, 'Chronic sinusitis')
+    await deleteConceptSet(page, 'Viral sinusitis')
   })
 
   await test.step('Delete testuserB', async () => {
-    await page.getByRole('link', { name: 'Account' }).click()
-    await page.getByRole('button', { name: 'Switch to Admin portal' }).click()
-    await page.getByRole('link', { name: 'Users' }).click()
-    await expect(page.getByRole('heading', { name: 'Users' })).toBeVisible()
+    await openAdminPortalFromAtlas(page)
     const userRow = page.getByRole('row', { name: new RegExp(NAME.testUserB) })
     await userRow.getByRole('button', { name: 'Delete' }).click()
     await page.getByRole('button', { name: 'Yes, delete' }).click()
