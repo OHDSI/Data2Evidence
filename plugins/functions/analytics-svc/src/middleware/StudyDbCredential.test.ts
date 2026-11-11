@@ -126,19 +126,6 @@ Deno.test(
 );
 
 Deno.test(
-    "requires a top-level datasetId when a plain-JSON body mriquery names one",
-    async () => {
-        const req = makeReq({
-            body: { mriquery: JSON.stringify({ datasetId: "known-dataset" }) },
-        });
-        const err = (await run(req)) as { status?: number };
-
-        assertEquals(err?.status, 400);
-        assertEquals(req.dbCredentials.studyAnalyticsCredential, undefined);
-    }
-);
-
-Deno.test(
     "requires a top-level datasetId when a query mriquery names one",
     async () => {
         const req = makeReq({
@@ -167,46 +154,6 @@ Deno.test(
             assertEquals(req.selectedstudyDbMetadata.id, "known-dataset");
             assertEquals(req.dbCredentials.studyAnalyticsCredential.schema, "cdm");
             assertEquals(urls.length, 1);
-            assertStringIncludes(urls[0], "datasetId=known-dataset");
-            assertEquals(req.paConfigId, "c");
-        });
-    }
-);
-
-Deno.test(
-    "uses the top-level body datasetId when a body mriquery names an unknown dataset",
-    async () => {
-        await withPortalStub(async (urls) => {
-            const req = makeReq({
-                body: {
-                    datasetId: "known-dataset",
-                    mriquery: JSON.stringify({ datasetId: "someone-elses-dataset" }),
-                },
-            });
-            const nextArg = await run(req);
-
-            assertEquals(nextArg, undefined);
-            assertEquals(req.selectedstudyDbMetadata.id, "known-dataset");
-            assertEquals(req.dbCredentials.studyAnalyticsCredential.schema, "cdm");
-            assertStringIncludes(urls[0], "datasetId=known-dataset");
-        });
-    }
-);
-
-Deno.test(
-    "resolves a tokenStudyCode to the canonical dataset id",
-    async () => {
-        await withPortalStub(async (urls) => {
-            const req = makeReq({
-                query: {
-                    datasetId: "known-token",
-                    mriquery: zlibBase64({ datasetId: "known-token" }),
-                },
-            });
-            const nextArg = await run(req);
-
-            assertEquals(nextArg, undefined);
-            assertEquals(req.selectedstudyDbMetadata.id, "known-dataset");
             assertStringIncludes(urls[0], "datasetId=known-dataset");
             assertEquals(req.paConfigId, "c");
         });

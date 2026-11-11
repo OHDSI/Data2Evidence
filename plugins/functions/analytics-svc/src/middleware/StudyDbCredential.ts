@@ -321,7 +321,7 @@ export default async (req: IMRIRequest, res, next) => {
             }
             req.selectedstudyDbMetadata = studyMetadata;
             getDbConnectionByStudyMetadata(studyMetadata);
-            await addConfigMetadataToReq(studyMetadata?.id);
+            await addConfigMetadataToReq(datasetId);
         }
         next();
     } catch (err) {
