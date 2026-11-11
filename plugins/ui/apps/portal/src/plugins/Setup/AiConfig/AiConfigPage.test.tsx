@@ -198,12 +198,12 @@ describe("AiConfigPage list", () => {
     await userEvent.type(nameInput, "Zulu");
     await userEvent.click(screen.getByRole("button", { name: "AI_CONFIG__SAVE" }));
     await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
-    const items = screen.getAllByRole("listitem");
-    expect(items.map((li) => within(li).getByText(/^(Active|Zulu|Beta)$/).textContent)).toEqual([
-      "Active",
-      "Beta",
-      "Zulu",
-    ]);
+    // Retry: MUI can leave the root aria-hidden for a moment after the dialog unmounts (seen on slow CI runners).
+    await waitFor(() =>
+      expect(
+        screen.getAllByRole("listitem").map((li) => within(li).getByText(/^(Active|Zulu|Beta)$/).textContent)
+      ).toEqual(["Active", "Beta", "Zulu"])
+    );
     expect(listAiConfigs).toHaveBeenCalledTimes(1);
   });
 });
@@ -224,6 +224,10 @@ describe("AiConfigPage row actions", () => {
   const deleteMock = api.systemPortal.deleteAiConfig as jest.Mock;
   const names = (all: string[]) =>
     screen.getAllByRole("listitem").map((li) => within(li).getByText(new RegExp(`^(${all.join("|")})$`)).textContent);
+  // Row checks after a dialog closes retry: MUI can leave the root aria-hidden for a moment after the dialog
+  // unmounts (seen on slow CI runners), and role queries skip aria-hidden content.
+  const expectNames = (all: string[], expected: string[]) => waitFor(() => expect(names(all)).toEqual(expected));
+  const expectRowCount = (n: number) => waitFor(() => expect(screen.getAllByRole("listitem")).toHaveLength(n));
   const openMenu = async (name: string) =>
     userEvent.click(await screen.findByRole("button", { name: `AI_CONFIG__MORE_ACTIONS ${name}` }));
   // The toast content is a React node; render it to inspect the DOM it produces.
@@ -286,7 +290,7 @@ describe("AiConfigPage row actions", () => {
 
     await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
     expect(activateMock).toHaveBeenCalledWith(3);
-    expect(names(["Zed", "Alpha", "Beta"])).toEqual(["Beta", "Alpha", "Zed"]);
+    await expectNames(["Zed", "Alpha", "Beta"], ["Beta", "Alpha", "Zed"]);
     expect(within(screen.getAllByRole("listitem")[0]).getByText("AI_CONFIG__ACTIVE")).toBeInTheDocument();
     expect(screen.getAllByText("AI_CONFIG__ACTIVE")).toHaveLength(1);
     expect(listAiConfigs).toHaveBeenCalledTimes(1);
@@ -314,7 +318,7 @@ describe("AiConfigPage row actions", () => {
 
     await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
     expect(deleteMock).toHaveBeenCalledWith(2);
-    expect(screen.getAllByRole("listitem")).toHaveLength(1);
+    await expectRowCount(1);
     expect(listAiConfigs).toHaveBeenCalledTimes(1);
     const toast = renderedToast();
     expect(toast).toHaveTextContent("<b>x</b> AI configuration has been deleted successfully.");
@@ -340,7 +344,7 @@ describe("AiConfigPage row actions", () => {
     await userEvent.click(await screen.findByRole("button", { name: "AI_CONFIG__CANCEL" }));
     await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
     expect(deleteMock).not.toHaveBeenCalled();
-    expect(screen.getAllByRole("listitem")).toHaveLength(2);
+    await expectRowCount(2);
   });
 
   it("shows the server's own message when the active row cannot be deleted", async () => {
@@ -357,7 +361,7 @@ describe("AiConfigPage row actions", () => {
         message: "AI_CONFIG__ERROR__ACTIVE_DELETE",
       })
     );
-    expect(screen.getAllByRole("listitem")).toHaveLength(1);
+    await expectRowCount(1);
   });
 
   it("falls back to the generic action error for an unknown activate failure", async () => {
@@ -376,7 +380,7 @@ describe("AiConfigPage row actions", () => {
         message: "AI_CONFIG__ACTION_ERROR",
       })
     );
-    expect(names(["Active", "Beta"])).toEqual(["Active", "Beta"]);
+    await expectNames(["Active", "Beta"], ["Active", "Beta"]);
   });
 
   it.each([
@@ -398,7 +402,7 @@ describe("AiConfigPage row actions", () => {
           message: "AI_CONFIG__ERROR__NOT_FOUND",
         })
       );
-      expect(names(["Active", "Beta"])).toEqual(["Active"]);
+      await expectNames(["Active", "Beta"], ["Active"]);
       expect(listAiConfigs).toHaveBeenCalledTimes(1);
     }
   );
