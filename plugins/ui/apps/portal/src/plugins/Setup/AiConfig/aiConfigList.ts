@@ -27,9 +27,9 @@ export const connectionSummary = (config: AiConfig, labels: { apiKey: string; wo
   return detail ? `${labels.apiKey} · ${detail}` : labels.apiKey;
 };
 
-/** The one place that decides deletability: the active row can be deleted only when it is the last row. */
-export const canDeleteAiConfig = (config: AiConfig, configs: AiConfig[]): boolean =>
-  !config.isActive || configs.length === 1;
+/** Which delete dialog a row opens: the only row, the active row among others, or any other row. */
+export const deleteVariant = (config: AiConfig, configs: AiConfig[]): "plain" | "active" | "last" =>
+  configs.length === 1 ? "last" : config.isActive ? "active" : "plain";
 
 /** Maps a server error code (`AI_CONFIG_<SUFFIX>`) to its `AI_CONFIG__ERROR__<SUFFIX>` key, else the fallback. */
 export const aiConfigErrorKey = <T extends Record<string, string>>(

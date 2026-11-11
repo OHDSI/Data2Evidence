@@ -463,11 +463,12 @@ export class SystemPortal {
     });
   }
 
-  public deleteAiConfig(id: number) {
-    return requestNoCache<{ id: number }>({
+  public deleteAiConfig(id: number, newActiveId?: number) {
+    return requestNoCache<{ id: number; featureFlagTurnedOff: boolean }>({
       baseURL: SYSTEM_PORTAL_URL,
       url: `ai-config/${id}`,
       method: "DELETE",
+      params: newActiveId === undefined ? undefined : { newActiveId },
     });
   }
 

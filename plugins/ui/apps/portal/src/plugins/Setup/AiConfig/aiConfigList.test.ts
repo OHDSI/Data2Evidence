@@ -1,5 +1,5 @@
 import { AiConfig } from "../../../types/aiConfig";
-import { connectionSummary, sortAiConfigs, upsertAiConfig } from "./aiConfigList";
+import { connectionSummary, deleteVariant, sortAiConfigs, upsertAiConfig } from "./aiConfigList";
 
 const cfg = (id: number, name: string, isActive = false, extra: Partial<AiConfig> = {}): AiConfig => ({
   id,
@@ -68,4 +68,11 @@ describe("connectionSummary", () => {
       )
     ).toBe("API key · llm.example.com");
   });
+});
+
+describe("deleteVariant", () => {
+  const rows = [cfg(1, "A", true), cfg(2, "B")];
+  it("is plain for a non-active row", () => expect(deleteVariant(rows[1], rows)).toBe("plain"));
+  it("is active for the active row among others", () => expect(deleteVariant(rows[0], rows)).toBe("active"));
+  it("is last for the only row", () => expect(deleteVariant(rows[0], [rows[0]])).toBe("last"));
 });

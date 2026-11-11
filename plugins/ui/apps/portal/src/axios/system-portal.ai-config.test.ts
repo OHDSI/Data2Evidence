@@ -48,6 +48,21 @@ describe("SystemPortal AI config client", () => {
     expect(client).toHaveBeenCalledTimes(1);
   });
 
+  it("sends newActiveId as a query parameter only when given", async () => {
+    const systemPortal = new SystemPortal();
+
+    await systemPortal.deleteAiConfig(7, 9);
+    expect(client).toHaveBeenLastCalledWith({
+      baseURL: "system-portal/",
+      url: "ai-config/7",
+      method: "DELETE",
+      params: { newActiveId: 9 },
+    });
+
+    await systemPortal.deleteAiConfig(8);
+    expect(client.mock.calls[1][0].params).toBeUndefined();
+  });
+
   const body: AiConfigInput = { name: "Prod", provider: "anthropic", model: "claude", apiKey: "sk-secret-key" };
 
   it.each<[string, (sp: SystemPortal) => Promise<unknown>, object]>([
