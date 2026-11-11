@@ -54,6 +54,9 @@ export const AiConfigDialog: FC<Props> = ({ config, onClose, onSaved }) => {
   const [showKey, setShowKey] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<SaveError | null>(null);
+  // Fields the admin has left once; a required message never shows before that.
+  const [touched, setTouched] = useState<Set<string>>(new Set());
+  const touch = (field: string) => () => setTouched((prev) => new Set(prev).add(field));
 
   const edit = (setter: (value: string) => void) => (value: string) => {
     setError(null);
@@ -111,6 +114,9 @@ export const AiConfigDialog: FC<Props> = ({ config, onClose, onSaved }) => {
   const inlineField =
     error && (error.code === "AI_CONFIG_INVALID" || error.code === "AI_CONFIG_DUPLICATE") ? error.field : undefined;
   const fieldError = (field: string) => (inlineField === field ? errorText : undefined);
+  // A server error on the field wins over the required message.
+  const fieldMessage = (field: string, empty: boolean, requiredKey: keyof typeof i18nKeys) =>
+    fieldError(field) ?? (touched.has(field) && empty ? getText(i18nKeys[requiredKey]) : undefined);
   const dialogError =
     error &&
     (!inlineField ||
@@ -132,9 +138,13 @@ export const AiConfigDialog: FC<Props> = ({ config, onClose, onSaved }) => {
             label={getText(i18nKeys.AI_CONFIG__BASE_URL_LABEL)}
             value={baseUrl}
             onChange={edit(setBaseUrl)}
+            onBlur={touch("baseUrl")}
             hint={getText(i18nKeys.AI_CONFIG__BASE_URL_HINT)}
             errorMessages={
-              fieldError("baseUrl") ?? (baseUrlInvalid ? getText(i18nKeys.AI_CONFIG__BASE_URL_INVALID) : undefined)
+              fieldError("baseUrl") ??
+              (baseUrlInvalid
+                ? getText(i18nKeys.AI_CONFIG__BASE_URL_INVALID)
+                : fieldMessage("baseUrl", baseUrl.trim() === "", "AI_CONFIG__REQUIRED_BASE_URL"))
             }
           />
         );
@@ -157,9 +167,10 @@ export const AiConfigDialog: FC<Props> = ({ config, onClose, onSaved }) => {
             autoComplete="new-password"
             value={apiKey}
             onChange={edit(setApiKey)}
+            onBlur={touch("apiKey")}
             // The saved key is never put into the input; the keep hint explains the empty field.
             hint={hint}
-            errorMessages={fieldError("apiKey")}
+            errorMessages={fieldMessage("apiKey", !keyGiven && !keepable, "AI_CONFIG__REQUIRED_API_KEY")}
             InputProps={{
               endAdornment: (
                 <IconButton
@@ -182,7 +193,8 @@ export const AiConfigDialog: FC<Props> = ({ config, onClose, onSaved }) => {
             label={getText(i18nKeys.AI_CONFIG__MODEL_LABEL)}
             value={model}
             onChange={edit(setModel)}
-            errorMessages={fieldError("model")}
+            onBlur={touch("model")}
+            errorMessages={fieldMessage("model", model.trim() === "", "AI_CONFIG__REQUIRED_MODEL")}
           />
         );
       case "region":
@@ -193,8 +205,9 @@ export const AiConfigDialog: FC<Props> = ({ config, onClose, onSaved }) => {
             label={getText(i18nKeys.AI_CONFIG__REGION_LABEL)}
             value={region}
             onChange={edit(setRegion)}
+            onBlur={touch("region")}
             hint={getText(i18nKeys.AI_CONFIG__REGION_HINT)}
-            errorMessages={fieldError("region")}
+            errorMessages={fieldMessage("region", region.trim() === "", "AI_CONFIG__REQUIRED_REGION")}
           />
         );
       case "workspaceId":
@@ -224,7 +237,7 @@ export const AiConfigDialog: FC<Props> = ({ config, onClose, onSaved }) => {
           <Button variant="secondary" disabled={saving} onClick={onClose}>
             {getText(i18nKeys.AI_CONFIG__CANCEL)}
           </Button>
-          <Button disabled={!canSave} loading={saving} onClick={save}>
+          <Button disabled={!canSave || Boolean(inlineField && !dialogError)} loading={saving} onClick={save}>
             {getText(i18nKeys.AI_CONFIG__SAVE)}
           </Button>
         </>
@@ -241,7 +254,8 @@ export const AiConfigDialog: FC<Props> = ({ config, onClose, onSaved }) => {
           label={getText(i18nKeys.AI_CONFIG__NAME_LABEL)}
           value={name}
           onChange={edit(setName)}
-          errorMessages={fieldError("name")}
+          onBlur={touch("name")}
+          errorMessages={fieldMessage("name", name.trim() === "", "AI_CONFIG__REQUIRED_NAME")}
         />
         <Select
           required

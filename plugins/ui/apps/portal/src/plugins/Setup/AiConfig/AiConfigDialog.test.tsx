@@ -118,7 +118,7 @@ describe("AiConfigDialog add", () => {
 
     await fill("Base URL", "ftp://llm.example.org");
 
-    expect(screen.getByText("Enter a valid http or https URL.")).toBeInTheDocument();
+    expect(screen.getByText("Enter a valid URL, such as https://llm.example.org/v1.")).toBeInTheDocument();
     expect(saveButton()).toBeDisabled();
     await fill("Base URL", "https://llm.example.org");
     expect(saveButton()).toBeEnabled();
@@ -298,7 +298,10 @@ describe("AiConfigDialog edit", () => {
     expect(screen.getByText("Leave empty to keep the saved key.")).toBeInTheDocument();
     expect(saveButton()).toBeEnabled();
     await userEvent.click(saveButton());
-    expect(updateAiConfig).toHaveBeenCalledWith(7, expect.objectContaining({ provider: "anthropic", apiKey: "***REDACTED***" }));
+    expect(updateAiConfig).toHaveBeenCalledWith(
+      7,
+      expect.objectContaining({ provider: "anthropic", apiKey: "***REDACTED***" })
+    );
   });
 
   it("shows a failed update's error and clears it on the next edit", async () => {
@@ -306,10 +309,10 @@ describe("AiConfigDialog edit", () => {
     open(existing);
 
     await userEvent.click(saveButton());
-    expect(await screen.findByText("A configuration with this name already exists.")).toBeInTheDocument();
+    expect(await screen.findByText("This name is already in use. Choose a different name.")).toBeInTheDocument();
 
     await userEvent.type(field("Configuration name"), "x");
-    expect(screen.queryByText("A configuration with this name already exists.")).not.toBeInTheDocument();
+    expect(screen.queryByText("This name is already in use. Choose a different name.")).not.toBeInTheDocument();
   });
 
   it("never submits the placeholder when the saved key is unreadable", async () => {
@@ -338,10 +341,12 @@ describe("AiConfigDialog errors", () => {
   it("shows a duplicate name inline on the name field and stays open", async () => {
     await failSave({ status: 409, data: { code: "AI_CONFIG_DUPLICATE", field: "name" } });
 
-    const nameHelper = await screen.findByText("A configuration with this name already exists.");
+    const nameHelper = await screen.findByText("This name is already in use. Choose a different name.");
     expect(nameHelper.closest(".MuiFormControl-root")).toContainElement(field("Configuration name"));
     expect(onSaved).not.toHaveBeenCalled();
     expect(onClose).not.toHaveBeenCalled();
+    expect(saveButton()).toBeDisabled();
+    await userEvent.type(field("Configuration name"), "x");
     expect(saveButton()).toBeEnabled();
   });
 
@@ -350,6 +355,15 @@ describe("AiConfigDialog errors", () => {
 
     const helper = await screen.findByText("This value is not valid.");
     expect(helper.closest(".MuiFormControl-root")).toContainElement(field("Region"));
+    expect(saveButton()).toBeDisabled();
+  });
+
+  it("shows an invalid value for a field the provider does not have in the banner and keeps Save enabled", async () => {
+    await failSave({ status: 400, data: { code: "AI_CONFIG_INVALID", field: "baseUrl" } });
+
+    expect(await screen.findByText("This value is not valid.")).toBeInTheDocument();
+    expect(screen.queryByLabelText("Base URL")).not.toBeInTheDocument();
+    expect(saveButton()).toBeEnabled();
   });
 
   it("shows a known code's string in the dialog", async () => {
@@ -385,5 +399,52 @@ describe("AiConfigDialog errors", () => {
     } finally {
       spies.forEach((spy) => spy.mockRestore());
     }
+  });
+});
+
+describe("AiConfigDialog required messages", () => {
+  it("shows no message on open, then one per touched empty required field", async () => {
+    open();
+    await chooseProvider("OpenAI-compatible");
+    expect(screen.queryByText(/^Enter /)).not.toBeInTheDocument();
+
+    for (const label of ["Base URL", "API key", "Model"]) {
+      await userEvent.click(field(label));
+      await userEvent.tab();
+    }
+    await userEvent.clear(field("Configuration name"));
+    await userEvent.tab();
+
+    expect(screen.getByText("Enter the provider\u2019s base URL.")).toBeInTheDocument();
+    expect(screen.getByText("Enter an API key.")).toBeInTheDocument();
+    expect(screen.getByText("Enter a model.")).toBeInTheDocument();
+    expect(screen.getByText("Enter a configuration name.")).toBeInTheDocument();
+    expect(saveButton()).toBeDisabled();
+  });
+
+  it("shows the region message for Bedrock", async () => {
+    open();
+    await chooseProvider("AWS Bedrock");
+    await userEvent.click(field("Region"));
+    await userEvent.tab();
+
+    expect(screen.getByText("Enter the AWS region.")).toBeInTheDocument();
+  });
+
+  it("gives Anthropic's optional Workspace ID no message", async () => {
+    open();
+    await chooseProvider("Anthropic API");
+    await userEvent.click(field("Anthropic Workspace ID"));
+    await userEvent.tab();
+
+    expect(screen.queryByText(/^Enter /)).not.toBeInTheDocument();
+  });
+
+  it("does not ask for the API key on Edit while the stored key is kept", async () => {
+    open(existing);
+    await userEvent.click(field("API key"));
+    await userEvent.tab();
+
+    expect(screen.queryByText("Enter an API key.")).not.toBeInTheDocument();
   });
 });
