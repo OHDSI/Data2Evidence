@@ -43,7 +43,7 @@ const existing: AiConfig = {
   isActive: false,
 };
 
-const GENERIC = "Couldn’t save the configuration. Your entries are preserved. Check your connection and try again.";
+const GENERIC = "Couldn't save the configuration. Your entries are preserved. Check your connection and try again.";
 
 const onClose = jest.fn();
 const onSaved = jest.fn();
@@ -478,7 +478,7 @@ describe("AiConfigDialog required messages", () => {
     await userEvent.clear(field("Configuration name"));
     await userEvent.tab();
 
-    expect(screen.getByText("Enter the provider\u2019s base URL.")).toBeInTheDocument();
+    expect(screen.getByText("Enter the provider's base URL.")).toBeInTheDocument();
     expect(screen.getByText("Enter an API key.")).toBeInTheDocument();
     expect(screen.getByText("Enter a model.")).toBeInTheDocument();
     expect(screen.getByText("Enter a configuration name.")).toBeInTheDocument();
