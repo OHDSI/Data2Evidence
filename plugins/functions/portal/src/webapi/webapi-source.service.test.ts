@@ -5,6 +5,7 @@ import type { WebApiSourceApi } from './webapi-source.api.ts'
 import type { Dataset } from '../dataset/entity/index.ts'
 import type { DatasetDetail } from '../dataset/entity/dataset-detail.entity.ts'
 import type { IDbCredentials } from './types.ts'
+import { env } from '../env.ts'
 
 type Call = { method: string; args: unknown[] }
 
@@ -454,12 +455,10 @@ describe('WebApiSourceService trexsql cache sources', () => {
   }
 
   function withToken<T>(token: string | undefined, fn: () => Promise<T>): Promise<T> {
-    const previous = Deno.env.get('TREX__SQL_TOKEN')
-    if (token === undefined) Deno.env.delete('TREX__SQL_TOKEN')
-    else Deno.env.set('TREX__SQL_TOKEN', token)
+    const previous = env.TREX__SQL_TOKEN
+    env.TREX__SQL_TOKEN = token
     return fn().finally(() => {
-      if (previous === undefined) Deno.env.delete('TREX__SQL_TOKEN')
-      else Deno.env.set('TREX__SQL_TOKEN', previous)
+      env.TREX__SQL_TOKEN = previous
     })
   }
 
@@ -532,6 +531,38 @@ describe('WebApiSourceService trexsql cache sources', () => {
       )
     })
     assertEquals(methods().includes('createSource'), false)
+    // Checked before any WebAPI round-trip, and the cache build still starts.
+    assertEquals(methods().includes('getSourceByKey'), false)
+    assertEquals(methods().includes('createCacheFlowRun'), true)
+  })
+
+  it('still starts the cache build when WebAPI rejects the source', async () => {
+    const { api, jobPlugins, methods } = createApiStub()
+    api.createSource = () => Promise.reject(new Error('500 boom'))
+    const service = new WebApiSourceService(api as never, jobPlugins as never)
+    await withToken('quack-token', async () => {
+      await assertRejects(
+        () => service.syncSourceForDataset(cachedDataset(), detail, credentials),
+        Error,
+        '500 boom',
+      )
+    })
+    assertEquals(methods().includes('createCacheFlowRun'), true)
+  })
+
+  it('keeps the direct JDBC request when cacheId is the live source connection', async () => {
+    const request = (await createdRequest(cachedDataset({ cacheId: 'pg_db', databaseCode: 'pg_db' })))!
+    assertEquals(request.dialect, 'postgresql')
+    assertEquals(request.connectionString, 'jdbc:postgresql://db:5432/alp')
+    assertEquals(request.password, 'p')
+    assertEquals(request.daimons.map((d) => d.tableQualifier), ['demo_cdm', 'demo_cdm', 'demo_cdm_results'])
+  })
+
+  it('reads the token from env.ts, which the portal worker env supplies', async () => {
+    const request = (await createdRequest(cachedDataset(), 'from-env-ts'))!
+    assertEquals(request.password, 'from-env-ts')
+    const pkg = JSON.parse(await Deno.readTextFile(new URL('../../../package.json', import.meta.url)))
+    assertEquals(pkg.trex.functions.env.portal.TREX__SQL_TOKEN, '${TREX__SQL_TOKEN}')
   })
 
   // The source is registered before the cache flow finishes; generation in that

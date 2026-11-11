@@ -8,6 +8,7 @@ import { findRoleByName, sourceUserRoleName } from './webapi-role.util.ts'
 import { JobPluginsApi } from './jobplugins.api.ts'
 import { sanitizeIdForCacheId } from '../dataset/entity/dataset.entity.ts'
 import { WebApiDatasetLoader } from './webapi-dataset.loader.ts'
+import { env } from '../env.ts'
 
 // Mirrors org.ohdsi.webapi.common.DBMSType. A source whose dialect is absent there throws from
 // DataSourceDTOParser during WebAPI's connection check, and that exception escapes
@@ -84,38 +85,47 @@ export class WebApiSourceService {
     const dialect = this.usesTrexsqlCache(dataset) ? 'trexsql' : sourceDialect
     if (!WEBAPI_SUPPORTED_DIALECTS.has(dialect)) {
       await this.warnUnsupportedDialect(dataset.id, dialect, authToken)
-      if (dataset.schemaName && !isHana) {
-        await this.triggerCacheCreation(dataset.id, dataset.schemaName, authToken)
-      } else if (isHana) {
-        this.logger.debug(
-          `Skipping cache build for dataset ${dataset.id}: HANA has no DuckDB cache on any dataset type`
-        )
-      }
+      await this.startCacheBuild(dataset, isHana, authToken)
       return
     }
 
+    // The cache build must start even when the source cannot be registered.
+    let sourceError: unknown
     try {
+      const trexsqlToken = this.usesTrexsqlCache(dataset) ? this.trexsqlToken() : undefined
       const existing = await this.webApiSourceApi.getSourceByKey(dataset.id, authToken)
       const defaultTypes = await this.findDefaultDaimonTypes(dataset, existing, authToken)
-      const sourceRequest = this.buildSourceRequest(dataset, datasetDetail, dbCredentials, existing, defaultTypes)
+      const sourceRequest = this.buildSourceRequest(
+        dataset, datasetDetail, dbCredentials, existing, defaultTypes, trexsqlToken
+      )
 
       if (existing) {
         await this.webApiSourceApi.updateSource(existing.sourceId, sourceRequest, authToken)
       } else {
         await this.webApiSourceApi.createSource(sourceRequest, authToken)
       }
-
-      if (dataset.schemaName && !isHana) {
-        await this.triggerCacheCreation(dataset.id, dataset.schemaName, authToken)
-      } else if (isHana) {
-        this.logger.debug(
-          `Skipping cache build for dataset ${dataset.id}: HANA has no DuckDB cache on any dataset type`
-        )
-      }
     } catch (error) {
       this.logger.error(`Failed to sync WebAPI source for dataset ${dataset.id}: ${error}`)
-      throw error
+      sourceError = error
     }
+
+    await this.startCacheBuild(dataset, isHana, authToken)
+    if (sourceError) throw sourceError
+  }
+
+  private async startCacheBuild(dataset: Dataset, isHana: boolean, authToken?: string): Promise<void> {
+    if (dataset.schemaName && !isHana) {
+      await this.triggerCacheCreation(dataset.id, dataset.schemaName, authToken)
+    } else if (isHana) {
+      this.logger.debug(
+        `Skipping cache build for dataset ${dataset.id}: HANA has no DuckDB cache on any dataset type`
+      )
+    }
+  }
+
+  private trexsqlToken(): string {
+    if (!env.TREX__SQL_TOKEN) throw new Error('TREX__SQL_TOKEN is not set')
+    return env.TREX__SQL_TOKEN
   }
 
   private async warnUnsupportedDialect(
@@ -317,18 +327,17 @@ export class WebApiSourceService {
     detail: DatasetDetail,
     creds: IDbCredentials,
     existing: ISourceInfo | null,
-    defaultTypes: Set<string> | null
+    defaultTypes: Set<string> | null,
+    trexsqlToken?: string
   ): ISourceRequest {
-    if (this.usesTrexsqlCache(dataset)) {
-      const token = Deno.env.get('TREX__SQL_TOKEN')
-      if (!token) throw new Error('TREX__SQL_TOKEN is not set')
+    if (trexsqlToken) {
       return {
         key: dataset.id,
         name: detail.name,
         dialect: 'trexsql',
         connectionString: TREXSQL_CONNECTION_STRING,
         username: '',
-        password: token,
+        password: trexsqlToken,
         daimons: this.buildDaimons(dataset, existing, defaultTypes),
         krbAuthMethod: 'DEFAULT',
       }
@@ -345,9 +354,13 @@ export class WebApiSourceService {
     }
   }
 
-  // HANA is queried directly and never has a DuckDB cache, whatever cacheId says.
+  // HANA is queried directly and never has a DuckDB cache. A cacheId equal to the
+  // databaseCode (a dataset transformed from a source row) names the live source
+  // connection, not a cache, so it keeps the direct JDBC source.
   private usesTrexsqlCache(dataset: Dataset): boolean {
-    return !!dataset.cacheId && this.mapDialect(dataset.dialect) !== 'hana'
+    return !!dataset.cacheId &&
+      dataset.cacheId !== dataset.databaseCode &&
+      this.mapDialect(dataset.dialect) !== 'hana'
   }
 
   private mapDialect(dialect: string): string {
