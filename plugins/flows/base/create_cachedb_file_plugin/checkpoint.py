@@ -46,6 +46,22 @@ REQUIRED_STATUS_COLUMNS = {
     "rows_expected",
 }
 
+# Results tables OHDSI WebAPI writes straight into the cache once the source is
+# trexsql. A refresh must never discard or re-copy them; achilles_*, heracles_*
+# and concept_hierarchy are ordinary copied tables and are not listed.
+WEBAPI_RESULT_TABLES = frozenset({
+    "cohort", "cohort_cache", "cohort_definition", "cohort_sample_element",
+    "cohort_censor_stats", "cohort_censor_stats_cache",
+    "cohort_inclusion", "cohort_inclusion_result", "cohort_inclusion_result_cache",
+    "cohort_inclusion_stats", "cohort_inclusion_stats_cache",
+    "cohort_summary_stats", "cohort_summary_stats_cache",
+    "cc_results", "cc_temporal_annual_results", "cc_temporal_results",
+    "feas_study_inclusion_stats", "feas_study_index_stats", "feas_study_result",
+    "ir_analysis_dist", "ir_analysis_result", "ir_analysis_strata_stats", "ir_strata",
+    "pathway_analysis_codes", "pathway_analysis_events",
+    "pathway_analysis_paths", "pathway_analysis_stats",
+})
+
 STATUS_IN_PROGRESS = "IN_PROGRESS"
 STATUS_COMPLETE = "COMPLETE"
 STATUS_FAILED = "FAILED"
@@ -436,7 +452,10 @@ def apply_fresh_copy(
             f"WHERE status IS DISTINCT FROM {_sql_string(STATUS_COMPLETE)} "
             "ORDER BY table_name"
         )
-        tables = [row[0] for row in conn.fetchall()]
+        # WebAPI owns these once the source is trexsql; never discard them.
+        tables = [
+            row[0] for row in conn.fetchall() if row[0] not in WEBAPI_RESULT_TABLES
+        ]
 
         if dry_run:
             logger.info(
@@ -478,3 +497,11 @@ def _record_fresh_copy_applied(conn, database: str, schema: str, flow_run_id: st
         f"{_sql_string(flow_run_id)}, {_sql_string(schema)}, CAST(NOW() AS TIMESTAMP)) "
         "ON CONFLICT DO NOTHING"
     )
+
+
+def webapi_owned_tables_to_skip(conn, database: str, schema: str, tables) -> list[str]:
+    """Source tables a refresh must not copy: WebAPI-owned and already in the cache."""
+    return [
+        t for t in tables
+        if t in WEBAPI_RESULT_TABLES and _existing_columns(conn, database, schema, t)
+    ]
