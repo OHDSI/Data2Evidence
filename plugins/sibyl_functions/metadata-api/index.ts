@@ -17,20 +17,11 @@ import { BlobReader, BlobWriter, ZipWriter } from "jsr:@zip-js/zip-js@2.7.45";
 
 const ENC_KEY = Deno.env.get("METADATA_ENC_KEY") ?? "";
 const OUTPUT_BASE = Deno.env.get("HADES_OUTPUT_BASE_DIR") ?? "";
-// d2e STORAGE REPOINT (port note): the upstream trex-notebook function reached the
-// native Supabase Storage REST API via `${TREX_BASE_URL}/storage/v1/...`. d2e runs the
-// `supabase-storage` service (docker-compose port 9000) which speaks that SAME native
-// API, exposed to functions as the `supabaseStorage` SERVICE_ROUTE. We hit it directly
-// through STORAGE_BASE_URL instead of going via TREX_BASE_URL. STORAGE_BASE_URL is the
-// base you append `/bucket` and `/object/{bucket}/{key}` to — mirroring d2e's portal
-// SupabaseStorageClient (plugins/functions/portal/src/supabase-storage), whose
-// `services.supabaseStorage` base serves the storage REST API at the ROOT (NO
-// `/storage/v1` prefix — it's `https://...-supabase-storage-1.<domain>:9000`) and is
-// authed with a Bearer SUPABASE_STORAGE_JWT_TOKEN. The endpoint is TLS-only (nginx in
-// the storage image terminates the internal cert); the trex runtime trusts the internal
-// CA via DENO_TLS_CA_STORE=system, so plain `fetch` validates it.
+// STORAGE_BASE_URL is the root of trex's embedded storage-api (no `/storage/v1`
+// prefix): `/bucket` and `/object/{bucket}/{key}` are appended to it, authed with
+// the service-role Bearer SUPABASE_STORAGE_JWT_TOKEN.
 const STORAGE_BASE_URL =
-  Deno.env.get("STORAGE_BASE_URL") ?? "https://d2e-supabase-storage-1.d2e.local:9000";
+  Deno.env.get("STORAGE_BASE_URL") ?? "http://localhost:33001/plugins/trex/storage-api";
 const STORAGE_JWT = Deno.env.get("SUPABASE_STORAGE_JWT_TOKEN") ?? "";
 const PREFIX = "/metadata-api";
 
@@ -94,7 +85,7 @@ Deno.serve(async (req: Request) => {
     }
 
     // POST /results/sign  { bucket, key, expiresIn? }
-    // Mint a presigned download URL via the supabase-storage service. The browser
+    // Mint a presigned download URL via the storage service. The browser
     // can't call storage directly (it holds the user bearer, not the storage
     // service JWT), so the jobs plugin's storageClient routes through here.
     if (path === "/results/sign" && req.method === "POST") {
@@ -136,7 +127,7 @@ Deno.serve(async (req: Request) => {
 // (STORAGE_BASE_URL) and auth (service-role Bearer JWT) are d2e-specific, matching the
 // portal SupabaseStorageClient. The per-request `authorization`/`cookie` forwarding the
 // upstream used to reach trex is replaced by the storage service-role token, since the
-// supabase-storage service authenticates with its own JWT, not the caller's session.
+// storage service authenticates with its own JWT, not the caller's session.
 async function ensureBucket(name: string) {
   const resp = await fetch(`${STORAGE_BASE_URL}/bucket`, {
     method: "POST",
@@ -158,7 +149,7 @@ async function uploadObject(bucket: string, key: string, bytes: Uint8Array) {
   });
   if (!resp.ok) throw new Error(`storage upload ${resp.status}: ${await resp.text()}`);
 }
-// signObject(): ask the supabase-storage service to mint a presigned download URL
+// signObject(): ask the storage service to mint a presigned download URL
 // for an existing object (native REST shape `POST /object/sign/{bucket}/{key}`),
 // authed with the storage service-role Bearer JWT. Returns the service JSON, which
 // contains `signedURL`.

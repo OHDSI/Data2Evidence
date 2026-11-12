@@ -69,8 +69,8 @@ spec:
                 secretKeyRef:
                   name: "{{ .Release.Name }}-{{ .Chart.Name }}"
                   key: POSTGRES_CONFIG_DB
-            # supabase-storage connects as POSTGRES_SUPERUSER (see
-            # STORAGE__JDBC__URL), so on a fresh install it owns storage.objects
+            # trex's embedded storage connects as POSTGRES_SUPERUSER, so on a
+            # fresh install it can own storage.objects
             # and only that role can disable RLS on it. Connecting as the config
             # admin user failed with "must be owner of table objects" on every
             # greenfield deploy; it worked on older installs only because their
@@ -98,6 +98,8 @@ spec:
                { psql -c \"GRANT ${POSTGRES_CONFIG_ADMIN_USER} TO CURRENT_USER;\" ||
                  echo 'Could not join the config admin role - relying on existing membership'; } &&
                psql -c 'ALTER TABLE IF EXISTS storage.objects DISABLE ROW LEVEL SECURITY;' &&
+               psql -c 'DROP POLICY IF EXISTS d2e_service_role_all ON storage.objects;' &&
+               psql -c 'CREATE POLICY d2e_service_role_all ON storage.objects FOR ALL TO service_role USING (true) WITH CHECK (true);' &&
                psql -c 'DROP VIEW IF EXISTS public.objects CASCADE;' &&
                psql -c 'CREATE VIEW public.objects AS SELECT * FROM storage.objects;' &&
                psql -c 'GRANT SELECT, INSERT, UPDATE, DELETE ON public.objects TO service_role;' &&
@@ -245,7 +247,10 @@ spec:
             - name: TREX_STORAGE_URL
               value: "https://trex.{{ .Release.Namespace }}.svc.cluster.local:443/plugins/trex/storage-api"
             - name: TREX_STORAGE_SERVICE_KEY
-              value: ""
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: SUPABASE_STORAGE_JWT_TOKEN
             - name: PREFECT_API_ENABLE_HTTP2
               value: "False"
             - name: PREFECT_WORKER_WEBSERVER_HOST

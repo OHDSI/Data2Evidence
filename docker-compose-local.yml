@@ -249,11 +249,6 @@ services:
     # volumes:
     #   - ./services/alp-logto/post-init:/home/docker
 
-  supabase-storage:
-    build:
-      context: ./services/supabase-storage
-      dockerfile: Dockerfile
-
   materialize-cohorts:
     profiles:
       - materialize-cohorts

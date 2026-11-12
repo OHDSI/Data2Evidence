@@ -264,9 +264,6 @@ jobs:
             DOCKER_BUILD_CONTEXT_PATH: .
             cache_enabled: "true"
             needs_github_pat_secret: "true"
-          - AZ_REG_REPOSITORY: d2e-supabase-storage
-            DOCKER_BUILD_FILE_PATH: ./services/supabase-storage/Dockerfile
-            DOCKER_BUILD_CONTEXT_PATH: ./services/supabase-storage
           - AZ_REG_REPOSITORY: d2e-materialize-cohorts
             DOCKER_BUILD_FILE_PATH: ./services/materialize-cohorts/Dockerfile
             DOCKER_BUILD_CONTEXT_PATH: .
@@ -1995,7 +1992,6 @@ jobs:
           - d2e-trex
           - d2e-dataflow-gen
           - d2e-dataflow-gen-worker
-          - d2e-supabase-storage
           - d2e-materialize-cohorts
     steps:
       - name: Login to GitHub Container Registry

@@ -164,14 +164,13 @@ deployed with an older image will fail in ways the manifests cannot explain:
 
 #### Which hops are on TLS
 
-All four internal service-to-service hops in `charts/d2e-services`, with no verification
+All three internal service-to-service hops in `charts/d2e-services`, with no verification
 bypasses:
 
 | Hop | Listener | Terminated by |
 |---|---|---|
 | `idp` :443→3001, `idp-admin` :443→3002 | Logto, natively | `HTTPS_CERT_PATH` / `HTTPS_KEY_PATH` |
 | `dataflow-gen` :443→41120 | nginx in front of Prefect on loopback :41121 | the image entrypoint |
-| `storage` :443→9000 | nginx in front of storage-api on loopback :9001 | the image entrypoint |
 | `trex` :443→33000 | trexas, natively | `tls_cert_path` in `SWARM_CONFIG` |
 
 Note `trex-http` (:443→33001) is the same trexas routes without TLS. Nothing in the chart
@@ -189,7 +188,7 @@ the same mechanism `caddy-local-pki` already uses — at fixed paths:
 ```
 
 Only the Logto pod terminates TLS on the mounted pair, so only it receives the private key.
-`trex`, `dataflow-gen` and `storage` write their own cert from the `TLS__INTERNAL__*` env
+`trex` and `dataflow-gen` write their own cert from the `TLS__INTERNAL__*` env
 their entrypoints read.
 
 #### Trust is one mechanism per runtime
@@ -199,7 +198,7 @@ the same container still fails, so verify per runtime rather than per pod:
 
 | Runtime | Mechanism | Where |
 |---|---|---|
-| shell / `wget` / `curl` | OS trust store (`update-ca-certificates`) | trex, dataflow-gen, storage, worker |
+| shell / `wget` / `curl` | OS trust store (`update-ca-certificates`) | trex, dataflow-gen, worker |
 | Deno edge functions | `DENO_TLS_CA_STORE=system` | trex |
 | GraalVM native WebAPI | `WEBAPI_TRUST_CERTS` — it ignores the OS store entirely | trex |
 | Python | append to `certifi.where()` — it does not read the OS store | worker, dataflow-gen |
