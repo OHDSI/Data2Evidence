@@ -313,12 +313,13 @@ jobs:
           context: ${{ matrix.DOCKER_BUILD_CONTEXT_PATH }}
           file: ${{ matrix.DOCKER_BUILD_FILE_PATH }}
           platforms: ${{ matrix.PLATFORMS || 'linux/amd64,linux/arm64' }}
-          # push_by_digest entries push an untagged image via `outputs`;
-          # merge_worker_image tags the combined manifest list.
-          push: ${{ matrix.push_by_digest != 'true' }}
-          outputs: ${{ matrix.push_by_digest == 'true' && 'type=image,push-by-digest=true,name-canonical=true,push=true' || '' }}
+          # push_by_digest entries push a per-arch <RUN_TAG>-<ARCH> image that
+          # merge_worker_image joins by digest. It must be tagged: the builds are
+          # reproducible, so the digest can match a version pushed days ago, and
+          # another run's untagged-version cleanup would delete it before merge.
+          push: true
           pull: ${{ matrix.pull_base == 'true' || false }}
-          tags: ${{ env.REG_URL }}/${{ matrix.AZ_REG_REPOSITORY }}${{ matrix.push_by_digest != 'true' && format(':{0}', env.RUN_TAG) || '' }}
+          tags: ${{ env.REG_URL }}/${{ matrix.AZ_REG_REPOSITORY }}:${{ env.RUN_TAG }}${{ matrix.push_by_digest == 'true' && format('-{0}', matrix.ARCH) || '' }}
           provenance: false
           sbom: false
           cache-from: |
