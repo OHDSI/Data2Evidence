@@ -518,7 +518,8 @@
           "GIT_STUDIES_REPO_URL": "${GIT_STUDIES_REPO_URL:-https://github.com/data2evidence/studies.git}",
           "GIT_STUDIES_REPO_BRANCH": "${GIT_STUDIES_REPO_BRANCH:-main}",
           "GIT_DASHBOARDS_REPO_URL": "${GIT_DASHBOARDS_REPO_URL:-https://github.com/data2evidence/study_dashboard_templates.git}",
-          "GIT_DASHBOARDS_REPO_BRANCH": "${GIT_DASHBOARDS_REPO_BRANCH:-main}"
+          "GIT_DASHBOARDS_REPO_BRANCH": "${GIT_DASHBOARDS_REPO_BRANCH:-main}",
+          "TREX__SQL_TOKEN": "${TREX__SQL_TOKEN}"
         },
         "files-manager": {
           "PG_ADMIN_PASSWORD": "${PG_ADMIN_PASSWORD}",
@@ -1568,6 +1569,15 @@
         },
         {
           "path": "^/system-portal/dataset/(.*)/refresh-cache$",
+          "scopes": [
+            "portal.dataset.update"
+          ],
+          "httpMethods": [
+            "POST"
+          ]
+        },
+        {
+          "path": "^/system-portal/webapi/resync-sources$",
           "scopes": [
             "portal.dataset.update"
           ],

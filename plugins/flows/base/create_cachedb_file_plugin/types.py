@@ -45,6 +45,8 @@ class CopyParameters:
     fresh_copy: bool = False
     # Plan and log only: nothing is created, copied or dropped.
     dry_run: bool = False
+    # Results-schema pass only: WebAPI-written tables there survive a refresh.
+    protect_webapi_results: bool = False
 
 
 class DatamartTableConfig(BaseModel):

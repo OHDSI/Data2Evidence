@@ -901,6 +901,11 @@ spec:
                 secretKeyRef:
                   name: "{{ .Release.Name }}-{{ .Chart.Name }}"
                   key: TREX__SQL__PASSWORD
+            - name: TREX__SQL_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: TREX__SQL_TOKEN
             - name: TREX__ENDPOINT_URL
               value: "http://localhost:33001"
             - name: TREX_ROUTES
@@ -946,6 +951,10 @@ spec:
                         {
                           "name": "pgwire",
                           "config": { "host": "0.0.0.0", "port": 5433, "password": "$(TREX__SQL__PASSWORD)" }
+                        },
+                        {
+                          "name": "quack",
+                          "config": { "host": "127.0.0.1", "port": 9494, "token": "$(TREX__SQL_TOKEN)", "disable_ssl": true }
                         }
                       ]
                     }
