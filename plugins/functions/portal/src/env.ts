@@ -83,6 +83,8 @@ export const env = {
 
   // Quack token WebAPI presents to trexsql for cached dataset sources.
   TREX__SQL_TOKEN: _env.TREX__SQL_TOKEN,
+
+  AI_CONFIG_ENCRYPTION_KEY: _env.AI_CONFIG_ENCRYPTION_KEY,
 };
 
 export const services = JSON.parse(env.SERVICE_ROUTES);

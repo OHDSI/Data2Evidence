@@ -9,6 +9,7 @@ import { DatasetRelease } from "../entity/dataset/dataset-release.entity.ts";
 import { DatasetTagConfig } from "../entity/dataset/dataset-tag-config.entity.ts";
 import { DatasetTag } from "../entity/dataset/dataset-tag.entity.ts";
 import { Dataset } from "../entity/dataset/dataset.entity.ts";
+import { AiConfig } from "../entity/ai-config/ai-config.entity.ts";
 import { Feature } from "../entity/feature/feature.entity.ts";
 import { Notebook } from "../entity/notebook/notebook.entity.ts";
 import { UserArtifactGroup } from "../entity/user-artifact/user-artifact-group.entity.ts";
@@ -65,6 +66,7 @@ import { UpdateFhirDatasetIdColumn17763068271810 } from "./migrations/1776306827
 import { FixSourceDatasetCacheId1778417559069 } from "./migrations/1778417559069-fix-source-dataset-cache-id.ts";
 import { RemoveEntityCountDistributionAttribute1791808486000 } from "./migrations/1791808486000-remove-entity-count-distribution-attribute.ts";
 import { AddSequenceToDatasetAttribute1793600000000 } from "./migrations/1793600000000-add-sequence-to-dataset-attribute.ts";
+import { CreateAiConfig1791808487000 } from "./migrations/1791808487000-create-ai-config.ts";
 import { env } from "../env.ts";
 
 const migrationDataSourceOptions: DataSourceOptions = {
@@ -87,6 +89,7 @@ const migrationDataSourceOptions: DataSourceOptions = {
   })(),
   poolSize: parseInt(env.PG__MAX_POOL) || 10,
   entities: [
+    AiConfig,
     Config,
     DatasetAttributeConfig,
     DatasetAttribute,
@@ -155,6 +158,7 @@ const migrationDataSourceOptions: DataSourceOptions = {
     FixSourceDatasetCacheId1778417559069,
     RemoveEntityCountDistributionAttribute1791808486000,
     AddSequenceToDatasetAttribute1793600000000,
+    CreateAiConfig1791808487000,
   ],
 };
 const migrationDataSource = new DataSource(migrationDataSourceOptions);

@@ -1,0 +1,43 @@
+// Figma: 24px between fields; the dialog body has 16px above the first field.
+.ai-config-dialog {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  margin-top: -8px;
+
+  &__section {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+
+  &__section-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.88px;
+    text-transform: uppercase;
+    color: #595757;
+
+    &::after {
+      content: "";
+      flex: 1;
+      height: 1px;
+      background: #dedcda;
+    }
+  }
+
+  &__empty {
+    margin: 0;
+    font-size: 12px;
+    color: #595757;
+  }
+}
+
+// Matches the 24px gap between the dialog's fields.
+.ai-config-pending {
+  align-items: center;
+  gap: 8px;
+}

@@ -309,6 +309,7 @@ EOF
             # env file cannot start the stack at all.
             echo TREX_ROOT_KEY=$(openssl rand -base64 32) >> $DOTENV_FILE
             echo TREX__OIDC__WEBAPI_CLIENT_SECRET=$(random-password $DEFAULT_PASSWORD_LENGTH) >> $DOTENV_FILE
+            echo AI_CONFIG_ENCRYPTION_KEY=$(openssl rand -base64 32) >> $DOTENV_FILE
             # A fresh installation has no Logto users to carry over.
             echo D2E_IDP=trex >> $DOTENV_FILE
             echo D2E_IDP_MODE=trex >> $DOTENV_FILE

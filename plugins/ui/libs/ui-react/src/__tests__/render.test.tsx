@@ -14,6 +14,7 @@ import { Menu } from "../components/Menu";
 import { Select } from "../components/Select";
 import { FilterPanel } from "../components/FilterPanel";
 import type { FilterDef } from "../components/filterTypes";
+import { TextField } from "../components/TextField";
 import { Tabs, Tab } from "../components/Tab";
 import { Alert } from "../components/Alert";
 import { Tooltip } from "../components/Tooltip";
@@ -37,6 +38,18 @@ function mount(ui: React.ReactNode) {
 }
 
 afterEach(cleanup);
+
+describe("Select required", () => {
+  const items = [{ label: "A", value: "a" }];
+
+  it.each([
+    ["plain", false],
+    ["searchable", true],
+  ])("sets aria-required on the %s combobox", (_name, searchable) => {
+    mount(<Select label="Provider" items={items} required searchable={searchable} />);
+    expect(screen.getByRole("combobox").getAttribute("aria-required")).toBe("true");
+  });
+});
 
 describe("render smoke", () => {
   it("renders a button and fires onClick", () => {
@@ -205,6 +218,19 @@ describe("render smoke", () => {
     // Clear empties the state.
     fireEvent.click(screen.getByRole("button", { name: "Clear all selections" }));
     expect(state).toEqual({});
+  });
+
+  it("shows a text field's hint, and an error message in its place", () => {
+    const { rerender } = mount(<TextField label="Key" hint="Stored encrypted" />);
+    expect(screen.getByText("Stored encrypted")).toBeTruthy();
+    expect(screen.getByRole("textbox", { description: "Stored encrypted" })).toBeTruthy();
+    rerender(
+      <ThemeProvider theme={theme}>
+        <TextField label="Key" hint="Stored encrypted" errorMessages="Required" />
+      </ThemeProvider>,
+    );
+    expect(screen.getByText("Required")).toBeTruthy();
+    expect(screen.queryByText("Stored encrypted")).toBeNull();
   });
 
   it("renders tabs, marks the selected one and fires onChange", () => {

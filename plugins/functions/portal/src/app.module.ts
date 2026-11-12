@@ -1,5 +1,6 @@
 import { Module } from "@danet/core";
 import { RequestContextMiddleware } from "./common/request-context.middleware.ts";
+import { AiConfigModule } from "./ai-config/ai-config.module.ts";
 import { AuditModule } from "./audit/audit.module.ts";
 import { ConfigModule } from "./config/config.module.ts";
 import { DatabaseModule } from "./database/module.ts";
@@ -18,6 +19,7 @@ import { GitDashboardModule } from "./git-dashboards/git-dashboards.module.ts";
 @Module({
   controllers: [],
   imports: [
+    AiConfigModule,
     AuditModule,
     TenantModule,
     SystemModule,

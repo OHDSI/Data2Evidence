@@ -1207,6 +1207,11 @@ spec:
                 secretKeyRef:
                   name: "{{ .Release.Name }}-{{ .Chart.Name }}"
                   key: TREX_ROOT_KEY
+            - name: AI_CONFIG_ENCRYPTION_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: AI_CONFIG_ENCRYPTION_KEY
             - name: BETTER_AUTH_SECRET
               value: "$(TREX_ROOT_KEY)"
             - name: BETTER_AUTH_URL

@@ -519,7 +519,8 @@
           "GIT_STUDIES_REPO_BRANCH": "${GIT_STUDIES_REPO_BRANCH:-main}",
           "GIT_DASHBOARDS_REPO_URL": "${GIT_DASHBOARDS_REPO_URL:-https://github.com/data2evidence/study_dashboard_templates.git}",
           "GIT_DASHBOARDS_REPO_BRANCH": "${GIT_DASHBOARDS_REPO_BRANCH:-main}",
-          "TREX__SQL_TOKEN": "${TREX__SQL_TOKEN}"
+          "TREX__SQL_TOKEN": "${TREX__SQL_TOKEN}",
+          "AI_CONFIG_ENCRYPTION_KEY": "${AI_CONFIG_ENCRYPTION_KEY}"
         },
         "files-manager": {
           "PG_ADMIN_PASSWORD": "${PG_ADMIN_PASSWORD}",
@@ -741,6 +742,8 @@
           "portal.config.read",
           "portal.configSecret.read",
           "portal.config.write",
+          "portal.aiConfig.read",
+          "portal.aiConfig.write",
           "portal.userArtifact.read",
           "portal.userArtifact.write",
           "portal.userArtifact.delete",
@@ -1926,6 +1929,43 @@
           ],
           "httpMethods": [
             "PUT"
+          ]
+        },
+        {
+          "path": "^/system-portal/ai-config/[^/]+/activate$",
+          "scopes": [
+            "portal.aiConfig.write"
+          ],
+          "httpMethods": [
+            "POST"
+          ]
+        },
+        {
+          "path": "^/system-portal/ai-config/[^/]+$",
+          "scopes": [
+            "portal.aiConfig.write"
+          ],
+          "httpMethods": [
+            "PUT",
+            "DELETE"
+          ]
+        },
+        {
+          "path": "^/system-portal/ai-config$",
+          "scopes": [
+            "portal.aiConfig.read"
+          ],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
+          "path": "^/system-portal/ai-config$",
+          "scopes": [
+            "portal.aiConfig.write"
+          ],
+          "httpMethods": [
+            "POST"
           ]
         },
         {

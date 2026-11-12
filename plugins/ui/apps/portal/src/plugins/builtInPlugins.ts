@@ -25,6 +25,7 @@ const moduleNames = [
   "Setup/MigrateUserArtifacts",
   "Setup/HybridSearch",
   "Setup/GitConfig",
+  "Setup/AiConfig",
 ];
 
 const moduleLoaders = import.meta.glob("./**/module.{ts,tsx}");

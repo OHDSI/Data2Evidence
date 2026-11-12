@@ -23,6 +23,8 @@ export interface TextFieldProps extends ForwardedProps {
   label?: string;
   required?: boolean;
   errorMessages?: string | string[];
+  /** Static helper text under the field; an error message replaces it. */
+  hint?: string;
   maxlength?: number | string;
   placeholder?: string;
   autofocus?: boolean;
@@ -35,6 +37,7 @@ export function TextField({
   label,
   required = false,
   errorMessages,
+  hint,
   maxlength,
   placeholder,
   autofocus = false,
@@ -48,9 +51,9 @@ export function TextField({
     : errorMessages
       ? [errorMessages]
       : [];
-  // true hides the details area; false / "auto" show messages[0] (which is
-  // undefined when there is no error, so "auto" only shows on error).
-  const helperText = hideDetails === true ? undefined : messages[0];
+  // true hides the details area; false / "auto" show the first error, else the
+  // hint (so "auto" shows nothing when there is neither).
+  const helperText = hideDetails === true ? undefined : (messages[0] ?? hint);
 
   return (
     <MuiTextField

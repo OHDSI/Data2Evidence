@@ -187,6 +187,7 @@ global:
     TREX__SQL__PASSWORD: "pencil"
     TREX__SQL_TOKEN: "ci-quack-token-not-real"
     TREX_ROOT_KEY: "ndDfri0G85Aw/P+s5jYqdnuBFdfbbY8irhrI9gFSE1Q="
+    AI_CONFIG_ENCRYPTION_KEY: "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
   resources:
     caddy:
       requests: { cpu: 25m, memory: 50Mi }
