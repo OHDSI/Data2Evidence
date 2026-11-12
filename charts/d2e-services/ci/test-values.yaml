@@ -59,7 +59,7 @@ config:
       "trex": "https://trex.d2e.svc.cluster.local:443",
       "logto": "https://idp.d2e.svc.cluster.local:443",
       "prefect": "https://dataflow-gen.d2e.svc.cluster.local:443/d2e/api",
-      "supabaseStorage": "http://localhost:33001/plugins/trex/storage-api"
+      "supabaseStorage": "http://localhost:33001/trex/storage/v1"
     }
   baseJobTemplate:
     configuration: |

@@ -17,11 +17,11 @@ import { BlobReader, BlobWriter, ZipWriter } from "jsr:@zip-js/zip-js@2.7.45";
 
 const ENC_KEY = Deno.env.get("METADATA_ENC_KEY") ?? "";
 const OUTPUT_BASE = Deno.env.get("HADES_OUTPUT_BASE_DIR") ?? "";
-// STORAGE_BASE_URL is the root of trex's embedded storage-api (no `/storage/v1`
-// prefix): `/bucket` and `/object/{bucket}/{key}` are appended to it, authed with
-// the service-role Bearer SUPABASE_STORAGE_JWT_TOKEN.
+// STORAGE_BASE_URL is trex's /trex/storage/v1 route to its embedded storage-api:
+// `/bucket` and `/object/{bucket}/{key}` are appended to it, authed with the
+// service-role Bearer SUPABASE_STORAGE_JWT_TOKEN.
 const STORAGE_BASE_URL =
-  Deno.env.get("STORAGE_BASE_URL") ?? "http://localhost:33001/plugins/trex/storage-api";
+  Deno.env.get("STORAGE_BASE_URL") ?? "http://localhost:33001/trex/storage/v1";
 const STORAGE_JWT = Deno.env.get("SUPABASE_STORAGE_JWT_TOKEN") ?? "";
 const PREFIX = "/metadata-api";
 

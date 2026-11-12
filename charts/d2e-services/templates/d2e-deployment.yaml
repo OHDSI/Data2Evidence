@@ -1127,7 +1127,7 @@ spec:
                   name: "{{ .Release.Name }}-{{ .Chart.Name }}"
                   key: SUPABASE_STORAGE_JWT_SECRET
             - name: TREX_STORAGE_URL
-              value: "http://localhost:33001/plugins/trex/storage-api"
+              value: "http://localhost:33001/trex/storage/v1"
             - name: TREX_STORAGE_SERVICE_KEY
               valueFrom:
                 secretKeyRef:
