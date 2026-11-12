@@ -178,7 +178,7 @@ test(TEST_NAME, async ({ page }) => {
     await page.getByText('Use default result schema name').click()
     await page.getByRole('combobox', { name: 'Data model option', exact: true }).click()
     await page.getByRole('option', { name: 'omop5-4 [omop_cdm_plugin]' }).click()
-    await page.getByRole('combobox', { name: 'PA config' }).click()
+    await page.getByRole('combobox', { name: 'Data exploration configuration' }).click()
     await page.getByRole('option', { name: 'OMOP', exact: true }).click()
     await page.getByRole('textbox', { name: 'Token data source code' }).click()
     await page.getByRole('textbox', { name: 'Token data source code' }).fill('wizardE2E')
@@ -217,7 +217,7 @@ test(TEST_NAME, async ({ page }) => {
     await page.getByTestId('button').click()
   })
 
-  // Edit Wizard in Cohort Builder Config card
+  // Edit Wizard in Data exploration configuration card
   await test.step('Edit Wizard', async () => {
     await page.getByRole('link', { name: 'Account' }).click()
     await page.getByRole('button', { name: 'Logout' }).click()
@@ -232,7 +232,7 @@ test(TEST_NAME, async ({ page }) => {
 
     await page
       .locator('div')
-      .filter({ hasText: /^Cohort builder configConfigure cohort builderConfigure$/ })
+      .filter({ hasText: /^Data exploration configurationConfigure data explorationConfigure$/ })
       .getByTestId('button')
       .click()
     await page.locator('[id$="dataModelConfigurationsCombo-arrow"]').click()
