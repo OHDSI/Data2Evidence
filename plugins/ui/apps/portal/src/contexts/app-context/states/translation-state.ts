@@ -162,7 +162,6 @@ export const i18nDefault = {
       "{0} is the active configuration. Choose which configuration the AI assistant should use instead. This can't be undone.",
     AI_CONFIG__DELETE_ACTIVE_PICK_LABEL: "New active configuration",
     AI_CONFIG__DELETE_ACTIVE_PICK_HINT: "The AI assistant switches to this configuration for everyone.",
-    AI_CONFIG__DELETED_LAST_TOAST: "{0} has been deleted.",
     AI_CONFIG__DELETED_REPLACED_TOAST: "{0} has been deleted. {1} is now the active configuration.",
     AI_CONFIG__DELETING_TITLE: "Deleting AI configuration",
     AI_CONFIG__DELETING_BODY: "{0} is being deleted. This configuration will be removed when the request completes.",

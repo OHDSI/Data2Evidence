@@ -723,7 +723,6 @@ describe("AI configuration translations", () => {
       "AI_CONFIG__DELETE_BODY",
       "AI_CONFIG__ADDED_TOAST",
       "AI_CONFIG__DELETE_ACTIVE_BODY",
-      "AI_CONFIG__DELETED_LAST_TOAST",
       "AI_CONFIG__DELETED_REPLACED_TOAST",
     ]) {
       expect(texts[key].split("{0}")).toHaveLength(2);

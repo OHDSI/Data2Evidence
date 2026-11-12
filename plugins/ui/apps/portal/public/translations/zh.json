@@ -151,7 +151,6 @@
   "AI_CONFIG__DELETE_ACTIVE_BODY": "{0} 是当前使用的配置。请选择 AI 助手改用哪个配置。此操作无法撤销。",
   "AI_CONFIG__DELETE_ACTIVE_PICK_LABEL": "新的当前配置",
   "AI_CONFIG__DELETE_ACTIVE_PICK_HINT": "AI 助手将为所有人切换到此配置。",
-  "AI_CONFIG__DELETED_LAST_TOAST": "{0} 已删除。",
   "AI_CONFIG__DELETED_REPLACED_TOAST": "{0} 已删除。{1} 现在是当前使用的配置。",
   "AI_CONFIG__DELETING_TITLE": "正在删除 AI 配置",
   "AI_CONFIG__DELETING_BODY": "正在删除 {0}。请求完成后，此配置将被移除。",

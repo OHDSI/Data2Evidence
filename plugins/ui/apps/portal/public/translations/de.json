@@ -151,7 +151,6 @@
   "AI_CONFIG__DELETE_ACTIVE_BODY": "{0} ist die aktive Konfiguration. Wählen Sie, welche Konfiguration der KI-Assistent stattdessen verwenden soll. Dies kann nicht rückgängig gemacht werden.",
   "AI_CONFIG__DELETE_ACTIVE_PICK_LABEL": "Neue aktive Konfiguration",
   "AI_CONFIG__DELETE_ACTIVE_PICK_HINT": "Der KI-Assistent wechselt für alle zu dieser Konfiguration.",
-  "AI_CONFIG__DELETED_LAST_TOAST": "{0} wurde gelöscht.",
   "AI_CONFIG__DELETED_REPLACED_TOAST": "{0} wurde gelöscht. {1} ist jetzt die aktive Konfiguration.",
   "AI_CONFIG__DELETING_TITLE": "KI-Konfiguration wird gelöscht",
   "AI_CONFIG__DELETING_BODY": "{0} wird gelöscht. Diese Konfiguration wird entfernt, sobald die Anfrage abgeschlossen ist.",

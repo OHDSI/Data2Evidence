@@ -74,5 +74,5 @@ describe("deleteVariant", () => {
   const rows = [cfg(1, "A", true), cfg(2, "B")];
   it("is plain for a non-active row", () => expect(deleteVariant(rows[1], rows)).toBe("plain"));
   it("is active for the active row among others", () => expect(deleteVariant(rows[0], rows)).toBe("active"));
-  it("is last for the only row", () => expect(deleteVariant(rows[0], [rows[0]])).toBe("last"));
+  it("is plain for the only row", () => expect(deleteVariant(rows[0], [rows[0]])).toBe("plain"));
 });

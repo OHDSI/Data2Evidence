@@ -50,7 +50,7 @@ export const AiConfigPage: FC = () => {
     kind: "activate" | "delete";
     config: AiConfig;
     // Fixed when the dialog opens, so the dialog does not change shape while the list changes under it.
-    variant?: "plain" | "active" | "last";
+    variant?: "plain" | "active";
     failed?: boolean;
   } | null>(null);
   // The replacement picked in the delete-active dialog (a row id as a string), and its name as last sent.
@@ -151,7 +151,7 @@ export const AiConfigPage: FC = () => {
       return { toast: withNames(getText(i18nKeys.AI_CONFIG__ACTIVATED_TOAST), [{ bold: activated.name }]) };
     });
 
-  const remove = (config: AiConfig, variant: "plain" | "active" | "last") => {
+  const remove = (config: AiConfig, variant: "plain" | "active") => {
     const pick = variant === "active" ? configs.find((c) => String(c.id) === pickId) : undefined;
     if (pick) setPickedName(pick.name);
     return runConfirmed(
@@ -165,8 +165,6 @@ export const AiConfigPage: FC = () => {
         const toastKey =
           variant === "active"
             ? i18nKeys.AI_CONFIG__DELETED_REPLACED_TOAST
-            : variant === "last"
-            ? i18nKeys.AI_CONFIG__DELETED_LAST_TOAST
             : i18nKeys.AI_CONFIG__DELETED_TOAST;
         return {
           toast: withNames(getText(toastKey), [{ bold: config.name }, ...(pick ? [{ bold: pick.name }] : [])]),
@@ -192,7 +190,7 @@ export const AiConfigPage: FC = () => {
 
   const currentActive = configs.find((c) => c.isActive);
 
-  const renderDelete = (config: AiConfig, variant: "plain" | "active" | "last", failed: boolean) => {
+  const renderDelete = (config: AiConfig, variant: "plain" | "active", failed: boolean) => {
     const pickable = sortAiConfigs(configs.filter((c) => c.id !== config.id));
     const picker = (
       <div className="ai-config__confirm-banner">

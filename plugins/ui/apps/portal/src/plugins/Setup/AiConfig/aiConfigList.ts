@@ -28,11 +28,10 @@ export const connectionSummary = (config: AiConfig, labels: { apiKey: string; wo
 };
 
 /**
- * Which delete dialog a row opens: the only row, the active row among others, or any other row.
- * "last" is kept apart from "plain" on purpose: release 2 adds the flag-off warning to it.
+ * Which delete dialog a row opens: the active row among others (it asks for a replacement), or any other row.
  */
-export const deleteVariant = (config: AiConfig, configs: AiConfig[]): "plain" | "active" | "last" =>
-  configs.length === 1 ? "last" : config.isActive ? "active" : "plain";
+export const deleteVariant = (config: AiConfig, configs: AiConfig[]): "plain" | "active" =>
+  config.isActive && configs.length > 1 ? "active" : "plain";
 
 /** Maps a server error code (`AI_CONFIG_<SUFFIX>`) to its `AI_CONFIG__ERROR__<SUFFIX>` key, else the fallback. */
 export const aiConfigErrorKey = <T extends Record<string, string>>(
