@@ -27,7 +27,10 @@ export const connectionSummary = (config: AiConfig, labels: { apiKey: string; wo
   return detail ? `${labels.apiKey} · ${detail}` : labels.apiKey;
 };
 
-/** Which delete dialog a row opens: the only row, the active row among others, or any other row. */
+/**
+ * Which delete dialog a row opens: the only row, the active row among others, or any other row.
+ * "last" is kept apart from "plain" on purpose: release 2 adds the flag-off warning to it.
+ */
 export const deleteVariant = (config: AiConfig, configs: AiConfig[]): "plain" | "active" | "last" =>
   configs.length === 1 ? "last" : config.isActive ? "active" : "plain";
 

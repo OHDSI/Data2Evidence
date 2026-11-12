@@ -9,6 +9,7 @@ import { aiConfigErrorKey } from "./aiConfigList";
 import { PendingBanner } from "./PendingBanner";
 import "./AiConfigDialog.scss";
 
+// Must equal REDACTED_TEXT in plugins/functions/portal/src/common/const.ts (plugins cannot share code).
 const KEY_PLACEHOLDER = "***REDACTED***";
 const DEFAULT_NAME = "AI Configuration 1";
 
