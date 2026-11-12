@@ -111,3 +111,20 @@ export function upgradeEnvForIdpMode(
   add("USER_MGMT__ROLE_SOURCE", "trex");
   return { mode: "logto-federated", content: body, added };
 }
+
+/**
+ * Append KEY=value when the env file has no non-empty KEY, dropping an empty
+ * line first so only one remains. Independent of IdP mode: compose guards the
+ * key with ${KEY:?...}, so an install from before it existed must gain it.
+ */
+export function backfillEnvKey(
+  content: string,
+  key: string,
+  value: () => string,
+): { content: string; added: boolean } {
+  const existing = lineValue(content, key);
+  if (existing !== undefined && existing !== "") return { content, added: false };
+  let body = content.replace(/\n*$/, "\n");
+  if (existing === "") body = body.replace(new RegExp(`^${key}=.*\\n`, "m"), "");
+  return { content: `${body}${key}=${value()}\n`, added: true };
+}

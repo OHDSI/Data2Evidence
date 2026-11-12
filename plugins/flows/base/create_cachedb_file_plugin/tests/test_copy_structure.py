@@ -161,3 +161,19 @@ def test_the_bigquery_bytes_limitation_is_recorded():
     start, end = func.lineno, func.end_lineno
     body = "\n".join(source.splitlines()[start - 1 : end])
     assert "total_bytes_processed" in body
+
+
+def test_existing_webapi_results_tables_are_not_copied_again():
+    func = function_node(COPY_SOURCE_PATH, "create_schema_tables")
+    assert calls_to(func, "webapi_owned_tables_to_skip"), (
+        "a refresh must leave WebAPI-written results tables alone"
+    )
+
+
+def test_only_the_results_pass_protects_webapi_tables():
+    from .copy_source import FLOW_SOURCE_PATH
+
+    func = function_node(FLOW_SOURCE_PATH, "create_results_cache_flow")
+    call = calls_to(func, "create_cache_flow")[0]
+    assert [k.arg for k in call.keywords] == ["protect_webapi_results"]
+    assert call.keywords[0].value.value is True
