@@ -18,7 +18,6 @@ export interface AiConfigResponse {
   baseUrl: string | null;
   region: string | null;
   workspaceId: string | null;
-  apiKey: string;
   keyReadable?: false;
   isActive: boolean;
 }
@@ -31,5 +30,6 @@ export interface NormalisedAiConfig {
   baseUrl: string | null;
   region: string | null;
   workspaceId: string | null;
-  apiKey: string;
+  /** Always set on create; on update undefined means "keep the stored key". */
+  apiKey?: string;
 }

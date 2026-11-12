@@ -7,7 +7,6 @@ import {
   assertRejects,
   assertStrictEquals,
 } from "@std/assert";
-import { REDACTED_TEXT } from "../common/const.ts";
 import { AI_CONFIG_LOCK_KEY } from "./ai-config.service.ts";
 import {
   anthropic,
@@ -207,14 +206,15 @@ Deno.test("name: blank or not a string -> 400 field name; stored trimmed", async
   assertEquals(db.rows[0].name, "Prod");
 });
 
-Deno.test("API key: empty -> _INVALID, placeholder on create -> _INVALID", async () => {
+Deno.test("API key: required on create, never blank when given on update", async () => {
   const { svc } = setup();
-  for (const apiKey of ["", "   ", undefined, 5]) {
+  for (const apiKey of ["", "   ", undefined, null, 5]) {
     await expectError(svc.create(bedrock({ apiKey })), 400, "AI_CONFIG_INVALID", "apiKey");
   }
-  await expectError(svc.create(bedrock({ apiKey: REDACTED_TEXT })), 400, "AI_CONFIG_INVALID", "apiKey");
   const c = await svc.create(bedrock());
-  await expectError(svc.update(String(c.id), bedrock({ apiKey: "" })), 400, "AI_CONFIG_INVALID", "apiKey");
+  for (const apiKey of ["", "   ", null, 5]) {
+    await expectError(svc.update(String(c.id), bedrock({ apiKey })), 400, "AI_CONFIG_INVALID", "apiKey");
+  }
 });
 
 Deno.test("API key is trimmed before storing", async () => {
@@ -225,39 +225,21 @@ Deno.test("API key is trimmed before storing", async () => {
   assertEquals(decryptApiKey(db.rows[0].apiKeyEncrypted, parseEncryptionKey(KEY_A)!), "sk-new");
 });
 
-Deno.test("padded placeholder: rejected on create, keeps the stored key on update", async () => {
-  const { db, svc } = setup();
-  const padded = ` ${REDACTED_TEXT} \n`;
-  await expectError(svc.create(bedrock({ apiKey: padded })), 400, "AI_CONFIG_INVALID", "apiKey");
-  assertEquals(db.rows.length, 0);
-  const b = await svc.create(bedrock());
-  const stored = db.rows[0].apiKeyEncrypted;
-  await svc.update(String(b.id), bedrock({ model: "m2", apiKey: padded }));
-  assertEquals(db.rows[0].apiKeyEncrypted, stored);
-  assertEquals(db.rows[0].model, "m2");
-  // still subject to the placeholder rule: provider change -> _KEY_REQUIRED
-  await expectError(
-    svc.update(String(b.id), anthropic({ apiKey: padded })),
-    400,
-    "AI_CONFIG_KEY_REQUIRED",
-  );
-});
-
-Deno.test("placeholder rule on update", async () => {
+Deno.test("an absent apiKey on update keeps the stored key only when provider and base URL are unchanged", async () => {
   const { db, svc } = setup();
   const b = await svc.create(bedrock({ name: "Prod" }));
   const stored = db.rows[0].apiKeyEncrypted;
   // name-only, model-only and region-only edits keep the key
-  await svc.update(String(b.id), bedrock({ name: "Prod renamed", apiKey: REDACTED_TEXT }));
+  await svc.update(String(b.id), bedrock({ name: "Prod renamed", apiKey: undefined }));
   assertEquals(db.rows[0].name, "Prod renamed");
   assertEquals(db.rows[0].apiKeyEncrypted, stored);
-  await svc.update(String(b.id), bedrock({ model: "m2", apiKey: REDACTED_TEXT }));
-  await svc.update(String(b.id), bedrock({ model: "m2", region: "eu-west-1", apiKey: REDACTED_TEXT }));
+  await svc.update(String(b.id), bedrock({ model: "m2", apiKey: undefined }));
+  await svc.update(String(b.id), bedrock({ model: "m2", region: "eu-west-1", apiKey: undefined }));
   assertEquals(db.rows[0].apiKeyEncrypted, stored);
   assertEquals(db.rows[0].region, "eu-west-1");
   // provider change -> _KEY_REQUIRED
   await expectError(
-    svc.update(String(b.id), anthropic({ apiKey: REDACTED_TEXT })),
+    svc.update(String(b.id), anthropic({ apiKey: undefined })),
     400,
     "AI_CONFIG_KEY_REQUIRED",
   );
@@ -266,28 +248,28 @@ Deno.test("placeholder rule on update", async () => {
   // workspace-only edit keeps the key; base URL change does not
   const a = await svc.create(anthropic({ workspaceId: "w1" }));
   const aStored = db.rows[1].apiKeyEncrypted;
-  await svc.update(String(a.id), anthropic({ workspaceId: "w2", apiKey: REDACTED_TEXT }));
+  await svc.update(String(a.id), anthropic({ workspaceId: "w2", apiKey: undefined }));
   assertEquals(db.rows[1].apiKeyEncrypted, aStored);
   const o = await svc.create(openai());
   await expectError(
-    svc.update(String(o.id), openai({ baseUrl: "https://y/v1", apiKey: REDACTED_TEXT })),
+    svc.update(String(o.id), openai({ baseUrl: "https://y/v1", apiKey: undefined })),
     400,
     "AI_CONFIG_KEY_REQUIRED",
   );
   // trimmed base URL equals stored -> kept
-  await svc.update(String(o.id), openai({ baseUrl: " https://x/v1 ", apiKey: REDACTED_TEXT, model: "gpt2" }));
+  await svc.update(String(o.id), openai({ baseUrl: " https://x/v1 ", apiKey: undefined, model: "gpt2" }));
 
   // a new key replaces the ciphertext
   await svc.update(String(b.id), bedrock({ model: "m2", region: "eu-west-1", apiKey: "new-key" }));
   assertNotEquals(db.rows[0].apiKeyEncrypted, stored);
 });
 
-Deno.test("placeholder rejected when the stored key is unreadable", async () => {
+Deno.test("an absent apiKey is rejected when the stored key is unreadable", async () => {
   const { db, svc } = setup(KEY_A);
   const b = await svc.create(bedrock());
   const other = new TestService(db, KEY_B);
   await expectError(
-    other.update(String(b.id), bedrock({ apiKey: REDACTED_TEXT, model: "m2" })),
+    other.update(String(b.id), bedrock({ apiKey: undefined, model: "m2" })),
     400,
     "AI_CONFIG_KEY_REQUIRED",
   );
@@ -300,19 +282,19 @@ Deno.test("PUT with isActive -> 400 field isActive; echoing the GET response min
   const { db, svc } = setup();
   const c = await svc.create(bedrock());
   await expectError(
-    svc.update(String(c.id), { ...bedrock({ apiKey: REDACTED_TEXT }), isActive: false }),
+    svc.update(String(c.id), { ...bedrock({ apiKey: undefined }), isActive: false }),
     400,
     "AI_CONFIG_INVALID",
     "isActive",
   );
   await expectError(
-    svc.update(String(c.id), { ...bedrock({ apiKey: REDACTED_TEXT }), isActive: true }),
+    svc.update(String(c.id), { ...bedrock({ apiKey: undefined }), isActive: true }),
     400,
     "AI_CONFIG_INVALID",
     "isActive",
   );
   db.allowPool = true;
-  // Other properties are ignored: echo the GET response (id, keyReadable, apiKey placeholder, nulls) minus isActive
+  // Other properties are ignored: echo the GET response (id, keyReadable, nulls) minus isActive
   const echoed = { ...(await svc.list())[0] } as Record<string, unknown>;
   delete echoed.isActive;
   echoed.keyReadable = false; // sent back by a client, but ignored; the stored key is still readable
@@ -325,6 +307,39 @@ Deno.test("PUT with isActive -> 400 field isActive; echoing the GET response min
   assertEquals(db.rows[0].id, c.id);
   assertEquals(db.rows.length, 1);
   assertFalse("keyReadable" in out);
+});
+
+Deno.test("an absent apiKey after a provider or base URL change is rejected and the stored key stays", async () => {
+  const { db, svc } = setup();
+  const b = await svc.create(bedrock());
+  const o = await svc.create(openai());
+  const stored = db.rows.map((r) => r.apiKeyEncrypted);
+  await expectError(
+    svc.update(String(b.id), anthropic({ apiKey: undefined })),
+    400,
+    "AI_CONFIG_KEY_REQUIRED",
+  );
+  await expectError(
+    svc.update(String(o.id), openai({ baseUrl: "https://other/v1", apiKey: undefined })),
+    400,
+    "AI_CONFIG_KEY_REQUIRED",
+  );
+  assertEquals(db.rows.map((r) => r.apiKeyEncrypted), stored);
+  assertEquals(db.rows[0].provider, "bedrock");
+  assertEquals(db.rows[1].baseUrl, "https://x/v1");
+});
+
+Deno.test("responses never carry apiKey, plaintext or ciphertext", async () => {
+  const { db, svc } = setup();
+  const c = await svc.create(bedrock({ apiKey: "sk-plain-1" }));
+  const u = await svc.update(String(c.id), bedrock({ model: "m9", apiKey: undefined }));
+  db.allowPool = true;
+  for (const out of [c, u, ...(await svc.list())]) {
+    assertFalse("apiKey" in out);
+    const text = JSON.stringify(out);
+    assertFalse(text.includes("sk-plain-1"));
+    assertFalse(text.includes(db.rows[0].apiKeyEncrypted as string));
+  }
 });
 
 // ----------------------------------------------------------------- Uniqueness
@@ -546,10 +561,10 @@ Deno.test("response shape is redacted and omits audit columns, ciphertext and ke
     baseUrl: "https://x/v1",
     region: null,
     workspaceId: null,
-    apiKey: REDACTED_TEXT,
     isActive: true,
   });
   assertFalse("keyReadable" in c);
+  assertFalse("apiKey" in c);
   assertEquals(db.rows[0].createdBy, "tester");
   assertEquals(db.rows[0].modifiedBy, "tester");
 });
@@ -588,15 +603,15 @@ Deno.test("encryption key unset, empty, not 32 bytes: reads 200 keyReadable fals
 
     await expectError(degraded.create(bedrock({ region: "ap-1" })), 500, "AI_CONFIG_ENCRYPTION_KEY_NOT_CONFIGURED");
     await expectError(degraded.update(String(a.id), bedrock({ model: "x" })), 500, "AI_CONFIG_ENCRYPTION_KEY_NOT_CONFIGURED");
-    // the key check comes first, before :id parsing, validation and the placeholder rule
-    await expectError(degraded.update("abc", bedrock({ apiKey: REDACTED_TEXT })), 500, "AI_CONFIG_ENCRYPTION_KEY_NOT_CONFIGURED");
+    // the key check comes first, before :id parsing and validation
+    await expectError(degraded.update("abc", bedrock({ apiKey: undefined })), 500, "AI_CONFIG_ENCRYPTION_KEY_NOT_CONFIGURED");
     await expectError(degraded.update(String(a.id), { provider: "nope" }), 500, "AI_CONFIG_ENCRYPTION_KEY_NOT_CONFIGURED");
     await expectError(
-      degraded.update(String(a.id), bedrock({ apiKey: REDACTED_TEXT })),
+      degraded.update(String(a.id), bedrock({ apiKey: undefined })),
       500,
       "AI_CONFIG_ENCRYPTION_KEY_NOT_CONFIGURED",
     );
-    await expectError(degraded.create(bedrock({ apiKey: REDACTED_TEXT })), 500, "AI_CONFIG_ENCRYPTION_KEY_NOT_CONFIGURED");
+    await expectError(degraded.create(bedrock({ apiKey: undefined })), 500, "AI_CONFIG_ENCRYPTION_KEY_NOT_CONFIGURED");
 
     // activate and delete do not need the key
     assertEquals((await degraded.activate(String(b.id))).isActive, true);

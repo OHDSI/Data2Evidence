@@ -19,7 +19,7 @@ import {
   ViewerCodeQuery,
   ViewerCodeWithQueries,
 } from "../types";
-import { AiConfig, AiConfigInput } from "../types/aiConfig";
+import { AiConfig, AiConfigInput, AiConfigUpdateInput } from "../types/aiConfig";
 import { ConfigTypes, LogResponseType } from "../constant";
 const SYSTEM_PORTAL_URL = "system-portal/";
 
@@ -454,7 +454,7 @@ export class SystemPortal {
     });
   }
 
-  public updateAiConfig(id: number, data: AiConfigInput) {
+  public updateAiConfig(id: number, data: AiConfigUpdateInput) {
     return requestNoCache<AiConfig>({
       baseURL: SYSTEM_PORTAL_URL,
       url: `ai-config/${id}`,

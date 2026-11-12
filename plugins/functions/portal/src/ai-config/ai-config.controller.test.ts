@@ -1,5 +1,5 @@
 import "reflect-metadata"; // Must be first: otherwise importing postgres.service.ts makes Danet's @Body() miss "design:paramtypes" in this runner.
-import { assertEquals } from "@std/assert";
+import { assertEquals, assertFalse } from "@std/assert";
 import {
   DanetApplication,
   Injectable,
@@ -85,7 +85,7 @@ Deno.test(
       assertEquals(created.body.id, 1);
       assertEquals(created.body.name, "Prod");
       assertEquals(created.body.isActive, true);
-      assertEquals(created.body.apiKey, "***REDACTED***");
+      assertFalse("apiKey" in created.body);
       assertEquals(db.rows[0].createdBy, "admin-1");
 
       const dup = await call("POST", "", bedrock({ name: "Prod", region: "eu-west-1" }));
@@ -113,7 +113,7 @@ Deno.test(
       const put = await call(
         "PUT",
         "/2",
-        bedrock({ region: "eu-west-1", model: "m2", apiKey: "***REDACTED***" }),
+        bedrock({ region: "eu-west-1", model: "m2", apiKey: undefined }),
       );
       assertEquals([put.status, put.body.model], [200, "m2"]);
       const putActive = await call("PUT", "/2", {

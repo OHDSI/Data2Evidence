@@ -160,7 +160,6 @@ describe("AiConfigPage list", () => {
     baseUrl: null,
     region: "us-east-2",
     workspaceId: null,
-    apiKey: "***REDACTED***",
     isActive,
   });
 
@@ -217,7 +216,6 @@ describe("AiConfigPage row actions", () => {
     baseUrl: null,
     region: "us-east-2",
     workspaceId: null,
-    apiKey: "***REDACTED***",
     isActive,
   });
   const activateMock = api.systemPortal.activateAiConfig as jest.Mock;

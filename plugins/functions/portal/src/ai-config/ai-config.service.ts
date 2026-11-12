@@ -1,7 +1,6 @@
 import { Inject, Injectable, SCOPE } from "@danet/core";
 import { Buffer } from "node:buffer";
 import { DataSource, EntityManager } from "npm:typeorm";
-import { REDACTED_TEXT } from "../common/const.ts";
 import { RequestContextService } from "../common/request-context.service.ts";
 import { DATABASE } from "../database/module.ts";
 import { PostgresService } from "../database/postgres.service.ts";
@@ -74,10 +73,7 @@ export class AiConfigService {
 
   async create(body: unknown): Promise<AiConfigResponse> {
     const key = this.requireKey(); // first, so a missing key fails before any input handling
-    const input = this.validate(body);
-    if (input.apiKey === REDACTED_TEXT) {
-      throw this.invalid("apiKey", "The API key placeholder is not valid here");
-    }
+    const input = this.validate(body, true);
     return await this.withLock(async (manager) => {
       const rows = await this.repo.listTx(manager);
       if (rows.some((row) => row.name === input.name)) {
@@ -90,7 +86,7 @@ export class AiConfigService {
         baseUrl: input.baseUrl,
         region: input.region,
         workspaceId: input.workspaceId,
-        apiKeyEncrypted: encryptApiKey(input.apiKey, key),
+        apiKeyEncrypted: encryptApiKey(input.apiKey as string, key),
         isActive: !rows.some((row) => row.isActive),
         createdBy: this.userId,
         modifiedBy: this.userId,
@@ -111,14 +107,14 @@ export class AiConfigService {
         "Field `isActive` cannot be set here; use the activate endpoint",
       );
     }
-    const input = this.validate(body);
+    const input = this.validate(body, false);
     return await this.withLock(async (manager) => {
       const rows = await this.repo.listTx(manager);
       const existing = rows.find((row) => row.id === id);
       if (!existing) throw this.notFound();
 
       let apiKeyEncrypted: string;
-      if (input.apiKey === REDACTED_TEXT) {
+      if (input.apiKey === undefined) {
         const keepable = existing.provider === input.provider &&
           existing.baseUrl === input.baseUrl &&
           decryptApiKey(existing.apiKeyEncrypted, key) !== null;
@@ -306,7 +302,6 @@ export class AiConfigService {
       baseUrl: row.baseUrl ?? null,
       region: row.region ?? null,
       workspaceId: row.workspaceId ?? null,
-      apiKey: REDACTED_TEXT,
       ...(readable ? {} : { keyReadable: false as const }),
       isActive: row.isActive,
     };
@@ -352,7 +347,8 @@ export class AiConfigService {
     return trimmed === "" ? null : trimmed;
   }
 
-  private validate(rawBody: unknown): NormalisedAiConfig {
+  /** On update an absent `apiKey` means "keep the stored key"; a present one must be non-blank. */
+  private validate(rawBody: unknown, keyRequired: boolean): NormalisedAiConfig {
     const body = (rawBody !== null && typeof rawBody === "object"
       ? rawBody
       : {}) as Record<string, unknown>;
@@ -416,11 +412,12 @@ export class AiConfigService {
       }
     }
 
-    // Trimmed before the blank check, the placeholder comparisons and storage,
-    // so a padded " ***REDACTED*** " still counts as the placeholder.
-    const apiKey = typeof body.apiKey === "string" ? body.apiKey.trim() : "";
-    if (apiKey === "") {
-      throw this.invalid("apiKey", "Field `apiKey` is required");
+    let apiKey: string | undefined;
+    if (body.apiKey !== undefined || keyRequired) {
+      apiKey = typeof body.apiKey === "string" ? body.apiKey.trim() : "";
+      if (apiKey === "") {
+        throw this.invalid("apiKey", "Field `apiKey` is required");
+      }
     }
 
     return {

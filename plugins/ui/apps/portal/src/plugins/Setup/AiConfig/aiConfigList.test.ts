@@ -9,7 +9,6 @@ const cfg = (id: number, name: string, isActive = false, extra: Partial<AiConfig
   baseUrl: null,
   region: null,
   workspaceId: null,
-  apiKey: "***REDACTED***",
   isActive,
   ...extra,
 });

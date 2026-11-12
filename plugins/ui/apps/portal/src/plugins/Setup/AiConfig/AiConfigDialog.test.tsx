@@ -29,7 +29,6 @@ const saved: AiConfig = {
   baseUrl: null,
   region: "us-east-2",
   workspaceId: null,
-  apiKey: "***REDACTED***",
   isActive: true,
 };
 const existing: AiConfig = {
@@ -229,7 +228,6 @@ describe("AiConfigDialog edit", () => {
       name: "Prod",
       provider: "openai-compatible",
       model: "gpt-4.1",
-      apiKey: "***REDACTED***",
       baseUrl: "https://llm.example.org/v1",
     });
     expect(createAiConfig).not.toHaveBeenCalled();
@@ -275,7 +273,8 @@ describe("AiConfigDialog edit", () => {
     await fill(label, "changed");
     await userEvent.click(saveButton());
 
-    expect(updateAiConfig).toHaveBeenCalledWith(config.id, expect.objectContaining({ apiKey: "***REDACTED***" }));
+    expect(updateAiConfig).toHaveBeenCalledWith(config.id, expect.objectContaining({ name: expect.any(String) }));
+    expect(updateAiConfig.mock.calls[0][1]).not.toHaveProperty("apiKey");
   });
 
   it("restores the saved key when the base URL is changed back", async () => {
@@ -300,10 +299,8 @@ describe("AiConfigDialog edit", () => {
     expect(screen.getByText("Leave empty to keep the saved key.")).toBeInTheDocument();
     expect(saveButton()).toBeEnabled();
     await userEvent.click(saveButton());
-    expect(updateAiConfig).toHaveBeenCalledWith(
-      7,
-      expect.objectContaining({ provider: "anthropic", apiKey: "***REDACTED***" })
-    );
+    expect(updateAiConfig).toHaveBeenCalledWith(7, expect.objectContaining({ provider: "anthropic" }));
+    expect(updateAiConfig.mock.calls[0][1]).not.toHaveProperty("apiKey");
   });
 
   it("shows a failed update's error and clears it on the next edit", async () => {

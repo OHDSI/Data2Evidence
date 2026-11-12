@@ -4,13 +4,11 @@ import VisibilityOff from "@mui/icons-material/VisibilityOff";
 import { Alert, Button, Dialog, IconButton, Select, TextField } from "ui-react";
 import { api } from "../../../axios/api";
 import { useTranslation } from "../../../contexts";
-import { AiConfig, AiConfigInput, AiConfigProvider } from "../../../types/aiConfig";
+import { AiConfig, AiConfigProvider, AiConfigUpdateInput } from "../../../types/aiConfig";
 import { aiConfigErrorKey } from "./aiConfigList";
 import { PendingBanner } from "./PendingBanner";
 import "./AiConfigDialog.scss";
 
-// Must equal REDACTED_TEXT in plugins/functions/portal/src/common/const.ts (plugins cannot share code).
-const KEY_PLACEHOLDER = "***REDACTED***";
 const DEFAULT_NAME = "AI Configuration 1";
 
 type FieldName = "baseUrl" | "apiKey" | "model" | "region" | "workspaceId";
@@ -89,12 +87,12 @@ export const AiConfigDialog: FC<Props> = ({ config, onClose, onSaved, onNotFound
 
   const save = async () => {
     if (!provider || !canSave || inFlight.current) return;
-    const body: AiConfigInput = {
+    // On update an absent apiKey keeps the stored key; canSave guarantees a key on create.
+    const body: AiConfigUpdateInput = {
       name: name.trim(),
       provider,
       model: model.trim(),
-      // The backend rejects the placeholder on create, so it is only ever sent on update.
-      apiKey: keyGiven ? apiKey.trim() : KEY_PLACEHOLDER,
+      ...(keyGiven ? { apiKey: apiKey.trim() } : {}),
     };
     if (provider === "openai-compatible") body.baseUrl = baseUrl.trim();
     if (provider === "bedrock") body.region = region.trim();
@@ -106,7 +104,7 @@ export const AiConfigDialog: FC<Props> = ({ config, onClose, onSaved, onNotFound
     try {
       const saved = config
         ? await api.systemPortal.updateAiConfig(config.id, body)
-        : await api.systemPortal.createAiConfig(body);
+        : await api.systemPortal.createAiConfig({ ...body, apiKey: apiKey.trim() });
       onSaved(saved);
     } catch (err: any) {
       // The rejection holds the request body (with the API key), so only the code and field are read from it.
