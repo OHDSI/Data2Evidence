@@ -88,7 +88,7 @@ def create_embeddings_hana(dbdao_hana, database_code, schema_name, chunksize):
     db_schema = f"{database_code}_cache.{schema_name}"
 
     # Make sure the cache schema exists before writing embeddings. Mirrors create_cachedb_hana_plugin
-    cache_dao.execute_sql("CALL pg_clear_cache();")
+    cache_dao.execute_sql("CALL postgres_clear_cache();")
     cache_dao.create_schema(db_schema)
 
     # Stream HANA rows server-side
@@ -159,10 +159,11 @@ def create_embeddings_duckdb(conn, schema_name, chunksize, tmp_embedding_table='
     conn.execute(f'CREATE TABLE "{schema_name}"."{tmp_embedding_table}" (concept_id int, vec FLOAT[384]);')
 
     ## Stream concept rows in Arrow RecordBatches of ~chunksize rows so we
-    ## never materialize the full 6M-row table in memory.
-    reader = conn.execute(
+    ## never materialize the full 6M-row table in memory. Read on a separate
+    ## cursor: the INSERTs below would otherwise end the stream after one batch.
+    reader = conn.cursor().sql(
         f'SELECT concept_id, concept_name FROM "{schema_name}".concept'
-    ).fetch_record_batch(chunksize)
+    ).to_arrow_reader(chunksize)
 
     processed = 0
     for batch in reader:
