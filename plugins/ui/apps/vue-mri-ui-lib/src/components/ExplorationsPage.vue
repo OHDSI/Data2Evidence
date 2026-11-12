@@ -7,8 +7,15 @@
         :title="getText('MRI_PA_EXPLORATIONS_TITLE')"
         :subtitle="getText('MRI_PA_EXPLORATIONS_DESCRIPTION')"
       >
-        <template v-if="isAtlasHosted" #actions>
+        <template #actions>
+          <D2eViewToggle
+            v-model="viewMode"
+            :options="viewOptions"
+            :label="getText('MRI_PA_EXPLORATIONS_VIEW')"
+            data-testid="explorations-view-toggle"
+          />
           <D2eSelect
+            v-if="isAtlasHosted"
             class="explorations-page__dataset"
             size="sm"
             :disabled="!canSwitchDataSource"
@@ -144,12 +151,23 @@
       <ExplorationEmptyState :title="emptyState.title" :body="emptyState.body" />
     </div>
 
+    <div v-else-if="viewMode === 'list'" class="explorations-page__table">
+      <ExplorationsTable
+        :rows="tableRows"
+        :sort-by="columnSort"
+        :menu-items="rowMenuItems"
+        @update:sort-by="columnSort = $event"
+        @open="onRowOpen"
+        @select="onRowMenuSelect"
+      />
+    </div>
+
     <div v-else class="explorations-page__grid" data-testid="explorations-grid">
       <D2eExplorationCard
         v-for="card in cards"
         :key="card.id"
         width="500px"
-        :clickable="Boolean(card.bmkId)"
+        :clickable="isOpenable(card)"
         :name="card.name"
         :selected="explorations.isSelected(card.id)"
         :status="card.status"
@@ -166,7 +184,7 @@
         <template v-if="!card.isMaterialised" #lead>
           <D2eButton
             variant="secondary"
-            :disabled="!canMaterialize || !card.canBeMaterialised"
+            :disabled="quickActions(card).materialize.disabled"
             :data-testid="`explorations-materialize-lead-${card.id}`"
             @click="openMaterialize(card.source)"
           >
@@ -187,7 +205,7 @@
               <span v-bind="tooltipProps">
                 <D2eIconButton
                   category="no-stroke"
-                  :disabled="!canMaterialize || !card.canBeMaterialised"
+                  :disabled="quickActions(card).materialize.disabled"
                   :aria-label="card.materializeLabel"
                   :data-testid="`explorations-materialize-btn-${card.id}`"
                   @click="openMaterialize(card.source)"
@@ -207,6 +225,7 @@
               <span v-bind="tooltipProps">
                 <D2eIconButton
                   category="no-stroke"
+                  :disabled="quickActions(card).filterSummary.disabled"
                   :aria-label="getText('MRI_PA_EXPLORATIONS_FILTER_SUMMARY')"
                   :data-testid="`explorations-filter-summary-btn-${card.id}`"
                   @click="openFilterSummary(card)"
@@ -226,7 +245,7 @@
               <span v-bind="tooltipProps">
                 <D2eIconButton
                   category="no-stroke"
-                  :disabled="!canAnalyze"
+                  :disabled="quickActions(card).analyze.disabled"
                   :aria-label="getText('MRI_PA_EXPLORATIONS_ANALYZE')"
                   :data-testid="`explorations-analyze-btn-${card.id}`"
                   @click="openAnalyze(card)"
@@ -255,7 +274,7 @@
               <span v-bind="tooltipProps">
                 <D2eIconButton
                   category="no-stroke"
-                  :disabled="!card.cohortDefinitionId || dataQualityBusy(card)"
+                  :disabled="quickActions(card).dataQuality.disabled"
                   :loading="dataQualityBusy(card)"
                   :aria-label="getText('MRI_PA_EXPLORATIONS_DATA_QUALITY')"
                   :data-testid="`explorations-dq-btn-${card.id}`"
@@ -411,7 +430,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, nextTick, onBeforeUnmount, reactive, ref, watch } from 'vue'
+import { computed, markRaw, nextTick, onBeforeUnmount, reactive, ref, watch } from 'vue'
 import { useStore } from 'vuex'
 import {
   D2eButton,
@@ -424,8 +443,10 @@ import {
   D2ePageHeader,
   D2eSearchField,
   D2eSelect,
+  D2eViewToggle,
+  type D2eMenuItem,
 } from '@d2e/ui'
-import { useExplorationsStore } from '../stores/explorations'
+import { useExplorationsStore, type ExplorationViewMode } from '../stores/explorations'
 import { useNotificationStore } from '../stores/notifications'
 import { useUnsavedChanges } from '@/composables/useUnsavedChanges'
 import { usePortalContext } from '../composables/usePortalContext'
@@ -437,6 +458,9 @@ import {
   shouldResetDashboardFlow,
 } from './helpers/explorationAnalyze'
 import { filterAndSort, toCardId, type ExplorationSortKey } from './helpers/explorationList'
+import { sortByColumn, type ExplorationColumnSort } from './helpers/explorationTableSort'
+import { isOpenable } from './helpers/explorationTableRow'
+import { quickActionMenuItems, quickActionState, type QuickAction } from './helpers/explorationQuickActions'
 import { dataQualityCohortId, dataQualityTooltipKey, isDataQualityBusy } from './helpers/explorationDataQuality'
 import { useDataQualityRun } from '../composables/useDataQualityRun'
 import { allSelected, someSelected } from './helpers/explorationSelection'
@@ -473,6 +497,7 @@ import ExplorationFiltersPanel from './ExplorationFiltersPanel.vue'
 import FilterCardSummary from './FilterCardSummary.vue'
 import DashboardFlowModals from './DashboardFlowModals.vue'
 import ExplorationPagination from './ExplorationPagination.vue'
+import ExplorationsTable from './ExplorationsTable.vue'
 import ExplorationEmptyState from './ExplorationEmptyState.vue'
 import CohortComparisonDialog from './CohortComparisonDialog.vue'
 
@@ -529,6 +554,8 @@ const filters = ref<ExplorationFilters>(explorations.listView.filters)
 const filtersOpen = ref(false)
 const page = ref(explorations.listView.page)
 const pageSize = ref<number>(explorations.listView.pageSize)
+const viewMode = ref<ExplorationViewMode>(explorations.listView.viewMode)
+const columnSort = ref<ExplorationColumnSort[]>(explorations.listView.columnSort)
 const filterSummaryOpen = ref(false)
 /** True while the panel's SQL query is in flight; feeds its `chartBusy` prop. */
 const summaryBusy = ref(false)
@@ -694,7 +721,27 @@ const sortItems = computed(() =>
 const activeSortLabel = computed(() => sortItems.value.find(i => i.selected)?.label ?? '')
 const onSortSelect = (value: string): void => {
   sortKey.value = value as ExplorationSortKey
+  columnSort.value = []
 }
+
+const VIEW_ICON_SIZES = { grid: 18, list: 21 } as const
+
+const viewOptions = computed(() => [
+  {
+    value: 'grid',
+    label: getText('MRI_PA_EXPLORATIONS_VIEW_GRID'),
+    icon: 'mdi-view-grid-outline',
+    iconSize: VIEW_ICON_SIZES.grid,
+    testId: 'explorations-view-grid',
+  },
+  {
+    value: 'list',
+    label: getText('MRI_PA_EXPLORATIONS_VIEW_LIST'),
+    icon: 'mdi-view-list-outline',
+    iconSize: VIEW_ICON_SIZES.list,
+    testId: 'explorations-view-list',
+  },
+])
 
 /** The raw list, before filtering. Both the filter panel's option list and
     the filter step read this, never the filtered result. */
@@ -728,19 +775,25 @@ const matchedCards = computed(() => {
 // Reset to page 1 whenever the result set changes underneath it. Without
 // this, filtering from 43 rows to 5 while on page 3 would show an empty grid
 // that looks like a bug.
-watch([searchQuery, filters, sortKey], () => {
+watch([searchQuery, filters, sortKey, columnSort, viewMode], () => {
   page.value = 1
 })
 
-watch([searchQuery, sortKey, filters, page, pageSize], () => {
+watch([searchQuery, sortKey, filters, page, pageSize, viewMode, columnSort], () => {
   explorations.saveListView({
     searchQuery: searchQuery.value,
     sortKey: sortKey.value,
     filters: filters.value,
     page: page.value,
     pageSize: pageSize.value,
+    viewMode: viewMode.value,
+    columnSort: columnSort.value,
   })
 })
+
+const orderedCards = computed(() =>
+  viewMode.value === 'list' ? sortByColumn(matchedCards.value, columnSort.value) : matchedCards.value
+)
 
 const emptyState = computed(() => {
   if (allCards.value.length === 0) {
@@ -769,7 +822,7 @@ const emptyState = computed(() => {
 const currentPage = computed(() => clampPage(page.value, matchedCards.value.length, pageSize.value))
 
 const cards = computed(() => {
-  return pageSlice(matchedCards.value, currentPage.value, pageSize.value).map((card: BookmarkDisplay) => {
+  return pageSlice(orderedCards.value, currentPage.value, pageSize.value).map((card: BookmarkDisplay) => {
     const bookmark = card.bookmark
     const cohortDefinition = card.cohortDefinition
     const atlas = card.atlasCohortDefinition
@@ -780,6 +833,17 @@ const cards = computed(() => {
     const idLabel = ['A', 'A+M'].includes(getBookmarkType(card))
       ? getText('MRI_PA_EXPLORATIONS_COHORT_ID_LABEL')
       : getText('MRI_PA_EXPLORATIONS_ID_LABEL')
+    const personCount =
+      typeof cohortDefinition?.patientCount === 'number' ? cohortDefinition.patientCount.toLocaleString() : undefined
+    const lastMaterialized = DateUtils.displayExplorationDate(cohortDefinition?.createdOn) || EMPTY_VALUE
+    const cohortId = cohortDefinition?.id ?? EMPTY_VALUE
+    const description = cohortDefinition?.description || atlas?.description || EMPTY_VALUE
+    const createdBy = bookmark?.username || atlas?.username || EMPTY_VALUE
+    const lastUpdated =
+      DateUtils.displayExplorationDate(bookmark?.dateModified) ||
+      DateUtils.displayExplorationDate(atlas?.updatedOn) ||
+      EMPTY_VALUE
+    const version = bookmark?.version ?? EMPTY_VALUE
 
     return {
       id,
@@ -799,38 +863,26 @@ const cards = computed(() => {
       // A stale card offers Re-materialize in place of Materialize.
       materializeLabel: getText(isStale ? 'MRI_PA_BUTTON_REMATERIALIZE' : 'MRI_PA_BUTTON_ADD_TO_COLLECTION'),
       // The card prop is documented as pre-formatted, so localise here.
-      personCount:
-        typeof cohortDefinition?.patientCount === 'number'
-          ? cohortDefinition.patientCount.toLocaleString()
-          : undefined,
+      personCount,
+      description,
+      lastMaterialized,
+      cohortId,
+      createdBy,
+      lastUpdated,
+      version,
       // A never-materialised exploration keeps its rows and shows a dash, rather
       // than dropping them and changing the card's height (Figma 1810:241322).
       metadata: [
-        {
-          label: getText('MRI_PA_EXPLORATIONS_LAST_MATERIALISED'),
-          value: DateUtils.displayExplorationDate(cohortDefinition?.createdOn) || EMPTY_VALUE,
-        },
+        { label: getText('MRI_PA_EXPLORATIONS_LAST_MATERIALISED'), value: lastMaterialized },
         // The frame's id row is the materialised cohort's id, so a card that has
         // never been materialised shows a dash (Figma 1798:192928).
-        { label: idLabel, value: cohortDefinition?.id ?? EMPTY_VALUE },
-        {
-          label: getText('MRI_PA_EXPLORATIONS_DESCRIPTION_LABEL'),
-          value: cohortDefinition?.description || atlas?.description || EMPTY_VALUE,
-        },
+        { label: idLabel, value: cohortId },
+        { label: getText('MRI_PA_EXPLORATIONS_DESCRIPTION_LABEL'), value: description },
       ],
       bookmarkRows: [
-        {
-          label: getText('MRI_PA_EXPLORATIONS_CREATED_BY'),
-          value: bookmark?.username || atlas?.username || EMPTY_VALUE,
-        },
-        {
-          label: getText('MRI_PA_EXPLORATIONS_LAST_UPDATED'),
-          value:
-            DateUtils.displayExplorationDate(bookmark?.dateModified) ||
-            DateUtils.displayExplorationDate(atlas?.updatedOn) ||
-            EMPTY_VALUE,
-        },
-        { label: getText('MRI_PA_EXPLORATIONS_VERSION'), value: bookmark?.version ?? EMPTY_VALUE },
+        { label: getText('MRI_PA_EXPLORATIONS_CREATED_BY'), value: createdBy },
+        { label: getText('MRI_PA_EXPLORATIONS_LAST_UPDATED'), value: lastUpdated },
+        { label: getText('MRI_PA_EXPLORATIONS_VERSION'), value: version },
       ],
     }
   })
@@ -988,6 +1040,14 @@ const confirmBulkDelete = async (): Promise<void> => {
 watch(matchedIds, ids => {
   explorations.retain(ids)
 })
+
+watch(
+  viewMode,
+  mode => {
+    if (mode === 'list') explorations.clear()
+  },
+  { immediate: true }
+)
 
 /**
  * Close the panel and put the cohort builder's state back.
@@ -1418,6 +1478,57 @@ const onMoreSelect = (card: { source: BookmarkDisplay }, value: string): void =>
   if (value === 'delete') deleteOpen.value = true
   if (value === 'duplicate') duplicateExploration(card.source)
 }
+
+type ExplorationCard = (typeof cards.value)[number]
+
+const quickActions = (card: ExplorationCard) =>
+  quickActionState({
+    canMaterialize: canMaterialize.value,
+    canBeMaterialised: card.canBeMaterialised,
+    canAnalyze: canAnalyze.value,
+    showDataQuality: SHOW_DATA_QUALITY,
+    cohortDefinitionId: card.cohortDefinitionId,
+    dataQualityBusy: dataQualityBusy(card),
+  })
+
+const QUICK_ACTION_ICONS = markRaw({
+  materialize: ExplorationMaterializeIcon,
+  filterSummary: ExplorationFilterSummaryIcon,
+  analyze: ExplorationAnalyzeIcon,
+  dataQuality: ExplorationDataQualityIcon,
+})
+
+const quickActionLabels = computed<Record<QuickAction, string>>(() => ({
+  materialize: getText('MRI_PA_BUTTON_ADD_TO_COLLECTION'),
+  filterSummary: getText('MRI_PA_EXPLORATIONS_FILTER_SUMMARY'),
+  analyze: getText('MRI_PA_EXPLORATIONS_ANALYZE'),
+  dataQuality: getText('MRI_PA_EXPLORATIONS_DATA_QUALITY'),
+}))
+
+const tableRows = computed(() => cards.value.map(card => ({ ...card, personCount: card.personCount ?? EMPTY_VALUE })))
+
+const rowMenuItems = (card: ExplorationCard): D2eMenuItem[] => [
+  ...quickActionMenuItems(
+    quickActions(card),
+    { ...quickActionLabels.value, materialize: card.materializeLabel },
+    QUICK_ACTION_ICONS
+  ),
+  ...moreItems(card),
+]
+
+const onRowMenuSelect = (card: ExplorationCard, value: string): void => {
+  if (value === 'materialize') openMaterialize(card.source)
+  else if (value === 'filterSummary') openFilterSummary(card)
+  else if (value === 'analyze') openAnalyze(card)
+  else if (value === 'dataQuality') openDataQuality(card)
+  else onMoreSelect(card, value)
+}
+
+const onRowOpen = (card: ExplorationCard): void => {
+  if (!card.bmkId) return
+  if ((window.getSelection()?.toString().length ?? 0) > 0) return
+  emit('open-exploration', card.bmkId, card.chartType)
+}
 </script>
 
 <style scoped lang="scss">
@@ -1448,14 +1559,11 @@ const onMoreSelect = (card: { source: BookmarkDisplay }, value: string): void =>
     flex-shrink: 0;
   }
 
-  /* 208px in the frame. Read-only until #2956 settles the nav contract: the
+  /* 215px in the frame. Read-only until #2956 settles the nav contract: the
      dataset arrives through customProps and nothing flows back. */
   &__dataset {
-    flex: 0 0 208px;
-    min-width: 208px;
-    // The floating label sits above the border; without this it clips against
-    // the top of the header row.
-    margin-top: var(--d2e-spacing-xs);
+    flex: 0 0 215px;
+    min-width: 215px;
 
     // Read-only, not broken: keep it at full contrast rather than Vuetify's
     // dimmed disabled treatment, and drop the empty details row whose rule
@@ -1617,6 +1725,12 @@ const onMoreSelect = (card: { source: BookmarkDisplay }, value: string): void =>
   /* The card's Materialize button outlines in Primary/Lightest. */
   :deep(.d2e-exploration-card__lead-row .d2e-button.v-btn--variant-outlined) {
     border-color: var(--d2e-color-primary-lightest);
+  }
+
+  &__table {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
   }
 
   &__grid {
