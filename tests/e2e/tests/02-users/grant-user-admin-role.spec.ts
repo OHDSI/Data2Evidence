@@ -15,7 +15,7 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByRole('button', { name: 'Switch to Admin portal' }).click()
 
   //create a new user
-  await page.getByTestId('button').click()
+  await page.getByRole('button', { name: 'Add new user' }).click()
   await page.getByRole('textbox', { name: 'Username' }).click()
   await page.getByRole('textbox', { name: 'Username' }).fill('researcher_1')
   await page.getByRole('textbox', { name: 'Password' }).click()
@@ -32,7 +32,7 @@ test(TEST_NAME, async ({ page }) => {
   await expect(page.getByTestId('dialog').getByText('User Admin')).toBeChecked()
   await page.getByRole('button', { name: 'Update' }).click()
   await page.reload()
-  await expect(page.getByRole('row', { name: 'researcher_1 Viewer User' }).locator('div').nth(2)).toBeVisible()
+  await expect(page.getByRole('row', { name: 'researcher_1' })).toContainText('User Admin')
 
   await page.getByRole('link', { name: 'Account' }).click()
   await page.getByRole('button', { name: 'Logout' }).click()
@@ -46,7 +46,8 @@ test(TEST_NAME, async ({ page }) => {
   await expect(page).toHaveScreenshot()
 
   // Delete the user
-  await page.getByRole('button', { name: 'Delete' }).nth(1).click()
+  await page.getByRole('row', { name: 'researcher_1' }).getByRole('button', { name: 'Actions' }).click()
+  await page.getByRole('menuitem', { name: 'Delete user' }).click()
   await page.getByRole('button', { name: 'Yes, delete' }).click()
   await expect(page.getByText('Delete userAre you sure you')).toBeHidden()
 })

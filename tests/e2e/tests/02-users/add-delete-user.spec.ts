@@ -21,8 +21,8 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByRole('link', { name: 'Users' }).click()
 
   // Add user
-  await expect(page.getByTestId('button')).toBeVisible()
-  await page.getByTestId('button').click()
+  await expect(page.getByRole('button', { name: 'Add new user' })).toBeVisible()
+  await page.getByRole('button', { name: 'Add new user' }).click()
   await page.getByRole('textbox', { name: 'Username' }).click()
   await page.getByRole('textbox', { name: 'Username' }).fill('test_user')
   await page.getByRole('button', { name: 'Generate' }).click()
@@ -35,7 +35,8 @@ test(TEST_NAME, async ({ page }) => {
   await expect(page.getByRole('cell', { name: 'test_user' })).toBeVisible()
 
   // Delete user
-  await page.getByRole('button', { name: 'Delete' }).nth(1).click()
+  await page.getByRole('row', { name: 'test_user' }).getByRole('button', { name: 'Actions' }).click()
+  await page.getByRole('menuitem', { name: 'Delete user' }).click()
   await page.getByRole('button', { name: 'Yes, delete' }).click()
   // Check if user is deleted
   await page.waitForTimeout(500)

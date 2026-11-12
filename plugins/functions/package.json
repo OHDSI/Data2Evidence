@@ -1315,6 +1315,15 @@
           ]
         },
         {
+          "path": "^/usermgmt/api/study/access-request/user/(.+)",
+          "scopes": [
+            "usermgmt.studyAccessRequest.read"
+          ],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
           "path": "^/usermgmt/api/study/access-request",
           "scopes": [
             "usermgmt.studyAccessRequest.add"
