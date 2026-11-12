@@ -127,6 +127,7 @@ export interface Feedback {
 }
 
 export type CloseDialogType = "success" | "cancelled";
+
 export interface LocationState {
   studyId: string;
   tab: string;

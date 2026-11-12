@@ -35,7 +35,7 @@ import { AiConfigRepository } from "./repository/ai-config.repository.ts";
  * Trex's auth code takes in the same database.
  */
 export const AI_CONFIG_LOCK_KEY = 3561003561n;
-export const AI_CONFIG_NAME_INDEX = "ai_config_name_idx";
+const AI_CONFIG_NAME_INDEX = "ai_config_name_idx";
 
 const MAX_INT4 = 2147483647;
 

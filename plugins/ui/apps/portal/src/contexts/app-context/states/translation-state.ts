@@ -1383,9 +1383,9 @@ export const i18nDefault = {
       "{0} rows use a metadata attribute that doesn't exist yet and won't be imported. Create the attribute or edit the row to include them.",
     MANAGE_METADATA_DIALOG__IMPORT_UNKNOWN_BANNER_ONE:
       "1 row uses a metadata attribute that doesn't exist yet and won't be imported. Create the attribute or edit the row to include it.",
-    MANAGE_METADATA_DIALOG__IMPORT_CREATED_BANNER: 'Attribute "{0}" created. The row can now be imported.',
+    MANAGE_METADATA_DIALOG__IMPORT_CREATED_BANNER: "Attribute \"{0}\" created. The row can now be imported.",
     MANAGE_METADATA_DIALOG__IMPORT_UNKNOWN_TOOLTIP:
-      '"{0}" is not a metadata attribute yet. Create it or edit the row to include it.',
+      "\"{0}\" is not a metadata attribute yet. Create it or edit the row to include it.",
     MANAGE_METADATA_DIALOG__IMPORT_BUTTON: "Import",
     MANAGE_METADATA_DIALOG__IMPORT_BUTTON_N: "Import {0} metadata",
     MANAGE_METADATA_DIALOG__IMPORT_RESULT: "{0} metadata imported successfully",
@@ -1406,8 +1406,7 @@ export const i18nDefault = {
     MANAGE_METADATA_DIALOG__REORDER: "Drag to reorder",
     MANAGE_METADATA_DIALOG__REORDER_DISABLED: "Clear search to reorder manually",
     MANAGE_METADATA_DIALOG__NO_DATA: "No metadata yet",
-    MANAGE_METADATA_DIALOG__NO_DATA_DESCRIPTION:
-      "This data source has no metadata. Use Add metadata above to add one, or import a JSON file.",
+    MANAGE_METADATA_DIALOG__NO_DATA_DESCRIPTION: "This data source has no metadata. Use Add metadata above to add one, or import a JSON file.",
     MANAGE_METADATA_DIALOG__NO_RESULTS: "No metadata matches your search.",
     MANAGE_METADATA_DIALOG__METADATA_NAME: "Metadata name",
     MANAGE_METADATA_DIALOG__METADATA_ID: "Metadata ID",
