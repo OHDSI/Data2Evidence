@@ -313,7 +313,7 @@ Deno.test("PUT with isActive -> 400 field isActive; echoing the GET response min
   );
   db.allowPool = true;
   // Other properties are ignored: echo the GET response (id, keyReadable, apiKey placeholder, nulls) minus isActive
-  const echoed = { ...(await svc.get(String(c.id))) } as Record<string, unknown>;
+  const echoed = { ...(await svc.list())[0] } as Record<string, unknown>;
   delete echoed.isActive;
   echoed.keyReadable = false; // sent back by a client, but ignored; the stored key is still readable
   echoed.model = "edited";
@@ -459,7 +459,6 @@ Deno.test(":id edge cases -> 404 _NOT_FOUND with no DB call", async () => {
   for (const id of ["abc", "0", "-1", "99999999999", "2147483648", "1.5", "", " 1", "1e3", "01"]) {
     for (
       const op of [
-        () => svc.get(id),
         () => svc.update(id, bedrock()),
         () => svc.activate(id),
         () => svc.delete(id, undefined),
@@ -472,7 +471,7 @@ Deno.test(":id edge cases -> 404 _NOT_FOUND with no DB call", async () => {
   assertEquals(db.poolCalls, []);
   assertEquals(db.queries, []);
   // int4 max is a valid id (just unknown)
-  await expectError(svc.get("2147483647"), 404, "AI_CONFIG_NOT_FOUND");
+  await expectError(svc.activate("2147483647"), 404, "AI_CONFIG_NOT_FOUND");
 });
 
 // --------------------------------------------------------------------- Delete
@@ -555,7 +554,7 @@ Deno.test("response shape is redacted and omits audit columns, ciphertext and ke
   assertEquals(db.rows[0].modifiedBy, "tester");
 });
 
-Deno.test("list is ordered by id and get works (pool-bound reads only)", async () => {
+Deno.test("list is ordered by id (pool-bound reads only)", async () => {
   const { db, svc } = setup();
   await svc.create(bedrock());
   await svc.create(anthropic());
@@ -564,8 +563,7 @@ Deno.test("list is ordered by id and get works (pool-bound reads only)", async (
   db.reset();
   const list = await svc.list();
   assertEquals(list.map((r) => r.id), [1, 2, 3]);
-  assertEquals((await svc.get("2")).provider, "anthropic");
-  await expectError(svc.get("77"), 404, "AI_CONFIG_NOT_FOUND");
+  assertEquals(list[1].provider, "anthropic");
   assertEquals(db.runnersCreated, 0);
 });
 
@@ -587,7 +585,6 @@ Deno.test("encryption key unset, empty, not 32 bytes: reads 200 keyReadable fals
 
     const list = await degraded.list();
     assertEquals(list.map((r) => r.keyReadable), [false, false]);
-    assertEquals((await degraded.get(String(a.id))).keyReadable, false);
 
     await expectError(degraded.create(bedrock({ region: "ap-1" })), 500, "AI_CONFIG_ENCRYPTION_KEY_NOT_CONFIGURED");
     await expectError(degraded.update(String(a.id), bedrock({ model: "x" })), 500, "AI_CONFIG_ENCRYPTION_KEY_NOT_CONFIGURED");
@@ -621,9 +618,8 @@ Deno.test("valid key round trip; api_key_encrypted is not plaintext; wrong key -
   assertEquals(decryptApiKey(stored, parseEncryptionKey(KEY_A)!), "sk-super-secret");
 
   db.allowPool = true;
-  assertFalse("keyReadable" in (await svc.get(String(c.id))));
+  assertFalse("keyReadable" in (await svc.list())[0]);
   const wrong = new TestService(db, KEY_B);
-  assertEquals((await wrong.get(String(c.id))).keyReadable, false);
   assertEquals((await wrong.list())[0].keyReadable, false);
 
   // same plaintext twice gives different ciphertext (random IV)
@@ -643,7 +639,7 @@ Deno.test("no response, error or log line contains an API key or the env key", a
     const c = await svc.create(bedrock({ name: "Leak", apiKey: "sk-leak-check" }));
     outputs.push(JSON.stringify(c));
     db.allowPool = true;
-    outputs.push(JSON.stringify(await svc.list()), JSON.stringify(await svc.get("1")));
+    outputs.push(JSON.stringify(await svc.list()));
     outputs.push(JSON.stringify(await svc.update("1", bedrock({ name: "Leak", apiKey: "sk-leak-2", model: "z" }))));
     for (
       const p of [
@@ -677,6 +673,5 @@ Deno.test("the DataSource comes from PostgresService.getDataSourceAsync, never i
   await svc.create(bedrock({ region: "x" }));
   db.allowPool = true;
   await svc.list();
-  await svc.get("1");
-  assertEquals(db.asyncDataSourceCalls, 4);
+  assertEquals(db.asyncDataSourceCalls, 3);
 });

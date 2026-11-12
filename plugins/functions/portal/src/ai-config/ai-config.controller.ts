@@ -22,11 +22,6 @@ export class AiConfigController {
     return await this.service.list();
   }
 
-  @Get(":id")
-  async get(@Param("id") id: string) {
-    return await this.service.get(id);
-  }
-
   @Post()
   async create(@Body() body: Record<string, unknown>) {
     return await this.service.create(body);

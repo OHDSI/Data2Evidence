@@ -1933,15 +1933,6 @@
         {
           "path": "^/system-portal/ai-config/[^/]+$",
           "scopes": [
-            "portal.aiConfig.read"
-          ],
-          "httpMethods": [
-            "GET"
-          ]
-        },
-        {
-          "path": "^/system-portal/ai-config/[^/]+$",
-          "scopes": [
             "portal.aiConfig.write"
           ],
           "httpMethods": [

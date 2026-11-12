@@ -107,12 +107,8 @@ Deno.test(
         (await call("GET", "")).body.map((r: { id: number }) => r.id),
         [1, 2],
       );
-      assertEquals((await call("GET", "/2")).body.region, "eu-west-1");
-      assertEquals((await call("GET", "/abc")).status, 404);
-      assertEquals(
-        (await call("GET", "/abc")).body.code,
-        "AI_CONFIG_NOT_FOUND",
-      );
+      // no GET by id
+      assertEquals((await call("GET", "/2")).status, 404);
 
       const put = await call(
         "PUT",
@@ -128,7 +124,7 @@ Deno.test(
 
       const act = await call("POST", "/2/activate");
       assertEquals([act.status, act.body.isActive], [200, true]);
-      assertEquals((await call("GET", "/1")).body.isActive, false);
+      assertEquals((await call("GET", "")).body[0].isActive, false);
 
       const delActive = await call("DELETE", "/2");
       assertEquals(
@@ -150,7 +146,7 @@ Deno.test(
         status: 200,
         body: { id: 2 },
       });
-      assertEquals((await call("GET", "/3")).body.isActive, true);
+      assertEquals((await call("GET", "")).body.find((r: { id: number }) => r.id === 3).isActive, true);
 
       // verbs that are not routes
       assertEquals((await call("PATCH", "/2")).status, 404);

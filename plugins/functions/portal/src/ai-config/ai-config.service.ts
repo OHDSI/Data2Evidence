@@ -70,14 +70,6 @@ export class AiConfigService {
     return rows.map((row) => this.toResponse(row, key));
   }
 
-  async get(rawId: string): Promise<AiConfigResponse> {
-    const id = this.parseId(rawId);
-    await this.initDataSource();
-    const row = await this.repo.findById(id);
-    if (!row) throw this.notFound();
-    return this.toResponse(row, this.getKey());
-  }
-
   // --------------------------------------------------------------- writes (lock)
 
   async create(body: unknown): Promise<AiConfigResponse> {

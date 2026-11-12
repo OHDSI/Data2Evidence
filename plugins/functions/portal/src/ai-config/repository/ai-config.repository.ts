@@ -6,7 +6,7 @@ import { AiConfig } from "../entity/ai-config.entity.ts";
 
 /**
  * Two groups of methods, deliberately kept apart:
- * - pool-bound methods, used ONLY by the two GET routes;
+ * - pool-bound methods, used ONLY by the GET list route;
  * - `*Tx` methods, which take the EntityManager of the surrounding transaction and
  *   are the only ones the service may call from inside `withLock`. A pool-bound call
  *   takes its own connection and autocommits, which would break the transaction's
@@ -17,20 +17,13 @@ import { AiConfig } from "../entity/ai-config.entity.ts";
 export class AiConfigRepository {
   constructor(@Inject(DATABASE) private readonly postgresService: PostgresService) {}
 
-  // ---- pool-bound (GET routes only) ----
+  // ---- pool-bound (GET list only) ----
 
   findAll(): Promise<AiConfig[]> {
     return this.postgresService
       .getDataSource()
       .getRepository(AiConfig)
       .find({ order: { id: "ASC" } });
-  }
-
-  findById(id: number): Promise<AiConfig | null> {
-    return this.postgresService
-      .getDataSource()
-      .getRepository(AiConfig)
-      .findOneBy({ id });
   }
 
   // ---- transaction-bound ----
