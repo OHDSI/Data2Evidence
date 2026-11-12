@@ -7,7 +7,7 @@ import Grid from "@mui/material/Grid";
 import { Button, Dialog, TermsOfUseIcon } from "@portal/components";
 import { api } from "../../../../../axios/api";
 import { getFileSizeDisplay, getFileExtension } from "../../../../../utils";
-import { formatFileTypeList, validateResourceFile } from "../../../../../utils/resourceUpload";
+import { formatFileTypeList, formatMaxFileSize, validateResourceFile } from "../../../../../utils/resourceUpload";
 import { CloseDialogType, DatasetResource, Feedback, ResourceUploadConfig } from "../../../../../types";
 import "./DatasetResourceUploadConfirmDialog.scss";
 import { useTranslation } from "../../../../../contexts";
@@ -56,15 +56,23 @@ const DatasetResourceUploadConfirmDialog: FC<DatasetResourceUploadConfirmDialogP
   // Checked as soon as the file is picked, before anything is uploaded.
   const validationError = useMemo(() => {
     if (!file || !uploadConfig) return undefined;
-    if (validateResourceFile(file, uploadConfig) === "type") {
-      return getText(i18nKeys.DATASET_RESOURCE_UPLOAD_CONFIRM_DIALOG__ERROR_TYPE, [
-        formatFileTypeList(
-          uploadConfig.allowedExtensions,
-          getText(i18nKeys.DATASET_RESOURCE_UPLOAD_CONFIRM_DIALOG__OR)
-        ),
-      ]);
+    switch (validateResourceFile(file, uploadConfig)) {
+      case "type":
+        return getText(i18nKeys.DATASET_RESOURCE_UPLOAD_CONFIRM_DIALOG__ERROR_TYPE, [
+          formatFileTypeList(
+            uploadConfig.allowedExtensions,
+            getText(i18nKeys.DATASET_RESOURCE_UPLOAD_CONFIRM_DIALOG__OR)
+          ),
+        ]);
+      case "empty":
+        return getText(i18nKeys.DATASET_RESOURCE_UPLOAD_CONFIRM_DIALOG__ERROR_EMPTY);
+      case "size":
+        return getText(i18nKeys.DATASET_RESOURCE_UPLOAD_CONFIRM_DIALOG__ERROR_TOO_LARGE, [
+          formatMaxFileSize(uploadConfig.maxFileSizeBytes),
+        ]);
+      default:
+        return undefined;
     }
-    return undefined;
   }, [file, uploadConfig, getText, i18nKeys]);
 
   const mapFileToResource = useCallback(

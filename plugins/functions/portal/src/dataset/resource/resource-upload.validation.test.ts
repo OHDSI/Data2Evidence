@@ -7,7 +7,8 @@ const defaults = parseResourceUploadConfig(undefined, undefined);
 const TYPE_ERROR =
   "This file type isn't supported. Upload a PDF, CSV, JSON, XLSX, DOCX, SQL, MD or TXT file.";
 
-const check = (name: string, config = defaults) => validateResourceFile({ name }, config);
+const check = (name: string, config = defaults, size = 100) =>
+  validateResourceFile({ name, size }, config);
 
 describe("getFileExtension", () => {
   it("returns the last extension in lower case", () => {
@@ -52,5 +53,34 @@ describe("validateResourceFile: file type", () => {
       check("cohort.json", pdfAndCsv),
       "This file type isn't supported. Upload a PDF or CSV file.",
     );
+  });
+});
+
+describe("validateResourceFile: file size", () => {
+  const MB = 1024 * 1024;
+
+  it("rejects an empty file", () => {
+    assertEquals(check("notes.txt", defaults, 0), "This file is empty.");
+  });
+
+  it("accepts a file of exactly the limit and rejects one byte more", () => {
+    assertEquals(check("data.csv", defaults, 25 * MB), undefined);
+    assertEquals(
+      check("data.csv", defaults, 25 * MB + 1),
+      "This file is too large. Files must be 25 MB or smaller.",
+    );
+  });
+
+  it("uses the configured limit in the check and the message", () => {
+    const tenMb = parseResourceUploadConfig("10", undefined);
+    assertEquals(
+      check("data.csv", tenMb, 11 * MB),
+      "This file is too large. Files must be 10 MB or smaller.",
+    );
+  });
+
+  it("checks the type first, so a wrong type never gets a size error", () => {
+    assertEquals(check("program.exe", defaults, 0), TYPE_ERROR);
+    assertEquals(check("program.exe", defaults, 26 * MB), TYPE_ERROR);
   });
 });

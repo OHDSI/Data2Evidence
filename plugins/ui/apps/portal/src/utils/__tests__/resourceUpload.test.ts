@@ -38,17 +38,32 @@ describe("resourceUpload utils", () => {
 });
 
 describe("validateResourceFile", () => {
-  const config = { allowedExtensions: ALL_TYPES };
+  const config = { allowedExtensions: ALL_TYPES, maxFileSizeBytes: 25 * MB };
+  const check = (name: string, size = 100) => validateResourceFile({ name, size }, config);
 
   it("accepts allowed extensions in any case", () => {
-    expect(validateResourceFile({ name: "data.CSV" }, config)).toBeUndefined();
-    expect(validateResourceFile({ name: "report.Pdf" }, config)).toBeUndefined();
+    expect(check("data.CSV")).toBeUndefined();
+    expect(check("report.Pdf")).toBeUndefined();
   });
 
   it.each(["a.exe", "a.sh", "a.bat", "a.js", "a.html", "a.R", "a.EXE", "report.pdf.exe", "Makefile", ".env"])(
     "rejects %s as the wrong type",
     (name) => {
-      expect(validateResourceFile({ name }, config)).toBe("type");
+      expect(check(name)).toBe("type");
     }
   );
+
+  it("rejects an empty file", () => {
+    expect(check("notes.txt", 0)).toBe("empty");
+  });
+
+  it("accepts a file of exactly the limit and rejects one byte more", () => {
+    expect(check("data.csv", 25 * MB)).toBeUndefined();
+    expect(check("data.csv", 25 * MB + 1)).toBe("size");
+  });
+
+  it("checks the type first, so a wrong type never gets a size error", () => {
+    expect(check("program.exe", 0)).toBe("type");
+    expect(check("program.exe", 26 * MB)).toBe("type");
+  });
 });

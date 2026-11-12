@@ -16,9 +16,9 @@ const makeController = () => {
   return { controller: new ResourceController(service), uploaded };
 };
 
-const uploadRequest = (fileName?: string) => {
+const uploadRequest = (fileName?: string, content = "content") => {
   const form = new FormData();
-  if (fileName) form.append("file", new File(["content"], fileName), fileName);
+  if (fileName) form.append("file", new File([content], fileName), fileName);
   return new Request("http://localhost/system-portal/dataset/resource", {
     method: "POST",
     body: form,
@@ -42,6 +42,10 @@ describe("ResourceController.uploadResource", () => {
       uploadRequest("analysis.R"),
       "This file type isn't supported. Upload a PDF, CSV, JSON, XLSX, DOCX, SQL, MD or TXT file.",
     );
+  });
+
+  it("rejects an empty file with a 400", async () => {
+    await assertRejected(uploadRequest("notes.txt", ""), "This file is empty.");
   });
 
   it("rejects a request with no file with a 400", async () => {

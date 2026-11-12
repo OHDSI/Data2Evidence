@@ -51,11 +51,11 @@ const TYPE_ERROR =
 const ADD = "DATASET_RESOURCE_UPLOAD_CONFIRM_DIALOG__ADD";
 
 // Pass null to simulate a config that failed to load.
-const renderDialog = (fileName: string, config: typeof CONFIG | null = CONFIG) =>
+const renderDialog = (fileName: string, config: typeof CONFIG | null = CONFIG, content = "content") =>
   render(
     <DatasetResourceUploadConfirmDialog
       datasetId="ds-1"
-      file={new File(["content"], fileName)}
+      file={new File([content], fileName)}
       uploadConfig={config ?? undefined}
       open
     />
@@ -89,6 +89,39 @@ describe("DatasetResourceUploadConfirmDialog", () => {
     expect(screen.getByTestId("feedback")).toHaveTextContent(
       "DATASET_RESOURCE_UPLOAD_CONFIRM_DIALOG__ERROR_TYPE:PDF DATASET_RESOURCE_UPLOAD_CONFIRM_DIALOG__OR CSV"
     );
+  });
+
+  it("rejects an empty file and offers only Cancel", () => {
+    renderDialog("notes.txt", CONFIG, "");
+
+    expect(screen.getByTestId("feedback")).toHaveTextContent("DATASET_RESOURCE_UPLOAD_CONFIRM_DIALOG__ERROR_EMPTY");
+    expect(screen.queryByText(ADD)).not.toBeInTheDocument();
+  });
+
+  // A 10-byte limit stands in for 25 MB, so the test doesn't build a huge file.
+  const TINY_LIMIT = { ...CONFIG, maxFileSizeBytes: 10 };
+
+  it("rejects a file over the limit, naming the limit, and offers only Cancel", () => {
+    renderDialog("data.csv", { ...CONFIG, maxFileSizeBytes: 5 * 1024 * 1024 }, "x".repeat(5 * 1024 * 1024 + 1));
+
+    expect(screen.getByTestId("feedback")).toHaveTextContent(
+      "DATASET_RESOURCE_UPLOAD_CONFIRM_DIALOG__ERROR_TOO_LARGE:5 MB"
+    );
+    expect(screen.queryByText(ADD)).not.toBeInTheDocument();
+  });
+
+  it("accepts a file of exactly the limit", () => {
+    renderDialog("data.csv", TINY_LIMIT, "x".repeat(10));
+
+    expect(screen.queryByTestId("feedback")).not.toBeInTheDocument();
+    expect(screen.getByText(ADD)).toBeInTheDocument();
+  });
+
+  it("shows only the type error for a file that is the wrong type and too large", () => {
+    renderDialog("program.exe", TINY_LIMIT, "x".repeat(11));
+
+    expect(screen.getByTestId("feedback")).toHaveTextContent(TYPE_ERROR);
+    expect(screen.getByTestId("feedback")).not.toHaveTextContent("ERROR_TOO_LARGE");
   });
 
   it("leaves the check to the backend when the config could not be loaded", () => {

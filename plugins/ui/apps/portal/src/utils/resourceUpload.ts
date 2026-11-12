@@ -18,16 +18,19 @@ export const formatMaxFileSize = (maxFileSizeBytes: number): string => {
   return `${Number.isInteger(mb) ? mb : Number(mb.toFixed(1))} MB`;
 };
 
-export type ResourceFileError = "type";
+export type ResourceFileError = "type" | "empty" | "size";
 
-// Checks a picked file against the upload rules. Mirrors the backend check in
-// plugins/functions/portal/src/dataset/resource/resource-upload.validation.ts.
+// Checks a picked file against the upload rules: type first, then size, so a
+// file of the wrong type only ever gets the type error. Mirrors the backend
+// check in plugins/functions/portal/src/dataset/resource/resource-upload.validation.ts.
 export const validateResourceFile = (
-  file: { name: string },
-  config: { allowedExtensions: string[] }
+  file: { name: string; size: number },
+  config: { allowedExtensions: string[]; maxFileSizeBytes: number }
 ): ResourceFileError | undefined => {
   const lastDot = file.name.lastIndexOf(".");
   const extension = lastDot > 0 ? file.name.slice(lastDot + 1).toLowerCase() : "";
   if (!config.allowedExtensions.includes(extension)) return "type";
+  if (file.size === 0) return "empty";
+  if (file.size > config.maxFileSizeBytes) return "size";
   return undefined;
 };

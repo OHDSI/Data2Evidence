@@ -7,6 +7,11 @@ export const getFileExtension = (fileName: string): string => {
   return lastDot > 0 ? fileName.slice(lastDot + 1).toLowerCase() : "";
 };
 
+const formatMaxFileSize = (maxFileSizeBytes: number): string => {
+  const mb = maxFileSizeBytes / (1024 * 1024);
+  return `${Number.isInteger(mb) ? mb : Number(mb.toFixed(1))} MB`;
+};
+
 const formatTypeList = (allowedExtensions: string[]): string => {
   const types = allowedExtensions.map((ext) => ext.toUpperCase());
   if (types.length < 2) return types.join("");
@@ -14,14 +19,21 @@ const formatTypeList = (allowedExtensions: string[]): string => {
 };
 
 // Returns the error message for a file that breaks the upload rules, or
-// undefined when it is allowed. English only, like other portal API errors;
-// the Add file dialog shows its own translated message first.
+// undefined when it is allowed. Type is checked first, so a file of the wrong
+// type only ever gets the type error. English only, like other portal API
+// errors; the Add file dialog shows its own translated message first.
 export const validateResourceFile = (
-  file: { name: string },
+  file: { name: string; size: number },
   config: ResourceUploadConfig,
 ): string | undefined => {
   if (!config.allowedExtensions.includes(getFileExtension(file.name))) {
     return `This file type isn't supported. Upload a ${formatTypeList(config.allowedExtensions)} file.`;
+  }
+  if (file.size === 0) {
+    return "This file is empty.";
+  }
+  if (file.size > config.maxFileSizeBytes) {
+    return `This file is too large. Files must be ${formatMaxFileSize(config.maxFileSizeBytes)} or smaller.`;
   }
   return undefined;
 };

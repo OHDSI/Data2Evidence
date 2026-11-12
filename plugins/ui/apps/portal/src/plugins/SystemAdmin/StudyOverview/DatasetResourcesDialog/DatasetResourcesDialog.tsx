@@ -15,7 +15,7 @@ import {
 } from "@portal/components";
 import React, { ChangeEvent, FC, useCallback, useState } from "react";
 import { api } from "../../../../axios/api";
-import { useTranslation } from "../../../../contexts";
+import { useFeedback, useTranslation } from "../../../../contexts";
 import { useDatasetResources, useDialogHelper, useResourceUploadConfig } from "../../../../hooks";
 import { CloseDialogType, DatasetResource, Feedback, Study } from "../../../../types";
 import { downloadFromJsonResponse } from "../../../../utils/downloadResource";
@@ -57,6 +57,7 @@ const DatasetResourcesDialog: FC<DatasetResourcesDialogProps> = ({ study, open, 
   const [activeResource, setActiveResource] = useState<DatasetResource>();
   const [downloading, setDownloading] = useState<string>();
   const [uploadConfig] = useResourceUploadConfig();
+  const { setSuccessFeedback } = useFeedback();
 
   const handleClose = useCallback(() => {
     setFeedback({});
@@ -82,17 +83,20 @@ const DatasetResourcesDialog: FC<DatasetResourcesDialogProps> = ({ study, open, 
   );
 
   const handleConfirmUploadClose = useCallback(
-    async (type: CloseDialogType) => {
+    async (type: CloseDialogType, resource?: DatasetResource) => {
       if (!datasetId) return;
 
       if (type === "success") {
         setHasChanges(true);
         setRefetch((refetch) => refetch + 1);
+        if (resource) {
+          setSuccessFeedback(getText(i18nKeys.DATASET_RESOURCES_DIALOG__UPLOAD_SUCCESS, [resource.name]));
+        }
       }
 
       closeConfirmDialog();
     },
-    [closeConfirmDialog, datasetId]
+    [closeConfirmDialog, datasetId, setSuccessFeedback, getText, i18nKeys]
   );
 
   const handleDownloadResource = useCallback(
