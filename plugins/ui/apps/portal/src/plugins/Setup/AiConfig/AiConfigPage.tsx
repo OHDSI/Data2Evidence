@@ -225,7 +225,7 @@ export const AiConfigPage: FC = () => {
               {getText(i18nKeys.AI_CONFIG__CANCEL)}
             </Button>
             <Button
-              variant="danger"
+              variant={variant === "active" ? "primary" : "danger"}
               disabled={busy || (variant === "active" && pickId === null)}
               onClick={() => remove(config, variant)}
             >
@@ -233,7 +233,7 @@ export const AiConfigPage: FC = () => {
                 ? getText(i18nKeys.AI_CONFIG__DELETING_BUTTON)
                 : failed
                 ? getText(i18nKeys.AI_CONFIG__TRY_AGAIN)
-                : getText(i18nKeys.AI_CONFIG__DELETE_CONFIRM)}
+                : getText(variant === "active" ? i18nKeys.AI_CONFIG__DELETE_SWITCH_CONFIRM : i18nKeys.AI_CONFIG__DELETE_CONFIRM)}
             </Button>
           </>
         }
@@ -462,9 +462,9 @@ export const AiConfigPage: FC = () => {
                 </div>
               </>
             ) : (
-              getText(i18nKeys.AI_CONFIG__ACTIVATE_BODY, [
-                currentActive?.name ?? "",
-                confirm.config.name,
+              withNames(getText(i18nKeys.AI_CONFIG__ACTIVATE_BODY), [
+                { bold: currentActive?.name ?? "" },
+                { bold: confirm.config.name },
                 confirm.config.model,
               ])
             )}

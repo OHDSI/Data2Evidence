@@ -132,7 +132,7 @@ export const i18nDefault = {
     AI_CONFIG__ACTION_ERROR: "The action could not be completed. Try again.",
     AI_CONFIG__ACTIVATED_TOAST: "{0} is now the active AI configuration.",
     AI_CONFIG__ACTIVATE_BODY:
-      'The AI assistant will switch from "{0}" to "{1}" ({2}) for everyone in your organization.',
+      "The AI assistant will switch from {0} to {1} ({2}) for everyone in your organization.",
     AI_CONFIG__ACTIVATE_TITLE: 'Set "{0}" as active?',
     AI_CONFIG__ACTIVE: "Active",
     AI_CONFIG__ADD: "Add AI configuration",
@@ -172,6 +172,7 @@ export const i18nDefault = {
     AI_CONFIG__DELETE_SWITCH_FAILED: "No changes were applied. Try again, or cancel to keep both configurations.",
     AI_CONFIG__DELETE_BODY: "Are you sure you want to delete this AI configuration: {0}? This action cannot be undone.",
     AI_CONFIG__DELETE_CONFIRM: "Yes, delete",
+    AI_CONFIG__DELETE_SWITCH_CONFIRM: "Delete and switch",
     AI_CONFIG__DELETE_TITLE: "Delete AI configuration?",
     AI_CONFIG__EDIT: "Edit",
     AI_CONFIG__EDIT_TITLE: "Edit AI configuration",

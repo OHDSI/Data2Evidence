@@ -1,4 +1,3 @@
-import React from "react";
 import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { AiConfigPage } from "./AiConfigPage";
@@ -266,11 +265,10 @@ describe("AiConfigPage row actions", () => {
 
     const dialog = await screen.findByRole("dialog");
     expect(within(dialog).getByRole("heading", { name: 'Set "Beta" as active?' })).toBeInTheDocument();
-    expect(
-      within(dialog).getByText(
-        'The AI assistant will switch from "Zed" to "Beta" (model-Beta) for everyone in your organization.'
-      )
-    ).toBeInTheDocument();
+    expect(dialog).toHaveTextContent(
+      "The AI assistant will switch from Zed to Beta (model-Beta) for everyone in your organization."
+    );
+    expect([...dialog.querySelectorAll("strong")].map((e) => e.textContent)).toEqual(["Zed", "Beta"]);
     expect(activateMock).not.toHaveBeenCalled();
 
     await userEvent.click(within(dialog).getByRole("button", { name: "AI_CONFIG__SET_ACTIVE" }));
@@ -535,11 +533,11 @@ describe("AiConfigPage row actions", () => {
 
       expect(within(dialog).getByRole("heading", { name: "AI_CONFIG__DELETE_ACTIVE_TITLE" })).toBeInTheDocument();
       expect(dialog).toHaveTextContent("Zed is the active configuration. Choose which configuration");
-      expect(within(dialog).getByRole("button", { name: "AI_CONFIG__DELETE_CONFIRM" })).toBeDisabled();
+      expect(within(dialog).getByRole("button", { name: "AI_CONFIG__DELETE_SWITCH_CONFIRM" })).toBeDisabled();
       await userEvent.click(within(dialog).getByRole("combobox"));
       expect((await screen.findAllByRole("option")).map((o) => o.textContent)).toEqual(["Alpha", "Beta"]);
       await userEvent.click(screen.getByRole("option", { name: "Beta" }));
-      await userEvent.click(within(dialog).getByRole("button", { name: "AI_CONFIG__DELETE_CONFIRM" }));
+      await userEvent.click(within(dialog).getByRole("button", { name: "AI_CONFIG__DELETE_SWITCH_CONFIRM" }));
 
       await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
       expect(deleteMock).toHaveBeenCalledWith(1, 2);
@@ -577,7 +575,7 @@ describe("AiConfigPage row actions", () => {
         render(<AiConfigPage />);
         const dialog = await openDelete(name);
         if (variant === "active") await pick(dialog, "Beta");
-        await userEvent.click(within(dialog).getByRole("button", { name: "AI_CONFIG__DELETE_CONFIRM" }));
+        await userEvent.click(within(dialog).getByRole("button", { name: variant === "active" ? "AI_CONFIG__DELETE_SWITCH_CONFIRM" : "AI_CONFIG__DELETE_CONFIRM" }));
 
         expect(await within(dialog).findByRole("heading", { name: "AI_CONFIG__DELETING_TITLE" })).toBeInTheDocument();
         expect(dialog).toHaveTextContent(`${name} is being deleted. This configuration will be removed`);
@@ -601,7 +599,7 @@ describe("AiConfigPage row actions", () => {
       render(<AiConfigPage />);
       const dialog = await openDelete("Zed");
       await pick(dialog, "Beta");
-      await userEvent.click(within(dialog).getByRole("button", { name: "AI_CONFIG__DELETE_CONFIRM" }));
+      await userEvent.click(within(dialog).getByRole("button", { name: "AI_CONFIG__DELETE_SWITCH_CONFIRM" }));
 
       expect(
         await within(dialog).findByRole("heading", { name: "AI_CONFIG__DELETE_SWITCH_FAILED_TITLE" })
@@ -626,7 +624,7 @@ describe("AiConfigPage row actions", () => {
       render(<AiConfigPage />);
       const dialog = await openDelete("Zed");
       await pick(dialog, "Beta");
-      await userEvent.click(within(dialog).getByRole("button", { name: "AI_CONFIG__DELETE_CONFIRM" }));
+      await userEvent.click(within(dialog).getByRole("button", { name: "AI_CONFIG__DELETE_SWITCH_CONFIRM" }));
 
       await within(dialog).findByRole("heading", { name: "AI_CONFIG__DELETE_SWITCH_FAILED_TITLE" });
       expect(within(dialog).getByRole("button", { name: "AI_CONFIG__TRY_AGAIN" })).toBeDisabled();
@@ -643,7 +641,7 @@ describe("AiConfigPage row actions", () => {
       const dialog = await openDelete("Zed");
       await pick(dialog, "Beta");
       listAiConfigs.mockResolvedValue([row(1, "Zed", true)]);
-      await userEvent.click(within(dialog).getByRole("button", { name: "AI_CONFIG__DELETE_CONFIRM" }));
+      await userEvent.click(within(dialog).getByRole("button", { name: "AI_CONFIG__DELETE_SWITCH_CONFIRM" }));
 
       await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
       expect(mockSetFeedback).toHaveBeenCalledWith({

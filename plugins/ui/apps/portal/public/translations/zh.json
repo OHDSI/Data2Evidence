@@ -161,6 +161,7 @@
   "AI_CONFIG__DELETE_SWITCH_FAILED": "未应用任何更改。请重试，或取消以保留两个配置。",
   "AI_CONFIG__DELETE_BODY": "确定要删除此 AI 配置：{0}？此操作无法撤销。",
   "AI_CONFIG__DELETE_CONFIRM": "是，删除",
+  "AI_CONFIG__DELETE_SWITCH_CONFIRM": "删除并切换",
   "AI_CONFIG__DELETE_TITLE": "删除 AI 配置？",
   "AI_CONFIG__EDIT": "编辑",
   "AI_CONFIG__EDIT_TITLE": "编辑 AI 配置",

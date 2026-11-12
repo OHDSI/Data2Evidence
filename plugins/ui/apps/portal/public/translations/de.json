@@ -161,6 +161,7 @@
   "AI_CONFIG__DELETE_SWITCH_FAILED": "Es wurden keine Änderungen vorgenommen. Versuchen Sie es erneut oder brechen Sie ab, um beide Konfigurationen zu behalten.",
   "AI_CONFIG__DELETE_BODY": "Möchten Sie diese KI-Konfiguration wirklich löschen: {0}? Diese Aktion kann nicht rückgängig gemacht werden.",
   "AI_CONFIG__DELETE_CONFIRM": "Ja, löschen",
+  "AI_CONFIG__DELETE_SWITCH_CONFIRM": "Löschen und wechseln",
   "AI_CONFIG__DELETE_TITLE": "KI-Konfiguration löschen?",
   "AI_CONFIG__EDIT": "Bearbeiten",
   "AI_CONFIG__EDIT_TITLE": "KI-Konfiguration bearbeiten",
