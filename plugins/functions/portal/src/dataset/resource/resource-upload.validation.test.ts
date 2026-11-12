@@ -7,8 +7,18 @@ const defaults = parseResourceUploadConfig(undefined, undefined);
 const TYPE_ERROR =
   "This file type isn't supported. Upload a PDF, CSV, JSON, XLSX, DOCX, SQL, MD or TXT file.";
 
-const check = (name: string, config = defaults, size = 100) =>
-  validateResourceFile({ name, size }, config);
+const enc = new TextEncoder();
+// Minimal content that passes the content check for each extension.
+const validContent = (name: string): Uint8Array => {
+  const ext = getFileExtension(name);
+  if (ext === "pdf") return enc.encode("%PDF-1.7\n");
+  if (ext === "docx") return enc.encode("PK\x03\x04word/document.xml");
+  if (ext === "xlsx") return enc.encode("PK\x03\x04xl/workbook.xml");
+  return enc.encode("plain text");
+};
+
+const check = (name: string, config = defaults, size = 100, content = validContent(name)) =>
+  validateResourceFile({ name, size }, config, content);
 
 describe("getFileExtension", () => {
   it("returns the last extension in lower case", () => {
@@ -82,5 +92,27 @@ describe("validateResourceFile: file size", () => {
   it("checks the type first, so a wrong type never gets a size error", () => {
     assertEquals(check("program.exe", defaults, 0), TYPE_ERROR);
     assertEquals(check("program.exe", defaults, 26 * MB), TYPE_ERROR);
+  });
+});
+
+describe("validateResourceFile: content", () => {
+  const CORRUPTED = "This file is corrupted. Please fix the file and try again.";
+  const MB = 1024 * 1024;
+  const programBytes = new Uint8Array([0x7f, 0x45, 0x4c, 0x46, 0x02, 0x01]);
+
+  it("rejects a file whose content doesn't match its extension", () => {
+    assertEquals(check("report.pdf", defaults, 100, enc.encode("not a pdf")), CORRUPTED);
+  });
+
+  it("checks the extension before the content", () => {
+    assertEquals(check("program.exe", defaults, 6, programBytes), TYPE_ERROR);
+  });
+
+  it("reports an empty file as empty, not corrupted", () => {
+    assertEquals(check("report.pdf", defaults, 0, new Uint8Array()), "This file is empty.");
+  });
+
+  it("reports corrupted content before the size", () => {
+    assertEquals(check("report.pdf", defaults, 26 * MB, enc.encode("not a pdf")), CORRUPTED);
   });
 });

@@ -44,14 +44,20 @@ export class ResourceController {
     }
 
     // Same rules as the Add file dialog, in case its check was bypassed.
-    const validationError = validateResourceFile(file, getResourceUploadConfig());
+    const config = getResourceUploadConfig();
+    const buffer = await file.arrayBuffer();
+    const validationError = validateResourceFile(
+      file,
+      config,
+      new Uint8Array(buffer, 0, Math.min(buffer.byteLength, config.maxFileSizeBytes)),
+    );
     if (validationError) {
       throw new HttpException(400, validationError);
     }
 
     const uploadedFile = {
       originalname: file.name,
-      buffer: await file.arrayBuffer(),
+      buffer,
       mimetype: file.type,
     };
     if (

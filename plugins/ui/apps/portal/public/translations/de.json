@@ -337,6 +337,7 @@
   "DATASET_RESOURCE_UPLOAD_CONFIRM_DIALOG__ERROR_TYPE": "Dieser Dateityp wird nicht unterstützt. Laden Sie eine {0}-Datei hoch.",
   "DATASET_RESOURCE_UPLOAD_CONFIRM_DIALOG__OR": "oder",
   "DATASET_RESOURCE_UPLOAD_CONFIRM_DIALOG__ERROR_EMPTY": "Diese Datei ist leer.",
+  "DATASET_RESOURCE_UPLOAD_CONFIRM_DIALOG__ERROR_CORRUPTED": "Diese Datei ist beschädigt. Bitte reparieren Sie die Datei und versuchen Sie es erneut.",
   "DATASET_RESOURCE_UPLOAD_CONFIRM_DIALOG__ERROR_TOO_LARGE": "Diese Datei ist zu groß. Dateien dürfen höchstens {0} groß sein.",
   "DATASET_RESOURCE_UPLOAD_CONFIRM_DIALOG__UNTITLED": "Ohne Titel",
   "DATASET_SELECTOR__SELECT_STUDY": "Wählen Sie Studie",

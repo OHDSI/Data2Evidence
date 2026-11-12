@@ -64,71 +64,92 @@ const renderDialog = (fileName: string, config: typeof CONFIG | null = CONFIG, c
 describe("DatasetResourceUploadConfirmDialog", () => {
   beforeEach(() => mockAddResource.mockReset());
 
-  it("lets an allowed file be added, whatever the extension's case", () => {
+  // The content check reads the file, so wait until the Add button is enabled.
+  const waitForCheck = () => waitFor(() => expect(screen.getByText(ADD)).not.toBeDisabled());
+
+  it("lets an allowed file be added, whatever the extension's case", async () => {
     renderDialog("data.CSV");
 
+    await waitForCheck();
     expect(screen.queryByTestId("feedback")).not.toBeInTheDocument();
-    expect(screen.getByText(ADD)).toBeInTheDocument();
   });
 
   it.each(["analysis.R", "setup.sh", "program.exe", "report.pdf.exe", "Makefile"])(
     "rejects %s with the type error and offers only Cancel",
-    (fileName) => {
+    async (fileName) => {
       renderDialog(fileName);
 
-      expect(screen.getByTestId("feedback")).toHaveTextContent(TYPE_ERROR);
+      expect(await screen.findByTestId("feedback")).toHaveTextContent(TYPE_ERROR);
       expect(screen.getByTestId("feedback")).toHaveAttribute("data-type", "error");
       expect(screen.queryByText(ADD)).not.toBeInTheDocument();
       expect(screen.getByText("DATASET_RESOURCE_UPLOAD_CONFIRM_DIALOG__CANCEL")).toBeInTheDocument();
     }
   );
 
-  it("lists only the configured types in the error", () => {
+  it("lists only the configured types in the error", async () => {
     renderDialog("cohort.json", { ...CONFIG, allowedExtensions: ["pdf", "csv"] });
 
-    expect(screen.getByTestId("feedback")).toHaveTextContent(
+    expect(await screen.findByTestId("feedback")).toHaveTextContent(
       "DATASET_RESOURCE_UPLOAD_CONFIRM_DIALOG__ERROR_TYPE:PDF DATASET_RESOURCE_UPLOAD_CONFIRM_DIALOG__OR CSV"
     );
   });
 
-  it("rejects an empty file and offers only Cancel", () => {
+  it("rejects an empty file and offers only Cancel", async () => {
     renderDialog("notes.txt", CONFIG, "");
 
-    expect(screen.getByTestId("feedback")).toHaveTextContent("DATASET_RESOURCE_UPLOAD_CONFIRM_DIALOG__ERROR_EMPTY");
+    expect(await screen.findByTestId("feedback")).toHaveTextContent(
+      "DATASET_RESOURCE_UPLOAD_CONFIRM_DIALOG__ERROR_EMPTY"
+    );
     expect(screen.queryByText(ADD)).not.toBeInTheDocument();
+  });
+
+  it("rejects a file whose content doesn't match its type and offers only Cancel", async () => {
+    renderDialog("report.pdf", CONFIG, "MZ this is not a PDF");
+
+    expect(await screen.findByTestId("feedback")).toHaveTextContent(
+      "DATASET_RESOURCE_UPLOAD_CONFIRM_DIALOG__ERROR_CORRUPTED"
+    );
+    expect(screen.queryByText(ADD)).not.toBeInTheDocument();
+  });
+
+  it("accepts a file whose content matches its type", async () => {
+    renderDialog("report.pdf", CONFIG, "%PDF-1.7\n1 0 obj");
+
+    await waitForCheck();
+    expect(screen.queryByTestId("feedback")).not.toBeInTheDocument();
   });
 
   // A 10-byte limit stands in for 25 MB, so the test doesn't build a huge file.
   const TINY_LIMIT = { ...CONFIG, maxFileSizeBytes: 10 };
 
-  it("rejects a file over the limit, naming the limit, and offers only Cancel", () => {
+  it("rejects a file over the limit, naming the limit, and offers only Cancel", async () => {
     renderDialog("data.csv", { ...CONFIG, maxFileSizeBytes: 5 * 1024 * 1024 }, "x".repeat(5 * 1024 * 1024 + 1));
 
-    expect(screen.getByTestId("feedback")).toHaveTextContent(
+    expect(await screen.findByTestId("feedback")).toHaveTextContent(
       "DATASET_RESOURCE_UPLOAD_CONFIRM_DIALOG__ERROR_TOO_LARGE:5 MB"
     );
     expect(screen.queryByText(ADD)).not.toBeInTheDocument();
   });
 
-  it("accepts a file of exactly the limit", () => {
+  it("accepts a file of exactly the limit", async () => {
     renderDialog("data.csv", TINY_LIMIT, "x".repeat(10));
 
+    await waitForCheck();
     expect(screen.queryByTestId("feedback")).not.toBeInTheDocument();
-    expect(screen.getByText(ADD)).toBeInTheDocument();
   });
 
-  it("shows only the type error for a file that is the wrong type and too large", () => {
+  it("shows only the type error for a file that is the wrong type and too large", async () => {
     renderDialog("program.exe", TINY_LIMIT, "x".repeat(11));
 
-    expect(screen.getByTestId("feedback")).toHaveTextContent(TYPE_ERROR);
+    expect(await screen.findByTestId("feedback")).toHaveTextContent(TYPE_ERROR);
     expect(screen.getByTestId("feedback")).not.toHaveTextContent("ERROR_TOO_LARGE");
   });
 
-  it("leaves the check to the backend when the config could not be loaded", () => {
+  it("leaves the check to the backend when the config could not be loaded", async () => {
     renderDialog("analysis.R", null);
 
+    await waitForCheck();
     expect(screen.queryByTestId("feedback")).not.toBeInTheDocument();
-    expect(screen.getByText(ADD)).toBeInTheDocument();
   });
 
   it("shows the backend's rejection without the status code prefix", async () => {

@@ -1,4 +1,4 @@
-import React, { FC, useCallback, useMemo, useState } from "react";
+import React, { FC, useCallback, useEffect, useMemo, useState } from "react";
 import { SxProps } from "@mui/system";
 import Divider from "@mui/material/Divider";
 import FormControl from "@mui/material/FormControl";
@@ -7,7 +7,12 @@ import Grid from "@mui/material/Grid";
 import { Button, Dialog, TermsOfUseIcon } from "@portal/components";
 import { api } from "../../../../../axios/api";
 import { getFileSizeDisplay, getFileExtension } from "../../../../../utils";
-import { formatFileTypeList, formatMaxFileSize, validateResourceFile } from "../../../../../utils/resourceUpload";
+import {
+  checkResourceFile,
+  formatFileTypeList,
+  formatMaxFileSize,
+  ResourceFileError,
+} from "../../../../../utils/resourceUpload";
 import { CloseDialogType, DatasetResource, Feedback, ResourceUploadConfig } from "../../../../../types";
 import "./DatasetResourceUploadConfirmDialog.scss";
 import { useTranslation } from "../../../../../contexts";
@@ -53,10 +58,33 @@ const DatasetResourceUploadConfirmDialog: FC<DatasetResourceUploadConfirmDialogP
   const extension = getFileExtension(file?.name).toUpperCase();
   const [loading, setLoading] = useState(false);
 
-  // Checked as soon as the file is picked, before anything is uploaded.
-  const validationError = useMemo(() => {
+  // Checked as soon as the file is picked, before anything is uploaded. The
+  // content check reads the file, so the result arrives asynchronously.
+  const [fileError, setFileError] = useState<ResourceFileError>();
+  const [checking, setChecking] = useState(false);
+
+  useEffect(() => {
+    setFileError(undefined);
+    setChecking(false);
     if (!file || !uploadConfig) return undefined;
-    switch (validateResourceFile(file, uploadConfig)) {
+    let cancelled = false;
+    setChecking(true);
+    checkResourceFile(file, uploadConfig)
+      .then((error) => {
+        if (!cancelled) setFileError(error);
+      })
+      .catch((error) => console.error("Failed to check file", error))
+      .finally(() => {
+        if (!cancelled) setChecking(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [file, uploadConfig]);
+
+  const validationError = useMemo(() => {
+    if (!uploadConfig) return undefined;
+    switch (fileError) {
       case "type":
         return getText(i18nKeys.DATASET_RESOURCE_UPLOAD_CONFIRM_DIALOG__ERROR_TYPE, [
           formatFileTypeList(
@@ -66,6 +94,8 @@ const DatasetResourceUploadConfirmDialog: FC<DatasetResourceUploadConfirmDialogP
         ]);
       case "empty":
         return getText(i18nKeys.DATASET_RESOURCE_UPLOAD_CONFIRM_DIALOG__ERROR_EMPTY);
+      case "corrupted":
+        return getText(i18nKeys.DATASET_RESOURCE_UPLOAD_CONFIRM_DIALOG__ERROR_CORRUPTED);
       case "size":
         return getText(i18nKeys.DATASET_RESOURCE_UPLOAD_CONFIRM_DIALOG__ERROR_TOO_LARGE, [
           formatMaxFileSize(uploadConfig.maxFileSizeBytes),
@@ -73,7 +103,7 @@ const DatasetResourceUploadConfirmDialog: FC<DatasetResourceUploadConfirmDialogP
       default:
         return undefined;
     }
-  }, [file, uploadConfig, getText, i18nKeys]);
+  }, [fileError, uploadConfig, getText, i18nKeys]);
 
   const mapFileToResource = useCallback(
     (file: File): DatasetResource => ({
@@ -166,6 +196,7 @@ const DatasetResourceUploadConfirmDialog: FC<DatasetResourceUploadConfirmDialogP
             onClick={() => handleClose("success")}
             block
             loading={loading}
+            disabled={checking}
           />
         )}
       </div>

@@ -364,6 +364,7 @@ export const i18nDefault = {
     DATASET_RESOURCE_UPLOAD_CONFIRM_DIALOG__ERROR_TYPE: "This file type isn't supported. Upload a {0} file.",
     DATASET_RESOURCE_UPLOAD_CONFIRM_DIALOG__OR: "or",
     DATASET_RESOURCE_UPLOAD_CONFIRM_DIALOG__ERROR_EMPTY: "This file is empty.",
+    DATASET_RESOURCE_UPLOAD_CONFIRM_DIALOG__ERROR_CORRUPTED: "This file is corrupted. Please fix the file and try again.",
     DATASET_RESOURCE_UPLOAD_CONFIRM_DIALOG__ERROR_TOO_LARGE: "This file is too large. Files must be {0} or smaller.",
     DATASET_RESOURCE_UPLOAD_CONFIRM_DIALOG__UNTITLED: "Untitled",
     DATASET_SELECTOR__SELECT_STUDY: "Select study",

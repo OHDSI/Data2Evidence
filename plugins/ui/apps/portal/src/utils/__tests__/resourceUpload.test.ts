@@ -39,7 +39,18 @@ describe("resourceUpload utils", () => {
 
 describe("validateResourceFile", () => {
   const config = { allowedExtensions: ALL_TYPES, maxFileSizeBytes: 25 * MB };
-  const check = (name: string, size = 100) => validateResourceFile({ name, size }, config);
+  // jsdom has no TextEncoder; the test strings are plain ASCII.
+  const enc = { encode: (s: string) => Uint8Array.from(s, (c) => c.charCodeAt(0)) };
+  // Minimal content that passes the content check for each extension.
+  const validContent = (name: string): Uint8Array => {
+    const ext = name.split(".").pop()?.toLowerCase();
+    if (ext === "pdf") return enc.encode("%PDF-1.7\n");
+    if (ext === "docx") return enc.encode("PK\x03\x04word/document.xml");
+    if (ext === "xlsx") return enc.encode("PK\x03\x04xl/workbook.xml");
+    return enc.encode("plain text");
+  };
+  const check = (name: string, size = 100, content = validContent(name)) =>
+    validateResourceFile({ name, size }, config, content);
 
   it("accepts allowed extensions in any case", () => {
     expect(check("data.CSV")).toBeUndefined();
@@ -65,5 +76,15 @@ describe("validateResourceFile", () => {
   it("checks the type first, so a wrong type never gets a size error", () => {
     expect(check("program.exe", 0)).toBe("type");
     expect(check("program.exe", 26 * MB)).toBe("type");
+  });
+
+  it("rejects content that doesn't match the extension as corrupted", () => {
+    expect(check("report.pdf", 100, enc.encode("not a pdf"))).toBe("corrupted");
+    expect(check("notes.txt", 100, new Uint8Array([0x4d, 0x5a, 0, 0]))).toBe("corrupted");
+  });
+
+  it("reports empty before corrupted, and corrupted before too large", () => {
+    expect(check("report.pdf", 0, new Uint8Array())).toBe("empty");
+    expect(check("report.pdf", 26 * MB, enc.encode("not a pdf"))).toBe("corrupted");
   });
 });
