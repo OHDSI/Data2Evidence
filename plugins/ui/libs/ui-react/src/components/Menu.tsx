@@ -2,7 +2,6 @@ import {
   useCallback,
   useEffect,
   useMemo,
-  useId,
   useRef,
   useState,
   type ReactNode,
@@ -16,7 +15,6 @@ import {
   nextEnabledIndex,
 } from "./menuNavigation";
 import { resolveIcon, type Icon } from "./internal/icon";
-import { Tooltip } from "./Tooltip";
 import "./Menu.scss";
 
 export interface MenuItem {
@@ -27,8 +25,6 @@ export interface MenuItem {
   disabled?: boolean;
   /** Destructive action: the label and icon paint in the alarm colour. */
   danger?: boolean;
-  /** Shown on hover, also when the item is disabled (a disabled button fires no hover events itself). */
-  tooltip?: string;
   /** Render a horizontal divider between groups instead of an action row. */
   divider?: boolean;
 }
@@ -93,7 +89,6 @@ function MenuList({
   autoFocusFirst?: boolean;
   children?: ReactNode;
 }) {
-  const baseId = useId();
   const itemEls = useRef<(HTMLButtonElement | null)[]>([]);
   const [activeIndex, setActiveIndex] = useState(-1);
 
@@ -162,8 +157,8 @@ function MenuList({
       style={{ width: resolvedWidth }}
       onKeyDown={onKeyDown}
     >
-      {items.map((item, index) => {
-        const node = item.divider ? (
+      {items.map((item, index) =>
+        item.divider ? (
           <div key={item.value} className="d2e-menu__divider" role="separator" />
         ) : (
         <button
@@ -180,7 +175,6 @@ function MenuList({
           role="menuitem"
           tabIndex={index === tabbableIndex ? 0 : -1}
           disabled={item.disabled}
-          aria-describedby={item.tooltip ? `${baseId}-hint-${index}` : undefined}
           onClick={() => onSelect?.(item.value)}
           onFocus={() => setActiveIndex(index)}
         >
@@ -194,21 +188,8 @@ function MenuList({
             <CheckIcon className="d2e-menu__item-check" sx={{ fontSize: "20px" }} />
           ) : null}
         </button>
-        );
-        return item.tooltip ? (
-          // describeChild: the hint is announced via aria-describedby, not as an aria-label on the wrapper.
-          <Tooltip key={item.value} title={item.tooltip} describeChild>
-            <span className="d2e-menu__item-wrap">
-              {node}
-              <span id={`${baseId}-hint-${index}`} className="d2e-menu__sr-only">
-                {item.tooltip}
-              </span>
-            </span>
-          </Tooltip>
-        ) : (
-          node
-        );
-      })}
+        ),
+      )}
     </div>
   );
 }
