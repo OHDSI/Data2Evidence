@@ -159,6 +159,7 @@ export class DatasetCommandService {
         schemaName: datasetDto.schemaName,
         vocabSchemaName: datasetDto.vocabSchemaName,
         resultsSchemaName: datasetDto.resultsSchemaName,
+        cacheId: datasetDto.cacheId ?? resolveCacheId(datasetDto),
         type: datasetDto.type,
         fhirDatasetId: datasetDto.fhirDatasetId ?? null,
       },
@@ -420,6 +421,7 @@ export class DatasetCommandService {
             schemaName: source.schemaName,
             vocabSchemaName: source.vocabSchemaName,
             resultsSchemaName: source.resultsSchemaName,
+            cacheId: source.cacheId ?? null,
             type: "webapi",
             fhirDatasetId: source.fhirDatasetId ?? null,
           },
@@ -751,6 +753,7 @@ export class DatasetCommandService {
         schemaName: dataset.schemaName,
         vocabSchemaName: dataset.vocabSchemaName,
         resultsSchemaName: dataset.resultsSchemaName,
+        cacheId: dataset.cacheId ?? null,
         type: dataset.type,
         fhirDatasetId: dataset.fhirDatasetId ?? null,
       },
@@ -1263,6 +1266,7 @@ export class DatasetCommandService {
       schemaName?: string;
       vocabSchemaName?: string;
       resultsSchemaName?: string;
+      cacheId: string | null;
       type?: string;
       fhirDatasetId: string | null;
     },
@@ -1295,6 +1299,7 @@ export class DatasetCommandService {
       schemaName: datasetInfo.schemaName,
       vocabSchemaName: datasetInfo.vocabSchemaName,
       resultsSchemaName: datasetInfo.resultsSchemaName,
+      cacheId: datasetInfo.cacheId,
     } as Dataset;
 
     const detailEntity =

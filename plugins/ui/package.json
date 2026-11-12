@@ -345,10 +345,10 @@
             "route": "metadata"
           },
           {
-            "description": "Configure cohort builder",
+            "description": "Configure data exploration",
             "descriptionI18nKey": "UI_PLUGIN_SETUP_PATIENT_ANALYTICS_DESCRIPTION",
             "visible": true,
-            "name": "Cohort builder config",
+            "name": "Data exploration configuration",
             "nameI18nKey": "UI_PLUGIN_PATIENT_ANALYTICS_CONFIG",
             "notes": "",
             "pluginPath": "plugins/mri/PatientAnalyticsConfig/module",

@@ -23,6 +23,7 @@ from .chunk_utils import (
 )
 from .checkpoint import (
     COPY_STATUS_TABLE_NAME,
+    WEBAPI_RESULT_TABLES,
     apply_fresh_copy,
     clear_resume_point,
     drop_status_tables,
@@ -33,6 +34,7 @@ from .checkpoint import (
     read_checkpoint,
     record_chunk_progress,
     reset_table,
+    webapi_owned_tables_to_skip,
 )
 from .errors import ChunkCopyError, PlannerError, ReconciliationError
 from .planner_types import ChunkConfig, ChunkStrategy
@@ -164,6 +166,7 @@ def create_schema_tables(write_conn: Any, read_conn: Any, copy_params: CopyParam
             str(prefect_flow_run.id),
             dry_run=copy_params.dry_run,
             logger=logger,
+            protected=WEBAPI_RESULT_TABLES if copy_params.protect_webapi_results else frozenset(),
         )
 
     # Determine tables to copy
@@ -202,6 +205,14 @@ def create_schema_tables(write_conn: Any, read_conn: Any, copy_params: CopyParam
         logger.info(
             f"Found {len(tables_to_copy)} tables/views to copy from schema '{copy_params.source_schema}': {tables_to_copy}"
         )
+
+    # WebAPI writes these into the cache itself; copy them only the first time.
+    webapi_owned = webapi_owned_tables_to_skip(
+        write_conn, copy_params.target_database, copy_params.target_schema, tables_to_copy
+    ) if copy_params.protect_webapi_results else []
+    if webapi_owned:
+        logger.info(f"Leaving WebAPI-owned tables already in the cache untouched: {webapi_owned}")
+        tables_to_copy = [t for t in tables_to_copy if t not in webapi_owned]
 
     original_count = len(tables_to_copy)
 

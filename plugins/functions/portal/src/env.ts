@@ -81,6 +81,9 @@ export const env = {
   USE_PUBLIC_WEBAPI: _env.USE_PUBLIC_WEBAPI || false,
   PUBLIC_WEBAPI_PROXY_URL: _env.PUBLIC_WEBAPI_PROXY_URL,
 
+  // Quack token WebAPI presents to trexsql for cached dataset sources.
+  TREX__SQL_TOKEN: _env.TREX__SQL_TOKEN,
+
   AI_CONFIG_ENCRYPTION_KEY: _env.AI_CONFIG_ENCRYPTION_KEY,
 };
 

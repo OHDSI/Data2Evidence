@@ -185,6 +185,7 @@ global:
     SUPABASE_STORAGE_JWT_SECRET: "ci-supabase-jwt-secret-not-real-0000000000"
     SUPABASE_STORAGE_JWT_TOKEN: ""
     TREX__SQL__PASSWORD: "pencil"
+    TREX__SQL_TOKEN: "ci-quack-token-not-real"
     TREX_ROOT_KEY: "ndDfri0G85Aw/P+s5jYqdnuBFdfbbY8irhrI9gFSE1Q="
     AI_CONFIG_ENCRYPTION_KEY: "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
   resources:

@@ -313,12 +313,13 @@ jobs:
           context: ${{ matrix.DOCKER_BUILD_CONTEXT_PATH }}
           file: ${{ matrix.DOCKER_BUILD_FILE_PATH }}
           platforms: ${{ matrix.PLATFORMS || 'linux/amd64,linux/arm64' }}
-          # push_by_digest entries push an untagged image via `outputs`;
-          # merge_worker_image tags the combined manifest list.
-          push: ${{ matrix.push_by_digest != 'true' }}
-          outputs: ${{ matrix.push_by_digest == 'true' && 'type=image,push-by-digest=true,name-canonical=true,push=true' || '' }}
+          # push_by_digest entries push a per-arch <RUN_TAG>-<ARCH> image that
+          # merge_worker_image joins by digest. It must be tagged: the builds are
+          # reproducible, so the digest can match a version pushed days ago, and
+          # another run's untagged-version cleanup would delete it before merge.
+          push: true
           pull: ${{ matrix.pull_base == 'true' || false }}
-          tags: ${{ env.REG_URL }}/${{ matrix.AZ_REG_REPOSITORY }}${{ matrix.push_by_digest != 'true' && format(':{0}', env.RUN_TAG) || '' }}
+          tags: ${{ env.REG_URL }}/${{ matrix.AZ_REG_REPOSITORY }}:${{ env.RUN_TAG }}${{ matrix.push_by_digest == 'true' && format('-{0}', matrix.ARCH) || '' }}
           provenance: false
           sbom: false
           cache-from: |
@@ -852,7 +853,7 @@ jobs:
             BUILD_TYPE=OSS
             PLUGINS_FEED=${{ needs.setup.outputs.is_release_push == 'true' && 'stable' || 'd2e' }}
             PLUGINS_FROM_REGISTRY=@ohdsi/pythia-agent@0.1.0-develop.21.g24eb709
-            TREXSQL_REF=sha-043f3efb7ea0351a346530d0c76156bbc3994666@sha256:6df5527702ad165cbc486f042dadded8710f73dbac38ee307d8de31c05b39bf5
+            TREXSQL_REF=sha-1fac22c26fbab41e9b135ebc6643272319c219b0@sha256:3aa00a6c00293477ad9e0e4c4e21d1448cd0acd04c682b284b13c5f5ef9d6ed2
           secrets: |
             "PLUGINS_REGISTRY=${{ secrets.PLUGINS_REGISTRY }}"
             "github_token=${{ secrets.GITHUB_TOKEN }}"
