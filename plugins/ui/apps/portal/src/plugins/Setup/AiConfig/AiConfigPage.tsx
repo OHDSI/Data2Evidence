@@ -225,7 +225,7 @@ export const AiConfigPage: FC = () => {
               {getText(i18nKeys.AI_CONFIG__CANCEL)}
             </Button>
             <Button
-              variant={variant === "active" ? "primary" : "danger"}
+              variant={variant === "active" ? "primary" : "danger-solid"}
               disabled={busy || (variant === "active" && pickId === null)}
               onClick={() => remove(config, variant)}
             >
