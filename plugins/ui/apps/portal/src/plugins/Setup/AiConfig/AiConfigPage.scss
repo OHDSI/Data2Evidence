@@ -102,9 +102,3 @@
 .ai-config__confirm-banner {
   margin-top: 16px;
 }
-
-// The warning sits above the body text, so it spaces below itself instead.
-.ai-config__confirm-banner--above {
-  margin-top: 0;
-  margin-bottom: 16px;
-}

@@ -162,10 +162,6 @@ export const i18nDefault = {
       "{0} is the active configuration. Choose which configuration the AI assistant should use instead. This can't be undone.",
     AI_CONFIG__DELETE_ACTIVE_PICK_LABEL: "New active configuration",
     AI_CONFIG__DELETE_ACTIVE_PICK_HINT: "The AI assistant switches to this configuration for everyone.",
-    AI_CONFIG__DELETE_LAST_WARNING:
-      "This is the only AI configuration. Deleting it will also turn off the AI feature flag, if it's currently on. The AI assistant won't be available until you add a new configuration and turn the flag back on.",
-    AI_CONFIG__FLAG_TURNED_OFF_NOTICE: "{0} has been turned off.",
-    AI_CONFIG__FLAG_NAME: "The AI feature flag",
     AI_CONFIG__DELETED_LAST_TOAST: "{0} has been deleted.",
     AI_CONFIG__DELETED_REPLACED_TOAST: "{0} has been deleted. {1} is now the active configuration.",
     AI_CONFIG__DELETING_TITLE: "Deleting AI configuration",
@@ -721,12 +717,6 @@ export const i18nDefault = {
       "Please try again. To report the error, please send an email to your administrator.",
     FEATURE__ADMIN_ONLY_SHARING: "Admin-only sharing",
     FEATURE__AI_ASSISTANT: "AI assistant",
-    FEATURE__AI_CONFIG_CHECK_ERROR: "Couldn't check the AI configurations. Try again.",
-    FEATURE__NO_AI_CONFIG_BODY:
-      "The AI assistant needs an AI configuration to work, and none has been added yet. Add one on the AI configuration page, then turn this feature on again.",
-    FEATURE__NO_AI_CONFIG_CANCEL: "Cancel",
-    FEATURE__NO_AI_CONFIG_GO: "Go to AI configuration",
-    FEATURE__NO_AI_CONFIG_TITLE: "Add an AI configuration first",
     FEATURE__CDM_DOWNLOAD: "CDM download",
     FEATURE__CONCEPT_RECORD_COUNTS: "Concept record counts",
     FLOW_RUN_NOTIFICATION_DIALOG__CLOSE: "Close",

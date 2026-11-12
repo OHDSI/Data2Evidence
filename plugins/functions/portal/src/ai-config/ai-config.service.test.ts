@@ -484,8 +484,8 @@ Deno.test("delete rules", async () => {
   await expectError(svc.delete(String(a.id), undefined), 400, "AI_CONFIG_ACTIVE_DELETE");
   assertEquals(db.rows.length, 2);
   await expectError(svc.delete("999", undefined), 404, "AI_CONFIG_NOT_FOUND");
-  assertEquals(await svc.delete(String(b.id), undefined), { id: b.id, featureFlagTurnedOff: false }); // not active
-  assertEquals(await svc.delete(String(a.id), undefined), { id: a.id, featureFlagTurnedOff: false }); // last, active
+  assertEquals(await svc.delete(String(b.id), undefined), { id: b.id }); // not active
+  assertEquals(await svc.delete(String(a.id), undefined), { id: a.id }); // last, active
   assertEquals(db.rows.length, 0);
   // none active afterwards; the next create is made active
   assertEquals((await svc.create(bedrock())).isActive, true);
@@ -498,7 +498,7 @@ Deno.test("delete with newActiveId: replaces the active row, or a non-active one
   const c = await svc.create(bedrock({ region: "ap-1" }));
   assertEquals(
     await svc.delete(String(a.id), String(b.id)),
-    { id: a.id, featureFlagTurnedOff: false },
+    { id: a.id },
   );
   assertEquals(db.rows.map((r) => [r.id, r.isActive]), [[b.id, true], [c.id, false]]);
   // b is active; deleting the non-active c while naming b keeps b active
@@ -532,56 +532,6 @@ Deno.test("delete audit: the new active row gets modified_by = the caller and it
   db.rows.find((r) => r.id === b.id)!.modifiedBy = "someone-else";
   await svc.delete(String(a.id), String(b.id));
   assertEquals(db.rows.find((r) => r.id === b.id)!.modifiedBy, "tester");
-});
-
-Deno.test("delete last row: turns the pythia flag off only when it exists and is on", async () => {
-  const { db, svc } = setup();
-  // missing row: no feature write
-  let a = await svc.create(bedrock());
-  db.reset();
-  assertEquals(await svc.delete(String(a.id), undefined), { id: a.id, featureFlagTurnedOff: false });
-  assertEquals(db.queries.filter((q) => q === "feature.update"), []);
-  assertEquals(db.features, []);
-  // disabled row: no feature write
-  db.features = [{ id: 1, feature: "pythia", isEnabled: false, modifiedBy: "someone-else" }];
-  a = await svc.create(bedrock());
-  db.reset();
-  assertEquals((await svc.delete(String(a.id), undefined)).featureFlagTurnedOff, false);
-  assertEquals(db.queries.filter((q) => q === "feature.update"), []);
-  assertEquals(db.features[0].modifiedBy, "someone-else");
-  // enabled row: turned off, modified_by is the caller and changed; other flags untouched
-  db.features = [
-    { id: 1, feature: "pythia", isEnabled: true, modifiedBy: "someone-else" },
-    { id: 2, feature: "aiAssistant", isEnabled: true, modifiedBy: "someone-else" },
-  ];
-  a = await svc.create(bedrock());
-  assertEquals(await svc.delete(String(a.id), undefined), { id: a.id, featureFlagTurnedOff: true });
-  assertEquals(db.features[0], { id: 1, feature: "pythia", isEnabled: false, modifiedBy: "tester" });
-  assertEquals(db.features[1].isEnabled, true);
-  assertEquals(db.rows, []); // the config rows were not rewritten by the flag update
-});
-
-Deno.test("delete not the last row: no feature read or write", async () => {
-  const { db, svc } = setup();
-  db.features = [{ id: 1, feature: "pythia", isEnabled: true, modifiedBy: "x" }];
-  const a = await svc.create(bedrock());
-  const b = await svc.create(bedrock());
-  db.reset();
-  await svc.delete(String(a.id), String(b.id));
-  assertEquals(db.queries.filter((q) => q.startsWith("feature.")), []);
-  assertEquals(db.features[0].isEnabled, true);
-});
-
-Deno.test("delete: a failing flag update rolls back the config delete and leaves the flag", async () => {
-  const { db, svc } = setup();
-  db.features = [{ id: 1, feature: "pythia", isEnabled: true, modifiedBy: "x" }];
-  const a = await svc.create(bedrock());
-  db.reset();
-  db.failNextFeatureUpdateWith = new Error("boom");
-  await assertRejects(() => svc.delete(String(a.id), undefined), Error, "boom");
-  assertEquals(db.rollbacks, 1);
-  assertEquals(db.rows.length, 1);
-  assertEquals(db.features[0], { id: 1, feature: "pythia", isEnabled: true, modifiedBy: "x" });
 });
 
 // ------------------------------------------------------------ Response / reads
@@ -653,7 +603,7 @@ Deno.test("encryption key unset, empty, not 32 bytes: reads 200 keyReadable fals
 
     // activate and delete do not need the key
     assertEquals((await degraded.activate(String(b.id))).isActive, true);
-    assertEquals(await degraded.delete(String(a.id), undefined), { id: a.id, featureFlagTurnedOff: false });
+    assertEquals(await degraded.delete(String(a.id), undefined), { id: a.id });
     assertEquals(db.rows.length, 1);
   }
 });

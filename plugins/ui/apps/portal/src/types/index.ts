@@ -117,8 +117,6 @@ export interface Feedback {
   message?: string;
   // Alert toast only: rich content shown instead of `message` (for example a bold name).
   messageNode?: ReactNode;
-  // Alert toast only: a second toast stacked under the first, closed together with it.
-  stackedMessageNode?: ReactNode;
   description?: string;
   autoClose?: number;
   // Opt-in to the new Alert toast (default/undefined renders the legacy Snackbar).

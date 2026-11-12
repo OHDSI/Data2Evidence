@@ -27,8 +27,6 @@ jest.mock("react-router-dom", () => ({
   useLocation: () => ({ pathname: "/setup", state: mockLocationState }),
   useNavigate: () => mockNavigate,
 }));
-const mockInvalidateFeatures = jest.fn();
-jest.mock("../../../hooks", () => ({ invalidateFeatures: () => mockInvalidateFeatures() }));
 
 const mockSetFeedback = jest.fn();
 // Stable references, so the page's load effect runs once per mount.
@@ -71,7 +69,6 @@ beforeEach(() => {
   mockUseRealFeedback = false;
   mockLocationState = undefined;
   mockNavigate.mockReset();
-  mockInvalidateFeatures.mockReset();
   (api.systemPortal.activateAiConfig as jest.Mock).mockReset();
   (api.systemPortal.deleteAiConfig as jest.Mock).mockReset();
 });
@@ -302,7 +299,7 @@ describe("AiConfigPage row actions", () => {
 
   it("deletes a row after confirmation and shows the bold-name toast, rendering markup in a name as text", async () => {
     listAiConfigs.mockResolvedValue([row(1, "Active", true), row(2, "<b>x</b>")]);
-    deleteMock.mockResolvedValue({ id: 2, featureFlagTurnedOff: false });
+    deleteMock.mockResolvedValue({ id: 2 });
     render(<AiConfigPage />);
     await openMenu("<b>x</b>");
     await userEvent.click(await screen.findByRole("menuitem", { name: "AI_CONFIG__DELETE" }));
@@ -329,7 +326,7 @@ describe("AiConfigPage row actions", () => {
 
   it("shows the empty state after the last configuration is deleted", async () => {
     listAiConfigs.mockResolvedValue([row(1, "Only", true)]);
-    deleteMock.mockResolvedValue({ id: 1, featureFlagTurnedOff: false });
+    deleteMock.mockResolvedValue({ id: 1 });
     render(<AiConfigPage />);
     await openMenu("Only");
     await userEvent.click(await screen.findByRole("menuitem", { name: "AI_CONFIG__DELETE" }));
@@ -512,7 +509,7 @@ describe("AiConfigPage row actions", () => {
     await expectNames(["Active", "Beta"], ["Active"]);
   });
 
-  // The last toast set with a messageNode, with its stacked sibling, rendered to inspect the DOM.
+  // The last toast set with a messageNode, rendered to inspect the DOM.
   const lastToasts = () => {
     const f = mockSetFeedback.mock.calls
       .map(([x]) => x)
@@ -521,10 +518,9 @@ describe("AiConfigPage row actions", () => {
     const { container } = render(
       <div>
         <div data-testid="first">{f.messageNode}</div>
-        <div data-testid="second">{f.stackedMessageNode}</div>
       </div>
     );
-    return { first: within(container).getByTestId("first"), second: within(container).getByTestId("second") };
+    return { first: within(container).getByTestId("first") };
   };
   const openDelete = async (name: string) => {
     await openMenu(name);
@@ -544,7 +540,7 @@ describe("AiConfigPage row actions", () => {
   describe("Delete variants", () => {
     it("delete active: lists the other rows, needs a pick, sends (id, pick), promotes the pick and shows one toast", async () => {
       listAiConfigs.mockResolvedValue([row(1, "Zed", true), row(2, "Beta"), row(3, "Alpha")]);
-      deleteMock.mockResolvedValue({ id: 1, featureFlagTurnedOff: false });
+      deleteMock.mockResolvedValue({ id: 1 });
       render(<AiConfigPage />);
       const dialog = await openDelete("Zed");
 
@@ -560,54 +556,23 @@ describe("AiConfigPage row actions", () => {
       expect(deleteMock).toHaveBeenCalledWith(1, 2);
       await expectNames(["Zed", "Alpha", "Beta"], ["Beta", "Alpha"]);
       expect(within(screen.getAllByRole("listitem")[0]).getByText("AI_CONFIG__ACTIVE")).toBeInTheDocument();
-      const { first, second } = lastToasts();
+      const { first } = lastToasts();
       expect(first).toHaveTextContent("Zed has been deleted. Beta is now the active configuration.");
       expect([...first.querySelectorAll("strong")].map((e) => e.textContent)).toEqual(["Zed", "Beta"]);
-      expect(second).toBeEmptyDOMElement();
     });
 
-    it("delete last: shows the warning and, when the flag was turned off, a stacked notice and invalidates features", async () => {
+    it("delete last: sends no replacement, empties the list and shows one toast", async () => {
       listAiConfigs.mockResolvedValue([row(1, "Only", true)]);
-      deleteMock.mockResolvedValue({ id: 1, featureFlagTurnedOff: true });
+      deleteMock.mockResolvedValue({ id: 1 });
       render(<AiConfigPage />);
       const dialog = await openDelete("Only");
-      expect(within(dialog).getByText("AI_CONFIG__DELETE_LAST_WARNING")).toBeInTheDocument();
       await userEvent.click(within(dialog).getByRole("button", { name: "AI_CONFIG__DELETE_CONFIRM" }));
 
       expect(await screen.findByText("AI_CONFIG__EMPTY_TITLE")).toBeInTheDocument();
       expect(deleteMock).toHaveBeenCalledWith(1, undefined);
-      const { first, second } = lastToasts();
+      const { first } = lastToasts();
       expect(first).toHaveTextContent("Only has been deleted.");
       expect(first.querySelector("strong")).toHaveTextContent("Only");
-      expect(second).toHaveTextContent("AI_CONFIG__FLAG_NAME has been turned off.");
-      expect(second.querySelector("strong")).toHaveTextContent("AI_CONFIG__FLAG_NAME");
-      expect(mockInvalidateFeatures).toHaveBeenCalledTimes(1);
-    });
-
-    it("delete last: without a flag change there is one toast and no invalidate call", async () => {
-      listAiConfigs.mockResolvedValue([row(1, "Only", true)]);
-      deleteMock.mockResolvedValue({ id: 1, featureFlagTurnedOff: false });
-      render(<AiConfigPage />);
-      const dialog = await openDelete("Only");
-      await userEvent.click(within(dialog).getByRole("button", { name: "AI_CONFIG__DELETE_CONFIRM" }));
-
-      await screen.findByText("AI_CONFIG__EMPTY_TITLE");
-      const { first, second } = lastToasts();
-      expect(first).toHaveTextContent("Only has been deleted.");
-      expect(second).toBeEmptyDOMElement();
-      expect(mockInvalidateFeatures).not.toHaveBeenCalled();
-    });
-
-    it("a plain delete that the server turned into the last one still shows the flag notice", async () => {
-      listAiConfigs.mockResolvedValue([row(1, "Active", true), row(2, "Beta")]);
-      deleteMock.mockResolvedValue({ id: 2, featureFlagTurnedOff: true });
-      render(<AiConfigPage />);
-      const dialog = await openDelete("Beta");
-      await userEvent.click(within(dialog).getByRole("button", { name: "AI_CONFIG__DELETE_CONFIRM" }));
-
-      await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
-      expect(lastToasts().second).toHaveTextContent("has been turned off.");
-      expect(mockInvalidateFeatures).toHaveBeenCalledTimes(1);
     });
 
     it.each([
@@ -634,10 +599,9 @@ describe("AiConfigPage row actions", () => {
         expect(primary).toBeDisabled();
         expect(within(dialog).queryByRole("button", { name: "AI_CONFIG__CLOSE" })).not.toBeInTheDocument();
         expect(within(dialog).queryByRole("combobox")).not.toBeInTheDocument();
-        expect(within(dialog).queryByText("AI_CONFIG__DELETE_LAST_WARNING")).not.toBeInTheDocument();
         fireEvent.click(primary);
         expect(deleteMock).toHaveBeenCalledTimes(1);
-        pending.resolve({ id: 1, featureFlagTurnedOff: false });
+        pending.resolve({ id: 1 });
         await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
       }
     );
@@ -661,7 +625,7 @@ describe("AiConfigPage row actions", () => {
       expect(within(dialog).getByRole("button", { name: "AI_CONFIG__CLOSE" })).toBeInTheDocument();
       expect(mockSetFeedback).not.toHaveBeenCalled();
 
-      deleteMock.mockResolvedValueOnce({ id: 1, featureFlagTurnedOff: false });
+      deleteMock.mockResolvedValueOnce({ id: 1 });
       await userEvent.click(within(dialog).getByRole("button", { name: "AI_CONFIG__TRY_AGAIN" }));
       await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
       expect(deleteMock).toHaveBeenLastCalledWith(1, 2);
@@ -702,7 +666,7 @@ describe("AiConfigPage row actions", () => {
       await expectRowCount(1);
     });
 
-    it("a failed last delete keeps the warning, idle copy and Try again", async () => {
+    it("a failed last delete keeps the idle copy and Try again", async () => {
       listAiConfigs.mockResolvedValue([row(1, "Only", true)]);
       deleteMock.mockRejectedValueOnce({ status: 500 });
       render(<AiConfigPage />);
@@ -711,7 +675,6 @@ describe("AiConfigPage row actions", () => {
 
       expect(await within(dialog).findByText("AI_CONFIG__ACTION_ERROR")).toBeInTheDocument();
       expect(within(dialog).getByRole("heading", { name: "AI_CONFIG__DELETE_TITLE" })).toBeInTheDocument();
-      expect(within(dialog).getByText("AI_CONFIG__DELETE_LAST_WARNING")).toBeInTheDocument();
       expect(within(dialog).getByRole("button", { name: "AI_CONFIG__TRY_AGAIN" })).toBeEnabled();
     });
 
@@ -800,7 +763,6 @@ describe("AI configuration translations", () => {
       "AI_CONFIG__DELETE_ACTIVE_BODY",
       "AI_CONFIG__DELETED_LAST_TOAST",
       "AI_CONFIG__DELETED_REPLACED_TOAST",
-      "AI_CONFIG__FLAG_TURNED_OFF_NOTICE",
     ]) {
       expect(texts[key].split("{0}")).toHaveLength(2);
     }

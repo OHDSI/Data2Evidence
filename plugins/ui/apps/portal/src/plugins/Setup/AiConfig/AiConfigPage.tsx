@@ -21,7 +21,6 @@ import "ui-react/tokens.css";
 import "ui-react/style.css";
 import { api } from "../../../axios/api";
 import { useFeedback, useTranslation } from "../../../contexts";
-import { invalidateFeatures } from "../../../hooks";
 import { LocationState } from "../../../types";
 import { AiConfig } from "../../../types/aiConfig";
 import { AiConfigDialog } from "./AiConfigDialog";
@@ -108,11 +107,11 @@ export const AiConfigPage: FC = () => {
   // Runs a confirmed write on the row `id`. Success closes the dialog with a toast. A stale row
   // (`_NOT_FOUND`, `_ACTIVE_DELETE`) closes it with an error toast, since a retry cannot succeed. Any other failure
   // keeps the dialog open in its failed state so the admin can try again.
-  // `write` resolves to the success toast, and optionally a second toast stacked under it.
+  // `write` resolves to the success toast.
   // `onError` sees a failure first and returns true when it has handled it.
   const runConfirmed = async (
     id: number,
-    write: () => Promise<{ toast: ReactNode; stacked?: ReactNode }>,
+    write: () => Promise<{ toast: ReactNode }>,
     onError?: (err: any) => boolean
   ) => {
     // A ref, not `busy`: state is stale between two clicks in the same render.
@@ -120,13 +119,12 @@ export const AiConfigPage: FC = () => {
     inFlight.current = true;
     setBusy(true);
     try {
-      const { toast, stacked } = await write();
+      const { toast } = await write();
       setFeedback({
         type: "success",
         variant: "alert",
         autoClose: 5000,
         messageNode: toast,
-        stackedMessageNode: stacked,
       });
       setConfirm(null);
     } catch (err: any) {
@@ -172,7 +170,7 @@ export const AiConfigPage: FC = () => {
     return runConfirmed(
       config.id,
       async () => {
-        const { featureFlagTurnedOff } = await api.systemPortal.deleteAiConfig(config.id, pick?.id);
+        await api.systemPortal.deleteAiConfig(config.id, pick?.id);
         setConfigs((rows) => {
           const rest = rows.filter((r) => r.id !== config.id);
           return pick ? sortAiConfigs(rest.map((r) => ({ ...r, isActive: r.id === pick.id }))) : rest;
@@ -183,15 +181,8 @@ export const AiConfigPage: FC = () => {
             : variant === "last"
             ? i18nKeys.AI_CONFIG__DELETED_LAST_TOAST
             : i18nKeys.AI_CONFIG__DELETED_TOAST;
-        // The server decides whether this was the last row, so the flag notice does not depend on the variant.
-        if (featureFlagTurnedOff) invalidateFeatures();
         return {
           toast: withNames(getText(toastKey), [{ bold: config.name }, ...(pick ? [{ bold: pick.name }] : [])]),
-          stacked: featureFlagTurnedOff
-            ? withNames(getText(i18nKeys.AI_CONFIG__FLAG_TURNED_OFF_NOTICE), [
-                { bold: getText(i18nKeys.AI_CONFIG__FLAG_NAME) },
-              ])
-            : undefined,
         };
       },
       (err) => {
@@ -284,13 +275,6 @@ export const AiConfigPage: FC = () => {
           </>
         ) : (
           <>
-            {variant === "last" && (
-              <div className="ai-config__confirm-banner ai-config__confirm-banner--above">
-                <Alert severity="warning" variant="inline">
-                  {getText(i18nKeys.AI_CONFIG__DELETE_LAST_WARNING)}
-                </Alert>
-              </div>
-            )}
             {withNames(
               getText(variant === "active" ? i18nKeys.AI_CONFIG__DELETE_ACTIVE_BODY : i18nKeys.AI_CONFIG__DELETE_BODY),
               [{ bold: config.name }]

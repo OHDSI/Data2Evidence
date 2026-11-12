@@ -1,7 +1,6 @@
 import React, { FC, useEffect } from "react";
 import { Snackbar, Alert } from "@portal/components";
 import { useFeedback } from "../../../contexts";
-import "./FeedbackToast.scss";
 
 // Renders the app's global feedback. Existing callers render the legacy Snackbar
 // unchanged; callers that opt in with `variant: "alert"` get the new Alert toast.
@@ -19,27 +18,19 @@ export const FeedbackToast: FC = () => {
   }, [feedback, clearFeedback]);
 
   if (feedback?.variant === "alert") {
-    const alertProps = {
-      severity: feedback.type ?? "info",
-      title: feedback.title,
-      actionLabel: feedback.actionLabel,
-      onAction: feedback.onAction,
-      dismissible: !feedback.autoClose,
-      autoHideDuration: feedback.autoClose,
-      onClose: clearFeedback,
-    } as const;
-    const message = feedback.messageNode ?? feedback.message;
-    const visible = message != null;
-    if (feedback.stackedMessageNode == null) {
-      return <Alert variant="toast" {...alertProps} message={message} visible={visible} />;
-    }
-    // One fixed container; the two alerts inside are laid out in a column;
-    // both close together because each timer calls clearFeedback.
     return (
-      <div className="feedback-toast-stack">
-        <Alert variant="toast" {...alertProps} message={message} visible={visible} />
-        <Alert variant="toast" {...alertProps} message={feedback.stackedMessageNode} visible={visible} />
-      </div>
+      <Alert
+        variant="toast"
+        severity={feedback.type ?? "info"}
+        title={feedback.title}
+        message={feedback.messageNode ?? feedback.message}
+        actionLabel={feedback.actionLabel}
+        onAction={feedback.onAction}
+        dismissible={!feedback.autoClose}
+        autoHideDuration={feedback.autoClose}
+        visible={(feedback.messageNode ?? feedback.message) != null}
+        onClose={clearFeedback}
+      />
     );
   }
 

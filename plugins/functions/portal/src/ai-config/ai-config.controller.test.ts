@@ -142,13 +142,13 @@ Deno.test(
       );
       assertEquals(await call("DELETE", "/1"), {
         status: 200,
-        body: { id: 1, featureFlagTurnedOff: false },
+        body: { id: 1 },
       });
       // the query parameter reaches the service: replace the active row 2 with 3
       await call("POST", "", bedrock({ region: "ap-1" }));
       assertEquals(await call("DELETE", "/2?newActiveId=3"), {
         status: 200,
-        body: { id: 2, featureFlagTurnedOff: false },
+        body: { id: 2 },
       });
       assertEquals((await call("GET", "/3")).body.isActive, true);
 

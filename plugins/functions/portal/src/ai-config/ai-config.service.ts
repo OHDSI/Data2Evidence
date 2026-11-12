@@ -16,7 +16,6 @@ import {
   AiConfigResponse,
   NormalisedAiConfig,
 } from "./dto/ai-config.dto.ts";
-import { Feature } from "../feature/entity/feature.entity.ts";
 import { AiConfig } from "./entity/ai-config.entity.ts";
 import {
   AI_CONFIG_ACTIVE_DELETE,
@@ -36,7 +35,6 @@ import { AiConfigRepository } from "./repository/ai-config.repository.ts";
  * Trex's auth code takes in the same database.
  */
 export const AI_CONFIG_LOCK_KEY = 3561003561n;
-export const AI_CONFIG_FEATURE_FLAG = "pythia";
 export const AI_CONFIG_NAME_INDEX = "ai_config_name_idx";
 
 const MAX_INT4 = 2147483647;
@@ -179,7 +177,7 @@ export class AiConfigService {
   async delete(
     rawId: string,
     rawNewActiveId: string | undefined,
-  ): Promise<{ id: number; featureFlagTurnedOff: boolean }> {
+  ): Promise<{ id: number }> {
     const id = this.parseId(rawId);
     // An empty string counts as absent.
     const newActiveId = rawNewActiveId ? this.parseNewActiveId(rawNewActiveId) : null;
@@ -207,19 +205,7 @@ export class AiConfigService {
         await this.repo.clearActiveTx(manager, this.userId);
         await this.repo.setActiveTx(manager, newActiveId, this.userId);
       }
-      let featureFlagTurnedOff = false;
-      if (rows.length === 1) {
-        // Deliberately not FeatureService: its reads use the pool, outside this transaction.
-        const flag = await manager.findOneBy(Feature, { feature: AI_CONFIG_FEATURE_FLAG });
-        if (flag?.isEnabled) {
-          await manager.update(Feature, { id: flag.id }, {
-            isEnabled: false,
-            modifiedBy: this.userId,
-          });
-          featureFlagTurnedOff = true;
-        }
-      }
-      return { id, featureFlagTurnedOff };
+      return { id };
     });
   }
 

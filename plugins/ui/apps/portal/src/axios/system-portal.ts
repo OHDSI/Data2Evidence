@@ -464,7 +464,7 @@ export class SystemPortal {
   }
 
   public deleteAiConfig(id: number, newActiveId?: number) {
-    return requestNoCache<{ id: number; featureFlagTurnedOff: boolean }>({
+    return requestNoCache<{ id: number }>({
       baseURL: SYSTEM_PORTAL_URL,
       url: `ai-config/${id}`,
       method: "DELETE",
