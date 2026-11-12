@@ -33,7 +33,8 @@ export const FeedbackToast: FC = () => {
     if (feedback.stackedMessageNode == null) {
       return <Alert variant="toast" {...alertProps} message={message} visible={visible} />;
     }
-    // One fixed container; the two alerts inside are laid out in a column, share one close and one timer.
+    // One fixed container; the two alerts inside are laid out in a column;
+    // both close together because each timer calls clearFeedback.
     return (
       <div className="feedback-toast-stack">
         <Alert variant="toast" {...alertProps} message={message} visible={visible} />
