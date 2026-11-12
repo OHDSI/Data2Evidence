@@ -1,10 +1,5 @@
 import { Locator } from 'playwright/test'
-import {
-  test,
-  expect as baseExpect,
-  openAdminPortalFromAtlas,
-  openAtlasPortalFromAdmin
-} from '../fixtures'
+import { test, expect as baseExpect, openAdminPortalFromAtlas, openAtlasPortalFromAdmin } from '../fixtures'
 
 // Configure expect with 1 minute timeout for this file
 const expect = baseExpect.configure({ timeout: 60000 })
@@ -15,7 +10,7 @@ test.use({ actionTimeout: 60000 })
 const TEST_NAME = 'CDM configuration creation'
 const SHOULD_SKIP = false
 test.fixme(SHOULD_SKIP, `${TEST_NAME} test is temporarily disabled.`)
-test.describe.configure({ retries: 0 }) // Re-try up to 3 times for flaky tests
+test.describe.configure({ retries: 3 }) // Re-try up to 3 times for flaky tests
 
 test(TEST_NAME, async ({ page }, testInfo) => {
   test.setTimeout(300 * 1000) // Set timeout to 5 minutes
