@@ -133,8 +133,6 @@ export interface LocationState {
   subTab?: string;
   tenantId: string;
   configTab?: string;
-  // Set by the Feature flags page to open the Add dialog on the AI configuration page.
-  openAdd?: boolean;
 }
 
 export interface AppError {

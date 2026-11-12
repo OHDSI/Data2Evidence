@@ -1,5 +1,4 @@
 import React, { FC, ReactNode, useEffect, useRef, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
 import AddIcon from "@mui/icons-material/Add";
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
@@ -21,7 +20,6 @@ import "ui-react/tokens.css";
 import "ui-react/style.css";
 import { api } from "../../../axios/api";
 import { useFeedback, useTranslation } from "../../../contexts";
-import { LocationState } from "../../../types";
 import { AiConfig } from "../../../types/aiConfig";
 import { AiConfigDialog } from "./AiConfigDialog";
 import { PendingBanner } from "./PendingBanner";
@@ -59,9 +57,6 @@ export const AiConfigPage: FC = () => {
   const [pickId, setPickId] = useState<string | null>(null);
   const [pickedName, setPickedName] = useState("");
   const [busy, setBusy] = useState(false);
-  const location = useLocation();
-  const navigate = useNavigate();
-  const openAdd = (location.state as LocationState | null)?.openAdd === true;
   const inFlight = useRef(false);
 
   useEffect(() => {
@@ -95,14 +90,6 @@ export const AiConfigPage: FC = () => {
       .listAiConfigs()
       .then((rows) => setConfigs(sortAiConfigs(rows)))
       .catch(() => setFeedback({ type: "error", variant: "alert", message: getText(i18nKeys.AI_CONFIG__LOAD_ERROR) }));
-
-  // Arriving with `openAdd` opens the Add dialog once the list has loaded, then clears the flag so Back or a
-  // re-render does not open it again.
-  useEffect(() => {
-    if (!openAdd || loading || loadFailed) return;
-    setAdding(true);
-    navigate(location.pathname, { replace: true, state: { tab: "setup", subTab: "ai-config" } });
-  }, [openAdd, loading, loadFailed, navigate, location.pathname]);
 
   // Runs a confirmed write on the row `id`. Success closes the dialog with a toast. A stale row
   // (`_NOT_FOUND`, `_ACTIVE_DELETE`) closes it with an error toast, since a retry cannot succeed. Any other failure

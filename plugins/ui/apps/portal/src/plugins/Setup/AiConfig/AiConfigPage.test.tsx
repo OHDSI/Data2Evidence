@@ -21,13 +21,6 @@ jest.mock("../../../axios/api", () => ({
   },
 }));
 
-let mockLocationState: { openAdd?: boolean } | undefined;
-const mockNavigate = jest.fn();
-jest.mock("react-router-dom", () => ({
-  useLocation: () => ({ pathname: "/setup", state: mockLocationState }),
-  useNavigate: () => mockNavigate,
-}));
-
 const mockSetFeedback = jest.fn();
 // Stable references, so the page's load effect runs once per mount.
 // Phrases with placeholders (titles, bodies, toasts) resolve to their real English text so the copy is
@@ -67,8 +60,6 @@ beforeEach(() => {
   mockClearFeedback.mockReset();
   mockGetFeedback.mockReset();
   mockUseRealFeedback = false;
-  mockLocationState = undefined;
-  mockNavigate.mockReset();
   (api.systemPortal.activateAiConfig as jest.Mock).mockReset();
   (api.systemPortal.deleteAiConfig as jest.Mock).mockReset();
 });
@@ -692,7 +683,7 @@ describe("AiConfigPage row actions", () => {
     });
   });
 
-  describe("Add toast and openAdd", () => {
+  describe("Add toast", () => {
     it("shows the Add toast with the bold name after a successful add", async () => {
       listAiConfigs.mockResolvedValue([]);
       (api.systemPortal.createAiConfig as jest.Mock).mockResolvedValue(row(5, "Fresh", true));
@@ -709,35 +700,6 @@ describe("AiConfigPage row actions", () => {
       const { first } = lastToasts();
       expect(first).toHaveTextContent("Fresh AI configuration has been added successfully.");
       expect(first.querySelector("strong")).toHaveTextContent("Fresh");
-    });
-
-    it("opens Add once the list has loaded when the location state asks for it, then clears the flag", async () => {
-      mockLocationState = { openAdd: true };
-      listAiConfigs.mockResolvedValue([]);
-      render(<AiConfigPage />);
-
-      expect(await screen.findByRole("dialog")).toBeInTheDocument();
-      expect(mockNavigate).toHaveBeenCalledWith("/setup", {
-        replace: true,
-        state: { tab: "setup", subTab: "ai-config" },
-      });
-    });
-
-    it("does not open Add when the list failed to load", async () => {
-      mockLocationState = { openAdd: true };
-      listAiConfigs.mockRejectedValue({ status: 500 });
-      render(<AiConfigPage />);
-      await waitFor(() => expect(mockSetFeedback).toHaveBeenCalled());
-      expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
-      expect(mockNavigate).not.toHaveBeenCalled();
-    });
-
-    it("opens nothing without the flag", async () => {
-      listAiConfigs.mockResolvedValue([]);
-      render(<AiConfigPage />);
-      await screen.findByText("AI_CONFIG__EMPTY_TITLE");
-      expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
-      expect(mockNavigate).not.toHaveBeenCalled();
     });
   });
 });
