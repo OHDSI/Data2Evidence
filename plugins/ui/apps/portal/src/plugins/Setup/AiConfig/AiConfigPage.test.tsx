@@ -562,7 +562,7 @@ describe("AiConfigPage row actions", () => {
       expect(await screen.findByText("AI_CONFIG__EMPTY_TITLE")).toBeInTheDocument();
       expect(deleteMock).toHaveBeenCalledWith(1, undefined);
       const { first } = lastToasts();
-      expect(first).toHaveTextContent("Only has been deleted.");
+      expect(first).toHaveTextContent("Only AI configuration has been deleted successfully.");
       expect(first.querySelector("strong")).toHaveTextContent("Only");
     });
 
