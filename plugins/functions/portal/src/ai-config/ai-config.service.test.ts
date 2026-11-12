@@ -329,6 +329,17 @@ Deno.test("an absent apiKey after a provider or base URL change is rejected and 
   assertEquals(db.rows[1].baseUrl, "https://x/v1");
 });
 
+Deno.test("a missing key on a provider change is reported before a duplicate name", async () => {
+  const { svc } = setup();
+  await svc.create(bedrock({ name: "A" }));
+  const b = await svc.create(bedrock({ name: "B" }));
+  await expectError(
+    svc.update(String(b.id), anthropic({ name: "A", apiKey: undefined })),
+    400,
+    "AI_CONFIG_KEY_REQUIRED",
+  );
+});
+
 Deno.test("responses never carry apiKey, plaintext or ciphertext", async () => {
   const { db, svc } = setup();
   const c = await svc.create(bedrock({ apiKey: "sk-plain-1" }));

@@ -212,7 +212,7 @@ describe("AiConfigDialog add", () => {
 });
 
 describe("AiConfigDialog edit", () => {
-  it("prefills the saved values with an empty masked key field and submits the placeholder when the key is untouched", async () => {
+  it("prefills the saved values with an empty masked key field and omits apiKey when the key is untouched", async () => {
     open(existing);
 
     expect(screen.getByRole("heading", { name: "Edit AI configuration" })).toBeInTheDocument();
@@ -233,7 +233,7 @@ describe("AiConfigDialog edit", () => {
     expect(createAiConfig).not.toHaveBeenCalled();
   });
 
-  it("does not submit the placeholder when the base URL changed", async () => {
+  it("requires a new key when the base URL changed", async () => {
     open(existing);
 
     await fill("Base URL", "https://other.example.org/v1");
@@ -246,7 +246,7 @@ describe("AiConfigDialog edit", () => {
     expect(updateAiConfig).toHaveBeenCalledWith(7, expect.objectContaining({ apiKey: "new-key" }));
   });
 
-  it("does not submit the placeholder when the provider changed", async () => {
+  it("requires a new key when the provider changed", async () => {
     open(existing);
 
     await chooseProvider("Anthropic API");
@@ -314,7 +314,7 @@ describe("AiConfigDialog edit", () => {
     expect(screen.queryByText("This name is already in use. Choose a different name.")).not.toBeInTheDocument();
   });
 
-  it("never submits the placeholder when the saved key is unreadable", async () => {
+  it("requires a new key when the saved key is unreadable; sends the typed key", async () => {
     open({ ...existing, keyReadable: false });
 
     expect(field("API key").value).toBe("");

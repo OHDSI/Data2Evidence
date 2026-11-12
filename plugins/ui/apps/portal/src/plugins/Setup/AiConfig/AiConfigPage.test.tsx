@@ -567,7 +567,7 @@ describe("AiConfigPage row actions", () => {
     it.each([
       ["plain", [row(1, "Active", true), row(2, "Beta")], "Beta"],
       ["active", [row(1, "Active", true), row(2, "Beta")], "Active"],
-      ["last", [row(1, "Only", true)], "Only"],
+      ["only", [row(1, "Only", true)], "Only"],
     ])(
       "%s: a pending delete shows the deleting copy, locks the dialog and ignores a second click",
       async (variant, rows, name) => {
