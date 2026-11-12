@@ -46,8 +46,7 @@ export const ConfirmPermissionDialog: FC<ConfirmPermissionDialogProps> = ({
             {getText(i18nKeys.DATA_SOURCE_PERMISSION__CANCEL)}
           </Button>
           <Button
-            variant="primary"
-            className={danger ? "d2e-dsp__danger-confirm" : undefined}
+            variant={danger ? "danger-solid" : "primary"}
             loading={busy}
             onClick={handleConfirm}
           >

@@ -168,13 +168,3 @@
     color: var(--d2e-color-neutral);
   }
 }
-
-.d2e-button.d2e-dsp__danger-confirm.d2e-dsp__danger-confirm {
-  background: var(--d2e-color-alarm);
-  color: var(--d2e-color-neutral-xtra-lightest);
-
-  &:hover {
-    background: var(--d2e-color-alarm);
-    filter: brightness(0.92);
-  }
-}
