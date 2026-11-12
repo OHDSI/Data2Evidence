@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test'
+import { test, expect, openAdminPortalFromAtlas } from '../fixtures'
 
 const TEST_NAME = 'copy-dataset-id-schema-name'
 const SHOULD_SKIP = false
@@ -14,9 +14,7 @@ test(TEST_NAME, async ({ page, context }) => {
   await page.locator('input[name="password"]').click()
   await page.locator('input[name="password"]').fill('Updatepassword12345')
   await page.getByRole('button', { name: 'Sign in' }).click()
-  await page.getByTestId('card-content').first().click()
-  await page.getByRole('link', { name: 'Account' }).click()
-  await page.getByRole('button', { name: 'Switch to Admin portal' }).click()
+  await openAdminPortalFromAtlas(page)
   await page.getByRole('link', { name: 'Data sources' }).click()
 
   // Get the dataset ID

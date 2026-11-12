@@ -1,9 +1,9 @@
 import React, { FC, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@portal/components";
-import { config } from "../../../../config";
-import { isAuthenticated } from "../../../auth";
-import { useTranslation } from "../../../../contexts";
+import { config } from "../../../../../config";
+import { isAuthenticated } from "../../../../auth";
+import { useTranslation } from "../../../../../contexts";
 import "./AccountButton.scss";
 
 export const AccountButton: FC = () => {

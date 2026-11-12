@@ -1,4 +1,4 @@
-import { expect, test } from '../fixtures'
+import { expect, openAdminPortalFromAtlas, test } from '../fixtures'
 import { MINUTE_2 } from '../const'
 
 const TEST_NAME = 'add-dataset-with-existing-schema'
@@ -23,8 +23,7 @@ test(TEST_NAME, async ({ page }) => {
   const vocabSchemaName = 'demo_cdm'
 
   // Switch to admin portal
-  await page.getByTestId('button').nth(1).click()
-  await page.getByRole('button', { name: 'Switch to Admin portal' }).click()
+  await openAdminPortalFromAtlas(page)
 
   // Cleanup if the datasets already exist
   await page.getByRole('link', { name: 'Data sources' }).click()

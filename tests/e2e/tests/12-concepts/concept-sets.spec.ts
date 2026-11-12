@@ -1,164 +1,60 @@
-import { expect, test } from '../fixtures'
+import { expect, openAtlasDataset, test } from '../fixtures'
 
 const TEST_NAME = 'concept-sets'
-// Skipped: the three full-page snapshots flakily capture the Atlas UI mid-load
-// (header nav not yet settled; the concept-set modal's table spinner still
-// running), producing ~20k-px diffs. The data-load assertion can also race a
-// concurrent DQD flow (conceptRecordCount 500). Re-enable once the snapshots
-// are stabilised/masked and the concept-record-count path degrades gracefully.
-const SHOULD_SKIP = true
-
-// Tolerate minor anti-aliasing/render noise (dev runs differ by ~200px) while
-// still catching real content diffs (e.g. the ~20k-px unsettled-nav regression).
-const SCREENSHOT_OPTS = { maxDiffPixels: 1000 }
-test.fixme(SHOULD_SKIP, `${TEST_NAME} test is temporarily disabled.`)
-test.describe.configure({ retries: 3 }) // Re-try up to 3 times for flaky tests
 
 test(TEST_NAME, async ({ page }) => {
-  async function assertCount(count: string) {
-    return page.locator('button').filter({ hasText: 'Selected concepts' }).getByText(count).isVisible()
-  }
+  const conceptSetName = `E2E concept set ${Date.now()}`
+  let conceptSetCreated = false
 
   await page.goto('/d2e/portal')
-  await page.locator('input[name="identifier"]').click()
-  await page.locator('input[name="identifier"]').fill('admin')
-  await page.locator('input[name="password"]').click()
-  await page.locator('input[name="password"]').fill('Updatepassword12345')
+  await page.getByLabel('Username').fill('admin')
+  await page.getByLabel('Password').fill('Updatepassword12345')
   await page.getByRole('button', { name: 'Sign in' }).click()
-  await page.getByText('Demo dataset').first().click()
+  await openAtlasDataset(page)
   await page.getByRole('link', { name: 'Concepts' }).click()
-  await expect(page.getByText('-25 of 444')).toBeVisible()
-  // Feature-gated nav items (e.g. Analysis) only settle once enabled-feature flags
-  // and their single-spa plugins finish loading; wait for the header to reach its
-  // final state so it isn't captured mid-bootstrap.
-  await expect(page.locator('.header__menu-group').getByText('Analysis', { exact: true })).toBeVisible()
-  await expect(page.locator('.loading-animation-component')).not.toBeVisible()
-  await expect(page).toHaveScreenshot(SCREENSHOT_OPTS)
-  await page.getByRole('tab', { name: 'Concept Sets' }).click()
+  await expect(page.getByRole('tab', { name: 'Concept Sets' })).toHaveAttribute('aria-selected', 'true')
 
-  // Concept set
-  const conceptSetName = `Concept Set Test 1`
-  // If the concept set already exists (retry), remove the second concept set we added last time
-  if (await page.getByRole('cell', { name: conceptSetName }).isVisible()) {
-    await page.getByRole('row').filter({ hasText: conceptSetName }).getByRole('button').first().click()
-    await expect(page.getByRole('button', { name: 'Update' })).toBeEnabled()
-    console.log(`assertCount ${await assertCount('2')}`)
-    if (await assertCount('2')) {
-      await page.getByRole('tab', { name: 'Selected concepts' }).click()
-      await page
-        .getByRole('row', { name: /81893.*64766004.*Ulcerative/ })
-        .locator('td')
-        .first()
-        .click()
-      await expect(await assertCount('1')).toBeTruthy()
-      await page.getByRole('button', { name: 'Update' }).dblclick()
-      await expect(page.getByRole('button', { name: 'Update' })).toBeDisabled()
-      await expect(page.getByRole('button', { name: 'Update' })).toBeEnabled()
-    }
-    await page.getByRole('button', { name: 'Close' }).click()
-  } else {
-    // Create a new concept set
-    await page.getByTestId('button').click() // click on the "Add concept set" button
-    await page.getByRole('textbox', { name: 'search terms' }).click()
-    await page.getByRole('textbox', { name: 'search terms' }).fill('Streptococcal sore throat')
-    await page.getByRole('button', { name: 'Search' }).click()
-    await page
-      .getByRole('row', { name: /28060.*43878008.*Streptococcal sore throat/ })
-      .locator('td')
-      .first()
-      .click()
-    await page.getByRole('tab', { name: 'Selected concepts' }).click()
-    await expect(page.getByRole('row')).toHaveCount(2) // including the header row
-    await page.getByRole('tab', { name: 'Related concepts' }).click()
-    await page.getByRole('textbox', { name: 'Concept set name' }).click()
-    await page.getByRole('textbox', { name: 'Concept set name' }).fill('')
-    await page.getByRole('button', { name: 'Create' }).click()
-    await expect(page.getByText('Please enter a name.')).toBeVisible()
-    await page.getByRole('textbox', { name: 'Concept set name' }).fill(conceptSetName)
-    await page.getByRole('button', { name: 'Create' }).click()
-    await expect(page.getByRole('button', { name: 'Update' })).toBeEnabled()
-    await page.getByRole('button', { name: 'Close' }).click()
-    await expect(page.locator('.loading-animation-component')).not.toBeVisible()
-  }
-
-  await test.step('Attempt to create another concept set with the same name', async () => {
-    await page.goto('/d2e/portal')
-    await page.getByText('Demo dataset').first().click()
-    await page.getByRole('link', { name: 'Concepts' }).click()
-    await expect(page.getByText('-25 of 444')).toBeVisible()
-    await page.getByRole('tab', { name: 'Concept Sets' }).click()
-    await page.getByTestId('button').click()
-    await page.getByRole('textbox', { name: 'Concept set name' }).click()
-    await page.getByRole('textbox', { name: 'Concept set name' }).fill(conceptSetName)
-    await page.getByRole('button', { name: 'Create' }).click()
-    await expect(
-      page.getByText(`Concept set name "${conceptSetName}" already exists. Please enter another name.`)
-    ).toBeVisible()
-    await page.getByRole('button', { name: 'Close' }).click()
-  })
-
-  // Cohort builder
-  await page.getByRole('link', { name: 'Cohorts' }).click()
-  await page.getByTestId('explorations-new-btn').click()
-  await page.getByTitle('Add Filter Card').getByRole('button').click()
-  await page.getByRole('menuitem', { name: 'Condition Occurrence' }).click()
-  await page.getByTitle('Add Filter Card').getByRole('button').click()
-  // Select the "Condition concept set" filter
-  await page.locator('button:has(span[title="Select Filter Attributes"])').nth(1).click()
-  const conceptSet = page.locator('.bs-checkbox:has-text("Condition concept set")')
-  const conceptChecked = await conceptSet.locator('input[type="checkbox"]').isChecked()
-  if (!conceptChecked) {
-    await conceptSet.click()
-  }
-  await page.locator('button:has(span[title="Select Filter Attributes"])').nth(1).click()
-  // Select the concept set we just created
-  await page.locator('[id="patient\\.interactions\\.conditionoccurrence\\.1"]').getByText('All').click()
-  await page.getByPlaceholder('Enter search term').fill(conceptSetName)
-  await expect(page.getByText('Concept Set Test 1 -')).toBeVisible()
-  await page.waitForTimeout(3000)
-  await page.getByPlaceholder('Enter search term').press('Enter')
-  await expect(page.getByText('1,677 / 2,694')).toBeVisible()
-  await page.getByText('✎').click()
-  await expect(page.locator('.loading-animation-component')).not.toBeVisible()
-  await expect(page).toHaveScreenshot(SCREENSHOT_OPTS)
-  await page.getByRole('textbox', { name: 'search terms' }).click()
-  await page.getByRole('textbox', { name: 'search terms' }).fill('Ulcerative colitis')
-  await page.getByRole('textbox', { name: 'search terms' }).press('Enter')
-  await expect(page.getByRole('cell', { name: '81893' })).toBeVisible()
-  // Only add "81893 64766004 Ulcerative" when it is not already selected, in the scenario of re-running the test
-  if (await assertCount('1')) {
-    await page
-      .getByRole('row', { name: /81893.*64766004.*Ulcerative/ })
-      .locator('td')
-      .first()
-      .click()
-    await expect(await assertCount('2')).toBeTruthy()
-  }
-  await page.waitForTimeout(1000)
-  await page.getByRole('button', { name: 'Update' }).dblclick()
-  await expect(page.getByRole('button', { name: 'Update' })).toBeDisabled()
-  await expect(page.getByRole('button', { name: 'Update' })).toBeEnabled()
-  await page.getByRole('button', { name: 'Close' }).click()
-
-  // Blur any focused element to prevent focus shadow on multiselect tags
-  // (focus can return to the tag when modal closes, especially on fast systems)
-  await page.evaluate(() => (document.activeElement as HTMLElement)?.blur())
-
-  // Dismiss popover if present
   try {
-    await page.mouse.move(0, 0)
-    await page.locator('.modal-wrapper').click()
-  } catch {
-    // Modal not present, continue
+    await page.getByRole('button', { name: 'New Concept Set' }).click()
+
+    const editor = page
+      .getByRole('navigation')
+      .filter({ has: page.getByTestId('cs-editor-primary-btn') })
+    await editor.getByRole('textbox', { name: 'Name' }).fill(conceptSetName)
+    await expect(editor.getByRole('tab', { name: 'Search' })).toHaveAttribute('aria-selected', 'true')
+
+    const search = editor.getByRole('textbox', { name: 'Search' })
+    await search.fill('Streptococcal sore throat')
+    await search.press('Enter')
+
+    await editor
+      .getByRole('checkbox', { name: 'Select Streptococcal sore throat' })
+      .check()
+    await editor.getByTestId('add-selected').click()
+    await expect(editor.getByRole('tab', { name: /Selected.*1/ })).toBeVisible()
+
+    await editor.getByTestId('cs-editor-primary-btn').click()
+    await expect(editor).not.toBeVisible()
+    conceptSetCreated = true
+
+    const conceptSetRow = page.getByRole('row').filter({
+      has: page.getByRole('cell', { name: conceptSetName, exact: true })
+    })
+    await expect(conceptSetRow).toBeVisible()
+  } finally {
+    if (conceptSetCreated) {
+      const conceptSetSearch = page.getByRole('textbox', { name: 'Search concept sets…' })
+      await conceptSetSearch.fill(conceptSetName)
+
+      const conceptSetRow = page.getByRole('row').filter({
+        has: page.getByRole('cell', { name: conceptSetName, exact: true })
+      })
+      await conceptSetRow.getByRole('button', { name: 'Delete' }).click()
+
+      const deleteDialog = page.getByRole('dialog', { name: 'Delete' })
+      await expect(deleteDialog).toContainText(`Are you sure you want to delete "${conceptSetName}"?`)
+      await deleteDialog.getByRole('button', { name: 'Delete', exact: true }).click()
+      await expect(conceptSetRow).not.toBeVisible()
+    }
   }
-
-  await expect(page.locator('.loading-animation-component')).not.toBeVisible()
-
-  // GHA race condition: After updating the concept set, the cohort count may trigger a background
-  // recalculation. On slower GHA runners, this completes between the initial check and the screenshot,
-  // causing the count to change. Wait for the count to stabilize before screenshot.
-  await page.waitForTimeout(3000)
-  await expect(page.getByText('1,836 / 2,694')).toBeVisible()
-
-  await expect(page).toHaveScreenshot(SCREENSHOT_OPTS)
 })

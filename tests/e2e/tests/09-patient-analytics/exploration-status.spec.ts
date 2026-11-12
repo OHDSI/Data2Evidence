@@ -1,5 +1,5 @@
 import type { Page } from '@playwright/test'
-import { test, expect } from '../fixtures'
+import { test, expect, openAtlasDataExploration } from '../fixtures'
 import { MINUTE_2 } from '../const'
 import {
   type CardButtonAction,
@@ -40,9 +40,7 @@ async function openCohorts(page: Page) {
   await page.locator('input[name="password"]').click()
   await page.locator('input[name="password"]').fill(PASSWORD)
   await page.getByRole('button', { name: 'Sign in' }).click()
-  await page.getByText(DATASET).first().click()
-  await page.getByRole('link', { name: 'Cohorts' }).click()
-  await expect(page.getByTestId('explorations-page')).toBeVisible()
+  await openAtlasDataExploration(page, DATASET)
 }
 
 async function backToList(page: Page) {
@@ -76,9 +74,16 @@ async function openExploration(page: Page, name: string, count: string) {
 }
 
 async function addFirstFilter(page: Page) {
-  await page.locator('div[title="Basic Data - Month of Birth"]').click()
-  await page.locator('div[title="Basic Data - Month of Birth"]').getByRole('textbox').fill('>2')
-  await page.locator('div[title="Basic Data - Month of Birth"]').getByRole('textbox').press('Enter')
+  const basicData = page.getByRole('tab', { name: /Basic Data/ })
+  const attributeMenu = basicData.getByTitle('Select Filter Attributes')
+  await attributeMenu.click()
+  await page.getByRole('menu').getByText('Month of Birth', { exact: true }).click()
+  await attributeMenu.click()
+
+  const monthOfBirthFilter = page.getByTitle('Basic Data - Month of Birth')
+  await monthOfBirthFilter.click()
+  await monthOfBirthFilter.getByRole('textbox').fill('>2')
+  await monthOfBirthFilter.getByRole('textbox').press('Enter')
   await expectPatientCount(page, COUNT.monthOfBirth)
 }
 
@@ -99,11 +104,11 @@ async function removeMaleFilter(page: Page) {
   await expectPatientCount(page, COUNT.monthOfBirth)
 }
 
-// Change only the chart: remove the Month of Birth axis.
+// Change only the chart: remove the default Age axis.
 async function changeChartOnly(page: Page) {
   await page
     .locator('div.axis-menu-button-wrapper')
-    .getByRole('button', { name: 'Basic Data Month of Birth ◢' })
+    .getByRole('button', { name: 'Basic Data Age ◢' })
     .click()
   await page.locator('div.dropdownmenu-container .menuWrapper:not(.closed)').getByText('Reset Selection').click()
   await expect(page.locator('.loading-animation-component')).not.toBeVisible()

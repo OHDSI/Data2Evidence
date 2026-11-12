@@ -1,4 +1,4 @@
-import { test, expect } from '../fixtures'
+import { test, expect, openAtlasDataExploration } from '../fixtures'
 import { deleteExploration } from '../explorations'
 
 const TEST_NAME = 'cohort-generation'
@@ -27,10 +27,7 @@ test('cohort-generation', async ({ page }) => {
   // DATASET SELECTION AND NAVIGATION
   // ========================
   // Select the demo dataset for testing
-  await page.getByText('Demo dataset').first().click()
-
-  // Navigate to the Cohorts section for patient analytics
-  await page.getByRole('link', { name: 'Cohorts' }).click()
+  await openAtlasDataExploration(page)
 
   // ========================
   // COHORT CREATION SECTION
@@ -82,21 +79,22 @@ test('cohort-generation', async ({ page }) => {
   // ========================
   // Create a new concept set for "Acute allergic reaction"
   await page.getByRole('button', { name: '+' }).click()
-  await page.getByRole('textbox', { name: 'Concept set name' }).click()
-  await page.getByRole('textbox', { name: 'Concept set name' }).fill('Acute allergic reaction')
+  await page.getByRole('textbox', { name: 'Name' }).click()
+  await page.getByRole('textbox', { name: 'Name' }).fill('Acute allergic reaction')
 
   // Search for the acute allergic reaction concept in the OMOP vocabulary
-  await page.getByRole('textbox', { name: 'search terms' }).click()
-  await page.getByRole('textbox', { name: 'search terms' }).fill('Acute allergic reaction')
-  await page.getByRole('textbox', { name: 'search terms' }).press('Enter')
+  await page.getByRole('textbox', { name: 'Search', exact: true }).click()
+  await page.getByRole('textbox', { name: 'Search', exact: true }).fill('Acute allergic reaction')
+  await page.getByRole('textbox', { name: 'Search', exact: true }).press('Enter')
 
   // Select the specific concept (ID: 4084167, SNOMED: 241929008)
-  await page.getByRole('row', { name: '4084167 241929008 Acute' }).getByRole('img').click()
+  await page.getByRole('row', { name: /4084167.*241929008.*Acute/ }).getByRole('checkbox').check()
+  await page.getByTestId('add-selected').click()
 
   // Create the concept set and verify it's ready for use
   await page.getByRole('button', { name: 'Create' }).click()
   await expect(page.getByRole('button', { name: 'Update' })).toBeVisible()
-  await page.getByRole('button', { name: 'Close' }).click()
+  await page.getByRole('button', { name: 'Close', exact: true }).click()
 
   // ========================
   // COHORT RESULTS VERIFICATION

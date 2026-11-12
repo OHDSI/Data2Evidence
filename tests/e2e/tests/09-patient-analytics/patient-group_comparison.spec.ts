@@ -1,11 +1,14 @@
-import { test, expect } from '../fixtures'
-import { confirmExplorationDialog, explorationCard } from '../explorations'
+import { test, expect, openAtlasDataExploration } from '../fixtures'
+import { confirmExplorationDialog, explorationCard, explorationMenuAction } from '../explorations'
 
 test('pa-compare-cohorts', async ({ page }) => {
   test.slow()
   // Generate unique cohort name to avoid conflicts with other tests
   const cohortA = `CohortA_${new Date().getTime()}`
   const cohortB = `CohortB_${new Date().getTime()}`
+  const createdCohorts: string[] = []
+
+  try {
 
   // ========================
   // AUTHENTICATION SECTION
@@ -19,20 +22,15 @@ test('pa-compare-cohorts', async ({ page }) => {
   await page.locator('input[name="password"]').click()
   await page.locator('input[name="password"]').fill('Updatepassword12345')
   await page.getByRole('button', { name: 'Sign in' }).click()
-  await page.waitForTimeout(5000)
 
   // ========================
   // DATASET SELECTION AND NAVIGATION
   // ========================
   // Select the demo dataset for testing
-  await page.getByText('Demo dataset').first().click()
-  // Navigate to the Cohorts section for patient analytics
-  await page.getByRole('link', { name: 'Cohorts' }).click()
-
-  await page.waitForTimeout(10000)
+  await openAtlasDataExploration(page)
   await createCohortWithOneConditionOccurrenceFilercard(page, cohortA)
+  createdCohorts.push(cohortA)
   await addMonthOfBirthFilter(page, '[1-2]')
-  await page.waitForTimeout(3000)
   // do not add the concept set for "Acute allergic reaction"
   // await createConceptSet(page, 'Acute allergic reaction', 'Acute allergic reaction', '4084167 241929008 Acute')
 
@@ -46,8 +44,7 @@ test('pa-compare-cohorts', async ({ page }) => {
   // Re-saving an already-saved cohort owned by the current user no longer opens the
   // naming dialog - FiltersFooter.openSaveBookmark() only does that when
   // needsSaveDialog (isNewCohort || isNotUserSharedBookmark) is true.
-  await page.getByTestId('pa-save-cohort-btn').click()
-  await expect(page.locator('#app')).toContainText('Saved filter updated.')
+  await saveUpdatedCohort(page)
 
   // Navigate back to the cohorts list
   await page.locator('#pane-left').getByRole('link', { name: 'Cohorts' }).click()
@@ -57,10 +54,9 @@ test('pa-compare-cohorts', async ({ page }) => {
   await expect(explorationCard(page, cohortA)).toBeVisible()
 
   // Cohort B creation: with Condition Occurrence A filtercard
-  await page.waitForTimeout(10000)
   await createCohortWithOneConditionOccurrenceFilercard(page, cohortB)
+  createdCohorts.push(cohortB)
   await addMonthOfBirthFilter(page, '[2-4]')
-  await page.waitForTimeout(3000)
   await expect(page.locator('#pane-right')).toContainText('642')
 
   // Add Condition Occurrence B filter card
@@ -73,8 +69,7 @@ test('pa-compare-cohorts', async ({ page }) => {
   // Re-saving an already-saved cohort owned by the current user no longer opens the
   // naming dialog - FiltersFooter.openSaveBookmark() only does that when
   // needsSaveDialog (isNewCohort || isNotUserSharedBookmark) is true.
-  await page.getByTestId('pa-save-cohort-btn').click()
-  await expect(page.locator('#app')).toContainText('Saved filter updated.')
+  await saveUpdatedCohort(page)
 
   // Navigate back to the cohorts list
   await page.locator('#pane-left').getByRole('link', { name: 'Cohorts' }).click()
@@ -94,10 +89,19 @@ test('pa-compare-cohorts', async ({ page }) => {
   await expect(page.getByRole('button', { name: 'Compare' })).toBeEnabled()
 
   await page.getByRole('button', { name: 'Compare' }).click()
-  await page.waitForTimeout(15000)
 
   // Verify the comparison modal is visible
-  await expect(page.getByTestId('pa-compare-modal')).toBeVisible()
+  const compareModal = page.getByTestId('pa-compare-modal')
+  await expect(compareModal).toBeVisible()
+  await expect(compareModal.locator('.loading-animation-component')).toBeHidden()
+  await expect(
+    compareModal
+      .locator('#columnbar-chart svg')
+      .filter({ hasText: cohortA })
+      .filter({ hasText: cohortB })
+  ).toBeVisible()
+  await expect(compareModal).toContainText(cohortA)
+  await expect(compareModal).toContainText(cohortB)
   await page.locator('.mainChartToolbar').getByTitle('Export to File').click()
 
   const downloadPromise = page.waitForEvent('download')
@@ -109,42 +113,9 @@ test('pa-compare-cohorts', async ({ page }) => {
   const download = await downloadPromise
   // the downloaded PNG should be prefixed with the active cohort and follows {cohortName}_{chartType}_{DD-MM-YYYY}.png format
   expect(download.suggestedFilename()).toMatch(new RegExp(`^${cohortB}_.*\\d{2}-\\d{2}-\\d{4}\\.png$`))
-
-  // ========================
-  // CLEANUP SECTION
-  // ========================
-  // Navigate back to cohorts list and delete the specific test cohort
-  await page.getByRole('button', { name: 'Close' }).click()
-  // Closing the modal leaves the Data Exploration list, which is where Compare
-  // was started, so there is nothing to navigate. `#pane-left` is the builder's
-  // breadcrumb and is not rendered here, and the top-nav Cohorts link is inert
-  // because the list already owns that route. Wait for the list instead.
-  //
-  // Wait on the bulk bar, NOT on explorations-new-btn. ExplorationsPage renders
-  // `v-if="explorations.hasSelection"` for the bulk bar and `v-else` for the
-  // toolbar that holds the new-exploration button, so the two never coexist.
-  // Both cohorts are still selected at this point - that is how Compare was
-  // reached - so the new-exploration button cannot exist yet and waiting for it
-  // always times out.
-  await expect(page.getByTestId('explorations-bulk-bar')).toBeVisible()
-
-  // Find and delete the specific cohort by name to avoid deleting wrong cohorts
-  // The delete button is the last img element in the action buttons container for each cohort
-  // Navigate from cohort title to its parent container, then to the action buttons container
-  // await page.locator('.footer > div:nth-child(5)').first().click()
-  // await page.getByRole('button', { name: 'Delete' }).click()
-
-  // Delete all saved cohorts until none remain. The delete icon with its
-  // "Delete Saved Filter" title is gone; Delete is a More-menu item now, so
-  // drain the list card by card.
-  while (await page.locator('.d2e-exploration-card').first().isVisible().catch(() => false)) {
-    await page.locator('.d2e-exploration-card').first().getByRole('button', { name: 'More actions' }).click()
-    await page.getByRole('menuitem', { name: 'Delete' }).click()
-    await confirmExplorationDialog(page)
-    await page.waitForTimeout(10000)
+  } finally {
+    await cleanupCreatedCohorts(page, createdCohorts)
   }
-
-  await expect(page.getByTestId('explorations-empty')).toBeVisible()
 })
 
 async function createCohortWithOneConditionOccurrenceFilercard(page, cohortName) {
@@ -162,12 +133,10 @@ async function createCohortWithOneConditionOccurrenceFilercard(page, cohortName)
 
   // Save the initial cohort configuration
   await page.getByTestId('pa-save-cohort-btn').click()
-  await page.waitForTimeout(5000)
 
   // Name the cohort with unique timestamp-based name and save
   await page.getByRole('textbox', { name: 'Enter name' }).click()
   await page.getByRole('textbox', { name: 'Enter name' }).fill(cohortName)
-  await page.waitForTimeout(10000)
   await page.getByTestId('pa-save-dialog-save-btn').click()
   // await expect(page.locator('#pane-left')).toContainText(cohortName)
 
@@ -175,7 +144,6 @@ async function createCohortWithOneConditionOccurrenceFilercard(page, cohortName)
   // CONDITION OCCURRENCE FILTER
   // ========================
   // Add a new condition occurrence filter to further narrow the cohort
-  await page.waitForTimeout(10000)
   await page.getByTitle('Add Filter Card').getByRole('button').click()
   await page.getByRole('menuitem', { name: 'Condition Occurrence' }).click()
 
@@ -186,36 +154,81 @@ async function createCohortWithOneConditionOccurrenceFilercard(page, cohortName)
   )
 }
 
+async function saveUpdatedCohort(page) {
+  const savedToast = page.getByText('Saved filter updated.', { exact: true })
+  await page.getByTestId('pa-save-cohort-btn').click()
+  await expect(savedToast).toBeVisible()
+  await expect(savedToast).toBeHidden()
+}
+
+async function cleanupCreatedCohorts(page, cohortNames: string[]) {
+  if (cohortNames.length === 0) return
+
+  const compareModal = page.getByTestId('pa-compare-modal')
+  if (await compareModal.isVisible().catch(() => false)) {
+    await compareModal.getByRole('button', { name: 'Close', exact: true }).click()
+    await expect(compareModal).toBeHidden()
+  }
+
+  const cohortsLink = page.locator('#pane-left').getByRole('link', { name: 'Cohorts' })
+  if (await cohortsLink.isVisible().catch(() => false)) {
+    await cohortsLink.click()
+  }
+
+  for (const cohortName of cohortNames) {
+    const checkbox = page.getByRole('checkbox', { name: `Select exploration ${cohortName}` })
+    if (await checkbox.isChecked().catch(() => false)) {
+      await checkbox.uncheck()
+    }
+  }
+
+  await expect(page.getByTestId('explorations-bulk-bar')).toBeHidden()
+
+  for (const cohortName of cohortNames) {
+    const card = explorationCard(page, cohortName)
+    if (!(await card.isVisible().catch(() => false))) continue
+
+    await explorationMenuAction(page, cohortName, 'Delete')
+    await confirmExplorationDialog(page)
+    await expect(card).toBeHidden()
+  }
+}
+
 async function addMonthOfBirthFilter(page, ageRange) {
   // ========================
   // AGE FILTER CONFIGURATION
   // ========================
-  // Add age restriction filter: patients between 35-80 years old
-  await page.locator('div[title="Basic Data - Month of Birth"]').click()
-  await page.locator('div[title="Basic Data - Month of Birth"]').getByRole('textbox').fill(ageRange)
-  await page.locator('div[title="Basic Data - Month of Birth"]').getByRole('textbox').press('Enter')
-
-  await page.waitForTimeout(3000)
+  const basicData = page.getByRole('tab', { name: /Basic Data/ })
+  const attributeMenu = basicData.getByTitle('Select Filter Attributes')
+  await attributeMenu.click()
+  await page.getByRole('menu').getByText('Month of Birth', { exact: true }).click()
+  await attributeMenu.click()
+  const monthOfBirthFilter = page.getByTitle('Basic Data - Month of Birth')
+  await monthOfBirthFilter.click()
+  await monthOfBirthFilter.getByRole('textbox').fill(ageRange)
+  await monthOfBirthFilter.getByRole('textbox').press('Enter')
 }
+
 async function createConceptSet(page, conceptSetName, searchTerm, conceptIdRowName) {
   // ========================
   // CONCEPT SET CREATION
   // ========================
   // Create a new concept set for "Acute allergic reaction"
   await page.getByRole('button', { name: '+' }).click()
-  await page.getByRole('textbox', { name: 'Concept set name' }).click()
-  await page.getByRole('textbox', { name: 'Concept set name' }).fill(conceptSetName)
+  await page.getByRole('textbox', { name: 'Name' }).click()
+  await page.getByRole('textbox', { name: 'Name' }).fill(conceptSetName)
 
   // Search for the acute allergic reaction concept in the OMOP vocabulary
-  await page.getByRole('textbox', { name: 'search terms' }).click()
-  await page.getByRole('textbox', { name: 'search terms' }).fill(searchTerm)
-  await page.getByRole('textbox', { name: 'search terms' }).press('Enter')
+  await page.getByRole('textbox', { name: 'Search', exact: true }).click()
+  await page.getByRole('textbox', { name: 'Search', exact: true }).fill(searchTerm)
+  await page.getByRole('textbox', { name: 'Search', exact: true }).press('Enter')
 
   // Select the specific concept (ID: 4084167, SNOMED: 241929008)
-  await page.getByRole('row', { name: conceptIdRowName }).getByRole('img').click()
+  await page.getByRole('row', { name: conceptIdRowName }).getByRole('checkbox').check()
+  await page.getByTestId('add-selected').click()
 
   // Create the concept set and verify it's ready for use
   await page.getByRole('button', { name: 'Create' }).click()
   await expect(page.getByRole('button', { name: 'Update' })).toBeVisible()
-  await page.getByRole('button', { name: 'Close' }).click()
+  await page.getByRole('button', { name: 'Close', exact: true }).click()
 }

@@ -1,4 +1,4 @@
-import { test, expect } from '../fixtures'
+import { test, expect, openAdminPortalFromAtlas } from '../fixtures'
 
 const TEST_NAME = 'dataset-user-permission'
 const SHOULD_SKIP = false
@@ -15,8 +15,7 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByRole('button', { name: 'Sign in' }).click()
 
   // Switch to Admin portal
-  await page.getByTestId('button').nth(1).click()
-  await page.getByRole('button', { name: 'Switch to Admin portal' }).click()
+  await openAdminPortalFromAtlas(page)
 
   // Create user - testuserC
   await page.getByRole('button', { name: 'Add user' }).click()

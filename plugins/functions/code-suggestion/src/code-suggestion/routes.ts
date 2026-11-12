@@ -94,7 +94,7 @@ export class CodeSuggestionRouter {
         let lastChar = "\n";
         let modelText = "";
         const COHORT_URL_RE =
-          /(?:\/d2e)?\/portal\/researcher\/cohort\?[^\s")']+/;
+          /\/atlas\/#\/plugins\/patient-analytics\/\?[^\s")']+/;
         // Cast: langchain's messages-mode stream isn't precisely typed; the
         // /chat route gets `any` for free via its fallback branch's wider union.
         for await (const [token, metadata] of stream as any) {

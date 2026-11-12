@@ -1,4 +1,4 @@
-import { test, expect } from '../fixtures'
+import { test, expect, acceptAtlasLicense } from '../fixtures'
 
 // Runs only in the federation job, which starts a Logto-era installation and
 // upgrades it. The regular e2e job has no Logto and skips this file.
@@ -16,7 +16,12 @@ test('an existing Logto user signs in through trex and keeps their dataset acces
 
   // Back in the portal as the migrated user, with the demo dataset still granted.
   await page.waitForURL(/\/d2e\/portal/)
-  await expect(page.getByText('Demo dataset').first()).toBeVisible()
+  await acceptAtlasLicense(page)
+  await expect(
+    page.getByRole('button', {
+      name: /^Demo dataset\s+Have access.*Data source type:\s+omop5-4/i
+    })
+  ).toBeVisible()
 })
 
 test('the sign-in page still offers Logto when the redirect is opted out of', async ({ page }) => {

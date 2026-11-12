@@ -1,4 +1,4 @@
-import { test, expect } from '../fixtures'
+import { expect, openAdminPortalFromAtlas, openAtlasPortalFromAdmin, test } from '../fixtures'
 import { MINUTE_10 } from '../const'
 
 const TEST_NAME = 'execute-data-quality'
@@ -12,85 +12,40 @@ test(TEST_NAME, async ({ page }) => {
 
   // Sign in
   await page.goto('/d2e/portal')
-  await page.locator('input[name="identifier"]').click()
-  await page.locator('input[name="identifier"]').fill('admin')
-  await page.locator('input[name="password"]').click()
-  await page.locator('input[name="password"]').fill('Updatepassword12345')
+  await page.getByLabel('Username').fill('admin')
+  await page.getByLabel('Password').fill('Updatepassword12345')
   await page.getByRole('button', { name: 'Sign in' }).click()
-  await page.getByTestId('button').nth(1).click() // account button
-  await page.getByRole('button', { name: 'Switch to Admin portal' }).click()
+  await openAdminPortalFromAtlas(page)
 
-  // Trigger data quality from Datasets page for demo dataset
+  // Atlas catalogs the webapi child, so target the matching Admin data-source row.
   await page.getByRole('link', { name: 'Data sources' }).click()
-  const demoDataset = await page.locator('tr', { hasText: 'Demo dataset' }).getByRole('button', { name: 'Actions' })
-  await demoDataset.click()
+  const demoDatasetRow = page.getByRole('row', { name: /Demo dataset.*webapi/i })
+  await demoDatasetRow.getByRole('button', { name: 'Actions' }).click()
   await page.getByRole('menuitem', { name: 'Run data quality' }).click()
   await page.getByRole('button', { name: 'Run Analysis' }).click()
-  await expect(page.getByTestId('alert-message')).toContainText('Successfully generated dqd')
+  await expect(page.getByTestId('alert-message')).toContainText('Successfully generated dqd job for Demo dataset')
 
-  // Grant researcher dataset permissions
-  await demoDataset.click()
-  await page.getByRole('menuitem', { name: 'Update permissions' }).click()
-  await page.getByRole('tab', { name: 'Access' }).click()
-
-  // Check if the user is already granted researcher access
-  await page.waitForTimeout(5000)
-  const isVisible = await page.getByRole('cell', { name: 'admin', exact: true }).isVisible()
-
-  if (!isVisible) {
-    const addExistingUsersButton = page.getByTestId('dialog').getByTestId('button')
-    await expect(addExistingUsersButton).toBeVisible()
-    await addExistingUsersButton.click()
-    // Wait for 5 seconds to ensure the menu items are visible
-    await page.waitForTimeout(5000)
-    await expect(page.getByRole('menuitem', { name: /admin/ })).toBeVisible()
-    await page.getByRole('menuitem', { name: /admin/ }).click()
-    await expect(page.getByRole('cell', { name: /admin/ })).toBeVisible()
-    await expect(page.getByTestId('alert-message')).toContainText('User admin has been granted permission')
-  }
-  await page.getByTestId('dialog-close').click()
-
-  // Wait for job container to stabilize before navigating to Jobs page
-  await page.waitForTimeout(5000)
-  // Open jobs page
   await page.getByRole('link', { name: 'Jobs' }).click()
   await page.getByRole('button', { name: 'Job Runs' }).click()
+  const jobSearch = page.getByRole('searchbox', { name: 'Search by flow run name' })
+  await jobSearch.fill('DQD_')
+  // DQD flow-run names are deterministic, so the newest matching Prefect card is the run just launched.
+  const latestDataQualityRun = page
+    .locator('.state-list-item__content')
+    .filter({ has: page.getByRole('link', { name: /^DQD_/ }) })
+    .first()
+  await expect(latestDataQualityRun.getByText('Completed', { exact: true })).toBeVisible({
+    timeout: 300000
+  })
 
-  // Verify if Data Quality Job has started running
-  await expect(
-    page.locator('.state-list-item__content').locator('div').filter({ hasText: 'Running' }).getByRole('img').first()
-  ).toBeVisible({ timeout: 80000 })
+  // Switch through Account → Switch to ATLAS, then use visible Atlas navigation.
+  await openAtlasPortalFromAdmin(page)
+  await page.getByRole('link', { name: 'Data Sources' }).click()
+  await page.getByTestId('ds-card').click()
+  await page.getByText('Data quality dashboard', { exact: true }).click()
 
-  // Verify if Data Quality Job is completed
-  await expect(
-    page.locator('.state-list-item__content').locator('div').filter({ hasText: 'Completed' }).getByRole('img').first()
-  ).toBeVisible({ timeout: 200000 })
-
-  // Switch to researcher portal
-  await page.getByRole('link', { name: 'Account' }).click()
-  await page.getByRole('button', { name: 'Switch to Researcher portal' }).click()
-
-  // Select demo dataset and Data Quality
-  await page.getByText('Demo dataset').nth(1).click()
-  await page.getByRole('tab', { name: 'Data Quality' }).click()
-
-  // Expect to see dataset name
-  await expect(page.getByTestId('card-content').getByText('Demo dataset')).toBeVisible()
-
-  // Expect to see overview
-  await expect(page.getByText('Overview')).toBeVisible()
-  await expect(page.getByRole('columnheader', { name: 'Verification' })).toBeVisible({ timeout: MINUTE_10 })
-  await expect(page.getByRole('columnheader', { name: 'Validation' })).toBeVisible()
-  await expect(page.getByRole('columnheader', { name: 'Total' }).first()).toBeVisible()
-  await expect(page.getByText('passed checks are not applicable, due to empty tables or fields')).toBeVisible()
-
-  // Expect to see Results. The table streams in behind a "Loading DQD results"
-  // spinner, and that text contains "Results" too, so an inexact match resolves to
-  // two elements and trips strict mode for as long as the spinner is up. Wait for
-  // it to clear, then match the heading exactly.
-  await expect(page.getByText('Loading DQD results')).toBeHidden({ timeout: MINUTE_10 })
-  await expect(page.getByText('Results', { exact: true })).toBeVisible()
-  await expect(page.getByRole('button', { name: 'Download CSV' })).toBeVisible()
-  await expect(page.getByRole('button', { name: 'Download JSON' })).toBeVisible()
-  await expect(page.getByText('Rows per page')).toBeVisible() // Check that table footer has rendered
+  // The dashboard follows the latest run from loading/running to ready.
+  await page.getByRole('cell', { name: 'Verification' }).click()
+  await page.getByRole('cell', { name: 'Validation' }).click()
+  await page.getByRole('rowheader', { name: 'Total' }).click()
 })

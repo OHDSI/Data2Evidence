@@ -7,15 +7,13 @@
 - (Optional) Pass in a results schema name that contains the cohort and cohort_definition tables
 - Select the **Run Analysis** button.
 ![](../images/dc/dc-runanalysis.png)
-- After completing the Data Characterization job run, the dashboard is available through the researcher portal.
-![dc-dashboard](../images/dc/dc-dashboard.png)
+- After completing the Data Characterization job run, the reports are available in Atlas: open the dataset from the Atlas home page, then use the left sidebar reports (**Dashboard**, **Data Density**, **Demographics**, **Clinical Domains**).
+![dc-dashboard](../images/dc/atlas-dc-dashboard.png)
 
 # Error Handling
 - The Data Characterization job fails when the following occurs:
-    - The dashboard for the dataset in the researcher portal displays an error **Latest job failed**
-    ![dc-failed-run-researcher](../images/dc/dc-failed-run-researcher.png)
+    - The dashboard for the dataset in Atlas displays an error **Latest job failed**
     - In Admin Portal **Jobs** page, the latest job run shows the status **Failed**
-    ![dc-failed-run-admin](../images/dc/dc-failed-run-admin.png)
 
 - To check the logs, click the hyperlink after **data_characterization_plugin >**
 ![dc-failed-run-admin](../images/dc/dc-job-run-logs.png)

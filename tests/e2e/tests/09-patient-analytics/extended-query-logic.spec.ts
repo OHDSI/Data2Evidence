@@ -1,4 +1,4 @@
-import { test, expect } from '../fixtures'
+import { test, expect, openAtlasDataExploration } from '../fixtures'
 import { deleteExploration } from '../explorations'
 const TEST_NAME = 'patient-analytics-extended-query-logic'
 const SHOULD_SKIP = false
@@ -13,8 +13,7 @@ test(TEST_NAME, async ({ page }) => {
   await page.locator('input[name="password"]').fill('Updatepassword12345')
   await page.getByRole('button', { name: 'Sign in' }).click()
 
-  await page.getByText('Demo dataset').first().click()
-  await page.getByRole('link', { name: 'Cohorts' }).click()
+  await openAtlasDataExploration(page)
   await page.getByTestId('explorations-new-btn').click()
   await expect(page.getByText('2,694 / 2,694')).toBeVisible()
   await expect(page.locator('.loading-animation-component')).not.toBeVisible()
@@ -29,9 +28,15 @@ test(TEST_NAME, async ({ page }) => {
   await expect(page.locator('.loading-animation-component')).not.toBeVisible()
   await expect(page.getByText('2,694 / 2,694')).toBeVisible()
   // Add basic data - month of birth
-  await page.locator('div[title="Basic Data - Month of Birth"]').click()
-  await page.locator('div[title="Basic Data - Month of Birth"]').getByRole('textbox').fill('6')
-  await page.locator('div[title="Basic Data - Month of Birth"]').getByRole('textbox').press('Enter')
+  const basicData = page.getByRole('tab', { name: /Basic Data/ })
+  const attributeMenu = basicData.getByTitle('Select Filter Attributes')
+  await attributeMenu.click()
+  await page.getByRole('menu').getByText('Month of Birth', { exact: true }).click()
+  await attributeMenu.click()
+  const monthOfBirthFilter = page.getByTitle('Basic Data - Month of Birth')
+  await monthOfBirthFilter.click()
+  await monthOfBirthFilter.getByRole('textbox').fill('6')
+  await monthOfBirthFilter.getByRole('textbox').press('Enter')
   // Add basic data - gender === MALE
   await page.getByTitle('Basic Data - Gender', { exact: true }).locator('div').nth(1).click()
   await page.getByPlaceholder('Enter search term').fill('MALE')
@@ -57,8 +62,8 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByRole('button', { name: 'AND ' }).first().click()
   await expect(page.locator('.loading-animation-component')).not.toBeVisible()
 
-  // Click x1 and ensure only the filtercards that do not associate with any OR condition should be available to select
-  await page.getByRole('button', { name: 'Basic Data Month of Birth ◢' }).first().click()
+  // Click x2 and ensure only the filtercards that do not associate with any OR condition should be available to select
+  await page.getByRole('button', { name: 'Basic Data Age ◢' }).click()
   await expect(page.locator('#pane-right').getByText('Condition Occurrence B')).toBeVisible()
   // await page.getByRole('button', { name: 'Select an Attribute ◢' }).first().click()
   await expect(page.locator('#pane-right').getByText('Condition Occurrence A')).not.toBeVisible()

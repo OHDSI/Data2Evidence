@@ -1,4 +1,4 @@
-import { test, expect } from '../fixtures'
+import { test, expect, openAtlasDataExploration } from '../fixtures'
 import { deleteExploration, explorationCard } from '../explorations'
 
 const TEST_NAME = 'patient-analytics-patient-list'
@@ -16,17 +16,22 @@ test(TEST_NAME, async ({ page }) => {
 
   //Navigate to Cohort page
   await test.step('Navigate to Cohort page', async () => {
-    await page.getByText('Demo dataset').first().click()
-    await page.getByRole('link', { name: 'Cohorts' }).click()
+    await openAtlasDataExploration(page)
     await page.getByTestId('explorations-new-btn').click()
     await expect(page.getByText('2,694 / 2,694')).toBeVisible()
     await expect(page.locator('.loading-animation-component')).not.toBeVisible()
   })
   //Add Age filter
   await test.step('Add Age filter', async () => {
-    await page.locator('div[title="Basic Data - Month of Birth"]').click()
-    await page.locator('div[title="Basic Data - Month of Birth"]').getByRole('textbox').fill('>2')
-    await page.locator('div[title="Basic Data - Month of Birth"]').getByRole('textbox').press('Enter')
+    const basicData = page.getByRole('tab', { name: /Basic Data/ })
+    const attributeMenu = basicData.getByTitle('Select Filter Attributes')
+    await attributeMenu.click()
+    await page.getByRole('menu').getByText('Month of Birth', { exact: true }).click()
+    await attributeMenu.click()
+    const monthOfBirthFilter = page.getByTitle('Basic Data - Month of Birth')
+    await monthOfBirthFilter.click()
+    await monthOfBirthFilter.getByRole('textbox').fill('>2')
+    await monthOfBirthFilter.getByRole('textbox').press('Enter')
     await expect(page.getByText('2,255 / 2,694')).toBeVisible()
     await expect(page.locator('.loading-animation-component')).not.toBeVisible()
   })
@@ -45,25 +50,25 @@ test(TEST_NAME, async ({ page }) => {
       const conceptSetName = `Chronic sinusitis ${randomSuffix}`
 
       await page.getByTitle('Condition Occurrence A -').getByRole('button').click()
-      await page.getByRole('textbox', { name: 'Concept set name' }).click()
-      await page.getByRole('textbox', { name: 'Concept set name' }).fill(conceptSetName)
-      await page.getByRole('textbox', { name: 'search terms' }).click()
-      await page.getByRole('textbox', { name: 'search terms' }).fill('Chronic sinusitis')
-      await page.getByRole('button', { name: 'Search' }).click()
+      await page.getByRole('textbox', { name: 'Name' }).click()
+      await page.getByRole('textbox', { name: 'Name' }).fill(conceptSetName)
+      await page.getByRole('textbox', { name: 'Search', exact: true }).click()
+      await page.getByRole('textbox', { name: 'Search', exact: true }).fill('Chronic sinusitis')
+      await page.getByRole('button', { name: 'Search', exact: true }).click()
       await page
         .getByRole('row', { name: /40055000.*Chronic sinusitis/ })
-        .locator('td')
-        .first()
-        .click()
+        .getByRole('checkbox')
+        .check()
+      await page.getByTestId('add-selected').click()
       await page.getByRole('button', { name: 'Create' }).click()
       // Wait for Create button to change to Update (confirms concept set was created)
       await expect(page.getByRole('button', { name: 'Update' })).toBeVisible()
-      await page.getByRole('button', { name: 'Close' }).click()
+      await page.getByRole('button', { name: 'Close', exact: true }).click()
       await expect(page.locator('.loading-animation-component')).not.toBeVisible()
     }
     await expect(page.locator('.loading-animation-component')).not.toBeVisible()
     await expect(page.getByText('682 / 2,694')).toBeVisible()
-    await page.getByRole('button', { name: 'Basic Data Month of Birth ◢' }).click()
+    await page.getByRole('button', { name: 'Basic Data Age ◢' }).click()
     await page.getByText('Reset Selection').click()
     await expect(page.locator('g.xaxislayer-above text', { hasText: 'Current Patient Group' })).toBeVisible()
   })

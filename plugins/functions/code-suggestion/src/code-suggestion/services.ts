@@ -29,10 +29,9 @@ const COHORT_AGENT_TOOLS = new Set<string>([
   COHORT_BUILDER_TOOL,
 ]);
 // The deep-link path the tool returns; captured deterministically so the LLM
-// never has to relay the (long, easily-placeholdered) URL itself. The optional
-// /d2e prefix must be kept (the tool emits /d2e/portal/...); anchoring at
-// /portal here is what was silently stripping it.
-const COHORT_URL_RE = /(?:\/d2e)?\/portal\/researcher\/cohort\?[^\s")']+/;
+// never has to relay the (long, easily-placeholdered) URL itself. The tool
+// emits the Atlas Patient Analytics hash route (/atlas/#/plugins/patient-analytics/?…).
+const COHORT_URL_RE = /\/atlas\/#\/plugins\/patient-analytics\/\?[^\s")']+/;
 
 /** Pull the deep-link URL out of whatever shape the tool result arrives in. */
 function extractCohortUrl(toolResult: unknown): string | undefined {

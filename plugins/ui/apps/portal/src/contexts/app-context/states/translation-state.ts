@@ -877,6 +877,10 @@ export const i18nDefault = {
     PIE_CHART__NO_DATA: "Results not available",
     PLUGIN_MENU_ITEM__TITLE: "Plugins",
     PLUGIN_TABLE__NO_DATA: "No data available",
+    PORTAL_UNAVAILABLE__GO_TO_ATLAS: "Go to Atlas",
+    PORTAL_UNAVAILABLE__INFO:
+      "The researcher portal has been retired. Researcher workflows are now available in Atlas.",
+    PORTAL_UNAVAILABLE__TITLE: "This page is no longer available.",
     PRIVACY_POLICY__TITLE: "Privacy policy",
     PUBLIC_DATASET_CARD__DATA_MODEL: "Data model",
     PUBLIC_DATASET_CARD__DATE: "Date",

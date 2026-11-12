@@ -1,4 +1,4 @@
-import { test, expect } from '../fixtures'
+import { test, expect, openAtlasDataExploration } from '../fixtures'
 
 const TEST_NAME = 'filtering-include-descendants'
 const SHOULD_SKIP = false
@@ -14,8 +14,7 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByRole('button', { name: 'Sign in' }).click()
 
   await test.step('Open Demo dataset and start a new D2E cohort', async () => {
-    await page.getByText('Demo dataset').first().click()
-    await page.getByRole('link', { name: 'Cohorts' }).click()
+    await openAtlasDataExploration(page)
     await page.getByTestId('explorations-new-btn').click()
     await expect(page.getByText('2,694 / 2,694')).toBeVisible()
     await expect(page.locator('.loading-animation-component')).not.toBeVisible()

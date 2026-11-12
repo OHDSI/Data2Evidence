@@ -1,85 +1,45 @@
-import { test, expect } from '../fixtures'
+import { expect, openAdminPortalFromAtlas, openAtlasPortalFromAdmin, test } from '../fixtures'
 
 const TEST_NAME = 'execute-data-characterization'
-const SHOULD_SKIP = false
-test.fixme(SHOULD_SKIP, `${TEST_NAME} test is temporarily disabled.`)
 test.describe.configure({ retries: 3 }) // Re-try up to 3 times for flaky tests
 
 test(TEST_NAME, async ({ page }) => {
-  //Increase timeout longer than the configured 30s
+  // Data characterization can take several minutes to finish.
   test.setTimeout(360000)
 
-  // Sign in
   await page.goto('/d2e/portal')
-  await page.locator('input[name="identifier"]').click()
-  await page.locator('input[name="identifier"]').fill('admin')
-  await page.locator('input[name="password"]').click()
-  await page.locator('input[name="password"]').fill('Updatepassword12345')
+  await page.getByLabel('Username').fill('admin')
+  await page.getByLabel('Password').fill('Updatepassword12345')
   await page.getByRole('button', { name: 'Sign in' }).click()
-  await page.getByTestId('button').nth(1).click() // account button
-  await page.getByRole('button', { name: 'Switch to Admin portal' }).click()
+  await openAdminPortalFromAtlas(page)
 
-  // Trigger data characterization from Datasets page for demo dataset
+  // Atlas catalogs the webapi child, so target the matching Admin data-source row.
   await page.getByRole('link', { name: 'Data sources' }).click()
-  const demoDataset = await page.locator('tr', { hasText: 'Demo dataset' }).getByRole('button', { name: 'Actions' })
-  await demoDataset.click()
+  const demoDatasetRow = page.getByRole('row', { name: /Demo dataset.*webapi/i })
+  await demoDatasetRow.getByRole('button', { name: 'Actions' }).click()
   await page.getByRole('menuitem', { name: 'Run data characterization' }).click()
   await page.getByRole('button', { name: 'Run Analysis' }).click()
+  await expect(page.getByTestId('alert-message')).toContainText('Successfully generated data_characterization job for Demo dataset')
 
-  // Grant researcher dataset permissions
-  await demoDataset.click()
-  await page.getByRole('menuitem', { name: 'Update permissions' }).click()
-  await page.getByRole('tab', { name: 'Access' }).click()
-
-  // Check if the user is already granted researcher access
-  await page.waitForTimeout(5000)
-  const isVisible = await page.getByRole('cell', { name: 'admin', exact: true }).isVisible()
-
-  if (!isVisible) {
-    const addExistingUsersButton = page.getByTestId('dialog').getByTestId('button')
-    await expect(addExistingUsersButton).toBeVisible()
-    await addExistingUsersButton.click()
-    // Wait for 5 seconds to ensure the menu items are visible
-    await page.waitForTimeout(5000)
-    await expect(page.getByRole('menuitem', { name: /admin/ })).toBeVisible()
-    await page.getByRole('menuitem', { name: /admin/ }).click()
-    await expect(page.getByRole('cell', { name: /admin/ })).toBeVisible()
-  }
-  await page.getByTestId('dialog-close').click()
-
-  // Wait for job container to stabilize before navigating to Jobs page
-  await page.waitForTimeout(5000)
-  // Open jobs page
   await page.getByRole('link', { name: 'Jobs' }).click()
   await page.getByRole('button', { name: 'Job Runs' }).click()
+  const jobSearch = page.getByRole('searchbox', { name: 'Search by flow run name' })
+  await jobSearch.fill('DC_')
+  // DC flow-run names are deterministic, so the newest matching Prefect card is the run just launched.
+  const latestDataCharacterizationRun = page
+    .locator('.state-list-item__content')
+    .filter({ has: page.getByRole('link', { name: /^DC_/ }) })
+    .first()
+  await expect(latestDataCharacterizationRun.getByText('Completed', { exact: true })).toBeVisible({
+    timeout: 300000
+  })
 
-  // Verify if DC Job has started running
-  await expect(
-    page.locator('.state-list-item__content').locator('div').filter({ hasText: 'Running' }).getByRole('img').first()
-  ).toBeVisible({ timeout: 80000 })
-
-  // Wait for DC Job to progress further
-  await page.waitForTimeout(100000)
-
-  // Verify if DC Job is completed
-  await expect(
-    page.locator('.state-list-item__content').locator('div').filter({ hasText: 'Completed' }).getByRole('img').first()
-  ).toBeVisible({ timeout: 100000 })
-
-  // Switch to researcher portal
-  await page.getByRole('link', { name: 'Account' }).click()
-  await page.getByRole('button', { name: 'Switch to Researcher portal' }).click()
-
-  // Select demo dataset and DC
-  await page.getByText('Demo dataset').nth(1).click()
-  await page.getByRole('tab', { name: 'Data Characterization' }).click()
-  await page.waitForTimeout(10000)
-
-  // Load Charts
-  await page.getByRole('combobox', { name: 'Select Data Characterization' }).click()
-  await page.getByRole('option', { name: 'Show All Reports' }).click()
-
-  // Verify if Dashboard results are rendered
-  await expect(page.getByText('Number of persons: 2,694')).toBeVisible()
-  await expect(page.getByText('Concepts Per Person')).toBeVisible()
+  // Switch through Account → Switch to ATLAS, then use visible Atlas navigation.
+  await openAtlasPortalFromAdmin(page)
+  await page.getByRole('link', { name: 'Data Sources' }).click()
+  
+  await page.getByTestId('ds-card').click();
+  await page.getByTestId('datasource-sidebar-dashboard').getByText('Dashboard').click();
+  await expect(page.getByRole('cell', { name: 'Number of People' })).toBeVisible();
+  await page.getByRole('cell', { name: '2,694' }).click();
 })

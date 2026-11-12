@@ -1,4 +1,8 @@
-import { test, expect } from '../fixtures'
+import { test, expect, openAdminPortalFromAtlas, cleanupTestDataflows } from '../fixtures'
+
+test.afterEach(async ({ page }) => {
+  await cleanupTestDataflows(page, [/^TestDataflow_/, /^TestDE_/])
+})
 
 test('duplicate-dataflow-version', async ({ page }) => {
   // Authentication
@@ -6,58 +10,58 @@ test('duplicate-dataflow-version', async ({ page }) => {
   await page.locator('input[name="identifier"]').fill('admin')
   await page.locator('input[name="password"]').fill('Updatepassword12345')
   await page.getByRole('button', { name: 'Sign in' }).click()
-  await page.getByTestId('button').nth(1).click()
-  await page.getByRole('button', { name: 'Switch to Admin portal' }).click()
+  await openAdminPortalFromAtlas(page)
 
   const timestamp = Date.now()
   const dataflowName = `TestDataflow_${timestamp}`
-  const version2Name = `${dataflowName}_v2`
-  const duplicateName = `${version2Name}_duplicate`
+  const duplicateName = `${dataflowName}_duplicate`
 
   await page.getByRole('link', { name: 'ETL' }).click()
 
   // Handle both scenarios: no flows (Create your first dataflow) or existing flows (Create new dataflow)
-  try {
-    // First try to find "Create your first dataflow" button (when no flows exist)
-    await page.waitForSelector('button:has-text("Create your first dataflow")')
-    await page.getByRole('button', { name: 'Create your first dataflow' }).click()
-  } catch {
-    // If that fails, look for "Create new dataflow" button (when flows already exist)
-    await page.getByLabel('Create new dataflow').getByRole('button').click()
+  const firstFlowButton = page.getByRole('button', { name: 'Create your first dataflow' })
+  const createNewButton = page.getByLabel('Create new dataflow').getByRole('button')
+  await expect(firstFlowButton.or(createNewButton)).toBeVisible()
+  if (await firstFlowButton.isVisible()) {
+    await firstFlowButton.click()
+  } else {
+    await createNewButton.click()
   }
   await page.getByRole('textbox', { name: 'Name' }).fill(dataflowName)
   await page.getByRole('textbox', { name: 'Comment' }).fill('Test dataflow')
   await page.getByRole('button', { name: 'Create' }).click()
 
-  // This timeout is necessary as clicking the node button too quickly seems to have an issue which causes the node not to be added. Remove this wait to see if the issue persists.
-  await page.waitForTimeout(1500)
-  await page.getByText('Python').first().click()
+  const nodeTypeDialog = page.getByRole('dialog').filter({ hasText: 'Select node type' })
+  await expect(nodeTypeDialog).toBeVisible()
+  await nodeTypeDialog.getByText('Python', { exact: true }).click()
   await expect(page.getByRole('button', { name: 'Save' })).toBeVisible()
 
   // Save as version #2
   await page.getByRole('button', { name: 'Save' }).click()
-  await page.getByRole('button').filter({ hasText: /^$/ }).click()
-  await page.getByRole('textbox', { name: 'Name' }).fill(version2Name)
-  await page.getByRole('textbox', { name: 'Describe your changes' }).fill('Added Python node')
-  await page.getByRole('button', { name: 'Save' }).click()
+  const saveDialog = page.getByRole('dialog').filter({ hasText: 'Save dataflow' })
+  await expect(saveDialog).toBeVisible()
+  await saveDialog.getByRole('textbox', { name: 'Describe your changes' }).fill('Added Python node')
+  await saveDialog.getByRole('button', { name: 'Save' }).click()
+  await expect(saveDialog).not.toBeVisible()
 
   await expect(page.getByText('Up to Date')).toBeVisible()
 
   // Verify version history shows 2 versions
   await page.getByLabel('Show version history').getByRole('button').click()
 
-  await expect(page.getByText(`Version history of "${version2Name}"`)).toBeVisible()
+  await expect(page.getByText(`Version history of "${dataflowName}"`)).toBeVisible()
   await expect(page.getByText('Version #2')).toBeVisible()
   await expect(page.getByText('Version #1')).toBeVisible()
 
   // Duplicate version #2 (newest version at index 0)
-  await page.getByRole('listitem').nth(0).hover()
-  await page.getByRole('listitem').nth(0).getByRole('button', { name: 'Duplicate' }).click()
+  const version2 = page.getByRole('listitem').filter({ hasText: 'Version #2' })
+  await version2.hover()
+  await version2.getByRole('button', { name: 'Duplicate' }).click()
 
   // Edit duplicate name and create
   await expect(page.getByText('Duplicate dataflow')).toBeVisible()
   const nameField = page.getByRole('textbox').first()
-  await expect(nameField).toHaveValue(version2Name)
+  await expect(nameField).toHaveValue(dataflowName)
   await nameField.fill(duplicateName)
 
   await page.getByRole('button', { name: 'Duplicate' }).click()
@@ -75,5 +79,9 @@ test('duplicate-dataflow-version', async ({ page }) => {
   // Cleanup
   await page.getByLabel('Delete flow').getByRole('button').click()
   await page.getByRole('textbox').fill(duplicateName)
+  const deleteResponsePromise = page.waitForResponse(
+    response => response.request().method() === 'DELETE' && response.url().includes('/d2e/jobplugins/dataflow/')
+  )
   await page.getByRole('button', { name: 'Delete' }).click()
+  expect((await deleteResponsePromise).ok()).toBeTruthy()
 })

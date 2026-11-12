@@ -17,10 +17,10 @@ Current Schema Version and Latest Available Schema Version are displayed on the 
 
 For OMOP data models:
 
-- The dataset will be displayed in the Researcher Portal alongside an updated donut chart if data is present in the schema
+- The dataset card on the Atlas home page shows the updated subject count and schema version if data is present in the schema
 - Total Subjects is based on the Patient Count
-- This information can also be viewed in the Dataset Info tab
+- The full metadata (Dataset ID, Entity Count, Patient Count, Schema Version, Latest Available Schema Version, Metadata Last Fetched Date) can be viewed on the dataset's **Description** page in Atlas
 
 > **The expected display is:**
-> ![Researcher Portal Dataset Donut Chart](../images/metadata/DatasetDonutChart.png)
-> ![Researcher Portal Dataset Metadata](../images/metadata/DatasetMetadataInfo.png)
+> ![Atlas Dataset Overview](../images/portal/AtlasHomeDatasets.png)
+> ![Atlas Dataset Metadata](../images/metadata/AtlasDatasetMetadata.png)

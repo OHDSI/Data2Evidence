@@ -1,4 +1,10 @@
-import { test, expect } from '../fixtures'
+import {
+  test,
+  expect,
+  openAdminPortalFromAtlas,
+  openAtlasDataExploration,
+  openAtlasPortalFromAdmin
+} from '../fixtures'
 
 const TEST_NAME = 'patient-analytics-cohort-entry-and-exit'
 const SHOULD_SKIP = false
@@ -12,8 +18,7 @@ test(TEST_NAME, async ({ page }) => {
   await page.locator('input[name="password"]').click()
   await page.locator('input[name="password"]').fill('Updatepassword12345')
   await page.getByRole('button', { name: 'Sign in' }).click()
-  await page.getByTestId('button').nth(1).click()
-  await page.getByRole('button', { name: 'Switch to Admin portal' }).click()
+  await openAdminPortalFromAtlas(page)
   await page.getByRole('link', { name: 'Setup' }).click()
 
   // Go to PA config and ensure CEE is checked
@@ -37,10 +42,8 @@ test(TEST_NAME, async ({ page }) => {
   await expect(page.getByText('Configuration saved.')).toBeVisible()
 
   // Go to cohorts screen and test CEE
-  await page.getByRole('link', { name: 'Account' }).click()
-  await page.getByRole('button', { name: 'Switch to Researcher portal' }).click()
-  await page.getByText('Demo dataset').first().click()
-  await page.getByRole('link', { name: 'Cohorts' }).click()
+  await openAtlasPortalFromAdmin(page)
+  await openAtlasDataExploration(page)
   await page.getByTestId('explorations-new-btn').click()
   await page.getByTitle('Add Filter Card').getByRole('button').click()
   await page.getByRole('menuitem', { name: 'Visit' }).click()
@@ -62,14 +65,14 @@ test(TEST_NAME, async ({ page }) => {
   await expect(page).toHaveScreenshot()
 
   // Go to PA config and uncheck CEE
-  await page.getByRole('link', { name: 'Account' }).click()
   // The cohort has unsaved changes (filter cards + Entry/Exit + AND→OR), so navigating
   // away now prompts the unsaved-changes dialog (#2636). Confirm leaving so nav proceeds.
+  await page.getByRole('button', { name: 'admin', exact: true }).click()
+  await page.getByRole('button', { name: 'Switch to Admin portal' }).click()
   await page
     .getByRole('button', { name: 'Leave without saving' })
     .click({ timeout: 3000 })
     .catch(() => {})
-  await page.getByRole('button', { name: 'Switch to Admin portal' }).click()
   await page.getByRole('link', { name: 'Setup' }).click()
   await page
     .locator('div')

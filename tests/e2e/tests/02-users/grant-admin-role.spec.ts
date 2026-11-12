@@ -1,4 +1,4 @@
-import { test, expect } from '../fixtures'
+import { test, expect, openAdminPortalFromAtlas, openAtlasAccount, resetPortalSession } from '../fixtures'
 
 test('test', async ({ page }) => {
   await page.goto('/d2e/portal')
@@ -7,8 +7,7 @@ test('test', async ({ page }) => {
   await page.locator('input[name="password"]').click()
   await page.locator('input[name="password"]').fill('Updatepassword12345')
   await page.getByRole('button', { name: 'Sign in' }).click()
-  await page.getByTestId('button').nth(1).click()
-  await page.getByRole('button', { name: 'Switch to Admin portal' }).click()
+  await openAdminPortalFromAtlas(page)
   await page.getByTestId('button').click()
   await page.getByRole('textbox', { name: 'Username' }).click()
   // Generate a random number for the role name to avoid conflicts
@@ -28,22 +27,29 @@ test('test', async ({ page }) => {
   await expect(page.locator('tbody')).toContainText('ViewerAdminUser Admin')
   await page.getByRole('link', { name: 'Account' }).click()
   await page.getByRole('button', { name: 'Logout' }).click()
+  await resetPortalSession(page)
   await page.locator('input[name="identifier"]').click()
   await page.locator('input[name="identifier"]').fill(roleName)
   await page.locator('input[name="password"]').click()
   await page.locator('input[name="password"]').fill('Updatepassword12345')
   await page.getByRole('button', { name: 'Sign in' }).click()
-  await expect(page.getByTestId('nav')).toContainText('Data sources')
-  await expect(page.getByTestId('nav')).toContainText('Users')
+  await expect(page.getByRole('link', { name: 'Data Sources' })).toBeVisible()
+  await openAtlasAccount(page, new RegExp(roleName, 'i'))
+  if (page.url().includes('/systemadmin/')) {
+    await page.getByRole('link', { name: 'Users' }).click()
+  } else {
+    await page.getByRole('button', { name: 'Switch to Admin portal' }).click()
+  }
+  await expect(page.getByRole('heading', { name: 'Users' })).toBeVisible()
   await page.getByRole('link', { name: 'Account' }).click()
   await page.getByRole('button', { name: 'Logout' }).click()
+  await resetPortalSession(page)
   await page.locator('input[name="identifier"]').click()
   await page.locator('input[name="identifier"]').fill('admin')
   await page.locator('input[name="password"]').click()
   await page.locator('input[name="password"]').fill('Updatepassword12345')
   await page.getByRole('button', { name: 'Sign in' }).click()
-  await page.getByTestId('button').nth(1).click()
-  await page.getByRole('button', { name: 'Switch to Admin portal' }).click()
+  await openAdminPortalFromAtlas(page)
   await page.getByTestId('table-row').filter({ hasText: roleName }).getByRole('button', { name: 'Delete' }).click()
   await page.getByRole('button', { name: 'Yes, delete' }).click()
 })

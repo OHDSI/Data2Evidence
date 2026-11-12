@@ -1,4 +1,4 @@
-import { test, expect } from '../fixtures'
+import { test, expect, openAdminPortalFromAtlas } from '../fixtures'
 import { Page } from '@playwright/test'
 import { MINUTE_1, MINUTE_2, MINUTE_3, MINUTE_5, MINUTE_10 } from '../const'
 
@@ -43,17 +43,17 @@ const deleteDatasetsIfPresent = async (page: Page, name: string) => {
 // Logs in as admin only if the session is not already signed in (hooks and test share the same page)
 const openAdminPortal = async (page: Page) => {
   await page.goto('/d2e/portal')
-  const identifier = page.locator('input[name="identifier"]')
-  const accountButton = page.getByTestId('button').nth(1)
-  // Continue as soon as either the login form or the signed-in account button shows up
-  await expect(identifier.or(accountButton)).toBeVisible({ timeout: MINUTE_1 })
+  const identifier = page.getByRole('textbox', { name: 'Username or email' })
+  const atlasUser = page.getByRole('button', { name: /admin/i })
+  const adminUsers = page.getByRole('heading', { name: 'Users' })
+  await expect(identifier.or(atlasUser).or(adminUsers)).toBeVisible({ timeout: MINUTE_1 })
   if (await identifier.isVisible()) {
     await identifier.fill('admin')
-    await page.locator('input[name="password"]').fill('Updatepassword12345')
+    await page.getByRole('textbox', { name: 'Password' }).fill('Updatepassword12345')
     await page.getByRole('button', { name: 'Sign in' }).click()
+    await expect(atlasUser.or(adminUsers)).toBeVisible({ timeout: MINUTE_1 })
   }
-  await accountButton.click()
-  await page.getByRole('button', { name: 'Switch to Admin portal' }).click()
+  await openAdminPortalFromAtlas(page)
 }
 
 const cleanUpWaveformDatasets = async (page: Page) => {
@@ -64,7 +64,7 @@ const cleanUpWaveformDatasets = async (page: Page) => {
   await deleteDatasetsIfPresent(page, DATASET_NAME)
 }
 
-// Before each attempt: remove leftovers so the Researcher portal shows exactly one card with our dataset name
+// Before each attempt: remove leftovers so dataset creation starts from a known state
 test.beforeEach(async ({ page }) => {
   test.setTimeout(test.info().timeout + MINUTE_3)
   await cleanUpWaveformDatasets(page)
@@ -141,60 +141,41 @@ test(TEST_NAME, async ({ page }) => {
   })
 
   await test.step('Grant admin access to the cache dataset', async () => {
-    // A newly created dataset is not accessible in Patient Analytics until the user is granted access.
-    // The parent is a "source" dataset with no Permissions action; the OMOP cache dataset is the researcher-facing one.
     await page.getByRole('link', { name: 'Data sources' }).click()
-    const cacheRow = page.locator('tr', { hasText: CACHE_DATASET_NAME }).first()
-    await expect(cacheRow).toBeVisible({ timeout: MINUTE_2 })
+    const cacheRow = page.getByRole('row').filter({ hasText: CACHE_DATASET_NAME })
+    await expect(cacheRow).toHaveCount(1, { timeout: MINUTE_2 })
     await cacheRow.getByRole('button', { name: 'Actions' }).click()
     await page.getByRole('menuitem', { name: 'Update permissions' }).click()
     await page.getByRole('tab', { name: 'Access' }).click()
     const addButton = page.getByTestId('dialog').getByTestId('button')
     await expect(addButton).toBeVisible()
     await addButton.click()
-    await expect(page.getByRole('menu')).toBeVisible()
     await expect(page.getByRole('menuitem', { name: 'admin', exact: true })).toBeVisible()
     await page.getByRole('menuitem', { name: 'admin', exact: true }).click()
     await expect(page.getByRole('cell', { name: 'admin', exact: true })).toBeVisible()
     await page.getByTestId('dialog-close').click()
   })
 
-  await test.step('Open the waveform dataset as a researcher', async () => {
+  await test.step('Open the waveform dataset in Data Exploration', async () => {
     await page.getByRole('link', { name: 'Account' }).click()
-    await page.getByRole('button', { name: 'Switch to Researcher portal' }).click()
-    // The dataset list renders every card at once, so wait for it and scroll down to ours
-    await expect(page.locator('.dataset-card').first()).toBeVisible({ timeout: MINUTE_1 })
-    const datasetCard = page
-      .locator('.dataset-card')
-      .filter({ has: page.locator('.dataset-card__title', { hasText: CACHE_DATASET_NAME }) })
-    await expect(datasetCard).toHaveCount(1)
-    await datasetCard.scrollIntoViewIfNeeded()
-    // The padlock is unlocked once the access granted above is picked up; only reload if it is still locked
-    const lockedIcon = datasetCard.locator('.dataset-card__permission-icon--inaccessible')
-    const isUnlocked = await expect(lockedIcon)
-      .toHaveCount(0, { timeout: 5000 })
-      .then(() => true)
-      .catch(() => false)
-    if (!isUnlocked) {
-      await expect(async () => {
-        await page.reload()
-        await datasetCard.scrollIntoViewIfNeeded()
-        await expect(lockedIcon).toHaveCount(0)
-      }).toPass({ timeout: MINUTE_2 })
-    }
-    await datasetCard.click()
+    await page.getByRole('button', { name: 'Switch to ATLAS' }).click()
+    await page.getByRole('link', { name: 'Data Exploration' }).click()
+
+    const dataSource = page.getByTestId('explorations-datasource')
+    await expect(dataSource).toBeVisible({ timeout: MINUTE_1 })
+    await dataSource.click()
+    await page.getByRole('option', { name: CACHE_DATASET_NAME, exact: true }).click()
+    await expect(dataSource).toContainText(CACHE_DATASET_NAME, { timeout: MINUTE_2 })
   })
 
-  await test.step('Verify waveform filter cards in Patient Analytics', async () => {
-    await page.getByRole('link', { name: 'Cohorts' }).click()
+  await test.step('Verify waveform filter cards in Data Exploration', async () => {
     await page.getByTestId('explorations-new-btn').click()
-    await expect(page.locator('.loading-animation-component')).not.toBeVisible({ timeout: MINUTE_2 })
-    // Filter cards come from the WAVEFORM PA config (mri-pg-config waveformConfigDuckdb.ts)
+    await expect(page.locator('.loading-animation-component')).toBeHidden({ timeout: MINUTE_2 })
     await page.getByTitle('Add Filter Card').getByRole('button').click()
     await expect(page.getByRole('menuitem', { name: 'Waveform Occurrence' })).toBeVisible()
     await expect(page.getByRole('menuitem', { name: 'Waveform Registry' })).toBeVisible()
     await page.getByRole('menuitem', { name: 'Waveform Occurrence' }).click()
-    // Filter cards are added to the left pane; the right pane holds the charts
     await expect(page.locator('#pane-left')).toContainText('Waveform Occurrence')
   })
+
 })

@@ -11,8 +11,8 @@ export interface WizardSubmitPayload {
 /**
  * Generate deep link URL for wizard result action.
  *
- * Expected URL format (from PRD):
- * https://[d2e-url]/d2e/portal/researcher?datasetId=[datasetId]&route=cohort&linkType=cohort-definition&query=[base64-json]
+ * Expected URL format (from PRD, now targeting Atlas):
+ * https://[d2e-url]/atlas/#/plugins/patient-analytics/?datasetId=[datasetId]&linkType=cohort-definition&query=[base64-json]
  *
  * @param action - Result action configuration
  * @param formData - Wizard form data to encode in URL
@@ -74,7 +74,9 @@ export function decodeWizardConfig(encoded: string): Record<string, any> {
  * Builds an MRI bookmark JSON from wizard fields and form data, compresses it
  * with pako (compatible with vue-mri CohortUrlCodec), and encodes it in the URL.
  *
- * URL format: /d2e/portal/researcher/cohort?datasetId={datasetId}&linkType=cohort-definition&query={compressed}
+ * URL format: /atlas/#/plugins/patient-analytics/?datasetId={datasetId}&linkType=cohort-definition&query={compressed}
+ * The params live in the hash query: the native PA plugin in Atlas reads them
+ * from there (useDeepLink), and location.search is empty under /atlas/#/….
  *
  * @param fields - Wizard field definitions (needed for configPath mapping)
  * @param formData - Wizard form data values
@@ -115,7 +117,7 @@ export function generateFormSubmitDeepLink(
     query: compressed,
     wizards,
   });
-  const url = `/d2e/portal/researcher/cohort?${params.toString()}`;
+  const url = `/atlas/#/plugins/patient-analytics/?${params.toString()}`;
 
   return url;
 }

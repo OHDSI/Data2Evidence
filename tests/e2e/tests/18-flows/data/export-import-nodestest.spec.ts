@@ -1,4 +1,4 @@
-import { test, expect } from '../../fixtures'
+import { test, expect, openAdminPortalFromAtlas } from '../../fixtures'
 import type { Page } from '@playwright/test'
 import fs from 'fs/promises'
 import path from 'path'
@@ -34,9 +34,20 @@ type DataflowTemplate = {
   schemas?: unknown[]
 }
 
+async function openEtlPage(page: Page) {
+  const etlLink = page.getByRole('link', { name: 'ETL' })
+  if (!(await etlLink.isVisible().catch(() => false))) {
+    await openAdminPortalFromAtlas(page)
+  }
+  await page.getByRole('link', { name: 'ETL' }).click()
+  await expect(
+    page.getByLabel('Create new dataflow').or(page.getByRole('button', { name: 'Create your first dataflow' }))
+  ).toBeVisible()
+}
+
 test.afterEach(async ({ page }) => {
   try {
-    await page.goto('/d2e/portal/etl')
+    await openEtlPage(page)
 
     const flowSelector = page.getByRole('combobox').filter({ hasText: /.+/ }).first()
     if (await flowSelector.isVisible({ timeout: 5000 }).catch(() => false)) {
@@ -57,13 +68,7 @@ test.afterEach(async ({ page }) => {
 
   for (const createdDataflowName of createdDataflowNames) {
     try {
-      await page.goto('/d2e/portal')
-      const etlLink = page.getByRole('link', { name: 'ETL' })
-      if (await etlLink.isVisible({ timeout: 5000 }).catch(() => false)) {
-        await etlLink.click()
-      } else {
-        await page.goto('/d2e/portal/etl')
-      }
+      await openEtlPage(page)
 
       const flowSelector = page.getByRole('combobox').filter({ hasText: /.+/ }).first()
       await flowSelector.click()
@@ -102,21 +107,8 @@ test('import and run nodes test template', async ({ page }) => {
     await page.locator('input[name="identifier"]').fill('admin')
     await page.locator('input[name="password"]').fill('Updatepassword12345')
     await page.getByRole('button', { name: 'Sign in' }).click()
-    await page.getByTestId('button').nth(1).click()
-    await page.getByRole('button', { name: 'Switch to Admin portal' }).click()
-
-    const etlLink = page.getByRole('link', { name: 'ETL' })
-    if (await etlLink.isVisible({ timeout: 5000 }).catch(() => false)) {
-      await etlLink.click()
-    } else {
-      await page.goto('/d2e/portal/etl')
-    }
-
-    await expect(
-      page.getByLabel('Create new dataflow').or(page.getByRole('button', { name: 'Create your first dataflow' }))
-    ).toBeVisible({
-      timeout: 30000
-    })
+    await openAdminPortalFromAtlas(page)
+    await openEtlPage(page)
   })
 
   await test.step('Create and save a workflow from the Nodes Test template', async () => {

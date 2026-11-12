@@ -1,8 +1,6 @@
-import { test, expect } from '../fixtures'
+import { test, expect, openAdminPortalFromAtlas } from '../fixtures'
 
 const TEST_NAME = 'jobs-overview'
-const SHOULD_SKIP = false
-test.fixme(SHOULD_SKIP, `${TEST_NAME} test is temporarily disabled.`)
 
 test(TEST_NAME, async ({ page }) => {
   // Sign in
@@ -14,8 +12,7 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByRole('button', { name: 'Sign in' }).click()
 
   // Switch to admin portal
-  await page.getByTestId('button').nth(1).click()
-  await page.getByRole('button', { name: 'Switch to Admin portal' }).click()
+  await openAdminPortalFromAtlas(page)
 
   // Open jobs
   await page.getByRole('link', { name: 'Jobs' }).click()

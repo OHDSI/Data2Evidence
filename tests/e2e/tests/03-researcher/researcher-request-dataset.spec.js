@@ -1,8 +1,38 @@
-import { test, expect } from '@playwright/test'
+import {
+  test,
+  expect,
+  acceptAtlasLicense,
+  openAdminPortalFromAtlas,
+  openAtlasAccount,
+  resetPortalSession
+} from '../fixtures'
 
 const TEST_NAME = 'researcher-request-dataset-access'
+const DATASET_NAME = 'Demo dataset'
+const USERNAME = `researcher${Date.now().toString().slice(-8)}`
 const SHOULD_SKIP = false
 test.fixme(SHOULD_SKIP, `${TEST_NAME} test is temporarily disabled.`)
+
+let userMayExist = false
+
+test.afterEach(async ({ page }) => {
+  if (!userMayExist) return
+
+  await resetPortalSession(page)
+  await page.locator('input[name="identifier"]').fill('admin')
+  await page.locator('input[name="password"]').fill('Updatepassword12345')
+  await page.getByRole('button', { name: 'Sign in' }).click()
+  await openAdminPortalFromAtlas(page)
+
+  const userRow = page.getByRole('row').filter({ hasText: USERNAME })
+  if ((await userRow.count()) > 0) {
+    await userRow.getByRole('button', { name: 'Delete' }).click()
+    await page.getByRole('button', { name: 'Yes, delete' }).click()
+    await expect(userRow).toHaveCount(0)
+  }
+
+  userMayExist = false
+})
 
 test(TEST_NAME, async ({ page }) => {
   // Go to portal and log in as admin
@@ -12,84 +42,77 @@ test(TEST_NAME, async ({ page }) => {
   await page.locator('input[name="password"]').click()
   await page.locator('input[name="password"]').fill('Updatepassword12345')
   await page.getByRole('button', { name: 'Sign in' }).click()
-  await page.getByTestId('button').nth(1).click()
-  await page.getByRole('button', { name: 'Switch to Admin portal' }).click()
+  await openAdminPortalFromAtlas(page)
 
   // Select the demo dataset and update it to show request access button
   await page.getByRole('link', { name: 'Data sources' }).click()
   const datasetTable = page.locator('.d2e-table').first()
   await expect(datasetTable).toBeVisible()
   await expect(datasetTable.locator('tbody tr').first()).toBeVisible()
-  const demoRow = datasetTable.locator('tr', { hasText: /Demo dataset/i }).first()
+  const demoRow = datasetTable
+    .locator('tbody tr')
+    .filter({ hasText: /Demo dataset/i })
+    .filter({ hasText: /webapi/i })
   await expect(demoRow).toBeVisible()
-
-  // webapi-managed datasets render as a single row (no child cache row).
-  // Redesigned table columns: [Dataset ID] [Name] [Schema name] [Schema version] ...
-  const cacheDatasetNameCell = demoRow.locator('td').nth(1)
-  const cacheDatasetName = (await cacheDatasetNameCell.textContent())?.trim()
 
   await demoRow.getByRole('button', { name: 'Actions' }).click()
   await page.getByRole('menuitem', { name: 'Edit data source' }).click()
-  await page.getByText('Show request access button').click()
+  const requestAccessCheckbox = page.getByRole('checkbox', { name: 'Show request access button' })
+  await requestAccessCheckbox.check()
+  await expect(requestAccessCheckbox).toBeChecked()
   await page.getByRole('button', { name: 'Save' }).click()
+  await expect(page.getByTestId('dialog')).toBeHidden()
 
-  // Create a new researcher `test_researcher`
+  // Create a new researcher
   await page.getByRole('link', { name: 'Users' }).click()
   await page.getByTestId('button').click()
   await page.getByRole('textbox', { name: 'Username' }).click()
-  await page.getByRole('textbox', { name: 'Username' }).fill('test_researcher')
+  await page.getByRole('textbox', { name: 'Username' }).fill(USERNAME)
   await page.getByRole('textbox', { name: 'Password' }).click()
   await page.getByRole('textbox', { name: 'Password' }).fill('Updatepassword12345')
+  userMayExist = true
   await page.getByRole('button', { name: 'Add' }).click()
   await page.getByRole('link', { name: 'Account' }).click()
   await page.getByRole('button', { name: 'Logout' }).click()
+  await resetPortalSession(page)
 
-  // Login as researcher `test_researcher`
+  // Login as researcher
   await page.locator('input[name="identifier"]').click()
-  await page.locator('input[name="identifier"]').fill('test_researcher')
+  await page.locator('input[name="identifier"]').fill(USERNAME)
   await page.locator('input[name="password"]').click()
   await page.locator('input[name="password"]').fill('Updatepassword12345')
   await page.getByRole('button', { name: 'Sign in' }).click()
+  await acceptAtlasLicense(page)
 
-  await expect(page.getByTestId('card').first()).toBeVisible()
-
-  // Find and click on the cache dataset card by looking for a card with the dataset name
-  await page.waitForTimeout(2000)
-  const allCards = await page.getByTestId('card').all()
-  let clicked = false
-  for (const card of allCards) {
-    const cardText = await card.textContent()
-    if (cardText.includes(cacheDatasetName)) {
-      await card.click()
-      clicked = true
-      break
-    }
-  }
-  if (!clicked) {
-    throw new Error(`Could not find card with cache dataset name: ${cacheDatasetName}`)
-  }
+  const datasetButton = page.getByRole('button', { name: new RegExp(`${DATASET_NAME}.*No access`, 'i') })
+  await expect(datasetButton).toBeVisible()
+  await datasetButton.click()
 
   // Check that the request access button is visible and click it
-  await expect(page.getByTestId('card').locator('div').filter({ hasText: 'Dataset Info' }).first()).toBeVisible()
-  await expect(page.getByTestId('card-content')).toContainText('Request access')
-  await page.getByTestId('button').click()
+  const requestAccessButton = page.getByTestId('request-access-button')
+  await expect(requestAccessButton).toBeVisible()
+  await requestAccessButton.click()
+  await expect(page.getByTestId('access-badge')).toContainText('Pending access')
 
   // Login as admin and approve the request to dataset access
-  await page.getByRole('link', { name: 'Account' }).click()
+  await openAtlasAccount(page, new RegExp(USERNAME, 'i'))
   await page.getByRole('button', { name: 'Logout' }).click()
+  await resetPortalSession(page)
   await page.locator('input[name="identifier"]').click()
   await page.locator('input[name="identifier"]').fill('admin')
   await page.locator('input[name="password"]').click()
   await page.locator('input[name="password"]').fill('Updatepassword12345')
   await page.getByRole('button', { name: 'Sign in' }).click()
-  await page.getByTestId('button').nth(1).click()
-  await page.getByRole('button', { name: 'Switch to Admin portal' }).click()
+  await openAdminPortalFromAtlas(page)
   await page.getByRole('link', { name: 'Data sources' }).click()
   const datasetTableAgain = page.locator('.d2e-table').first()
   await expect(datasetTableAgain).toBeVisible()
   await expect(datasetTableAgain.locator('tbody tr').first()).toBeVisible()
   // Find the demo row again (can't reuse locator after navigation)
-  const demoRowAgain = datasetTableAgain.locator('tr', { hasText: /Demo dataset/i }).first()
+  const demoRowAgain = datasetTableAgain
+    .locator('tbody tr')
+    .filter({ hasText: /Demo dataset/i })
+    .filter({ hasText: /webapi/i })
   await expect(demoRowAgain).toBeVisible()
   await demoRowAgain.getByRole('button', { name: 'Actions' }).click()
   await page.getByRole('menuitem', { name: 'Update permissions' }).click()
@@ -98,38 +121,19 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByRole('button', { name: 'Save' }).click()
   await page.getByRole('button', { name: 'Close', exact: true }).click()
 
-  // Login as researcher user test_researcher and check that the dataset can be accessed
+  // Login as researcher and check that the dataset can be accessed
   await page.getByRole('link', { name: 'Account' }).click()
   await page.getByRole('button', { name: 'Logout' }).click()
+  await resetPortalSession(page)
   await page.locator('input[name="identifier"]').click()
-  await page.locator('input[name="identifier"]').fill('test_researcher')
+  await page.locator('input[name="identifier"]').fill(USERNAME)
   await page.locator('input[name="password"]').click()
   await page.locator('input[name="password"]').fill('Updatepassword12345')
   await page.getByRole('button', { name: 'Sign in' }).click()
+  await acceptAtlasLicense(page)
+  await page.getByRole('button', { name: new RegExp(`${DATASET_NAME}.*Have access`, 'i') }).click()
 
-  await expect(page.getByTestId('card').first()).toBeVisible()
-
-  // Find and click on the cache dataset card after approval
-  await page.waitForTimeout(2000)
-  const allCardsAfterApproval = await page.getByTestId('card').all()
-  let clickedAfterApproval = false
-  for (const card of allCardsAfterApproval) {
-    const cardText = await card.textContent()
-    if (cardText.includes(cacheDatasetName)) {
-      await card.click()
-      clickedAfterApproval = true
-      break
-    }
-  }
-  if (!clickedAfterApproval) {
-    throw new Error(`Could not find card with cache dataset name after approval: ${cacheDatasetName}`)
-  }
-
-  // Check that additional tabs on the navbar is visible after access is granted
-  await expect(page.getByTestId('header')).toBeVisible()
-  await expect(page.getByTestId('card').locator('div').filter({ hasText: 'Dataset InfoData' }).first()).toBeVisible()
-  // Check that the nav bar contains the cache dataset name (not the parent dataset)
-  await expect(page.getByTestId('nav')).toContainText(
-    `${cacheDatasetName}​DatasetConceptsCohortsNotebooksAnalysisAccount`
-  )
+  // Check that Atlas dataset details are available after access is granted
+  await expect(page.getByRole('heading', { name: DATASET_NAME })).toBeVisible()
+  await expect(page.getByRole('listitem').filter({ hasText: 'Description' })).toBeVisible()
 })
