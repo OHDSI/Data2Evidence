@@ -337,6 +337,8 @@
   "DATASET_RESOURCE_UPLOAD_CONFIRM_DIALOG__ERROR_TYPE": "Dieser Dateityp wird nicht unterstützt. Laden Sie eine {0}-Datei hoch.",
   "DATASET_RESOURCE_UPLOAD_CONFIRM_DIALOG__OR": "oder",
   "DATASET_RESOURCE_UPLOAD_CONFIRM_DIALOG__ERROR_EMPTY": "Diese Datei ist leer.",
+  "DATASET_RESOURCE_UPLOAD_CONFIRM_DIALOG__ERROR_BLOCKED": "Diese Datei wurde blockiert. Wir haben eine mögliche Sicherheitsbedrohung gefunden, daher wurde sie nicht hochgeladen. Überprüfen Sie die Datei oder wählen Sie eine andere aus.",
+  "DATASET_RESOURCE_UPLOAD_CONFIRM_DIALOG__ERROR_SCAN_UNAVAILABLE": "Wir konnten diese Datei gerade nicht auf Sicherheitsbedrohungen prüfen, daher kann sie nicht hochgeladen werden. Bitte versuchen Sie es später erneut.",
   "DATASET_RESOURCE_UPLOAD_CONFIRM_DIALOG__ERROR_CORRUPTED": "Diese Datei ist beschädigt. Bitte reparieren Sie die Datei und versuchen Sie es erneut.",
   "DATASET_RESOURCE_UPLOAD_CONFIRM_DIALOG__ERROR_TOO_LARGE": "Diese Datei ist zu groß. Dateien dürfen höchstens {0} groß sein.",
   "DATASET_RESOURCE_UPLOAD_CONFIRM_DIALOG__UNTITLED": "Ohne Titel",

@@ -515,6 +515,9 @@
           "DATA_TRANSFORMATION_BUCKET": "data-transformation",
           "RESOURCE_UPLOAD_MAX_FILE_SIZE_MB": "${RESOURCE_UPLOAD_MAX_FILE_SIZE_MB:-25}",
           "RESOURCE_UPLOAD_ALLOWED_EXTENSIONS": "${RESOURCE_UPLOAD_ALLOWED_EXTENSIONS:-pdf,csv,json,xlsx,docx,sql,md,txt}",
+          "CLAMAV_HOST": "${CLAMAV_HOST:-${PROJECT_NAME:-d2e}-clamav}",
+          "CLAMAV_PORT": "${CLAMAV_PORT:-3310}",
+          "CLAMAV_TIMEOUT_MS": "${CLAMAV_TIMEOUT_MS:-60000}",
           "NOTEBOOK_TEMPLATE_REPO_URL": "${NOTEBOOK_TEMPLATE_REPO_URL:-https://github.com/data2evidence/templates.git}",
           "NOTEBOOK_TEMPLATE_REPO_BRANCH": "${NOTEBOOK_TEMPLATE_REPO_BRANCH:-main}",
           "GIT_STUDIES_REPO_URL": "${GIT_STUDIES_REPO_URL:-https://github.com/data2evidence/studies.git}",
@@ -1638,6 +1641,15 @@
           ],
           "httpMethods": [
             "GET"
+          ]
+        },
+        {
+          "path": "^/system-portal/dataset/resource/check$",
+          "scopes": [
+            "portal.dataset.resource.add"
+          ],
+          "httpMethods": [
+            "POST"
           ]
         },
         {

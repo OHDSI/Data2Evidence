@@ -179,6 +179,20 @@ export class SystemPortal {
     });
   }
 
+  // Runs every upload rule and the malware scan without storing the file.
+  public checkResource(datasetId: string, file: File) {
+    const formData = new FormData();
+    formData.append("file", file, file.name);
+
+    return request<{ result: "clean" | "infected" | "unavailable" }>({
+      baseURL: SYSTEM_PORTAL_URL,
+      url: `dataset/resource/check`,
+      method: "POST",
+      params: { datasetId: datasetId },
+      data: formData,
+    });
+  }
+
   public addResource(datasetId: string, file: File) {
     const formData = new FormData();
     formData.append("file", file, file.name);

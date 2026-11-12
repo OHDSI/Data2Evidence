@@ -1,0 +1,81 @@
+# Malware scanner for resource uploads (ClamAV). The portal sends each file to
+# clamav:3310 and refuses the upload if this service is unavailable.
+# Signatures ship with the image and freshclam updates them from
+# database.clamav.net, so the pod needs outbound internet access. No volume:
+# on restart it starts from the bundled snapshot and downloads only what
+# changed since.
+{{- $clamav := .Values.clamav | default dict }}
+{{- $resources := $clamav.resources | default dict }}
+{{- $requests := $resources.requests | default dict }}
+{{- $limits := $resources.limits | default dict }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    profile: d2e-clamav
+  name: "{{ .Release.Name }}-{{ .Chart.Name }}-clamav"
+  namespace: {{ .Release.Namespace }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      profile: d2e-clamav
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        profile: d2e-clamav
+    spec:
+      restartPolicy: Always
+      containers:
+        - name: clamav
+          image: clamav/clamav-debian:1.5.3
+          env:
+            # Must stay above RESOURCE_UPLOAD_MAX_FILE_SIZE_MB.
+            - name: CLAMD_CONF_StreamMaxLength
+              value: 100M
+            - name: CLAMD_CONF_MaxFileSize
+              value: 100M
+            - name: CLAMD_CONF_MaxScanSize
+              value: 400M
+          ports:
+            - containerPort: 3310
+          # Loading the signatures takes from seconds to a couple of minutes.
+          startupProbe:
+            exec:
+              command: ["clamdcheck.sh"]
+            periodSeconds: 10
+            failureThreshold: 30
+          readinessProbe:
+            exec:
+              command: ["clamdcheck.sh"]
+            periodSeconds: 30
+            timeoutSeconds: 10
+          livenessProbe:
+            exec:
+              command: ["clamdcheck.sh"]
+            periodSeconds: 60
+            timeoutSeconds: 10
+            failureThreshold: 3
+          resources:
+            requests:
+              cpu: {{ $requests.cpu | default "250m" | quote }}
+              memory: {{ $requests.memory | default "1536Mi" | quote }}
+            limits:
+              cpu: {{ $limits.cpu | default "1" | quote }}
+              # Signature reloads briefly hold two copies in memory.
+              memory: {{ $limits.memory | default "3Gi" | quote }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: clamav
+spec:
+  ports:
+    - name: clamd
+      port: 3310
+      targetPort: 3310
+  selector:
+    profile: d2e-clamav
+  type: ClusterIP

@@ -13,6 +13,7 @@ volumes:
   demodb-data:
   hana-data:
   supabase-storage-data:
+  clamav-db:
   hades-data:
   audit-logs:
 
@@ -697,6 +698,10 @@ services:
       # Resource uploads (Admin > Data sources > Resources): size limit and accepted types.
       RESOURCE_UPLOAD_MAX_FILE_SIZE_MB: ${RESOURCE_UPLOAD_MAX_FILE_SIZE_MB:-25}
       RESOURCE_UPLOAD_ALLOWED_EXTENSIONS: ${RESOURCE_UPLOAD_ALLOWED_EXTENSIONS:-pdf,csv,json,xlsx,docx,sql,md,txt}
+      # Malware scanning of resource uploads (the clamav service below).
+      CLAMAV_HOST: ${CLAMAV_HOST:-${PROJECT_NAME:-d2e}-clamav}
+      CLAMAV_PORT: ${CLAMAV_PORT:-3310}
+      CLAMAV_TIMEOUT_MS: ${CLAMAV_TIMEOUT_MS:-60000}
 
   alp-caddy:
     container_name: &c1 ${PROJECT_NAME:-d2e}-caddy
@@ -1454,6 +1459,33 @@ services:
       FILE_STORAGE_BACKEND_PATH: /var/lib/storage
       TENANT_ID: stub
       REGION: stub
+
+  # Scans resource uploads for malware (ClamAV). The portal sends each file
+  # over port 3310 and refuses the upload if this service is unavailable.
+  # Signatures ship with the image and freshclam keeps them updated from
+  # database.clamav.net, so this service needs outbound internet access.
+  clamav:
+    container_name: ${PROJECT_NAME:-d2e}-clamav
+    image: clamav/clamav-debian:1.5.3
+    environment:
+      # Must stay above RESOURCE_UPLOAD_MAX_FILE_SIZE_MB.
+      CLAMD_CONF_StreamMaxLength: 100M
+      CLAMD_CONF_MaxFileSize: 100M
+      CLAMD_CONF_MaxScanSize: 400M
+    healthcheck:
+      test: ["CMD-SHELL", "clamdcheck.sh"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 5m
+    networks:
+      alp:
+        priority: 20
+    restart: ${DOCKER__RESTART_POLICY:-unless-stopped}
+    volumes:
+      # Caches downloaded signatures across restarts. The in-memory engine is
+      # still rebuilt on every start (seconds to a couple of minutes).
+      - clamav-db:/var/lib/clamav
 
   hana:
     container_name: hana

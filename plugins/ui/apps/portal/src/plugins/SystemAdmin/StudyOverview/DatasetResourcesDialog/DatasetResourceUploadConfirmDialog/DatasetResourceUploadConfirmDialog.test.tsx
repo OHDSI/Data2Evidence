@@ -3,6 +3,7 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import DatasetResourceUploadConfirmDialog from "./DatasetResourceUploadConfirmDialog";
 
 const mockAddResource = jest.fn();
+const mockCheckResource = jest.fn();
 
 jest.mock("../../../../../contexts", () => ({
   useTranslation: () => ({
@@ -12,7 +13,12 @@ jest.mock("../../../../../contexts", () => ({
 }));
 
 jest.mock("../../../../../axios/api", () => ({
-  api: { systemPortal: { addResource: (...args: unknown[]) => mockAddResource(...args) } },
+  api: {
+    systemPortal: {
+      addResource: (...args: unknown[]) => mockAddResource(...args),
+      checkResource: (...args: unknown[]) => mockCheckResource(...args),
+    },
+  },
 }));
 
 jest.mock(
@@ -21,7 +27,11 @@ jest.mock(
     const MockReact = require("react");
     return {
       Button: (props: any) =>
-        MockReact.createElement("button", { onClick: props.onClick, disabled: props.disabled }, props.text),
+        MockReact.createElement(
+          "button",
+          { onClick: props.onClick, disabled: props.disabled || props.loading, "data-loading": !!props.loading },
+          props.text
+        ),
       Dialog: (props: any) =>
         props.open
           ? MockReact.createElement(
@@ -62,7 +72,11 @@ const renderDialog = (fileName: string, config: typeof CONFIG | null = CONFIG, c
   );
 
 describe("DatasetResourceUploadConfirmDialog", () => {
-  beforeEach(() => mockAddResource.mockReset());
+  beforeEach(() => {
+    mockAddResource.mockReset();
+    mockCheckResource.mockReset();
+    mockCheckResource.mockResolvedValue({ result: "clean" });
+  });
 
   // The content check reads the file, so wait until the Add button is enabled.
   const waitForCheck = () => waitFor(() => expect(screen.getByText(ADD)).not.toBeDisabled());
@@ -157,6 +171,7 @@ describe("DatasetResourceUploadConfirmDialog", () => {
       data: { message: "400 - This file type isn't supported. Upload a PDF or CSV file." },
     });
     renderDialog("analysis.R", null);
+    await waitForCheck();
 
     fireEvent.click(screen.getByText(ADD));
 
@@ -165,5 +180,73 @@ describe("DatasetResourceUploadConfirmDialog", () => {
         /^This file type isn't supported\. Upload a PDF or CSV file\.$/
       )
     );
+  });
+
+  describe("malware scan before Add", () => {
+    it("sends a file that passes the rules to the backend check", async () => {
+      renderDialog("notes.txt");
+
+      await waitForCheck();
+      expect(mockCheckResource).toHaveBeenCalledWith("ds-1", expect.any(File));
+    });
+
+    it("doesn't send a file that already failed a rule", async () => {
+      renderDialog("analysis.R");
+
+      await screen.findByTestId("feedback");
+      expect(mockCheckResource).not.toHaveBeenCalled();
+    });
+
+    it("shows a spinner on Add while the scan runs", async () => {
+      let finishScan: (value: { result: string }) => void = () => undefined;
+      mockCheckResource.mockReturnValue(new Promise((resolve) => (finishScan = resolve)));
+      renderDialog("notes.txt");
+
+      await waitFor(() => expect(mockCheckResource).toHaveBeenCalled());
+      expect(screen.getByText(ADD)).toHaveAttribute("data-loading", "true");
+
+      finishScan({ result: "clean" });
+      await waitForCheck();
+    });
+
+    it("blocks an infected file before Add and offers only Cancel", async () => {
+      mockCheckResource.mockResolvedValue({ result: "infected" });
+      renderDialog("notes.txt");
+
+      expect(await screen.findByTestId("feedback")).toHaveTextContent(
+        "DATASET_RESOURCE_UPLOAD_CONFIRM_DIALOG__ERROR_BLOCKED"
+      );
+      expect(screen.queryByText(ADD)).not.toBeInTheDocument();
+    });
+
+    it.each([
+      ["the scanner is unavailable", () => mockCheckResource.mockResolvedValue({ result: "unavailable" })],
+      ["the check request fails", () => mockCheckResource.mockRejectedValue(new Error("Network Error"))],
+    ])("fails closed when %s", async (_label, setUp) => {
+      setUp();
+      renderDialog("notes.txt");
+
+      expect(await screen.findByTestId("feedback")).toHaveTextContent(
+        "DATASET_RESOURCE_UPLOAD_CONFIRM_DIALOG__ERROR_SCAN_UNAVAILABLE"
+      );
+      expect(screen.queryByText(ADD)).not.toBeInTheDocument();
+    });
+
+    it("shows the backend's own message when it rejects the file", async () => {
+      mockCheckResource.mockRejectedValue({ data: { message: "400 - This file is empty." } });
+      renderDialog("notes.txt", null);
+
+      expect(await screen.findByTestId("feedback")).toHaveTextContent(/^This file is empty\.$/);
+    });
+
+    it("shows a spinner on Add during the upload", async () => {
+      mockAddResource.mockReturnValue(new Promise(() => undefined));
+      renderDialog("notes.txt");
+      await waitForCheck();
+
+      fireEvent.click(screen.getByText(ADD));
+
+      await waitFor(() => expect(screen.getByText(ADD)).toHaveAttribute("data-loading", "true"));
+    });
   });
 });

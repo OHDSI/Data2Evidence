@@ -34,6 +34,9 @@ data:
   COHORT_CACHE_MAX_AGE_DAYS: {{ .Values.config.COHORT_CACHE_MAX_AGE_DAYS | default 30 | quote }}
   RESOURCE_UPLOAD_MAX_FILE_SIZE_MB: {{ .Values.config.RESOURCE_UPLOAD_MAX_FILE_SIZE_MB | default 25 | quote }}
   RESOURCE_UPLOAD_ALLOWED_EXTENSIONS: {{ .Values.config.RESOURCE_UPLOAD_ALLOWED_EXTENSIONS | default "pdf,csv,json,xlsx,docx,sql,md,txt" | quote }}
+  CLAMAV_HOST: {{ .Values.config.CLAMAV_HOST | default (printf "clamav.%s.svc.cluster.local" .Release.Namespace) | quote }}
+  CLAMAV_PORT: {{ .Values.config.CLAMAV_PORT | default 3310 | quote }}
+  CLAMAV_TIMEOUT_MS: {{ .Values.config.CLAMAV_TIMEOUT_MS | default 60000 | quote }}
   AZ_AUTO_GRANT_RESEARCHER_BY_DATASET_CODES: {{ .Values.config.AZ_AUTO_GRANT_RESEARCHER_BY_DATASET_CODES | quote }}
   LOGTO__TERM_OF_USE_URL: {{ .Values.idp.LOGTO__TERM_OF_USE_URL | quote }}
   LOGTO__PRIVACY_POLICY_URL: {{ .Values.idp.LOGTO__PRIVACY_POLICY_URL | quote }}

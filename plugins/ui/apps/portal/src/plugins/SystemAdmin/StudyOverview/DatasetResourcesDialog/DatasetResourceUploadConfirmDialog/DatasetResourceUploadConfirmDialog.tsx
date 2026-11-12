@@ -46,6 +46,12 @@ const styles: SxProps = {
   },
 };
 
+// Rule failures from the browser, plus the backend's malware scan results.
+type FileError = ResourceFileError | "blocked" | "scan-unavailable";
+
+// The API prefixes messages with the status code ("400 - ...").
+const stripStatusPrefix = (message: unknown) => String(message).replace(/^\d{3} - /, "");
+
 const DatasetResourceUploadConfirmDialog: FC<DatasetResourceUploadConfirmDialogProps> = ({
   datasetId,
   file,
@@ -58,31 +64,60 @@ const DatasetResourceUploadConfirmDialog: FC<DatasetResourceUploadConfirmDialogP
   const extension = getFileExtension(file?.name).toUpperCase();
   const [loading, setLoading] = useState(false);
 
-  // Checked as soon as the file is picked, before anything is uploaded. The
-  // content check reads the file, so the result arrives asynchronously.
-  const [fileError, setFileError] = useState<ResourceFileError>();
+  // Checked as soon as the file is picked, before Add: first the rules in the
+  // browser, then (if they pass) the backend runs them again and scans the
+  // file for malware without storing it.
+  const [fileError, setFileError] = useState<FileError>();
+  const [checkMessage, setCheckMessage] = useState<string>();
   const [checking, setChecking] = useState(false);
 
   useEffect(() => {
     setFileError(undefined);
+    setCheckMessage(undefined);
     setChecking(false);
-    if (!file || !uploadConfig) return undefined;
+    if (!file) return undefined;
     let cancelled = false;
     setChecking(true);
-    checkResourceFile(file, uploadConfig)
-      .then((error) => {
-        if (!cancelled) setFileError(error);
-      })
-      .catch((error) => console.error("Failed to check file", error))
-      .finally(() => {
-        if (!cancelled) setChecking(false);
-      });
+
+    const check = async () => {
+      if (uploadConfig) {
+        const ruleError = await checkResourceFile(file, uploadConfig);
+        if (cancelled || ruleError) {
+          if (!cancelled) setFileError(ruleError);
+          return;
+        }
+      }
+      try {
+        const { result } = await api.systemPortal.checkResource(datasetId, file);
+        if (cancelled) return;
+        if (result === "infected") setFileError("blocked");
+        else if (result === "unavailable") setFileError("scan-unavailable");
+      } catch (error: any) {
+        if (cancelled) return;
+        console.error("Failed to check file", error);
+        // A rule the browser couldn't check (e.g. no config) comes back as a
+        // message; anything else means the file couldn't be checked: fail closed.
+        if (error?.data?.message) setCheckMessage(stripStatusPrefix(error.data.message));
+        else setFileError("scan-unavailable");
+      }
+    };
+
+    check().finally(() => {
+      if (!cancelled) setChecking(false);
+    });
     return () => {
       cancelled = true;
     };
-  }, [file, uploadConfig]);
+  }, [datasetId, file, uploadConfig]);
 
   const validationError = useMemo(() => {
+    if (checkMessage) return checkMessage;
+    switch (fileError) {
+      case "blocked":
+        return getText(i18nKeys.DATASET_RESOURCE_UPLOAD_CONFIRM_DIALOG__ERROR_BLOCKED);
+      case "scan-unavailable":
+        return getText(i18nKeys.DATASET_RESOURCE_UPLOAD_CONFIRM_DIALOG__ERROR_SCAN_UNAVAILABLE);
+    }
     if (!uploadConfig) return undefined;
     switch (fileError) {
       case "type":
@@ -103,7 +138,7 @@ const DatasetResourceUploadConfirmDialog: FC<DatasetResourceUploadConfirmDialogP
       default:
         return undefined;
     }
-  }, [fileError, uploadConfig, getText, i18nKeys]);
+  }, [checkMessage, fileError, uploadConfig, getText, i18nKeys]);
 
   const mapFileToResource = useCallback(
     (file: File): DatasetResource => ({
@@ -125,14 +160,14 @@ const DatasetResourceUploadConfirmDialog: FC<DatasetResourceUploadConfirmDialogP
 
       if (type === "success") {
         try {
+          setLoading(true);
           await api.systemPortal.addResource(datasetId, file);
           typeof onClose === "function" && onClose(type, mapFileToResource(file));
         } catch (error: any) {
           console.error(error);
 
           if (error.data?.message) {
-            // The API prefixes messages with the status code ("400 - ...").
-            setFeedback({ type: "error", message: String(error.data.message).replace(/^\d{3} - /, "") });
+            setFeedback({ type: "error", message: stripStatusPrefix(error.data.message) });
           } else {
             setFeedback({
               type: "error",
@@ -195,8 +230,7 @@ const DatasetResourceUploadConfirmDialog: FC<DatasetResourceUploadConfirmDialogP
             text={getText(i18nKeys.DATASET_RESOURCE_UPLOAD_CONFIRM_DIALOG__ADD)}
             onClick={() => handleClose("success")}
             block
-            loading={loading}
-            disabled={checking}
+            loading={loading || checking}
           />
         )}
       </div>

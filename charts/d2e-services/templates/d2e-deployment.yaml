@@ -570,6 +570,21 @@ spec:
                 configMapKeyRef:
                   name: "{{ .Release.Name }}-{{ .Chart.Name }}"
                   key: RESOURCE_UPLOAD_ALLOWED_EXTENSIONS
+            - name: CLAMAV_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: CLAMAV_HOST
+            - name: CLAMAV_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: CLAMAV_PORT
+            - name: CLAMAV_TIMEOUT_MS
+              valueFrom:
+                configMapKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: CLAMAV_TIMEOUT_MS
             - name: DATABASE_CREDENTIALS
               value: "{}"
             - name: DB_CREDENTIALS_MGR__API_URL

@@ -3,16 +3,18 @@ import {
   Controller,
   Delete,
   Get,
+  Middleware,
   Post,
   Query,
   Param,
   Req,
 } from "@danet/core";
 import { Buffer } from "node:buffer";
+import { RequestContextMiddleware } from "../../common/request-context.middleware.ts";
 import { ResourceService } from "./resource.service.ts";
 import { getResourceUploadConfig } from "./resource-upload.config.ts";
-import { validateResourceFile } from "./resource-upload.validation.ts";
 
+@Middleware(RequestContextMiddleware)
 @Controller("system-portal/dataset/resource")
 export class ResourceController {
   constructor(private readonly resourceService: ResourceService) {}
@@ -32,42 +34,26 @@ export class ResourceController {
     return getResourceUploadConfig();
   }
 
+  // Lets the Add file dialog show the scan result before the user clicks Add.
+  // Nothing is stored; the upload itself checks and scans again.
+  @Post("check")
+  async checkResource(
+    @Query("datasetId") datasetId: string,
+    @Req() request: Request
+  ) {
+    const formData = await request.formData();
+    const { scan } = await this.resourceService.checkUpload(datasetId, formData.get("file"));
+    return { result: scan.status };
+  }
+
   @Post()
   async uploadResource(
     @Query("datasetId") datasetId: string,
     @Req() request: Request
   ) {
     const formData = await request.formData();
-    const file = formData.get("file");
-    if (!(file instanceof File)) {
-      throw new HttpException(400, "No file was uploaded");
-    }
-
-    // Same rules as the Add file dialog, in case its check was bypassed.
-    const config = getResourceUploadConfig();
-    const buffer = await file.arrayBuffer();
-    const validationError = validateResourceFile(
-      file,
-      config,
-      new Uint8Array(buffer, 0, Math.min(buffer.byteLength, config.maxFileSizeBytes)),
-    );
-    if (validationError) {
-      throw new HttpException(400, validationError);
-    }
-
-    const uploadedFile = {
-      originalname: file.name,
-      buffer,
-      mimetype: file.type,
-    };
-    if (
-      uploadedFile.originalname.includes("\\") ||
-      uploadedFile.originalname.includes("/")
-    ) {
-      throw new HttpException(400, "Invalid filename");
-    }
-
-    return await this.resourceService.uploadResource(datasetId, uploadedFile);
+    const checked = await this.resourceService.checkUpload(datasetId, formData.get("file"));
+    return await this.resourceService.uploadResource(datasetId, checked);
   }
 
   @Get(":fileName/download")
