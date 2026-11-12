@@ -71,7 +71,7 @@ def create_schema_if_not_exists_task(use_trex_conn: bool, copy_params: CopyParam
         try:
             trex_conn = get_trex_connection(copy_params.target_database)
             pg_cursor = trex_conn.cursor()
-            pg_cursor.execute("CALL pg_clear_cache();")
+            pg_cursor.execute("CALL postgres_clear_cache();")
 
             create_schema_if_not_exists(pg_cursor, copy_params, logger)
 

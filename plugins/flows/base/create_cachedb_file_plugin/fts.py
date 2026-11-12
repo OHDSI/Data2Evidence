@@ -45,7 +45,7 @@ def create_fts_index_task(
         try:
             trex_conn = get_trex_connection(copy_params.target_database)
             pg_cursor = trex_conn.cursor()
-            pg_cursor.execute("CALL pg_clear_cache();")
+            pg_cursor.execute("CALL postgres_clear_cache();")
 
             create_fts_index(pg_cursor, copy_params, logger)
 
