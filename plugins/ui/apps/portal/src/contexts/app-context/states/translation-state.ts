@@ -1359,7 +1359,7 @@ export const i18nDefault = {
     DATA_SOURCE_PERMISSION__REJECT_SUCCESS: "Access request from {0} has been rejected.",
     DATA_SOURCE_PERMISSION__REJECT_TITLE: "Reject Access Request",
     DATA_SOURCE_PERMISSION__REVOKE: "Revoke",
-    DATA_SOURCE_PERMISSION__REVOKE_CONFIRM: "Yes, Revoke",
+    DATA_SOURCE_PERMISSION__REVOKE_CONFIRM: "Yes, revoke",
     DATA_SOURCE_PERMISSION__REVOKE_CONFIRM_1: "Are you sure you want to revoke ",
     DATA_SOURCE_PERMISSION__REVOKE_CONFIRM_2: " access to ",
     DATA_SOURCE_PERMISSION__REVOKE_CONFIRM_3: "? They will lose access to this dataset and any analyses they have run on it.",
