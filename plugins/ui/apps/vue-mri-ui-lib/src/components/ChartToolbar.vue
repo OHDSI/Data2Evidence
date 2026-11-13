@@ -495,7 +495,7 @@ export default {
 
     fetchInclusionReport() {
       const mriquery = JSON.stringify(this.getBookmarksData)
-      const datasetId = this.getBookmarksData.datasetId
+      const datasetId = this.getSelectedDataset.id
 
       if (this.inclusionReportCache && this.inclusionReportCache.mriquery === mriquery) {
         return Promise.resolve(this.inclusionReportCache.result)
@@ -511,7 +511,7 @@ export default {
     },
     fetchSelectiveInclusionReport(ruleOrder?: number[]) {
       const mriquery = JSON.stringify(this.getBookmarksData)
-      const datasetId = this.getBookmarksData.datasetId
+      const datasetId = this.getSelectedDataset.id
       const params: Record<string, any> = { mriquery, datasetId }
       if (ruleOrder) {
         params.ruleOrder = JSON.stringify(ruleOrder)

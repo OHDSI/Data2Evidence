@@ -195,7 +195,7 @@ class Result(_EncodeQueryStringMixin, _AuthApi):
                 'returnOnlyPatientCount': 'False'
             }
 
-            params["datasetId"] = os.environ["PYQE_STUDY_ENTITY_VALUE"]
+        params["datasetId"] = os.environ["PYQE_STUDY_ENTITY_VALUE"]
         result = await self._get('/analytics-svc/api/services/datastream/patient', params)
         return await result.string()
     

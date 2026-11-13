@@ -7,7 +7,6 @@ import {
     CohortDefinitionType,
     IMRIRequest,
     PluginEndpointFormatType,
-    PluginEndpointRequestType,
     PluginEndpointResultType,
     PluginEndpointStreamResultType,
     RecontactPatientListRequestType,
@@ -123,9 +122,7 @@ async function streamDataset(req: IMRIRequest, callback: CallBackInterface) {
     let releaseDate: string = req.query.releaseDate;
     const { analyticsConnection } = req.dbConnections;
 
-    let { datasetId }: PluginEndpointRequestType = {
-        ...convertZlibBase64ToJson(req.query.mriquery),
-    };
+    let datasetId = req.query.datasetId;
 
     analyticsConnection.setTemporalSystemTimeToDbSession(
         releaseDate,
@@ -546,7 +543,7 @@ export async function getRecontactPatientList(req: IMRIRequest, res) {
     };
     let cohortName = body.name;
     try {
-        const study = await new PortalServerAPI().getStudy(body.datasetId);
+        const study = await new PortalServerAPI().getStudy(req.query.datasetId);
         const { attributes } = study;
         let queryParams = formatQueryParams(
             body.cohortDefinition.cards.content

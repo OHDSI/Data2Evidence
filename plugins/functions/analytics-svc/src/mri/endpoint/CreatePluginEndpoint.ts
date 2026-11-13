@@ -46,7 +46,7 @@ export async function createEndpointFromRequest(req: IMRIRequest): Promise<{
                 }
             }
         }
-        let datasetId = body.datasetId;
+        let datasetId = req.query.datasetId || req.body.datasetId;
         const studyMetadata: StudyDbMetadata =
             req.studiesDbMetadata.studies.find((o) => o.id === datasetId);
         const studySchemaName = studyMetadata?.schemaName;

@@ -81,6 +81,11 @@ paths:
           description: Can be PDF, JSON or CSV
           required: true
           type: string
+        - name: datasetId
+          in: query
+          type: string
+          description: Id of the dataset to query. Required when mriquery is sent.
+          required: false
         - name: mriquery
           in: query
           type: string
@@ -117,6 +122,11 @@ paths:
           in: query
           type: string
           description: Defines which entities should be returned
+        - name: datasetId
+          in: query
+          type: string
+          description: Id of the dataset to query. Required when mriquery is sent.
+          required: false
         - name: mriquery
           in: query
           type: string
@@ -149,6 +159,11 @@ paths:
       produces: 
         - application/text
       parameters: 
+        - name: datasetId
+          in: query
+          type: string
+          description: Id of the dataset to query. Required when mriquery is sent.
+          required: false
         - name: mriquery
           in: query
           type: string
@@ -175,6 +190,11 @@ paths:
       produces: 
         - application/text
       parameters: 
+        - name: datasetId
+          in: query
+          type: string
+          description: Id of the dataset to query. Required when mriquery is sent.
+          required: false
         - name: mriquery
           in: query
           type: string
@@ -207,6 +227,11 @@ paths:
         - text/csv
         - parquet
       parameters: 
+        - name: datasetId
+          in: query
+          type: string
+          description: Id of the dataset to query. Required when mriquery is sent.
+          required: false
         - name: mriquery
           in: query
           type: string
