@@ -50,7 +50,7 @@ test('pa-compare-cohorts', async ({ page }) => {
   await expect(page.locator('#app')).toContainText('Saved filter updated.')
 
   // Navigate back to the cohorts list
-  await page.locator('#pane-left').getByRole('link', { name: 'Cohorts' }).click()
+  await page.locator('#pane-left').getByRole('link', { name: 'Data Exploration' }).click()
   // The fullscreen toggle expanded the old bookmark list inside the builder's
   // pane. The exploration list replaces that pane, so there is nothing to
   // expand and no such control.
@@ -77,7 +77,7 @@ test('pa-compare-cohorts', async ({ page }) => {
   await expect(page.locator('#app')).toContainText('Saved filter updated.')
 
   // Navigate back to the cohorts list
-  await page.locator('#pane-left').getByRole('link', { name: 'Cohorts' }).click()
+  await page.locator('#pane-left').getByRole('link', { name: 'Data Exploration' }).click()
   // The fullscreen toggle expanded the old bookmark list inside the builder's
   // pane. The exploration list replaces that pane, so there is nothing to
   // expand and no such control.

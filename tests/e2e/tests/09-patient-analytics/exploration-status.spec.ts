@@ -46,7 +46,7 @@ async function openCohorts(page: Page) {
 }
 
 async function backToList(page: Page) {
-  await page.locator('#pane-left').getByRole('link', { name: 'Cohorts' }).click()
+  await page.locator('#pane-left').getByRole('link', { name: 'Data Exploration' }).click()
   await expect(page.getByTestId('explorations-grid')).toBeVisible()
 }
 

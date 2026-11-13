@@ -115,7 +115,7 @@ test('cohort-generation', async ({ page }) => {
   // CLEANUP SECTION
   // ========================
   // Navigate back to cohorts list and delete the specific test cohort
-  await page.locator('#pane-left').getByRole('link', { name: 'Cohorts' }).click()
+  await page.locator('#pane-left').getByRole('link', { name: 'Data Exploration' }).click()
 
   // Delete by name. The old selector took the fifth icon of the first card's
   // footer, which was the delete action only by position - and only ever

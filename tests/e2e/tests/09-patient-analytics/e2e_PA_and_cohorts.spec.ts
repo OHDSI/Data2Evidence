@@ -90,7 +90,7 @@ async function navigateBackToCohortList(page) {
   if (await newExplorationBtn.isVisible().catch(() => false)) {
     return
   }
-  await page.locator('#pane-left').getByRole('link', { name: 'Cohorts' }).click()
+  await page.locator('#pane-left').getByRole('link', { name: 'Data Exploration' }).click()
   await dismissUnsavedChangesDialog(page)
   await page.waitForTimeout(500)
 }
