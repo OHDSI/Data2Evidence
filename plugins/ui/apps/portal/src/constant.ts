@@ -49,7 +49,7 @@ export const DatasetMap: Record<SourceDatasetType, CacheDatasetType[]> = {
 export const ResearcherFeatures = ["Notebooks", "Results", "Concepts", "Cohorts", "Analysis"];
 
 export const ActionSelectorMap: Record<DatasetType, ActionValue[]> = {
-  source: ["info", "metadata", "manage-metadata", "version", "delete", "transform-to-webapi"],
+  source: ["info", "metadata", "manage-metadata", "delete", "transform-to-webapi"],
   fhir: ["info", "metadata", "manage-metadata", "delete"],
   non_omop: ["metadata", "manage-metadata", "permissions", "resources", "delete", "create-cache"],
   omop: [
