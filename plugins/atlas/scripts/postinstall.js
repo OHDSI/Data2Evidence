@@ -135,11 +135,22 @@ if (existsSync(landingImageSrc)) {
 //  - stale-token-guard.js: reactively refreshes when usermgmt reports the token
 //    predates a role change (AUTHZ_STALE_TOKEN); must follow token-keeper.js,
 //    whose window.__atlasTokenKeeper.refresh it calls.
+//  - branding.js: keeps the browser tab title on the d2e portal's title.
 // Injected in this order: each is appended before </head>, so the array order is
 // the execution order, and login-guard.js reads a global the first one sets.
-const headScripts = ['landing-redirect.js', 'login-guard.js', 'user-link.js', 'token-keeper.js', 'stale-token-guard.js'];
+const headScripts = ['landing-redirect.js', 'login-guard.js', 'user-link.js', 'token-keeper.js', 'stale-token-guard.js', 'branding.js'];
 let indexHtml = readFileSync(join(resourcesDir, 'index.html'), 'utf8');
 let indexChanged = false;
+
+// Browser tab branding: show the d2e portal's title and favicon rather than
+// Atlas3's. Atlas3 links /favicon.ico, which nothing serves at the site root.
+const brandedHtml = indexHtml
+  .replace(/<title>[^<]*<\/title>/, '<title>Data2Evidence</title>')
+  .replace(/<link rel="icon"[^>]*>/, '<link rel="icon" href="/d2e/portal/assets/favicon.ico">');
+if (brandedHtml !== indexHtml) {
+  indexHtml = brandedHtml;
+  indexChanged = true;
+}
 for (const script of headScripts) {
   const src = join(rootDir, 'token-keeper', script);
   if (!existsSync(src)) continue;
