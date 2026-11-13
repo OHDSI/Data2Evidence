@@ -25,6 +25,7 @@ describe("isProgram", () => {
     assertEquals(isProgram(windowsProgram()), true);
     assertEquals(isProgram(bytes([0x7f], "ELF", [2, 1])), true);
     assertEquals(isProgram(bytes([0xcf, 0xfa, 0xed, 0xfe, 7, 0])), true);
+    assertEquals(isProgram(bytes([0xca, 0xfe, 0xba, 0xbf], "%PDF-1.4")), true); // universal 64-bit
   });
 
   it("doesn't flag text that merely starts with MZ", () => {
@@ -58,7 +59,7 @@ describe("isText", () => {
     assertEquals(isText(bytes("id,name\n1,Ann\n", [0, 0, 0, 0])), true);
     assertEquals(isText(bytes("Bo", [0], "b\n", [0, 0])), false);
     assertEquals(isText(bytes([0, 0, 0])), false);
-    assertEquals(isText(bytes("MZ", new Array(510).fill(0))), false); // mostly nulls
+    assertEquals(isText(bytes("MZ", new Array(510).fill(0))), true); // padding longer than the text
   });
 
   it("accepts UTF-16 without a byte order mark", () => {

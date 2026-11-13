@@ -22,6 +22,7 @@ describe("resourceContent", () => {
   it("recognises programs but not text that starts with MZ", () => {
     expect(isProgram(windowsProgram())).toBe(true);
     expect(isProgram(bytes([0x7f], "ELF", [2, 1]))).toBe(true);
+    expect(isProgram(bytes([0xca, 0xfe, 0xba, 0xbf], "%PDF-1.4"))).toBe(true);
     expect(isProgram(bytes("MZ_region,population\n"))).toBe(false);
   });
 
@@ -37,7 +38,7 @@ describe("resourceContent", () => {
     expect(isText(bytes("id,name\n", [0, 0, 0]))).toBe(true);
     expect(isText(bytes("Bo", [0], "b\n", [0, 0]))).toBe(false);
     expect(isText(bytes([0, 0, 0]))).toBe(false);
-    expect(isText(bytes("MZ", new Array(510).fill(0)))).toBe(false);
+    expect(isText(bytes("MZ", new Array(510).fill(0)))).toBe(true);
     expect(isText(bytes(utf16le("id,name\n1,Ann\n")))).toBe(true);
     expect(isText(bytes(utf16le("id,"), [0x00, 0x4e], utf16le("\n")))).toBe(true);
     expect(isText(bytes(utf16le("ab"), [0, 0], utf16le("cd")))).toBe(false);

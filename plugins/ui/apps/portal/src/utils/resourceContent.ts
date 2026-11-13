@@ -44,6 +44,7 @@ export const isProgram = (bytes: Uint8Array): boolean => {
     [0xce, 0xfa, 0xed, 0xfe], // Mach-O 32-bit, little-endian
     [0xcf, 0xfa, 0xed, 0xfe], // Mach-O 64-bit, little-endian
     [0xca, 0xfe, 0xba, 0xbe], // Mach-O universal (also Java class files)
+    [0xca, 0xfe, 0xba, 0xbf], // Mach-O universal, 64-bit
   ].some((signature) => startsWith(bytes, signature));
 };
 
@@ -65,8 +66,8 @@ const hasNoNullUnits = (bytes: Uint8Array, unitSize: number): boolean => {
 };
 
 // Some legacy exports and file transfers pad a text file with null bytes.
-// These are allowed only as one run at the very end, shorter than the text
-// before it; a file that is mostly null bytes is corrupted.
+// These are allowed as one run at the very end, of any length, as long as
+// there is text before it.
 const withoutTrailingNulls = (bytes: Uint8Array): Uint8Array => {
   let end = bytes.length;
   while (end > 0 && bytes[end - 1] === 0) end--;
@@ -106,7 +107,7 @@ export const isText = (bytes: Uint8Array): boolean => {
   }
   if (!bytes.includes(0)) return true;
   const content = withoutTrailingNulls(bytes);
-  if (content.length > bytes.length - content.length && !content.includes(0)) return true;
+  if (content.length > 0 && !content.includes(0)) return true;
   return isUtf16WithoutBom(bytes);
 };
 
