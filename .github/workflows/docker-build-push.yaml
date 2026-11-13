@@ -1541,10 +1541,24 @@ jobs:
           # yarn.lock at this commit, so `yarn install --frozen-lockfile` would
           # simply fail here.
           npm install
-          init_choice=y ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v develop init
-          ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v develop -c ./docker-compose-ci.yml start
-          ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v develop setupdemo
-          ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v develop -c ./docker-compose-ci.yml stop
+          cli() { ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v develop "$@"; }
+          # set -e does not apply inside a function run as a condition, so chain explicitly.
+          seed() {
+            init_choice=y cli init &&
+            cli -c ./docker-compose-ci.yml start &&
+            cli setupdemo
+          }
+          # The 0.18.12 release's setupdemo is flaky: its WebAPI cache build can lose
+          # the cache-file ATTACH race, leaving an empty cache that DQD then fails on.
+          # Retry once from a clean stack; the state lives only in named volumes.
+          if ! seed; then
+            echo "::warning title=Logto-era seed::first attempt failed, resetting the stack and retrying once"
+            cli -c ./docker-compose-ci.yml stop || true
+            docker ps -aq --filter "label=com.docker.compose.project=$COMPOSE_PROJECT_NAME" | xargs -r docker rm -f
+            docker volume ls -q --filter "label=com.docker.compose.project=$COMPOSE_PROJECT_NAME" | xargs -r docker volume rm
+            seed
+          fi
+          cli -c ./docker-compose-ci.yml stop
 
       - name: Upgrade it to this build
         env:
