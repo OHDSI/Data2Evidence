@@ -134,12 +134,13 @@ async function ensureBucket(name: string) {
     headers: storageHeaders("application/json"),
     body: JSON.stringify({ name, id: name }),
   });
-  // 409 = bucket already exists, which is the success case here. Any other non-2xx
-  // (e.g. 401/403 from bad storage auth) must fail loudly, not be swallowed and
-  // resurface later as a confusing upload error.
-  if (!resp.ok && resp.status !== 409) {
-    throw new Error(`storage ensureBucket ${resp.status}: ${await resp.text()}`);
-  }
+  // "Already exists" is the success case here; storage-api sends it as HTTP 400
+  // with statusCode "409" in the body. Any other non-2xx (e.g. 401/403 from bad
+  // storage auth) must fail loudly, not resurface later as a confusing upload error.
+  if (resp.ok) return;
+  const body = await resp.text();
+  if (resp.status === 409 || /"statusCode"\s*:\s*"409"/.test(body)) return;
+  throw new Error(`storage ensureBucket ${resp.status}: ${body}`);
 }
 async function uploadObject(bucket: string, key: string, bytes: Uint8Array) {
   const resp = await fetch(`${STORAGE_BASE_URL}/object/${bucket}/${key}`, {
