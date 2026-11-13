@@ -1,9 +1,7 @@
 import { installTrexGlobal } from "../../_shared/testing/trex-global.ts";
 
 // Must run before any module under test evaluates: env.ts calls
-// Deno.env.toObject() and JSON.parse(SERVICE_ROUTES) at module scope, and
-// ShinyLiveService (constructed by DatasetRouter's own constructor) calls
-// JSON.parse(env.PG__SSL.toLowerCase()), which throws when PG__SSL is unset.
+// Deno.env.toObject() and JSON.parse(SERVICE_ROUTES) at module scope.
 //
 // SERVICE_ROUTES must carry every key the dataset sources read; each API-client
 // constructor throws "No url is set for ..." when its key is missing, and the
