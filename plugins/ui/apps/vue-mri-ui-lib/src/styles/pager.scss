@@ -10,7 +10,14 @@
     background-color: transparent;
     cursor: pointer;
   }
+  // Set the padding explicitly, because a host page can reset the browser default button padding.
+  button.page-button {
+    padding: 1px 6px;
+    white-space: nowrap;
+  }
   button.pager-nav {
+    width: 20px;
+    padding: 0;
     background-position-y: $enabledY;
     background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAHgAAABQCAAAAAD38O5VAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAACdFJOUwAAdpPNOAAAAAlwSFlzAAAOwwAADsMBx2+oZAAAABl0RVh0U29mdHdhcmUAUGFpbnQuTkVUIHYzLjUuODc7gF0AAADmSURBVGje7ZZBDsMgDAR5La/Nfzi6h7pC8ppWhlS2op2DDyuHiSwIaY2Qh9L7rCa1IQaLFnc1m2qnDTuGGKx63OU88bY3ZEbxgTdiLiROG3Xe5ko5ToQQQuozxqwTkU+B9HviPug6xmitDROKiBZIf0Tuk0MlIN72hswoPvBGzIXEaaPO21wpx4kQQkh93h90vGTuvCRch3bKP69F8V5n2Xjnj4CGVnzgjZgLidNGnbe5Uo4TIYSQ+lzXrCa1IQaLFnc1m2qnDS8MMVj1uMt54m1vyIziA2/EXEicNuq8zZVynAh5EC9PRpS/Kg5kUgAAAABJRU5ErkJggg==');
   }
