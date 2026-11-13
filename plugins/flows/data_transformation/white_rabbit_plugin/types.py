@@ -3,7 +3,7 @@ from typing import Optional
 from pydantic import BaseModel, Field
 
 
-WHITERABBIT_DIR_PATH = '/app/whiterabbit'
+WHITERABBIT_DIR_PATH = '/var/lib/d2e-flows/data-transformation-flow/baked/flows/white_rabbit_plugin'
 WHITERABBIT_BIN_PATH = f'{WHITERABBIT_DIR_PATH}/dist/bin'
 WHITERABBIT_CSV_DIR = f'{WHITERABBIT_DIR_PATH}/csvfiles'
 
