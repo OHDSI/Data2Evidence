@@ -64,10 +64,39 @@ const hasNoNullUnits = (bytes: Uint8Array, unitSize: number): boolean => {
   return true;
 };
 
+// Some legacy exports and file transfers pad a text file with null bytes.
+// These are allowed only as one run at the very end, shorter than the text
+// before it; a file that is mostly null bytes is corrupted.
+const withoutTrailingNulls = (bytes: Uint8Array): Uint8Array => {
+  let end = bytes.length;
+  while (end > 0 && bytes[end - 1] === 0) end--;
+  return bytes.subarray(0, end);
+};
+
+// UTF-16 saved without a byte order mark (e.g. R's fileEncoding = "UTF-16LE",
+// pandas' encoding="utf-16-le", SQL Server's bcp -w). Recognised when there
+// is no null character and at least half the characters have a zero byte in
+// the same position, as in mostly-English text such as CSV or SQL. Random
+// and compressed data never look like this.
+const isUtf16WithoutBom = (bytes: Uint8Array): boolean => {
+  if (bytes.length % 2 !== 0) return false;
+  let evenZeros = 0;
+  let oddZeros = 0;
+  for (let i = 0; i < bytes.length; i += 2) {
+    const evenZero = bytes[i] === 0;
+    const oddZero = bytes[i + 1] === 0;
+    if (evenZero && oddZero) return false; // a null character
+    if (evenZero) evenZeros++;
+    if (oddZero) oddZeros++;
+  }
+  return Math.max(evenZeros, oddZeros) * 2 >= bytes.length / 2;
+};
+
 // Plain text in any 8-bit encoding (UTF-8, Windows-1252, ...) has no null
-// bytes. UTF-16 and UTF-32 are recognised by their byte order mark and may
-// not contain null characters. UTF-32 marks are checked first because the
-// UTF-32LE mark starts with the UTF-16LE one.
+// bytes, apart from padding at the end. UTF-16 and UTF-32 are recognised by
+// their byte order mark and may not contain null characters; UTF-16 without
+// a byte order mark is also recognised (see above). UTF-32 marks are checked
+// first because the UTF-32LE mark starts with the UTF-16LE one.
 export const isText = (bytes: Uint8Array): boolean => {
   if (startsWith(bytes, [0xff, 0xfe, 0x00, 0x00]) || startsWith(bytes, [0x00, 0x00, 0xfe, 0xff])) {
     return hasNoNullUnits(bytes, 4);
@@ -75,7 +104,10 @@ export const isText = (bytes: Uint8Array): boolean => {
   if (startsWith(bytes, [0xff, 0xfe]) || startsWith(bytes, [0xfe, 0xff])) {
     return hasNoNullUnits(bytes, 2);
   }
-  return !bytes.includes(0);
+  if (!bytes.includes(0)) return true;
+  const content = withoutTrailingNulls(bytes);
+  if (content.length > bytes.length - content.length && !content.includes(0)) return true;
+  return isUtf16WithoutBom(bytes);
 };
 
 const isPdf = (bytes: Uint8Array): boolean => indexOfBytes(bytes, ascii("%PDF-"), PDF_HEADER_WINDOW + 5) >= 0;

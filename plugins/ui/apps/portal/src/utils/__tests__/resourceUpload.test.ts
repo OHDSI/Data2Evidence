@@ -80,7 +80,7 @@ describe("validateResourceFile", () => {
 
   it("rejects content that doesn't match the extension as corrupted", () => {
     expect(check("report.pdf", 100, enc.encode("not a pdf"))).toBe("corrupted");
-    expect(check("notes.txt", 100, new Uint8Array([0x4d, 0x5a, 0, 0]))).toBe("corrupted");
+    expect(check("notes.txt", 100, new Uint8Array([0x4d, 0x5a, 0, 0, 0x78]))).toBe("corrupted");
   });
 
   it("reports empty before corrupted, and corrupted before too large", () => {

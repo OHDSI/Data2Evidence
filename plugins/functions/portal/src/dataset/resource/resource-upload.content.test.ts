@@ -53,6 +53,27 @@ describe("isText", () => {
     assertEquals(isText(bytes([0xff, 0xfe], utf16le("ab"), [0x41])), false);
     assertEquals(isText(bytes([0xff, 0xfe, 0, 0], utf32le("a"), [0, 0, 0, 0])), false);
   });
+
+  it("accepts null bytes padding the end of 8-bit text, but nowhere else", () => {
+    assertEquals(isText(bytes("id,name\n1,Ann\n", [0, 0, 0, 0])), true);
+    assertEquals(isText(bytes("Bo", [0], "b\n", [0, 0])), false);
+    assertEquals(isText(bytes([0, 0, 0])), false);
+    assertEquals(isText(bytes("MZ", new Array(510).fill(0))), false); // mostly nulls
+  });
+
+  it("accepts UTF-16 without a byte order mark", () => {
+    assertEquals(isText(bytes(utf16le("id,name\n1,Ann\n"))), true);
+    assertEquals(isText(bytes(utf16be("id,name\n1,Ann\n"))), true);
+    // U+4E00 ("一") is stored as 00 4E, a zero in the other position.
+    assertEquals(isText(bytes(utf16le("id,"), [0x00, 0x4e], utf16le("\n"))), true);
+  });
+
+  it("rejects binary data that only looks a little like UTF-16", () => {
+    assertEquals(isText(bytes(utf16le("ab"), [0, 0], utf16le("cd"))), false); // null character
+    assertEquals(isText(bytes(utf16le("ab"), [0x41])), false); // odd length
+    assertEquals(isText(bytes([1, 2, 3, 0, 5, 6, 7, 8, 9, 10])), false); // too few zero bytes
+    assertEquals(isContentValid(bytes([0x1f, 0x8b, 0x08, 0x00, 0, 0, 0, 0, 0, 0x03, 0x4b, 0x4c, 0x4a, 0x06, 0x00]), "csv"), false); // gzip
+  });
 });
 
 describe("isContentValid", () => {
@@ -92,7 +113,7 @@ describe("isContentValid", () => {
   it("applies the text rule to every text type", () => {
     for (const ext of ["csv", "txt", "md", "sql", "json"]) {
       assertEquals(isContentValid(bytes("a,b\n1,2\n"), ext), true, ext);
-      assertEquals(isContentValid(bytes("MZ", [0, 0, 0]), ext), false, ext);
+      assertEquals(isContentValid(bytes("MZ", [0, 0, 0], "x"), ext), false, ext);
     }
   });
 

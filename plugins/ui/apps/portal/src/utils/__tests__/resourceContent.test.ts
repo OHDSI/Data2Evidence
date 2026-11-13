@@ -29,8 +29,19 @@ describe("resourceContent", () => {
     expect(isText(bytes("Ren", [0xe9], "\n"))).toBe(true);
     expect(isText(bytes([0xff, 0xfe], utf16le("id,name\n")))).toBe(true);
     expect(isText(bytes([0xff, 0xfe, 0, 0], [0x61, 0, 0, 0]))).toBe(true);
-    expect(isText(bytes("Bo", [0], "b"))).toBe(false);
+    expect(isText(bytes("Bo", [0], "b\n"))).toBe(false);
     expect(isText(bytes([0xff, 0xfe], utf16le("a"), [0, 0]))).toBe(false);
+  });
+
+  it("accepts trailing null padding and UTF-16 without a byte order mark", () => {
+    expect(isText(bytes("id,name\n", [0, 0, 0]))).toBe(true);
+    expect(isText(bytes("Bo", [0], "b\n", [0, 0]))).toBe(false);
+    expect(isText(bytes([0, 0, 0]))).toBe(false);
+    expect(isText(bytes("MZ", new Array(510).fill(0)))).toBe(false);
+    expect(isText(bytes(utf16le("id,name\n1,Ann\n")))).toBe(true);
+    expect(isText(bytes(utf16le("id,"), [0x00, 0x4e], utf16le("\n")))).toBe(true);
+    expect(isText(bytes(utf16le("ab"), [0, 0], utf16le("cd")))).toBe(false);
+    expect(isText(bytes([1, 2, 3, 0, 5, 6, 7, 8, 9, 10]))).toBe(false);
   });
 
   it("checks PDFs, including a program hiding a PDF header", () => {
