@@ -64,6 +64,8 @@ services:
       # deadlock (trex -> post-init -> logto -> trex's bootstrap).
       alp-minerva-postgres:
         condition: service_healthy
+      trex-storage-owner:
+        condition: service_completed_successfully
     networks:
       alp:
         priority: 20
@@ -1099,6 +1101,21 @@ services:
   #     DB_URL: postgres://${PG_SUPER_USER:-postgres}:${PG_SUPER_PASSWORD}@alp-minerva-postgres-1:${PG_PORT:-5432}/${PG_DB_NAME:-postgres}
   #   networks:
   #     - alp
+
+  trex-storage-owner:
+    # The standalone storage container wrote this volume as root; trex runs as
+    # uid 1000 and cannot write into those directories. Runs once per volume.
+    container_name: ${PROJECT_NAME:-d2e}-trex-storage-owner
+    image: postgres:15-alpine
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        d=/storage
+        [ -e "$$d/.trex-owner" ] && exit 0
+        chown -R 1000:1000 "$$d" && touch "$$d/.trex-owner"
+    restart: "no"
+    volumes:
+      - supabase-storage-data:/storage
 
   alp-logto-post-init:
     # Opt-in with `--profile logto`. trex is the identity provider now, so this

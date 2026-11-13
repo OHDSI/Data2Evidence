@@ -97,6 +97,29 @@ spec:
             - mountPath: /etc/d2e/tls
               name: d2e-tls
               readOnly: true
+        # The standalone storage pod wrote storage-pvc as root; trex runs as uid
+        # 1000 and cannot write into those directories. Runs once per volume.
+        - name: storage-owner
+          image: postgres:15-alpine
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            runAsUser: 0
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              d=/storage
+              [ -e "$d/.trex-owner" ] && exit 0
+              chown -R 1000:1000 "$d" && touch "$d/.trex-owner"
+          resources:
+            requests:
+              cpu: 50m
+              memory: 50Mi
+            limits:
+              cpu: 500m
+              memory: 100Mi
+          volumeMounts:
+            - mountPath: /storage
+              name: storage-volume
         - name: trex-init
           image: busybox:latest
           resources:
