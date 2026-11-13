@@ -19,6 +19,8 @@ const log = Logger.CreateLogger("analytics-log");
 const BASIC_DATA_CONFIG_PATH = "patient";
 const isBasicDataFiltercard = (filtercard) =>
     filtercard.content[0].configPath === BASIC_DATA_CONFIG_PATH;
+const isBasicDataAxis = (axis) =>
+    axis.attributeId.split(".attributes.")[0] === BASIC_DATA_CONFIG_PATH;
 
 const TOTAL_PATIENT_COUNT_BOOKMARK_STR = JSON.stringify({
     filter: {
@@ -170,7 +172,7 @@ export class InclusionReportEndpoint extends BaseQueryEngineEndpoint {
                         }
                     }
 
-                    // Strip all axis selection as is not needed by inclusionreport
+                    // Some inclusion card will be transformed into a NOT in some mask, and axis selection does not work for exlcusions.
                     bitmapMriquery["axisSelection"] = [];
 
                     return this.formulateQuery(req, {
@@ -313,8 +315,16 @@ export class InclusionReportEndpoint extends BaseQueryEngineEndpoint {
                             );
                         }
                     }
-                    // Strip all axis selection as is not needed by inclusionreport
-                    bitmapMriquery["axisSelection"] = [];
+                    // Basic Data is split into basicdataN rules, so add a copy of the original card for its axes.
+                    const basicDataAxisCard = this.getBasicDataAxisCard(
+                        mriquery,
+                        bitmapMriquery["axisSelection"]
+                    );
+                    if (basicDataAxisCard) {
+                        bitmapMriquery.filter.cards.content.push(
+                            basicDataAxisCard
+                        );
+                    }
 
                     return this.formulateQuery(req, {
                         queryParams: {
@@ -637,6 +647,33 @@ export class InclusionReportEndpoint extends BaseQueryEngineEndpoint {
             }
         }
         return ids;
+    }
+
+    private getBasicDataFiltercard(mriquery) {
+        // getInclusionReportFiltercards empties a container of only exclusions.
+        return mriquery.filter.cards.content.find(
+            (filtercard) =>
+                filtercard.content.length > 0 &&
+                isBasicDataFiltercard(filtercard)
+        );
+    }
+
+    /**
+     * Returns a copy of the Basic Data card without constraints when an x-axis is on Basic Data.
+     * The query needs this card to group by the axis. It adds no filter.
+     */
+    private getBasicDataAxisCard(mriquery, axes: any[]) {
+        const hasBasicDataXAxis = axes.some(
+            (axis) => axis.categoryId.startsWith("x") && isBasicDataAxis(axis)
+        );
+        if (!hasBasicDataXAxis) {
+            return null;
+        }
+        const card = structuredClone(this.getBasicDataFiltercard(mriquery));
+        card.content[0].attributes.content.forEach((attribute) => {
+            attribute.constraints.content = [];
+        });
+        return card;
     }
 
     /**
