@@ -425,11 +425,11 @@ export class SupabaseStorageClient {
   }
 
   private formatBytes(bytes, decimals = 1) {
-    if (!+bytes) return "0 Byte";
+    if (!+bytes) return "0 B";
 
     const k = 1024;
     const dm = decimals < 0 ? 0 : decimals;
-    const sizes = ["Bytes", "KB", "MB", "GB"];
+    const sizes = ["B", "KB", "MB", "GB"];
 
     const i = Math.floor(Math.log(bytes) / Math.log(k));
 

@@ -1,7 +1,7 @@
 import memoize from "lodash/memoize";
 
 export const getFileSizeDisplay = memoize((fileSizeInBytes: number) => {
-  const fileUnits = ["Bytes", "KB", "MB", "GB"];
+  const fileUnits = ["B", "KB", "MB", "GB"];
 
   let fileSize: number = fileSizeInBytes;
   let i = 0;
