@@ -8,6 +8,7 @@ export interface ConceptInput {
   conceptCode: string;
   domainId: string;
   vocabularyId: string;
+  score?: number;
 }
 
 export interface SuggestionDto {
@@ -17,6 +18,7 @@ export interface SuggestionDto {
   conceptCode: string;
   domainId: string;
   vocabularyId: string;
+  score: number | null;
   suggestedBy: string;
   // Display names behind the table's "Checked by" column: who suggested this concept, and -
   // once approved - who approved it. Null on suggestions written before these were recorded.

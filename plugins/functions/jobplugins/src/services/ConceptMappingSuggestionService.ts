@@ -28,6 +28,7 @@ export interface ConceptInput {
   conceptCode?: string;
   domainId?: string;
   vocabularyId?: string;
+  score?: number;
 }
 
 export interface SuggestionDto {
@@ -37,6 +38,7 @@ export interface SuggestionDto {
   conceptCode: string;
   domainId: string;
   vocabularyId: string;
+  score: number | null;
   suggestedBy: string;
   // Display names for the UI's "Checked by" column: who suggested this concept, and - once
   // approved - who approved it. Null on suggestions written before these were recorded.
@@ -60,6 +62,7 @@ function toDto(suggestion: ConceptMappingSuggestion): SuggestionDto {
     conceptCode: suggestion.conceptCode,
     domainId: suggestion.domainId,
     vocabularyId: suggestion.vocabularyId,
+    score: suggestion.score ?? null,
     suggestedBy: suggestion.suggestedBy,
     suggestedByName: suggestion.suggestedByName ?? null,
     approvedByName: suggestion.approvedByName ?? null,
@@ -150,6 +153,7 @@ export class ConceptMappingSuggestionService {
       conceptCode: concept.conceptCode,
       domainId: concept.domainId,
       vocabularyId: concept.vocabularyId,
+      score: concept.score ?? null,
       suggestedBy: userSub,
       suggestedByName: username ?? null,
       isApproved: false,

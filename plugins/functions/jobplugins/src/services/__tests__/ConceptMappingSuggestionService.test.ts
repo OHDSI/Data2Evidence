@@ -207,6 +207,28 @@ describe("ConceptMappingSuggestionService.addSuggestion", () => {
     assertEquals(suggestionRepo.items[0].suggestedByName, "alice");
   });
 
+  it("persists the match score and returns it on the DTO and on listByNode", async () => {
+    const dto = await service.addSuggestion(
+      DATAFLOW_ID,
+      NODE_ID,
+      ROW_ID,
+      { ...CONCEPT_A, score: 0.873 },
+      "user-a",
+    );
+
+    assertEquals(dto.score, 0.873);
+    assertEquals(suggestionRepo.items[0].score, 0.873);
+    const rows = await service.listByNode(DATAFLOW_ID, NODE_ID);
+    assertEquals(rows[0].suggestions[0].score, 0.873);
+  });
+
+  it("stores a null score when none is supplied (manual suggestion)", async () => {
+    const dto = await service.addSuggestion(DATAFLOW_ID, NODE_ID, ROW_ID, CONCEPT_A, "user-a");
+
+    assertEquals(dto.score, null);
+    assertEquals(suggestionRepo.items[0].score, null);
+  });
+
   it("rejects a duplicate suggestion (same targetConceptId for the row) with a ConflictError", async () => {
     await service.addSuggestion(DATAFLOW_ID, NODE_ID, ROW_ID, CONCEPT_A, "user-a");
 
