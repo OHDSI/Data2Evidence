@@ -1761,6 +1761,48 @@ jobs:
             DC_EXIT_CODE=$?
             [ $DC_EXIT_CODE = 0 ] || { echo EXIT DC_EXIT_CODE=$DC_EXIT_CODE && exit $DC_EXIT_CODE; }
 
+      - name: Wait for trex healthy
+        run: |
+          status=missing
+          for i in $(seq 1 60); do
+            name=$(docker ps -a --filter 'name=-trex$' --format '{{.Names}}' | head -1)
+            status=$(docker inspect -f '{{.State.Health.Status}}' "$name" 2>/dev/null || echo missing)
+            echo "[$i] ${name:-trex}: $status"
+            [ "$status" = "healthy" ] && exit 0
+            sleep 5
+          done
+          echo "::error::trex did not become healthy (last status: $status)"
+          [ -n "$name" ] && docker logs "$name" || true
+          exit 1
+
+      # build_e2e_image only runs when e2e or plugin sources change, and d2e-e2e
+      # has no canonical tag to fall back on, so build it here when this run did
+      # not publish one.
+      - name: Get e2e Docker image
+        run: |
+          if docker pull ${REG_URL}/d2e-e2e:${DOCKER_TAG_NAME}; then
+            docker tag ${REG_URL}/d2e-e2e:${DOCKER_TAG_NAME} d2e-e2e
+          else
+            docker build -t d2e-e2e ./tests/e2e
+          fi
+
+      - name: Disable IPv6 to prevent ERR_NETWORK_CHANGED
+        run: sudo sysctl -w net.ipv6.conf.all.disable_ipv6=1
+
+      - name: e2e tests
+        run: |
+          cd ./tests/e2e
+          docker run --rm \
+            --network=host \
+            --ipc=host \
+            -v "$(pwd)/test-results:/work/test-results" \
+            -v "$(pwd)/ctrf:/work/ctrf" \
+            -e D2E_BASE_URL=https://localhost:443 \
+            -e E2E_DB_DIALECT=hana \
+            -e CI=true \
+            -e GITHUB_ACTIONS=true \
+            d2e-e2e npm test
+
       - name: Mark demo hana attempt success
         if: success()
         run: |
@@ -1774,6 +1816,21 @@ jobs:
           name: demo-hana-attempt-${{ matrix.attempt }}
           path: ./_attempt/
           overwrite: true
+
+      - name: Upload Error Context
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: error-context-hana-attempt-${{ matrix.attempt }}
+          path: tests/e2e/test-results/**/*
+          overwrite: true
+
+      - name: Publish Test Report
+        if: always()
+        uses: ctrf-io/github-test-reporter@v1
+        with:
+          report-path: "./tests/e2e/ctrf/*.json"
+          file-report: true
 
       - name: Stop d2e services
         if: success() || failure()
