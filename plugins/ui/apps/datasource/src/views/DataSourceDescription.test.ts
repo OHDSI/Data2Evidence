@@ -3,7 +3,7 @@ import { mount, flushPromises } from "@vue/test-utils";
 import { createVuetify } from "vuetify";
 import { buildVuetifyOptions } from "@ohdsi/atlas-ui";
 import { D2eStatusChip } from "@d2e/ui";
-import DatasourceDescription from "./DatasourceDescription.vue";
+import DataSourceDescription from "./DataSourceDescription.vue";
 import * as systemPortal from "../api/systemPortal";
 import * as userMgmt from "../api/userMgmt";
 import * as jwt from "../utils/jwt";
@@ -20,13 +20,13 @@ function mountWith(overrides: { showRequestAccess?: boolean } = {}) {
       showRequestAccess: overrides.showRequestAccess ?? true,
     },
   });
-  return mount(DatasourceDescription, {
+  return mount(DataSourceDescription, {
     props: { sourceKey: "ds-1", token: "tok" },
     global: { plugins: [vuetify] },
   });
 }
 
-describe("DatasourceDescription", () => {
+describe("DataSourceDescription", () => {
   beforeEach(() => {
     vi.restoreAllMocks();
     vi.spyOn(systemPortal, "getResources").mockResolvedValue([]);
@@ -254,7 +254,7 @@ describe("DatasourceDescription", () => {
     });
     vi.spyOn(userMgmt, "getMyStudyAccessRequests").mockResolvedValue([]);
 
-    const wrapper = mount(DatasourceDescription, {
+    const wrapper = mount(DataSourceDescription, {
       props: { sourceKey: "ds-1", token: "tok" },
       global: { plugins: [vuetify] },
     });

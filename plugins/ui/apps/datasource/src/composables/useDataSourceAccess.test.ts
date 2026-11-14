@@ -1,6 +1,6 @@
 import { ref, nextTick } from 'vue'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { useDatasourceAccess } from './useDatasourceAccess'
+import { useDataSourceAccess } from './useDataSourceAccess'
 import * as systemPortal from '../api/systemPortal'
 import * as userMgmt from '../api/userMgmt'
 import * as jwt from '../utils/jwt'
@@ -9,7 +9,7 @@ function flushPromises() {
   return new Promise(resolve => setTimeout(resolve, 0))
 }
 
-describe('useDatasourceAccess', () => {
+describe('useDataSourceAccess', () => {
   beforeEach(() => {
     vi.restoreAllMocks()
     vi.spyOn(jwt, 'getIdpUserId').mockReturnValue('idp-1')
@@ -26,7 +26,7 @@ describe('useDatasourceAccess', () => {
     })
     vi.spyOn(userMgmt, 'getMyStudyAccessRequests').mockResolvedValue([])
 
-    const { accessState, loading } = useDatasourceAccess(() => 'ds-1', () => 'tok')
+    const { accessState, loading } = useDataSourceAccess(() => 'ds-1', () => 'tok')
     await flushPromises()
 
     expect(loading.value).toBe(false)
@@ -39,7 +39,7 @@ describe('useDatasourceAccess', () => {
       { id: 'r1', userId: 'u-1', studyId: 'ds-1', role: 'RESEARCHER' },
     ])
 
-    const { accessState } = useDatasourceAccess(() => 'ds-1', () => 'tok')
+    const { accessState } = useDataSourceAccess(() => 'ds-1', () => 'tok')
     await flushPromises()
 
     expect(accessState.value).toBe('pending')
@@ -49,7 +49,7 @@ describe('useDatasourceAccess', () => {
     vi.spyOn(userMgmt, 'getUserGroupList').mockResolvedValue({ userId: 'u-1', alp_role_study_researcher: [] })
     vi.spyOn(userMgmt, 'getMyStudyAccessRequests').mockResolvedValue([])
 
-    const { accessState } = useDatasourceAccess(() => 'ds-1', () => 'tok')
+    const { accessState } = useDataSourceAccess(() => 'ds-1', () => 'tok')
     await flushPromises()
 
     expect(accessState.value).toBe('no-access')
@@ -63,7 +63,7 @@ describe('useDatasourceAccess', () => {
     vi.spyOn(userMgmt, 'getUserGroupList').mockResolvedValue({ userId: 'u-1', alp_role_study_researcher: [] })
     vi.spyOn(userMgmt, 'getMyStudyAccessRequests').mockResolvedValue([])
 
-    const { accessState } = useDatasourceAccess(() => 'ds-1', () => 'tok')
+    const { accessState } = useDataSourceAccess(() => 'ds-1', () => 'tok')
     await flushPromises()
 
     expect(accessState.value).toBe('restricted')
@@ -73,7 +73,7 @@ describe('useDatasourceAccess', () => {
     vi.spyOn(userMgmt, 'getUserGroupList').mockRejectedValue(new Error('500'))
     vi.spyOn(userMgmt, 'getMyStudyAccessRequests').mockResolvedValue([])
 
-    const { accessState, accessLookupFailed, dataset, error, requestAccess } = useDatasourceAccess(() => 'ds-1', () => 'tok')
+    const { accessState, accessLookupFailed, dataset, error, requestAccess } = useDataSourceAccess(() => 'ds-1', () => 'tok')
     await flushPromises()
 
     expect(accessState.value).toBe('no-access')
@@ -96,7 +96,7 @@ describe('useDatasourceAccess', () => {
       .mockResolvedValueOnce([{ id: 'r1', userId: 'u-1', studyId: 'ds-1', role: 'RESEARCHER' }])
     const addSpy = vi.spyOn(userMgmt, 'addStudyAccessRequest').mockResolvedValue(undefined)
 
-    const { accessState, requestAccess } = useDatasourceAccess(() => 'ds-1', () => 'tok')
+    const { accessState, requestAccess } = useDataSourceAccess(() => 'ds-1', () => 'tok')
     await flushPromises()
     expect(accessState.value).toBe('no-access')
 
@@ -116,7 +116,7 @@ describe('useDatasourceAccess', () => {
     vi.spyOn(userMgmt, 'getMyStudyAccessRequests').mockResolvedValue([])
 
     const sourceKey = ref('ds-1')
-    const { dataset } = useDatasourceAccess(() => sourceKey.value, () => 'tok')
+    const { dataset } = useDataSourceAccess(() => sourceKey.value, () => 'tok')
     await flushPromises()
 
     expect(dataset.value?.id).toBe('ds-1')
@@ -142,7 +142,7 @@ describe('useDatasourceAccess', () => {
     vi.spyOn(userMgmt, 'getMyStudyAccessRequests').mockResolvedValue([])
 
     const sourceKey = ref('ds-1')
-    const { dataset, loading } = useDatasourceAccess(() => sourceKey.value, () => 'tok')
+    const { dataset, loading } = useDataSourceAccess(() => sourceKey.value, () => 'tok')
     await flushPromises()
     expect(loading.value).toBe(true) // ds-1's getDataset is still pending
 
@@ -170,7 +170,7 @@ describe('useDatasourceAccess', () => {
     vi.spyOn(userMgmt, 'getMyStudyAccessRequests').mockResolvedValue([])
 
     const token = ref<string | null>(null)
-    const { accessState } = useDatasourceAccess(() => 'ds-1', () => token.value)
+    const { accessState } = useDataSourceAccess(() => 'ds-1', () => token.value)
     await flushPromises()
 
     expect(accessState.value).toBe('no-access') // no token yet -> idpUserId null -> early-return branch

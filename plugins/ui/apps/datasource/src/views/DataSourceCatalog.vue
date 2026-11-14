@@ -72,14 +72,14 @@
 
 <script setup lang="ts">
 import { AtlasIcon } from '@ohdsi/atlas-ui'
-import { useDatasourceCatalog } from '../composables/useDatasourceCatalog'
+import { useDataSourceCatalog } from '../composables/useDataSourceCatalog'
 import DataSourceCard from '../components/DataSourceCard.vue'
 import DataSourceBanner from '../components/DataSourceBanner.vue'
 import DataSourceFooter from '../components/DataSourceFooter.vue'
 import SortMenu from '../components/SortMenu.vue'
 
 const props = defineProps<{ token: string | null; onSelect: (id: string) => void }>()
-const cat = useDatasourceCatalog(() => props.token)
+const cat = useDataSourceCatalog(() => props.token)
 </script>
 
 <style scoped>

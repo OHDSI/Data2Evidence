@@ -3,11 +3,11 @@ import { mount } from '@vue/test-utils'
 import { createVuetify } from 'vuetify'
 import { buildVuetifyOptions } from '@ohdsi/atlas-ui'
 import DataSourceCard from './DataSourceCard.vue'
-import type { DatasourceCardVM } from '../composables/useDatasourceCatalog'
+import type { DataSourceCardVM } from '../composables/useDataSourceCatalog'
 
 const vuetify = createVuetify(buildVuetifyOptions())
 
-const vm: DatasourceCardVM = {
+const vm: DataSourceCardVM = {
   id: 'a',
   name: 'EHR Primary Care Network',
   description: 'desc',
@@ -19,7 +19,7 @@ const vm: DatasourceCardVM = {
   access: 'approved',
 }
 
-const mountCard = (over: Partial<DatasourceCardVM> = {}) =>
+const mountCard = (over: Partial<DataSourceCardVM> = {}) =>
   mount(DataSourceCard, { props: { source: { ...vm, ...over } }, global: { plugins: [vuetify] } })
 
 describe('DataSourceCard', () => {

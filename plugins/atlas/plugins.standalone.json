@@ -159,7 +159,7 @@
         { "id": "datasources", "name": "Data Sources", "route": "/plugins/datasources/", "icon": "mdi-database", "order": 5, "insertBefore": "concepts" }
       ],
       "mountPoints": [
-        { "id": "datasource", "surface": "datasource-sidebar", "name": "Description", "icon": "mdi-file-document-outline", "group": "Overview", "order": 5, "insertBefore": "dashboard" }
+        { "id": "description", "surface": "datasource-sidebar", "name": "Description", "icon": "mdi-file-document-outline", "group": "Overview", "order": 5, "insertBefore": "dashboard" }
       ],
       "metadata": { "author": "D2E", "description": "Data source catalog and description screens, replacing the researcher portal's dataset views" }
     }

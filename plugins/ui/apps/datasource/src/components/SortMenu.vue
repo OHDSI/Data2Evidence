@@ -27,7 +27,7 @@ import { computed } from 'vue'
 import { AtlasButton } from '@ohdsi/atlas-ui'
 import { D2eMenu } from '@d2e/ui'
 import type { D2eMenuItem } from '@d2e/ui'
-import type { SortMode } from '../composables/useDatasourceCatalog'
+import type { SortMode } from '../composables/useDataSourceCatalog'
 
 const props = defineProps<{ modelValue: SortMode; isLoggedIn: boolean }>()
 const emit = defineEmits<{ (e: 'update:modelValue', mode: SortMode): void }>()
