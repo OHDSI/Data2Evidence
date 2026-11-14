@@ -165,7 +165,7 @@ test(TEST_NAME, async ({ page }) => {
   })
   //Verify the new bookmark is listed on the Data Exploration page
   await test.step('Verify the new bookmark on the Data Exploration page', async () => {
-    await page.locator('#pane-left').getByRole('link', { name: 'Cohorts' }).click()
+    await page.locator('#pane-left').getByRole('link', { name: 'Data Exploration' }).click()
     await expect(explorationBookmarkCard(page, NAME.savedFilters)).toBeVisible()
     // Open it again, so the steps below continue on the saved cohort.
     await explorationBookmarkCard(page, NAME.savedFilters).click()
@@ -210,7 +210,7 @@ test(TEST_NAME, async ({ page }) => {
   })
   //Verify the saved filter
   await test.step('Verify the saved filter', async () => {
-    await page.locator('#pane-left').getByRole('link', { name: 'Cohorts' }).click()
+    await page.locator('#pane-left').getByRole('link', { name: 'Data Exploration' }).click()
     await expect(explorationCard(page, NAME.savedFilters)).toBeVisible()
   })
   // Test for duplicate name validation
@@ -228,7 +228,7 @@ test(TEST_NAME, async ({ page }) => {
   })
   //Rename the saved filter
   await test.step('Rename the saved filter', async () => {
-    await page.locator('#pane-left').getByRole('link', { name: 'Cohorts' }).click()
+    await page.locator('#pane-left').getByRole('link', { name: 'Data Exploration' }).click()
     await explorationMenuAction(page, NAME.savedFilters, 'Rename')
     await page.getByRole('textbox', { name: 'Exploration name' }).fill('')
     await expect(page.getByTestId('pa-save-dialog-save-btn')).toBeDisabled()
@@ -256,7 +256,7 @@ test(TEST_NAME, async ({ page }) => {
   })
   //Delete the saved filter
   await test.step('Delete the saved filter', async () => {
-    await page.locator('#pane-left').getByRole('link', { name: 'Cohorts' }).click()
+    await page.locator('#pane-left').getByRole('link', { name: 'Data Exploration' }).click()
     await expect(explorationCard(page, NAME.renamedFilters)).toBeVisible()
     await explorationMenuAction(page, NAME.renamedFilters, 'Delete')
     await confirmExplorationDialog(page)
@@ -341,7 +341,7 @@ test(TEST_NAME, async ({ page }) => {
     await page.getByRole('textbox', { name: 'Enter name' }).fill(NAME.patientListFilters)
     await page.getByTestId('pa-save-dialog-save-btn').click()
     //Verify Cohort is saved
-    await page.locator('#pane-left').getByRole('link', { name: 'Cohorts' }).click()
+    await page.locator('#pane-left').getByRole('link', { name: 'Data Exploration' }).click()
     await expect(explorationCard(page, NAME.patientListFilters)).toBeVisible()
     //Click on the saved cohort - already on the list, so no navigation needed
     await explorationCard(page, NAME.patientListFilters).click()

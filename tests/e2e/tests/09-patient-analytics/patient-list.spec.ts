@@ -81,7 +81,7 @@ test(TEST_NAME, async ({ page }) => {
   })
   //Check if the cohort is saved
   await test.step('Check if the cohort is saved', async () => {
-    await page.locator('#pane-left').getByRole('link', { name: 'Cohorts' }).click()
+    await page.locator('#pane-left').getByRole('link', { name: 'Data Exploration' }).click()
     await expect(explorationCard(page, 'Cohort Test')).toBeVisible()
   })
   //Go to patient list
@@ -144,7 +144,7 @@ test(TEST_NAME, async ({ page }) => {
   //Delete cohort
   await test.step('Delete cohort', async () => {
     // await page.getByRole('button', { name: '' }).click();
-    await page.locator('#pane-left').getByRole('link', { name: 'Cohorts' }).click()
+    await page.locator('#pane-left').getByRole('link', { name: 'Data Exploration' }).click()
     await expect(explorationCard(page, 'Cohort Test')).toBeVisible()
     // Was the fifth icon of the old card footer, then a confirm button labelled
     // "Delete". The card has a More menu now and the dialog confirms with
