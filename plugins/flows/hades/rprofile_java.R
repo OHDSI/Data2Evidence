@@ -9,3 +9,7 @@ local({
     options(java.parameters = params[nzchar(params)])
   }
 })
+
+# Embedded R under rpy2 reports interactive() == TRUE, so duckdb >= 2.0 would
+# block on a stdin prompt offering to create ~/.duckdb. Pin its home instead.
+options(duckdb.home = file.path(tempdir(), "duckdb"))
