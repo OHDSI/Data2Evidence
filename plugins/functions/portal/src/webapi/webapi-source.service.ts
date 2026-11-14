@@ -33,6 +33,9 @@ const WEBAPI_SUPPORTED_DIALECTS = new Set([
 // trexsql's Quack endpoint inside the same container as WebAPI and the portal.
 const TREXSQL_CONNECTION_STRING = 'jdbc:trexsql://127.0.0.1:9494?disable_ssl=true'
 
+// trex attaches a HANA database read-only as `<databaseCode>__srcdb` (TYPE hana).
+const HANA_SOURCE_CATALOG_SUFFIX = '__srcdb'
+
 type RefreshCacheResult = { success: boolean; databaseCode: string; flowRunId?: string; error?: string }
 
 @Injectable()
@@ -82,7 +85,8 @@ export class WebApiSourceService {
   ): Promise<void> {
     const sourceDialect = this.mapDialect(dataset.dialect)
     const isHana = sourceDialect === 'hana'
-    const dialect = this.usesTrexsqlCache(dataset) ? 'trexsql' : sourceDialect
+    const usesTrexsql = this.trexsqlCatalog(dataset) !== null
+    const dialect = usesTrexsql ? 'trexsql' : sourceDialect
     if (!WEBAPI_SUPPORTED_DIALECTS.has(dialect)) {
       await this.warnUnsupportedDialect(dataset.id, dialect, authToken)
       await this.startCacheBuild(dataset, isHana, authToken)
@@ -92,7 +96,7 @@ export class WebApiSourceService {
     // The cache build must start even when the source cannot be registered.
     let sourceError: unknown
     try {
-      const trexsqlToken = this.usesTrexsqlCache(dataset) ? this.trexsqlToken() : undefined
+      const trexsqlToken = usesTrexsql ? this.trexsqlToken() : undefined
       const existing = await this.webApiSourceApi.getSourceByKey(dataset.id, authToken)
       const defaultTypes = await this.findDefaultDaimonTypes(dataset, existing, authToken)
       const sourceRequest = this.buildSourceRequest(
@@ -354,13 +358,16 @@ export class WebApiSourceService {
     }
   }
 
-  // HANA is queried directly and never has a DuckDB cache. A cacheId equal to the
+  // The trexsql catalog WebAPI reads the dataset through, or null for a direct JDBC
+  // source. HANA has no DuckDB cache: trex attaches the HANA database itself,
+  // read-only, as `<databaseCode>__srcdb`. Otherwise a cacheId equal to the
   // databaseCode (a dataset transformed from a source row) names the live source
   // connection, not a cache, so it keeps the direct JDBC source.
-  private usesTrexsqlCache(dataset: Dataset): boolean {
-    return !!dataset.cacheId &&
-      dataset.cacheId !== dataset.databaseCode &&
-      this.mapDialect(dataset.dialect) !== 'hana'
+  private trexsqlCatalog(dataset: Dataset): string | null {
+    if (this.mapDialect(dataset.dialect) === 'hana') {
+      return dataset.databaseCode ? `${dataset.databaseCode}${HANA_SOURCE_CATALOG_SUFFIX}` : null
+    }
+    return dataset.cacheId && dataset.cacheId !== dataset.databaseCode ? dataset.cacheId : null
   }
 
   private mapDialect(dialect: string): string {
@@ -416,8 +423,8 @@ export class WebApiSourceService {
     defaultTypes: Set<string> | null
   ): IDaimonRequest[] {
     const daimons: IDaimonRequest[] = []
-    const qualify = (schema: string) =>
-      this.usesTrexsqlCache(dataset) ? `${dataset.cacheId}.${schema}` : schema
+    const catalog = this.trexsqlCatalog(dataset)
+    const qualify = (schema: string) => (catalog ? `${catalog}.${schema}` : schema)
     const priorityFor = (daimonType: IDaimonRequest['daimonType']): number => {
       const current = existing?.daimons?.find((d) => d.daimonType === daimonType)
       if (current && current.priority >= 0) {
