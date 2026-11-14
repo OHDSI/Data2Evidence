@@ -2,7 +2,6 @@ import { Alert, Button, Checkbox, Dialog, MarkdownField, Select, TextField } fro
 import React, { FC, useCallback, useEffect, useMemo, useState } from "react";
 import { api } from "../../../../axios/api";
 import { FEATURE_FHIR_SERVER } from "../../../../config";
-import { DatasetMap } from "../../../../constant";
 import { useTranslation } from "../../../../contexts";
 import { useDbVocabSchemas, useEnabledFeatures, usePaConfigs, useTenant } from "../../../../hooks";
 import FlowRunNotificationDialog from "../FlowRunNotificationDialog/FlowRunNotificationDialog";
@@ -13,10 +12,14 @@ import {
   IDatabase,
   NewStudyInput,
   SourceDatasetType,
-  StandaloneDatasetType,
   Study,
+  WebApiDatasetType,
 } from "../../../../types";
-import { parseDatamodelOption, resolveSourceDatasetType } from "./datasetType";
+import {
+  filterCreatableDataModels,
+  isWebApiManagedDataset,
+  parseDatamodelOption,
+} from "./datasetType";
 import "./AddDataSourceDialog.scss";
 
 interface AddDataSourceDialogProps {
@@ -34,12 +37,10 @@ const customDataModelOption: Datamodel = {
   flowId: "",
 };
 
-const cacheDatasetTypeOptions: { title: string; type: CacheDatasetType }[] = [
+const hanaDatasetTypeOptions: { title: string; type: CacheDatasetType }[] = [
   { title: "OMOP", type: CacheDatasetType.OMOP },
   { title: "Other datamodel", type: CacheDatasetType.NON_OMOP },
 ];
-
-type ManagementMode = "webapi" | "source";
 
 interface FormData {
   type: string;
@@ -61,10 +62,6 @@ interface FormData {
   dialect: string;
   paConfigId: string;
   visibilityStatus: string;
-  managementMode: ManagementMode;
-
-  cacheDatasetName: string;
-  cacheDatasetType: CacheDatasetType;
 }
 
 interface FormError {
@@ -105,13 +102,6 @@ interface FormError {
   type: {
     required: boolean;
   };
-
-  cacheDatasetName: {
-    required: boolean;
-  };
-  cacheDatasetType: {
-    required: boolean;
-  };
 }
 
 const EMPTY_FORM_ERROR: FormError = {
@@ -127,8 +117,6 @@ const EMPTY_FORM_ERROR: FormError = {
   paConfigId: { required: false },
   name: { required: false },
   type: { required: false },
-  cacheDatasetName: { required: false },
-  cacheDatasetType: { required: false },
 };
 
 const EMPTY_FORM_DATA: FormData = {
@@ -151,10 +139,6 @@ const EMPTY_FORM_DATA: FormData = {
   dialect: "",
   paConfigId: "",
   visibilityStatus: "HIDDEN",
-  managementMode: "webapi",
-
-  cacheDatasetName: "",
-  cacheDatasetType: CacheDatasetType.OMOP,
 };
 
 /**
@@ -279,29 +263,15 @@ const AddDataSourceDialog: FC<AddDataSourceDialogProps> = ({ open, onClose, load
     [onClose]
   );
 
-  const displayCacheConfiguration = useMemo(() => {
-    return (
-      formData.dialect !== "hana" &&
-      formData.managementMode === "source" &&
-      formData.type !== SourceDatasetType.FHIR &&
-      formData.type !== StandaloneDatasetType.I2B2
-    );
-  }, [formData.dialect, formData.managementMode, formData.type]);
+  const isWebApiManaged = useMemo(
+    () => isWebApiManagedDataset(formData.dialect, formData.type),
+    [formData.dialect, formData.type]
+  );
 
-  const displayManagementMode = useMemo(() => {
-    return formData.dialect !== "hana" && formData.type !== StandaloneDatasetType.I2B2;
-  }, [formData.dialect, formData.type]);
-
-  const isOmopDataModel = useCallback((dataModelOption: string) => {
-    return dataModelOption.toLowerCase().startsWith("omop");
-  }, []);
-
-  const filteredDataModelOptions = useMemo(() => {
-    if (formData.managementMode === "webapi") {
-      return dataModelOptions.filter(isOmopDataModel);
-    }
-    return dataModelOptions;
-  }, [dataModelOptions, formData.managementMode, isOmopDataModel]);
+  const filteredDataModelOptions = useMemo(
+    () => filterCreatableDataModels(dataModelOptions, formData.dialect),
+    [dataModelOptions, formData.dialect]
+  );
 
   const getDataModels = useCallback(async () => {
     try {
@@ -375,9 +345,6 @@ const AddDataSourceDialog: FC<AddDataSourceDialogProps> = ({ open, onClose, load
       paConfigId,
       name,
       dialect,
-
-      cacheDatasetName,
-      cacheDatasetType,
     } = formData;
 
     let formError: FormError | {} = {};
@@ -445,26 +412,6 @@ const AddDataSourceDialog: FC<AddDataSourceDialogProps> = ({ open, onClose, load
       formError = { ...formError, type: { required: true } };
     }
 
-    if (
-      !cacheDatasetName &&
-      dialect !== "hana" &&
-      formData.managementMode === "source" &&
-      type !== SourceDatasetType.FHIR &&
-      type !== StandaloneDatasetType.I2B2
-    ) {
-      formError = { ...formError, cacheDatasetName: { required: true } };
-    }
-
-    if (
-      !cacheDatasetType &&
-      dialect !== "hana" &&
-      formData.managementMode === "source" &&
-      type !== SourceDatasetType.FHIR &&
-      type !== StandaloneDatasetType.I2B2
-    ) {
-      formError = { ...formError, cacheDatasetType: { required: true } };
-    }
-
     if (Object.keys(formError).length > 0) {
       console.error("Validation errors:", formError);
       setFormError({ ...EMPTY_FORM_ERROR, ...(formError as FormError) });
@@ -501,9 +448,6 @@ const AddDataSourceDialog: FC<AddDataSourceDialogProps> = ({ open, onClose, load
       dialect,
       paConfigId,
       visibilityStatus,
-
-      cacheDatasetName,
-      cacheDatasetType,
     } = formData;
     const dataModelDetails = parseDatamodelOption(dataModel);
     const parsedDataModel =
@@ -534,9 +478,7 @@ const AddDataSourceDialog: FC<AddDataSourceDialogProps> = ({ open, onClose, load
       attributes: [],
       tags: [],
       dashboards: [],
-      cacheDatasetName,
-      cacheDatasetType,
-      webApiManaged: formData.managementMode === "webapi",
+      webApiManaged: isWebApiManaged,
     };
 
     try {
@@ -554,7 +496,7 @@ const AddDataSourceDialog: FC<AddDataSourceDialogProps> = ({ open, onClose, load
     } finally {
       setLoading(false);
     }
-  }, [formData, tenant, isFormError, setLoading, handleClose]);
+  }, [formData, tenant, isFormError, setLoading, handleClose, isWebApiManaged]);
 
   if (createdDatasetName) {
     return (
@@ -637,39 +579,10 @@ const AddDataSourceDialog: FC<AddDataSourceDialogProps> = ({ open, onClose, load
                 databaseCode: "",
                 dialect: "",
                 type: newType,
-                cacheDatasetType: DatasetMap[newType][0],
-                // webapi requires OMOP — FHIR is non-OMOP, so force source mode.
-                ...(schemaOption === SchemaTypes.FHIR ? { managementMode: "source" as ManagementMode } : {}),
               });
             }}
           />
         </div>
-        {/* Management mode (webapi vs source). webapi is OMOP-only and disabled for FHIR. */}
-        {displayManagementMode && (
-          <div>
-            <Select
-              label={getText(i18nKeys.ADD_DATA_SOURCE_DIALOG__MANAGEMENT_MODE)}
-              value={formData.managementMode}
-              items={[
-                {
-                  label: getText(i18nKeys.ADD_DATA_SOURCE_DIALOG__MANAGEMENT_MODE_WEBAPI),
-                  value: "webapi",
-                  disabled: formData.schemaOption === SchemaTypes.FHIR,
-                },
-                { label: getText(i18nKeys.ADD_DATA_SOURCE_DIALOG__MANAGEMENT_MODE_SOURCE), value: "source" },
-              ]}
-              onChange={(value) => {
-                const managementMode = value as ManagementMode;
-                const changes: Partial<FormData> = { managementMode };
-                if (managementMode === "webapi" && formData.dataModel && !isOmopDataModel(formData.dataModel)) {
-                  changes.dataModel = "";
-                  changes.dataModelCustom = "";
-                }
-                handleFormDataChange(changes);
-              }}
-            />
-          </div>
-        )}
         {/* DB Input */}
         {displayDatabases && (
           <div>
@@ -689,9 +602,6 @@ const AddDataSourceDialog: FC<AddDataSourceDialogProps> = ({ open, onClose, load
                   vocabSchemaValue: "",
                   // Set type to empty for HANA where user need to manually select the type
                   type: isHana ? "" : SourceDatasetType.SOURCE,
-                  // HANA hides the management-mode toggle and uses its own dataset types,
-                  // so force source mode to avoid submitting webApiManaged=true by default.
-                  ...(isHana ? { managementMode: "source" as ManagementMode } : {}),
                 });
               }}
             />
@@ -704,7 +614,7 @@ const AddDataSourceDialog: FC<AddDataSourceDialogProps> = ({ open, onClose, load
             <TextField
               disabled
               label={getText(i18nKeys.ADD_DATA_SOURCE_DIALOG__TYPE)}
-              value={formData.type}
+              value={isWebApiManaged ? WebApiDatasetType.WEBAPI : formData.type}
             />
           </div>
         ) : (
@@ -712,7 +622,7 @@ const AddDataSourceDialog: FC<AddDataSourceDialogProps> = ({ open, onClose, load
             <Select
               label={getText(i18nKeys.ADD_DATA_SOURCE_DIALOG__HANA_TYPE)}
               value={formData.type}
-              items={cacheDatasetTypeOptions.map((option) => ({ label: option.title, value: option.type }))}
+              items={hanaDatasetTypeOptions.map((option) => ({ label: option.title, value: option.type }))}
               errorMessages={formError.type?.required ? getText(i18nKeys.ADD_DATA_SOURCE_DIALOG__REQUIRED) : undefined}
               onChange={(value) => handleFormDataChange({ type: value as CacheDatasetType })}
             />
@@ -869,23 +779,7 @@ const AddDataSourceDialog: FC<AddDataSourceDialogProps> = ({ open, onClose, load
               value={formData.dataModel}
               items={(filteredDataModelOptions ?? []).map((model) => ({ label: model, value: model }))}
               errorMessages={formError.dataModel.required ? getText(i18nKeys.ADD_DATA_SOURCE_DIALOG__REQUIRED) : undefined}
-              onChange={(value) => {
-                const dataModel = value as string;
-                // HANA uses its own type dropdown — don't derive type from the data model.
-                if (formData.dialect === "hana") {
-                  handleFormDataChange({ dataModel });
-                  return;
-                }
-                const type = resolveSourceDatasetType(dataModel);
-                const changes: Partial<FormData> = { dataModel, type };
-                // i2b2 is standalone: always source-managed with no cache. Clear any cache
-                if (type === StandaloneDatasetType.I2B2) {
-                  changes.managementMode = "source";
-                  changes.cacheDatasetName = "";
-                  changes.cacheDatasetType = CacheDatasetType.OMOP;
-                }
-                handleFormDataChange(changes);
-              }}
+              onChange={(value) => handleFormDataChange({ dataModel: value as string })}
             />
           </div>
         )}
@@ -924,31 +818,6 @@ const AddDataSourceDialog: FC<AddDataSourceDialogProps> = ({ open, onClose, load
             {getText(i18nKeys.ADD_DATA_SOURCE_DIALOG__DATA_SOURCE_CODE_ALLOWED_VALUES)}
           </div>
         </div>
-        {displayCacheConfiguration && (
-          <>
-            <div style={{ fontWeight: "bold" }}>
-              {getText(i18nKeys.ADD_DATA_SOURCE_DIALOG__CACHE_DATA_SOURCE_CONFIGURATION)}
-            </div>
-
-            <div>
-              <TextField
-                label={getText(i18nKeys.ADD_DATA_SOURCE_DIALOG__CACHE_DATA_SOURCE_NAME)}
-                value={formData.cacheDatasetName}
-                onChange={(value) => handleFormDataChange({ cacheDatasetName: value })}
-                errorMessages={formError.cacheDatasetName.required ? getText(i18nKeys.ADD_DATA_SOURCE_DIALOG__REQUIRED) : undefined}
-              />
-            </div>
-            <div>
-              <Select
-                label={getText(i18nKeys.ADD_DATA_SOURCE_DIALOG__CACHE_DATA_SOURCE_TYPE)}
-                value={formData.cacheDatasetType}
-                items={cacheDatasetTypeOptions.map((option) => ({ label: option.title, value: option.type }))}
-                errorMessages={formError.cacheDatasetType.required ? getText(i18nKeys.ADD_DATA_SOURCE_DIALOG__REQUIRED) : undefined}
-                onChange={(value) => handleFormDataChange({ cacheDatasetType: value as CacheDatasetType })}
-              />
-            </div>
-          </>
-        )}
       </div>
     </Dialog>
   );

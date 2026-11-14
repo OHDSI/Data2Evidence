@@ -40,3 +40,9 @@ export enum CacheDatasetType {
   HANA__NON_OMOP = 'hana__non_omop',
   NON_OMOP = 'non_omop'
 }
+
+export const NON_WEBAPI_DATASET_TYPES: string[] = [
+  SourceDatasetType.FHIR,
+  CacheDatasetType.HANA__OMOP,
+  CacheDatasetType.HANA__NON_OMOP
+]

@@ -144,3 +144,117 @@ Deno.test("cohorts endpoint reports a missing Authorization header as 500, not 4
   assertEquals(captured.statusCode, 500);
   assertEquals(captured.body, "Error when getting cohorts");
 });
+
+const CREATE_PATH = "/";
+const SNAPSHOT_PATH = "/snapshot";
+
+async function postCreate(body: Record<string, unknown>) {
+  const hasDatasetStub = stub(PortalAPI.prototype, "hasDataset", () => Promise.resolve(false));
+  const createStub = stub(PortalAPI.prototype, "createDataset", () => Promise.resolve({ id: "new-id" }));
+  try {
+    const req = createMockRequest({
+      body: { tokenStudyCode: "TOKEN_1", schemaOption: "existing_cdm", ...body },
+      headers: AUTH,
+    });
+    const { res, captured } = createMockResponse();
+    await handlerFor("post", CREATE_PATH)(req, res);
+    return { captured, createCalls: createStub.calls.length };
+  } finally {
+    hasDatasetStub.restore();
+    createStub.restore();
+  }
+}
+
+Deno.test("create rejects a request for a cache dataset", async () => {
+  const { captured, createCalls } = await postCreate({
+    type: "source",
+    dataModel: "omop5-4",
+    webApiManaged: false,
+    cacheDatasetName: "Demo Cache",
+    cacheDatasetType: "omop",
+  });
+
+  assertEquals(captured.statusCode, 400);
+  assertEquals(captured.body, "Creating cache datasets is no longer supported");
+  assertEquals(createCalls, 0);
+});
+
+Deno.test("create rejects a source-managed OMOP dataset", async () => {
+  const { captured, createCalls } = await postCreate({
+    type: "source",
+    dataModel: "omop5-4",
+    webApiManaged: false,
+  });
+
+  assertEquals(captured.statusCode, 400);
+  assertEquals(
+    captured.body,
+    "Dataset type 'source' is not supported; create a WebAPI-managed dataset instead",
+  );
+  assertEquals(createCalls, 0);
+});
+
+Deno.test("create rejects a non-OMOP source dataset when webApiManaged is omitted", async () => {
+  const { captured, createCalls } = await postCreate({
+    type: "source",
+    dataModel: "waveform",
+  });
+
+  assertEquals(captured.statusCode, 400);
+  assertEquals(createCalls, 0);
+});
+
+Deno.test("snapshot rejects creating a new version of a source dataset", async () => {
+  const getDatasetStub = stub(PortalAPI.prototype, "getDataset", () =>
+    Promise.resolve({ type: "source", schemaName: "cdm", dialect: "postgres" } as never));
+  const copyStub = stub(PortalAPI.prototype, "copyDataset", () => Promise.resolve({ id: "copy" }));
+  try {
+    const req = createMockRequest({
+      body: { sourceStudyId: "source-1", newStudyName: "v2", type: "omop" },
+      headers: AUTH,
+    });
+    const { res, captured } = createMockResponse();
+
+    await handlerFor("post", SNAPSHOT_PATH)(req, res);
+
+    assertEquals(captured.statusCode, 400);
+    assertEquals(captured.body, "Creating new versions of source datasets is no longer supported");
+    assertEquals(copyStub.calls.length, 0);
+  } finally {
+    getDatasetStub.restore();
+    copyStub.restore();
+  }
+});
+
+Deno.test("create rejects a non-WebAPI dataset whose type is not HANA or FHIR", async () => {
+  const { captured, createCalls } = await postCreate({
+    type: "non_omop",
+    dialect: "postgres",
+    dataModel: "waveform",
+    webApiManaged: false,
+  });
+
+  assertEquals(captured.statusCode, 400);
+  assertEquals(
+    captured.body,
+    "Dataset type 'non_omop' is not supported; create a WebAPI-managed dataset instead",
+  );
+  assertEquals(createCalls, 0);
+});
+
+Deno.test("create rejects an i2b2 dataset", async () => {
+  const { captured, createCalls } = await postCreate({
+    type: "i2b2",
+    dialect: "postgres",
+    dataModel: "v1.8.1",
+    plugin: "i2b2_plugin",
+    webApiManaged: false,
+  });
+
+  assertEquals(captured.statusCode, 400);
+  assertEquals(
+    captured.body,
+    "Dataset type 'i2b2' is not supported; create a WebAPI-managed dataset instead",
+  );
+  assertEquals(createCalls, 0);
+});

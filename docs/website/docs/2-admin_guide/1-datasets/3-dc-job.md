@@ -1,7 +1,6 @@
 # Data Characterization job
 
-- In the Admin Portal, go to **Datasets**. Go to the source dataset of interest.
-- Uncollapse the source dataset to views its cache dataset and click **Select Action**.
+- In the Admin Portal, go to **Datasets** and click **Select Action** on the dataset of interest. For a legacy source dataset, expand it and use its cache dataset.
 - Select **Run data characterization**
 ![](../images/dc/dc-job.png)
 - (Optional) Pass in a results schema name that contains the cohort and cohort_definition tables
