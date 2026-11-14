@@ -265,6 +265,14 @@ export function buildBootstrapStatements(cfg: BootstrapConfig): string[] {
       const s = quoteIdent(schema);
       out.push(`CREATE SCHEMA IF NOT EXISTS ${s}`);
 
+      // The storage API runs requests as service_role with search_path
+      // storage, public. Without USAGE here it silently resolves to the
+      // public.* views, whose column lists are frozen at creation. The manager
+      // holds no grant option on this schema, so storage-init cannot grant it.
+      if (schema === "storage") {
+        out.push(`GRANT USAGE ON SCHEMA ${s} TO service_role`);
+      }
+
       // The manage roles first: without CREATE/USAGE here, a service that owns
       // its own migrations (alp-logto) cannot provision its schema on a fresh
       // database — the schema is owned by the bootstrap superuser.

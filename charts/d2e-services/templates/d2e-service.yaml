@@ -100,19 +100,6 @@ spec:
     profile: d2e-functions
   type: ClusterIP
 ---
-apiVersion: v1
-kind: Service
-metadata:
-  name: storage
-spec:
-  ports:
-    - name: storage
-      port: 443
-      targetPort: 9000
-  selector:
-    profile: d2e-functions
-  type: ClusterIP
----
 # apiVersion: v1
 # kind: Service
 # metadata:
