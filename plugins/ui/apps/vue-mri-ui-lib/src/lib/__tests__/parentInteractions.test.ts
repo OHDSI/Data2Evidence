@@ -85,7 +85,9 @@ describe('parentInteractions', () => {
       expect(
         parentOptions({ possibleParent: [VISIT], parentLabel: 'Visit Occurrence Parent' }, nameOf, 'Parent')[0].label
       ).toBe('Visit Occurrence Parent')
-      expect(parentOptions({ possibleParent: [VISIT], parentLabel: '' }, nameOf, 'Parent')[0].label).toBe('Visit')
+      expect(parentOptions({ possibleParent: [VISIT], parentLabel: '' }, nameOf, 'Parent')[0].label).toBe(
+        'Visit parent'
+      )
       expect(parentOptions({ possibleParent: ['patient.interactions.unknown'] }, nameOf, 'Parent')[0].label).toBe(
         'Parent'
       )
@@ -100,7 +102,15 @@ describe('parentInteractions', () => {
         nameOf,
         'Parent'
       )
-      expect(options[0].label).toBe('Visit')
+      expect(options[0].label).toBe('Visit parent')
+    })
+
+    it('replaces the default old label "parent" with "<name> parent" for one parent', () => {
+      const labelFor = (parentLabel: string) =>
+        parentOptions({ possibleParent: [VISIT], parentLabel }, nameOf, 'Parent')[0].label
+      expect(labelFor('parent')).toBe('Visit parent')
+      expect(labelFor('Parent ')).toBe('Visit parent')
+      expect(labelFor('Visit Occurrence Parent')).toBe('Visit Occurrence Parent')
     })
 
     it('uses "<name> parent" for two parents without mapping labels', () => {
@@ -210,7 +220,7 @@ describe('parentInteractions', () => {
 
     it('reads the card config and the parent names', () => {
       expect(parentOptionsForCard(frontendConfig, PROC)).toEqual([
-        { parentPath: VISIT, attrKey: 'parentInteraction_visit', label: 'Visit' },
+        { parentPath: VISIT, attrKey: 'parentInteraction_visit', label: 'Visit parent' },
       ])
     })
 

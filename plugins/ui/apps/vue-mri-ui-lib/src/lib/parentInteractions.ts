@@ -56,6 +56,13 @@ function mappingLabel(config: ParentConfig, parentPath: string): string {
   return nonBlank(mapping?.parentMappingInteractionLabel)
 }
 
+const DEFAULT_OLD_LABEL = 'parent'
+
+function oldParentLabel(config: ParentConfig): string {
+  const label = nonBlank(config.parentLabel)
+  return label.toLowerCase() === DEFAULT_OLD_LABEL ? '' : label
+}
+
 export function parentOptions(
   config: ParentConfig | undefined,
   nameOf: (parentPath: string) => string,
@@ -64,10 +71,11 @@ export function parentOptions(
   const parents = config?.possibleParent || []
   const fallbackLabel = (parentPath: string): string => {
     const name = nonBlank(nameOf(parentPath))
+    const nameLabel = name ? `${name} parent` : ''
     if (parents.length > 1) {
-      return name ? `${name} parent` : nonBlank(config.parentLabel) || defaultLabel
+      return nameLabel || nonBlank(config.parentLabel) || defaultLabel
     }
-    return nonBlank(config.parentLabel) || name || defaultLabel
+    return oldParentLabel(config) || nameLabel || defaultLabel
   }
   const labelled = parents.map(parentPath => ({
     parentPath,
