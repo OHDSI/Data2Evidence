@@ -7,7 +7,7 @@ const text = (value: string | number | undefined | null): string =>
   value === undefined || value === null || value === '' ? EMPTY : String(value);
 
 const count = (value: number | undefined | null): string | number =>
-  typeof value === 'number' && Number.isFinite(value) ? value : EMPTY;
+  typeof value === 'number' && Number.isFinite(value) ? value : text(value);
 
 const flag = (value: number | undefined): string => (value === 1 ? 'Yes' : 'No');
 

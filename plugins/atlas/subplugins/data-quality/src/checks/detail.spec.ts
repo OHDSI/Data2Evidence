@@ -61,6 +61,12 @@ describe('detailRows', () => {
     expect(detail['Denominator rows']).toBe('-');
   });
 
+  it('shows a row count the backend sends as a string as it is', () => {
+    const rawCount = '2340' as unknown as number;
+    const detail = Object.fromEntries(detailRows(row({ numViolatedRows: rawCount }), t).map((d) => [d.label, d.value]));
+    expect(detail['Violated rows']).toBe('2340');
+  });
+
   it('keeps a concept ID the backend sends as a number as text, so it shows no thousands separator', () => {
     const rawConceptId = 4012345 as unknown as string;
     const detail = Object.fromEntries(detailRows(row({ conceptId: rawConceptId }), t).map((d) => [d.label, d.value]));
