@@ -43,7 +43,10 @@ async function deleteConfigIfExists(page: Page, name: string) {
 }
 
 function mappingRow(page: Page, label: string): Locator {
-  return page.locator('li').filter({ hasText: label }).filter({ has: page.getByRole('button', { name: 'Duplicate' }) })
+  return page
+    .locator('li')
+    .filter({ hasText: label })
+    .filter({ has: page.getByRole('button', { name: 'Duplicate' }) })
 }
 
 function editorHeading(page: Page): Locator {

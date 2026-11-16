@@ -56,8 +56,7 @@ const names: Record<string, string> = {
 };
 const nameOf = (path: string) => names[path] || path.split(".").pop();
 
-const valuesOf = (item: Item) =>
-  Object.fromEntries(Object.entries(item).map(([key, field]) => [key, field.value]));
+const valuesOf = (item: Item) => Object.fromEntries(Object.entries(item).map(([key, field]) => [key, field.value]));
 
 const text = (key: string) => `text:${key}`;
 
@@ -65,9 +64,7 @@ describe("ParentMappings.fromBackend", () => {
   it("keeps stored mappings in order, all valid", () => {
     const items: Item[] = PM.fromBackend(seedProc, nameOf);
     expect(items.map((i) => i.parentMappingInteractionLabel.value)).toEqual(["Episode parent", "Visit parent"]);
-    items.forEach((item) =>
-      Object.values(item).forEach((field) => expect(field.validity.status).toBe("valid"))
-    );
+    items.forEach((item) => Object.values(item).forEach((field) => expect(field.validity.status).toBe("valid")));
   });
 
   it("round trips the seeded config through toBackend", () => {
@@ -142,7 +139,16 @@ describe("ParentMappings.nameLookup", () => {
     const lookup = PM.nameLookup({
       interactions: { visit: { name: [{ lang: "", value: "Visit Occurrence" }] } },
       conditions: {
-        acme: { interactions: { priDiag: { name: [{ lang: "en", value: "" }, { lang: "", value: "Primary Diagnosis" }] } } },
+        acme: {
+          interactions: {
+            priDiag: {
+              name: [
+                { lang: "en", value: "" },
+                { lang: "", value: "Primary Diagnosis" },
+              ],
+            },
+          },
+        },
       },
     });
     expect(lookup(VISIT)).toBe("Visit Occurrence");
@@ -250,9 +256,7 @@ describe("ParentMappings.validate", () => {
     expect(status(0, "currentMappingInteractionId").message).toBe("text:HPH_CDM_CFG_PARENT_MAPPING_COLUMN_INVALID");
     expect(status(0, "parentInteraction").status).toBe("valid");
     expect(status(1, "parentInteraction").message).toBe("text:HPH_CDM_CFG_VALID_DUPLICATE_PARENT_INTERACTION");
-    expect(status(1, "parentMappingInteraction").message).toBe(
-      "text:HPH_CDM_CFG_PARENT_MAPPING_PLACEHOLDER_REQUIRED"
-    );
+    expect(status(1, "parentMappingInteraction").message).toBe("text:HPH_CDM_CFG_PARENT_MAPPING_PLACEHOLDER_REQUIRED");
     expect(status(2, "parentInteraction").message).toBe("text:HPH_CDM_CFG_PARENT_MAPPING_PARENT_REQUIRED");
     expect(status(2, "currentMappingInteractionId").status).toBe("valid");
   });
