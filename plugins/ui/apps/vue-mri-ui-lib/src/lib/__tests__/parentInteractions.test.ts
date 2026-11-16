@@ -103,13 +103,28 @@ describe('parentInteractions', () => {
       expect(options[0].label).toBe('Visit')
     })
 
-    it('adds the parent name when two labels are the same', () => {
+    it('uses "<name> parent" for two parents without mapping labels', () => {
       const options = parentOptions(
         { possibleParent: [EPISODE, VISIT], parentLabel: 'Episode/Visit parent' },
         nameOf,
         'Parent'
       )
-      expect(options.map(o => o.label)).toEqual(['Episode/Visit parent (Episode)', 'Episode/Visit parent (Visit)'])
+      expect(options.map(o => o.label)).toEqual(['Episode parent', 'Visit parent'])
+    })
+
+    it('adds the parent name when two labels are the same', () => {
+      const options = parentOptions(
+        {
+          possibleParent: [EPISODE, VISIT],
+          parentInteractionsMapping: [
+            { parentInteraction: EPISODE, parentMappingInteractionLabel: 'Parent' },
+            { parentInteraction: VISIT, parentMappingInteractionLabel: 'Parent' },
+          ],
+        },
+        nameOf,
+        'Parent'
+      )
+      expect(options.map(o => o.label)).toEqual(['Parent (Episode)', 'Parent (Visit)'])
     })
   })
 

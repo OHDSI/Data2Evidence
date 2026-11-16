@@ -62,11 +62,17 @@ export function parentOptions(
   defaultLabel: string
 ): ParentOption[] {
   const parents = config?.possibleParent || []
+  const fallbackLabel = (parentPath: string): string => {
+    const name = nonBlank(nameOf(parentPath))
+    if (parents.length > 1) {
+      return name ? `${name} parent` : nonBlank(config.parentLabel) || defaultLabel
+    }
+    return nonBlank(config.parentLabel) || name || defaultLabel
+  }
   const labelled = parents.map(parentPath => ({
     parentPath,
     attrKey: parentAttrKey(parentPath),
-    label:
-      mappingLabel(config, parentPath) || nonBlank(config.parentLabel) || nonBlank(nameOf(parentPath)) || defaultLabel,
+    label: mappingLabel(config, parentPath) || fallbackLabel(parentPath),
   }))
   return labelled.map(option => {
     const isShared = labelled.filter(other => other.label === option.label).length > 1
