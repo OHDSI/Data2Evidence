@@ -1,42 +1,21 @@
-import pg from "npm:pg";
 import { env, services } from "../env.ts";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { Buffer } from "node:buffer";
 
+interface StorageObject {
+  name: string;
+  updated_at: string;
+}
+
 export class ShinyLiveService {
   private readonly PUBLIC_BUCKET = "portal-datasets-graphs";
   private readonly baseUrl: string;
   private readonly authToken: string;
-  private static pgPool: pg.Pool;
 
   constructor() {
     this.baseUrl = services.supabaseStorage;
     this.authToken = env.SUPABASE_STORAGE_JWT_TOKEN;
-
-    if (!ShinyLiveService.pgPool) {
-      ShinyLiveService.pgPool = new pg.Pool({
-        user: env.PG_USER,
-        password: env.PG_PASSWORD,
-        host: env.PG__HOST,
-        port: parseInt(env.PG__PORT),
-        database: env.PG__DB_NAME,
-        max: 5,
-        idleTimeoutMillis: 30000,
-        connectionTimeoutMillis: 2000,
-        ssl: (() => {
-          let ssl: boolean | { rejectUnauthorized: boolean; ca: string } =
-            false;
-          if (env.PG__SSL) {
-            ssl = JSON.parse(env.PG__SSL.toLowerCase());
-          }
-          if (env.PG__CA_ROOT_CERT) {
-            ssl = { rejectUnauthorized: true, ca: env.PG__CA_ROOT_CERT };
-          }
-          return ssl;
-        })(),
-      });
-    }
   }
 
   getPublicUrl(
@@ -48,6 +27,39 @@ export class ShinyLiveService {
   ): string {
     const basePath = `${datasetId}/dashboard/${datasetId}_${type}_${name}_${language}`;
     return `${this.baseUrl}/object/public/${this.PUBLIC_BUCKET}/${basePath}/${subPath}`;
+  }
+
+  // Every object under `prefix`, recursively, newest first.
+  private async listObjects(prefix: string): Promise<StorageObject[]> {
+    const objects: StorageObject[] = [];
+    let cursor: string | undefined;
+    do {
+      const response = await fetch(
+        `${this.baseUrl}/object/list-v2/${this.PUBLIC_BUCKET}`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${this.authToken}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            prefix,
+            limit: 1000,
+            cursor,
+            sortBy: { column: "updated_at", order: "desc" },
+          }),
+        },
+      );
+      if (!response.ok) {
+        throw new Error(
+          `Failed to list ${prefix}: ${response.status} - ${await response.text()}`,
+        );
+      }
+      const page = await response.json();
+      objects.push(...page.objects);
+      cursor = page.hasNext ? page.nextCursor : undefined;
+    } while (cursor);
+    return objects;
   }
 
   async getStaticFilesDir(
@@ -63,64 +75,45 @@ export class ShinyLiveService {
       `${datasetId}_${type}_${name}_${language}`,
     );
 
-    let client: pg.PoolClient;
+    const objects = await this.listObjects(`${resourcePrefix}/`);
+    if (objects.length === 0) {
+      return null;
+    }
+
+    const newestRemote = new Date(objects[0].updated_at);
+    let localNewest: Date;
 
     try {
-      client = await ShinyLiveService.pgPool.connect();
-      const query = `
-        SELECT name, updated_at FROM storage.objects
-        WHERE bucket_id = $1 AND name LIKE $2
-        ORDER BY updated_at DESC
-      `;
-      const result = await client.query(query, [
-        this.PUBLIC_BUCKET,
-        `${resourcePrefix}%`,
-      ]);
-
-      if (result.rows.length === 0) {
-        return null;
-      }
-
-      const newestRemote = new Date(result.rows[0].updated_at);
-      let localNewest: Date;
-
-      try {
-        const indexPath = path.join(tmpDir, "index.html");
-        const stat = await fs.stat(indexPath);
-        localNewest = new Date(stat.mtime);
-      } catch {
-        localNewest = new Date(0);
-      }
-
-      if (newestRemote > localNewest) {
-        await fs.rm(tmpDir, { recursive: true, force: true });
-        await fs.mkdir(tmpDir, { recursive: true });
-      } else {
-        return tmpDir;
-      }
-
-      for (const row of result.rows) {
-        const filePath: string = row.name;
-        const relPath = filePath.startsWith(resourcePrefix + "/")
-          ? filePath.substring(resourcePrefix.length + 1)
-          : filePath;
-        const localPath = path.join(tmpDir, relPath);
-        await fs.mkdir(path.dirname(localPath), { recursive: true });
-
-        const url = `${this.baseUrl}/object/public/${this.PUBLIC_BUCKET}/${filePath}`;
-        const resp = await fetch(url);
-        if (!resp.ok) {
-          throw new Error(`Failed to download ${url}: ${resp.status}`);
-        }
-        const data = await resp.arrayBuffer();
-
-        await fs.writeFile(localPath, Buffer.from(data));
-      }
-
-      return tmpDir;
-    } finally {
-      client.release();
+      const indexPath = path.join(tmpDir, "index.html");
+      const stat = await fs.stat(indexPath);
+      localNewest = new Date(stat.mtime);
+    } catch {
+      localNewest = new Date(0);
     }
+
+    if (newestRemote > localNewest) {
+      await fs.rm(tmpDir, { recursive: true, force: true });
+      await fs.mkdir(tmpDir, { recursive: true });
+    } else {
+      return tmpDir;
+    }
+
+    for (const obj of objects) {
+      const relPath = obj.name.substring(resourcePrefix.length + 1);
+      const localPath = path.join(tmpDir, relPath);
+      await fs.mkdir(path.dirname(localPath), { recursive: true });
+
+      const url = `${this.baseUrl}/object/public/${this.PUBLIC_BUCKET}/${obj.name}`;
+      const resp = await fetch(url);
+      if (!resp.ok) {
+        throw new Error(`Failed to download ${url}: ${resp.status}`);
+      }
+      const data = await resp.arrayBuffer();
+
+      await fs.writeFile(localPath, Buffer.from(data));
+    }
+
+    return tmpDir;
   }
 
   async deleteDatasetShinyLiveResources(
@@ -129,45 +122,29 @@ export class ShinyLiveService {
     name: string,
     language: string,
   ): Promise<void> {
-    const pattern = `${datasetId}_${type}_${name}_${language}`;
-    let client: pg.PoolClient;
+    const resourcePrefix = `${datasetId}/dashboard/${datasetId}_${type}_${name}_${language}`;
+    const objects = await this.listObjects(`${resourcePrefix}/`);
+    if (objects.length === 0) {
+      return;
+    }
 
-    try {
-      client = await ShinyLiveService.pgPool.connect();
-      const query = `
-        SELECT name FROM storage.objects
-        WHERE bucket_id = $1 AND name LIKE $2
-      `;
-      const result = await client.query(query, [
-        this.PUBLIC_BUCKET,
-        `%${pattern}%`,
-      ]);
-
-      if (result.rows.length === 0) {
-        return;
-      }
-
-      const filePaths = result.rows.map((row: { name: string }) => row.name);
-
-      // Delete all files
-      const deleteUrl = `${this.baseUrl}/object/${this.PUBLIC_BUCKET}`;
-      const deleteResponse = await fetch(deleteUrl, {
+    const deleteResponse = await fetch(
+      `${this.baseUrl}/object/${this.PUBLIC_BUCKET}`,
+      {
         method: "DELETE",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${this.authToken}`,
         },
-        body: JSON.stringify({ prefixes: filePaths }),
-      });
+        body: JSON.stringify({ prefixes: objects.map((obj) => obj.name) }),
+      },
+    );
 
-      if (!deleteResponse.ok) {
-        const errorText = await deleteResponse.text();
-        throw new Error(
-          `Failed to delete files: ${deleteResponse.status} - ${errorText}`,
-        );
-      }
-    } finally {
-      client.release();
+    if (!deleteResponse.ok) {
+      const errorText = await deleteResponse.text();
+      throw new Error(
+        `Failed to delete files: ${deleteResponse.status} - ${errorText}`,
+      );
     }
   }
 }

@@ -70,7 +70,7 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByRole('textbox', { name: 'Data source summary' }).fill(datasetSchema)
   await page.getByRole('combobox', { name: 'CDM schema option' }).click()
   await page.getByRole('option', { name: 'Create FHIR data source', exact: true }).click()
-  await page.getByRole('combobox', { name: 'PA config' }).click()
+  await page.getByRole('combobox', { name: 'Data exploration configuration' }).click()
   await page.getByRole('option', { name: 'FHIR_QR', exact: true }).click()
   await page.getByRole('textbox', { name: 'Token data source code' }).fill(`${randomString}1`)
   await page.getByRole('button', { name: 'Add', exact: true }).click()

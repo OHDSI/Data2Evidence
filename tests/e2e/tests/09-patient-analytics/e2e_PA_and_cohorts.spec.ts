@@ -25,7 +25,7 @@ async function logout(page) {
 }
 
 async function createUser(page, username) {
-  await page.getByRole('button', { name: 'Add user' }).click()
+  await page.getByRole('button', { name: 'Add new user' }).click()
   await page.getByRole('textbox', { name: 'Username' }).fill(username)
   await page.getByRole('textbox', { name: 'Password' }).fill(PASSWORD)
   await page.getByRole('button', { name: 'Add' }).click()
@@ -57,7 +57,8 @@ async function deleteUser(page, username) {
   await page.getByRole('link', { name: 'Users' }).click()
   await expect(page.getByRole('heading', { name: 'Users' })).toBeVisible()
   const userRow = page.getByRole('row', { name: new RegExp(username) })
-  await userRow.getByRole('button', { name: 'Delete' }).click()
+  await userRow.getByRole('button', { name: 'Actions' }).click()
+  await page.getByRole('menuitem', { name: 'Delete user' }).click()
   await page.getByRole('button', { name: 'Yes, delete' }).click()
   await expect(userRow).not.toBeVisible()
 }

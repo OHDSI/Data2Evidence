@@ -233,7 +233,7 @@ def invalidate_trex_source_cache(options: DCOptionsType, dialect: str, logger):
     clear_sql = (
         "CALL bigquery_clear_cache()"
         if dialect == SupportedDatabaseDialects.BIGQUERY
-        else "CALL pg_clear_cache()"
+        else "CALL postgres_clear_cache()"
     )
     try:
         TrexDao(
