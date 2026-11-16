@@ -162,6 +162,65 @@ describe("ParentMappings.nameLookup", () => {
   });
 });
 
+describe("ParentMappings.placeholderLookup", () => {
+  it("finds placeholders of interactions at the top level and under conditions", () => {
+    const lookup = PM.placeholderLookup({
+      interactions: { visit: { defaultPlaceholder: " @VISIT " }, note: {} },
+      conditions: { acme: { interactions: { priDiag: { defaultPlaceholder: "@COND" } } } },
+    });
+    expect(lookup(VISIT)).toBe("@VISIT");
+    expect(lookup("patient.conditions.acme.interactions.priDiag")).toBe("@COND");
+    expect(lookup("patient.interactions.note")).toBe("");
+    expect(lookup("patient.interactions.unknown")).toBe("");
+  });
+});
+
+describe("ParentMappings.fromBackend with placeholders", () => {
+  const placeholderOf = PM.placeholderLookup({
+    interactions: { visit: { defaultPlaceholder: "@VISIT" }, episode: { defaultPlaceholder: "@EPISODE" } },
+  });
+
+  it("gives an old one-parent config the parent placeholder and a valid mapping", () => {
+    const items: Item[] = PM.fromBackend(
+      deepFreeze({ parentInteraction: [VISIT], parentInteractionLabel: "Visit Occurrence Parent" }),
+      nameOf,
+      placeholderOf
+    );
+    expect(items.map(valuesOf)).toEqual([
+      {
+        parentMappingInteractionLabel: "Visit Occurrence Parent",
+        parentInteraction: VISIT,
+        parentMappingInteraction: "@VISIT",
+        currentMappingInteractionId: "",
+      },
+    ]);
+    expect(PM.validate(items, text).valid).toBe(true);
+    expect(PM.toBackend(items).parentInteractionsMapping).toEqual([
+      { parentMappingInteractionLabel: "Visit Occurrence Parent", parentInteraction: VISIT, parentMappingInteraction: "@VISIT" },
+    ]);
+  });
+
+  it("fills a blank stored placeholder and keeps a stored one", () => {
+    const items: Item[] = PM.fromBackend(
+      deepFreeze({
+        parentInteraction: [EPISODE, VISIT],
+        parentInteractionsMapping: [
+          { parentInteraction: EPISODE, parentMappingInteraction: "  ", parentMappingInteractionLabel: "Episode parent" },
+          { parentInteraction: VISIT, parentMappingInteraction: "@VISITDETAIL", parentMappingInteractionLabel: "Visit parent" },
+        ],
+      }),
+      nameOf,
+      placeholderOf
+    );
+    expect(items.map((i) => i.parentMappingInteraction.value)).toEqual(["@EPISODE", "@VISITDETAIL"]);
+  });
+
+  it("leaves the placeholder empty without a placeholder lookup", () => {
+    const items: Item[] = PM.fromBackend({ parentInteraction: [VISIT] }, nameOf);
+    expect(items[0].parentMappingInteraction.value).toBe("");
+  });
+});
+
 describe("ParentMappings.toBackend", () => {
   it("omits an empty column, trims values, and leaves empty parents out", () => {
     const items = PM.update(

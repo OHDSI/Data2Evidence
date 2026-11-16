@@ -2226,7 +2226,7 @@ sap.ui.define([
     };
 
     ConfigModelsManager.prototype._convertBeInteractionToFilterCard = function (
-        key, interVal, conditionType, nameOf) {
+        key, interVal, conditionType, nameOf, placeholderOf) {
 
         var filterCard = this._configModelsData.getEmptyFilterCard(interVal.name,
             key);
@@ -2293,7 +2293,7 @@ sap.ui.define([
             }
         }
 
-        filterCard.parentInteractionsMapping = ParentMappings.fromBackend(interVal, nameOf);
+        filterCard.parentInteractionsMapping = ParentMappings.fromBackend(interVal, nameOf, placeholderOf);
         filterCard.parentInteraction = ParentMappings.toBackend(filterCard.parentInteractionsMapping).parentInteraction;
 
         return filterCard;
@@ -2400,12 +2400,13 @@ sap.ui.define([
 
         var inter;
         var nameOf = ParentMappings.nameLookup(patient);
+        var placeholderOf = ParentMappings.placeholderLookup(patient);
         if (patient.hasOwnProperty("interactions")) {
             for (inter in patient.interactions) {
 
                 var uiCard = this._convertBeInteractionToFilterCard(inter,
                     patient.interactions[inter], this._configModelsData
-                        .getEmptyConditionType(), nameOf);
+                        .getEmptyConditionType(), nameOf, placeholderOf);
                 configForUi.configEditorModelData.filterCards.push(uiCard);
             }
         }
@@ -2431,7 +2432,7 @@ sap.ui.define([
                         condObject = that._configModelsData.getEmptyConditionType(
                             condName, condKey);
                         var uiCard = that._convertBeInteractionToFilterCard(inter,
-                            cond.interactions[inter], condObject, nameOf);
+                            cond.interactions[inter], condObject, nameOf, placeholderOf);
                         configForUi.configEditorModelData.filterCards.push(uiCard);
                     }
                 }

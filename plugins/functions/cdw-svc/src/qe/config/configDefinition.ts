@@ -231,10 +231,8 @@ export function getDefinition(tableMapping: any) {
         children: [
           {
             name: "parentMappingInteractionLabel",
-            mandatory: true,
+            mandatory: false,
             type: "string",
-            regex: "^.*\\S.*$",
-            minLength: 1,
           },
           {
             name: "parentInteraction",

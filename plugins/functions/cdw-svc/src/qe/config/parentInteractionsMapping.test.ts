@@ -81,15 +81,12 @@ Deno.test("parent mappings: a parent under a condition is valid", () => {
   assertEquals(errorsFor([conditionParent]), []);
 });
 
-Deno.test("parent mappings: a missing label is an error", () => {
-  const errors = errorsFor([without(visit, "parentMappingInteractionLabel")]);
-  assertEquals(errors.length, 1);
+Deno.test("parent mappings: a missing label is valid", () => {
+  assertEquals(errorsFor([without(visit, "parentMappingInteractionLabel")]), []);
 });
 
-Deno.test("parent mappings: a blank label is an error", () => {
-  const errors = errorsFor([{ ...visit, parentMappingInteractionLabel: "  " }]);
-  assertEquals(errors.length, 1);
-  assert(errors[0].startsWith("0.parentMappingInteractionLabel:"), errors[0]);
+Deno.test("parent mappings: a blank label is valid", () => {
+  assertEquals(errorsFor([{ ...visit, parentMappingInteractionLabel: "  " }]), []);
 });
 
 Deno.test("parent mappings: a missing parent interaction is an error", () => {

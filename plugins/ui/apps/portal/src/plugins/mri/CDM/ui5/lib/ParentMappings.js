@@ -61,6 +61,24 @@ sap.ui.define([], function () {
         };
     }
 
+    function placeholderLookup(patient) {
+        var placeholders = {};
+        var addAll = function (prefix, interactions) {
+            Object.keys(interactions || {}).forEach(function (key) {
+                var placeholder = interactions[key] && interactions[key].defaultPlaceholder;
+                placeholders[prefix + key] = typeof placeholder === "string" ? placeholder.trim() : "";
+            });
+        };
+        addAll("patient.interactions.", patient && patient.interactions);
+        var conditions = (patient && patient.conditions) || {};
+        Object.keys(conditions).forEach(function (conditionKey) {
+            addAll("patient.conditions." + conditionKey + ".interactions.", conditions[conditionKey].interactions);
+        });
+        return function (path) {
+            return placeholders[path] || "";
+        };
+    }
+
     function storedMappings(interaction) {
         var stored = interaction.parentInteractionsMapping;
         if (typeof stored === "string") {
@@ -83,7 +101,14 @@ sap.ui.define([], function () {
         };
     }
 
-    function fromBackend(interaction, nameOf) {
+    function fillPlaceholder(mapping, placeholderOf) {
+        var placeholder = String(mapping.parentMappingInteraction || "").trim();
+        return placeholder || !placeholderOf
+            ? mapping
+            : Object.assign({}, mapping, { parentMappingInteraction: placeholderOf(mapping.parentInteraction) });
+    }
+
+    function fromBackend(interaction, nameOf, placeholderOf) {
         var source = interaction || {};
         var labelFor = labelRule(source, nameOf || lastSegment);
         var stored = storedMappings(source).map(function (mapping) {
@@ -98,7 +123,9 @@ sap.ui.define([], function () {
         }).map(function (parentPath) {
             return { parentInteraction: parentPath, parentMappingInteractionLabel: labelFor(parentPath) };
         });
-        return stored.concat(missing).map(toItem);
+        return stored.concat(missing).map(function (mapping) {
+            return toItem(fillPlaceholder(mapping, placeholderOf));
+        });
     }
 
     function trimmed(item, key) {
@@ -219,6 +246,7 @@ sap.ui.define([], function () {
     return {
         lastSegment: lastSegment,
         nameLookup: nameLookup,
+        placeholderLookup: placeholderLookup,
         fromBackend: fromBackend,
         toBackend: toBackend,
         add: add,

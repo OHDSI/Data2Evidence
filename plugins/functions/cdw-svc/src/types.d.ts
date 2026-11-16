@@ -315,7 +315,7 @@ declare global {
     parentInteraction?: string[];
     parentInteractionLabel?: string;
     parentInteractionsMapping?: {
-      parentMappingInteractionLabel: string;
+      parentMappingInteractionLabel?: string;
       parentInteraction: string;
       parentMappingInteraction: string;
       currentMappingInteractionId?: string;
