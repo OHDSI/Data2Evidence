@@ -109,7 +109,9 @@ describe('parentInteractions', () => {
       const labelFor = (parentLabel: string) =>
         parentOptions({ possibleParent: [VISIT], parentLabel }, nameOf, 'Parent')[0].label
       expect(labelFor('parent')).toBe('Visit parent')
-      expect(labelFor('Parent ')).toBe('Visit parent')
+      expect(labelFor(' parent ')).toBe('Visit parent')
+      expect(labelFor('Parent')).toBe('Parent')
+      expect(labelFor('Parent ')).toBe('Parent')
       expect(labelFor('Visit Occurrence Parent')).toBe('Visit Occurrence Parent')
     })
 

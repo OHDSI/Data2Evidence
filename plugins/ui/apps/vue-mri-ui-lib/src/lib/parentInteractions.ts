@@ -60,7 +60,7 @@ const DEFAULT_OLD_LABEL = 'parent'
 
 function oldParentLabel(config: ParentConfig): string {
   const label = nonBlank(config.parentLabel)
-  return label.toLowerCase() === DEFAULT_OLD_LABEL ? '' : label
+  return label === DEFAULT_OLD_LABEL ? '' : label
 }
 
 export function parentOptions(
