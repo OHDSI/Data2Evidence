@@ -44,7 +44,7 @@
         #[`item.${header.key}`]="slotProps"
       >
         <slot :name="`item.${header.key}`" v-bind="slotProps">{{
-          slotProps.value
+          formatCell(slotProps.value, locale, header.format)
         }}</slot>
       </template>
 
@@ -101,8 +101,9 @@ import D2eIconButton from "./D2eIconButton.vue";
 import D2ePagination from "./D2ePagination.vue";
 import {
   DATA_TABLE_STYLE_MAP,
+  formatCell,
+  formatRange,
   nextSort,
-  pageRange,
   type D2eDataTableProps,
   type D2eSortItem,
 } from "./dataTable";
@@ -115,8 +116,9 @@ const props = withDefaults(defineProps<D2eDataTableProps<T>>(), {
   expanded: () => [],
   noDataText: "No data",
   rowsPerPageLabel: "Rows per page:",
-  rangeLabel: (start: number, end: number, total: number) =>
+  rangeLabel: (start: string, end: string, total: string) =>
     `${start}-${end} of ${total}`,
+  locale: "en",
   pageLabels: () => ({
     first: "First page",
     previous: "Previous page",
@@ -158,10 +160,11 @@ const vuetifyHeaders = computed(() => [
 ]);
 
 const rangeText = computed(() => {
-  const { start, end, total } = pageRange(
+  const { start, end, total } = formatRange(
     props.page,
     props.itemsPerPage,
     props.items.length,
+    props.locale,
   );
   return props.rangeLabel(start, end, total);
 });

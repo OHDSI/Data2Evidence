@@ -1,3 +1,5 @@
+import { formatNumber } from "./numberFormat";
+
 // Figma: the Data quality checks table — header row 2855:278875, body row
 // 2855:278884, pagination 2855:278894 and the expanded detail 1783:373766 (D2E
 // WebApp main file), built from the Table cell set 2445:7589 and Pagination
@@ -24,6 +26,7 @@ export interface D2eDataTableHeader {
   title: string;
   sortable?: boolean;
   width?: number | string;
+  format?: boolean;
 }
 
 export interface D2eSortItem {
@@ -56,6 +59,30 @@ export function pageRange(
   return { start, end: Math.min(page * itemsPerPage, total), total };
 }
 
+export function formatRange(
+  page: number,
+  itemsPerPage: number,
+  total: number,
+  locale?: string,
+): { start: string; end: string; total: string } {
+  const range = pageRange(page, itemsPerPage, total);
+  return {
+    start: formatNumber(range.start, locale),
+    end: formatNumber(range.end, locale),
+    total: formatNumber(range.total, locale),
+  };
+}
+
+export function formatCell<V>(
+  value: V,
+  locale?: string,
+  format = true,
+): V | string {
+  return format && typeof value === "number"
+    ? formatNumber(value, locale)
+    : value;
+}
+
 /** How many pages the rows fill. Never less than one, so page 1 always exists. */
 export function pageCount(itemsPerPage: number, total: number): number {
   return Math.max(1, Math.ceil(total / itemsPerPage));
@@ -82,7 +109,8 @@ export interface D2eDataTableProps<T> {
   expanded?: string[];
   noDataText?: string;
   rowsPerPageLabel?: string;
-  rangeLabel?: (start: number, end: number, total: number) => string;
+  rangeLabel?: (start: string, end: string, total: string) => string;
+  locale?: string;
   /** Accessible names of the four pager buttons. */
   pageLabels?: D2eDataTablePageLabels;
   /** Accessible name of each row's expand chevron. */

@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
   DATA_TABLE_STYLE_MAP,
+  formatCell,
+  formatRange,
   nextSort,
   pageCount,
   pageRange,
@@ -75,5 +77,45 @@ describe("pageCount", () => {
   it("rounds up", () => {
     expect(pageCount(10, 123)).toBe(13);
     expect(pageCount(25, 50)).toBe(2);
+  });
+});
+
+describe("formatRange", () => {
+  it("groups the thousands of the start, end and total", () => {
+    expect(formatRange(1, 10, 2340, "en")).toEqual({
+      start: "1",
+      end: "10",
+      total: "2,340",
+    });
+    expect(formatRange(234, 10, 2340, "de")).toEqual({
+      start: "2.331",
+      end: "2.340",
+      total: "2.340",
+    });
+  });
+
+  it("is 0-0 of 0 when there are no rows", () => {
+    expect(formatRange(1, 10, 0, "en")).toEqual({
+      start: "0",
+      end: "0",
+      total: "0",
+    });
+  });
+});
+
+describe("formatCell", () => {
+  it("groups the thousands of a number", () => {
+    expect(formatCell(2340, "en")).toBe("2,340");
+    expect(formatCell(2340, "de")).toBe("2.340");
+  });
+
+  it("shows a number as it is when the column turns formatting off", () => {
+    expect(formatCell(4012345, "en", false)).toBe(4012345);
+  });
+
+  it("does not change a value that is not a number", () => {
+    expect(formatCell("2340", "en")).toBe("2340");
+    expect(formatCell(null, "en")).toBe(null);
+    expect(formatCell(undefined, "en")).toBe(undefined);
   });
 });

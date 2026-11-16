@@ -109,11 +109,11 @@ function download(kind: string): void {
   downloadText(`﻿${toCsv(shown.value)}`, exportFileName('csv'), 'text/csv;charset=utf-8');
 }
 
-const rangeLabel = (start: number, end: number, total: number) =>
+const rangeLabel = (start: string, end: string, total: string) =>
   t('plugins.dataQuality.checks.range', '{start}-{end} of {total}')
-    .replace('{start}', String(start))
-    .replace('{end}', String(end))
-    .replace('{total}', String(total));
+    .replace('{start}', start)
+    .replace('{end}', end)
+    .replace('{total}', total);
 
 const pageLabels = computed(() => ({
   first: t('plugins.dataQuality.checks.pageFirst', 'First page'),
@@ -200,6 +200,7 @@ const pageLabels = computed(() => ({
         :no-data-text="t('plugins.dataQuality.checks.noMatches', 'No checks match the current search and filters.')"
         :rows-per-page-label="t('plugins.dataQuality.checks.rowsPerPage', 'Rows per page:')"
         :range-label="rangeLabel"
+        :locale="ctx.locale"
         :page-labels="pageLabels"
         :expand-label="t('plugins.dataQuality.checks.showDetails', 'Show details')"
         data-testid="dq-checks-table"
@@ -213,7 +214,7 @@ const pageLabels = computed(() => ({
         <template #item.severity="{ item }">{{ displayValue(COLUMN_BY_KEY.severity, item) }}</template>
         <template #item.pctViolatedRows="{ item }">{{ displayValue(COLUMN_BY_KEY.pctViolatedRows, item) }}</template>
         <template #expanded-row="{ item }">
-          <D2eDataTableDetail :rows="detailRows(item, t)" />
+          <D2eDataTableDetail :rows="detailRows(item, t)" :locale="ctx.locale" />
         </template>
       </D2eDataTable>
     </template>

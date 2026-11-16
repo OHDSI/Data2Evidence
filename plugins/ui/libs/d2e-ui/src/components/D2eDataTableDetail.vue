@@ -3,7 +3,7 @@
        under an expanded D2eDataTable row. -->
   <dl class="d2e-data-table-detail" data-testid="d2e-data-table-detail">
     <div
-      v-for="row in rows"
+      v-for="row in shownRows"
       :key="row.label"
       class="d2e-data-table-detail__line"
     >
@@ -14,11 +14,22 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from "vue";
+import { formatCell } from "./dataTable";
+
 interface Props {
-  rows: { label: string; value: string }[];
+  rows: { label: string; value: string | number }[];
+  locale?: string;
 }
 
-defineProps<Props>();
+const props = withDefaults(defineProps<Props>(), { locale: "en" });
+
+const shownRows = computed(() =>
+  props.rows.map((row) => ({
+    label: row.label,
+    value: formatCell(row.value, props.locale),
+  })),
+);
 </script>
 
 <style scoped lang="scss">
