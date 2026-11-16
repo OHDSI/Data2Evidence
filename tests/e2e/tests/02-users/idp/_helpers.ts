@@ -2,7 +2,7 @@
  * Shared IDP test harness — the auth-provider contract every sign-in path must satisfy.
  *
  * Folder-scoped exception to the suite's inline-helper convention so the four provider specs
- * (logto-native / entra-external-id / entra / physionet) share login + token-read + claim
+ * (logto-federated / entra-external-id / entra / physionet) share login + token-read + claim
  * assertion, and a future `D2E_IDP=trex` cutover re-runs the exact same contract.
  */
 import { expect } from '../../fixtures'

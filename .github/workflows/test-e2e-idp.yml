@@ -1,6 +1,6 @@
 name: test-e2e-idp
 
-# Reusable e2e for the IDP auth paths (logto-native / physionet-mock / entra-external-id),
+# Reusable e2e for the IDP auth paths (logto-federated / physionet-mock / entra-external-id),
 # called by docker-build-push.yaml after its build jobs — reuses that run's run_tag images
 # and its ui-tgz artifact.
 #
@@ -32,8 +32,8 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - provider: logto-native
-            spec: tests/02-users/idp/logto-native.spec.ts
+          - provider: logto-federated
+            spec: tests/02-users/idp/logto-federated.spec.ts
           - provider: physionet-mock
             spec: tests/02-users/idp/physionet.spec.ts
           - provider: entra-external-id
@@ -125,8 +125,13 @@ jobs:
           printf '%s\n' 'TREX_NATIVE_PASSWORD_LOGIN_ENABLED=true' >> .env
           grep -E '^(D2E_IDP_MODE|TREX_NATIVE_PASSWORD_LOGIN_ENABLED)=' .env
 
+      # A fresh install has no D2E account linked to Logto's admin; let trex create it on first sign-in.
+      - name: Auto-provision Logto users
+        if: steps.gate.outputs.run == 'true' && matrix.provider == 'logto-federated'
+        run: printf '\n%s\n' 'IDP__AUTO_PROVISION_USERS=true' >> .env
+
       # Connectors are applied by appending to .env (dotenv-parsed by compose, JSON-safe, last wins)
-      # after init — no CLI flag. logto-native needs no connector, so neither step runs for it.
+      # after init — no CLI flag. logto-federated needs no connector, so neither step runs for it.
       - name: Apply PhysioNet connector overlay
         if: steps.gate.outputs.run == 'true' && matrix.provider == 'physionet-mock'
         run: |

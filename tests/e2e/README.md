@@ -29,7 +29,7 @@ are the exact gap list.
 
 | Spec | Path | Runs |
 |---|---|---|
-| `idp/logto-native.spec.ts` | Logto username/password | always (CI baseline, no upstream) |
+| `idp/logto-federated.spec.ts` | Logto username/password | always (CI baseline, no upstream) |
 | `idp/entra-external-id.spec.ts` | Entra External ID (CIAM) | when its `E2E_*` creds + connector are set |
 | `idp/entra.spec.ts` | Azure AD (Entra) | when its `E2E_*` creds + connector are set |
 | `idp/physionet.spec.ts` | PhysioNet OIDC | when its `E2E_*` creds + connector are set |
@@ -59,6 +59,6 @@ spec reads). `E2E_ENV_FILE` is resolved relative to `tests/e2e/`; it's loaded be
 a plain `.env` still fills in anything a provider file omits.
 
 - Baseline in CI: `docker-build-push.yaml` → `test_demosetup_dev` runs `npm test`, which picks
-  up `idp/logto-native.spec.ts` on every PR.
+  up `idp/logto-federated.spec.ts` on every PR.
 - Gated specs in CI: set the `E2E_*` repo secrets and boot a stack with the connector applied;
   the `e2e tests` step already forwards those secrets into the test container.

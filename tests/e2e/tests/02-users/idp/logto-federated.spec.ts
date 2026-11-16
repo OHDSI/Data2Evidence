@@ -1,5 +1,5 @@
 /**
- * IDP path: Logto native (username/password) — the CI-safe baseline, runs on every PR.
+ * IDP path: Logto federated (username/password on Logto, token from trex) — the CI-safe baseline, runs on every PR.
  *
  * A usermgmt-provisioned user logs in on the Logto form; we assert the auth-provider claim
  * contract (roles, preferred_username/username, email, iss/aud) and that WebAPI accepts the token.
@@ -30,7 +30,7 @@ import {
 
 const NEW_USER_PASSWORD = 'Updatepassword12345'
 
-test('idp:logto-native', async ({ page, baseURL }) => {
+test('idp:logto-federated', async ({ page, baseURL }) => {
   const api: APIRequestContext = page.request
   const base = baseURL ?? 'https://localhost:443'
   const username = `ituser_${Date.now()}`

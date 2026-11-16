@@ -1880,7 +1880,7 @@ jobs:
       prepull_flow_images: ""
     secrets: inherit
 
-  # IDP auth e2e (logto-native / physionet-mock / entra-external-id). Reuses this run's
+  # IDP auth e2e (logto-federated / physionet-mock / entra-external-id). Reuses this run's
   # freshly-built run_tag images + ui-tgz. Runs on develop merges, manual dispatch, and
   # PRs that touch the e2e harness (changes_e2e) — never on unrelated PRs.
   test_e2e_idp:
