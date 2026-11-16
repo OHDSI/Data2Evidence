@@ -36,8 +36,8 @@ export function skipReason(names: string[]): string {
  * Logto" (federated mode) — never trex's native password form.
  */
 export async function loginViaUI(page: Page, username: string, password: string): Promise<void> {
-  // Portal 301-redirects to sign-in; ignore a goto abort from that redirect (the waits below gate readiness).
-  await page.goto('/d2e/portal').catch(() => {})
+  // /login always starts sign-in; /d2e/portal may show the public page instead. goto can ERR_ABORTED.
+  await page.goto('/d2e/portal/login').catch(() => {})
 
   const logtoButton = page
     .getByRole('link', { name: /sign in with logto/i })
@@ -77,8 +77,8 @@ export async function loginViaConnector(
 ): Promise<void> {
   const { target, connectorName, creds } = opts
 
-  // Portal 301-redirects to sign-in; ignore a goto abort from that redirect (selectors below gate readiness).
-  await page.goto('/d2e/portal').catch(() => {})
+  // /login always starts sign-in; /d2e/portal may show the public page instead. goto can ERR_ABORTED.
+  await page.goto('/d2e/portal/login').catch(() => {})
   // Origin from the page (not an env fallback) so it always matches the fixture's baseURL.
   const portalOrigin = new URL(page.url()).origin
 
@@ -219,16 +219,12 @@ export async function loginViaConnector(
  */
 export async function resetSession(page: Page): Promise<void> {
   await page.context().clearCookies()
-  try {
-    await page.evaluate(() => {
-      sessionStorage.clear()
-      localStorage.clear()
-    })
-  } catch {
-    // context may be mid-navigation; storage still gets cleared on next load
-  }
-  // Portal 301-redirects to sign-in; goto can ERR_ABORTED. The waitFor below is the readiness gate.
-  await page.goto('/d2e/portal').catch(() => {})
+  await page.goto('/d2e/portal/assets/favicon.ico')
+  await page.evaluate(() => {
+    sessionStorage.clear()
+    localStorage.clear()
+  })
+  await page.goto('/d2e/portal/login').catch(() => {})
   await page.locator('input[name="identifier"]').waitFor({ state: 'visible', timeout: MINUTE_1 })
 }
 
