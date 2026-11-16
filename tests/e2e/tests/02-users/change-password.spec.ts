@@ -16,7 +16,10 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByRole('button', { name: 'Switch to Admin portal' }).click()
 
   // Change to new password
-  await page.getByRole('row', { name: 'admin Viewer Admin User Admin' }).getByRole('button').nth(2).click()
+  await page
+    .getByRole('row', { name: 'admin Viewer Admin User Admin' })
+    .getByRole('button', { name: 'Actions' })
+    .click()
   await page.getByRole('menuitem', { name: 'Change password' }).click()
   await page.getByRole('textbox', { name: 'Password' }).fill('Newpassword12345')
   await page.getByRole('button', { name: 'Change' }).click()
@@ -33,7 +36,10 @@ test(TEST_NAME, async ({ page }) => {
 
   // Clean up
   await page.getByRole('button', { name: 'Switch to Admin portal' }).click()
-  await page.getByRole('row', { name: 'admin Viewer Admin User Admin' }).getByRole('button').nth(2).click()
+  await page
+    .getByRole('row', { name: 'admin Viewer Admin User Admin' })
+    .getByRole('button', { name: 'Actions' })
+    .click()
   await page.getByRole('menuitem', { name: 'Change password' }).click()
   await page.getByRole('textbox', { name: 'Password' }).fill('Updatepassword12345')
   await page.getByRole('button', { name: 'Change' }).click()
