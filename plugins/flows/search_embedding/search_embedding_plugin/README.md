@@ -24,7 +24,7 @@ Declared in `pyproject.toml`. Requires **Python 3.12.\***.
 | `torch` | 2.6.0 | Model inference (CPU or CUDA) |
 | `transformers` | 4.44.2 | `AutoTokenizer` / `AutoModel` for gte-small |
 | `pandas` | 2.2.2 | In-memory batch handling |
-| `duckdb` | 1.4.0 | Direct DuckDB connection path (non-Trex) |
+| `duckdb` | 2.0.0 | Direct DuckDB connection path (non-Trex) |
 | `prefect[docker,shell]` | 3.0.3 | Flow orchestration |
 | `psycopg2-binary` | 2.9.6 | Trex DAO SQL parameterisation |
 | `pydantic` | 2.10.6 | Flow parameter validation |

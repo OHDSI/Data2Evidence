@@ -9,7 +9,7 @@ const meta = {
   argTypes: {
     variant: {
       control: "select",
-      options: ["primary", "secondary", "danger", "positive", "ghost"],
+      options: ["primary", "secondary", "danger", "danger-solid", "positive", "ghost"],
     },
     size: { control: "inline-radio", options: ["xs", "sm", "md", "lg"] },
   },
@@ -22,6 +22,7 @@ const SHOWCASE_VARIANTS = [
   "primary",
   "secondary",
   "danger",
+  "danger-solid",
   "positive",
   "ghost",
 ] as const;

@@ -85,7 +85,7 @@ export const cdwFHIRConfigDuckdb = {
             ],
             type: "text",
             expression:
-              "replace( list_reduce( CAST(list_transform( @QUESTIONNAIRERESPONSE.content.item[0].answer::json[], e -> e.valueCoding.display) AS varchar[]), (acc, e) -> concat(acc, ', ', e) ), '\"', '' )",
+              "replace( list_reduce( CAST(list_transform( @QUESTIONNAIRERESPONSE.content.item[0].answer::json[], lambda e: e.valueCoding.display) AS varchar[]), lambda acc, e: concat(acc, ', ', e) ), '\"', '' )",
             order: 1,
             domainFilter: "",
             standardConceptCodeFilter: "",
@@ -173,7 +173,7 @@ export const cdwFHIRConfigDuckdb = {
             ],
             type: "text",
             expression:
-              "replace( list_reduce( CAST(list_transform( @QUESTIONNAIRERESPONSE.content.item[2].answer::json[], e -> e.valueCoding.display) AS varchar[]), (acc, e) -> concat(acc, ', ', e) ), '\"', '' )",
+              "replace( list_reduce( CAST(list_transform( @QUESTIONNAIRERESPONSE.content.item[2].answer::json[], lambda e: e.valueCoding.display) AS varchar[]), lambda acc, e: concat(acc, ', ', e) ), '\"', '' )",
             order: 3,
             domainFilter: "",
             standardConceptCodeFilter: "",
@@ -217,7 +217,7 @@ export const cdwFHIRConfigDuckdb = {
             ],
             type: "text",
             expression:
-              "replace( list_reduce( CAST(list_transform( @QUESTIONNAIRERESPONSE.content.item[3].answer::json[], e -> e.valueCoding.display) AS varchar[]), (acc, e) -> concat(acc, ', ', e) ), '\"', '' )",
+              "replace( list_reduce( CAST(list_transform( @QUESTIONNAIRERESPONSE.content.item[3].answer::json[], lambda e: e.valueCoding.display) AS varchar[]), lambda acc, e: concat(acc, ', ', e) ), '\"', '' )",
             order: 4,
             domainFilter: "",
             standardConceptCodeFilter: "",
@@ -261,7 +261,7 @@ export const cdwFHIRConfigDuckdb = {
             ],
             type: "text",
             expression:
-              "replace( list_reduce( CAST(list_transform( @QUESTIONNAIRERESPONSE.content.item[4].answer::json[], e -> e.valueCoding.display) AS varchar[]), (acc, e) -> concat(acc, ', ', e) ), '\"', '' )",
+              "replace( list_reduce( CAST(list_transform( @QUESTIONNAIRERESPONSE.content.item[4].answer::json[], lambda e: e.valueCoding.display) AS varchar[]), lambda acc, e: concat(acc, ', ', e) ), '\"', '' )",
             order: 5,
             domainFilter: "",
             standardConceptCodeFilter: "",
@@ -306,7 +306,7 @@ export const cdwFHIRConfigDuckdb = {
             ],
             type: "text",
             expression:
-              "replace( list_reduce( CAST(list_transform( @QUESTIONNAIRERESPONSE.content.item[5].answer::json[], e -> e.valueCoding.display) AS varchar[]), (acc, e) -> concat(acc, ', ', e) ), '\"', '' )",
+              "replace( list_reduce( CAST(list_transform( @QUESTIONNAIRERESPONSE.content.item[5].answer::json[], lambda e: e.valueCoding.display) AS varchar[]), lambda acc, e: concat(acc, ', ', e) ), '\"', '' )",
             order: 6,
             domainFilter: "",
             standardConceptCodeFilter: "",
@@ -687,7 +687,7 @@ export const cdwFHIRConfigDuckdb = {
         ],
         type: "text",
         expression:
-          "replace(list_reduce(CAST(@PATIENT.content->'$.name[*].family' AS varchar[]), (acc, e) -> concat(acc, ' ', e)), '\"',  '')",
+          "replace(list_reduce(CAST(@PATIENT.content->'$.name[*].family' AS varchar[]), lambda acc, e: concat(acc, ' ', e)), '\"',  '')",
         order: 7,
         domainFilter: "",
         standardConceptCodeFilter: "",
@@ -732,7 +732,7 @@ export const cdwFHIRConfigDuckdb = {
         ],
         type: "text",
         expression:
-          "replace(list_reduce(CAST(@PATIENT.content->'$.name[*].family' AS varchar[]), (acc, e) -> concat(acc, ' ', e)), '\"',  '')",
+          "replace(list_reduce(CAST(@PATIENT.content->'$.name[*].family' AS varchar[]), lambda acc, e: concat(acc, ' ', e)), '\"',  '')",
         order: 7,
         domainFilter: "",
         standardConceptCodeFilter: "",
@@ -777,7 +777,7 @@ export const cdwFHIRConfigDuckdb = {
         ],
         type: "text",
         expression:
-          "replace(list_reduce(CAST(@PATIENT.content->'$.name[*].given[*]' AS varchar[]), (acc, e) -> concat(acc, ' ', e)), '\"',  '')",
+          "replace(list_reduce(CAST(@PATIENT.content->'$.name[*].given[*]' AS varchar[]), lambda acc, e: concat(acc, ' ', e)), '\"',  '')",
         order: 8,
         domainFilter: "",
         standardConceptCodeFilter: "",

@@ -18,6 +18,8 @@ pytest = "*"
 # Bunny is a GIT dependency (not on PyPI). Pin to v1.7.0 (commit a4121dc…).
 [tool.pixi.feature.bunny.pypi-dependencies]
 hutch-bunny = { git = "https://github.com/Health-Informatics-UoN/hutch-bunny.git", rev = "a4121dc7a37660638763ed20b11d8882a7ab8edd" }
+# Bunny only talks to Postgres here; pinned so no 1.x duckdb ships in the image.
+duckdb = "==2.0.0"
 
 [tool.pixi.environments]
 default = { solve-group = "default" }
