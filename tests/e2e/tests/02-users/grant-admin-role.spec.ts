@@ -9,7 +9,7 @@ test('test', async ({ page }) => {
   await page.getByRole('button', { name: 'Sign in' }).click()
   await page.getByTestId('button').nth(1).click()
   await page.getByRole('button', { name: 'Switch to Admin portal' }).click()
-  await page.getByTestId('button').click()
+  await page.getByRole('button', { name: 'Add new user' }).click()
   await page.getByRole('textbox', { name: 'Username' }).click()
   // Generate a random number for the role name to avoid conflicts
   const roleName = `grant_admin_role_${Math.floor(Math.random() * 10000)}`
@@ -21,7 +21,7 @@ test('test', async ({ page }) => {
   await page.getByRole('textbox', { name: 'Password' }).fill('Updatepassword12345')
   await page.waitForTimeout(2000)
   await page.getByRole('button', { name: 'Add' }).click()
-  await page.getByTestId('table-row').filter({ hasText: roleName }).getByRole('button', { name: 'Edit' }).click()
+  await page.getByRole('row').filter({ hasText: roleName }).getByRole('button', { name: 'Edit' }).click()
   await page.getByTestId('dialog').getByText('Admin', { exact: true }).click()
   await page.getByTestId('dialog').getByText('User Admin').click()
   await page.getByRole('button', { name: 'Update' }).click()
@@ -44,6 +44,7 @@ test('test', async ({ page }) => {
   await page.getByRole('button', { name: 'Sign in' }).click()
   await page.getByTestId('button').nth(1).click()
   await page.getByRole('button', { name: 'Switch to Admin portal' }).click()
-  await page.getByTestId('table-row').filter({ hasText: roleName }).getByRole('button', { name: 'Delete' }).click()
+  await page.getByRole('row').filter({ hasText: roleName }).getByRole('button', { name: 'Actions' }).click()
+  await page.getByRole('menuitem', { name: 'Delete user' }).click()
   await page.getByRole('button', { name: 'Yes, delete' }).click()
 })

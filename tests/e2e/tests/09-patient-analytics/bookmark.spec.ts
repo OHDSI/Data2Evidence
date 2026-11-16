@@ -394,7 +394,7 @@ test(TEST_NAME, async ({ page }) => {
   })
   //Create another user - testuserB
   await test.step('Create user', async () => {
-    await page.getByRole('button', { name: 'Add user' }).click()
+    await page.getByRole('button', { name: 'Add new user' }).click()
     await page.getByRole('textbox', { name: 'Username' }).click()
     await page.getByRole('textbox', { name: 'Username' }).fill(NAME.testUserB)
     await page.getByRole('textbox', { name: 'Password' }).click()
@@ -507,7 +507,8 @@ test(TEST_NAME, async ({ page }) => {
     await page.getByRole('link', { name: 'Users' }).click()
     await expect(page.getByRole('heading', { name: 'Users' })).toBeVisible()
     const userRow = page.getByRole('row', { name: new RegExp(NAME.testUserB) })
-    await userRow.getByRole('button', { name: 'Delete' }).click()
+    await userRow.getByRole('button', { name: 'Actions' }).click()
+    await page.getByRole('menuitem', { name: 'Delete user' }).click()
     await page.getByRole('button', { name: 'Yes, delete' }).click()
     await expect(userRow).not.toBeVisible()
   })

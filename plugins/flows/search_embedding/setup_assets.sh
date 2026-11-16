@@ -3,7 +3,7 @@
 # in pyproject.toml/pixi.lock. Runs as the pixi `setup-assets` task at
 # provisioning time, cwd = plugin dir; flows resolve <cwd>/duckdb_extensions.
 set -euo pipefail
-DUCKDB_VERSION="1.4.0"
+DUCKDB_VERSION="2.0.0"
 EXTENSIONS="postgres_scanner fts vss"
 mkdir -p duckdb_extensions
 for ext in $EXTENSIONS; do

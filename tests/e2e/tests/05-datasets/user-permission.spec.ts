@@ -19,7 +19,7 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByRole('button', { name: 'Switch to Admin portal' }).click()
 
   // Create user - testuserC
-  await page.getByRole('button', { name: 'Add user' }).click()
+  await page.getByRole('button', { name: 'Add new user' }).click()
   await page.getByRole('textbox', { name: 'Username' }).click()
   await page.getByRole('textbox', { name: 'Username' }).fill('testuserC')
   await page.getByRole('textbox', { name: 'Password' }).click()
@@ -64,7 +64,8 @@ test(TEST_NAME, async ({ page }) => {
   await test.step('Delete test user', async () => {
     await page.getByRole('link', { name: 'Users' }).click()
     const userRow = page.getByRole('row', { name: /testuserC/ })
-    await userRow.getByRole('button', { name: 'Delete' }).click()
+    await userRow.getByRole('button', { name: 'Actions' }).click()
+    await page.getByRole('menuitem', { name: 'Delete user' }).click()
     // await page.getByRole('button', { name: 'Delete' }).nth(2).click();
     await page.getByRole('button', { name: 'Yes, delete' }).click()
     // Wait for the user row to be removed from the table, not just any text
