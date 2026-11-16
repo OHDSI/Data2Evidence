@@ -2,6 +2,7 @@
 import AdvancedTimeFilterModel from './AdvancedTimeFilterModel'
 import ConstraintModel from './ConstraintModel'
 import EntityBase from './EntityBase'
+import { isParentAttrKey, parentOptionsForCard } from '../parentInteractions'
 
 export default class FilterCardModel extends EntityBase {
   /**
@@ -16,12 +17,11 @@ export default class FilterCardModel extends EntityBase {
     return null
   }
 
-  public static getParentInteraction(filterCardProps) {
-    const oParentConstraint = FilterCardModel.getConstraintForAttribute(filterCardProps, '_parentInteraction')
-    if (oParentConstraint) {
-      return oParentConstraint.getSelectedKey()
-    }
-    return null
+  public static getParentInteraction({ constraints }): string[] {
+    return (constraints || [])
+      .filter(constraint => isParentAttrKey(constraint.props.attrKey))
+      .map(constraint => constraint.props.value?.value)
+      .filter(value => typeof value === 'string' && value.length > 0)
   }
 
   // check if this card contains a constraint for a given attribute (key)
@@ -37,10 +37,6 @@ export default class FilterCardModel extends EntityBase {
     if (attributeKey === 'relation') {
       return FilterCardModel.getConstraintForAttribute({ constraints }, '_succ')
     }
-    if (attributeKey === 'parentInteraction') {
-      return FilterCardModel.getConstraintForAttribute({ constraints }, '_parentInteraction')
-    }
-
     for (let i = 0; i < constraints.length; i += 1) {
       if (constraints[i].props.attrKey === attributeKey) {
         return constraints[i]
@@ -50,15 +46,12 @@ export default class FilterCardModel extends EntityBase {
   }
 
   public static createConstraintForAttribute(
-    { key, name, instanceId, cardId, filterCardConfig },
+    { key, name, instanceId, cardId },
     attributeKey,
     attributeConfig?
   ) {
     let constraint
     let filter
-    let parentInteractionConfiguration
-    let parentInteractionLabel
-    let allowedParentInteractions
     switch (attributeKey) {
       case '_absTime':
         constraint = ConstraintModel.createConstraint(
@@ -95,22 +88,6 @@ export default class FilterCardModel extends EntityBase {
         })
 
         break
-      case '_parentInteraction':
-        parentInteractionConfiguration = filterCardConfig.oInternalConfigFilterCard.parentInteraction
-        parentInteractionLabel = parentInteractionConfiguration.parentLabel || 'MRI_PA_FILTERCARD_CONSTRAINT_PARENT'
-        allowedParentInteractions = parentInteractionConfiguration.possibleParent
-
-        constraint = ConstraintModel.createConstraint(
-          'parentInteraction',
-          {
-            type: 'parentInteraction',
-            name: parentInteractionLabel,
-            cardId: instanceId,
-            parents: [...allowedParentInteractions],
-          },
-          key
-        )
-        break
       case '_relTime':
         constraint = ConstraintModel.createConstraint(
           '_relTime',
@@ -138,6 +115,19 @@ export default class FilterCardModel extends EntityBase {
     }
 
     return constraint
+  }
+
+  public static createParentConstraint({ key, instanceId }, option: { attrKey: string; label: string; parentPath: string }) {
+    return ConstraintModel.createConstraint(
+      option.attrKey,
+      {
+        type: 'parentInteraction',
+        name: option.label,
+        cardId: instanceId,
+        parents: [option.parentPath],
+      },
+      key
+    )
   }
 
   public props: any
@@ -314,6 +304,9 @@ export default class FilterCardModel extends EntityBase {
     const constraints: any[] = []
 
     attributeKey = attributeKey.substr(attributeKey.lastIndexOf('.') + 1)
+    if (isParentAttrKey(attributeKey)) {
+      return this.addParentField(attributeKey)
+    }
     if (!FilterCardModel.getConstraintForAttribute(this.props, attributeKey)) {
       switch (attributeKey) {
         case 'time':
@@ -332,15 +325,6 @@ export default class FilterCardModel extends EntityBase {
           constraints.push({
             constraint: FilterCardModel.createConstraintForAttribute(this.props, '_relTime'),
             pos: 2,
-            visible: true,
-          })
-          break
-        case 'parentInteraction':
-          const oParentConstraint = FilterCardModel.createConstraintForAttribute(this.props, '_parentInteraction')
-          oParentConstraint.addExpression('=', this.props.parentInteraction)
-          constraints.push({
-            constraint: oParentConstraint,
-            pos: null,
             visible: true,
           })
           break
@@ -366,14 +350,29 @@ export default class FilterCardModel extends EntityBase {
     return []
   }
 
+  public getParentOptions() {
+    return parentOptionsForCard(this.mriFrontendConfig, this.props.key)
+  }
+
+  public addParentField(attrKey: string, value?: string) {
+    const option = this.getParentOptions().find(o => o.attrKey === attrKey)
+    if (!option || FilterCardModel.getConstraintForAttribute(this.props, attrKey)) {
+      return []
+    }
+    const constraint = FilterCardModel.createParentConstraint(this.props, option)
+    if (value) {
+      constraint.addExpression('=', value)
+    }
+    this.addConstraint(constraint, null)
+    return [constraint]
+  }
+
   public removeConstraintForAttributeKey(attributeKey) {
     if (attributeKey === 'time') {
       this.removeConstraint(FilterCardModel.getConstraintForAttribute(this.props, '_absTime'))
     } else if (attributeKey === 'relation') {
       this.removeConstraint(FilterCardModel.getConstraintForAttribute(this.props, '_succ'))
       this.removeConstraint(FilterCardModel.getConstraintForAttribute(this.props, '_relTime'))
-    } else if (attributeKey === 'parentInteraction') {
-      this.removeConstraint(FilterCardModel.getConstraintForAttribute(this.props, '_parentInteraction'))
     } else {
       this.removeConstraint(FilterCardModel.getConstraintForAttribute(this.props, attributeKey))
     }

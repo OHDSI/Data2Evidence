@@ -330,6 +330,8 @@ export const i18n = {
     MRI_PA_FILTERCARD_CONSTRAINT_ABSTIME: 'Date Range',
     MRI_PA_FILTERCARD_CONSTRAINT_SUCCESSOR: 'Next Interaction',
     MRI_PA_FILTERCARD_CONSTRAINT_PARENT: 'Parent',
+    MRI_PA_PARENT_LINK_DROPPED:
+      'A parent link was removed because its parent type is not in the configuration. The patient count can change: {0}',
     MRI_PA_FILTERCARD_CONSTRAINT_RELTIME: 'Days Until Next Interaction',
     MRI_PA_FILTERCARD_CONSTRAINT_TIME: 'Time',
     MRI_PA_FILTERCARD_FROM_RANGE: 'From (inclusive)',

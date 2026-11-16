@@ -14,6 +14,7 @@ import BoolFilterContainerModel from '../../lib/models/BoolFilterContainerModel'
 import ConstraintModel from '../../lib/models/ConstraintModel'
 import FilterCardModel from '../../lib/models/FilterCardModel'
 import KeyCounter from '../../lib/utils/KeyCounter'
+import { collectParentIds, isParentAttrKey, parentOptionsForCard } from '../../lib/parentInteractions'
 import Constants from '../../utils/Constants'
 import DateUtils from '../../utils/DateUtils'
 import QueryString from '../../utils/QueryString'
@@ -310,9 +311,14 @@ const getters = {
         //       oConstraint.getLower(), oConstraint.getUpper());
         // }
 
-        const parentInteractionConstraint = constraints.find(c => c.props.attrKey === 'parentInteraction')
-        if (parentInteractionConstraint && parentInteractionConstraint.props.value) {
-          mFilterCardSettings.parentInteraction = parentInteractionConstraint.props.value.value
+        const parentIds = collectParentIds(
+          constraints
+            .filter(c => isParentAttrKey(c.props.attrKey))
+            .map(c => ({ attrKey: c.props.attrKey, value: c.props.value?.value })),
+          parentOptionsForCard(mriFrontendConfig, filterCard.props.key)
+        )
+        if (parentIds.length > 0) {
+          mFilterCardSettings.parentInteraction = parentIds
         }
 
         const oAtfIFR = AdvancedTimeFilterModel.getIFR(filterCard.props.layout.advancedTimeLayout)
@@ -566,13 +572,21 @@ const actions = {
   setIFRState({ commit, rootGetters, dispatch }, { ifr }) {
     return new Promise((resolve, reject) => {
       const boolcontainermodel = new BoolContainerModel(rootGetters.getMriFrontendConfig)
+      let droppedParentLinks = []
       try {
-        ControlGenerator.generate(ifr, boolcontainermodel)
+        droppedParentLinks = ControlGenerator.generateWithReport(ifr, boolcontainermodel).droppedParentLinks
       } catch (e) {
         reject()
         return
       }
       dispatch('setBoolContainerState', boolcontainermodel)
+      if (droppedParentLinks.length > 0) {
+        const links = droppedParentLinks.map(link => `${link.cardName} to ${link.parentName}`).join(', ')
+        useNotificationStore().setAlertMessage({
+          messageType: 'warning',
+          message: rootGetters.getText('MRI_PA_PARENT_LINK_DROPPED', links),
+        })
+      }
       resolve(null)
     })
   },
@@ -899,7 +913,7 @@ const actions = {
     const constraints = getters.getConstraints
     Object.keys(constraints).forEach(constraintId => {
       const c = constraints[constraintId]
-      if (c.props.attrKey === 'parentInteraction' && c.props.value.value === filterCardId) {
+      if (isParentAttrKey(c.props.attrKey) && c.props.value?.value === filterCardId) {
         commit(types.CONSTRAINTS_SET_VALUE, {
           constraintId,
           value: null,
