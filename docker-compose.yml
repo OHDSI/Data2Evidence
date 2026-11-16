@@ -1020,7 +1020,6 @@ services:
         --limit ${D2E_WORKER_FLOW_RUN_LIMIT:-3}
 
     container_name: &c83 ${PROJECT_NAME:-d2e}-dataflow-gen-worker
-    platform: linux/amd64
     depends_on:
       # See alp-dataflow-gen: no edge to the profiled logto services.
       alp-dataflow-gen:
