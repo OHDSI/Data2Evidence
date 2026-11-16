@@ -76,6 +76,14 @@ else
     dev="--env-file $env"
 fi
 ENVFILE=$env
+# Backfill TREX__SQL_TOKEN for env files written before it existed; compose
+# refuses to interpolate without it. Never echo the value.
+if [ -f "$env" ] && [ -z "$(sed -n 's/^TREX__SQL_TOKEN=\(.\)/\1/p' "$env" | head -n1)" ]; then
+    DOTENV_FILE=$env source $node_modules_path/scripts/lib.sh
+    sed -i.bak -e '/^TREX__SQL_TOKEN=/d' "$env" && rm -f "$env.bak"
+    [ -n "$(tail -c1 "$env")" ] && echo >> "$env"
+    echo TREX__SQL_TOKEN=$(random-password $DEFAULT_PASSWORD_LENGTH) >> "$env"
+fi
 # export PROJECT_NAME=${PROJECT_NAME:-d2e}
 
 if [[ $version = "develop" ]]; then
@@ -294,6 +302,7 @@ EOF
             echo "SUPABASE_STORAGE_JWT_TOKEN=$JWT_TOKEN" >> $DOTENV_FILE
             echo PROJECT_NAME=$PROJECT_NAME >> $DOTENV_FILE
             echo TREX__SQL__PASSWORD=$(random-password $DEFAULT_PASSWORD_LENGTH) >> $DOTENV_FILE
+            echo TREX__SQL_TOKEN=$(random-password $DEFAULT_PASSWORD_LENGTH) >> $DOTENV_FILE
             # Both are hard requirements in docker-compose.yml (${VAR:?...}): trex
             # refuses to boot without a root key, and the OIDC client secret is
             # shared between the provider and WebAPI. Without these the generated

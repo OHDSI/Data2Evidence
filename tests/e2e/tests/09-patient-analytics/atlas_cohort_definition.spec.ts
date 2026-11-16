@@ -17,7 +17,7 @@ test(TEST_NAME, async ({ page }) => {
 
   await page
     .locator('div')
-    .filter({ hasText: /^Cohort builder configConfigure cohort builderConfigure$/ })
+    .filter({ hasText: /^Data exploration configurationConfigure data explorationConfigure$/ })
     .getByTestId('button')
     .click()
   await page.locator('[id="__xmlview0--dataModelConfigurationsCombo-arrow"]').click()
@@ -54,7 +54,7 @@ test(TEST_NAME, async ({ page }) => {
 
   await page
     .locator('div')
-    .filter({ hasText: /^Cohort builder configConfigure cohort builderConfigure$/ })
+    .filter({ hasText: /^Data exploration configurationConfigure data explorationConfigure$/ })
     .getByTestId('button')
     .click()
   await page.locator('[id="__xmlview0--dataModelConfigurationsCombo-arrow"]').click()
