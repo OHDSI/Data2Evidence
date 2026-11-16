@@ -125,9 +125,9 @@ jobs:
           printf '%s\n' 'TREX_NATIVE_PASSWORD_LOGIN_ENABLED=true' >> .env
           grep -E '^(D2E_IDP_MODE|TREX_NATIVE_PASSWORD_LOGIN_ENABLED)=' .env
 
-      # A fresh install has no D2E account linked to Logto's admin; let trex create it on first sign-in.
+      # A fresh install has no D2E account linked to any Logto user; let trex create it on first sign-in.
       - name: Auto-provision Logto users
-        if: steps.gate.outputs.run == 'true' && matrix.provider == 'logto-federated'
+        if: steps.gate.outputs.run == 'true'
         run: printf '\n%s\n' 'IDP__AUTO_PROVISION_USERS=true' >> .env
 
       # Connectors are applied by appending to .env (dotenv-parsed by compose, JSON-safe, last wins)
@@ -160,7 +160,6 @@ jobs:
           printf '\n' >> .env
           { printf 'LOGTO__CONNECTOR_CONFIG=%s\n' "$CFG"
             echo 'LOGTO__SOCIAL_SIGNIN_TARGETS=entra-external-id-alp'
-            echo 'IDP__AUTO_PROVISION_USERS=true'
             echo 'AUTO_GRANT_RESEARCHER_BY_DATASET_CODES=demo'
           } >> .env
 
