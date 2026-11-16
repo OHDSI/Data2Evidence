@@ -56,13 +56,17 @@ function editorHeading(page: Page): Locator {
 async function openInteraction(page: Page) {
   const interaction = page.getByText(INTERACTION, { exact: true }).first()
   if (!(await interaction.isVisible().catch(() => false))) {
-    await page.getByRole('tab', { name: /Defined Interactions/ }).click()
+    await page.getByRole('link', { name: /Defined Interactions/ }).click()
   }
   await interaction.click()
 }
 
 function parentDetails(page: Page): Locator {
-  return page.locator('[id*="ParentMapping"]').filter({ hasText: 'Parent Details' }).first()
+  return page
+    .locator('.sapUiVlt')
+    .filter({ has: page.locator('input[id$="--parentLabelInput-inner"]') })
+    .filter({ hasText: 'Parent Details' })
+    .last()
 }
 
 test(TEST_NAME, async ({ page }) => {
@@ -117,7 +121,8 @@ test(TEST_NAME, async ({ page }) => {
     await details.locator('.sapMSlt').click()
     const options = page.getByRole('option')
     await expect(options.filter({ hasText: /^Episode$/ })).toHaveCount(0)
-    await expect(options.filter({ hasText: /^Visit Occurrence$/ })).toHaveCount(0)
+    await expect(options.filter({ hasText: /^Visit$/ })).toHaveCount(0)
+    await expect(options.filter({ hasText: /^Procedure Occurrence$/ })).toHaveCount(0)
     await options.first().click()
     await details.locator('input').nth(1).fill('@VISIT')
     await details.locator('input').nth(1).press('Enter')
@@ -129,9 +134,10 @@ test(TEST_NAME, async ({ page }) => {
     await mappingRow(page, 'Visit parent').getByRole('button', { name: 'Duplicate' }).click()
     await expect(page.getByText('Parent Interaction Mappings (4)')).toBeVisible()
     const details = parentDetails(page)
+    await details.locator('input').first().fill('Visit parent copy')
     await details.locator('input').first().press('Enter')
     await expect(details.getByText('Select a parent interaction.')).toBeVisible()
-    await mappingRow(page, 'Visit parent').last().getByRole('button', { name: 'Delete' }).click()
+    await mappingRow(page, 'Visit parent copy').getByRole('button', { name: 'Delete' }).click()
     await expect(page.getByText('Parent Interaction Mappings (3)')).toBeVisible()
 
     await mappingRow(page, 'Third parent').getByText('Third parent').click()
@@ -148,6 +154,8 @@ test(TEST_NAME, async ({ page }) => {
     await page.getByRole('button', { name: 'OK' }).click()
     await openConfigList(page)
     await configRow(page, TEST_CONFIG).click({ position: { x: 100, y: 20 } })
+    await expect(page.getByText(`${TEST_CONFIG} - Version`)).toBeVisible()
+    await page.getByText('Inactive', { exact: true }).dblclick()
     await expect(editorHeading(page)).toBeVisible()
     await openInteraction(page)
     await expect(page.getByText('Parent Interaction Mappings (3)')).toBeVisible()
