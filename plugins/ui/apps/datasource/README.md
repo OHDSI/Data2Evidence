@@ -11,14 +11,14 @@ per-dataset description view) with a native Atlas3 plugin.
 Both screens are fully built against the real `system-portal`/`usermgmt`
 REST APIs (see `src/api/`), not placeholders:
 
-- **Catalog** (`src/views/DatasourceCatalog.vue`) — search, sort, and a card
+- **Catalog** (`src/views/DataSourceCatalog.vue`) — search, sort, and a card
   grid backed by `getDatasetList`/`getPublicDatasetList`. Clicking a card
   navigates to Atlas3's native Data Sources report view for that source,
   landing directly on this plugin's Description mount.
-- **Description** (`src/views/DatasourceDescription.vue`) — dataset
+- **Description** (`src/views/DataSourceDescription.vue`) — dataset
   name/description, an access-state badge and request-access flow
-  (`useDatasourceAccess`), a Metadata table, and a Files/resources table with
-  download (`useDatasourceResources`).
+  (`useDataSourceAccess`), a Metadata table, and a Files/resources table with
+  download (`useDataSourceResources`).
 
 `src/App.vue` picks which screen to render based on `hostContext?.sourceKey`
 (present only for the sidebar parcel mount — see below).
