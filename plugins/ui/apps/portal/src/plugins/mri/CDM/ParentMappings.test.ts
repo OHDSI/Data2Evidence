@@ -196,7 +196,11 @@ describe("ParentMappings.fromBackend with placeholders", () => {
     ]);
     expect(PM.validate(items, text).valid).toBe(true);
     expect(PM.toBackend(items).parentInteractionsMapping).toEqual([
-      { parentMappingInteractionLabel: "Visit Occurrence Parent", parentInteraction: VISIT, parentMappingInteraction: "@VISIT" },
+      {
+        parentMappingInteractionLabel: "Visit Occurrence Parent",
+        parentInteraction: VISIT,
+        parentMappingInteraction: "@VISIT",
+      },
     ]);
   });
 
@@ -205,8 +209,16 @@ describe("ParentMappings.fromBackend with placeholders", () => {
       deepFreeze({
         parentInteraction: [EPISODE, VISIT],
         parentInteractionsMapping: [
-          { parentInteraction: EPISODE, parentMappingInteraction: "  ", parentMappingInteractionLabel: "Episode parent" },
-          { parentInteraction: VISIT, parentMappingInteraction: "@VISITDETAIL", parentMappingInteractionLabel: "Visit parent" },
+          {
+            parentInteraction: EPISODE,
+            parentMappingInteraction: "  ",
+            parentMappingInteractionLabel: "Episode parent",
+          },
+          {
+            parentInteraction: VISIT,
+            parentMappingInteraction: "@VISITDETAIL",
+            parentMappingInteractionLabel: "Visit parent",
+          },
         ],
       }),
       nameOf,
