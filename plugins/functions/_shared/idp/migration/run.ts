@@ -336,8 +336,9 @@ export async function runIdpMigration(
       clientSecret: cfg.clientSecret,
       issuer: cfg.logtoIssuer,
       authorizationEndpoint: `${cfg.publicOrigin.replace(/\/+$/, "")}/oidc/auth`,
-      scopes: "openid profile email",
-      groupsSource: "none",
+      scopes: "openid profile email roles",
+      groupsSource: "claim",
+      groupsClaim: "roles",
       autoProvision: cfg.autoProvision ?? false,
       enabled: true,
     });

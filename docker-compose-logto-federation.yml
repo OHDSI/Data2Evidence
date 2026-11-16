@@ -57,3 +57,5 @@ services:
       # Defaults off so the migration's trex roles aren't reconciled away by
       # Logto group mapping; a connector deployment sets it true via .env.
       IDP__AUTO_PROVISION_USERS: ${IDP__AUTO_PROVISION_USERS:-false}
+      D2E_IDP_SCOPE: "openid profile email idp_groups offline_access"
+      IDP__GROUP_ROLE_MAPPING: '${IDP__GROUP_ROLE_MAPPING:-{"logto":{"role.systemadmin":"role.systemadmin","role.useradmin":"role.useradmin","role.dashboardviewer":"role.dashboardviewer"}}}'
