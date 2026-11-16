@@ -142,54 +142,56 @@
 						selectedKey="{configEditorModel>conditionType/key}"></ActionSelect>
 				</l:content>
 			</l:VerticalLayout>
-			<l:VerticalLayout id="parentSection" 
-				width="100%">
-				<l:content>
-					<Label class="sapMxConfigPropLabel" 
-						text="{hc.hph.cdw.config.ui.i18n>CONFIG_ADMIN_PARENT_INTERACTION}" 
-						tooltip="{hc.hph.cdw.config.ui.i18n>CONFIG_ADMIN_PARENT_INTERACTION}" 
-						id="pInteractionLabelId"></Label>
-
-					<MultiComboBox id="pInteractionDDId" 
-						enabled="{editableModel>/editable}" 
-						class="sapTriggerSave sapMxConfigProp" 
-						selectedKeys="{configEditorModel>parentInteraction}" 
-						selectionChange="_parentInteractionMappingChanged"
-						items="{
-								path: 'configEditorModel>/parentInteractions'
-							}">
-						<core:Item key="{configEditorModel>key}" text="{configEditorModel>name}" />
-					</MultiComboBox>
-
-					<Label class="sapMxConfigPropLabel" 
-						text="{hc.hph.cdw.config.ui.i18n>CONFIG_ADMIN_PARENT_INTERACTION_LABEL}" 
-						tooltip="{hc.hph.cdw.config.ui.i18n>CONFIG_ADMIN_PARENT_INTERACTION_LABEL}" 
-						id="pInteractionLabelLabelId"></Label>
-
-					<Input id="pInteractionLabel" 
-						class="sapTriggerSave sapMxConfigProp" 
-						value="{configEditorModel>parentInteractionLabel/value}" 
-						enabled="{editableModel>/editable}" 
-						tooltip="{configEditorModel>parentInteractionLabel/value}" 
-						valueLiveUpdate="true"></Input>
-
-					<Label class="sapMxConfigPropLabel" 
-							text="Parent Interaction Mappings:" 
-							tooltip="{hc.hph.cdw.config.ui.i18n>CONFIG_ADMIN_PARENT_INTERACTION_MAPPINGS_LABEL}" 
-						id="pInteractionMappingLabelId"></Label>
-
-					<Input id="pInteractionMappingLabel" 
-						class="sapTriggerSave sapMxConfigProp" 
-						value="{configEditorModel>parentInteractionsMapping/value}" 
-						enabled="{editableModel>/editable}" 
-						tooltip="{configEditorModel>parentInteractionsMapping/value}" 
-						valueLiveUpdate="true"></Input>
-				</l:content>
-			</l:VerticalLayout>
 		</l:content>
 	</l:VerticalLayout>
 
 	<html:br></html:br>
+
+	<m:SmartAccordion width="100%" 
+		id="parentAccordion">
+		<m:sections>
+			<c:AccordionSection id="parentMappingSection">
+				<c:content>
+					<l:VerticalLayout width="100%">
+						<Button id="addParentButton" 
+							class="sapMeAccordionActionBtn" 
+							icon="sap-icon://add" 
+							width="100%" 
+							text="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_ADD_PARENT}" 
+							tooltip="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_ADD_PARENT}" 
+							enabled="{editableModel>/editable}" 
+							press="_onAddParentPressed"></Button>
+					</l:VerticalLayout>
+				</c:content>
+				<c:content>
+					<List id="parentMappingList" 
+						mode="SingleSelectMaster" 
+						selectionChange="_onParentSelected" 
+						items="{configEditorModel>parentInteractionsMapping}">
+						<CustomListItem>
+							<HBox justifyContent="SpaceBetween" 
+								alignItems="Center" 
+								class="sapUiTinyMarginBeginEnd">
+								<Text text="{configEditorModel>parentMappingInteractionLabel/value}"></Text>
+								<HBox>
+									<Button icon="sap-icon://copy" 
+										type="Transparent" 
+										text="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_BUTTON_DUPLICATE}" 
+										enabled="{editableModel>/editable}" 
+										press="_onDuplicateParentPressed"></Button>
+									<Button icon="sap-icon://delete" 
+										type="Transparent" 
+										text="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_BUTTON_DELETE}" 
+										enabled="{editableModel>/editable}" 
+										press="_onDeleteParentPressed"></Button>
+								</HBox>
+							</HBox>
+						</CustomListItem>
+					</List>
+				</c:content>
+			</c:AccordionSection>
+		</m:sections>
+	</m:SmartAccordion>
 
 	<m:SmartAccordion width="100%" 
 		id="accordion">
