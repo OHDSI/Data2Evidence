@@ -6,7 +6,7 @@ readme = "README.md"
 requires-python = "==3.12.*"
 dependencies = [
     "asyncio==4.0.0",
-    "duckdb==1.4.0",
+    "duckdb==2.0.0",
     "genson==1.3.0",
     "httpx==0.27.2",
     # Undeclared prefect 3.6.x dependency: prefect/workers/base.py imports the
@@ -61,6 +61,7 @@ ner = [
     "pyjwt==2.13.0",
     "psycopg2-binary==2.9.9",
     "sqlalchemy==2.0.38",
+    "duckdb==2.0.0",
     "ibis-framework[duckdb,postgres]==11.0.0",
     "scispacy==0.5.5",
     "scipy==1.16.0",

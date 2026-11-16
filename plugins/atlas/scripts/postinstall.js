@@ -138,7 +138,7 @@ if (existsSync(landingImageSrc)) {
 //  - branding.js: keeps the browser tab title on the d2e portal's title.
 // Injected in this order: each is appended before </head>, so the array order is
 // the execution order, and login-guard.js reads a global the first one sets.
-const headScripts = ['landing-redirect.js', 'login-guard.js', 'user-link.js', 'token-keeper.js', 'stale-token-guard.js', 'branding.js'];
+const headScripts = ['landing-redirect.js', 'login-guard.js', 'user-link.js', 'token-keeper.js', 'stale-token-guard.js', 'datasource-picker.js', 'branding.js'];
 let indexHtml = readFileSync(join(resourcesDir, 'index.html'), 'utf8');
 let indexChanged = false;
 

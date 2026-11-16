@@ -20,6 +20,18 @@
     padding-block: 6px;
   }
 
+  // Plain multi Select: icon and chevron stay on the first chip row.
+  &.d2e-select--multiple {
+    .d2e-select__adornment {
+      align-self: flex-start;
+      margin-top: 8px;
+    }
+
+    .MuiSelect-icon {
+      top: 8px;
+    }
+  }
+
   &__adornment .MuiSvgIcon-root {
     font-size: 24px;
     color: var(--d2e-color-neutral);
@@ -88,6 +100,42 @@
       padding-bottom: 0;
       padding-left: 0;
       min-width: 0;
+    }
+  }
+
+  // Multi-select chips wrap onto extra rows instead of overflowing the field,
+  // with a 4px chip gap; the first row is centred in the field height.
+  &.d2e-select--multiple .MuiAutocomplete-inputRoot {
+    --d2e-select-row-center: calc(var(--d2e-select-height) / 2);
+    flex-wrap: wrap;
+    gap: 4px;
+    padding-block: calc(var(--d2e-select-row-center) - 14px);
+
+    .MuiAutocomplete-tag {
+      height: 28px;
+      margin: 0;
+      font-family: var(--d2e-font-family);
+      color: var(--d2e-color-neutral-black);
+    }
+
+    // Icon and clear/chevron stay on the first chip row.
+    .MuiAutocomplete-endAdornment {
+      top: var(--d2e-select-row-center);
+      transform: translateY(-50%);
+    }
+  }
+
+  // Hanging indent: wrapped chips line up with the first chip, not the icon.
+  &.d2e-select--multiple.d2e-select--with-icon .MuiAutocomplete-inputRoot {
+    position: relative;
+    padding-left: 48px;
+
+    .d2e-select__adornment {
+      position: absolute;
+      top: var(--d2e-select-row-center);
+      left: 16px;
+      margin: 0;
+      transform: translateY(-50%);
     }
   }
 

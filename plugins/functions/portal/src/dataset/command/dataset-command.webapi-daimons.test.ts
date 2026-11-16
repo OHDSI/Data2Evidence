@@ -170,3 +170,29 @@ describe('updateDatasetDetailMetadata — keeping WebAPI daimons in step', () =>
     assertEquals(updated[0].resultsSchemaName, 'cdm_results_v2')
   })
 })
+
+describe('syncWebApiSource — cache catalog', () => {
+  it('hands the dataset cacheId to the WebAPI source sync', async () => {
+    // getDbCredentialsByCode reads the Trex runtime global once and caches it.
+    ;(globalThis as any).Trex = {
+      databaseManager: () => ({
+        getDatabaseCredentials: () => [{
+          code: 'pg_db', host: 'db', port: 5432, name: 'alp', dialect: 'postgres',
+          credentials: [{ username: 'u', password: 'p', userScope: 'Admin' }],
+        }],
+      }),
+    }
+    const received: any[] = []
+    const harness = buildService({ ...STORED, cacheId: '_cache_1' })
+    const real = Object.getPrototypeOf(harness.svc).syncWebApiSource
+    ;(harness.svc as any).webApiSourceService = {
+      syncSourceForDataset: (dataset: any) => {
+        received.push(dataset)
+        return Promise.resolve(undefined)
+      },
+    }
+    await real.call(harness.svc, DATASET_ID)
+    delete (globalThis as any).Trex
+    assertEquals(received.map((d) => d.cacheId), ['_cache_1'])
+  })
+})
