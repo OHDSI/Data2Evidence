@@ -45,11 +45,7 @@ export default class FilterCardModel extends EntityBase {
     return null
   }
 
-  public static createConstraintForAttribute(
-    { key, name, instanceId, cardId },
-    attributeKey,
-    attributeConfig?
-  ) {
+  public static createConstraintForAttribute({ key, name, instanceId, cardId }, attributeKey, attributeConfig?) {
     let constraint
     let filter
     switch (attributeKey) {
@@ -117,7 +113,10 @@ export default class FilterCardModel extends EntityBase {
     return constraint
   }
 
-  public static createParentConstraint({ key, instanceId }, option: { attrKey: string; label: string; parentPath: string }) {
+  public static createParentConstraint(
+    { key, instanceId },
+    option: { attrKey: string; label: string; parentPath: string }
+  ) {
     return ConstraintModel.createConstraint(
       option.attrKey,
       {
