@@ -52,7 +52,7 @@ async function toggleCardMenuItem(page: Page, cardName: string, item: string) {
     .locator('button')
     .last()
     .click()
-  await page.getByRole('menuitem', { name: item, exact: true }).click()
+  await page.getByRole('menuitem', { name: new RegExp(`^(✓ )?${item}$`) }).click()
 }
 
 function parentField(page: Page, label: string): Locator {
