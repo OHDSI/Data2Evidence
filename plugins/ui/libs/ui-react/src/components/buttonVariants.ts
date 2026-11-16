@@ -2,6 +2,7 @@ export const VARIANT_MAP = {
   primary: { muiVariant: "contained" },
   secondary: { muiVariant: "outlined" },
   danger: { muiVariant: "text" },
+  "danger-solid": { muiVariant: "contained" },
   positive: { muiVariant: "text" },
   ghost: { muiVariant: "text" },
 } as const;

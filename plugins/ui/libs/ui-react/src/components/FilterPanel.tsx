@@ -7,7 +7,7 @@ import { Menu, type MenuPlacement } from "./Menu";
 import { Select } from "./Select";
 import { Switch } from "./Switch";
 import { TextField } from "./TextField";
-import { activeFilterCount } from "./filterEngine";
+import { activeFilterCount, isActive } from "./filterEngine";
 import type {
   FilterControlKind,
   FilterDef,
@@ -76,6 +76,7 @@ export function FilterPanel({
   const control = (def: FilterDef) => {
     const value = state[def.id];
     const opts = options?.[def.id] ?? EMPTY;
+    const filledLabel = value && isActive(value) ? def.label : undefined;
 
     switch (def.control.kind) {
       case "multiSelect":
@@ -87,6 +88,7 @@ export function FilterPanel({
             prependIcon={def.icon}
             items={toItems(opts)}
             value={inValues(value)}
+            label={filledLabel}
             placeholder={def.label}
             onChange={(v) =>
               patch(def.id, { op: "in", values: Array.isArray(v) ? v : v ? [v] : [] })
@@ -101,6 +103,7 @@ export function FilterPanel({
             prependIcon={def.icon}
             items={toItems(opts)}
             value={inValues(value)[0] ?? null}
+            label={filledLabel}
             placeholder={def.label}
             onChange={(v) =>
               patch(def.id, { op: "in", values: typeof v === "string" && v ? [v] : [] })
@@ -153,6 +156,7 @@ export function FilterPanel({
       case "text":
         return (
           <TextField
+            label={filledLabel}
             placeholder={def.label}
             value={value?.op === "contains" ? value.text : ""}
             onChange={(s) => patch(def.id, { op: "contains", text: s })}
@@ -174,9 +178,10 @@ export function FilterPanel({
       items={[]}
       width={width}
       placement={placement}
-      activator={({ open }) => (
+      activator={({ open, isOpen }) => (
         <Button
           variant="secondary"
+          className={clsx("d2e-filter-panel__trigger", isOpen && "d2e-filter-panel__trigger--open")}
           prependIcon={<FilterListIcon />}
           onClick={open}
           data-testid="d2e-filter-panel-trigger"

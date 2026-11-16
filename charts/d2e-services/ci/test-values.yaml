@@ -60,7 +60,8 @@ config:
       "analytics": "https://trex.d2e.svc.cluster.local:443",
       "trex": "https://trex.d2e.svc.cluster.local:443",
       "logto": "https://idp.d2e.svc.cluster.local:443",
-      "prefect": "https://dataflow-gen.d2e.svc.cluster.local:443/d2e/api"
+      "prefect": "https://dataflow-gen.d2e.svc.cluster.local:443/d2e/api",
+      "supabaseStorage": "http://localhost:33001/trex/storage/v1"
     }
   baseJobTemplate:
     configuration: |
@@ -187,6 +188,7 @@ global:
     SUPABASE_STORAGE_JWT_SECRET: "ci-supabase-jwt-secret-not-real-0000000000"
     SUPABASE_STORAGE_JWT_TOKEN: ""
     TREX__SQL__PASSWORD: "pencil"
+    TREX__SQL_TOKEN: "ci-quack-token-not-real"
     TREX_ROOT_KEY: "ndDfri0G85Aw/P+s5jYqdnuBFdfbbY8irhrI9gFSE1Q="
   resources:
     caddy:
