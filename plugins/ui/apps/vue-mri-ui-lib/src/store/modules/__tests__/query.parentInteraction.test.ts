@@ -217,7 +217,6 @@ describe('store - query - parent interactions', () => {
     }
 
     async function load(parentInteraction: string[]) {
-      const alert = vi.spyOn(useNotificationStore(), 'setAlertMessage')
       await queryModule.actions.setIFRState(
         {
           commit: vi.fn(),
@@ -226,20 +225,22 @@ describe('store - query - parent interactions', () => {
         } as any,
         { ifr: ifrWithParents(parentInteraction) }
       )
-      return alert
+      return useNotificationStore()
     }
 
-    it('shows a warning when a parent link is dropped', async () => {
-      const alert = await load(['patient.interactions.visitdetail.1'])
-      expect(alert).toHaveBeenCalledWith({
-        messageType: 'warning',
-        message: 'MRI_PA_PARENT_LINK_DROPPED:Procedure A to patient.interactions.visitdetail.1',
-      })
+    it('keeps the dropped parent link warning visible after the follow-up request clears notifications', async () => {
+      const notifications = await load(['patient.interactions.visitdetail.1'])
+      notifications.clearNotifications()
+      expect(notifications.getToastNotification.message).toBe(
+        'MRI_PA_PARENT_LINK_DROPPED:Procedure A to patient.interactions.visitdetail.1'
+      )
     })
 
     it('shows no warning when every link is kept', async () => {
-      const alert = await load([VISIT_CARD])
-      expect(alert).not.toHaveBeenCalled()
+      const notifications = await load([VISIT_CARD])
+      notifications.clearNotifications()
+      expect(notifications.getToastNotification.message).toBe('')
+      expect(notifications.getAlertNotification.show).toBe(false)
     })
   })
 })

@@ -582,9 +582,8 @@ const actions = {
       dispatch('setBoolContainerState', boolcontainermodel)
       if (droppedParentLinks.length > 0) {
         const links = droppedParentLinks.map(link => `${link.cardName} to ${link.parentName}`).join(', ')
-        useNotificationStore().setAlertMessage({
-          messageType: 'warning',
-          message: rootGetters.getText('MRI_PA_PARENT_LINK_DROPPED', links),
+        useNotificationStore().setToastMessage({
+          text: rootGetters.getText('MRI_PA_PARENT_LINK_DROPPED', links),
         })
       }
       resolve(null)
