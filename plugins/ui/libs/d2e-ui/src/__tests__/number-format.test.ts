@@ -20,7 +20,7 @@ describe("formatNumber", () => {
   });
 
   it("uses English when the locale is not a valid tag", () => {
-    expect(formatNumber(2340, "default")).toBe("2,340");
+    expect(formatNumber(2340, "de_DE")).toBe("2,340");
     expect(formatNumber(2340, "")).toBe("2,340");
   });
 

@@ -23,13 +23,10 @@ export { default as D2eDataTable } from "./components/D2eDataTable.vue";
 export { default as D2eDataTableDetail } from "./components/D2eDataTableDetail.vue";
 export {
   DATA_TABLE_STYLE_MAP,
-  formatCell,
-  formatRange,
   nextSort,
   pageRange,
   pageCount,
 } from "./components/dataTable";
-export { formatNumber } from "./components/numberFormat";
 export type {
   D2eDataTableHeader,
   D2eDataTablePageLabels,
