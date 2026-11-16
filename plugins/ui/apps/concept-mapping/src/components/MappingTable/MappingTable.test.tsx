@@ -34,6 +34,7 @@ const suggestion = (overrides: Partial<SuggestionDto>): SuggestionDto => ({
   conceptCode: "",
   domainId: "",
   vocabularyId: "",
+  score: null,
   suggestedBy: "user-1",
   suggestedByName: null,
   approvedByName: null,
@@ -369,13 +370,85 @@ describe("MappingTable", () => {
 
   test("Checked by falls back to a dash for a suggestion recorded before names were stored", async () => {
     getSuggestions.mockResolvedValue([
-      backendRow({ sourceRowId: "r2", suggestions: [suggestion({ id: "s1", suggestedByName: null })] }),
+      // A score is set so the only dash on the row is the Checked by one (an unscored line
+      // also renders a dash in the Match score column).
+      backendRow({ sourceRowId: "r2", suggestions: [suggestion({ id: "s1", suggestedByName: null, score: 0.5 })] }),
     ]);
 
     renderWithProviders(<MappingTable selectedDatasetId="ds-1" dataflowId="df-1" nodeId="node-1" />, { state });
 
     await waitFor(() => expect(within(rowFor("B2")).getByText("Suggested (1)")).toBeInTheDocument());
     expect(within(rowFor("B2")).getByText("\u2014")).toBeInTheDocument();
+  });
+
+  test("Match score shows each suggestion line's score with 2 decimals, and a dash when unscored", async () => {
+    getSuggestions.mockResolvedValue([
+      backendRow({
+        sourceRowId: "r2",
+        suggestions: [
+          suggestion({ id: "s1", conceptId: 111, score: 0.87654, suggestedByName: "alice" }),
+          suggestion({ id: "s2", conceptId: 222, score: null, suggestedByName: "bob" }),
+        ],
+      }),
+    ]);
+
+    renderWithProviders(<MappingTable selectedDatasetId="ds-1" dataflowId="df-1" nodeId="node-1" />, { state });
+
+    await waitFor(() => expect(within(rowFor("B2")).getByText("0.88")).toBeInTheDocument());
+    expect(within(rowFor("B2")).getByText("\u2014")).toBeInTheDocument();
+  });
+
+  test("Match score shows the Recommend score on a client-only concept and sends it when approving", async () => {
+    const scoredState = {
+      ...state,
+      csvData: {
+        ...state.csvData,
+        data: state.csvData.data.map((row) => (row.sourceRowId === "r2" ? { ...row, score: 0.5 } : row)),
+      },
+    };
+    addSuggestion.mockResolvedValue(suggestion({ id: "new-id", conceptId: 222 }));
+
+    renderWithProviders(<MappingTable selectedDatasetId="ds-1" dataflowId="df-1" nodeId="node-1" />, {
+      state: scoredState,
+    });
+    await waitFor(() => expect(within(rowFor("B2")).getByText("0.50")).toBeInTheDocument());
+
+    within(rowFor("B2")).getByRole("button", { name: "Approve" }).click();
+
+    await waitFor(() =>
+      expect(addSuggestion).toHaveBeenCalledWith("df-1", "node-1", "r2", expect.objectContaining({ score: 0.5 }))
+    );
+  });
+
+  test("sorting by Match score puts unscored rows last in both directions", async () => {
+    getSuggestions.mockResolvedValue([
+      backendRow({ sourceRowId: "r2", suggestions: [suggestion({ id: "s1", score: 0.2 })] }),
+      backendRow({ sourceRowId: "r3", suggestions: [suggestion({ id: "s2", score: 0.9 })] }),
+    ]);
+
+    renderWithProviders(<MappingTable selectedDatasetId="ds-1" dataflowId="df-1" nodeId="node-1" />, { state });
+    await waitFor(() => expect(within(rowFor("B2")).getByText("0.20")).toBeInTheDocument());
+
+    const sourceCodes = () =>
+      screen
+        .getAllByRole("row")
+        .map((tr) => ["A1", "B2", "C3", "D4"].find((code) => within(tr).queryByText(code)))
+        .filter(Boolean);
+    // MRT relabels the sort button after each click ("Sort by…" -> "Sorted by…"), so locate it
+    // through the column header instead of by its label.
+    const sortButton = () =>
+      within(screen.getByRole("columnheader", { name: /match score/i })).getAllByRole("button", {
+        name: /sort/i,
+      })[0];
+
+    // Numeric columns sort descending on the first click.
+    sortButton().click();
+    await waitFor(() => expect(sourceCodes().slice(0, 2)).toEqual(["C3", "B2"]), { timeout: 3000 });
+    expect(sourceCodes().slice(2).sort()).toEqual(["A1", "D4"]);
+
+    sortButton().click();
+    await waitFor(() => expect(sourceCodes().slice(0, 2)).toEqual(["B2", "C3"]), { timeout: 3000 });
+    expect(sourceCodes().slice(2).sort()).toEqual(["A1", "D4"]);
   });
 
   test("selecting rows shows the bulk toolbar; bulk Flag flags every selected row then refetches", async () => {

@@ -26,6 +26,7 @@ export const i18nDefault = {
     MAPPING_TABLE__DOMAIN_ID: "Domain",
     MAPPING_TABLE__FREQUENCY: "Frequency",
     MAPPING_TABLE__VOCABULARY: "Vocabulary",
+    MAPPING_TABLE__MATCH_SCORE: "Match score",
     MAPPING_TABLE__NAME: "Name",
     MAPPING_TABLE__POPULATE_CONCEPTS: "Populate concepts",
     MAPPING_TABLE__RECOMMEND_CONCEPT: "Recommend concept",

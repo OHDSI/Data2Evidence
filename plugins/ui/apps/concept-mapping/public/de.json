@@ -30,6 +30,7 @@
   "MAPPING_TABLE__SOURCE": "Quelle",
   "MAPPING_TABLE__STATUS": "Status",
   "MAPPING_TABLE__VOCABULARY": "Terminologien",
+  "MAPPING_TABLE__MATCH_SCORE": "Übereinstimmungswert",
   "STATUS__UNCHECKED": "Ungeprüft",
   "STATUS__SUGGESTED": "Vorgeschlagen",
   "STATUS__APPROVED": "Freigegeben",
