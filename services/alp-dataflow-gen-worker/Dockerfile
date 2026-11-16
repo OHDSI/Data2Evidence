@@ -31,7 +31,7 @@
 # collapse it, at the cost of the per-stage registry cache.
 
 
-FROM ghcr.io/data2evidence/whiterabbit:master AS whiterabbit_base
+FROM --platform=linux/amd64 ghcr.io/data2evidence/whiterabbit:master AS whiterabbit_base
 
 FROM ubuntu:24.04 AS staging
 RUN apt-get update && apt-get install -y --no-install-recommends python3 \

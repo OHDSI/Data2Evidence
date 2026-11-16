@@ -5,7 +5,8 @@ from pydantic import BaseModel, Field
 
 WHITERABBIT_DIR_PATH = '/var/lib/d2e-flows/data-transformation-flow/baked/flows/white_rabbit_plugin'
 WHITERABBIT_BIN_PATH = f'{WHITERABBIT_DIR_PATH}/dist/bin'
-WHITERABBIT_CSV_DIR = f'{WHITERABBIT_DIR_PATH}/csvfiles'
+CSV_SUBDIR = 'csvfiles'
+SCAN_REPORT_FILENAME = 'ScanReport.xlsx'
 
 
 class WhiteRabbitRunType(str, Enum):
@@ -47,6 +48,7 @@ class WhiteRabbitRequestType(BaseModel):
 class INISettings(BaseModel):
 
     scan_type: WhiteRabbitRunType
+    work_dir: str
 
     # For scanning source database tables
     server_location: str = Field(default="")
@@ -70,13 +72,13 @@ class INISettings(BaseModel):
     @property
     def working_folder(self) -> str:
         if self.scan_type == WhiteRabbitRunType.SCAN_REPORT_FILES:
-            return WHITERABBIT_CSV_DIR
-        return WHITERABBIT_DIR_PATH
-    
+            return f"{self.work_dir}/{CSV_SUBDIR}"
+        return self.work_dir
+
     @property
     def scan_report_path(self) -> str:
         """Get the expected path for the ScanReport.xlsx file based on scan type."""
-        return f"{self.working_folder}/ScanReport.xlsx"
+        return f"{self.working_folder}/{SCAN_REPORT_FILENAME}"
     
     @property
     def data_type_source(self) -> str:
