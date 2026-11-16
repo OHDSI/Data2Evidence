@@ -1734,7 +1734,7 @@
           "id": "visitType",
           "type": "text",
           "label": "Visit type",
-          "configPath": "patient.interactions.visit.attributes.Visit_concept_name_14b5ab89_4df5_4c60_acc8_888f36ba999b",
+          "configPath": "patient.interactions.visit.attributes.visit_concept_id",
           "required": true,
           "isWizardField": true,
           "allowFreeText": false
