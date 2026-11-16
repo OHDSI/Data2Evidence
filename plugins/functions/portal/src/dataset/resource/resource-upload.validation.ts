@@ -38,7 +38,7 @@ export const validateResourceFile = (
     return "This file is empty.";
   }
   if (!isContentValid(content, extension)) {
-    return "This file is corrupted. Please fix the file and try again.";
+    return "This file can\u2019t be opened. It may be damaged or saved in a different format. Check the file or choose a different one.";
   }
   if (file.size > config.maxFileSizeBytes) {
     return `This file is too large. Files must be ${formatMaxFileSize(config.maxFileSizeBytes)} or smaller.`;

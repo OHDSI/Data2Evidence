@@ -96,7 +96,7 @@ describe("validateResourceFile: file size", () => {
 });
 
 describe("validateResourceFile: content", () => {
-  const CORRUPTED = "This file is corrupted. Please fix the file and try again.";
+  const CORRUPTED = "This file can\u2019t be opened. It may be damaged or saved in a different format. Check the file or choose a different one.";
   const MB = 1024 * 1024;
   const programBytes = new Uint8Array([0x7f, 0x45, 0x4c, 0x46, 0x02, 0x01]);
 

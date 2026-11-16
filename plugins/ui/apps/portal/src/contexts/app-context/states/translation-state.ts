@@ -369,7 +369,7 @@ export const i18nDefault = {
     DATASET_RESOURCE_UPLOAD_CONFIRM_DIALOG__ERROR_SCAN_UNAVAILABLE:
       "We couldn’t check this file for security threats right now, so it can’t be uploaded. Please try again later.",
     DATASET_RESOURCE_UPLOAD_CONFIRM_DIALOG__ERROR_CORRUPTED:
-      "This file is corrupted. Please fix the file and try again.",
+      "This file can’t be opened. It may be damaged or saved in a different format. Check the file or choose a different one.",
     DATASET_RESOURCE_UPLOAD_CONFIRM_DIALOG__ERROR_TOO_LARGE: "This file is too large. Files must be {0} or smaller.",
     DATASET_RESOURCE_UPLOAD_CONFIRM_DIALOG__UNTITLED: "Untitled",
     DATASET_SELECTOR__SELECT_STUDY: "Select study",
