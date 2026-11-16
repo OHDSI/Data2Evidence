@@ -168,17 +168,17 @@ import { computed } from 'vue'
 import MarkdownIt from 'markdown-it'
 import { AtlasButton, AtlasTooltip, AtlasIcon } from '@ohdsi/atlas-ui'
 import AccessChip from '../components/AccessChip.vue'
-import { useDatasourceAccess } from '../composables/useDatasourceAccess'
-import { useDatasourceResources } from '../composables/useDatasourceResources'
+import { useDataSourceAccess } from '../composables/useDataSourceAccess'
+import { useDataSourceResources } from '../composables/useDataSourceResources'
 import { formatNumber } from '../utils/formatNumber'
 
 const props = defineProps<{ sourceKey: string; token: string | null }>()
 
-const { dataset, accessState, accessLookupFailed, loading, requestingAccess, requestAccess } = useDatasourceAccess(
+const { dataset, accessState, accessLookupFailed, loading, requestingAccess, requestAccess } = useDataSourceAccess(
   () => props.sourceKey,
   () => props.token,
 )
-const { resources, downloadingName, download } = useDatasourceResources(
+const { resources, downloadingName, download } = useDataSourceResources(
   () => props.sourceKey,
   () => props.token,
 )

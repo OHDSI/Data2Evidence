@@ -147,6 +147,17 @@ export class DatasetCommandService {
       datasetDto,
     );
 
+    // Best-effort: notify trex to (re)attach the new dataset's cache file and source DB
+    // so a freshly-set cache_id becomes available without a trex restart. Resolved through
+    // the same helper the insert path uses, so the attached value cannot drift from the
+    // value persisted to cache_id. Runs before the WebAPI sync because a HANA dataset's
+    // WebAPI source reads the `<databaseCode>__srcdb` catalog this attach creates.
+    const cacheId = datasetDto.cacheId ?? resolveCacheId(datasetDto);
+    await this.trexApiService.attach({
+      cacheIds: cacheId ? [cacheId] : [],
+      connectionIds: datasetDto.databaseCode ? [datasetDto.databaseCode] : [],
+    });
+
     // Then register the source and kick off the TrexSQL cache build. The cache build
     // is fire-and-forget inside syncDatasetToWebApi — downstream consumers (DQD, DC)
     // must poll cache readiness via GET /system-portal/dataset/:id/cache-status
@@ -165,16 +176,6 @@ export class DatasetCommandService {
       },
       datasetDto.detail,
     );
-
-    // Best-effort: notify trex to (re)attach the new dataset's cache file and source DB
-    // so a freshly-set cache_id becomes available without a trex restart. Resolved through
-    // the same helper the insert path uses, so the attached value cannot drift from the
-    // value persisted to cache_id.
-    const cacheId = datasetDto.cacheId ?? resolveCacheId(datasetDto);
-    await this.trexApiService.attach({
-      cacheIds: cacheId ? [cacheId] : [],
-      connectionIds: datasetDto.databaseCode ? [datasetDto.databaseCode] : [],
-    });
 
     // Sync of the per-dataset Logto role + scopes; lazy-recreated on first researcher assignment if it fails.
     if (datasetDto.tokenDatasetCode) {

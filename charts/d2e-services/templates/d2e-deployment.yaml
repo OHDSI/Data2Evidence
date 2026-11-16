@@ -97,6 +97,29 @@ spec:
             - mountPath: /etc/d2e/tls
               name: d2e-tls
               readOnly: true
+        # The standalone storage pod wrote storage-pvc as root; trex runs as uid
+        # 1000 and cannot write into those directories. Runs once per volume.
+        - name: storage-owner
+          image: postgres:15-alpine
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            runAsUser: 0
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              d=/storage
+              [ -e "$d/.trex-owner" ] && exit 0
+              chown -R 1000:1000 "$d" && touch "$d/.trex-owner"
+          resources:
+            requests:
+              cpu: 50m
+              memory: 50Mi
+            limits:
+              cpu: 500m
+              memory: 100Mi
+          volumeMounts:
+            - mountPath: /storage
+              name: storage-volume
         - name: trex-init
           image: busybox:latest
           resources:
@@ -1113,10 +1136,26 @@ spec:
               value: "/app/run-flow.sh d2e-flows"
             - name: STORAGE_FILE_BACKEND_PATH
               value: "/usr/src/data/storage"
+            # Keep the on-disk layout of the retired supabase-storage container,
+            # whose PVC is mounted at the backend path.
+            - name: STORAGE_S3_BUCKET
+              value: stub
+            - name: STORAGE_TENANT_ID
+              value: d2e
+            - name: STORAGE_FILE_SIZE_LIMIT
+              value: "1048576000"
+            - name: STORAGE_JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: SUPABASE_STORAGE_JWT_SECRET
             - name: TREX_STORAGE_URL
-              value: "http://localhost:33001/plugins/trex/storage-api"
+              value: "http://localhost:33001/trex/storage/v1"
             - name: TREX_STORAGE_SERVICE_KEY
-              value: ""
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: SUPABASE_STORAGE_JWT_TOKEN
             - name: PROJECT_NAME
               value: d2e
             - name: SERVICE_ROUTES
@@ -1252,6 +1291,8 @@ spec:
           volumeMounts:
             - mountPath: /usr/src/data
               name: trex-volume
+            - mountPath: /usr/src/data/storage
+              name: storage-volume
             # WebAPI/Logto seeding SQL, applied by the d2e-compat atlas-db-init
             # block once webapi.sec_role and logto.users exist. Replaces the
             # webapi-init container, which ran the same files through psql.
@@ -1333,137 +1374,3 @@ spec:
             periodSeconds: 10
             timeoutSeconds: 5
         {{- end }}
-        - name: supabase-storage
-          # Restore the image entrypoint ahead of the existing shell. It writes
-          # the internal cert, installs the CA into the OS store, starts nginx
-          # (TLS on 9000 -> storage-api on loopback 9001), then execs "$@" --
-          # so the args below still run exactly as before.
-          command: ["/usr/src/entrypoint.sh", "/bin/sh", "-c"]
-          args:
-            [
-              "-c",
-              "echo 'Waiting 60 seconds before starting...' && sleep 60 && echo 'Starting server now' && node dist/start/server.js",
-            ]
-          env:
-            - name: PROJECT_REF
-              value: "d2e"
-            # storage-api moves off 9000 so nginx can own it. Resolution order
-            # in the image's config is SERVER_HOST || HOST and
-            # SERVER_PORT || PORT, and the baked nginx.conf proxies to
-            # 127.0.0.1:9001, so all three must agree.
-            - name: PORT
-              value: "9001"
-            - name: SERVER_HOST
-              value: 127.0.0.1
-            - name: SERVER_PORT
-              value: "9001"
-            - name: FILE_SIZE_LIMIT
-              value: "1048576000"
-            - name: DATABASE_URL
-              valueFrom:
-                secretKeyRef:
-                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
-                  key: STORAGE__JDBC__URL
-            - name: SUPABASE_STORAGE_JWT_SECRET
-              valueFrom:
-                secretKeyRef:
-                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
-                  key: SUPABASE_STORAGE_JWT_SECRET
-            - name: PGRST_JWT_SECRET
-              value: "$(SUPABASE_STORAGE_JWT_SECRET)"
-            - name: SERVICE_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
-                  key: SUPABASE_STORAGE_JWT_TOKEN
-            - name: MIGRATIONS_SCHEMA
-              value: storage
-            - name: MIGRATIONS_TABLE
-              value: migrations
-            - name: SKIP_MIGRATIONS
-              value: "true"
-            - name: STORAGE_BACKEND
-              value: file
-            - name: GLOBAL_S3_BUCKET
-              value: stub
-            # Inert under STORAGE_BACKEND=file, but kept consistent: the
-            # endpoint has to be a name the internal certificate covers if the
-            # S3 backend ever goes live.
-            - name: GLOBAL_S3_ENDPOINT
-              value: https://storage.{{ .Release.Namespace }}.svc.cluster.local:443/s3
-            - name: GLOBAL_S3_PROTOCOL
-              value: https
-            - name: GLOBAL_S3_FORCE_PATH_STYLE
-              value: "true"
-            - name: FILE_STORAGE_BACKEND_PATH
-              value: "/var/lib/storage"
-            - name: TENANT_ID
-              value: "stub"
-            - name: REGION
-              value: stub
-            # Read by the image entrypoint to write the nginx cert/key and to
-            # install the CA into this container's OS trust store.
-            - name: TLS__INTERNAL__CRT
-              valueFrom:
-                secretKeyRef:
-                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
-                  key: TLS__INTERNAL__CRT
-            - name: TLS__INTERNAL__KEY
-              valueFrom:
-                secretKeyRef:
-                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
-                  key: TLS__INTERNAL__KEY
-            - name: TLS__INTERNAL__CA_CRT
-              valueFrom:
-                secretKeyRef:
-                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
-                  key: TLS__INTERNAL__CA_CRT
-          image: ghcr.io/ohdsi/d2e-supabase-storage:{{ .Values.global.image.tag }}
-          volumeMounts:
-            - name: storage-volume
-              mountPath: /var/lib/storage
-            - mountPath: /etc/d2e/tls
-              name: d2e-tls
-              readOnly: true
-          imagePullPolicy: IfNotPresent
-          # nginx now owns :9000 with TLS, so both probes move to https. They
-          # stay on loopback and skip validation, matching compose and trex's
-          # own probe: these must not route through the Service (a readiness
-          # probe that does can never pass, since the Service has no ready
-          # endpoints until the probe succeeds), and no certificate can cover
-          # 127.0.0.1 without an IP SAN. The CA chain on this listener is
-          # exercised for real by in-cluster callers.
-          livenessProbe:
-            exec:
-              command:
-                - wget
-                - --no-check-certificate
-                - -O
-                - liveness
-                - https://127.0.0.1:9000/status
-            failureThreshold: 5
-            initialDelaySeconds: 150
-            periodSeconds: 5
-            timeoutSeconds: 10
-          readinessProbe:
-            exec:
-              command:
-                - wget
-                - --no-check-certificate
-                - -O
-                - readiness
-                - https://127.0.0.1:9000/status
-            failureThreshold: 5
-            initialDelaySeconds: 150
-            periodSeconds: 5
-            timeoutSeconds: 10
-          ports:
-            - containerPort: 9000
-              protocol: TCP
-          resources:
-            requests:
-              cpu: 50m
-              memory: 100Mi
-            limits:
-              cpu: 500m
-              memory: 500Mi
