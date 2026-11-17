@@ -39,6 +39,7 @@ from .checkpoint import (
 from .errors import ChunkCopyError, PlannerError, ReconciliationError
 from .planner_types import ChunkConfig, ChunkStrategy
 from .source_stats import build_source_adapter, plan_table
+from .stage_timing import StageName, StageSummary, stage
 
 from _shared_flow_utils.types import SupportedDatabaseDialects
 
@@ -123,7 +124,8 @@ def create_schema_tables_task(use_trex_conn: bool, read_conn: Any, copy_params: 
             trex_conn = get_trex_connection(copy_params.target_database)
             pg_cursor = trex_conn.cursor()
 
-            create_schema_tables(pg_cursor, read_conn, copy_params, logger)
+            with stage(logger, StageName.SCHEMA_TOTAL, schema=copy_params.target_schema):
+                create_schema_tables(pg_cursor, read_conn, copy_params, logger)
 
         except Exception as e:
             logger.error(f"Failed to copy schema tables through Trex SQL interface: {e}")
@@ -136,7 +138,8 @@ def create_schema_tables_task(use_trex_conn: bool, read_conn: Any, copy_params: 
 
     else:
         with duckdb.connect(duckdb_file_path) as file_conn:
-            create_schema_tables(file_conn, read_conn, copy_params, logger)
+            with stage(logger, StageName.SCHEMA_TOTAL, schema=copy_params.target_schema):
+                create_schema_tables(file_conn, read_conn, copy_params, logger)
 
 
 def create_schema_tables(write_conn: Any, read_conn: Any, copy_params: CopyParameters, logger):
@@ -237,6 +240,7 @@ def create_schema_tables(write_conn: Any, read_conn: Any, copy_params: CopyParam
     logger.info(msg)
 
     unplannable_tables = []
+    summary = StageSummary(copy_params.target_schema)
 
     for idx, table in enumerate(tables_left_to_copy, start=1):
         # Determine which schema this table should be copied from
@@ -260,35 +264,41 @@ def create_schema_tables(write_conn: Any, read_conn: Any, copy_params: CopyParam
             timestamp_filter_col=timestamp_col if timestamp_col in columns_to_copy else None
         )
 
-        # Call copy_table directly
-        try:
-            copy_table_task(write_conn, read_conn, copy_params, query_columns, source_schema_for_table)
-        except PlannerError as exc:
-            if not copy_params.dry_run:
-                # A real run still fails fast: an unplannable table is either
-                # copied unbounded or not copied at all, and neither may be
-                # papered over.
-                raise
-            # A dry run exists to tell the operator about every unplannable
-            # table in the schema, not just the first one it hits.
-            unplannable_tables.append(table)
-            logger.error(
-                f"[dry run] '{table}' cannot be planned and would fail a real copy: {exc}"
-            )
-            continue
+        with stage(logger, StageName.TABLE_TOTAL, summary=summary, table=table) as table_stage:
+            # Call copy_table directly
+            try:
+                table_stage.rows = copy_table_task(
+                    write_conn, read_conn, copy_params, query_columns, source_schema_for_table
+                )
+            except PlannerError as exc:
+                if not copy_params.dry_run:
+                    # A real run still fails fast: an unplannable table is either
+                    # copied unbounded or not copied at all, and neither may be
+                    # papered over.
+                    raise
+                # A dry run exists to tell the operator about every unplannable
+                # table in the schema, not just the first one it hits.
+                unplannable_tables.append(table)
+                logger.error(
+                    f"[dry run] '{table}' cannot be planned and would fail a real copy: {exc}"
+                )
+                table_stage.status, table_stage.reason = "failed", "PlannerError"
+                continue
 
-        # Call copy_indexes directly. Not under dryRun: copy_table returns
-        # before the target is created, so CREATE INDEX ... ON <target> would
-        # hit a table that does not exist. On Postgres get_indexes_for_pk
-        # always reports a real primary key, so that fired on the very first
-        # table, burnt this task's three retries and killed the flow.
-        if not copy_params.dry_run:
-            copy_indexes(write_conn, read_conn, copy_params, query_columns, source_schema_for_table, logger)
-        else:
-            logger.info(
-                f"[dry run] skipped index creation for '{table}': the target table "
-                "was not created, so there is nothing to index."
-            )
+            # Call copy_indexes directly. Not under dryRun: copy_table returns
+            # before the target is created, so CREATE INDEX ... ON <target> would
+            # hit a table that does not exist. On Postgres get_indexes_for_pk
+            # always reports a real primary key, so that fired on the very first
+            # table, burnt this task's three retries and killed the flow.
+            if not copy_params.dry_run:
+                copy_indexes(write_conn, read_conn, copy_params, query_columns, source_schema_for_table, logger)
+            else:
+                logger.info(
+                    f"[dry run] skipped index creation for '{table}': the target table "
+                    "was not created, so there is nothing to index."
+                )
+
+    logger.info(summary.line())
 
     if copy_params.dry_run:
         logger.info(
@@ -504,11 +514,15 @@ def reconcile_table(write_conn: Any, read_conn: Any, copy_params: CopyParameters
         return
 
     adapter = build_source_adapter(read_conn)
-    source_count = adapter.count_rows_exact(source_schema, table)
+    with stage(logger, StageName.RECONCILE_SOURCE, table=table) as count_stage:
+        source_count = adapter.count_rows_exact(source_schema, table)
+        count_stage.rows = source_count
 
     target = f'"{copy_params.target_database}"."{copy_params.target_schema}"."{table}"'
-    write_conn.execute(f"SELECT COUNT(*) FROM {target}")
-    target_count = int(write_conn.fetchone()[0])
+    with stage(logger, StageName.RECONCILE_TARGET, table=table) as count_stage:
+        write_conn.execute(f"SELECT COUNT(*) FROM {target}")
+        target_count = int(write_conn.fetchone()[0])
+        count_stage.rows = target_count
 
     if source_count != target_count:
         raise ReconciliationError(
@@ -567,8 +581,9 @@ def copy_table(write_conn: Any, read_conn: Any, copy_params: CopyParameters, que
         target = f'"{database}"."{schema}"."{table}"'
         select_sql = create_select_query(copy_params, query_columns, source_schema)
         mark_in_progress(write_conn, database, schema, table, plan.plan_id, 1, stats.row_count)
-        execute_statement(write_conn, f"DROP TABLE IF EXISTS {target};")
-        execute_statement(write_conn, f"CREATE TABLE {target} AS {select_sql}")
+        with stage(logger, StageName.COPY_SINGLE, rows=stats.row_count, table=table):
+            execute_statement(write_conn, f"DROP TABLE IF EXISTS {target};")
+            execute_statement(write_conn, f"CREATE TABLE {target} AS {select_sql}")
         record_chunk_progress(write_conn, database, schema, table, 1)
         return stats.row_count
 
@@ -618,12 +633,16 @@ def copy_table(write_conn: Any, read_conn: Any, copy_params: CopyParameters, que
 
     create_empty_target_table_if_absent(write_conn, copy_params, query_columns, source_schema)
 
-    for index in range(start_at, len(plan.predicates)):
-        copy_table_chunk(
-            write_conn, copy_params, query_columns, source_schema,
-            plan.predicates[index], index, len(plan.predicates),
-        )
-        record_chunk_progress(write_conn, database, schema, table, index + 1)
+    with stage(
+        logger, StageName.COPY_CHUNKS, rows=stats.row_count, table=table,
+        chunks=len(plan.predicates) - start_at, start_at=start_at,
+    ):
+        for index in range(start_at, len(plan.predicates)):
+            copy_table_chunk(
+                write_conn, copy_params, query_columns, source_schema,
+                plan.predicates[index], index, len(plan.predicates),
+            )
+            record_chunk_progress(write_conn, database, schema, table, index + 1)
 
     return stats.row_count
 
@@ -726,17 +745,18 @@ def copy_indexes(write_conn: Any, read_conn: Any, copy_params: CopyParameters, q
                     f"Creating index '{index.get('name')}' on columns {index.get('column_names')} (unique={index.get('unique')}) for table '{table}'."
                 )
 
-                execute_statement(
-                    write_conn,
-                    create_index_query(
-                        target_database,
-                        target_schema,
-                        table,
-                        index.get("name"),
-                        index.get("column_names"),
-                        index.get("unique"),
-                    ),
-                )
+                with stage(logger, StageName.INDEX, table=table, index=index.get("name")):
+                    execute_statement(
+                        write_conn,
+                        create_index_query(
+                            target_database,
+                            target_schema,
+                            table,
+                            index.get("name"),
+                            index.get("column_names"),
+                            index.get("unique"),
+                        ),
+                    )
 
                 logger.info(
                     f"{'Unique' if index.get('unique') else 'Non-unique'} index '{index.get('name')}' created for table '{table}' on columns {index.get('column_names')}."
@@ -760,17 +780,18 @@ def copy_indexes(write_conn: Any, read_conn: Any, copy_params: CopyParameters, q
             logger.debug(
                 f"Creating primary key index '{pk_index_name}' on columns {pk_index_columns} for table '{table}'."
             )
-            execute_statement(
-                write_conn,
-                create_index_query(
-                    target_database,
-                    target_schema,
-                    table,
-                    pk_index_name,
-                    pk_index_columns,
-                    unique=True,
-                ),
-            )
+            with stage(logger, StageName.INDEX, table=table, index=pk_index_name):
+                execute_statement(
+                    write_conn,
+                    create_index_query(
+                        target_database,
+                        target_schema,
+                        table,
+                        pk_index_name,
+                        pk_index_columns,
+                        unique=True,
+                    ),
+                )
             logger.info(
                 f"Primary Key Index '{pk_index_name}' copied for table '{table}' in schema '{target_database}'.'{target_schema}'."
             )

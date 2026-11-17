@@ -452,6 +452,7 @@ def test_planner_modules_do_not_drag_in_prefect():
     import create_cachedb_file_plugin.chunk_utils  # noqa: F401
     import create_cachedb_file_plugin.errors  # noqa: F401
     import create_cachedb_file_plugin.planner_types  # noqa: F401
+    import create_cachedb_file_plugin.stage_timing  # noqa: F401
 
     assert "prefect" not in sys.modules
 

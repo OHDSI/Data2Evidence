@@ -26,6 +26,7 @@ from .planner_types import (
     ChunkStats,
     ColumnKind,
 )
+from .stage_timing import StageName, stage
 
 # Identifiers reach the SQL text by interpolation, because neither dataset,
 # table nor column can be a bind parameter in any of these statements. So the
@@ -599,7 +600,10 @@ class _BaseAdapter:
         ``excluded_columns`` are columns already tried and rejected for this
         table; see :func:`plan_table`.
         """
-        row_count, is_exact = self.count_rows(schema, table)
+        with stage(logger, StageName.COUNT_ESTIMATE, table=table) as count_stage:
+            row_count, is_exact = self.count_rows(schema, table)
+            count_stage.rows = row_count
+            count_stage.fields["exact"] = is_exact
 
         # ``row_count_is_exact`` is read here and nowhere else: it is what says
         # the number below is safe to compare against the threshold. An
@@ -607,7 +611,9 @@ class _BaseAdapter:
         # count before anything is decided on it. See
         # SMALL_TABLE_CONFIRM_FACTOR for what a wrong answer costs.
         if not is_exact and row_count < config.small_table_threshold * SMALL_TABLE_CONFIRM_FACTOR:
-            exact = self.count_rows_exact(schema, table)
+            with stage(logger, StageName.COUNT_EXACT, table=table) as count_stage:
+                exact = self.count_rows_exact(schema, table)
+                count_stage.rows = exact
             logger.info(
                 f"{schema}.{table}: the estimated row count ({row_count:,}) is near the "
                 f"{config.small_table_threshold:,}-row small-table threshold, so it was "
@@ -637,13 +643,18 @@ class _BaseAdapter:
         # column can be NULL: a NOT NULL column gets no NULL chunk at all, so
         # there is nothing for plan_chunks to size. See MAX_NULL_CHUNK_MULTIPLE
         # for what an unsized NULL chunk costs.
-        null_count = self.count_nulls(schema, table, column.name) if column.nullable else 0
+        null_count = 0
+        if column.nullable:
+            with stage(logger, StageName.COUNT_NULLS, table=table, column=column.name) as count_stage:
+                null_count = self.count_nulls(schema, table, column.name)
+                count_stage.rows = null_count
         if null_count:
             logger.info(
                 f"{schema}.{table}: '{column.name}' is NULL in {null_count:,} rows, "
                 "which will be copied as one unsplittable chunk."
             )
-        boundaries = self.column_boundaries(schema, table, column.name, chunk_count)
+        with stage(logger, StageName.BOUNDARIES, table=table, column=column.name, chunks=chunk_count):
+            boundaries = self.column_boundaries(schema, table, column.name, chunk_count)
         return ChunkStats(row_count, is_exact, column, tuple(boundaries), null_count)
 
 
@@ -776,31 +787,42 @@ def plan_table(
     excluded: set[str] = set()
     first_error: PlannerError | None = None
     skewed: tuple[ChunkStats, ChunkPlan] | None = None
-    for _ in range(max(1, max_attempts)):
-        stats = adapter.collect(
-            schema, table, config, logger, allowed_columns, frozenset(excluded)
-        )
-        try:
-            plan = plan_chunks(dialect, schema, table, stats, config)
-        except PlannerError as exc:
-            if first_error is None:
-                first_error = exc
-            if stats.column is None:
-                break
-            logger.warning(f"{exc} Trying another chunk column.")
-            excluded.add(stats.column.name.lower())
-            continue
-        if not plan.is_skewed:
-            return stats, plan
-        logger.warning(
-            f"{schema}.{table}: chunking on {plan.column_name} would put about "
-            f"{plan.estimated_largest_chunk_rows:,} rows into one chunk (limit "
-            f"{plan.max_chunk_rows:,}): a few values hold most of the table. "
-            "Trying another chunk column."
-        )
-        if skewed is None:
-            skewed = (stats, plan)
-        excluded.add(plan.column_name.lower())
+    for attempt in range(1, max(1, max_attempts) + 1):
+        with stage(logger, StageName.PLAN_ATTEMPT, table=table, attempt=attempt) as attempt_stage:
+            stats = adapter.collect(
+                schema, table, config, logger, allowed_columns, frozenset(excluded)
+            )
+            attempt_stage.rows = stats.row_count
+            if stats.column is not None:
+                attempt_stage.fields["column"] = stats.column.name
+                attempt_stage.fields["kind"] = stats.column.kind.value
+            try:
+                plan = plan_chunks(dialect, schema, table, stats, config)
+            except PlannerError as exc:
+                attempt_stage.fields["outcome"] = "rejected"
+                attempt_stage.status, attempt_stage.reason = "fallback", "rejected"
+                if first_error is None:
+                    first_error = exc
+                if stats.column is None:
+                    break
+                logger.warning(f"{exc} Trying another chunk column.")
+                excluded.add(stats.column.name.lower())
+                continue
+            if not plan.is_skewed:
+                attempt_stage.fields["outcome"] = "planned"
+                attempt_stage.fields["strategy"] = plan.strategy.value
+                return stats, plan
+            attempt_stage.fields["outcome"] = "skewed"
+            attempt_stage.status, attempt_stage.reason = "fallback", "skewed"
+            logger.warning(
+                f"{schema}.{table}: chunking on {plan.column_name} would put about "
+                f"{plan.estimated_largest_chunk_rows:,} rows into one chunk (limit "
+                f"{plan.max_chunk_rows:,}): a few values hold most of the table. "
+                "Trying another chunk column."
+            )
+            if skewed is None:
+                skewed = (stats, plan)
+            excluded.add(plan.column_name.lower())
 
     if skewed is not None:
         logger.warning(
