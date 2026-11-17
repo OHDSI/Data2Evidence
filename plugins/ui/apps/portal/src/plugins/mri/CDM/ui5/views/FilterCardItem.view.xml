@@ -148,7 +148,8 @@
 	<html:br></html:br>
 
 	<m:SmartAccordion width="100%" 
-		id="parentAccordion">
+		id="parentAccordion" 
+		class="sapUiSmallMarginBottom">
 		<m:sections>
 			<c:AccordionSection id="parentMappingSection">
 				<c:content>
