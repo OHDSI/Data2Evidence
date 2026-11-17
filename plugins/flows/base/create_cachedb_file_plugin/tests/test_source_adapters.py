@@ -357,3 +357,173 @@ def test_a_table_that_plans_first_time_costs_one_boundary_query():
 
     assert plan.column_name == "analysis_id"
     assert adapter.boundary_columns == ["analysis_id"]
+
+
+# ---------------------------------------------------------------------------
+# plan_postgres_table: page ranges for large Postgres tables, before collect()
+# ---------------------------------------------------------------------------
+#
+# A page-range table must never pay for the column pick, the NULL count or the
+# percentile_disc sort: avoiding that sort is the reason PAGE_RANGE exists.
+
+from create_cachedb_file_plugin.chunk_utils import compute_page_plan_id
+from create_cachedb_file_plugin.source_stats import plan_postgres_table
+
+COLUMNS_KEY = "measurement_id,person_id"
+FILTERS_KEY = "no-filters"
+#: (relkind, relhassubclass, amname, relfilenode, blocks)
+HEAP_FACTS = ("r", False, "heap", 16384, 1_000_000)
+
+
+class StubPageAdapter(StubPostgresAdapter):
+    """StubPostgresAdapter that also answers the page-range catalogue queries,
+    and records which planning steps were reached."""
+
+    def __init__(self, estimate, exact, facts=HEAP_FACTS, version=160000, **kwargs):
+        super().__init__(estimate, exact, **kwargs)
+        self.facts = facts
+        self.version = version
+        self.calls = []
+
+    def _scalar(self, statement):
+        if "server_version_num" in statement:
+            self.statements.append(statement)
+            return self.version
+        return super()._scalar(statement)
+
+    def _rows(self, statement):
+        if "pg_relation_size" in statement:
+            self.statements.append(statement)
+            return [] if self.facts is None else [self.facts]
+        return super()._rows(statement)
+
+    def page_facts(self, schema, table):
+        self.calls.append("page_facts")
+        return super().page_facts(schema, table)
+
+    def collect(self, *args, **kwargs):
+        self.calls.append("collect")
+        return super().collect(*args, **kwargs)
+
+    def pick_chunk_column(self, *args, **kwargs):
+        self.calls.append("pick_chunk_column")
+        return super().pick_chunk_column(*args, **kwargs)
+
+    def column_boundaries(self, *args, **kwargs):
+        self.calls.append("column_boundaries")
+        return super().column_boundaries(*args, **kwargs)
+
+    def count_nulls(self, *args, **kwargs):
+        self.calls.append("count_nulls")
+        return super().count_nulls(*args, **kwargs)
+
+
+class PlanKeys:
+    """The plan_keys callable. It counts its calls: on a '*' table it reads
+    the source catalog."""
+
+    def __init__(self):
+        self.calls = 0
+
+    def __call__(self):
+        self.calls += 1
+        return COLUMNS_KEY, FILTERS_KEY
+
+
+def _plan_pg(adapter, chunk_count=None, plan_keys=None):
+    return plan_postgres_table(
+        adapter, "postgres", SCHEMA, TABLE, CONFIG, LOGGER,
+        plan_keys if plan_keys is not None else PlanKeys(), chunk_count,
+    )
+
+
+def test_a_small_postgres_table_plans_exactly_as_plan_table_does():
+    """Same SINGLE_STATEMENT plan_id, so existing small-table checkpoints still match."""
+    adapter = StubPageAdapter(estimate=1_000, exact=1_000)
+    reference = StubPageAdapter(estimate=1_000, exact=1_000)
+
+    stats, plan = _plan_pg(adapter)
+    ref_stats, ref_plan = plan_table(reference, "postgres", SCHEMA, TABLE, CONFIG, LOGGER)
+
+    assert plan.strategy is ChunkStrategy.SINGLE_STATEMENT
+    assert plan == ref_plan
+    assert stats == ref_stats
+    assert adapter.calls == []
+    assert not any("server_version_num" in s for s in adapter.statements)
+
+
+def test_a_large_eligible_table_gets_page_ranges_without_collect():
+    adapter = StubPageAdapter(estimate=900_000_000, exact=900_000_000)
+
+    stats, plan = _plan_pg(adapter)
+
+    assert plan.strategy is ChunkStrategy.PAGE_RANGE
+    assert len(plan.predicates) == 180
+    assert plan.page_bounds[0][0] == 0
+    assert plan.page_bounds[-1][1] is None
+    assert plan.plan_id == compute_page_plan_id(
+        "postgres", SCHEMA, TABLE, 16384, 1_000_000, 180, COLUMNS_KEY, FILTERS_KEY
+    )
+    assert stats.row_count == 900_000_000
+    assert stats.column is None
+    assert adapter.calls == ["page_facts"]
+    for expensive in ("percentile_disc", "IS NULL", "indisprimary", "pg_stats"):
+        assert not any(expensive in s for s in adapter.statements), expensive
+    assert adapter.exact_counts_issued == []
+
+
+def test_plan_keys_are_computed_only_for_a_page_range_table():
+    small_keys, large_keys = PlanKeys(), PlanKeys()
+
+    _, small = _plan_pg(StubPageAdapter(estimate=1_000, exact=1_000), plan_keys=small_keys)
+    _, large = _plan_pg(
+        StubPageAdapter(estimate=900_000_000, exact=900_000_000), plan_keys=large_keys
+    )
+
+    assert small.strategy is ChunkStrategy.SINGLE_STATEMENT
+    assert small_keys.calls == 0
+    assert large.strategy is ChunkStrategy.PAGE_RANGE
+    assert large_keys.calls == 1
+
+
+@pytest.mark.parametrize(
+    "facts, version, reason",
+    [
+        (HEAP_FACTS, 130000, "pg_version"),
+        (None, 160000, "not_found"),
+        (("p", False, None, 0, 0), 160000, "partitioned"),
+        (("v", False, None, 0, 0), 160000, "view"),
+        (("m", False, "heap", 16384, 10), 160000, "view"),
+        (("f", False, None, 0, 0), 160000, "not_table"),
+        (("r", True, "heap", 16384, 1_000_000), 160000, "inherited"),
+        (("r", False, "columnar", 16384, 1_000_000), 160000, "not_heap"),
+        (("r", False, "heap", 16384, 0), 160000, "no_blocks"),
+    ],
+)
+def test_an_ineligible_table_falls_back_and_says_why(facts, version, reason, caplog):
+    adapter = StubPageAdapter(estimate=900_000_000, exact=900_000_000, facts=facts, version=version)
+
+    plan_keys = PlanKeys()
+    with caplog.at_level(logging.INFO, logger=LOGGER.name):
+        planned = _plan_pg(adapter, plan_keys=plan_keys)
+
+    assert planned is None
+    assert plan_keys.calls == 0
+    assert "collect" not in adapter.calls
+    stage_lines = [
+        r.getMessage() for r in caplog.records if r.getMessage().startswith("stage=plan_attempt")
+    ]
+    assert len(stage_lines) == 1
+    assert "outcome=fallback" in stage_lines[0]
+    assert f"status=fallback reason={reason}" in stage_lines[0]
+
+
+def test_a_near_threshold_estimate_is_confirmed_exactly_once():
+    adapter = StubPageAdapter(estimate=550_000, exact=900_000_000)
+
+    stats, plan = _plan_pg(adapter)
+
+    assert len(adapter.exact_counts_issued) == 1
+    assert stats.row_count == 900_000_000
+    assert stats.row_count_is_exact is True
+    assert plan.strategy is ChunkStrategy.PAGE_RANGE

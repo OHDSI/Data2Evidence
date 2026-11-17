@@ -377,3 +377,70 @@ def test_results_tables_without_a_primary_key_chunk_on_the_mapped_column(table, 
     assert candidate is not None
     assert candidate.name == column
     assert candidate.kind is ColumnKind.MAPPED_ID
+
+
+# ---------------------------------------------------------------------------
+# Page-range eligibility: the facts query and what it decides
+# ---------------------------------------------------------------------------
+
+from create_cachedb_file_plugin.source_stats import (
+    MIN_PAGE_RANGE_SERVER_VERSION,
+    page_range_ineligible,
+    pg_page_facts_sql,
+)
+
+
+def test_pg_page_facts_reads_the_live_size_not_relpages():
+    sql = pg_page_facts_sql("cdm", "measurement")
+    assert sql == (
+        "SELECT c.relkind, c.relhassubclass, am.amname, c.relfilenode, "
+        "pg_relation_size(c.oid) / current_setting('block_size')::int AS blocks "
+        "FROM pg_class c LEFT JOIN pg_am am ON am.oid = c.relam "
+        "WHERE c.oid = to_regclass('\"cdm\".\"measurement\"')"
+    )
+    assert "relpages" not in sql
+
+
+@pytest.mark.parametrize(
+    "schema, table",
+    [("cdm", 'measurement"; DROP TABLE x --'), ("cdm'--", "measurement"), ("cdm", "")],
+)
+def test_pg_page_facts_rejects_unsafe_identifiers(schema, table):
+    with pytest.raises(PlannerError):
+        pg_page_facts_sql(schema, table)
+
+
+#: (relkind, relhassubclass, amname, relfilenode, blocks) of a plain heap table.
+ELIGIBLE_FACTS = ("r", False, "heap", 16384, 1_000)
+
+
+def _facts(**change):
+    names = ("relkind", "relhassubclass", "amname", "relfilenode", "blocks")
+    values = dict(zip(names, ELIGIBLE_FACTS))
+    values.update(change)
+    return tuple(values[name] for name in names)
+
+
+@pytest.mark.parametrize(
+    "facts, version, reason",
+    [
+        (ELIGIBLE_FACTS, 130000, "pg_version"),
+        (ELIGIBLE_FACTS, 139999, "pg_version"),
+        (None, 130000, "pg_version"),
+        (None, 160000, "not_found"),
+        (_facts(relkind="p"), 160000, "partitioned"),
+        (_facts(relkind="v", amname=None), 160000, "view"),
+        (_facts(relkind="m"), 160000, "view"),
+        (_facts(relkind="f", amname=None), 160000, "not_table"),
+        (_facts(relhassubclass=True), 160000, "inherited"),
+        (_facts(amname="columnar"), 160000, "not_heap"),
+        (_facts(amname=None), 160000, "not_heap"),
+        (_facts(blocks=0), 160000, "no_blocks"),
+        (_facts(blocks=None), 160000, "no_blocks"),
+        (ELIGIBLE_FACTS, MIN_PAGE_RANGE_SERVER_VERSION, None),
+        (ELIGIBLE_FACTS, 170004, None),
+        (_facts(blocks=1), 160000, None),
+    ],
+)
+def test_page_range_eligibility(facts, version, reason):
+    assert page_range_ineligible(facts, version) == reason

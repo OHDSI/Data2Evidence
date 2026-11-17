@@ -396,10 +396,100 @@ def plan_chunks(
     )
 
 
+def page_predicate(lower: int, upper: int | None) -> str:
+    """Postgres condition selecting pages ``[lower, upper)``; ``None`` means to the end."""
+    condition = f"ctid >= '({int(lower)},0)'::tid"
+    if upper is not None:
+        condition += f" AND ctid < '({int(upper)},0)'::tid"
+    return condition
+
+
+def compute_page_plan_id(
+    dialect: str,
+    schema: str,
+    table: str,
+    relfilenode: int,
+    blocks: int,
+    chunk_count: int,
+    columns_key: str,
+    filters_key: str,
+) -> str:
+    """Resume key for a PAGE_RANGE plan.
+
+    ``relfilenode`` changes on TRUNCATE, CLUSTER and VACUUM FULL, which move
+    rows to other pages; ``columns_key`` and ``filters_key`` describe what each
+    chunk selects. ``PLANNER_VERSION`` is not part of it, so column-range plan
+    ids are unaffected by this strategy.
+    """
+    parts = [
+        "page-range-1",
+        dialect,
+        schema,
+        table,
+        ChunkStrategy.PAGE_RANGE.value,
+        str(int(relfilenode)),
+        str(int(blocks)),
+        str(int(chunk_count)),
+        columns_key,
+        filters_key,
+    ]
+    return hashlib.sha256("\x1f".join(parts).encode("utf-8")).hexdigest()
+
+
+def plan_page_ranges(
+    dialect: str,
+    schema: str,
+    table: str,
+    row_count: int,
+    blocks: int,
+    relfilenode: int,
+    columns_key: str,
+    filters_key: str,
+    config: ChunkConfig,
+    chunk_count: int | None = None,
+) -> ChunkPlan:
+    """Split ``[0, blocks)`` into even page ranges. Pure: no database access.
+
+    The chunk count comes from the row count, as for column ranges, unless a
+    stored plan's count is given (resume). It never exceeds the page count.
+    The last range is open-ended.
+    """
+    if blocks < 1:
+        raise PlannerError(f"{schema}.{table} has no pages to split ({blocks}).")
+    count = chunk_count if chunk_count else resolve_chunk_count(row_count, config)
+    count = max(1, min(int(count), int(blocks)))
+    starts = [blocks * i // count for i in range(count)]
+    bounds = tuple(
+        (start, starts[i + 1] if i + 1 < count else None) for i, start in enumerate(starts)
+    )
+    return ChunkPlan(
+        plan_id=compute_page_plan_id(
+            dialect, schema, table, relfilenode, blocks, count, columns_key, filters_key
+        ),
+        strategy=ChunkStrategy.PAGE_RANGE,
+        column_name=None,
+        column_kind=None,
+        predicates=tuple(page_predicate(lower, upper) for lower, upper in bounds),
+        estimated_rows_per_chunk=max(1, row_count // count),
+        includes_null_chunk=False,
+        page_bounds=bounds,
+    )
+
+
 def describe_plan(plan: ChunkPlan, schema: str, table: str) -> str:
     """One-line summary of a plan, for the copy log."""
     if plan.strategy is ChunkStrategy.SINGLE_STATEMENT:
         return f"{schema}.{table}: single statement (below small-table threshold)"
+    if plan.strategy is ChunkStrategy.PAGE_RANGE:
+        pages = (
+            f"~{plan.page_bounds[1][0] - plan.page_bounds[0][0]:,}"
+            if len(plan.page_bounds) > 1 else "all"
+        )
+        return (
+            f"{schema}.{table}: {len(plan.predicates)} page-range chunks, "
+            f"{pages} pages/chunk, ~{plan.estimated_rows_per_chunk:,} rows/chunk, "
+            f"plan_id={plan.plan_id[:12]}"
+        )
     # A CHUNKED plan always carries the column it was chunked on.
     return (
         f"{schema}.{table}: {len(plan.predicates)} chunks on {plan.column_name} "

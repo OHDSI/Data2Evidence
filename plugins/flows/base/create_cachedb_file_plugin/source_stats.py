@@ -16,7 +16,7 @@ switching to these builders does not change which table a query resolves to.
 import re
 from collections.abc import Iterable, Sequence
 
-from .chunk_utils import plan_chunks, resolve_chunk_count
+from .chunk_utils import plan_chunks, plan_page_ranges, resolve_chunk_count
 from .errors import PlannerError
 from .filter import CHUNK_COLUMN_MAP
 from .planner_types import (
@@ -522,6 +522,53 @@ def _without(rows: Iterable[Sequence], excluded: set[str]) -> list:
 # --------------------------------------------------------------------------
 
 
+#: TID range scans, which page-range chunks rely on, exist from Postgres 14.
+MIN_PAGE_RANGE_SERVER_VERSION = 140000
+
+
+def pg_page_facts_sql(schema: str, table: str) -> str:
+    """What decides whether a table can be copied in page ranges, and its live size.
+
+    The block count comes from ``pg_relation_size``, not ``relpages``: after a
+    bulk load ``relpages`` can be far too small, and the last, open-ended range
+    would then read most of the table.
+    """
+    _check_identifier(schema, "schema")
+    _check_identifier(table, "table")
+    return (
+        "SELECT c.relkind, c.relhassubclass, am.amname, c.relfilenode, "
+        "pg_relation_size(c.oid) / current_setting('block_size')::int AS blocks "
+        "FROM pg_class c LEFT JOIN pg_am am ON am.oid = c.relam "
+        f"WHERE c.oid = to_regclass('\"{schema}\".\"{table}\"')"
+    )
+
+
+def page_range_ineligible(facts, server_version: int) -> str | None:
+    """Why a table cannot be copied in page ranges, or None when it can.
+
+    ``facts`` is the row of :func:`pg_page_facts_sql`, or None if the table
+    was not found.
+    """
+    if server_version < MIN_PAGE_RANGE_SERVER_VERSION:
+        return "pg_version"
+    if facts is None:
+        return "not_found"
+    relkind, has_subclass, access_method, _relfilenode, blocks = facts[:5]
+    if relkind == "p":
+        return "partitioned"
+    if relkind in ("v", "m"):
+        return "view"
+    if relkind != "r":
+        return "not_table"
+    if has_subclass:
+        return "inherited"
+    if access_method != "heap":
+        return "not_heap"
+    if not blocks or int(blocks) < 1:
+        return "no_blocks"
+    return None
+
+
 class _BaseAdapter:
     """Runs the statements above against a source connection.
 
@@ -572,6 +619,30 @@ class _BaseAdapter:
 
     # ----------------------------------------------------------------------
 
+    def confirmed_row_count(self, schema: str, table: str, config: ChunkConfig, logger) -> tuple[int, bool]:
+        """The row count the planner decides on, and whether it is exact."""
+        with stage(logger, StageName.COUNT_ESTIMATE, table=table) as count_stage:
+            row_count, is_exact = self.count_rows(schema, table)
+            count_stage.rows = row_count
+            count_stage.fields["exact"] = is_exact
+
+        # ``row_count_is_exact`` is read here and nowhere else: it is what says
+        # the number below is safe to compare against the threshold. An
+        # estimate near the threshold is not, so it is confirmed with a real
+        # count before anything is decided on it. See
+        # SMALL_TABLE_CONFIRM_FACTOR for what a wrong answer costs.
+        if not is_exact and row_count < config.small_table_threshold * SMALL_TABLE_CONFIRM_FACTOR:
+            with stage(logger, StageName.COUNT_EXACT, table=table) as count_stage:
+                exact = self.count_rows_exact(schema, table)
+                count_stage.rows = exact
+            logger.info(
+                f"{schema}.{table}: the estimated row count ({row_count:,}) is near the "
+                f"{config.small_table_threshold:,}-row small-table threshold, so it was "
+                f"confirmed with an exact count: {exact:,} rows."
+            )
+            row_count, is_exact = exact, True
+        return row_count, is_exact
+
     def collect(
         self,
         schema: str,
@@ -600,26 +671,7 @@ class _BaseAdapter:
         ``excluded_columns`` are columns already tried and rejected for this
         table; see :func:`plan_table`.
         """
-        with stage(logger, StageName.COUNT_ESTIMATE, table=table) as count_stage:
-            row_count, is_exact = self.count_rows(schema, table)
-            count_stage.rows = row_count
-            count_stage.fields["exact"] = is_exact
-
-        # ``row_count_is_exact`` is read here and nowhere else: it is what says
-        # the number below is safe to compare against the threshold. An
-        # estimate near the threshold is not, so it is confirmed with a real
-        # count before anything is decided on it. See
-        # SMALL_TABLE_CONFIRM_FACTOR for what a wrong answer costs.
-        if not is_exact and row_count < config.small_table_threshold * SMALL_TABLE_CONFIRM_FACTOR:
-            with stage(logger, StageName.COUNT_EXACT, table=table) as count_stage:
-                exact = self.count_rows_exact(schema, table)
-                count_stage.rows = exact
-            logger.info(
-                f"{schema}.{table}: the estimated row count ({row_count:,}) is near the "
-                f"{config.small_table_threshold:,}-row small-table threshold, so it was "
-                f"confirmed with an exact count: {exact:,} rows."
-            )
-            row_count, is_exact = exact, True
+        row_count, is_exact = self.confirmed_row_count(schema, table, config, logger)
 
         if row_count < config.small_table_threshold:
             # Below the threshold the planner copies in one statement, so
@@ -721,6 +773,17 @@ class PostgresSourceAdapter(_BaseAdapter):
 
     def count_rows_exact(self, schema: str, table: str) -> int:
         return int(self._scalar(pg_exact_count_sql(schema, table)) or 0)
+
+    def page_facts(self, schema: str, table: str):
+        rows = self._rows(pg_page_facts_sql(schema, table))
+        return tuple(rows[0]) if rows else None
+
+    def server_version(self) -> int:
+        if not hasattr(self, "_server_version"):
+            self._server_version = int(
+                self._scalar("SELECT current_setting('server_version_num')::int") or 0
+            )
+        return self._server_version
 
     def pick_chunk_column(
         self, schema: str, table: str, allowed_columns=None, excluded_columns=(), row_count=0
@@ -831,6 +894,58 @@ def plan_table(
         )
         return skewed
     raise first_error
+
+
+def plan_postgres_table(
+    adapter: "PostgresSourceAdapter",
+    dialect: str,
+    schema: str,
+    table: str,
+    config: ChunkConfig,
+    logger,
+    plan_keys,
+    chunk_count: int | None = None,
+) -> tuple[ChunkStats, ChunkPlan] | None:
+    """Plan a Postgres table without sorting a column, or return None.
+
+    Small tables get the same single-statement plan as :func:`plan_table`.
+    Large tables that can be read in page ranges get a PAGE_RANGE plan. For
+    any other table this returns None, after logging why, and the caller falls
+    back to :func:`plan_table`. ``plan_keys`` returns ``(columns_key,
+    filters_key)`` and is only called for a table that gets page ranges.
+    ``chunk_count`` replays a stored plan's count on resume.
+    """
+    with stage(logger, StageName.PLAN_ATTEMPT, table=table, attempt=1) as attempt_stage:
+        row_count, is_exact = adapter.confirmed_row_count(schema, table, config, logger)
+        attempt_stage.rows = row_count
+        stats = ChunkStats(row_count, is_exact, None, ())
+        if row_count < config.small_table_threshold:
+            plan = plan_chunks(dialect, schema, table, stats, config)
+            attempt_stage.fields["outcome"] = "planned"
+            attempt_stage.fields["strategy"] = plan.strategy.value
+            return stats, plan
+
+        facts = adapter.page_facts(schema, table)
+        reason = page_range_ineligible(facts, adapter.server_version())
+        if reason is not None:
+            attempt_stage.fields["outcome"] = "fallback"
+            attempt_stage.status, attempt_stage.reason = "fallback", reason
+            logger.info(
+                f"{schema}.{table}: cannot copy in page ranges ({reason}); "
+                "using column ranges."
+            )
+            return None
+
+        _relkind, _sub, _am, relfilenode, blocks = facts[:5]
+        columns_key, filters_key = plan_keys()
+        plan = plan_page_ranges(
+            dialect, schema, table, row_count, int(blocks), int(relfilenode),
+            columns_key, filters_key, config, chunk_count,
+        )
+        attempt_stage.fields["outcome"] = "planned"
+        attempt_stage.fields["strategy"] = plan.strategy.value
+        attempt_stage.fields["blocks"] = int(blocks)
+        return stats, plan
 
 
 def build_source_adapter(read_conn) -> _BaseAdapter:
