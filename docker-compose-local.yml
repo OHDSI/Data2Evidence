@@ -44,7 +44,7 @@ services:
         # The second of the two TREXSQL_REF pins; the other is the ARG default
         # in services/trex/Dockerfile.v2. Shipping trex code means bumping both.
         # See docs/trex-oidc-provider-cutover.md.
-        TREXSQL_REF: ${TREXSQL_REF:-sha-1cb9bdec0e132bccf62bcce3d5e4193e8cf8af90@sha256:d707544a8cc75e2ff7efead5ff59ea2618f28bb8afaf6844635b6e7dfa009a4f}
+        TREXSQL_REF: ${TREXSQL_REF:-sha-974c584da03f996441dfe07549f94b4005066784@sha256:38041ff0d775185ee9a0e87e7a1d23a5e9b616edacca4f0c2a7412c68c304c9e}
         # Local builds pull published plugins from the feed; CI uses plugin-artifacts/.
         PLUGINS_FROM_REGISTRY: ${PLUGINS_FROM_REGISTRY:-@data2evidence/d2e-ui @data2evidence/d2e-functions @data2evidence/fhir @data2evidence/sibyl @data2evidence/d2e-flows @data2evidence/i2b2-flow @data2evidence/search-embedding-flow @data2evidence/data-management-flow @data2evidence/hades-flow @data2evidence/loyalty-score-flow @data2evidence/cohort-discovery-flow @data2evidence/eq5d5l-index-calculation-flow @data2evidence/data-transformation-flow @ohdsi/pythia-agent@0.1.0-develop.21.g24eb709}
         # Keep in sync with the `docker build --build-arg WITH_R=true` used to
