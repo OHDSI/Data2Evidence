@@ -34,6 +34,9 @@ const state = {
 
 const bookmarkURL = '/analytics-svc/api/services/bookmark'
 const webApiCohortDefinitionURL = '/d2e-webapi/cohortdefinition'
+let latestLoadAllRequestId = 0
+let latestAppliedLoadAllRequestId = 0
+let latestSettledLoadAllRequestId = 0
 
 // getters
 const getters = {
@@ -348,6 +351,9 @@ const actions = {
     commit(types.SET_BOOKMARKS_LOADING, { loading: true })
     const isLoadAll = params.cmd === 'loadAll'
     const requestDatasetId = isLoadAll ? rootGetters.getSelectedDataset.id : ''
+    const loadAllRequestId = isLoadAll ? ++latestLoadAllRequestId : 0
+    const isCurrentLoadAll = () =>
+      rootGetters.getSelectedDataset.id === requestDatasetId && loadAllRequestId > latestAppliedLoadAllRequestId
     if (isLoadAll && requestDatasetId !== state.bookmarksDatasetId) {
       commit(types.RESET_ALL_BOOKMARKS)
     }
@@ -376,9 +382,10 @@ const actions = {
       .then(({ data }) => {
         let toastMessage = ''
         if (isLoadAll) {
-          if (rootGetters.getSelectedDataset.id !== requestDatasetId) {
+          if (!isCurrentLoadAll()) {
             return data
           }
+          latestAppliedLoadAllRequestId = loadAllRequestId
           commit(types.SET_BOOKMARKS_LOAD_ERROR, { loadError: false })
           commit(types.RESET_ALL_BOOKMARKS)
           const { bookmarks, materializedCohorts, atlasCohortDefinitions } = processBookmarksData(
@@ -410,7 +417,7 @@ const actions = {
         return data
       })
       .catch(error => {
-        if (isLoadAll && rootGetters.getSelectedDataset.id === requestDatasetId) {
+        if (isLoadAll && isCurrentLoadAll()) {
           // Cohort list load failures surface as an in-list error state (see Bookmarks.vue).
           // Keep rethrowing so awaiting callers retain their current control flow.
           commit(types.SET_BOOKMARKS_LOAD_ERROR, { loadError: true })
@@ -435,7 +442,10 @@ const actions = {
         }
       })
       .finally(() => {
-        commit(types.SET_BOOKMARKS_LOADING, { loading: false })
+        latestSettledLoadAllRequestId = Math.max(latestSettledLoadAllRequestId, loadAllRequestId)
+        if (latestSettledLoadAllRequestId === latestLoadAllRequestId) {
+          commit(types.SET_BOOKMARKS_LOADING, { loading: false })
+        }
       })
   },
   /**
