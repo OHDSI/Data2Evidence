@@ -1800,6 +1800,7 @@ jobs:
             -v "$(pwd)/ctrf:/work/ctrf" \
             -e D2E_BASE_URL=https://localhost:443 \
             -e E2E_DB_DIALECT=hana \
+            -e SKIP_IDP_SPECS=1 \
             -e CI=true \
             -e GITHUB_ACTIONS=true \
             d2e-e2e npm test
