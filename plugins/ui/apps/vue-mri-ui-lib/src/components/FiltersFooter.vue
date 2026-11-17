@@ -157,7 +157,6 @@ import appButton from '../lib/ui/app-button.vue'
 import bsDropdown from '../lib/ui/bs-dropdown.vue'
 import bsDropdownItemButton from '../lib/ui/bs-dropdown-item-button.vue'
 import * as types from '../store/mutation-types'
-import DialogBox from './DialogBox.vue'
 import { D2eButton, D2eDialog, D2eTextField } from '@d2e/ui'
 import { usePortalContext } from '../composables/usePortalContext'
 import { useNotificationStore } from '../stores/notifications'
@@ -411,7 +410,6 @@ export default {
     appButton,
     bsDropdown,
     bsDropdownItemButton,
-    DialogBox,
     D2eButton,
     D2eDialog,
     D2eTextField,
