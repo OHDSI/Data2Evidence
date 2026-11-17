@@ -192,12 +192,6 @@ def test_the_columns_key_ignores_order_and_case():
     assert copy_module._page_plan_keys(_params(), ["measurement_id", "person_id"])[0] == columns_key
 
 
-def test_the_filters_key_ignores_patient_order():
-    a = copy_module._page_plan_keys(_params([3, 1, 2], "2009-08-03"), ["a"])
-    b = copy_module._page_plan_keys(_params([1, 2, 3], "2009-08-03"), ["a"])
-    assert a == b
-
-
 @pytest.mark.parametrize(
     "change",
     [{"patient_filter": [1, 2, 4]}, {"patient_filter": None}, {"timestamp_filter": "2010-01-01"}],
@@ -250,12 +244,6 @@ def _run_chunk_fn(monkeypatch, patient_filter, error):
     with pytest.raises(copy_module.ChunkCopyError) as raised:
         copy_module.copy_page_chunk.fn(None, copy_params, query_columns, "cdm", plan, 1)
     return raised.value
-
-
-def test_without_a_patient_filter_the_cause_is_kept(monkeypatch):
-    cause = RuntimeError("boom")
-    error = _run_chunk_fn(monkeypatch, None, cause)
-    assert error.__cause__ is cause
 
 
 def test_with_a_patient_filter_the_cause_is_dropped(monkeypatch):

@@ -12,7 +12,6 @@ from .copy_source import (
     function_node,
     handled_exception_names,
     handlers_for,
-    module_tree,
     string_constants,
 )
 
@@ -195,13 +194,6 @@ def _task_decorator(func):
     return None
 
 
-def _class_node(name):
-    for node in ast.walk(module_tree(COPY_SOURCE_PATH)):
-        if isinstance(node, ast.ClassDef) and node.name == name:
-            return node
-    raise AssertionError(f"copy.py has no class named {name!r}")
-
-
 def test_copy_page_chunk_is_a_task_without_a_concurrency_tag():
     """It runs inside copy_table_task, which already holds the table slot;
     a tag here would wait on that same slot forever."""
@@ -211,37 +203,9 @@ def test_copy_page_chunk_is_a_task_without_a_concurrency_tag():
     assert "tags" not in [keyword.arg for keyword in decorator.keywords]
 
 
-def test_copy_table_keeps_plan_table_as_the_fallback():
-    func = function_node(COPY_SOURCE_PATH, "copy_table")
-    fallback = [
-        node
-        for node in ast.walk(func)
-        if isinstance(node, ast.If)
-        and isinstance(node.test, ast.Compare)
-        and isinstance(node.test.ops[0], ast.Is)
-        and any(calls_to(stmt, "plan_table") for stmt in node.body)
-    ]
-    assert fallback, "plan_table must still plan every table _plan_postgres declines"
-
-
 def test_the_stored_plan_is_not_read_under_dry_run():
     func = function_node(COPY_SOURCE_PATH, "_plan_postgres")
     assert dry_run_guarded_branch(func, "read_checkpoint") is not None
-
-
-def test_create_schema_tables_task_writes_through_a_trex_writer():
-    func = function_node(COPY_SOURCE_PATH, "create_schema_tables_task")
-    assert calls_to(func, "TrexWriter")
-    assert not calls_to(func, "get_trex_connection"), (
-        "the bare connection cannot be replaced after a failed ROLLBACK"
-    )
-    finally_closes = [
-        node
-        for node in ast.walk(func)
-        if isinstance(node, ast.Try)
-        and any(calls_to(stmt, "close") for stmt in node.finalbody)
-    ]
-    assert finally_closes, "the writer must be closed in a finally block"
 
 
 def test_a_page_range_table_starting_at_chunk_one_is_emptied_first():

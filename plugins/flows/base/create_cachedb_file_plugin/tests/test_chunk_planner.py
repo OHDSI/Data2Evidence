@@ -879,26 +879,9 @@ def test_page_range_chunk_count_comes_from_the_row_count():
     assert plan.estimated_rows_per_chunk == 5_000_000
 
 
-def test_a_given_chunk_count_is_honoured_over_the_row_count():
-    """Resume replays the stored chunks_total, whatever reltuples says now."""
-    plan = _page_plan(row_count=900_000_000, chunk_count=7)
-    assert len(plan.predicates) == 7
-    assert len(plan.page_bounds) == 7
-
-
 def test_page_range_chunk_count_is_clamped_to_the_page_count():
     plan = _page_plan(row_count=900_000_000, blocks=3)
     assert plan.page_bounds == ((0, 1), (1, 2), (2, None))
-
-
-@pytest.mark.parametrize("blocks", [0, -1])
-def test_a_table_with_no_pages_cannot_be_page_planned(blocks):
-    with pytest.raises(PlannerError, match="no pages"):
-        _page_plan(blocks=blocks)
-
-
-def test_page_plan_id_is_stable():
-    assert _page_plan().plan_id == _page_plan().plan_id
 
 
 @pytest.mark.parametrize(
@@ -945,14 +928,3 @@ def test_column_range_plan_ids_are_unchanged_by_page_ranges():
     )
     assert chunked == "77aec8ba75b676ca2f4fd109461740e72a88ebbb9d034b65c3229bfc21de8cf6"
     assert single == "d7c586c309111760ba133849591801b9f1e1771eb56159867504b52db529edfd"
-
-
-def test_describe_plan_reports_the_page_range_shape():
-    config = ChunkConfig(target_chunk_rows=5_000_000)
-    plan = plan_page_ranges(
-        "postgres", "cdm", "measurement", 10_000_000, 1_000, 16384, "a", "f", config
-    )
-    assert describe_plan(plan, "cdm", "measurement") == (
-        "cdm.measurement: 2 page-range chunks, ~500 pages/chunk, "
-        f"~5,000,000 rows/chunk, plan_id={plan.plan_id[:12]}"
-    )

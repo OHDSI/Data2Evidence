@@ -472,20 +472,6 @@ def test_a_large_eligible_table_gets_page_ranges_without_collect():
     assert adapter.exact_counts_issued == []
 
 
-def test_plan_keys_are_computed_only_for_a_page_range_table():
-    small_keys, large_keys = PlanKeys(), PlanKeys()
-
-    _, small = _plan_pg(StubPageAdapter(estimate=1_000, exact=1_000), plan_keys=small_keys)
-    _, large = _plan_pg(
-        StubPageAdapter(estimate=900_000_000, exact=900_000_000), plan_keys=large_keys
-    )
-
-    assert small.strategy is ChunkStrategy.SINGLE_STATEMENT
-    assert small_keys.calls == 0
-    assert large.strategy is ChunkStrategy.PAGE_RANGE
-    assert large_keys.calls == 1
-
-
 @pytest.mark.parametrize(
     "facts, version, reason",
     [

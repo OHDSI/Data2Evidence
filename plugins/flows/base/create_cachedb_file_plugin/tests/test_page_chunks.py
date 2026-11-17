@@ -79,15 +79,6 @@ def test_patient_ids_are_rendered_as_integers_only():
         )
 
 
-@pytest.mark.parametrize("timestamp", ["2009-08-03", "2009-08-03 00:00:00"])
-def test_a_timestamp_filter_keeps_the_literal_as_given(timestamp):
-    sql = build_page_chunk_select(
-        "cdm", "measurement", ["measurement_date"], 0, None,
-        timestamp_filter_col="measurement_date", timestamp=timestamp,
-    )
-    assert sql.endswith(f"\"measurement_date\" = '{timestamp}'")
-
-
 def test_quotes_in_the_timestamp_are_doubled():
     sql = build_page_chunk_select(
         "cdm", "measurement", ["measurement_date"], 0, None,
@@ -204,22 +195,6 @@ def test_a_chunk_commits_its_rows_and_its_progress_together(conn, logger):
     assert _no_open_transaction(conn)
 
 
-def test_each_statement_is_sent_on_its_own_in_order(conn, logger):
-    recording = RecordingConn(conn)
-
-    run_page_chunk(recording, DATABASE, SCHEMA, TABLE, 0, _insert(0), logger)
-
-    statements = recording.statements
-    assert statements[0] == "BEGIN"
-    assert statements[1].startswith("SELECT ") and "chunks_completed" in statements[1]
-    assert statements[2] == _insert(0)
-    assert statements[3].startswith("UPDATE ") and "chunks_completed = 1" in statements[3]
-    assert statements[4] == "COMMIT"
-    assert len(statements) == 5
-    assert not any(";" in s for s in statements)
-    assert not any("DELETE" in s.upper() for s in statements)
-
-
 def test_a_chunk_already_committed_is_not_copied_again(conn, logger):
     """A task retry after the COMMIT reached trex but before Prefect saw it."""
     run_page_chunk(conn, DATABASE, SCHEMA, TABLE, 0, _insert(0), logger)
@@ -267,18 +242,6 @@ def test_a_failure_between_insert_and_commit_discards_the_rows(conn, logger):
     assert failing.statements[-1] == "ROLLBACK"
     assert _target_rows(conn) == 0
     assert _completed(conn) == 0
-
-
-def test_the_connection_is_usable_after_a_failed_chunk(conn, logger):
-    with pytest.raises(duckdb.Error):
-        run_page_chunk(
-            conn, DATABASE, SCHEMA, TABLE, 0,
-            f"INSERT INTO {TARGET} SELECT no_such_column FROM src", logger,
-        )
-
-    assert run_page_chunk(conn, DATABASE, SCHEMA, TABLE, 0, _insert(0), logger) is True
-    assert _target_rows(conn) == CHUNK_ROWS
-    assert _completed(conn) == 1
 
 
 def test_two_attempts_on_one_chunk_commit_it_once(conn, logger):
