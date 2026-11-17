@@ -13548,7 +13548,6 @@ const paConfig = {
         "externalAccessPoints": true,
         "cohortEntryExit": false,
         "atlasCohortDefinition": false,
-        "usePaAtlas": false,
         "inclusionReport": false,
         "intersectViewInclusionReport": false,
     }
@@ -27639,7 +27638,6 @@ const paConfigDuckdb = {
         "externalAccessPoints": true,
         "cohortEntryExit": false,
         "atlasCohortDefinition": false,
-        "usePaAtlas": false,
         "inclusionReport": true,
         "intersectViewInclusionReport": false,
     }
@@ -35119,7 +35117,6 @@ const pajsonfhirConfigDuckdb = {
         "externalAccessPoints": true,
         "cohortEntryExit": false,
         "atlasCohortDefinition": true,
-        "usePaAtlas": false,
         "inclusionReport": false,
         "intersectViewInclusionReport": false,
     }
@@ -38753,7 +38750,6 @@ const omopHanaLeanPAConfig = {
         "externalAccessPoints": true,
         "cohortEntryExit": false,
         "atlasCohortDefinition": false,
-        "usePaAtlas": false,
         "inclusionReport": false,
         "intersectViewInclusionReport": false,
     }

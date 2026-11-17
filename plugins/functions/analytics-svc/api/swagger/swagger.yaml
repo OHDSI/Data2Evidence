@@ -1159,39 +1159,6 @@ paths:
           description: Error
           schema:
             $ref: "#/definitions/Error"
-  /generate-cohort-definition:
-    x-swagger-router-controller: cohort
-    post:
-      description: Generates the cohort definition from mriquery
-      operationId: generateCohortDefinition
-      produces:
-        - application/json
-      consumes:
-        - application/json
-      parameters:
-        - in: body
-          name: cohort
-          schema:
-            type: object
-            required:
-              - datasetId
-              - mriquery
-            properties:
-              datasetId:
-                type: string
-                description: Id of dataset
-              mriquery:
-                type: string
-                description: Filtercard information in bookmark form. This is a binary string encoded in base64
-      responses:
-        "200":
-          description: Success
-          schema:
-            type: string
-        default:
-          description: Error
-          schema:
-            $ref: "#/definitions/Error"
 
 definitions:
   AnalyticsResponse:

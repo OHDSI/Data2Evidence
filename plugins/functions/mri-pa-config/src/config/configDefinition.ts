@@ -807,11 +807,6 @@ function _getValidDefinition(cdwConfig) {
           type: "boolean",
           strict: false,
         },
-        {
-          name: "usePaAtlas",
-          type: "boolean",
-          strict: false,
-        },
         // deprecated
         {
           name: "afp",

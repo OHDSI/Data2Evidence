@@ -173,7 +173,17 @@ export class MRIConfig {
         });
     }
 
+    // Options that no longer exist. Stored configs may still contain them, and
+    // panelOptions is a strict object, so strip them before validating/saving.
+    private _stripRemovedOptions(config) {
+        if (config && config.panelOptions && typeof config.panelOptions === "object") {
+            delete config.panelOptions.usePaAtlas;
+        }
+        return config;
+    }
+
     public validateConfig(config, dependentConfig, callback: connLib.CallBackInterface) {
+        this._stripRemovedOptions(config);
         this.ffhConfig.getCDWConfig({
             configId: dependentConfig.configId,
             configVersion: dependentConfig.configVersion + "",
@@ -779,6 +789,7 @@ export class MRIConfig {
     }
 
     private _saveConfig(configId, configVersion, configName, config, dependentConfig, lang, callback: connLib.CallBackInterface) {
+        this._stripRemovedOptions(config);
         this._validateWizardsConfig(config);
         config = this.formatter.trimConfigForSaving(config);
 
