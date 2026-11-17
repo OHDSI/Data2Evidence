@@ -46,9 +46,9 @@
 import { AtlasChip } from '@ohdsi/atlas-ui'
 import AccessChip from './AccessChip.vue'
 import CardMeta from './CardMeta.vue'
-import type { DatasourceCardVM } from '../composables/useDatasourceCatalog'
+import type { DataSourceCardVM } from '../composables/useDataSourceCatalog'
 
-defineProps<{ source: DatasourceCardVM }>()
+defineProps<{ source: DataSourceCardVM }>()
 defineEmits<{ (e: 'select', id: string): void }>()
 </script>
 
