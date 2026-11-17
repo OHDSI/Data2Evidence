@@ -17,8 +17,8 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByRole('button', { name: 'Switch to Admin portal' }).click()
 
   await test.step('Update dataset metadata', async () => {
-    await page.getByRole('link', { name: 'Datasets' }).click()
-    await page.getByRole('button', { name: 'Update dataset metadata' }).click()
+    await page.getByRole('link', { name: 'Data sources' }).click()
+    await page.getByRole('button', { name: 'Update metadata' }).click()
 
     // Update dataset metadata only triggers get_version_info runs, one per source dataset plugin
     // (cache runs are only for snapshot datasets, which the demo setup doesn't create).

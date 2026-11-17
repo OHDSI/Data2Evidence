@@ -42,10 +42,10 @@ test(TEST_NAME, async ({ page }) => {
   expect(page.locator('.metadata-attribute-table__table')).toContainText('Test Display')
 
   // Use attribute in dataset
-  await page.getByRole('link', { name: 'Datasets' }).click()
+  await page.getByRole('link', { name: 'Data sources' }).click()
   await page.waitForTimeout(3000) // Wait for the datasets table to load
-  await page.getByText('Select action').click()
-  await page.getByRole('option', { name: 'Update dataset' }).click()
+  await page.getByRole('button', { name: 'Actions' }).first().click()
+  await page.getByRole('menuitem', { name: 'Edit data source' }).click()
   await page.getByRole('button', { name: 'add metadata' }).click()
   await page.getByLabel('', { exact: true }).nth(2).click()
   await page.getByRole('option', { name: 'Test Display' }).click()
@@ -76,9 +76,9 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByRole('button', { name: 'Delete' }).click()
 
   // Verify attribute deletion
-  await page.getByRole('link', { name: 'Datasets' }).click()
-  await page.getByText('Select action').click()
-  await page.getByRole('option', { name: 'Update dataset' }).click()
+  await page.getByRole('link', { name: 'Data sources' }).click()
+  await page.getByRole('button', { name: 'Actions' }).first().click()
+  await page.getByRole('menuitem', { name: 'Edit data source' }).click()
   await expect(page.getByRole('option', { name: 'Test Display' })).not.toBeVisible()
   await expect(page.getByRole('option', { name: 'Test value' })).not.toBeVisible()
 })

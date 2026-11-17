@@ -42,6 +42,90 @@ describe("buildMriBookmark", () => {
     });
   });
 
+  describe("numeric constraints", () => {
+    const ageField: FieldDefinition = {
+      id: "age",
+      type: "num",
+      label: "Age",
+      required: false,
+      configPath: "patient.attributes.Age",
+    };
+    const ageConstraints = (value: string) => {
+      const { bookmark } = buildMriBookmark([ageField], { age: value }, meta, "ds-1");
+      const filterCard = bookmark.filter.cards.content[0].content[0] as any;
+      return filterCard.attributes.content[0].constraints;
+    };
+    const range = (lowerOp: string, lower: number, upperOp: string, upper: number) => ({
+      type: "BooleanContainer",
+      op: "OR",
+      content: [
+        {
+          type: "BooleanContainer",
+          op: "AND",
+          content: [
+            { type: "Expression", operator: lowerOp, value: lower },
+            { type: "Expression", operator: upperOp, value: upper },
+          ],
+        },
+      ],
+    });
+
+    it.each([
+      ["[40-100]", range(">=", 40, "<=", 100)],
+      ["]18-40[", range(">", 18, "<", 40)],
+      ["[18-40[", range(">=", 18, "<", 40)],
+      ["]18-40]", range(">", 18, "<=", 40)],
+      ["[ 40 - 100 ]", range(">=", 40, "<=", 100)],
+    ])("nests closed range %s as one AND group inside OR", (value, expected) => {
+      expect(ageConstraints(value)).toEqual(expected);
+    });
+
+    it.each([
+      [">=18", ">=", 18],
+      ["<=100", "<=", 100],
+      ["40", "=", 40],
+    ])("keeps single value %s as a flat OR", (value, operator, expected) => {
+      expect(ageConstraints(value)).toEqual({
+        type: "BooleanContainer",
+        op: "OR",
+        content: [{ type: "Expression", operator, value: expected }],
+      });
+    });
+
+    it("keeps reversed bounds as given", () => {
+      expect(ageConstraints("[100-40]")).toEqual(range(">=", 100, "<=", 40));
+    });
+
+    it("nests a measurement range and keeps its fixed attributes", () => {
+      const weightField: FieldDefinition = {
+        id: "weight",
+        type: "num",
+        label: "Weight",
+        required: false,
+        configPath: "patient.interactions.measurement.attributes.numval",
+        filterCardPath: "patient.interactions.measurement",
+        fixedAttributes: [
+          {
+            configPath: "patient.interactions.measurement.attributes.measurementconceptname",
+            operator: "=",
+            value: "Body Weight",
+          },
+        ],
+      };
+
+      const { bookmark } = buildMriBookmark([weightField], { weight: "[60-80]" }, meta, "ds-1");
+      const filterCard = bookmark.filter.cards.content[0].content[0] as any;
+
+      expect(filterCard.configPath).toBe("patient.interactions.measurement");
+      expect(filterCard.attributes.content[0].constraints).toEqual(range(">=", 60, "<=", 80));
+      expect(filterCard.attributes.content[1].constraints).toEqual({
+        type: "BooleanContainer",
+        op: "OR",
+        content: [{ type: "Expression", operator: "=", value: "Body Weight" }],
+      });
+    });
+  });
+
   it("should create attribute for text field with selected option", () => {
     const fields: FieldDefinition[] = [
       {
@@ -63,7 +147,11 @@ describe("buildMriBookmark", () => {
     const attr = filterCard.attributes.content[0];
 
     expect(attr.configPath).toBe("patient.attributes.Gender");
-    expect(attr.constraints.content[0].value).toBe("M");
+    expect(attr.constraints).toEqual({
+      type: "BooleanContainer",
+      op: "OR",
+      content: [{ type: "Expression", operator: "=", value: "M" }],
+    });
   });
 
   it("should skip fields without configPath", () => {

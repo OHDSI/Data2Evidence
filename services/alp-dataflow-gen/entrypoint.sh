@@ -10,8 +10,8 @@ printf '%s' "$TLS__INTERNAL__CRT" > /usr/src/cert/cert.pem
 (umask 077; printf '%s' "$TLS__INTERNAL__KEY" > /usr/src/cert/key.pem)
 printf '%s' "$TLS__INTERNAL__CA_CRT" > /usr/src/cert/ca.pem
 
-# Outbound trust for the internal CA (same move as trex, the dataflow worker and
-# supabase-storage), so this container can reach other TLS-only internal
+# Outbound trust for the internal CA (same move as trex and the dataflow worker),
+# so this container can reach other TLS-only internal
 # services. Two mechanisms are needed: the OS store covers shell/curl, and
 # Python reads certifi's bundle rather than the OS store. Skipped when the CA is
 # absent so a plaintext deployment still starts.

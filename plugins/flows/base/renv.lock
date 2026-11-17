@@ -353,8 +353,7 @@
       "RemoteHost": "api.github.com",
       "RemoteUsername": "data2evidence",
       "RemoteRepo": "d2e-DatabaseConnector",
-      "RemoteRef": "alp-dqd",
-      "RemoteSha": "4a20bfccf83ac8a738091184cffed62429d262f2"
+      "RemoteRef": "3f7c6abffeb2b95d80ef8e1cf61957b956ca0643"
     },
     "ParallelLogger": {
       "Package": "ParallelLogger",
@@ -601,8 +600,7 @@
       "RemoteHost": "api.github.com",
       "RemoteUsername": "data2evidence",
       "RemoteRepo": "d2e-SqlRender",
-      "RemoteRef": "alp-dqd",
-      "RemoteSha": "26ed300a81f474c8ae81f1f9294d8d83d00d8cbf"
+      "RemoteRef": "d03b900f1f26bf33197e9b82a5321d9b6f7b545b"
     },
     "TTR": {
       "Package": "TTR",

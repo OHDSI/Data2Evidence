@@ -1,5 +1,5 @@
 import { Type } from 'npm:class-transformer'
-import { IsArray, IsNotEmpty, IsNotEmptyObject, IsUUID, ValidateNested } from 'npm:class-validator'
+import { IsArray, IsNotEmpty, IsNotEmptyObject, IsOptional, IsUUID, ValidateNested } from 'npm:class-validator'
 import { IDatasetDetailMetadataUpdateDto } from '../../types.d.ts'
 import { DatasetCustomAttribute, DatasetDashboardBaseDto, DatasetDetailDto } from './dataset.dto.ts'
 
@@ -13,10 +13,11 @@ export class DatasetDetailMetadataUpdateDto implements IDatasetDetailMetadataUpd
   @Type(() => DatasetDetailDto)
   detail: DatasetDetailDto
 
+  @IsOptional()
   @ValidateNested()
   @Type(() => DatasetDashboardBaseDto)
   @IsArray()
-  dashboards: DatasetDashboardBaseDto[]
+  dashboards?: DatasetDashboardBaseDto[]
 
   @ValidateNested()
   @Type(() => DatasetCustomAttribute)

@@ -80,7 +80,6 @@
         v-if="enableAtlasCohortDefinition"
         variant="primary"
         block
-        class="filtercard-summary__action-atlas"
         :disabled="chartBusy"
         @click="onClickCreateCohortDefinition"
       >
@@ -497,15 +496,6 @@ export default {
   gap: 8px;
   padding: 12px;
   border-top: 1px solid var(--d2e-color-neutral-lighter);
-}
-
-.filtercard-summary__action-atlas {
-  // D2eButton's label weight is --d2e-font-button-weight (500); the frame
-  // asks for 600 on this button only, so override it here rather than the
-  // shared token.
-  :deep(.v-btn__content) {
-    font-weight: 600;
-  }
 }
 
 .filtercard-summary__action-sql {

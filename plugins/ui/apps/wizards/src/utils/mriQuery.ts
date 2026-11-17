@@ -7,15 +7,24 @@ interface Expression {
   value: string | number;
 }
 
+interface RangeGroup {
+  type: "BooleanContainer";
+  op: "AND";
+  content: Expression[];
+}
+
+// The query engine joins the top-level content with OR, so a range must be one nested RangeGroup.
+interface AttributeConstraints {
+  type: "BooleanContainer";
+  op: "OR";
+  content: (Expression | RangeGroup)[];
+}
+
 interface Attribute {
   type: "Attribute";
   configPath: string;
   instanceID: string;
-  constraints: {
-    type: "BooleanContainer";
-    op: "AND" | "OR";
-    content: Expression[];
-  };
+  constraints: AttributeConstraints;
 }
 
 interface FilterCard {
@@ -102,9 +111,8 @@ function getFilterCardName(cardPath: string, config?: CdwConfig): string {
 /**
  * Parse a numeric expression string into Expression objects.
  *
- * Supported formats (comma-separated):
+ * Supported formats:
  *   >=60        → { operator: ">=", value: 60 }
- *   >50,<=70    → two expressions
  *   [50-80]     → >=50, <=80
  *   [50-80[     → >=50, <80
  *   ]50-80]     → >50, <=80
@@ -175,8 +183,11 @@ export function buildMriBookmark(
         ? parseNumericExpressions(String(value))
         : [{ type: "Expression", operator: "=", value: String(value) }];
 
-    // Numeric ranges use AND (e.g. >=50 AND <=80), single values and text use OR
-    const constraintOp = field.type === "num" && expressions.length > 1 ? "AND" : "OR";
+    // A numeric range is one AND group; other values stay flat
+    const content: AttributeConstraints["content"] =
+      field.type === "num" && expressions.length > 1
+        ? [{ type: "BooleanContainer", op: "AND", content: expressions }]
+        : expressions;
 
     cardGroups.get(cardKey)!.push({
       type: "Attribute",
@@ -184,8 +195,8 @@ export function buildMriBookmark(
       instanceID: field.configPath,
       constraints: {
         type: "BooleanContainer",
-        op: constraintOp,
-        content: expressions,
+        op: "OR",
+        content,
       },
       _fieldId: field.id,
     });

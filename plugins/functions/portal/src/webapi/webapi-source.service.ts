@@ -3,10 +3,12 @@ import { createLogger } from '../logger.ts'
 import { Dataset } from '../dataset/entity/index.ts'
 import { DatasetDetail } from '../dataset/entity/dataset-detail.entity.ts'
 import { WebApiSourceApi } from './webapi-source.api.ts'
-import { IDbCredentials, IDaimonRequest, ISourceRequest } from './types.ts'
+import { IDbCredentials, IDaimonRequest, ISourceInfo, ISourceRequest } from './types.ts'
 import { findRoleByName, sourceUserRoleName } from './webapi-role.util.ts'
 import { JobPluginsApi } from './jobplugins.api.ts'
 import { sanitizeIdForCacheId } from '../dataset/entity/dataset.entity.ts'
+import { WebApiDatasetLoader } from './webapi-dataset.loader.ts'
+import { env } from '../env.ts'
 
 // Mirrors org.ohdsi.webapi.common.DBMSType. A source whose dialect is absent there throws from
 // DataSourceDTOParser during WebAPI's connection check, and that exception escapes
@@ -25,7 +27,14 @@ const WEBAPI_SUPPORTED_DIALECTS = new Set([
   'spark',
   'snowflake',
   'synapse',
+  'trexsql',
 ])
+
+// trexsql's Quack endpoint inside the same container as WebAPI and the portal.
+const TREXSQL_CONNECTION_STRING = 'jdbc:trexsql://127.0.0.1:9494?disable_ssl=true'
+
+// trex attaches a HANA database read-only as `<databaseCode>__srcdb` (TYPE hana).
+const HANA_SOURCE_CATALOG_SUFFIX = '__srcdb'
 
 type RefreshCacheResult = { success: boolean; databaseCode: string; flowRunId?: string; error?: string }
 
@@ -43,7 +52,30 @@ export class WebApiSourceService {
   constructor(
     private readonly webApiSourceApi: WebApiSourceApi,
     private readonly jobPluginsApi: JobPluginsApi,
+    private readonly datasetLoader?: WebApiDatasetLoader,
   ) {}
+
+  // Re-registers every WebAPI-managed dataset, e.g. to move existing sources onto
+  // the trexsql cache after an upgrade. One dataset failing never stops the rest.
+  async resyncAllSources(
+    authToken?: string
+  ): Promise<{ synced: string[]; failed: { id: string; error: string }[] }> {
+    if (!this.datasetLoader) throw new Error('No dataset loader configured for WebAPI resync')
+    const synced: string[] = []
+    const failed: { id: string; error: string }[] = []
+    for (const { dataset, detail, credentials } of await this.datasetLoader.listSyncTargets()) {
+      try {
+        if (!credentials) {
+          throw new Error(`No database credentials found for ${dataset.databaseCode}`)
+        }
+        await this.syncSourceForDataset(dataset, detail, credentials, authToken)
+        synced.push(dataset.id)
+      } catch (error) {
+        failed.push({ id: dataset.id, error: error instanceof Error ? error.message : String(error) })
+      }
+    }
+    return { synced, failed }
+  }
 
   async syncSourceForDataset(
     dataset: Dataset,
@@ -51,41 +83,53 @@ export class WebApiSourceService {
     dbCredentials: IDbCredentials,
     authToken?: string
   ): Promise<void> {
-    const dialect = this.mapDialect(dataset.dialect)
-    const isHana = dialect === 'hana'
+    const sourceDialect = this.mapDialect(dataset.dialect)
+    const isHana = sourceDialect === 'hana'
+    const usesTrexsql = this.trexsqlCatalog(dataset) !== null
+    const dialect = usesTrexsql ? 'trexsql' : sourceDialect
     if (!WEBAPI_SUPPORTED_DIALECTS.has(dialect)) {
       await this.warnUnsupportedDialect(dataset.id, dialect, authToken)
-      if (dataset.schemaName && !isHana) {
-        await this.triggerCacheCreation(dataset.id, dataset.schemaName, authToken)
-      } else if (isHana) {
-        this.logger.debug(
-          `Skipping cache build for dataset ${dataset.id}: HANA has no DuckDB cache on any dataset type`
-        )
-      }
+      await this.startCacheBuild(dataset, isHana, authToken)
       return
     }
 
+    // The cache build must start even when the source cannot be registered.
+    let sourceError: unknown
     try {
-      const sourceRequest = this.buildSourceRequest(dataset, datasetDetail, dbCredentials)
+      const trexsqlToken = usesTrexsql ? this.trexsqlToken() : undefined
       const existing = await this.webApiSourceApi.getSourceByKey(dataset.id, authToken)
+      const defaultTypes = await this.findDefaultDaimonTypes(dataset, existing, authToken)
+      const sourceRequest = this.buildSourceRequest(
+        dataset, datasetDetail, dbCredentials, existing, defaultTypes, trexsqlToken
+      )
 
       if (existing) {
         await this.webApiSourceApi.updateSource(existing.sourceId, sourceRequest, authToken)
       } else {
         await this.webApiSourceApi.createSource(sourceRequest, authToken)
       }
-
-      if (dataset.schemaName && !isHana) {
-        await this.triggerCacheCreation(dataset.id, dataset.schemaName, authToken)
-      } else if (isHana) {
-        this.logger.debug(
-          `Skipping cache build for dataset ${dataset.id}: HANA has no DuckDB cache on any dataset type`
-        )
-      }
     } catch (error) {
       this.logger.error(`Failed to sync WebAPI source for dataset ${dataset.id}: ${error}`)
-      throw error
+      sourceError = error
     }
+
+    await this.startCacheBuild(dataset, isHana, authToken)
+    if (sourceError) throw sourceError
+  }
+
+  private async startCacheBuild(dataset: Dataset, isHana: boolean, authToken?: string): Promise<void> {
+    if (dataset.schemaName && !isHana) {
+      await this.triggerCacheCreation(dataset.id, dataset.schemaName, authToken)
+    } else if (isHana) {
+      this.logger.debug(
+        `Skipping cache build for dataset ${dataset.id}: HANA has no DuckDB cache on any dataset type`
+      )
+    }
+  }
+
+  private trexsqlToken(): string {
+    if (!env.TREX__SQL_TOKEN) throw new Error('TREX__SQL_TOKEN is not set')
+    return env.TREX__SQL_TOKEN
   }
 
   private async warnUnsupportedDialect(
@@ -253,11 +297,55 @@ export class WebApiSourceService {
     }
   }
 
+  // Daimon types another source already holds the default (priority > 0) for.
+  // Only asked when this sync adds a CDM or Vocabulary daimon. If the lookup
+  // fails the answer is null, and new daimons go in at 0 so an admin's choice
+  // is never overridden.
+  private async findDefaultDaimonTypes(
+    dataset: Dataset,
+    existing: ISourceInfo | null,
+    authToken?: string
+  ): Promise<Set<string> | null> {
+    const adds = (daimonType: string, schema?: string) =>
+      !!schema && !existing?.daimons?.some((d) => d.daimonType === daimonType)
+    if (!adds('CDM', dataset.schemaName) && !adds('Vocabulary', dataset.vocabSchemaName)) {
+      return new Set()
+    }
+    try {
+      const sources = await this.webApiSourceApi.getSources(authToken)
+      return new Set(
+        sources
+          .filter((s) => s.sourceKey !== dataset.id)
+          .flatMap((s) => s.daimons ?? [])
+          .filter((d) => d.priority > 0)
+          .map((d) => d.daimonType)
+      )
+    } catch (error) {
+      this.logger.warn(`Could not read WebAPI sources to pick daimon priorities for ${dataset.id}: ${error}`)
+      return null
+    }
+  }
+
   private buildSourceRequest(
     dataset: Dataset,
     detail: DatasetDetail,
-    creds: IDbCredentials
+    creds: IDbCredentials,
+    existing: ISourceInfo | null,
+    defaultTypes: Set<string> | null,
+    trexsqlToken?: string
   ): ISourceRequest {
+    if (trexsqlToken) {
+      return {
+        key: dataset.id,
+        name: detail.name,
+        dialect: 'trexsql',
+        connectionString: TREXSQL_CONNECTION_STRING,
+        username: '',
+        password: trexsqlToken,
+        daimons: this.buildDaimons(dataset, existing, defaultTypes),
+        krbAuthMethod: 'DEFAULT',
+      }
+    }
     return {
       key: dataset.id,
       name: detail.name,
@@ -265,9 +353,21 @@ export class WebApiSourceService {
       connectionString: this.buildJdbcUrl(creds),
       username: creds.username,
       password: creds.password,
-      daimons: this.buildDaimons(dataset),
+      daimons: this.buildDaimons(dataset, existing, defaultTypes),
       krbAuthMethod: 'DEFAULT',
     }
+  }
+
+  // The trexsql catalog WebAPI reads the dataset through, or null for a direct JDBC
+  // source. HANA has no DuckDB cache: trex attaches the HANA database itself,
+  // read-only, as `<databaseCode>__srcdb`. Otherwise a cacheId equal to the
+  // databaseCode (a dataset transformed from a source row) names the live source
+  // connection, not a cache, so it keeps the direct JDBC source.
+  private trexsqlCatalog(dataset: Dataset): string | null {
+    if (this.mapDialect(dataset.dialect) === 'hana') {
+      return dataset.databaseCode ? `${dataset.databaseCode}${HANA_SOURCE_CATALOG_SUFFIX}` : null
+    }
+    return dataset.cacheId && dataset.cacheId !== dataset.databaseCode ? dataset.cacheId : null
   }
 
   private mapDialect(dialect: string): string {
@@ -306,30 +406,57 @@ export class WebApiSourceService {
     }
   }
 
-  private buildDaimons(dataset: Dataset): IDaimonRequest[] {
+  // WebAPI resolves the default (priority) source per daimon type, e.g. the
+  // vocabulary Atlas searches, from source_daimon.priority, and an admin picks it
+  // with set-priority, which leaves 1 on one source and 0 on the rest. Sending 1
+  // on every create or re-sync would put several sources at 1 and silently move
+  // that default, so:
+  // - an existing daimon keeps the priority WebAPI already has;
+  // - a new CDM/Vocabulary daimon becomes the default (1) only when no other
+  //   source has one of that type yet, and is 0 otherwise. WebAPI's createSource
+  //   stores priorities as sent, so without the 1 a fresh install has no default;
+  // - a new Results daimon stays at 1: WebAPI only warms the Achilles cache for
+  //   results daimons with priority > 0 unless warming is enabled globally.
+  private buildDaimons(
+    dataset: Dataset,
+    existing: ISourceInfo | null,
+    defaultTypes: Set<string> | null
+  ): IDaimonRequest[] {
     const daimons: IDaimonRequest[] = []
+    const catalog = this.trexsqlCatalog(dataset)
+    const qualify = (schema: string) => (catalog ? `${catalog}.${schema}` : schema)
+    const priorityFor = (daimonType: IDaimonRequest['daimonType']): number => {
+      const current = existing?.daimons?.find((d) => d.daimonType === daimonType)
+      if (current && current.priority >= 0) {
+        return current.priority
+      }
+      if (daimonType === 'Results') {
+        return 1
+      }
+      return defaultTypes && !defaultTypes.has(daimonType) ? 1 : 0
+    }
 
     if (dataset.schemaName) {
       daimons.push({
         daimonType: 'CDM',
-        tableQualifier: dataset.schemaName,
-        priority: 1,
+        tableQualifier: qualify(dataset.schemaName),
+        priority: priorityFor('CDM'),
       })
     }
 
     if (dataset.vocabSchemaName) {
       daimons.push({
         daimonType: 'Vocabulary',
-        tableQualifier: dataset.vocabSchemaName,
-        priority: 1,
+        tableQualifier: qualify(dataset.vocabSchemaName),
+        priority: priorityFor('Vocabulary'),
       })
     }
 
     if (dataset.resultsSchemaName) {
       daimons.push({
         daimonType: 'Results',
-        tableQualifier: dataset.resultsSchemaName,
-        priority: 1,
+        tableQualifier: qualify(dataset.resultsSchemaName),
+        priority: priorityFor('Results'),
       })
     }
 

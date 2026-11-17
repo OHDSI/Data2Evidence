@@ -11,7 +11,10 @@
 // tokens while the OIDC provider issues RS256 ones from the JWKS key, and WebAPI
 // validates against the JWKS — so the password-grant token alone is rejected
 // downstream even though it looks like a working login here.
-const { Agent } = require("undici");
+// fetch must come from the same undici as Agent: Node's global fetch bundles its
+// own undici, and on Node 26 it rejects this package's dispatcher with
+// "invalid onError method".
+const { Agent, fetch } = require("undici");
 
 const insecureAgent = new Agent({ connect: { rejectUnauthorized: false } });
 

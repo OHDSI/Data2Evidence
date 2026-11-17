@@ -216,7 +216,7 @@ export class MeRouter {
       }
     })
 
-    // Forwards the caller's own token to WebAPI openidDirect to sync sec_user_role from JWT scopes.
+    // Forwards the caller's own token to WebAPI to sync sec_user_role from JWT scopes.
     this.router.post('/sync-webapi-roles', async (req: IAppRequest, res: Response, next: NextFunction) => {
       const authHeader = req.headers['authorization']
       if (!authHeader) {

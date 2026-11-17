@@ -60,6 +60,14 @@
     border-top: 1px solid var(--d2e-color-neutral-lighter);
   }
 
+  // A leading group hugs the left so the trailing actions stay on the right.
+  .d2e-dialog__actions-leading {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-right: auto;
+  }
+
   // Small modals split the action buttons full-width; medium/large hug them.
   &.d2e-dialog--s .d2e-dialog__actions .d2e-button {
     flex: 1 1 0;

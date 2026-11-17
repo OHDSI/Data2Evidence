@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from "react";
-import { Controller, type Control } from "react-hook-form";
+import { Controller, useFormState, type Control } from "react-hook-form";
 import { fetchAttributeValues } from "../config/cdwConfig";
 import type { ConfigMeta } from "../config/cdwConfig";
 import styles from "./StepForm.module.css";
@@ -16,6 +16,7 @@ interface TypeaheadFieldProps {
   setValue?: (name: string, value: any, options?: { shouldValidate?: boolean }) => void;
   defaultValue?: string;
   error?: { message?: string };
+  describedBy?: string;
   onDisplayValueChange?: (fieldId: string, displayValue: string | null) => void;
   allowFreeText?: boolean;
 }
@@ -59,9 +60,11 @@ export function TypeaheadField({
   setValue,
   defaultValue = "",
   error,
+  describedBy,
   onDisplayValueChange,
   allowFreeText = false,
 }: TypeaheadFieldProps) {
+  const { isSubmitted } = useFormState({ control });
   const [inputText, setInputText] = useState(defaultValue);
   const [options, setOptions] = useState<Option[]>([]);
   const [isOpen, setIsOpen] = useState(false);
@@ -157,7 +160,7 @@ export function TypeaheadField({
           hasSelection.current = false;
           if (allowFreeText) {
             // Free text mode: use typed text as both value and display name
-            setValue?.(fieldId, text, { shouldValidate: true });
+            setValue?.(fieldId, text, { shouldValidate: isSubmitted });
             onDisplayValueChange?.(fieldId, text || null);
           } else {
             // Strict mode: clear the selected value — user is typing new text
@@ -177,8 +180,7 @@ export function TypeaheadField({
           onDisplayValueChange?.(fieldId, option.label);
           setIsOpen(false);
           setHighlightIndex(-1);
-          // Use setValue with shouldValidate to set value and trigger validation
-          setValue?.(fieldId, option.value, { shouldValidate: true });
+          setValue?.(fieldId, option.value, { shouldValidate: isSubmitted });
         };
 
         const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -201,12 +203,14 @@ export function TypeaheadField({
         return (
           <div ref={wrapperRef} className={styles.typeaheadWrapper}>
             <input
+              ref={controllerField.ref}
               id={fieldId}
               type="text"
               value={inputText}
               placeholder={placeholder || `Search ${label}`}
               className={`${styles.input} ${error ? styles.inputError : ""}`}
               aria-invalid={!!error}
+              aria-describedby={describedBy}
               autoComplete="off"
               onFocus={handleFocus}
               onChange={(e) => handleInputChange(e.target.value)}

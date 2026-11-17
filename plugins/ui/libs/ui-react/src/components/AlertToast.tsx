@@ -8,21 +8,22 @@ export interface AlertToastProps {
   severity?: AlertSeverity;
   title?: ReactNode;
   action?: ReactNode;
-  /**
-   * Show the × close button. When true the toast is dismissible only by the user;
-   * when false it auto-dismisses (Figma: 5s). Default true.
-   */
+  /** Show the × close button so the viewer can dismiss early. Default true. */
   closeButton?: boolean;
-  /** Overrides the auto-dismiss delay used when there is no close button. */
-  autoHideDuration?: number;
+  /**
+   * Auto-dismiss delay in ms (Figma: 5s), independent of `closeButton`. Pass
+   * `null` to keep the toast until the viewer dismisses it. Default 5000.
+   */
+  autoHideDuration?: number | null;
   closeLabel?: string;
   anchorOrigin?: SnackbarOrigin;
   className?: string;
   children?: ReactNode;
 }
 
-// Floating toast (Figma "Alert toast"): a 380px alert anchored top-right. With a
-// close button it stays until dismissed; without one it auto-hides after 5s.
+// Floating toast (Figma "Alert toast"): a 380px alert anchored top-right. Shows
+// a × when closeButton is set and auto-hides after autoHideDuration (null keeps
+// it until dismissed); the two are independent.
 export function AlertToast({
   open,
   onClose,
@@ -40,7 +41,7 @@ export function AlertToast({
     <Snackbar
       open={open}
       anchorOrigin={anchorOrigin}
-      autoHideDuration={closeButton ? null : autoHideDuration}
+      autoHideDuration={autoHideDuration}
       onClose={(_event, reason) => {
         if (reason === "clickaway") return;
         onClose();

@@ -11,6 +11,10 @@
 // tsc, which downlevels their imports to require(), and Node refuses to
 // require() an ES module.
 
+// Callers pass a dispatcher from the undici package, which only that package's
+// fetch accepts; see idp-login.cjs.
+const { fetch } = require("undici");
+
 const seedEmail = (username, domain) =>
   username.includes("@") ? username : `${username}@${domain}`;
 

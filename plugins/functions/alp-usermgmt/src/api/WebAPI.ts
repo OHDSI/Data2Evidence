@@ -16,6 +16,12 @@ export class WebAPI {
   }
 
   // To upsert sec_user_role from the user's JWT scopes.
+  //
+  // Calls /user/me rather than /user/login/openidDirect: the trex gateway answers
+  // every /WebAPI request by running openidDirect with the caller's token (which
+  // is what rewrites the roles) and then forwards the request with the WebAPI
+  // session token it got back. openidDirect only accepts IdP tokens, so calling it
+  // through the gateway always ended in a 401 after the sync had succeeded.
   async syncUserRoles(authorizationHeader: string): Promise<{ ok: boolean; status?: number }> {
     if (!this.baseUrl) {
       return { ok: false }
@@ -25,16 +31,16 @@ export class WebAPI {
       return { ok: false }
     }
 
-    const url = `${this.baseUrl}/user/login/openidDirect`
+    const url = `${this.baseUrl}/user/me`
     try {
       const response = await get(url, { headers: { Authorization: authorizationHeader } })
-      this.logger.info('WebAPI openidDirect sync succeeded')
+      this.logger.info('WebAPI role sync succeeded')
       return { ok: true, status: response.status }
     } catch (err: any) {
       const status = err?.response?.status
       const body =
         typeof err?.response?.data === 'string' ? err.response.data : JSON.stringify(err?.response?.data || '')
-      this.logger.warn(`WebAPI openidDirect sync failed (${status ?? 'no status'}): ${body.slice(0, 200)}`)
+      this.logger.warn(`WebAPI role sync failed (${status ?? 'no status'}): ${body.slice(0, 200)}`)
       return { ok: false, status }
     }
   }

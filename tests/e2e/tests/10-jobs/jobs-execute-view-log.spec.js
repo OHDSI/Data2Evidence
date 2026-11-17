@@ -17,12 +17,12 @@ test(TEST_NAME, async ({ page, context }) => {
   await page.getByRole('button', { name: 'Sign in' }).click()
   await page.getByTestId('button').nth(1).click()
   await page.getByRole('button', { name: 'Switch to Admin portal' }).click()
-  await page.getByRole('link', { name: 'Datasets' }).click()
+  await page.getByRole('link', { name: 'Data sources' }).click()
   await expect(page.getByText('Demo dataset')).toBeVisible()
   const demoRow = page.getByRole('row', { name: /Demo dataset/ })
-  await demoRow.locator('div.alp-text__copy-button-container').nth(0).locator('button.alp-icon-button--icon-only').click()
+  await demoRow.locator('.d2e-ds__copy.d2e-ds__mono').first().click()
   const dataset_id = await page.evaluate(async () => await navigator.clipboard.readText())
-  await demoRow.locator('div.alp-text__copy-button-container').nth(1).locator('button.alp-icon-button--icon-only').click()
+  await demoRow.locator('.d2e-ds__copy.d2e-ds__trunc').first().click()
   const schema_name = await page.evaluate(async () => await navigator.clipboard.readText())
   await page.getByRole('link', { name: 'Jobs' }).click()
   await expect(page.getByRole('button', { name: 'Jobs' })).toBeVisible()
@@ -109,8 +109,10 @@ test(TEST_NAME, async ({ page, context }) => {
   await page.waitForTimeout(5000)
   await page.locator('li#logs.p-tab.p-tab__active').waitFor({ state: 'visible' })
   await page.locator('li#logs.p-tab.p-tab__active').click()
-  const logsPage = await page.locator('pre')
-  await logsPage.scrollIntoViewIfNeeded()
+  // The logs view only renders 50-row blocks near the viewport, and the worker
+  // line is in the first block; scrollIntoViewIfNeeded on a log taller than the
+  // viewport scrolls that block out (DQD logs ~20k "Target dialect" lines).
+  await page.locator('pre').evaluate((el) => el.scrollIntoView({ block: 'start' }))
   // Pool-agnostic: the worker is prefect-process-worker on the pixi process
   // pool and prefect-docker-worker under the docker-pool rollback.
   await expect(page.getByText("Worker 'prefect-").first()).toBeVisible()

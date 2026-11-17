@@ -22,6 +22,7 @@ export interface SelectProps {
   label?: string;
   placeholder?: string;
   size?: SelectSize;
+  required?: boolean;
   disabled?: boolean;
   multiple?: boolean;
   errorMessages?: string | string[];
@@ -29,6 +30,8 @@ export interface SelectProps {
   prependIcon?: Icon;
   /** Switches to an autocomplete so the user can type to filter the options. */
   searchable?: boolean;
+  /** With `searchable`, also allow typing a value that is not in the list. `value`/`onChange` then carry the raw text. */
+  freeSolo?: boolean;
   className?: string;
 }
 
@@ -39,12 +42,14 @@ export function Select({
   label,
   placeholder,
   size = "sm",
+  required = false,
   disabled = false,
   multiple = false,
   errorMessages,
   hint,
   prependIcon,
   searchable = false,
+  freeSolo = false,
   className,
 }: SelectProps) {
   const spec = SELECT_SIZE_MAP[size];
@@ -55,7 +60,14 @@ export function Select({
       : [];
   const error = messages.length > 0;
   const helperText = error ? messages[0] : hint;
-  const rootClass = clsx("d2e-field", "d2e-select", `d2e-select--${size}`, className);
+  const rootClass = clsx(
+    "d2e-field",
+    "d2e-select",
+    `d2e-select--${size}`,
+    multiple && "d2e-select--multiple",
+    prependIcon && "d2e-select--with-icon",
+    className,
+  );
   const rootStyle = { "--d2e-select-height": `${spec.height}px` } as React.CSSProperties;
 
   const adornment = prependIcon
@@ -68,6 +80,50 @@ export function Select({
       }
     : undefined;
 
+  if (searchable && freeSolo) {
+    const text = typeof value === "string" ? value : "";
+    return (
+      <Autocomplete
+        freeSolo
+        className={rootClass}
+        style={rootStyle}
+        disabled={disabled}
+        options={items}
+        getOptionLabel={(option) => (typeof option === "string" ? option : option.label)}
+        inputValue={text}
+        onInputChange={(_event, next) => onChange?.(next)}
+        renderOption={(props, option) => {
+          const o = option as SelectItem;
+          return (
+            <li {...props} key={o.value}>
+              <span className="d2e-select__option-label">{o.label}</span>
+            </li>
+          );
+        }}
+        renderInput={(params) => (
+          <TextField
+            {...params}
+            label={label}
+            placeholder={placeholder}
+            required={required}
+            error={error}
+            helperText={helperText}
+            InputLabelProps={{ ...params.InputLabelProps, shrink: placeholder ? true : undefined }}
+            InputProps={{
+              ...params.InputProps,
+              startAdornment: (
+                <>
+                  {adornment?.startAdornment}
+                  {params.InputProps.startAdornment}
+                </>
+              ),
+            }}
+          />
+        )}
+      />
+    );
+  }
+
   if (searchable) {
     const selectedValues = multiple
       ? items.filter((item) => Array.isArray(value) && value.includes(item.value))
@@ -78,6 +134,9 @@ export function Select({
         className={rootClass}
         style={rootStyle}
         multiple={multiple}
+        // Keep the list open while picking several values (MUI closes it after
+        // each selection otherwise, forcing a reopen per choice).
+        disableCloseOnSelect={multiple}
         disabled={disabled}
         options={items}
         value={selectedValues as never}
@@ -124,9 +183,15 @@ export function Select({
           <TextField
             {...params}
             label={label}
-            placeholder={placeholder}
+            placeholder={
+              multiple && Array.isArray(selectedValues) && selectedValues.length > 0
+                ? undefined
+                : placeholder
+            }
+            required={required}
             error={error}
             helperText={helperText}
+            InputLabelProps={{ ...params.InputLabelProps, shrink: placeholder ? true : undefined }}
             InputProps={{
               ...params.InputProps,
               startAdornment: (
@@ -154,6 +219,7 @@ export function Select({
       onChange={(event) => onChange?.(event.target.value as SelectValue)}
       label={label}
       placeholder={placeholder}
+      required={required}
       disabled={disabled}
       error={error}
       helperText={helperText}

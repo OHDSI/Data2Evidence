@@ -1,12 +1,4 @@
-"""Shared no-data empty state (and fetch-error variant) for the calculate-* dashboards
-(calculate-incidence.py, calculate-mortality.py, calculate-prevalence.py).
-
-Each dashboard keeps its own has_data() reactive.Calc in its own server()
-(it closes over that dashboard's data_store), and its own build_*_figure
-emptiness check - everything else here was identical byte-for-byte across
-the three files, so it's centralized here to avoid drift. The error variant's
-own wording, icon, retry button and CSS live in error_state.py.
-"""
+"""Loading, no-data and error cards shown in place of a dashboard's charts."""
 from shiny import ui, reactive, render
 
 from error_state import (
@@ -18,10 +10,7 @@ from error_state import (
     error_state_retry_button,
 )
 
-# Duotone bar-chart-with-trend-line glyph for the no-data empty state.
-# Two layered SVGs: a lighter/darker "shadow" composition (fg, 140x140) on
-# top of a solid darker copy of its own bar shape (bg, 106.387x86.628),
-# offset to align exactly with that shape inside fg.
+# Bar chart icon for the no-data card: a background bar shape under a 140x140 foreground.
 EMPTY_STATE_ICON = ui.HTML("""
     <div class="empty-state-icon">
         <svg class="empty-state-icon-bg" xmlns="http://www.w3.org/2000/svg" width="107" height="87" viewBox="0 0 107 87" fill="none">
@@ -34,12 +23,32 @@ EMPTY_STATE_ICON = ui.HTML("""
     </div>
 """)
 
-# Solid background for both the empty and error cards. Also written literally
-# in EMPTY_STATE_CSS below (a plain string full of CSS braces) - keep in sync.
+# Hexagon icon for the loading card; no clipPath, since the icon appears twice on the page.
+LOADING_STATE_ICON = ui.HTML("""
+    <svg class="empty-state-loading-icon" xmlns="http://www.w3.org/2000/svg" width="182" height="114" viewBox="0 0 182 114" fill="none" aria-hidden="true">
+        <path d="M4.37856e-06 56.6893L3.79908 50.117L7.59109 43.5376L15.1822 43.5376L22.7803 43.5376L26.5723 50.117L30.3714 56.6893L26.5723 63.2687L22.7803 69.8411L15.1822 69.8411L7.59109 69.8411L3.79908 63.2687L4.37856e-06 56.6893Z" fill-rule="evenodd" clip-rule="evenodd" fill="#DEDCDA"/>
+        <path d="M25.002 71.1639L28.794 77.7434L32.593 84.3157L40.1841 84.3157L47.7823 84.3157L51.5743 77.7433L55.3663 71.1639L51.5743 64.5916L47.7823 58.0122L40.1841 58.0122L32.593 58.0122L28.794 64.5916L25.002 71.1639Z" fill-rule="evenodd" clip-rule="evenodd" fill="#DEDCDA"/>
+        <path d="M25.002 42.1581L28.794 48.7375L32.593 55.3098L40.1841 55.3098L47.7823 55.3098L51.5743 48.7375L55.3663 42.1581L51.5743 35.5857L47.7823 29.0063L40.1841 29.0063L32.593 29.0063L28.794 35.5857L25.002 42.1581Z" fill-rule="evenodd" clip-rule="evenodd" fill="#DEDCDA"/>
+        <path d="M50.3789 85.6952L54.178 79.1228L57.97 72.5434L65.5682 72.5434L73.1592 72.5434L76.9512 79.1228L80.7503 85.6952L76.9512 92.2746L73.1592 98.8469L65.5682 98.8469L57.97 98.8469L54.178 92.2746L50.3789 85.6952Z" fill-rule="evenodd" clip-rule="evenodd" fill="#DEDCDA"/>
+        <path d="M50.3789 56.6893L54.178 50.117L57.97 43.5376L65.5682 43.5376L73.1592 43.5376L76.9512 50.117L80.7503 56.6893L76.9512 63.2687L73.1592 69.8411L65.5682 69.8411L57.97 69.8411L54.178 63.2687L50.3789 56.6893Z" fill-rule="evenodd" clip-rule="evenodd" fill="#DEDCDA"/>
+        <path d="M75.3799 100.17L79.1719 106.749L82.971 113.322L90.5621 113.322L98.1602 113.322L101.952 106.749L105.744 100.17L101.952 93.5975L98.1602 87.018L90.5621 87.018L82.971 87.018L79.1719 93.5975L75.3799 100.17Z" fill-rule="evenodd" clip-rule="evenodd" fill="#DEDCDA"/>
+        <path d="M75.3799 71.1639L79.1719 77.7434L82.971 84.3157L90.5621 84.3157L98.1602 84.3157L101.952 77.7433L105.744 71.1639L101.952 64.5916L98.1602 58.0122L90.5621 58.0122L82.971 58.0122L79.1719 64.5916L75.3799 71.1639Z" fill-rule="evenodd" clip-rule="evenodd" fill="#DEDCDA"/>
+        <path d="M75.3799 42.1581L79.1719 48.7375L82.971 55.3098L90.5621 55.3098L98.1602 55.3098L101.952 48.7375L105.744 42.1581L101.952 35.5857L98.1602 29.0063L90.5621 29.0063L82.971 29.0063L79.1719 35.5857L75.3799 42.1581Z" fill-rule="evenodd" clip-rule="evenodd" fill="#DEDCDA"/>
+        <path d="M50.3789 27.6835L54.178 21.1111L57.97 14.5388L65.5682 14.5388L73.1592 14.5388L76.9512 21.1111L80.7503 27.6835L76.9512 34.2629L73.1592 40.8352L65.5682 40.8352L57.97 40.8352L54.178 34.2629L50.3789 27.6835Z" fill-rule="evenodd" clip-rule="evenodd" fill="#DEDCDA"/>
+        <path d="M75.3799 13.1522L79.1719 19.7316L82.971 26.304L90.5621 26.304L98.1602 26.304L101.952 19.7316L105.744 13.1522L101.952 6.57988L98.1602 0.000474239L90.5621 0.000474571L82.971 0.000474903L79.1719 6.57988L75.3799 13.1522Z" fill-rule="evenodd" clip-rule="evenodd" fill="#DEDCDA"/>
+        <path d="M100.757 85.6952L104.556 79.1228L108.348 72.5434L115.946 72.5434L123.537 72.5434L127.329 79.1228L131.128 85.6952L127.329 92.2746L123.537 98.8469L115.946 98.8469L108.348 98.8469L104.556 92.2746L100.757 85.6952Z" fill-rule="evenodd" clip-rule="evenodd" fill="#DEDCDA"/>
+        <path d="M100.757 56.6893L104.556 50.117L108.348 43.5376L115.946 43.5376L123.537 43.5376L127.329 50.117L131.128 56.6893L127.329 63.2687L123.537 69.8411L115.946 69.8411L108.348 69.8411L104.556 63.2687L100.757 56.6893Z" fill-rule="evenodd" clip-rule="evenodd" fill="#DEDCDA"/>
+        <path d="M125.759 71.1639L129.551 77.7434L133.35 84.3157L140.941 84.3157L148.532 84.3157L152.331 77.7433L156.13 71.1639L152.331 64.5916L148.532 58.0122L140.941 58.0122L133.35 58.0122L129.551 64.5916L125.759 71.1639Z" fill-rule="evenodd" clip-rule="evenodd" fill="#DEDCDA"/>
+        <path d="M125.759 42.1581L129.551 48.7375L133.35 55.3098L140.941 55.3098L148.532 55.3098L152.331 48.7375L156.13 42.1581L152.331 35.5857L148.532 29.0063L140.941 29.0063L133.35 29.0063L129.551 35.5857L125.759 42.1581Z" fill-rule="evenodd" clip-rule="evenodd" fill="#DEDCDA"/>
+        <path d="M100.757 27.6835L104.556 21.1111L108.348 14.5388L115.946 14.5388L123.537 14.5388L127.329 21.1111L131.128 27.6835L127.329 34.2629L123.537 40.8352L115.946 40.8352L108.348 40.8352L104.556 34.2629L100.757 27.6835Z" fill-rule="evenodd" clip-rule="evenodd" fill="#DEDCDA"/>
+        <path d="M151.136 56.6893L154.935 63.2687L158.727 69.8411L166.325 69.8411L173.916 69.8411L177.708 63.2687L181.507 56.6893L177.708 50.117L173.916 43.5376L166.325 43.5376L158.727 43.5376L154.935 50.117L151.136 56.6893Z" fill-rule="evenodd" clip-rule="evenodd" fill="#DEDCDA"/>
+    </svg>
+""")
+
+# Card background colour; keep in sync with the literal value in EMPTY_STATE_CSS.
 EMPTY_STATE_BACKGROUND = "#FAF8F8"
 
-# Shown in the chart area in place of the widget whenever there is no data
-# to plot - a neutral empty state, not a warning, since nothing is broken.
+# Styles for the loading, no-data and error cards and the disabled download toolbar.
 EMPTY_STATE_CSS = """
     .empty-state {
         display: flex;
@@ -51,9 +60,7 @@ EMPTY_STATE_CSS = """
         padding: 80px 24px;
         background: #FAF8F8;
     }
-    /* calculate-*.py's chart-container is shared with the chart widget, so
-       its own white background can't just be swapped out - only recolor it
-       while it's holding the empty/error card instead. */
+    /* Recolour the chart container only while it holds a state card. */
     .chart-container:has(.empty-state) {
         background: #FAF8F8;
     }
@@ -97,6 +104,46 @@ EMPTY_STATE_CSS = """
         font-weight: 400;
         line-height: 150%;
     }
+    /* Hide the static loading placeholder once no_data_state has rendered. */
+    #no_data_state:not(:empty) ~ .empty-state-placeholder {
+        display: none;
+    }
+    /* Stop Shiny dimming the state cards while they recalculate. */
+    #no_data_state.recalculating > * {
+        opacity: 1;
+    }
+    .empty-state-loading-text {
+        margin: 0;
+        color: var(--Neutral-Default, #595757);
+        text-align: center;
+        font-family: "IBM Plex Sans", sans-serif;
+        font-size: 16px;
+        font-style: normal;
+        font-weight: 400;
+        line-height: 150%;
+    }
+    .empty-state-loading-icon {
+        width: 182px;
+        height: 114px;
+        flex-shrink: 0;
+        margin-bottom: 24px;
+    }
+    /* Staggered pulse across the loading icon's hexagons. */
+    .empty-state-loading-icon path {
+        animation: empty-state-loading-pulse 1.6s ease-in-out infinite;
+    }
+    .empty-state-loading-icon path:nth-child(4n + 2) { animation-delay: 0.2s; }
+    .empty-state-loading-icon path:nth-child(4n + 3) { animation-delay: 0.4s; }
+    .empty-state-loading-icon path:nth-child(4n + 4) { animation-delay: 0.6s; }
+    @keyframes empty-state-loading-pulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.35; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+        .empty-state-loading-icon path {
+            animation: none;
+        }
+    }
     .download-toolbar-wrapper {
         position: relative;
         display: inline-flex;
@@ -112,10 +159,7 @@ EMPTY_STATE_CSS = """
 
 
 def wrap_download_toolbar(toolbar):
-    """Wrap a create_download_toolbar(...) result with a conditional grey-
-    out overlay shown while the empty state is displayed - same
-    has_data_input hidden-input pattern used to gate the chart widget via
-    gate_chart_widget(), reused here so both stay in sync with has_data()."""
+    """Wrap the download toolbar with an overlay that disables it while there is no data."""
     return ui.div(
         toolbar,
         ui.panel_conditional(
@@ -127,24 +171,15 @@ def wrap_download_toolbar(toolbar):
 
 
 def hidden_has_data_input():
-    """The hidden has_data_input alone, for layouts where the no_data_state
-    output needs its own custom wrapping instead of empty_state_slot()'s
-    (e.g. cross-sectional-demographics.py's single empty-state card
-    standing in for its 4 chart cards).
-
-    panel_conditional's condition is evaluated against input.*, not
-    output.* - a hidden input kept in sync with has_data() (see
-    register_empty_state's sync_has_data_input) rather than a hidden
-    output."""
+    """Hidden has_data_input that panel_conditional gates read; starts "false"."""
     return ui.div(
-        ui.input_text("has_data_input", "", value="true"),
+        ui.input_text("has_data_input", "", value="false"),
         style="display: none;",
     )
 
 
 def empty_state_slot():
-    """Hidden has_data_input + the no_data_state output placeholder, to
-    splat into the chart-container div ahead of the gated chart widget."""
+    """Hidden has_data_input and the no_data_state output, placed before the chart."""
     return [
         hidden_has_data_input(),
         ui.output_ui("no_data_state"),
@@ -152,9 +187,7 @@ def empty_state_slot():
 
 
 def gate_chart_widget(widget):
-    """Chart widget stays registered exactly once, always - panel_conditional
-    only ever toggles its CSS visibility, so it's never regenerated/
-    duplicated when has_data() changes."""
+    """Show the chart widget only while has_data_input is "true"."""
     return ui.panel_conditional(
         "input.has_data_input === 'true'",
         widget,
@@ -162,40 +195,35 @@ def gate_chart_widget(widget):
 
 
 def empty_state_card(style=""):
-    """A single empty-state card, shown only while has_data() is false, for
-    layouts where several charts/KPI cards collapse into one shared empty
-    state instead of each showing its own (cross-sectional-demographics.py,
-    length-of-stay.py, 30-day-readmission.py). Pair with hidden_has_data_input()
-    and gate_chart_widget() for the rest of the layout.
-
-    Wrapping in its own panel_conditional - not just relying on
-    no_data_state() returning None while has_data() is true - matters: an
-    unconditional wrapper div would still show its padding/border as an
-    empty box even with nothing inside it."""
+    """One state card for all charts, shown while there is no data, with a static loading placeholder."""
     return ui.panel_conditional(
         "input.has_data_input === 'false'",
         ui.div(
             ui.output_ui("no_data_state"),
+            ui.div(loading_card(), class_="empty-state-placeholder"),
             style=f"{style}background: {EMPTY_STATE_BACKGROUND};",
         ),
     )
 
 
 def state_card(title, subtitle, icon=EMPTY_STATE_ICON, action=None):
-    """The icon/title/subtitle block shared by the empty and error states -
-    same layout, only the icon and wording differ. action, if given, is
-    an extra element (e.g. the error card's retry button) shown below the
-    subtitle.
-
-    Public for dashboards whose layout doesn't fit register_empty_state's
-    single no_data_state slot (loss-to-follow-up.py renders its states
-    inside its own results_area)."""
+    """Icon, title and subtitle card, with an optional action element below."""
     return ui.div(
         icon,
         ui.p(title, class_="empty-state-title"),
         ui.p(subtitle, class_="empty-state-subtitle"),
         action,
         class_="empty-state",
+    )
+
+
+def loading_card(title="Loading data..."):
+    """Loading icon and text card, the same size as state_card."""
+    return ui.div(
+        LOADING_STATE_ICON,
+        ui.p(title, class_="empty-state-loading-text"),
+        class_="empty-state",
+        role="status",
     )
 
 
@@ -210,45 +238,27 @@ def register_empty_state(
     error_icon_svg=ERROR_ICON_SVG,
     retry_input_id=None,
     retry_label="Retry",
+    loading=None,
+    loading_title="Loading data...",
 ):
-    """Registers the sync_has_data_input effect and no_data_state output
-    shared by every dashboard's empty state, against that dashboard's own
-    output object and has_data() reactive.Calc.
-
-    error, if given, is a zero-arg callable (e.g. a reactive.Value) that's
-    truthy when the last fetch failed. no_data_state then shows the
-    error_title/error_subtitle card instead of the empty one, in the same
-    slot - the caller is expected to clear its data on failure so
-    has_data() is false and the chart/toolbar are gated off the same way
-    they are for an empty result. The error_* defaults come from
-    error_state.py; error_icon_svg is the raw <svg> markup for the error
-    card's icon.
-
-    retry_input_id, if given, adds a retry button with that input id to
-    the error card only - never the empty card, since there's nothing to
-    retry when the fetch succeeded with no rows. The caller owns the
-    handler: a separate @reactive.event(input.<retry_input_id>) effect
-    that re-runs its fetch (see calculate-incidence.py)."""
+    """Register the has_data_input sync and the no_data_state output (loading, error or empty card)."""
     error_icon = error_state_icon(error_icon_svg)
 
     @reactive.Effect
     def sync_has_data_input():
-        """Keeps the hidden has_data_input in sync with has_data(), for
-        the panel_conditional gating the chart widget - see
-        empty_state_slot()'s docstring for why it's a hidden input instead
-        of referencing an output value directly."""
+        """Copy has_data() into the hidden has_data_input."""
         ui.update_text("has_data_input", value="true" if has_data() else "false")
 
-    @output
+    # Render while hidden so the loading card shows during the first fetch.
+    @output(suspend_when_hidden=False)
     @render.ui
     def no_data_state():
-        """Empty state shown in place of the chart whenever data_store is
-        empty (still loading, or the selected cohort/date range returned no
-        data) - nothing is broken there, so it's a neutral card. If the
-        dashboard passed an error callable and it's set, the fetch itself
-        failed and the error card is shown instead."""
+        """Loading card while fetching, error card after a failed fetch, else the no-data card."""
         if has_data():
             return None
+
+        if loading is not None and loading():
+            return loading_card(loading_title)
 
         if error is not None and error():
             retry_button = None

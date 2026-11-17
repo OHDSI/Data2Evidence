@@ -4,8 +4,25 @@ import { MINUTE_1, MINUTE_3, SECOND_20, SECOND_30 } from './tests/const'
 
 dotenv.config({ quiet: true })
 
+// The HANA demo setup provisions "Demo dataset HANA" from CDMSYNPUF5PCT rather
+// than the DuckDB demo dataset, so specs that assert on demo data, cohort
+// counts or seed-patched screenshots cannot pass against it. Only specs that
+// exercise the platform independently of the dataset run there; extend this
+// list as further specs are made to pass on HANA.
+const HANA_SPECS = [
+  '00-login-page/logo.spec.ts',
+  '02-users/**/*.spec.ts',
+  '07-setup/admin_portal.spec.ts',
+  '07-setup/metadata.spec.ts',
+  '08-dataflow/**/*.spec.ts',
+  '10-jobs/job-overview.spec.ts'
+]
+
+const isHana = process.env.E2E_DB_DIALECT === 'hana'
+
 export default defineConfig({
   testDir: 'tests',
+  ...(isHana ? { testMatch: HANA_SPECS.map((spec) => `**/${spec}`) } : {}),
   timeout: MINUTE_3, // 3 minutes per test
   expect: {
     timeout: SECOND_30 // 30 seconds for expect conditions

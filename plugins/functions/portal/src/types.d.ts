@@ -127,7 +127,7 @@ export type CdmSchemaOption = (typeof CDM_SCHEMA_OPTIONS)[number];
 export interface IDatasetDetailMetadataUpdateDto {
   id: string;
   detail: IDatasetDetailBaseDto;
-  dashboards: IDatasetDashboardBaseDto[];
+  dashboards?: IDatasetDashboardBaseDto[];
   attributes: IDatasetAttribute[];
   tags: string[];
   type?: string;

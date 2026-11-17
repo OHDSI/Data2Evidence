@@ -19,11 +19,11 @@ from .chunk_utils import (
     describe_dry_run_summary,
     describe_plan,
     find_column_case_insensitive,
-    plan_chunks,
     resolve_target_chunk_rows,
 )
 from .checkpoint import (
     COPY_STATUS_TABLE_NAME,
+    WEBAPI_RESULT_TABLES,
     apply_fresh_copy,
     clear_resume_point,
     drop_status_tables,
@@ -34,10 +34,11 @@ from .checkpoint import (
     read_checkpoint,
     record_chunk_progress,
     reset_table,
+    webapi_owned_tables_to_skip,
 )
 from .errors import ChunkCopyError, PlannerError, ReconciliationError
 from .planner_types import ChunkConfig, ChunkStrategy
-from .source_stats import build_source_adapter
+from .source_stats import build_source_adapter, plan_table
 
 from _shared_flow_utils.types import SupportedDatabaseDialects
 
@@ -72,7 +73,7 @@ def create_schema_if_not_exists_task(use_trex_conn: bool, copy_params: CopyParam
         try:
             trex_conn = get_trex_connection(copy_params.target_database)
             pg_cursor = trex_conn.cursor()
-            pg_cursor.execute("CALL pg_clear_cache();")
+            pg_cursor.execute("CALL postgres_clear_cache();")
 
             create_schema_if_not_exists(pg_cursor, copy_params, logger)
 
@@ -165,6 +166,7 @@ def create_schema_tables(write_conn: Any, read_conn: Any, copy_params: CopyParam
             str(prefect_flow_run.id),
             dry_run=copy_params.dry_run,
             logger=logger,
+            protected=WEBAPI_RESULT_TABLES if copy_params.protect_webapi_results else frozenset(),
         )
 
     # Determine tables to copy
@@ -203,6 +205,14 @@ def create_schema_tables(write_conn: Any, read_conn: Any, copy_params: CopyParam
         logger.info(
             f"Found {len(tables_to_copy)} tables/views to copy from schema '{copy_params.source_schema}': {tables_to_copy}"
         )
+
+    # WebAPI writes these into the cache itself; copy them only the first time.
+    webapi_owned = webapi_owned_tables_to_skip(
+        write_conn, copy_params.target_database, copy_params.target_schema, tables_to_copy
+    ) if copy_params.protect_webapi_results else []
+    if webapi_owned:
+        logger.info(f"Leaving WebAPI-owned tables already in the cache untouched: {webapi_owned}")
+        tables_to_copy = [t for t in tables_to_copy if t not in webapi_owned]
 
     original_count = len(tables_to_copy)
 
@@ -539,8 +549,11 @@ def copy_table(write_conn: Any, read_conn: Any, copy_params: CopyParameters, que
         else None
     )
 
-    stats = adapter.collect(source_schema, table, config, logger, allowed_columns)
-    plan = plan_chunks(dialect, source_schema, table, stats, config)
+    # Tries another chunk column when the first one is rejected or skewed,
+    # instead of failing the cache build on it (issue 3576).
+    stats, plan = plan_table(
+        adapter, dialect, source_schema, table, config, logger, allowed_columns
+    )
     logger.info(describe_plan(plan, source_schema, table))
 
     if config.dry_run:

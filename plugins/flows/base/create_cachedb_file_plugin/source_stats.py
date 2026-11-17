@@ -16,10 +16,16 @@ switching to these builders does not change which table a query resolves to.
 import re
 from collections.abc import Iterable, Sequence
 
-from .chunk_utils import resolve_chunk_count
+from .chunk_utils import plan_chunks, resolve_chunk_count
 from .errors import PlannerError
 from .filter import CHUNK_COLUMN_MAP
-from .planner_types import ChunkColumnCandidate, ChunkConfig, ChunkStats, ColumnKind
+from .planner_types import (
+    ChunkColumnCandidate,
+    ChunkConfig,
+    ChunkPlan,
+    ChunkStats,
+    ColumnKind,
+)
 
 # Identifiers reach the SQL text by interpolation, because neither dataset,
 # table nor column can be a bind parameter in any of these statements. So the
@@ -183,6 +189,33 @@ def pg_column_meta_sql(schema: str, table: str, column: str) -> str:
         "FROM pg_attribute a "
         f"WHERE a.attrelid = to_regclass('\"{schema}\".\"{table}\"') "
         f"AND a.attname = '{column}' "
+        "AND a.attnum > 0 AND NOT a.attisdropped"
+    )
+
+
+def pg_column_stats_sql(schema: str, table: str) -> str:
+    """Per-column statistics from ``pg_stats``, for tables with no better choice.
+
+    Read-only and free: ``pg_stats`` is what ANALYZE (or autovacuum) already
+    collected, and it only shows columns the connection may read. A table that
+    has never been analysed has no rows here, which leaves the fallback with
+    nothing to pick rather than guessing.
+
+    ``most_common_freqs`` is sorted descending, so its first element is the
+    share of the most frequent value -- the rows no predicate can split.
+    """
+    _check_identifier(schema, "schema")
+    _check_identifier(table, "table")
+    return (
+        "SELECT a.attname AS column_name, "
+        "format_type(a.atttypid, a.atttypmod) AS data_type, "
+        "NOT a.attnotnull AS nullable, "
+        "s.n_distinct, s.null_frac, "
+        "COALESCE((s.most_common_freqs)[1], 0) AS top_freq "
+        "FROM pg_attribute a "
+        "JOIN pg_stats s ON s.attname = a.attname "
+        f"AND s.schemaname = '{schema}' AND s.tablename = '{table}' "
+        f"WHERE a.attrelid = to_regclass('\"{schema}\".\"{table}\"') "
         "AND a.attnum > 0 AND NOT a.attisdropped"
     )
 
@@ -423,6 +456,66 @@ def pick_pg_candidate(
     return None
 
 
+#: A statistics candidate needs at least this many distinct values. Fewer
+#: cannot be cut into the two intervals a large table requires.
+MIN_STATISTICS_DISTINCT = 3
+
+
+def pick_pg_stats_candidate(
+    rows: Iterable[Sequence],
+    row_count: int,
+    allowed_columns: Iterable | None = None,
+    excluded_columns: Iterable = (),
+):
+    """Choose a chunk column from ``pg_stats`` when nothing better exists.
+
+    ``rows`` are ``(name, data_type, nullable, n_distinct, null_frac,
+    top_freq)`` from :func:`pg_column_stats_sql`. ``n_distinct`` is negative
+    when Postgres expects the count to grow with the table (``-1`` means every
+    value is distinct), so it is turned into a count against ``row_count``.
+
+    The column whose largest unsplittable group is smallest wins -- the most
+    frequent value or the NULL chunk, whichever is bigger -- and more distinct
+    values break the tie. That is the property the planner's guards measure,
+    so the column picked here is the one least likely to be rejected.
+    """
+    allowed = normalise_allowed_columns(allowed_columns)
+    excluded = {str(name).lower() for name in excluded_columns}
+    best = None
+    best_key = None
+    for row in rows:
+        name, data_type, nullable, n_distinct, null_frac, top_freq = row[:6]
+        if not is_orderable_pg_type(data_type):
+            continue
+        # The boundary and predicate SQL only accept plain identifiers. A
+        # quoted name such as "site-id" would win here and then raise inside
+        # collect(), outside plan_table's retry, failing the whole build.
+        if not isinstance(name, str) or not _IDENTIFIER_RE.match(name):
+            continue
+        if not _is_allowed(name, allowed) or str(name).lower() in excluded:
+            continue
+        n_distinct = float(n_distinct or 0)
+        distinct = n_distinct if n_distinct >= 0 else -n_distinct * max(row_count, 0)
+        if distinct < MIN_STATISTICS_DISTINCT:
+            continue
+        null_share = float(null_frac or 0) if nullable else 0.0
+        key = (max(float(top_freq or 0), null_share), -distinct)
+        if best_key is None or key < best_key:
+            best_key = key
+            best = ChunkColumnCandidate(
+                name=name,
+                kind=ColumnKind.STATISTICS,
+                data_type=str(data_type),
+                nullable=bool(nullable),
+            )
+    return best
+
+
+def _without(rows: Iterable[Sequence], excluded: set[str]) -> list:
+    """Candidate rows whose column (first field) has not been tried already."""
+    return [row for row in rows if str(row[0]).lower() not in excluded]
+
+
 # --------------------------------------------------------------------------
 # Adapters
 # --------------------------------------------------------------------------
@@ -465,7 +558,9 @@ class _BaseAdapter:
     def count_rows_exact(self, schema: str, table: str) -> int:
         raise NotImplementedError
 
-    def pick_chunk_column(self, schema: str, table: str, allowed_columns=None):
+    def pick_chunk_column(
+        self, schema: str, table: str, allowed_columns=None, excluded_columns=(), row_count=0
+    ):
         raise NotImplementedError
 
     def column_boundaries(self, schema: str, table: str, column: str, chunk_count: int) -> list:
@@ -483,6 +578,7 @@ class _BaseAdapter:
         config: ChunkConfig,
         logger,
         allowed_columns: Iterable | None = None,
+        excluded_columns: Iterable = (),
     ) -> ChunkStats:
         """Measure a table. The only method the copier needs to call.
 
@@ -499,6 +595,9 @@ class _BaseAdapter:
         unbounded copy of a table too large to chunk is the failure mode issue
         3033 exists to stop, and it must not be reached by way of a column
         filter either.
+
+        ``excluded_columns`` are columns already tried and rejected for this
+        table; see :func:`plan_table`.
         """
         row_count, is_exact = self.count_rows(schema, table)
 
@@ -521,7 +620,9 @@ class _BaseAdapter:
             # neither a chunk column nor a boundary scan is worth paying for.
             return ChunkStats(row_count, is_exact, None, ())
 
-        column = self.pick_chunk_column(schema, table, allowed_columns)
+        column = self.pick_chunk_column(
+            schema, table, allowed_columns, excluded_columns, row_count
+        )
         if column is None:
             # Reported honestly; plan_chunks is what decides that a large
             # table without a chunk column is a hard failure (issue 3033).
@@ -567,8 +668,11 @@ class BigQuerySourceAdapter(_BaseAdapter):
         # this to bq_exact_count_sql.
         return self.count_rows(schema, table)[0]
 
-    def pick_chunk_column(self, schema: str, table: str, allowed_columns=None):
-        rows = self._rows(bq_candidates_sql(schema, table))
+    def pick_chunk_column(
+        self, schema: str, table: str, allowed_columns=None, excluded_columns=(), row_count=0
+    ):
+        excluded = {str(name).lower() for name in excluded_columns}
+        rows = _without(self._rows(bq_candidates_sql(schema, table)), excluded)
         return pick_bq_candidate(
             rows,
             mapped_column=CHUNK_COLUMN_MAP.get(table),
@@ -607,10 +711,15 @@ class PostgresSourceAdapter(_BaseAdapter):
     def count_rows_exact(self, schema: str, table: str) -> int:
         return int(self._scalar(pg_exact_count_sql(schema, table)) or 0)
 
-    def pick_chunk_column(self, schema: str, table: str, allowed_columns=None):
+    def pick_chunk_column(
+        self, schema: str, table: str, allowed_columns=None, excluded_columns=(), row_count=0
+    ):
         allowed = normalise_allowed_columns(allowed_columns)
-        pk_rows = self._rows(pg_candidates_sql(schema, table))
+        excluded = {str(name).lower() for name in excluded_columns}
+        pk_rows = _without(self._rows(pg_candidates_sql(schema, table)), excluded)
         mapped_column = CHUNK_COLUMN_MAP.get(table)
+        if mapped_column and mapped_column.lower() in excluded:
+            mapped_column = None
         mapped_meta = None
         # Skip the metadata round trip when the mapped column is not being
         # copied: its type cannot change the answer.
@@ -618,7 +727,16 @@ class PostgresSourceAdapter(_BaseAdapter):
             meta_rows = self._rows(pg_column_meta_sql(schema, table, mapped_column))
             if meta_rows:
                 mapped_meta = tuple(meta_rows[0])
-        return pick_pg_candidate(pk_rows, mapped_column, mapped_meta, allowed)
+        candidate = pick_pg_candidate(pk_rows, mapped_column, mapped_meta, allowed)
+        if candidate is not None:
+            return candidate
+        # No primary key and no usable mapped column: pick from the statistics
+        # Postgres already holds, rather than failing a table nobody mapped
+        # (Achilles/Heracles results, site-specific tables) or one whose
+        # mapped column was rejected.
+        return pick_pg_stats_candidate(
+            self._rows(pg_column_stats_sql(schema, table)), row_count, allowed, excluded
+        )
 
     def column_boundaries(self, schema: str, table: str, column: str, chunk_count: int) -> list:
         rows = self._rows(pg_boundaries_sql(schema, table, column, chunk_count))
@@ -626,6 +744,71 @@ class PostgresSourceAdapter(_BaseAdapter):
 
     def count_nulls(self, schema: str, table: str, column: str) -> int:
         return int(self._scalar(pg_null_count_sql(schema, table, column)) or 0)
+
+
+#: Chunk columns tried per table before giving up. Each attempt costs one
+#: boundary query on the source, so this stays small.
+MAX_PLAN_ATTEMPTS = 3
+
+
+def plan_table(
+    adapter: _BaseAdapter,
+    dialect: str,
+    schema: str,
+    table: str,
+    config: ChunkConfig,
+    logger,
+    allowed_columns: Iterable | None = None,
+    max_attempts: int = MAX_PLAN_ATTEMPTS,
+) -> tuple[ChunkStats, ChunkPlan]:
+    """Measure and plan one table, trying another chunk column when one is rejected.
+
+    A rejected column used to fail the whole cache build, even when the table
+    had a perfectly good column to chunk on (issue 3576). Now the planner
+    moves on to the adapter's next candidate: on Postgres that ends with a
+    column picked from ``pg_stats``.
+
+    A skewed plan -- one value holding more rows than a chunk may -- is not
+    rejected. It is what today's copy would run, so it is kept as the answer of
+    last resort and only replaced when another column plans without skew.
+    That way no table that copies today starts failing because of this check.
+    """
+    excluded: set[str] = set()
+    first_error: PlannerError | None = None
+    skewed: tuple[ChunkStats, ChunkPlan] | None = None
+    for _ in range(max(1, max_attempts)):
+        stats = adapter.collect(
+            schema, table, config, logger, allowed_columns, frozenset(excluded)
+        )
+        try:
+            plan = plan_chunks(dialect, schema, table, stats, config)
+        except PlannerError as exc:
+            if first_error is None:
+                first_error = exc
+            if stats.column is None:
+                break
+            logger.warning(f"{exc} Trying another chunk column.")
+            excluded.add(stats.column.name.lower())
+            continue
+        if not plan.is_skewed:
+            return stats, plan
+        logger.warning(
+            f"{schema}.{table}: chunking on {plan.column_name} would put about "
+            f"{plan.estimated_largest_chunk_rows:,} rows into one chunk (limit "
+            f"{plan.max_chunk_rows:,}): a few values hold most of the table. "
+            "Trying another chunk column."
+        )
+        if skewed is None:
+            skewed = (stats, plan)
+        excluded.add(plan.column_name.lower())
+
+    if skewed is not None:
+        logger.warning(
+            f"{schema}.{table}: no better chunk column found; copying with the "
+            f"skewed plan on {skewed[1].column_name}."
+        )
+        return skewed
+    raise first_error
 
 
 def build_source_adapter(read_conn) -> _BaseAdapter:

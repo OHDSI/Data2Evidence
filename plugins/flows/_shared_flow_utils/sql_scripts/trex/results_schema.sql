@@ -1,6 +1,6 @@
 CREATE TABLE ${RESULTS_SCHEMA}.cohort (
 	cohort_definition_id integer NOT NULL,
-	subject_id integer NOT NULL,
+	subject_id bigint NOT NULL,
 	cohort_start_date date NOT NULL,
 	cohort_end_date date NOT NULL 
 );

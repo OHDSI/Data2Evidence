@@ -19,14 +19,15 @@ Rscript -e 'if (!requireNamespace("renv", quietly = TRUE)) install.packages("ren
 # duckdb is the exception: conda-forge has no linux-aarch64 r-duckdb, and its
 # source build is the heaviest in the stack (~3h under the worker image's
 # QEMU-emulated arm64 build). Posit Package Manager serves an aarch64 binary of
-# the same CRAN snapshot. Unlike PPM binaries in general (RENV_CONFIG_PPM_ENABLED
-# is off in pyproject.toml), it bundles DuckDB and links only libR and the C/C++
+# the snapshot renv.lock takes duckdb from (its CRAN-duckdb2 repository).
+# Unlike PPM binaries in general (RENV_CONFIG_PPM_ENABLED is off in
+# pyproject.toml), it bundles DuckDB and links only libR and the C/C++
 # runtime, so it loads into the conda R. Refuse anything but that binary: a
 # source tarball here would silently turn into the multi-hour compile.
 lockfile=renv.lock
 if [ "$(uname -m)" = "aarch64" ]; then
   lockfile=renv.aarch64.lock
-  snapshot=https://packagemanager.posit.co/cran/__linux__/noble/2025-09-22
+  snapshot=https://packagemanager.posit.co/cran/__linux__/noble/2026-11-02
   v=$(python3 -c 'import json; print(json.load(open("renv.lock"))["Packages"]["duckdb"]["Version"])')
   r_ver=$(Rscript -e 'cat(format(getRversion()))')
   tgz=$(mktemp --suffix=.tar.gz)

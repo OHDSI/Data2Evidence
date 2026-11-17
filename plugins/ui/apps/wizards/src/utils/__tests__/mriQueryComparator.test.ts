@@ -1,4 +1,6 @@
 import { describe, expect, it } from "vitest";
+import type { FieldDefinition } from "../../types/wizard";
+import { buildMriBookmark } from "../mriQuery";
 import { areMriQueriesEquivalent, getMriQueryIdentity } from "../mriQueryComparator";
 
 const cards = {
@@ -167,6 +169,34 @@ describe("MRI query comparison", () => {
     reversedBookmark.filter.cards.content[0].content[0].attributes.content[0].constraints.content.reverse();
 
     expect(areMriQueriesEquivalent(twoExpressionBookmark, reversedBookmark)).toBe(false);
+  });
+
+  it("does not match a range bookmark with the same range in the flat AND shape", () => {
+    const ageField: FieldDefinition = {
+      id: "age",
+      type: "num",
+      label: "Age",
+      required: false,
+      configPath: "patient.attributes.Age",
+    };
+    const { bookmark: rangeBookmark } = buildMriBookmark(
+      [ageField],
+      { age: "[40-100]" },
+      { configId: "test-config", configVersion: "2" },
+      "dataset-1"
+    );
+    const flatBookmark = JSON.parse(JSON.stringify(rangeBookmark));
+    flatBookmark.filter.cards.content[0].content[0].attributes.content[0].constraints = {
+      type: "BooleanContainer",
+      op: "AND",
+      content: [
+        { type: "Expression", operator: ">=", value: 40 },
+        { type: "Expression", operator: "<=", value: 100 },
+      ],
+    };
+
+    expect(getMriQueryIdentity(rangeBookmark)).not.toBeNull();
+    expect(areMriQueriesEquivalent(rangeBookmark, flatBookmark)).toBe(false);
   });
 
   it.each([null, undefined, "not-json", {}, { bookmark: "not-json" }])(

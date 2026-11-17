@@ -29,11 +29,45 @@ export interface MenuItem {
   divider?: boolean;
 }
 
+/** Which corner of the trigger the popover grows from. */
+export type MenuPlacement = "bottom-start" | "bottom-end" | "top-start" | "top-end";
+
+const PLACEMENT_ORIGINS: Record<
+  MenuPlacement,
+  {
+    anchorOrigin: { vertical: "top" | "bottom"; horizontal: "left" | "right" };
+    transformOrigin: { vertical: "top" | "bottom"; horizontal: "left" | "right" };
+  }
+> = {
+  "bottom-start": {
+    anchorOrigin: { vertical: "bottom", horizontal: "left" },
+    transformOrigin: { vertical: "top", horizontal: "left" },
+  },
+  "bottom-end": {
+    anchorOrigin: { vertical: "bottom", horizontal: "right" },
+    transformOrigin: { vertical: "top", horizontal: "right" },
+  },
+  "top-start": {
+    anchorOrigin: { vertical: "top", horizontal: "left" },
+    transformOrigin: { vertical: "bottom", horizontal: "left" },
+  },
+  "top-end": {
+    anchorOrigin: { vertical: "top", horizontal: "right" },
+    transformOrigin: { vertical: "bottom", horizontal: "right" },
+  },
+};
+
 export interface MenuProps {
   items: MenuItem[];
   width?: number | string;
   onSelect?: (value: string) => void;
   closeOnSelect?: boolean;
+  /**
+   * Preferred corner the popover opens from (default "bottom-end"). The popover
+   * still shifts to stay within the viewport (MUI keeps a 16px margin and caps
+   * height with internal scroll); it does not flip to the opposite side.
+   */
+  placement?: MenuPlacement;
   /** Render the trigger to anchor a popover. With none, the list is inline. */
   activator?: (args: {
     open: (event: React.MouseEvent<HTMLElement>) => void;
@@ -165,6 +199,7 @@ export function Menu({
   width = 330,
   onSelect,
   closeOnSelect = true,
+  placement = "bottom-end",
   activator,
   children,
 }: MenuProps) {
@@ -194,8 +229,8 @@ export function Menu({
         open={isOpen}
         anchorEl={anchorEl}
         onClose={() => setAnchorEl(null)}
-        anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
-        transformOrigin={{ vertical: "top", horizontal: "right" }}
+        anchorOrigin={PLACEMENT_ORIGINS[placement].anchorOrigin}
+        transformOrigin={PLACEMENT_ORIGINS[placement].transformOrigin}
       >
         <MenuList
           items={items}

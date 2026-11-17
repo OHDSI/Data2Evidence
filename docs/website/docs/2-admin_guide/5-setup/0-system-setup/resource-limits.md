@@ -58,3 +58,15 @@ For `D2E_SWAP_LIMIT`, 4 times the value provided by D2E_MEMORY_LIMIT will be use
   # To change it to use 2 times the value provided by D2E_MEMORY_LIMIT
   D2E_MEM_TO_SWAP_LIMIT_RATIO=2
   ```
+
+## Cohort live preview concurrency
+
+`TREXSQL_PREVIEW_MAX_CONCURRENT` sets how many cohort live previews (the counts shown while editing a cohort in Atlas) trex runs at once. Further previews wait in a queue. The default is `1`.
+
+Raise it when several users build cohorts at the same time, for example in a training session. In a load test with 15 users on a 16 vCPU instance, `8` brought the median preview time from 1.8s down to 0.5s; higher values added little and used more CPU.
+
+```bash
+TREXSQL_PREVIEW_MAX_CONCURRENT=8
+```
+
+On Kubernetes, set `trex.previewMaxConcurrent` in the Helm values.
