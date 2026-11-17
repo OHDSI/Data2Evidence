@@ -32,7 +32,12 @@ export default defineConfig({
   testDir: 'tests',
   ...(isHana ? { testMatch: HANA_SPECS.map((spec) => `**/${spec}`) } : {}),
   testIgnore: process.env.SKIP_IDP_SPECS
-    ? ['**/idp/physionet.spec.ts', '**/idp/entra-external-id.spec.ts']
+    ? [
+        '**/idp/logto-federated.spec.ts',
+        '**/idp/physionet.spec.ts',
+        '**/idp/entra-external-id.spec.ts',
+        '**/idp/entra.spec.ts'
+      ]
     : [],
   timeout: MINUTE_3, // 3 minutes per test
   expect: {

@@ -58,7 +58,8 @@ exist in repo-root `.env.local`) and the **test** block (`D2E_BASE_URL` + the `E
 spec reads). `E2E_ENV_FILE` is resolved relative to `tests/e2e/`; it's loaded before `.env`, so
 a plain `.env` still fills in anything a provider file omits.
 
-- Baseline in CI: `docker-build-push.yaml` → `test_demosetup_dev` runs `npm test`, which picks
-  up `idp/logto-federated.spec.ts` on every PR.
+- Baseline in CI: `test-e2e-idp.yml` runs `idp/logto-federated.spec.ts` on every PR in
+  logto-federated mode. `test_demosetup_dev` runs in trex mode and skips the `idp/` specs
+  (`SKIP_IDP_SPECS=1`).
 - Gated specs in CI: set the `E2E_*` repo secrets and boot a stack with the connector applied;
   the `e2e tests` step already forwards those secrets into the test container.
