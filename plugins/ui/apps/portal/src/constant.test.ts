@@ -7,7 +7,7 @@ describe("i2b2 dataset type maps", () => {
 
   it("i2b2 action menu excludes create-cache and transform-to-webapi", () => {
     const actions = ActionSelectorMap["i2b2"];
-    expect(actions).toEqual(["metadata", "permissions", "resources", "delete"]);
+    expect(actions).toEqual(["metadata", "manage-metadata", "permissions", "resources", "delete"]);
     expect(actions).not.toContain("create-cache");
     expect(actions).not.toContain("transform-to-webapi");
   });

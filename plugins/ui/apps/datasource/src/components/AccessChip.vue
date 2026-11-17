@@ -11,7 +11,7 @@
 import { computed } from 'vue'
 import { D2eStatusChip } from '@d2e/ui'
 import type { D2eStatusChipVariant } from '@d2e/ui'
-import type { AccessState } from '../composables/useDatasourceAccess'
+import type { AccessState } from '../composables/useDataSourceAccess'
 
 interface AccessBadge {
   label: string

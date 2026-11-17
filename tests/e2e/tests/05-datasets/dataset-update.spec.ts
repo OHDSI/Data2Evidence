@@ -16,12 +16,12 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByTestId('button').nth(1).click()
   await page.getByRole('button', { name: 'Switch to Admin portal' }).click()
 
-  await page.getByRole('link', { name: 'Datasets' }).click()
-  await page.getByRole('button', { name: 'Add dataset' }).click()
-  await page.getByRole('textbox', { name: 'Dataset name - Displayed on' }).click()
-  await page.getByRole('textbox', { name: 'Dataset name - Displayed on' }).fill('Test_dataset_update')
-  await page.getByTestId('add-study-mde').getByRole('textbox').fill('Test Description')
-  await page.getByRole('textbox', { name: 'Dataset summary' }).fill('Dataset Summary')
+  await page.getByRole('link', { name: 'Data sources' }).click()
+  await page.getByRole('button', { name: 'Add data source' }).click()
+  await page.getByRole('textbox', { name: 'Data source name - Displayed on' }).click()
+  await page.getByRole('textbox', { name: 'Data source name - Displayed on' }).fill('Test_dataset_update')
+  await page.locator('.d2e-markdown-field').getByRole('textbox').fill('Test Description')
+  await page.getByRole('textbox', { name: 'Data source summary' }).fill('Dataset Summary')
   await page.getByTestId('dialog').locator('div').filter({ hasText: 'CDM Schema Option' }).nth(4).click()
   await page.getByRole('option', { name: 'Create new schema', exact: true }).click()
   await page.locator('#mui-component-select-databaseOption').click()
@@ -53,16 +53,16 @@ test(TEST_NAME, async ({ page }) => {
   await expect(stateBadge).toHaveText('Completed', { timeout: MINUTE_2 })
 
   await test.step('Update dataset summary and description', async () => {
-    await page.getByRole('link', { name: 'Datasets' }).click()
+    await page.getByRole('link', { name: 'Data sources' }).click()
     await page
       .getByRole('row', { name: /Test_dataset_update/ })
       .filter({ hasText: 'Not Available' })
       .getByRole('button')
       .nth(2)
       .click()
-    await page.getByRole('option', { name: 'Update dataset' }).click()
-    await page.getByRole('textbox', { name: 'Dataset summary' }).click()
-    await page.getByRole('textbox', { name: 'Dataset summary' }).fill('Updated Summary')
+    await page.getByRole('menuitem', { name: 'Edit data source' }).click()
+    await page.getByRole('textbox', { name: 'Data source summary' }).click()
+    await page.getByRole('textbox', { name: 'Data source summary' }).fill('Updated Summary')
     await page.locator('[class="metadata-form-component"]').getByRole('button').first().click()
 
     await page.getByRole('option', { name: 'Schema Version', exact: true }).click()
@@ -137,13 +137,13 @@ test(TEST_NAME, async ({ page }) => {
   })
 
   await test.step('Hide dataset', async () => {
-    await page.getByRole('link', { name: 'Datasets' }).click()
+    await page.getByRole('link', { name: 'Data sources' }).click()
     await page
       .getByRole('row', { name: /Test_dataset_update/ })
       .getByRole('button')
       .nth(2)
       .click()
-    await page.getByRole('option', { name: 'Update dataset' }).click()
+    await page.getByRole('menuitem', { name: 'Edit data source' }).click()
     await page.getByRole('radio', { name: 'Hidden (only researchers and' }).check()
     await page.getByRole('button', { name: 'Save' }).click()
   })
@@ -187,14 +187,14 @@ test(TEST_NAME, async ({ page }) => {
 
   // Cleanup: Delete the datasets created for testing
   await test.step('Delete datasets', async () => {
-    await page.getByRole('link', { name: 'Datasets' }).click()
+    await page.getByRole('link', { name: 'Data sources' }).click()
     //Delete Test_dataset_update
     await page
       .getByRole('row', { name: /Test_dataset_update/ })
       .getByRole('button')
       .nth(2)
       .click()
-    await page.getByRole('option', { name: 'Delete dataset' }).click()
+    await page.getByRole('menuitem', { name: 'Delete data source' }).click()
     // Enter dataset name to confirm deletion
     await page.getByRole('textbox', { name: 'Enter dataset name to confirm' }).fill('Test_dataset_update')
     await page.getByRole('button', { name: 'Yes, delete' }).click()

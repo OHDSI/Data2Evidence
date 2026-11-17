@@ -466,27 +466,28 @@ export class CachedbDAO {
         [searchText],
       ];
     } else if (semanticRatio > 0) {
-      const duckdbFtsWhereClause = filterWhereClause
-        ? `${filterWhereClause} AND fts_score is not null`
-        : "WHERE fts_score is not null ";
-
       const escapedSearchText = this.escapeLike(searchText);
+      // DuckDB 2.0 treats match_bm25 as side-effecting and rejects a WHERE
+      // on its select-list alias, so the score is filtered one level up.
       return [
         `
       with ${this.getSynonymScoresCTE()},
       sem_fts_scores as (
-        select
-          ${columnsToSelect},
-          ${this.getBestBm25Score(
-            `${this.fts_concept_identifier}.match_bm25(c.concept_id, $1)`,
-            "sy.syn_bm25",
-          )} as fts_score,
-          array_cosine_similarity(e.concept_name_embedding, string_split($3, ',')::FLOAT[384]) as embd_score
-        from
-          ${this.vocabSchemaName}.concept c
-          JOIN ${this.vocabSchemaName}.concept_name_embeddings e USING (concept_id)
-          left join synonym_scores sy on sy.concept_id = c.concept_id
-          ${duckdbFtsWhereClause}
+        select * from (
+          select
+            ${columnsToSelect},
+            ${this.getBestBm25Score(
+              `${this.fts_concept_identifier}.match_bm25(c.concept_id, $1)`,
+              "sy.syn_bm25",
+            )} as fts_score,
+            array_cosine_similarity(e.concept_name_embedding, string_split($3, ',')::FLOAT[384]) as embd_score
+          from
+            ${this.vocabSchemaName}.concept c
+            JOIN ${this.vocabSchemaName}.concept_name_embeddings e USING (concept_id)
+            left join synonym_scores sy on sy.concept_id = c.concept_id
+            ${filterWhereClause}
+        )
+        where fts_score is not null
       ),
       fts as (
         select
@@ -504,26 +505,25 @@ export class CachedbDAO {
         [searchText, escapedSearchText, textEmbedding], // $1, $2, $3
       ];
     } else {
-      const duckdbFtsWhereClause = filterWhereClause
-        ? `${filterWhereClause} AND score is not null`
-        : "WHERE score is not null ";
-
       const escapedSearchText = this.escapeLike(searchText);
       return [
         `
       with ${this.getSynonymScoresCTE()},
       fts as (
-        select
-          ${columnsToSelect},
-          ${this.getBestBm25Score(
-            `${this.fts_concept_identifier}.match_bm25(c.concept_id, $1)`,
-            "sy.syn_bm25",
-          )} as score
-        from
-          ${this.vocabSchemaName}.concept c
-          left join synonym_scores sy on sy.concept_id = c.concept_id
-          ${duckdbFtsWhereClause}
-          order by score desc
+        select * from (
+          select
+            ${columnsToSelect},
+            ${this.getBestBm25Score(
+              `${this.fts_concept_identifier}.match_bm25(c.concept_id, $1)`,
+              "sy.syn_bm25",
+            )} as score
+          from
+            ${this.vocabSchemaName}.concept c
+            left join synonym_scores sy on sy.concept_id = c.concept_id
+            ${filterWhereClause}
+        )
+        where score is not null
+        order by score desc
         )
       `,
         [searchText, escapedSearchText], // $1, $2

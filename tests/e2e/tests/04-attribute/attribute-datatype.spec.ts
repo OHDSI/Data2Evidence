@@ -53,14 +53,14 @@ test(TEST_NAME, async ({ page }) => {
   await expect(page.getByRole('main')).toMatchAriaSnapshot(`- cell "Test Input"`)
   await expect(page.getByRole('main')).toMatchAriaSnapshot(`- cell "DATASET"`)
   await expect(page.getByRole('main')).toMatchAriaSnapshot(`- cell "STRING"`)
-  await page.getByRole('link', { name: 'Datasets' }).click()
+  await page.getByRole('link', { name: 'Data sources' }).click()
   await expect(page.getByRole('main')).toMatchAriaSnapshot(`
-    - heading "Datasets" [level=3]
-    - button "Update dataset metadata"
-    - button "Add dataset"
+    - heading "Data sources" [level=3]
+    - button "Update metadata"
+    - button "Add data source"
     `)
-  await page.getByText('Select action').click()
-  await page.getByRole('option', { name: 'Update dataset' }).click()
+  await page.getByRole('button', { name: 'Actions' }).first().click()
+  await page.getByRole('menuitem', { name: 'Edit data source' }).click()
   await expect(page.getByTestId('dialog-title')).toMatchAriaSnapshot(`- text: Update dataset`)
   await expect(page.getByRole('dialog')).toMatchAriaSnapshot(`- text: Metadata`)
   await page.getByLabel('', { exact: true }).click()
@@ -88,9 +88,9 @@ test(TEST_NAME, async ({ page }) => {
     - text: Attribute Config added successfully.
     - button
     `)
-  await page.getByRole('link', { name: 'Datasets' }).click()
-  await page.getByText('Select action').click()
-  await page.getByRole('option', { name: 'Update dataset' }).click()
+  await page.getByRole('link', { name: 'Data sources' }).click()
+  await page.getByRole('button', { name: 'Actions' }).first().click()
+  await page.getByRole('menuitem', { name: 'Edit data source' }).click()
   await expect(page.getByTestId('dialog-title')).toMatchAriaSnapshot(`- text: Update dataset`)
   await page.getByPlaceholder(' ').click()
   await page.getByPlaceholder(' ').fill('123')
@@ -111,9 +111,9 @@ test(TEST_NAME, async ({ page }) => {
     - text: Attribute Config added successfully.
     - button
     `)
-  await page.getByRole('link', { name: 'Datasets' }).click()
-  await page.getByText('Select action').click()
-  await page.getByRole('option', { name: 'Update dataset' }).click()
+  await page.getByRole('link', { name: 'Data sources' }).click()
+  await page.getByRole('button', { name: 'Actions' }).first().click()
+  await page.getByRole('menuitem', { name: 'Edit data source' }).click()
   await expect(page.locator('d4l-input')).toMatchAriaSnapshot(`
     - textbox
     - text: Value

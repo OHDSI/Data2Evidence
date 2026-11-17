@@ -48,6 +48,10 @@ export class DatasetAttributeRepository extends Repository<DatasetAttribute> {
     return await trxMgr.delete(DatasetAttribute, criteria)
   }
 
+  async updateAttributeSequence(trxMgr: EntityManager, datasetId: string, attributeId: string, sequence: number) {
+    return await trxMgr.update(DatasetAttribute, { datasetId, attributeId }, { sequence })
+  }
+
   createAttribute(datasetId, attribute: IDatasetAttribute) {
     const entity: Partial<DatasetAttribute> = { datasetId, attributeId: attribute.attributeId, value: attribute.value }
     return entity

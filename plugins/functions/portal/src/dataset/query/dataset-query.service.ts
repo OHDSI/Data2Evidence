@@ -92,6 +92,7 @@ export class DatasetQueryService {
       .leftJoin("attribute.attributeConfig", "attributeConfig")
       .where(whereClause, { lookupValue })
       .select(baseColumns)
+      .addOrderBy("attribute.sequence", "ASC", "NULLS LAST")
       .getOne();
 
     if (!dataset) {
@@ -164,6 +165,8 @@ export class DatasetQueryService {
         { hidden: "HIDDEN", datasetIds },
       );
     }
+
+    query.addOrderBy("attribute.sequence", "ASC", "NULLS LAST");
 
     const datasets = await query.getMany();
     const tenant = this.tenantService.getTenant();
@@ -244,6 +247,7 @@ export class DatasetQueryService {
       "datasetDetail.showRequestAccess",
       "attribute.attributeId",
       "attribute.value",
+      "attribute.sequence",
       "attributeConfig.name",
       "attributeConfig.dataType",
       "attributeConfig.isDisplayed",

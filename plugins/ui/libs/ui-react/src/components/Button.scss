@@ -28,7 +28,8 @@
     font-size: 21px;
   }
 
-  &--primary {
+  &--primary,
+  &--danger-solid {
     color: var(--d2e-color-neutral-xtra-lightest);
     box-shadow: var(--d2e-elevation-e2);
 
@@ -53,6 +54,21 @@
   &--secondary:hover,
   &--ghost:hover {
     background: var(--d2e-color-primary-x-x-lightest);
+  }
+
+  &--danger-solid {
+    background: var(--d2e-color-alarm);
+
+    &:hover,
+    &:active,
+    &.Mui-focusVisible {
+      background: var(--d2e-color-alarm);
+      filter: brightness(0.92);
+    }
+
+    &:disabled {
+      filter: none;
+    }
   }
 
   // Destructive tone (Figma): text button with red label, no fill.

@@ -21,6 +21,8 @@ export default defineConfig({
         /^@mui\//,
         /^@emotion\//,
         /^date-fns\/?/,
+        "react-simplemde-editor",
+        /^easymde\/?/,
       ],
     },
     cssCodeSplit: false,

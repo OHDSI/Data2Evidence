@@ -207,7 +207,9 @@ class IbisDao(SqlAlchemyDao):
 
     # --- Helper methods ---
     @contextmanager
-    def ibis_connect(self, *, autocommit: bool = False):
+    def ibis_connect(self, *, autocommit: bool = True):
+        # ibis 11's raw_sql no longer commits; with autocommit off every write is
+        # rolled back on disconnect.
         # Temporary as Ibis does not have a context manager yet
         con = None
         try:
@@ -220,12 +222,6 @@ class IbisDao(SqlAlchemyDao):
                 port=configs.port,
                 database_name=configs.databaseName,
             )
-
-            if autocommit:
-                connection_string = (
-                    connection_string + "?preferQueryMode=simple&autocommit=true"
-                )
-
 
             con = ibis.connect(connection_string, autocommit=autocommit)
             yield con

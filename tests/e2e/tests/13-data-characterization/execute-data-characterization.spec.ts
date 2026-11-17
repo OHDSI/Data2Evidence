@@ -20,15 +20,15 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByRole('button', { name: 'Switch to Admin portal' }).click()
 
   // Trigger data characterization from Datasets page for demo dataset
-  await page.getByRole('link', { name: 'Datasets' }).click()
-  const demoDataset = await page.locator('tr', { hasText: 'Demo dataset' }).getByText('Select action')
+  await page.getByRole('link', { name: 'Data sources' }).click()
+  const demoDataset = await page.locator('tr', { hasText: 'Demo dataset' }).getByRole('button', { name: 'Actions' })
   await demoDataset.click()
-  await page.getByRole('option', { name: 'Run data characterization' }).click()
+  await page.getByRole('menuitem', { name: 'Run data characterization' }).click()
   await page.getByRole('button', { name: 'Run Analysis' }).click()
 
   // Grant researcher dataset permissions
   await demoDataset.click()
-  await page.getByRole('option', { name: 'Permissions' }).click()
+  await page.getByRole('menuitem', { name: 'Update permissions' }).click()
   await page.getByRole('tab', { name: 'Access' }).click()
 
   // Check if the user is already granted researcher access

@@ -115,7 +115,7 @@ for a real dataset.
 | `index.vue` | Shell component: props, view state (PERSON/EVENT, ATTRITION/INTERSECT), wires the composables, loaders, export menus |
 | `composables/useInclusionReportData.ts` | Fetching. Chooses the attrition API or the inclusion-report API, keeps PERSON/EVENT responses separately, builds `treemapData` |
 | `composables/useRuleManagement.ts` | Row order, reorder handlers, aborting stale reorder requests, restoring rule ids, checkbox selection for the intersect view, error message |
-| `composables/useFunnelChart.ts` | Plotly funnel: label wrapping and truncation, hover, clickable y-axis labels, colour thresholds, PNG/CSV export |
+| `composables/useFunnelChart.ts` | Plotly funnel: label wrapping and truncation, hover, clickable y-axis labels, colour thresholds, Reset view, PNG/CSV export |
 | `composables/useTreemapChart.ts` | Echarts treemap: ANY/ALL and PASSED/FAILED greying, custom legend, PNG/CSV export |
 | `computeAttritionStats.ts` | Local attrition from the treemap (adapted from OHDSI Atlas), and API-response → `AttritionStat` mapping |
 | `computeTreemapStats.ts` | Treemap → echarts nodes, tooltip HTML, colour by number of failures |
@@ -125,7 +125,7 @@ for a real dataset.
 | `components/RulesTable.vue` | Draggable table (`vue-draggable-plus`). Dragging is disabled on the Intersect tab. |
 | `components/RuleNameContent.vue` | Renders one rule name with its constraints underneath |
 | `components/SummaryTable.vue`, `components/FilterControls.vue` | Summary block, and the ANY/ALL and PASSED/FAILED selects |
-| Outside this folder | [`../../types/InclusionReportTypes.ts`](../../types/InclusionReportTypes.ts), [`../../../utils/filterCardUtils.ts`](../../../utils/filterCardUtils.ts) (`getInclusionReportFilterCardDetails`, `getRuleNameParts`, `getRuleDisplayName`), [`../../../utils/ExportUtils.ts`](../../../utils/ExportUtils.ts) (`wrapTextByWidth`, `wrapTextToLineLimit`, `truncateTextToWidth`) |
+| Outside this folder | [`../../types/InclusionReportTypes.ts`](../../types/InclusionReportTypes.ts), [`../../../utils/filterCardUtils.ts`](../../../utils/filterCardUtils.ts) (`getInclusionReportFilterCardDetails`, `getRuleNameParts`, `getRuleDisplayName`), [`../../../utils/ExportUtils.ts`](../../../utils/ExportUtils.ts) (`wrapTextByWidth`, `wrapTextToLineLimit`, `truncateTextToWidth`), [`../../../utils/plotlyResetView.ts`](../../../utils/plotlyResetView.ts) (`createResetViewButton`, `ignoreNonPrimaryDrag`) |
 
 ---
 
@@ -187,6 +187,12 @@ for a real dataset.
   `addEventListener`, because plotly reuses those elements. They are re-attached on every
   `plotly_afterplot`. `showAxisDragHandles: false` removes a 20 px strip at the end of each label
   that would otherwise not respond to hover.
+- The mode bar holds only the shared **Reset view** button (`createResetViewButton` in
+  `utils/plotlyResetView.ts`, also used by `StackBarChart.vue`). It relayouts with
+  `yaxis.autorange` taken from `FUNNEL_Y_AUTORANGE` (`'reversed'`, so the funnel reads top down),
+  never from the layout object, because plotly rewrites the layout's `autorange` on zoom.
+- `ignoreNonPrimaryDrag` is registered on the graph div in the **capture** phase, so a
+  right-button, middle-button or ctrl drag never reaches plotly. Only a left drag zooms.
 - The width budgets in `constants.ts` were tuned by hand, not derived. If the chart height
   (fixed at `800`) or the layout changes, revisit them.
 
@@ -243,7 +249,7 @@ Unit tests are in `__tests__/`, with related specs under `src/utils/__tests__/`.
 `plugins/ui/apps/vue-mri-ui-lib`:
 
 ```bash
-npx vitest run src/query-filter/components/InclusionReport src/utils/__tests__/filterCardUtils.test.ts src/utils/__tests__/ExportUtils.test.ts
+npx vitest run src/query-filter/components/InclusionReport src/utils/__tests__/filterCardUtils.test.ts src/utils/__tests__/ExportUtils.test.ts src/utils/__tests__/plotlyResetView.test.ts
 ```
 
 `filterCardUtils.test.ts` covers Basic Data under a translated card name and card names that

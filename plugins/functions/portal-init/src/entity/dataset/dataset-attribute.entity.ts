@@ -12,6 +12,9 @@ export class DatasetAttribute extends Audit {
   @Column()
   value: string
 
+  @Column({ type: 'int', nullable: true })
+  sequence: number
+
   // Required for creation
   @Column({ name: 'attribute_id' })
   attributeId: string
