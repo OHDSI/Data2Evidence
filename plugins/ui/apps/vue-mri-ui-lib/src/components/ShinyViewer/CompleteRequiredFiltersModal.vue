@@ -46,7 +46,12 @@
                 </div>
               </div>
               <div class="field-grid" :class="getColumnsClass(group.columns)">
-                <div v-for="field in group.fields" :key="field.id" class="field-row">
+                <div
+                  v-for="field in group.fields"
+                  :key="field.id"
+                  class="field-row"
+                  :class="{ 'field-row--full': isDateFieldType(field.type) }"
+                >
                   <div class="field-label-wrapper">
                     <label class="field-label" :for="field.id">
                       {{ field.label }}
@@ -75,30 +80,39 @@
                     </span>
                   </div>
 
-                  <div class="field-input-wrapper">
+                  <div
+                    class="field-input-wrapper"
+                    :class="{ 'field-input-wrapper--fill': isDateFieldType(field.type) }"
+                  >
                     <!-- Date types -->
                     <template v-if="isDateFieldType(field.type)">
                       <div class="date-range-group">
-                        <input
+                        <D2eDatePicker
                           :id="`${field.id}_from`"
-                          class="form-control"
-                          :class="{ 'is-invalid': isInputInvalid(`${field.id}_from`) }"
-                          type="date"
+                          :model-value="fromIsoDate(formValues[field.id].from)"
+                          size="sm"
+                          clearable
+                          :error="isInputInvalid(`${field.id}_from`)"
                           :aria-invalid="getAriaInvalid(`${field.id}_from`)"
                           :aria-describedby="getDescribedBy(group, field.id)"
-                          v-model="formValues[field.id].from"
-                          @change="markFieldDirty(field.id)"
+                          :menu-z-index="DATE_MENU_Z_INDEX"
+                          :invalid-date-text="getText('MRI_PA_INVALID_DATE')"
+                          @update:model-value="setDateBound(field.id, 'from', $event)"
+                          @update:invalid="invalidDateBounds[`${field.id}_from`] = $event"
                         />
                         <span>to</span>
-                        <input
+                        <D2eDatePicker
                           :id="`${field.id}_to`"
-                          class="form-control"
-                          :class="{ 'is-invalid': isInputInvalid(`${field.id}_to`) }"
-                          type="date"
+                          :model-value="fromIsoDate(formValues[field.id].to)"
+                          size="sm"
+                          clearable
+                          :error="isInputInvalid(`${field.id}_to`)"
                           :aria-invalid="getAriaInvalid(`${field.id}_to`)"
                           :aria-describedby="getDescribedBy(group, field.id)"
-                          v-model="formValues[field.id].to"
-                          @change="markFieldDirty(field.id)"
+                          :menu-z-index="DATE_MENU_Z_INDEX"
+                          :invalid-date-text="getText('MRI_PA_INVALID_DATE')"
+                          @update:model-value="setDateBound(field.id, 'to', $event)"
+                          @update:invalid="invalidDateBounds[`${field.id}_to`] = $event"
                         />
                       </div>
                       <p v-if="fieldErrors[field.id]" :id="getErrorId(field.id)" class="field-error" role="alert">
@@ -265,6 +279,7 @@ import { useStore } from 'vuex'
 import MessageBox from '../MessageBox.vue'
 import appButton from '@/lib/ui/app-button.vue'
 import ConceptSetTypeaheadField from './ConceptSetTypeaheadField.vue'
+import { D2eDatePicker, fromIsoDate, toIsoDate } from '@d2e/ui'
 import type {
   ResolvedWizardFieldGroup,
   ResolvedWizardFormSection,
@@ -286,6 +301,8 @@ import { isDateFieldType, validateRequiredFilters, type NumericValidationStatus 
 
 const store = useStore()
 const getText = (key: string, param?: string | string[]) => store.getters.getText(key, param)
+
+const DATE_MENU_Z_INDEX = 10002
 
 const props = defineProps<{
   isOpen: boolean
@@ -311,6 +328,7 @@ const emit = defineEmits<{
 const formValues = reactive<Record<string, any>>({})
 const displayValues = reactive<Record<string, string>>({})
 const submitAttempted = ref(false)
+const invalidDateBounds = reactive<Record<string, boolean>>({})
 const dirtyFields = reactive<Set<string>>(new Set())
 const initialSnapshot = reactive<Record<string, any>>({})
 
@@ -393,7 +411,10 @@ const validation = computed(() =>
   })
 )
 const isFormValid = computed(
-  () => Object.keys(validation.value.fieldErrors).length === 0 && Object.keys(validation.value.groupErrors).length === 0
+  () =>
+    Object.keys(validation.value.fieldErrors).length === 0 &&
+    Object.keys(validation.value.groupErrors).length === 0 &&
+    !Object.values(invalidDateBounds).some(Boolean)
 )
 const fieldErrors = computed<Record<string, string>>(() => (submitAttempted.value ? validation.value.fieldErrors : {}))
 const groupErrors = computed<Record<string, string>>(() => (submitAttempted.value ? validation.value.groupErrors : {}))
@@ -463,6 +484,7 @@ watch(
     // Clear all form values and tracking
     Object.keys(formValues).forEach(key => delete formValues[key])
     Object.keys(displayValues).forEach(key => delete displayValues[key])
+    Object.keys(invalidDateBounds).forEach(key => delete invalidDateBounds[key])
     Object.keys(initialSnapshot).forEach(key => delete initialSnapshot[key])
     dirtyFields.clear()
     submitAttempted.value = false
@@ -509,6 +531,11 @@ watch(
   },
   { immediate: true }
 )
+
+function setDateBound(fieldId: string, bound: 'from' | 'to', date: Date | null) {
+  formValues[fieldId][bound] = toIsoDate(date) ?? ''
+  markFieldDirty(fieldId)
+}
 
 function shouldUseTypeahead(field: WizardFieldDefinition): boolean {
   if (field.type === 'conceptSet') {
@@ -922,6 +949,14 @@ function validateNumericValue(value: unknown, allowNegative: boolean): NumericVa
   display: flex;
   flex-direction: column;
   gap: 6px;
+}
+
+.field-input-wrapper--fill {
+  align-self: stretch;
+}
+
+.field-row--full {
+  grid-column: 1 / -1;
 }
 
 .date-range-group,
