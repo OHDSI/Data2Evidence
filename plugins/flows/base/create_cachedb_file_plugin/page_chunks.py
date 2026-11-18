@@ -12,14 +12,10 @@ either fully copied and recorded, or not at all; no DELETE is needed on retry.
 from collections.abc import Sequence
 
 from .checkpoint import read_checkpoint, record_chunk_progress
-from .chunk_utils import page_predicate
+from .chunk_utils import page_predicate, quote_identifier
 from .errors import ChunkCopyError
 
 NO_ACTIVE_TRANSACTION = "no transaction is active"
-
-
-def _ident(name: str) -> str:
-    return '"' + str(name).replace('"', '""') + '"'
 
 
 def _literal(value: str) -> str:
@@ -40,12 +36,12 @@ def build_page_chunk_select(
     conditions = [page_predicate(lower, upper)]
     if patient_filter_col and patient_ids:
         ids = ", ".join(str(int(pid)) for pid in patient_ids)
-        conditions.append(f"{_ident(patient_filter_col)} IN ({ids})")
+        conditions.append(f"{quote_identifier(patient_filter_col)} IN ({ids})")
     if timestamp_filter_col and timestamp:
-        conditions.append(f"{_ident(timestamp_filter_col)} = {_literal(timestamp)}")
-    column_list = ", ".join(_ident(c) for c in columns)
+        conditions.append(f"{quote_identifier(timestamp_filter_col)} = {_literal(timestamp)}")
+    column_list = ", ".join(quote_identifier(c) for c in columns)
     return (
-        f"SELECT {column_list} FROM {_ident(source_schema)}.{_ident(table)} "
+        f"SELECT {column_list} FROM {quote_identifier(source_schema)}.{quote_identifier(table)} "
         f"WHERE {' AND '.join(conditions)}"
     )
 
@@ -58,8 +54,8 @@ def build_page_chunk_insert(
     table: str,
     columns: Sequence[str],
 ) -> str:
-    column_list = ", ".join(_ident(c) for c in columns)
-    target = f"{_ident(target_database)}.{_ident(target_schema)}.{_ident(table)}"
+    column_list = ", ".join(quote_identifier(c) for c in columns)
+    target = f"{quote_identifier(target_database)}.{quote_identifier(target_schema)}.{quote_identifier(table)}"
     return (
         f"INSERT INTO {target} ({column_list}) SELECT {column_list} "
         f"FROM postgres_query({_literal(source_database)}, {_literal(source_select)})"
