@@ -1,9 +1,16 @@
 <script setup lang="ts">
-import AppDate from '@/lib/ui/app-date.vue'
+import { D2eDatePicker } from '@d2e/ui'
+import { useStore } from 'vuex'
+import { toDateUpdate, toPickerDate } from '@/utils/datePickerValue'
 import SelectMaterial from '../SelectMaterial.vue'
 import { dateRangeOptions } from '../../utils/AtlasUtils'
 import { computed, nextTick, ref, watch } from 'vue'
 import { formatDateToYMD, parseDate } from '../../utils/DateUtils'
+
+const DATE_FORMAT = 'YYYY-MM-DD'
+
+const store = useStore()
+const getText = (key: string): string => store.getters.getText(key)
 
 // Props now use internal format: operator (string like 'GREATER_THAN'), value (ISO date string), and extent (ISO date string)
 const props = defineProps<{
@@ -115,12 +122,24 @@ const updateDateExtentModel = (payload: { date: string | Date; isEmpty: boolean 
       <SelectMaterial v-model="dateRangeModel" :options="dateRangeOptions" label="Select an option" />
     </div>
     <div class="date-selection-container">
-      <AppDate :date="dateValueModel" @update="updateDateValueModel" />
+      <D2eDatePicker
+        :model-value="toPickerDate(dateValueModel, DATE_FORMAT)"
+        :format="DATE_FORMAT"
+        clearable
+        :invalid-date-text="getText('MRI_PA_INVALID_DATE')"
+        @update:model-value="updateDateValueModel(toDateUpdate($event))"
+      />
     </div>
 
     <div v-if="isDualDateRange" class="date-connector">and</div>
     <div v-if="isDualDateRange" class="date-selection-container">
-      <AppDate :date="dateExtentModel" @update="updateDateExtentModel" />
+      <D2eDatePicker
+        :model-value="toPickerDate(dateExtentModel, DATE_FORMAT)"
+        :format="DATE_FORMAT"
+        clearable
+        :invalid-date-text="getText('MRI_PA_INVALID_DATE')"
+        @update:model-value="updateDateExtentModel(toDateUpdate($event))"
+      />
     </div>
   </div>
 </template>
@@ -147,13 +166,6 @@ const updateDateExtentModel = (payload: { date: string | Date; isEmpty: boolean 
     height: 100%;
     display: flex;
     align-items: center;
-    ::v-deep(.app-date .form-control) {
-      min-height: 100%;
-    }
-    .app-date.form-group {
-      margin: 0px;
-      height: 100%;
-    }
   }
 }
 </style>

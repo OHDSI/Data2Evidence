@@ -1,4 +1,5 @@
 import type { App as VueApp } from 'vue'
+import { D2E_DIALOG_ATTACH } from '@d2e/ui'
 import Multiselect from 'vue-multiselect'
 import { applyPolyfills, defineCustomElements } from '@d4l/web-components-library/dist/loader'
 
@@ -16,6 +17,7 @@ import appRangeVue from '@/lib/ui/app-range.vue'
 import appVariantRangeVue from '@/lib/ui/app-variant-range.vue'
 import appSingleSelect from '@/lib/ui/app-single-select.vue'
 import appTagInputVue from '@/lib/ui/app-tag-input.vue'
+import { MRI_OVERLAY_TARGET } from './overlayTarget'
 
 let globalsInitialized = false
 
@@ -30,6 +32,7 @@ export const initGlobalsOnce = async () => {
 }
 
 export const registerDirectivesAndComponents = (app: VueApp) => {
+  app.provide(D2E_DIALOG_ATTACH, MRI_OVERLAY_TARGET)
   app.component('app-label', appLabelVue)
   app.component('app-tag-input', appTagInputVue)
   app.component('app-range', appRangeVue)
