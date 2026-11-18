@@ -23,7 +23,7 @@
       </bs-dropdown>
     </DisabledHoverPopover>
     <downloadCSVDialog v-if="csvShow" @closeEv="onCsvClosed"></downloadCSVDialog>
-    <imageExport v-if="imageShow" @closeEv="onImageExported"></imageExport>
+    <imageExport v-if="imageShow" :format="imageFormat" @closeEv="onImageExported"></imageExport>
     <VSnackbar
       v-model="snackbarVisible"
       location="top right"
@@ -58,11 +58,13 @@ export default {
     return {
       csvShow: false,
       imageShow: false,
+      imageFormat: 'png',
       snackbar: { visible: false, type: 'success', text: '' },
       pendingDownload: null,
       fileTypeKeyMap: {
         csv: 'MRI_PA_EXPORT_FILE_CSV',
         image: 'MRI_PA_EXPORT_FILE_PNG',
+        svg: 'MRI_PA_EXPORT_FILE_SVG',
         zip: 'MRI_PA_EXPORT_FILE_ZIP',
       },
     }
@@ -153,6 +155,10 @@ export default {
           key: 'image',
           value: this.getText('MRI_PA_BUTTON_DOWNLOAD_PNG'),
         })
+        menuData.push({
+          key: 'svg',
+          value: this.getText('MRI_PA_BUTTON_DOWNLOAD_SVG'),
+        })
       }
 
       if (getConfig(activeChartConfig, 'zipDownloadEnabled')) {
@@ -199,6 +205,8 @@ export default {
             this.csvShow = true
             break
           case 'image':
+          case 'svg':
+            this.imageFormat = arg === 'svg' ? 'svg' : 'png'
             this.imageShow = true
             break
           case 'zip': {
@@ -226,14 +234,15 @@ export default {
     },
     onImageExported(payload) {
       this.imageShow = false
-      if (this.pendingDownload === 'image') {
+      if (this.pendingDownload === 'image' || this.pendingDownload === 'svg') {
+        const fileTypeKey = this.fileTypeKeyMap[this.pendingDownload]
         if (payload && payload.cancelled) {
           // Save picker dismissed: nothing was exported
           this.pendingDownload = null
         } else if (payload && payload.success) {
-          this.showExportSuccessToast('MRI_PA_EXPORT_FILE_PNG')
+          this.showExportSuccessToast(fileTypeKey)
         } else {
-          this.showExportErrorToast(this.fileTypeKeyMap['image'])
+          this.showExportErrorToast(fileTypeKey)
         }
       }
     },

@@ -12,11 +12,12 @@ export type SaveTarget =
   | { kind: 'picker'; fileName: string; handle: FileSystemFileHandle }
   | { kind: 'fallback'; fileName: string }
 
-export type SaveFileType = 'csv' | 'png' | 'zip'
+export type SaveFileType = 'csv' | 'png' | 'svg' | 'zip'
 
 const ACCEPT: Record<SaveFileType, { description: string; accept: Record<string, string[]> }> = {
   csv: { description: 'CSV file', accept: { 'text/csv': ['.csv'] } },
   png: { description: 'PNG image', accept: { 'image/png': ['.png'] } },
+  svg: { description: 'SVG image', accept: { 'image/svg+xml': ['.svg'] } },
   zip: { description: 'ZIP archive', accept: { 'application/zip': ['.zip'] } },
 }
 
