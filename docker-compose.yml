@@ -944,7 +944,7 @@ services:
       # active, so waiting on it would break every default start.
       # Needs the alp_pg_* users, which trex's bootstrap creates.
       trex:
-        condition: service_healthy
+        condition: service_started
     healthcheck:
       interval: 30s
       retries: 30
@@ -1020,6 +1020,7 @@ services:
         --limit ${D2E_WORKER_FLOW_RUN_LIMIT:-3}
 
     container_name: &c83 ${PROJECT_NAME:-d2e}-dataflow-gen-worker
+    restart: ${DOCKER__RESTART_POLICY:-unless-stopped}
     depends_on:
       # See alp-dataflow-gen: no edge to the profiled logto services.
       alp-dataflow-gen:
