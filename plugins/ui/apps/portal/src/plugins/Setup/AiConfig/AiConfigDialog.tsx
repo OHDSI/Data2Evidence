@@ -5,11 +5,9 @@ import { Alert, Button, Dialog, IconButton, Select, TextField } from "ui-react";
 import { api } from "../../../axios/api";
 import { useTranslation } from "../../../contexts";
 import { AiConfig, AiConfigProvider, AiConfigUpdateInput } from "../../../types/aiConfig";
-import { aiConfigErrorKey } from "./aiConfigList";
+import { aiConfigErrorKey, nextDefaultName } from "./aiConfigList";
 import { PendingBanner } from "./PendingBanner";
 import "./AiConfigDialog.scss";
-
-const DEFAULT_NAME = "AI Configuration 1";
 
 type FieldName = "baseUrl" | "apiKey" | "model" | "region" | "workspaceId";
 
@@ -31,6 +29,8 @@ const isHttpUrl = (value: string) => {
 interface Props {
   /** Edit this configuration; omit to add a new one. */
   config?: AiConfig;
+  /** Add only: the existing configurations, so the default name does not collide with one. */
+  configs?: AiConfig[];
   onClose: () => void;
   /** Called with the write response once the save succeeded. */
   onSaved: (config: AiConfig) => void;
@@ -43,10 +43,10 @@ interface SaveError {
   field?: string;
 }
 
-export const AiConfigDialog: FC<Props> = ({ config, onClose, onSaved, onNotFound }) => {
+export const AiConfigDialog: FC<Props> = ({ config, configs = [], onClose, onSaved, onNotFound }) => {
   const { getText, i18nKeys } = useTranslation();
 
-  const [name, setName] = useState(config?.name ?? DEFAULT_NAME);
+  const [name, setName] = useState(config?.name ?? nextDefaultName(configs));
   const [provider, setProvider] = useState<AiConfigProvider | "">(config?.provider ?? "");
   const [baseUrl, setBaseUrl] = useState(config?.baseUrl ?? "");
   const [region, setRegion] = useState(config?.region ?? "");

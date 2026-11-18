@@ -1,5 +1,5 @@
 import { AiConfig } from "../../../types/aiConfig";
-import { connectionSummary, deleteVariant, sortAiConfigs, upsertAiConfig } from "./aiConfigList";
+import { connectionSummary, deleteVariant, nextDefaultName, sortAiConfigs, upsertAiConfig } from "./aiConfigList";
 
 const cfg = (id: number, name: string, isActive = false, extra: Partial<AiConfig> = {}): AiConfig => ({
   id,
@@ -46,6 +46,27 @@ describe("upsertAiConfig + sort", () => {
   it("places a new row in A-Z order, or first when it is the first config", () => {
     expect(names(sortAiConfigs(upsertAiConfig(rows, cfg(4, "Beta"))))).toEqual(["Mid", "Alpha", "Beta", "Zeta"]);
     expect(names(sortAiConfigs(upsertAiConfig([], cfg(5, "Only", true))))).toEqual(["Only"]);
+  });
+});
+
+describe("nextDefaultName", () => {
+  const next = (...rowNames: string[]) => nextDefaultName(rowNames.map((n, i) => cfg(i + 1, n)));
+
+  it("starts at 1 when there is no default-named row", () => {
+    expect(next()).toBe("AI Configuration 1");
+    expect(next("Prod", "AI Configuration", "AI Configuration 1 copy")).toBe("AI Configuration 1");
+  });
+
+  it("takes the lowest unused number, filling gaps", () => {
+    expect(next("AI Configuration 1")).toBe("AI Configuration 2");
+    expect(next("AI Configuration 1", "AI Configuration 3")).toBe("AI Configuration 2");
+    expect(next("AI Configuration 2", "AI Configuration 3")).toBe("AI Configuration 1");
+    expect(next("AI Configuration 1", "AI Configuration 2")).toBe("AI Configuration 3");
+  });
+
+  it("ignores case and extra spaces", () => {
+    expect(next(" ai configuration 1 ", "AI  Configuration   2")).toBe("AI Configuration 3");
+    expect(next(" ai configuration 2 ", "AI  Configuration   5")).toBe("AI Configuration 1");
   });
 });
 

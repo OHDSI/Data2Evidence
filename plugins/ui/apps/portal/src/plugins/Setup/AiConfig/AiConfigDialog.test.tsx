@@ -82,6 +82,13 @@ describe("AiConfigDialog add", () => {
     expect(saveButton()).toBeDisabled();
   });
 
+  it("defaults the name to the lowest unused AI Configuration number", () => {
+    const taken = [1, 3].map((n) => ({ ...existing, id: n, name: `AI Configuration ${n}` }));
+    render(<AiConfigDialog configs={taken} onClose={onClose} onSaved={onSaved} />);
+
+    expect(field("Configuration name").value).toBe("AI Configuration 2");
+  });
+
   it.each([
     ["OpenAI-compatible", ["Base URL", "API key", "Model"]],
     ["Anthropic API", ["Anthropic API key", "Model", "Anthropic Workspace ID"]],

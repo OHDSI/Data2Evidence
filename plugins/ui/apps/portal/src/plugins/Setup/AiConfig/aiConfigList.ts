@@ -8,6 +8,17 @@ export const sortAiConfigs = (configs: AiConfig[]): AiConfig[] =>
 export const upsertAiConfig = (configs: AiConfig[], saved: AiConfig): AiConfig[] =>
   configs.some((c) => c.id === saved.id) ? configs.map((c) => (c.id === saved.id ? saved : c)) : [...configs, saved];
 
+export const DEFAULT_NAME_PREFIX = "AI Configuration";
+
+/** "AI Configuration N" for the lowest N >= 1 not already used by a name that is exactly that (any case, extra spaces). */
+export const nextDefaultName = (configs: AiConfig[]): string => {
+  const pattern = new RegExp(`^${DEFAULT_NAME_PREFIX.replace(" ", "\\s+")}\\s+(\\d+)$`, "i");
+  const used = new Set(configs.map((c) => Number(pattern.exec(c.name.trim())?.[1])));
+  let n = 1;
+  while (used.has(n)) n++;
+  return `${DEFAULT_NAME_PREFIX} ${n}`;
+};
+
 /** `<key label> · <detail>` built from the stored fields; labels are passed in already translated. */
 export const connectionSummary = (config: AiConfig, labels: { apiKey: string; workspace: string }): string => {
   const detail = (() => {

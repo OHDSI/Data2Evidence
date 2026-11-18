@@ -382,6 +382,7 @@ export const AiConfigPage: FC = () => {
         {dialog && (
           <AiConfigDialog
             config={dialog === "add" ? undefined : dialog}
+            configs={configs}
             onClose={() => setDialog(null)}
             // Another admin deleted it: drop the stale row and tell the admin, as the confirm dialogs do.
             onNotFound={() => {
