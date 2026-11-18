@@ -1,4 +1,3 @@
-import hashlib
 import time
 import duckdb
 from typing import Any
@@ -21,6 +20,7 @@ from .chunk_utils import (
     describe_dry_run_summary,
     describe_plan,
     find_column_case_insensitive,
+    page_plan_keys,
     resolve_target_chunk_rows,
 )
 from .checkpoint import (
@@ -718,13 +718,6 @@ def copy_table(write_conn: Any, read_conn: Any, copy_params: CopyParameters, que
     return stats.row_count
 
 
-def _page_plan_keys(copy_params: CopyParameters, columns) -> tuple[str, str]:
-    columns_key = ",".join(sorted(str(c).lower() for c in columns))
-    ids = ",".join(str(int(pid)) for pid in sorted(copy_params.patient_filter or []))
-    filters = f"{ids}|{copy_params.timestamp_filter or ''}"
-    return columns_key, hashlib.sha256(filters.encode("utf-8")).hexdigest()
-
-
 def _plan_postgres(write_conn, read_conn, adapter, dialect, copy_params, query_columns, source_schema, config, logger):
     """Page-range plan for a Postgres table, or None to fall back to column ranges.
 
@@ -740,7 +733,7 @@ def _plan_postgres(write_conn, read_conn, adapter, dialect, copy_params, query_c
         if not columns or columns == ["*"]:
             # The real columns, so a column added or dropped in the source changes the plan.
             columns = read_conn.get_columns(source_schema, table)
-        return _page_plan_keys(copy_params, columns)
+        return page_plan_keys(columns, copy_params.patient_filter, copy_params.timestamp_filter)
 
     checkpoint = None
     if not copy_params.dry_run:

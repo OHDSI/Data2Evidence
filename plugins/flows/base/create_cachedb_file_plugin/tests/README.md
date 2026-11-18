@@ -41,9 +41,8 @@ PYTHONPATH="$PWD:$PWD/.." /tmp/cachevenv/bin/pytest create_cachedb_file_plugin/t
 `errors.py`, `planner_types.py`, `chunk_utils.py`, `source_stats.py`, `stage_timing.py`,
 `checkpoint.py` and `page_chunks.py` must never import `prefect`. They take a `logger` argument
 instead. That is what lets this suite run without the Prefect worker image.
-`test_checkpoint.py::test_checkpoint_module_does_not_drag_in_prefect`,
-`test_chunk_planner.py::test_planner_modules_do_not_drag_in_prefect` and
-`test_stage_timing.py::test_stage_timing_does_not_drag_in_prefect` enforce
+`test_checkpoint.py::test_checkpoint_module_does_not_drag_in_prefect` and
+`test_chunk_planner.py::test_planner_modules_do_not_drag_in_prefect` enforce
 this at import time — for the whole `pytest` process, not just their own
 module. Never add a test here that imports `prefect` (directly or via `copy.py`
 / `flow.py`); it will poison `sys.modules` and fail those checks even

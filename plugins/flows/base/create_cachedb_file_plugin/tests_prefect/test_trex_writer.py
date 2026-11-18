@@ -178,38 +178,6 @@ def test_execute_reconnects_after_a_failed_reconnect(monkeypatch):
 
 
 # ---------------------------------------------------------------------------
-# _page_plan_keys: what a page-range plan_id covers
-# ---------------------------------------------------------------------------
-
-
-def _params(patient_filter=None, timestamp_filter=None):
-    return SimpleNamespace(patient_filter=patient_filter, timestamp_filter=timestamp_filter)
-
-
-def test_the_columns_key_ignores_order_and_case():
-    columns_key, _ = copy_module._page_plan_keys(_params(), ["Person_ID", "measurement_id"])
-    assert columns_key == "measurement_id,person_id"
-    assert copy_module._page_plan_keys(_params(), ["measurement_id", "person_id"])[0] == columns_key
-
-
-@pytest.mark.parametrize(
-    "change",
-    [{"patient_filter": [1, 2, 4]}, {"patient_filter": None}, {"timestamp_filter": "2010-01-01"}],
-)
-def test_the_filters_key_changes_with_the_filters(change):
-    base = {"patient_filter": [1, 2, 3], "timestamp_filter": "2009-08-03"}
-    _, before = copy_module._page_plan_keys(_params(**base), ["a"])
-    _, after = copy_module._page_plan_keys(_params(**{**base, **change}), ["a"])
-    assert before != after
-
-
-def test_the_filters_key_does_not_carry_the_patient_ids():
-    _, filters_key = copy_module._page_plan_keys(_params([123456789]), ["a"])
-    assert "123456789" not in filters_key
-    assert len(filters_key) == 64
-
-
-# ---------------------------------------------------------------------------
 # copy_page_chunk: how a failed chunk is reported
 # ---------------------------------------------------------------------------
 

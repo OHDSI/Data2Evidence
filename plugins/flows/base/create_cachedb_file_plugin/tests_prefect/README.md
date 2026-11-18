@@ -5,7 +5,7 @@ be worth anything:
 
 - `test_concurrency_reconciliation.py` — `concurrency_reconciliation.py`,
   tested against a mocked `SyncPrefectClient`.
-- `test_trex_writer.py` — `copy.TrexWriter`, `copy._page_plan_keys` and the
+- `test_trex_writer.py` — `copy.TrexWriter` and the
   error reporting of `copy.copy_page_chunk`. It imports `copy.py` with
   `Variable.get` stubbed to return each call's default and, when `psycopg2` is
   not installed, a stub `psycopg2`. The task-retry test runs the real Prefect

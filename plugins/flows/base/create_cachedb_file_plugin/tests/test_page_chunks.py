@@ -8,7 +8,6 @@ trex can run. What is under test is the transaction around it.
 
 import asyncio
 import logging
-import sys
 
 import duckdb
 import pytest
@@ -330,7 +329,3 @@ def test_a_failed_chunk_raises_its_own_error_when_reconnect_fails_too(logger):
 
     with pytest.raises(RuntimeError, match=r"\(BEGIN\)"):
         run_page_chunk(DeadConn(), DATABASE, SCHEMA, TABLE, 0, "INSERT", logger)
-
-
-def test_page_chunks_does_not_drag_in_prefect():
-    assert "prefect" not in sys.modules

@@ -451,6 +451,7 @@ def test_planner_modules_do_not_drag_in_prefect():
     import create_cachedb_file_plugin.checkpoint  # noqa: F401
     import create_cachedb_file_plugin.chunk_utils  # noqa: F401
     import create_cachedb_file_plugin.errors  # noqa: F401
+    import create_cachedb_file_plugin.page_chunks  # noqa: F401
     import create_cachedb_file_plugin.planner_types  # noqa: F401
     import create_cachedb_file_plugin.stage_timing  # noqa: F401
 
@@ -827,6 +828,7 @@ def test_a_single_statement_plan_is_never_skewed():
 from create_cachedb_file_plugin.chunk_utils import (
     PLANNER_VERSION,
     compute_page_plan_id,
+    page_plan_keys,
     page_predicate,
     plan_page_ranges,
 )
@@ -900,6 +902,29 @@ def test_page_plan_id_changes_with_what_the_chunks_read(change):
     )
     changed = {**base, **change}
     assert compute_page_plan_id(**base) != compute_page_plan_id(**changed)
+
+
+def test_the_columns_key_ignores_order_and_case():
+    columns_key, _ = page_plan_keys(["Person_ID", "measurement_id"], None, None)
+    assert columns_key == "measurement_id,person_id"
+    assert page_plan_keys(["measurement_id", "person_id"], None, None)[0] == columns_key
+
+
+@pytest.mark.parametrize(
+    "change",
+    [{"patient_filter": [1, 2, 4]}, {"patient_filter": None}, {"timestamp_filter": "2010-01-01"}],
+)
+def test_the_filters_key_changes_with_the_filters(change):
+    base = {"patient_filter": [1, 2, 3], "timestamp_filter": "2009-08-03"}
+    _, before = page_plan_keys(["a"], **base)
+    _, after = page_plan_keys(["a"], **{**base, **change})
+    assert before != after
+
+
+def test_the_filters_key_does_not_carry_the_patient_ids():
+    _, filters_key = page_plan_keys(["a"], [123456789], None)
+    assert "123456789" not in filters_key
+    assert len(filters_key) == 64
 
 
 def test_resuming_with_the_stored_chunk_count_keeps_the_plan_id():

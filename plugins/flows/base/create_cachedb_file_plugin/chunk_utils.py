@@ -435,6 +435,16 @@ def compute_page_plan_id(
     return hashlib.sha256("\x1f".join(parts).encode("utf-8")).hexdigest()
 
 
+def page_plan_keys(
+    columns: Iterable[str], patient_filter: Sequence[int] | None, timestamp_filter: str | None
+) -> tuple[str, str]:
+    """``columns_key`` and ``filters_key`` for ``compute_page_plan_id``; the filters are hashed."""
+    columns_key = ",".join(sorted(str(c).lower() for c in columns))
+    ids = ",".join(str(int(pid)) for pid in sorted(patient_filter or []))
+    filters = f"{ids}|{timestamp_filter or ''}"
+    return columns_key, hashlib.sha256(filters.encode("utf-8")).hexdigest()
+
+
 def plan_page_ranges(
     dialect: str,
     schema: str,

@@ -1,5 +1,4 @@
 import re
-import sys
 
 import pytest
 
@@ -119,9 +118,3 @@ def test_a_failing_logger_changes_neither_the_result_nor_the_exception():
         with stage(BrokenLogger(), StageName.COPY_SINGLE, table="t"):
             raise error
     assert raised.value is error
-
-
-def test_stage_timing_does_not_drag_in_prefect():
-    import create_cachedb_file_plugin.stage_timing  # noqa: F401
-
-    assert "prefect" not in sys.modules
