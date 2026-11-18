@@ -44,8 +44,8 @@ export const AiConfigPage: FC = () => {
   const [configs, setConfigs] = useState<AiConfig[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadFailed, setLoadFailed] = useState(false);
-  const [adding, setAdding] = useState(false);
-  const [editing, setEditing] = useState<AiConfig | null>(null);
+  // The one open Add/Edit dialog: "add", the row being edited, or none.
+  const [dialog, setDialog] = useState<AiConfig | "add" | null>(null);
   const [confirm, setConfirm] = useState<{
     kind: "activate" | "delete";
     config: AiConfig;
@@ -287,7 +287,7 @@ export const AiConfigPage: FC = () => {
             title={getText(i18nKeys.AI_CONFIG__TITLE)}
             description={getText(i18nKeys.AI_CONFIG__SUBTITLE)}
             actions={
-              <Button prependIcon={<AddIcon />} disabled={loading || loadFailed} onClick={() => setAdding(true)}>
+              <Button prependIcon={<AddIcon />} disabled={loading || loadFailed} onClick={() => setDialog("add")}>
                 {getText(i18nKeys.AI_CONFIG__ADD)}
               </Button>
             }
@@ -340,7 +340,7 @@ export const AiConfigPage: FC = () => {
                         variant="ghost"
                         prependIcon={<EditOutlinedIcon />}
                         aria-label={`${getText(i18nKeys.AI_CONFIG__EDIT)} ${config.name}`}
-                        onClick={() => setEditing(config)}
+                        onClick={() => setDialog(config)}
                       >
                         {getText(i18nKeys.AI_CONFIG__EDIT)}
                       </Button>
@@ -379,35 +379,29 @@ export const AiConfigPage: FC = () => {
             </ul>
           )}
         </div>
-        {adding && (
+        {dialog && (
           <AiConfigDialog
-            onClose={() => setAdding(false)}
-            // The write response is the new row; the list is not re-fetched.
-            onSaved={(saved) => {
-              setConfigs((rows) => sortAiConfigs(upsertAiConfig(rows, saved)));
-              setAdding(false);
-              setFeedback({
-                type: "success",
-                variant: "alert",
-                autoClose: 5000,
-                richMessage: withNames(getText(i18nKeys.AI_CONFIG__ADDED_TOAST), [{ bold: saved.name }]),
-              });
-            }}
-          />
-        )}
-        {editing && (
-          <AiConfigDialog
-            config={editing}
-            onClose={() => setEditing(null)}
+            config={dialog === "add" ? undefined : dialog}
+            onClose={() => setDialog(null)}
             // Another admin deleted it: drop the stale row and tell the admin, as the confirm dialogs do.
             onNotFound={() => {
-              setConfigs((rows) => rows.filter((r) => r.id !== editing.id));
-              setEditing(null);
+              if (dialog === "add") return;
+              setConfigs((rows) => rows.filter((r) => r.id !== dialog.id));
+              setDialog(null);
               setFeedback({ type: "error", variant: "alert", message: getText(i18nKeys.AI_CONFIG__ERROR__NOT_FOUND) });
             }}
+            // The write response is the saved row; the list is not re-fetched.
             onSaved={(saved) => {
               setConfigs((rows) => sortAiConfigs(upsertAiConfig(rows, saved)));
-              setEditing(null);
+              setDialog(null);
+              if (dialog === "add") {
+                setFeedback({
+                  type: "success",
+                  variant: "alert",
+                  autoClose: 5000,
+                  richMessage: withNames(getText(i18nKeys.AI_CONFIG__ADDED_TOAST), [{ bold: saved.name }]),
+                });
+              }
             }}
           />
         )}
