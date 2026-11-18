@@ -394,14 +394,13 @@ export const AiConfigPage: FC = () => {
             onSaved={(saved) => {
               setConfigs((rows) => sortAiConfigs(upsertAiConfig(rows, saved)));
               setDialog(null);
-              if (dialog === "add") {
-                setFeedback({
-                  type: "success",
-                  variant: "alert",
-                  autoClose: 5000,
-                  richMessage: withNames(getText(i18nKeys.AI_CONFIG__ADDED_TOAST), [{ bold: saved.name }]),
-                });
-              }
+              const toastKey = dialog === "add" ? i18nKeys.AI_CONFIG__ADDED_TOAST : i18nKeys.AI_CONFIG__EDITED_TOAST;
+              setFeedback({
+                type: "success",
+                variant: "alert",
+                autoClose: 5000,
+                richMessage: withNames(getText(toastKey), [{ bold: saved.name }]),
+              });
             }}
           />
         )}

@@ -683,6 +683,24 @@ describe("AiConfigPage row actions", () => {
     });
   });
 
+  describe("Edit toast", () => {
+    it("shows the Edit toast with the saved (new) name in bold after a successful edit", async () => {
+      listAiConfigs.mockResolvedValue([row(1, "Active", true), row(2, "Alpha")]);
+      (api.systemPortal.updateAiConfig as jest.Mock).mockResolvedValue(row(2, "Zulu"));
+      render(<AiConfigPage />);
+      await userEvent.click(await screen.findByRole("button", { name: "AI_CONFIG__EDIT Alpha" }));
+      const nameInput = screen.getByLabelText("AI_CONFIG__NAME_LABEL");
+      await userEvent.clear(nameInput);
+      await userEvent.type(nameInput, "Zulu");
+      await userEvent.click(screen.getByRole("button", { name: "AI_CONFIG__SAVE" }));
+
+      await screen.findByText("Zulu");
+      const { first } = lastToasts();
+      expect(first).toHaveTextContent("Zulu AI configuration has been edited successfully.");
+      expect(first.querySelector("strong")).toHaveTextContent("Zulu");
+    });
+  });
+
   describe("Add toast", () => {
     it("shows the Add toast with the bold name after a successful add", async () => {
       listAiConfigs.mockResolvedValue([]);
@@ -722,6 +740,7 @@ describe("AI configuration translations", () => {
       "AI_CONFIG__DELETED_TOAST",
       "AI_CONFIG__DELETE_BODY",
       "AI_CONFIG__ADDED_TOAST",
+      "AI_CONFIG__EDITED_TOAST",
       "AI_CONFIG__DELETE_ACTIVE_BODY",
       "AI_CONFIG__DELETED_REPLACED_TOAST",
     ]) {

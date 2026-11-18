@@ -147,6 +147,7 @@
   "AI_CONFIG__DELETE": "删除",
   "AI_CONFIG__DELETED_TOAST": "AI 配置 {0} 已成功删除。",
   "AI_CONFIG__ADDED_TOAST": "AI 配置 {0} 已成功添加。",
+  "AI_CONFIG__EDITED_TOAST": "AI 配置 {0} 已成功编辑。",
   "AI_CONFIG__DELETE_ACTIVE_TITLE": "删除当前使用的 AI 配置？",
   "AI_CONFIG__DELETE_ACTIVE_BODY": "{0} 是当前使用的配置。请选择 AI 助手改用哪个配置。此操作无法撤销。",
   "AI_CONFIG__DELETE_ACTIVE_PICK_LABEL": "新的当前配置",
