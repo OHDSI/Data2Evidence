@@ -1,5 +1,5 @@
 <template>
-  <Teleport to="#app">
+  <Teleport :to="MRI_OVERLAY_TARGET">
     <DashboardSelectionModal
       :is-open="flow.showDashboardSelectionModal"
       :dashboards="flow.dashboardCodes"
@@ -11,7 +11,7 @@
     />
   </Teleport>
 
-  <Teleport to="#app">
+  <Teleport :to="MRI_OVERLAY_TARGET">
     <CompleteRequiredFiltersModal
       :is-open="flow.showRequiredFiltersModal"
       :all-fields="flow.allWizardFields"
@@ -26,7 +26,7 @@
     />
   </Teleport>
 
-  <Teleport to="#app">
+  <Teleport :to="MRI_OVERLAY_TARGET">
     <ConfigureTable1Dialog
       :is-open="flow.showTable1ConfigModal"
       :dataset-id="datasetId"
@@ -37,7 +37,7 @@
     />
   </Teleport>
 
-  <Teleport to="#app">
+  <Teleport :to="MRI_OVERLAY_TARGET">
     <ShinyDashboardModal
       v-if="flow.showDashboardModal"
       :is-open="flow.showDashboardModal"
@@ -50,7 +50,7 @@
     />
   </Teleport>
 
-  <Teleport to="#app">
+  <Teleport :to="MRI_OVERLAY_TARGET">
     <SaveCohortModal
       :is-open="flow.showSaveCohortModal"
       :mode="flow.saveCohortModalMode"
@@ -80,6 +80,7 @@ import SaveCohortModal from './ShinyViewer/SaveCohortModal.vue'
 import DashboardSelectionModal from './ShinyViewer/DashboardSelectionModal.vue'
 import CompleteRequiredFiltersModal from './ShinyViewer/CompleteRequiredFiltersModal.vue'
 import ConfigureTable1Dialog from './ShinyViewer/ConfigureTable1Dialog.vue'
+import { MRI_OVERLAY_TARGET } from '../bootstrap/overlayTarget'
 
 interface Props {
   flow: ReturnType<typeof useDashboardFlow>
