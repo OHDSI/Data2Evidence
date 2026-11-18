@@ -66,7 +66,7 @@ import { UpdateFhirDatasetIdColumn17763068271810 } from "./migrations/1776306827
 import { FixSourceDatasetCacheId1778417559069 } from "./migrations/1778417559069-fix-source-dataset-cache-id.ts";
 import { RemoveEntityCountDistributionAttribute1791808486000 } from "./migrations/1791808486000-remove-entity-count-distribution-attribute.ts";
 import { AddSequenceToDatasetAttribute1793600000000 } from "./migrations/1793600000000-add-sequence-to-dataset-attribute.ts";
-import { CreateAiConfig1791808487000 } from "./migrations/1791808487000-create-ai-config.ts";
+import { CreateAiConfig1794984117000 } from "./migrations/1794984117000-create-ai-config.ts";
 import { env } from "../env.ts";
 
 const migrationDataSourceOptions: DataSourceOptions = {
@@ -158,7 +158,7 @@ const migrationDataSourceOptions: DataSourceOptions = {
     FixSourceDatasetCacheId1778417559069,
     RemoveEntityCountDistributionAttribute1791808486000,
     AddSequenceToDatasetAttribute1793600000000,
-    CreateAiConfig1791808487000,
+    CreateAiConfig1794984117000,
   ],
 };
 const migrationDataSource = new DataSource(migrationDataSourceOptions);
