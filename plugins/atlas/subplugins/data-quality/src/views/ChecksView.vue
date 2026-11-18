@@ -200,7 +200,6 @@ const pageLabels = computed(() => ({
         :no-data-text="t('plugins.dataQuality.checks.noMatches', 'No checks match the current search and filters.')"
         :rows-per-page-label="t('plugins.dataQuality.checks.rowsPerPage', 'Rows per page:')"
         :range-label="rangeLabel"
-        :locale="ctx.locale"
         :page-labels="pageLabels"
         :expand-label="t('plugins.dataQuality.checks.showDetails', 'Show details')"
         data-testid="dq-checks-table"
@@ -214,7 +213,7 @@ const pageLabels = computed(() => ({
         <template #item.severity="{ item }">{{ displayValue(COLUMN_BY_KEY.severity, item) }}</template>
         <template #item.pctViolatedRows="{ item }">{{ displayValue(COLUMN_BY_KEY.pctViolatedRows, item) }}</template>
         <template #expanded-row="{ item }">
-          <D2eDataTableDetail :rows="detailRows(item, t)" :locale="ctx.locale" />
+          <D2eDataTableDetail :rows="detailRows(item, t)" />
         </template>
       </D2eDataTable>
     </template>

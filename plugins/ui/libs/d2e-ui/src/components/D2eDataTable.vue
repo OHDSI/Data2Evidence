@@ -44,7 +44,7 @@
         #[`item.${header.key}`]="slotProps"
       >
         <slot :name="`item.${header.key}`" v-bind="slotProps">{{
-          formatCell(slotProps.value, locale, header.format)
+          formatCell(slotProps.value, header.format)
         }}</slot>
       </template>
 
@@ -118,7 +118,6 @@ const props = withDefaults(defineProps<D2eDataTableProps<T>>(), {
   rowsPerPageLabel: "Rows per page:",
   rangeLabel: (start: string, end: string, total: string) =>
     `${start}-${end} of ${total}`,
-  locale: "en",
   pageLabels: () => ({
     first: "First page",
     previous: "Previous page",
@@ -164,7 +163,6 @@ const rangeText = computed(() => {
     props.page,
     props.itemsPerPage,
     props.items.length,
-    props.locale,
   );
   return props.rangeLabel(start, end, total);
 });

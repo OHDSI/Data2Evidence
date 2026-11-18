@@ -63,24 +63,17 @@ export function formatRange(
   page: number,
   itemsPerPage: number,
   total: number,
-  locale?: string,
 ): { start: string; end: string; total: string } {
   const range = pageRange(page, itemsPerPage, total);
   return {
-    start: formatNumber(range.start, locale),
-    end: formatNumber(range.end, locale),
-    total: formatNumber(range.total, locale),
+    start: formatNumber(range.start),
+    end: formatNumber(range.end),
+    total: formatNumber(range.total),
   };
 }
 
-export function formatCell<V>(
-  value: V,
-  locale?: string,
-  format = true,
-): V | string {
-  return format && typeof value === "number"
-    ? formatNumber(value, locale)
-    : value;
+export function formatCell<V>(value: V, format = true): V | string {
+  return format && typeof value === "number" ? formatNumber(value) : value;
 }
 
 /** How many pages the rows fill. Never less than one, so page 1 always exists. */
@@ -110,7 +103,6 @@ export interface D2eDataTableProps<T> {
   noDataText?: string;
   rowsPerPageLabel?: string;
   rangeLabel?: (start: string, end: string, total: string) => string;
-  locale?: string;
   /** Accessible names of the four pager buttons. */
   pageLabels?: D2eDataTablePageLabels;
   /** Accessible name of each row's expand chevron. */

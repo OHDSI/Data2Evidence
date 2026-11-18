@@ -19,15 +19,14 @@ import { formatCell } from "./dataTable";
 
 interface Props {
   rows: { label: string; value: string | number }[];
-  locale?: string;
 }
 
-const props = withDefaults(defineProps<Props>(), { locale: "en" });
+const props = defineProps<Props>();
 
 const shownRows = computed(() =>
   props.rows.map((row) => ({
     label: row.label,
-    value: formatCell(row.value, props.locale),
+    value: formatCell(row.value),
   })),
 );
 </script>
