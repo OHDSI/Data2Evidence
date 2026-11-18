@@ -778,11 +778,7 @@ class PostgresSourceAdapter(_BaseAdapter):
         return tuple(rows[0]) if rows else None
 
     def server_version(self) -> int:
-        if not hasattr(self, "_server_version"):
-            self._server_version = int(
-                self._scalar("SELECT current_setting('server_version_num')::int") or 0
-            )
-        return self._server_version
+        return int(self._scalar("SELECT current_setting('server_version_num')::int") or 0)
 
     def pick_chunk_column(
         self, schema: str, table: str, allowed_columns=None, excluded_columns=(), row_count=0
