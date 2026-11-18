@@ -33,9 +33,10 @@ const isAtlasNative = import.meta.env.VITE_ATLAS_NATIVE === 'true'
  *   order. `scope` rewrites `:root` to `:where(<scope>)` and prefixes every
  *   other selector, through `:where()` so specificity does not change.
  *
- * `.mri-app-vue-container` is `App.vue`'s own root, which also carries
- * `id="app"` — the target every dialog in this app teleports to. Scoping there
- * therefore covers the teleported overlays as well as the page.
+ * `.mri-app-vue-container` is `App.vue`'s own root — the target every dialog
+ * in this app teleports to (`MRI_OVERLAY_TARGET`). Atlas3's root is also
+ * `#app`, so the dialogs target the class, not the id. Scoping there therefore
+ * covers the teleported overlays as well as the page.
  *
  * The portal build must NOT scope: there the app owns the document, and
  * scoping would strip the theme from anything Vuetify renders outside that
