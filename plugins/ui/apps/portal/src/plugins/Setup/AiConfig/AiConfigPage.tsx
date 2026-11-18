@@ -111,7 +111,7 @@ export const AiConfigPage: FC = () => {
         type: "success",
         variant: "alert",
         autoClose: 5000,
-        messageNode: toast,
+        richMessage: toast,
       });
       setConfirm(null);
     } catch (err: any) {
@@ -390,7 +390,7 @@ export const AiConfigPage: FC = () => {
                 type: "success",
                 variant: "alert",
                 autoClose: 5000,
-                messageNode: withNames(getText(i18nKeys.AI_CONFIG__ADDED_TOAST), [{ bold: saved.name }]),
+                richMessage: withNames(getText(i18nKeys.AI_CONFIG__ADDED_TOAST), [{ bold: saved.name }]),
               });
             }}
           />

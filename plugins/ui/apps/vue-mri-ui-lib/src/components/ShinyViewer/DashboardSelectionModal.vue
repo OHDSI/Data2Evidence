@@ -1,76 +1,61 @@
 <template>
-  <VDialog
+  <D2eDialog
     :model-value="isOpen"
-    class="dashboard-selection-dialog"
-    max-width="900"
-    width="calc(100vw - 48px)"
-    @update:modelValue="handleDialogModelUpdate"
+    size="l"
+    :title="getText('MRI_PA_SELECT_DASHBOARD_TITLE')"
+    :close-label="getText('MRI_PA_CLOSE_BUTTON')"
+    data-testid="pa-dashboard-selection-dialog"
+    @close="handleClose"
   >
-    <v-card class="dashboard-selection-card">
-      <v-overlay :model-value="loading" contained persistent class="dashboard-selection-loading">
-        <VProgressCircular indeterminate color="primary" :size="40" :width="4" />
-      </v-overlay>
+    <div class="dashboard-selection-body">
+      <div v-if="loading" class="dashboard-selection-loading" data-testid="pa-dashboard-selection-loading">
+        <VProgressCircular indeterminate color="primary" />
+      </div>
+      <p v-if="!loading" class="description">{{ getText('MRI_PA_SELECT_DASHBOARD_DESC') }}</p>
 
-      <v-card-title class="dashboard-selection-header">
-        <span>{{ getText('MRI_PA_SELECT_DASHBOARD_TITLE') }}</span>
-        <v-btn
-          icon
-          variant="text"
-          density="comfortable"
-          color="primary"
-          class="dashboard-selection-close"
-          :aria-label="getText('MRI_PA_CLOSE_BUTTON')"
-          @click="handleClose"
+      <p v-if="!loading && error" class="error-text">{{ error }}</p>
+      <p v-else-if="!loading && dashboards.length === 0" class="status-text">
+        {{ getText('MRI_PA_NO_DASHBOARDS_AVAILABLE') }}
+      </p>
+      <p v-else-if="!loading && availableDashboards.length === 0 && dashboards.length > 0" class="status-text">
+        {{ getText('MRI_PA_NO_CONFIGURED_DASHBOARDS') }}
+      </p>
+
+      <div
+        v-else
+        class="dashboard-grid"
+        :class="{
+          'dashboard-grid--single': availableDashboards.length === 1,
+          'dashboard-grid--two': availableDashboards.length === 2,
+        }"
+      >
+        <v-card
+          v-for="dashboard in availableDashboards"
+          :key="dashboard.id"
+          class="dashboard-card"
+          variant="flat"
+          elevation="0"
+          ripple
+          role="button"
+          tabindex="0"
+          @click="handleDashboardSelect(dashboard.id)"
+          @keydown.enter.prevent="handleDashboardSelect(dashboard.id)"
+          @keydown.space.prevent="handleDashboardSelect(dashboard.id)"
         >
-          <span class="dashboard-selection-close-icon" aria-hidden="true">&#215;</span>
-        </v-btn>
-      </v-card-title>
-
-      <v-card-text class="dashboard-selection-body">
-        <p v-if="!loading" class="description">{{ getText('MRI_PA_SELECT_DASHBOARD_DESC') }}</p>
-
-        <p v-if="!loading && error" class="error-text">{{ error }}</p>
-        <p v-else-if="!loading && dashboards.length === 0" class="status-text">{{ getText('MRI_PA_NO_DASHBOARDS_AVAILABLE') }}</p>
-        <p v-else-if="!loading && availableDashboards.length === 0 && dashboards.length > 0" class="status-text">
-          {{ getText('MRI_PA_NO_CONFIGURED_DASHBOARDS') }}
-        </p>
-
-        <div
-          v-else
-          class="dashboard-grid"
-          :class="{
-            'dashboard-grid--single': availableDashboards.length === 1,
-            'dashboard-grid--two': availableDashboards.length === 2,
-          }"
-        >
-          <v-card
-            v-for="dashboard in availableDashboards"
-            :key="dashboard.id"
-            class="dashboard-card"
-            variant="flat"
-            elevation="0"
-            ripple
-            role="button"
-            tabindex="0"
-            @click="handleDashboardSelect(dashboard.id)"
-            @keydown.enter.prevent="handleDashboardSelect(dashboard.id)"
-            @keydown.space.prevent="handleDashboardSelect(dashboard.id)"
-          >
-            <v-card-title class="dashboard-name">{{ dashboard.name }}</v-card-title>
-            <v-card-text v-if="dashboard.description" class="dashboard-description">
-              {{ dashboard.description }}
-            </v-card-text>
-          </v-card>
-        </div>
-      </v-card-text>
-    </v-card>
-  </VDialog>
+          <v-card-title class="dashboard-name">{{ dashboard.name }}</v-card-title>
+          <v-card-text v-if="dashboard.description" class="dashboard-description">
+            {{ dashboard.description }}
+          </v-card-text>
+        </v-card>
+      </div>
+    </div>
+  </D2eDialog>
 </template>
 
 <script lang="ts" setup>
 import { computed } from 'vue'
 import { useStore } from 'vuex'
-import VDialog from '../vuetify/VDialog.vue'
+import { D2eDialog } from '@d2e/ui'
 import VProgressCircular from '../vuetify/VProgressCircular.vue'
 import { isWizardVisibleOnSurface, type WizardDefinition } from '@/utils/dashboardFlowUtils'
 
@@ -114,12 +99,6 @@ function handleClose() {
   emit('close')
 }
 
-function handleDialogModelUpdate(value: boolean) {
-  if (!value) {
-    handleClose()
-  }
-}
-
 function handleDashboardSelect(dashboardId: string) {
   const dashboard = props.dashboards.find(dashboard => dashboard.name === dashboardId)
   if (!dashboard) {
@@ -130,51 +109,19 @@ function handleDashboardSelect(dashboardId: string) {
 </script>
 
 <style scoped>
-.dashboard-selection-card {
-  background: #fff;
-  border-radius: 16px !important;
-  box-shadow:
-    0 6px 30px 5px rgba(0, 0, 0, 0.12),
-    0 16px 24px 2px rgba(0, 0, 0, 0.14),
-    0 8px 10px -5px rgba(0, 0, 0, 0.2) !important;
-  color: #000;
-  min-height: 391px;
-  overflow: hidden;
+.dashboard-selection-body {
+  min-height: 270px;
   position: relative;
 }
 
-.dashboard-selection-header {
-  align-items: flex-start;
-  color: var(--color-mri-brand, #000080);
+.dashboard-selection-loading {
+  align-items: center;
+  background: rgb(255 255 255 / 70%);
   display: flex;
-  font-family: var(--app-font-family);
-  font-size: 24px !important;
-  font-weight: 500 !important;
-  justify-content: space-between;
-  letter-spacing: 0;
-  line-height: 1.2 !important;
-  min-height: 68px;
-  padding: 24px 24px 12px !important;
-  white-space: normal;
-  width: 100%;
-}
-
-.dashboard-selection-close {
-  color: var(--color-mri-brand, #000080);
-  flex: 0 0 auto;
-  margin: -4px -4px 0 16px;
-  min-width: 32px;
-}
-
-.dashboard-selection-close-icon {
-  font-size: 24px;
-  font-weight: 400;
-  line-height: 1;
-}
-
-.dashboard-selection-body {
-  min-height: 270px;
-  padding: 0 24px 24px !important;
+  inset: 0;
+  justify-content: center;
+  position: absolute;
+  z-index: 1;
 }
 
 .description {
@@ -256,20 +203,7 @@ function handleDashboardSelect(dashboardId: string) {
   color: var(--color-feedback-error, #a3293d);
 }
 
-.dashboard-selection-loading {
-  align-items: center;
-  justify-content: center;
-}
-
 @media (max-width: 700px) {
-  .dashboard-selection-header {
-    font-size: 20px !important;
-  }
-
-  .dashboard-selection-body {
-    padding: 0 20px 20px !important;
-  }
-
   .dashboard-grid {
     grid-template-columns: 1fr;
   }

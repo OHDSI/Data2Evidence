@@ -8,8 +8,8 @@ jest.mock("../../../contexts", () => ({
 }));
 
 describe("FeedbackToast alert", () => {
-  it("is visible and renders messageNode when only messageNode is set", () => {
-    mockFeedback = { variant: "alert", type: "success", messageNode: <b>Prod is active</b> };
+  it("is visible and renders richMessage when only richMessage is set", () => {
+    mockFeedback = { variant: "alert", type: "success", richMessage: <b>Prod is active</b> };
     render(<FeedbackToast />);
     expect(screen.getByText("Prod is active").tagName).toBe("B");
   });

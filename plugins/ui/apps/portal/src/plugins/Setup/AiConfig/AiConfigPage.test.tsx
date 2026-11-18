@@ -229,9 +229,9 @@ describe("AiConfigPage row actions", () => {
     userEvent.click(await screen.findByRole("button", { name: `AI_CONFIG__MORE_ACTIONS ${name}` }));
   // The toast content is a React node; render it to inspect the DOM it produces.
   const renderedToast = () => {
-    const call = mockSetFeedback.mock.calls.map(([f]) => f).find((f) => f.messageNode);
+    const call = mockSetFeedback.mock.calls.map(([f]) => f).find((f) => f.richMessage);
     expect(call).toMatchObject({ variant: "alert", type: "success", autoClose: 5000 });
-    return render(<div data-testid="toast">{call.messageNode}</div>).getByTestId("toast");
+    return render(<div data-testid="toast">{call.richMessage}</div>).getByTestId("toast");
   };
 
   it("hides Set as active on the active row and offers it on the others", async () => {
@@ -496,15 +496,15 @@ describe("AiConfigPage row actions", () => {
     await expectNames(["Active", "Beta"], ["Active"]);
   });
 
-  // The last toast set with a messageNode, rendered to inspect the DOM.
+  // The last toast set with a richMessage, rendered to inspect the DOM.
   const lastToasts = () => {
     const f = mockSetFeedback.mock.calls
       .map(([x]) => x)
-      .filter((x) => x.messageNode)
+      .filter((x) => x.richMessage)
       .pop();
     const { container } = render(
       <div>
-        <div data-testid="first">{f.messageNode}</div>
+        <div data-testid="first">{f.richMessage}</div>
       </div>
     );
     return { first: within(container).getByTestId("first") };
@@ -575,7 +575,11 @@ describe("AiConfigPage row actions", () => {
         render(<AiConfigPage />);
         const dialog = await openDelete(name);
         if (variant === "active") await pick(dialog, "Beta");
-        await userEvent.click(within(dialog).getByRole("button", { name: variant === "active" ? "AI_CONFIG__DELETE_SWITCH_CONFIRM" : "AI_CONFIG__DELETE_CONFIRM" }));
+        await userEvent.click(
+          within(dialog).getByRole("button", {
+            name: variant === "active" ? "AI_CONFIG__DELETE_SWITCH_CONFIRM" : "AI_CONFIG__DELETE_CONFIRM",
+          })
+        );
 
         expect(await within(dialog).findByRole("heading", { name: "AI_CONFIG__DELETING_TITLE" })).toBeInTheDocument();
         expect(dialog).toHaveTextContent(`${name} is being deleted. This configuration will be removed`);

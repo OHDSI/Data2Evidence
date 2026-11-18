@@ -35,7 +35,7 @@ test(TEST_NAME, async ({ page }) => {
 
   // Create a new researcher `test_researcher`
   await page.getByRole('link', { name: 'Users' }).click()
-  await page.getByTestId('button').click()
+  await page.getByRole('button', { name: 'Add new user' }).click()
   await page.getByRole('textbox', { name: 'Username' }).click()
   await page.getByRole('textbox', { name: 'Username' }).fill('test_researcher')
   await page.getByRole('textbox', { name: 'Password' }).click()

@@ -30,6 +30,17 @@ export default defineConfig(({ command, mode }) => {
       },
     },
     plugins: [
+      {
+        name: "commonjs-es-import-watch-fix",
+        enforce: "pre",
+        shouldTransformCachedModule({ resolvedSources }) {
+          return Object.values(resolvedSources).some(({ id }) =>
+            id.endsWith("?commonjs-es-import")
+          )
+            ? true
+            : null;
+        },
+      },
       cssInjectedByJsPlugin(),
       react(),
       basicSsl({

@@ -41,5 +41,5 @@ test('test', async ({ page }) => {
   await page.getByRole('tab', { name: 'Imprint' }).click()
   await expect(page.getByRole('tab', { name: 'Imprint' })).toBeVisible()
   await page.getByRole('button', { name: 'Switch to Admin portal' }).click()
-  await expect(page.getByRole('columnheader', { name: 'Username' })).toBeVisible()
+  await expect(page.getByRole('columnheader', { name: 'User name' })).toBeVisible()
 })

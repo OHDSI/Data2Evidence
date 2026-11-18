@@ -18,6 +18,6 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByTestId('button').nth(1).click()
   await page.getByRole('button', { name: 'Switch to Admin portal' }).click()
   await expect(page.getByRole('heading', { name: 'Users' })).toBeVisible()
-  await expect(page.getByTestId('button')).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Add new user' })).toBeVisible()
   await expect(page.getByRole('cell', { name: 'admin', exact: true })).toBeVisible()
 })

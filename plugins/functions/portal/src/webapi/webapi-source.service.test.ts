@@ -147,7 +147,7 @@ describe('WebApiSourceService.syncSourceForDataset', () => {
     assertEquals(cacheCall.args[0], 'ds-1')
   })
 
-  it('does not register a source for a hana dataset', async () => {
+  it('does not register a source for a hana dataset without a databaseCode', async () => {
     const { api, jobPlugins, methods } = createApiStub()
     const service = new WebApiSourceService(api as never, jobPlugins as never)
 
@@ -171,7 +171,7 @@ describe('WebApiSourceService.syncSourceForDataset', () => {
     const { api, jobPlugins, methods } = createApiStub({ sourceId: 17, sourceKey: 'ds-1' })
     const service = new WebApiSourceService(api as never, jobPlugins as never)
 
-    await service.syncSourceForDataset(datasetWithDialect('hana'), detail, credentials)
+    await service.syncSourceForDataset(datasetWithDialect('duckdb'), detail, credentials)
 
     assertEquals(methods().includes('getSourceByKey'), true)
     assertEquals(methods().includes('createSource'), false)
@@ -236,19 +236,26 @@ describe('WebApiSourceService.syncSourceForDataset', () => {
     assertEquals(request.daimons.map((d) => d.priority), [1, 0, 1])
   })
 
-  // HANA has no DuckDB cache on any dataset type (it is queried directly), so a build
-  // triggered here would start a real Prefect flow run writing to the live HANA
-  // connection's own alias. Previously bao's create-cache-handler 404'd on the missing
-  // WebAPI Source and swallowed the error; the Prefect flow has no such backstop.
+  // HANA has no DuckDB cache on any dataset type (trex attaches the HANA database
+  // itself), so a build triggered here would start a real Prefect flow run writing to
+  // the live HANA connection's own alias.
   it('does not start a cache flow run for a hana dataset', async () => {
     const { api, jobPlugins, methods } = createApiStub()
     const service = new WebApiSourceService(api as never, jobPlugins as never)
-
-    await service.syncSourceForDataset(datasetWithDialect('hana'), detail, credentials)
+    const previous = env.TREX__SQL_TOKEN
+    env.TREX__SQL_TOKEN = 'quack-token'
+    try {
+      await service.syncSourceForDataset(
+        { ...datasetWithDialect('hana'), databaseCode: 'HANA_DB' } as Dataset,
+        detail,
+        credentials,
+      )
+    } finally {
+      env.TREX__SQL_TOKEN = previous
+    }
 
     assertEquals(methods().includes('createCacheFlowRun'), false)
-    assertEquals(methods().includes('createSource'), false)
-    assertEquals(methods().includes('updateSource'), false)
+    assertEquals(methods().includes('createSource'), true)
   })
 })
 
@@ -515,9 +522,26 @@ describe('WebApiSourceService trexsql cache sources', () => {
     assertEquals(request.dialect, 'postgresql')
   })
 
-  it('still registers no source for a hana dataset that names a cacheId', async () => {
-    const request = await createdRequest(cachedDataset({ dialect: 'hana' as never, cacheId: 'HANA_DB' }))
-    assertEquals(request, undefined)
+  it('points a hana dataset at the read-only HANA catalog trex attaches', async () => {
+    const request = (await createdRequest(cachedDataset({
+      dialect: 'hana' as never,
+      databaseCode: 'HANA_DB',
+      cacheId: 'HANA_DB',
+      schemaName: 'CDM',
+      vocabSchemaName: 'VOCAB',
+      resultsSchemaName: 'CDM_RESULTS',
+    })))!
+    assertEquals(request.dialect, 'trexsql')
+    assertEquals(request.connectionString, 'jdbc:trexsql://127.0.0.1:9494?disable_ssl=true')
+    assertEquals(request.password, 'quack-token')
+    assertEquals(
+      request.daimons.map((d) => [d.daimonType, d.tableQualifier]),
+      [
+        ['CDM', 'HANA_DB__srcdb.CDM'],
+        ['Vocabulary', 'HANA_DB__srcdb.VOCAB'],
+        ['Results', 'HANA_DB__srcdb.CDM_RESULTS'],
+      ],
+    )
   })
 
   it('refuses to register a cached dataset when TREX__SQL_TOKEN is not set', async () => {

@@ -32,13 +32,6 @@
           "env": "mri-pg-config"
         },
         {
-          "function": "/alp-dataflow-gen-init",
-          "imports": "/alp-dataflow-gen-init/deno.json",
-          "env": "alp-dataflow-gen-init",
-          "waitforEnvVar": "PREFECT_HEALTH_CHECK",
-          "eszip": "/alp-dataflow-gen-init/index.eszip"
-        },
-        {
           "function": "/files-manager-init",
           "imports": "/files-manager-init/deno.json",
           "env": "files-manager"
@@ -62,6 +55,14 @@
           "env": "alp-usermgmt",
           "function": "/alp-idp-migration-init",
           "imports": "/alp-idp-migration-init/deno.json",
+          "afterListen": true
+        },
+        {
+          "function": "/alp-dataflow-gen-init",
+          "imports": "/alp-dataflow-gen-init/deno.json",
+          "env": "alp-dataflow-gen-init",
+          "waitforEnvVar": "PREFECT_HEALTH_CHECK",
+          "eszip": "/alp-dataflow-gen-init/index.eszip",
           "afterListen": true
         },
         {
@@ -1315,6 +1316,15 @@
           "path": "^/usermgmt/api/study/access-request/list/(.+)",
           "scopes": [
             "usermgmt.studyAccessRequest.read"
+          ]
+        },
+        {
+          "path": "^/usermgmt/api/study/access-request/user/(.+)",
+          "scopes": [
+            "usermgmt.studyAccessRequest.read"
+          ],
+          "httpMethods": [
+            "GET"
           ]
         },
         {

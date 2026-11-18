@@ -61,7 +61,14 @@ export function Select({
       : [];
   const error = messages.length > 0;
   const helperText = error ? messages[0] : hint;
-  const rootClass = clsx("d2e-field", "d2e-select", `d2e-select--${size}`, className);
+  const rootClass = clsx(
+    "d2e-field",
+    "d2e-select",
+    `d2e-select--${size}`,
+    multiple && "d2e-select--multiple",
+    prependIcon && "d2e-select--with-icon",
+    className,
+  );
   const rootStyle = { "--d2e-select-height": `${spec.height}px` } as React.CSSProperties;
 
   const adornment = prependIcon
@@ -102,6 +109,7 @@ export function Select({
             required={required}
             error={error}
             helperText={helperText}
+            InputLabelProps={{ ...params.InputLabelProps, shrink: placeholder ? true : undefined }}
             InputProps={{
               ...params.InputProps,
               startAdornment: (
@@ -176,10 +184,15 @@ export function Select({
           <TextField
             {...params}
             label={label}
-            placeholder={placeholder}
+            placeholder={
+              multiple && Array.isArray(selectedValues) && selectedValues.length > 0
+                ? undefined
+                : placeholder
+            }
             required={required}
             error={error}
             helperText={helperText}
+            InputLabelProps={{ ...params.InputLabelProps, shrink: placeholder ? true : undefined }}
             inputProps={{ ...params.inputProps, ...(required ? { "aria-required": true } : {}) }}
             InputProps={{
               ...params.InputProps,

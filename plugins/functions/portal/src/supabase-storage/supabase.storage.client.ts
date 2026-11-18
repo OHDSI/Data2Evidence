@@ -5,9 +5,8 @@ import {
   InternalServerErrorException,
 } from "@danet/core";
 import { contentType } from "mime-types";
-import pg from "npm:pg";
 import { env, services } from "../env.ts";
-import { isBucketAlreadyExists } from "./bucket.util.ts";
+import { isBucketAlreadyExists, isBucketNotFound } from "./bucket.util.ts";
 
 interface UploadFile {
   originalname: string;
@@ -15,12 +14,20 @@ interface UploadFile {
   mimetype: string;
 }
 
+interface StorageObject {
+  id: string;
+  name: string;
+  metadata: Record<string, unknown> | null;
+  created_at: string;
+  updated_at: string;
+  last_accessed_at: string;
+}
+
 @Injectable()
 export class SupabaseStorageClient {
   private readonly DEFAULT_BUCKET = "portal-datasets-resources";
   private readonly baseUrl: string;
   private readonly authToken: string;
-  private static pgPool: pg.Pool;
   private static isInitialized = false;
   // Buckets this portal owns, created on demand before a write. Names passed in
   // by callers (e.g. the strategus-results ?bucket= param) are never created.
@@ -38,41 +45,6 @@ export class SupabaseStorageClient {
       SupabaseStorageClient.isInitialized = true;
 
       const envObj = Deno.env.toObject();
-      const pgOpt = {
-        user: envObj.PG_USER,
-        password: envObj.PG_PASSWORD,
-        host: envObj.PG__HOST,
-        port: parseInt(envObj.PG__PORT),
-        database: envObj.PG__DB_NAME,
-        max: 1,
-        idleTimeoutMillis: 30000,
-        connectionTimeoutMillis: 2000,
-        ssl: (() => {
-          let ssl: boolean | { rejectUnauthorized: boolean; ca: string } =
-            false;
-          try {
-            if (envObj.PG__SSL) {
-              ssl = JSON.parse(envObj.PG__SSL.toLowerCase());
-            }
-            if (envObj.PG__CA_ROOT_CERT) {
-              ssl = {
-                rejectUnauthorized: true,
-                ca: envObj.PG__CA_ROOT_CERT,
-              };
-            }
-          } catch (e) {
-            console.error(`Error parsing SSL config: ${e}`);
-          }
-          return ssl;
-        })(),
-      };
-
-      SupabaseStorageClient.pgPool = new pg.Pool(pgOpt);
-
-      SupabaseStorageClient.pgPool.on("error", (err) => {
-        console.error("Unexpected error on idle PostgreSQL client", err);
-      });
-
       const buckets: Array<[string | undefined, boolean]> = [
         [this.DEFAULT_BUCKET, false],
         [envObj.DATA_TRANSFORMATION_BUCKET, false],
@@ -85,8 +57,7 @@ export class SupabaseStorageClient {
         }
       }
 
-      // Test connection and warm up the buckets; writes ensure them again.
-      this.initializeDb();
+      // Warm up the buckets; writes ensure them again.
       for (const name of SupabaseStorageClient.managedBuckets.keys()) {
         this.ensureBucket(name).catch((e) =>
           console.warn(`Bucket ${name} not created at startup, retrying on first write: ${e}`)
@@ -95,25 +66,50 @@ export class SupabaseStorageClient {
     }
   }
 
-  async closePool() {
-    if (SupabaseStorageClient.pgPool) {
-      await SupabaseStorageClient.pgPool.end();
-      console.log("PostgreSQL connection pool closed");
-    }
-  }
-
-  private async initializeDb() {
-    let client;
-    try {
-      client = await SupabaseStorageClient.pgPool.connect();
-      console.log("Successfully connected to PostgreSQL database");
-    } catch (e) {
-      console.error(`Error connecting to PostgreSQL: ${e}`);
-    } finally {
-      if (client) {
-        client.release();
+  // Pages through list-v2. With a delimiter only the direct children of
+  // `prefix` are returned; without one the listing is recursive.
+  private async listObjects(
+    bucket: string,
+    prefix: string,
+    options: {
+      withDelimiter?: boolean;
+      sortBy?: { column: "name" | "created_at" | "updated_at"; order: "asc" | "desc" };
+    } = {},
+  ): Promise<StorageObject[]> {
+    const objects: StorageObject[] = [];
+    let cursor: string | undefined;
+    do {
+      const response = await fetch(
+        `${this.baseUrl}/object/list-v2/${encodeURIComponent(bucket)}`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${this.authToken}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            prefix,
+            limit: 1000,
+            cursor,
+            with_delimiter: options.withDelimiter ?? false,
+            sortBy: options.sortBy,
+          }),
+        },
+      );
+      if (!response.ok) {
+        const errorText = await response.text();
+        if (isBucketNotFound(response.status, errorText)) {
+          return [];
+        }
+        throw new Error(
+          `Error listing ${bucket}/${prefix}: ${response.status} - ${errorText}`,
+        );
       }
-    }
+      const page = await response.json();
+      objects.push(...page.objects);
+      cursor = page.hasNext ? page.nextCursor : undefined;
+    } while (cursor);
+    return objects;
   }
 
   // Creates a managed bucket once per worker; no-op for other names.
@@ -152,19 +148,14 @@ export class SupabaseStorageClient {
     console.info(`Bucket ${bucketName} created or already exists`);
   }
 
-  // Supabase storage API does not work for listing files, need further investigation.
-  // Directly query the database to get the files.
   async list(
     id: string,
     bucketName?: string,
     pathType: "dataset" | "data-transformation" = "dataset"
   ) {
     const targetBucket = bucketName || this.DEFAULT_BUCKET;
-    let client;
 
     try {
-      client = await SupabaseStorageClient.pgPool.connect();
-
       let folderPath;
 
       if (pathType === "data-transformation") {
@@ -173,34 +164,19 @@ export class SupabaseStorageClient {
         folderPath = this.getDatasetFolderPath(id);
       }
 
-      console.log(`Querying database for files in folder: ${folderPath}`);
-
-      // Query the storage.objects table directly
-      const query = `
-        SELECT name, metadata
-        FROM storage.objects
-        WHERE bucket_id = $1
-        AND name LIKE $2
-        AND name NOT LIKE $3
-      `;
-
-      const result = await client.query(query, [
-        targetBucket,
-        `${folderPath}/%`,
-        `${folderPath}/%/%`, // Exclude nested folders
-      ]);
+      const files = await this.listObjects(targetBucket, `${folderPath}/`, {
+        withDelimiter: true,
+      });
 
       if (pathType === "data-transformation") {
         console.log(
-          `Found ${result.rows.length} files in database for data-transformation node ${id}`
+          `Found ${files.length} files for data-transformation node ${id}`
         );
       } else {
-        console.log(
-          `Found ${result.rows.length} files in database for dataset ${id}`
-        );
+        console.log(`Found ${files.length} files for dataset ${id}`);
       }
 
-      return result.rows.map((file) => {
+      return files.map((file) => {
         const fullPath = file.name;
         const fileName = fullPath.substring(fullPath.lastIndexOf("/") + 1);
         const nameArr = fileName.split(".");
@@ -211,7 +187,7 @@ export class SupabaseStorageClient {
 
         return {
           name: fileName,
-          size: this.formatBytes(file.metadata?.size || 0),
+          size: this.formatBytes(Number(file.metadata?.size) || 0),
           type: fileType,
         };
       });
@@ -220,11 +196,6 @@ export class SupabaseStorageClient {
         `Error in list method: ${e instanceof Error ? e.message : String(e)}`
       );
       return [];
-    } finally {
-      // Always release the client back to the pool
-      if (client) {
-        client.release();
-      }
     }
   }
 
@@ -582,33 +553,20 @@ export class SupabaseStorageClient {
   }
 
   async listByPrefix(bucket: string, prefix: string) {
-    let client;
     try {
       console.log(`Listing files in bucket: ${bucket} with prefix: ${prefix}`);
 
-      client = await SupabaseStorageClient.pgPool.connect();
-
-      const query = `
-        SELECT
-          name,
-          id,
-          metadata,
-          created_at,
-          updated_at
-        FROM storage.objects
-        WHERE bucket_id = $1 AND name LIKE $2
-        ORDER BY created_at DESC
-      `;
-
-      const result = await client.query(query, [bucket, `${prefix}%`]);
-
-      const files = result.rows.map((row: any) => ({
-        name: row.name,
-        id: row.id,
-        updated_at: row.updated_at,
-        created_at: row.created_at,
-        last_accessed_at: row.last_accessed_at,
-        metadata: row.metadata,
+      const files = (
+        await this.listObjects(bucket, prefix, {
+          sortBy: { column: "created_at", order: "desc" },
+        })
+      ).map((obj) => ({
+        name: obj.name,
+        id: obj.id,
+        updated_at: obj.updated_at,
+        created_at: obj.created_at,
+        last_accessed_at: obj.last_accessed_at,
+        metadata: obj.metadata,
       }));
 
       console.info(`Found ${files.length} files with prefix ${prefix}`);
@@ -621,10 +579,6 @@ export class SupabaseStorageClient {
       );
       console.error(`Failed to list files with prefix: ${prefix}`);
       throw new InternalServerErrorException();
-    } finally {
-      if (client) {
-        client.release();
-      }
     }
   }
 

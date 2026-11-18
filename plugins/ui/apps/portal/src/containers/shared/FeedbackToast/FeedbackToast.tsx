@@ -23,12 +23,12 @@ export const FeedbackToast: FC = () => {
         variant="toast"
         severity={feedback.type ?? "info"}
         title={feedback.title}
-        message={feedback.messageNode ?? feedback.message}
+        message={feedback.richMessage ?? feedback.message}
         actionLabel={feedback.actionLabel}
         onAction={feedback.onAction}
         dismissible={!feedback.autoClose}
         autoHideDuration={feedback.autoClose}
-        visible={(feedback.messageNode ?? feedback.message) != null}
+        visible={(feedback.richMessage ?? feedback.message) != null}
         onClose={clearFeedback}
       />
     );
