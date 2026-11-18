@@ -80,6 +80,18 @@ describe("ResourceController.uploadResource", () => {
     assertEquals(error.message, `503 - ${SCAN_UNAVAILABLE_MESSAGE}`);
     assertEquals(uploaded, []);
   });
+
+  it("stores an allowed file when scanning is switched off", async () => {
+    const { controller, uploaded } = makeController({ status: "not-scanned" });
+    await controller.uploadResource("ds-1", uploadRequest("notes.txt"));
+    assertEquals(uploaded, ["notes.txt"]);
+  });
+
+  it("still applies the upload rules when scanning is switched off", async () => {
+    const { controller, uploaded } = makeController({ status: "not-scanned" });
+    await assertRejects(() => controller.uploadResource("ds-1", uploadRequest("analysis.R")), HttpException);
+    assertEquals(uploaded, []);
+  });
 });
 
 describe("ResourceController.checkResource", () => {
@@ -88,6 +100,7 @@ describe("ResourceController.checkResource", () => {
       { status: "clean" },
       { status: "infected", signature: "Eicar-Test-Signature" },
       { status: "unavailable", reason: "down" },
+      { status: "not-scanned" },
     ] as ScanResult[]) {
       const { controller, uploaded } = makeController(scan);
       assertEquals(await controller.checkResource("ds-1", uploadRequest("notes.txt")), { result: scan.status });

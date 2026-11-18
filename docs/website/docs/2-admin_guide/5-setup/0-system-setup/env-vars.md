@@ -57,20 +57,13 @@ RESOURCE_UPLOAD_ALLOWED_EXTENSIONS=pdf,csv
 
 ## Malware scanning of resource uploads
 
-Every file uploaded under **Admin > Data sources > Resources** is scanned for malware with [ClamAV](https://www.clamav.net/), which runs as the `clamav` service. The Add file dialog scans the file as soon as it is picked, and the upload scans it again before storing it.
+Uploaded resource files can be scanned for malware with [ClamAV](https://www.clamav.net/). Scanning is **off by default**, and Data2Evidence doesn't include or run ClamAV (it is licensed under GPLv2). To use it, run ClamAV yourself and switch scanning on: see [Malware scanning of resource uploads](./malware-scanning.md) for the setup steps.
 
-- If ClamAV finds a threat, the file is blocked and the event is written to the logs with the `[AUDITLOG]` prefix.
-- If ClamAV can't be reached (for example while it starts up), uploads are refused until it is available again. Files are never stored unscanned.
-- Password-protected documents can't be scanned, because their content is encrypted, so they are accepted unscanned.
+When scanning is on, uploads are refused if ClamAV can't be reached, so files are never stored unscanned.
 
-The `clamav` service needs outbound internet access to `database.clamav.net` to keep its virus signatures up to date. Without it, ClamAV keeps scanning with the signatures it already has, which become outdated over time.
-
-ClamAV uses about 1–1.5 GB of memory and takes from a few seconds to a couple of minutes to start, while it loads its signatures.
-
-| key                 | type   | comment                                                                       |
-| ------------------- | ------ | ----------------------------------------------------------------------------- |
-| `CLAMAV_HOST`       | string | Optional. Host of the ClamAV service (default: the bundled `clamav` service)  |
-| `CLAMAV_PORT`       | number | Optional. ClamAV port (default `3310`)                                        |
-| `CLAMAV_TIMEOUT_MS` | number | Optional. How long to wait for a scan before refusing the upload (default `60000`) |
-
-ClamAV accepts files up to 100 MB. If you raise `RESOURCE_UPLOAD_MAX_FILE_SIZE_MB` above that, also raise `CLAMD_CONF_StreamMaxLength` and `CLAMD_CONF_MaxFileSize` on the `clamav` service.
+| key                 | type    | comment                                                                                  |
+| ------------------- | ------- | ---------------------------------------------------------------------------------------- |
+| `CLAMAV_ENABLED`    | boolean | Optional. `true` switches malware scanning on (default `false`)                          |
+| `CLAMAV_HOST`       | string  | Required when scanning is on. Host name of your ClamAV service                           |
+| `CLAMAV_PORT`       | number  | Optional. ClamAV port (default `3310`)                                                   |
+| `CLAMAV_TIMEOUT_MS` | number  | Optional. How long to wait for a scan before refusing the upload (default `60000`)       |

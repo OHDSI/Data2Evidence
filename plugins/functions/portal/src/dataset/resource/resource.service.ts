@@ -7,7 +7,7 @@ import {
   BLOCKED_MESSAGE,
   SCAN_UNAVAILABLE_MESSAGE,
   ScanResult,
-  scanFile,
+  scanResource,
 } from "./resource-upload.scan.ts";
 
 export interface CheckedUpload {
@@ -23,8 +23,9 @@ export class ResourceService {
     private readonly requestContextService: RequestContextService,
   ) {}
 
-  // Replaceable in tests, which use a fake scanner instead of ClamAV.
-  scanner: (content: Uint8Array) => Promise<ScanResult> = (content) => scanFile(content);
+  // Replaceable in tests, which use a fake scanner instead of ClamAV. Returns
+  // "not-scanned" unless the deployment has switched scanning on.
+  scanner: (content: Uint8Array) => Promise<ScanResult> = (content) => scanResource(content);
 
   async getResources(datasetId: string) {
     const resources = await this.storageClient.list(datasetId);
@@ -39,8 +40,9 @@ export class ResourceService {
   }
 
   // Applies every upload rule (the same as the Add file dialog, in case its
-  // check was bypassed) and scans the file for malware. Rule failures throw
-  // a 400; the scan result is returned for the caller to act on.
+  // check was bypassed) and, if scanning is on, scans the file for malware.
+  // Rule failures throw a 400; the scan result is returned for the caller to
+  // act on.
   async checkUpload(datasetId: string, file: unknown): Promise<CheckedUpload> {
     if (!(file instanceof File)) {
       throw new HttpException(400, "No file was uploaded");
@@ -69,8 +71,9 @@ export class ResourceService {
     return { file, buffer, scan };
   }
 
-  // Stores a file that passed checkUpload. An infected or unscanned file is
-  // never stored: scanning fails closed.
+  // Stores a file that passed checkUpload. With scanning on, an infected or
+  // unscanned file is never stored: scanning fails closed. With it off
+  // ("not-scanned"), the upload rules above are the only checks.
   uploadResource(datasetId: string, { file, buffer, scan }: CheckedUpload) {
     if (scan.status === "infected") {
       throw new HttpException(400, BLOCKED_MESSAGE);

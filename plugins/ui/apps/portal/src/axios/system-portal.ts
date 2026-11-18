@@ -179,12 +179,13 @@ export class SystemPortal {
     });
   }
 
-  // Runs every upload rule and the malware scan without storing the file.
+  // Runs every upload rule, and the malware scan if the deployment has it on,
+  // without storing the file. "not-scanned" means scanning is off.
   public checkResource(datasetId: string, file: File) {
     const formData = new FormData();
     formData.append("file", file, file.name);
 
-    return request<{ result: "clean" | "infected" | "unavailable" }>({
+    return request<{ result: "clean" | "infected" | "unavailable" | "not-scanned" }>({
       baseURL: SYSTEM_PORTAL_URL,
       url: `dataset/resource/check`,
       method: "POST",

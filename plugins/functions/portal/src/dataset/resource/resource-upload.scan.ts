@@ -1,9 +1,13 @@
 import { env } from "../../env.ts";
 
-// Malware scanning through a ClamAV daemon (clamd), using its INSTREAM
+// Optional malware scanning through a ClamAV daemon (clamd), using its INSTREAM
 // protocol: send "zINSTREAM\0", then the file as length-prefixed chunks, then
 // a zero-length chunk; clamd replies "stream: OK" or "stream: <name> FOUND".
 // https://docs.clamav.net/manual/Usage/Scanning.html#instream
+//
+// Off unless CLAMAV_ENABLED=true. D2E doesn't ship or run ClamAV (it's GPLv2):
+// a deployment that wants scanning runs its own and points CLAMAV_HOST at it.
+// Setup guide: docs/website/docs/2-admin_guide/5-setup/0-system-setup/malware-scanning.md
 
 // Shown when a scan blocks or can't scan an upload. English only, like other
 // portal API errors; the Add file dialog shows its own translated messages.
@@ -15,7 +19,9 @@ export const SCAN_UNAVAILABLE_MESSAGE =
 export type ScanResult =
   | { status: "clean" }
   | { status: "infected"; signature: string }
-  | { status: "unavailable"; reason: string };
+  | { status: "unavailable"; reason: string }
+  // Scanning is switched off for this deployment.
+  | { status: "not-scanned" };
 
 export interface ScannerConfig {
   host: string;
@@ -25,8 +31,12 @@ export interface ScannerConfig {
 
 const CHUNK_SIZE = 64 * 1024;
 
+export const isScanningEnabled = (): boolean => (env.CLAMAV_ENABLED ?? "").trim().toLowerCase() === "true";
+
+// No default host: with scanning on, a missing CLAMAV_HOST must refuse
+// uploads rather than quietly try somewhere else.
 export const getScannerConfig = (): ScannerConfig => ({
-  host: env.CLAMAV_HOST || "localhost",
+  host: (env.CLAMAV_HOST ?? "").trim(),
   port: Number(env.CLAMAV_PORT) || 3310,
   timeoutMs: Number(env.CLAMAV_TIMEOUT_MS) || 60_000,
 });
@@ -65,9 +75,15 @@ const writeAll = async (conn: ScannerConnection, data: Uint8Array) => {
   }
 };
 
-const streamToScanner = async (conn: ScannerConnection, content: Uint8Array): Promise<string> => {
+const streamToScanner = async (
+  conn: ScannerConnection,
+  content: Uint8Array,
+  stopped: () => boolean,
+): Promise<string> => {
   await writeAll(conn, new TextEncoder().encode("zINSTREAM\0"));
   for (let offset = 0; offset < content.length; offset += CHUNK_SIZE) {
+    // Stop sending once the scan has timed out: nobody is waiting for the answer.
+    if (stopped()) throw new Error("Scan stopped after timing out");
     const chunk = content.subarray(offset, offset + CHUNK_SIZE);
     await writeAll(conn, lengthPrefix(chunk.length));
     await writeAll(conn, chunk);
@@ -86,32 +102,59 @@ const streamToScanner = async (conn: ScannerConnection, content: Uint8Array): Pr
   return reply;
 };
 
-// Scans the file with ClamAV. Never throws: connection failures, timeouts
-// and unexpected replies come back as "unavailable".
+// Scans the file with ClamAV. Never throws: a missing host, connection
+// failures, timeouts and unexpected replies come back as "unavailable".
 export const scanFile = async (
   content: Uint8Array,
   config: ScannerConfig = getScannerConfig(),
   connect: Connect = denoConnect,
 ): Promise<ScanResult> => {
+  if (!config.host) {
+    return { status: "unavailable", reason: "Malware scanning is enabled but CLAMAV_HOST is not set" };
+  }
+
   let conn: ScannerConnection | undefined;
   let timer: ReturnType<typeof setTimeout> | undefined;
-  try {
-    const timeout = new Promise<never>((_, reject) => {
-      timer = setTimeout(() => reject(new Error(`Scan timed out after ${config.timeoutMs} ms`)), config.timeoutMs);
-    });
-    const scan = (async () => {
-      conn = await connect(config.host, config.port);
-      return parseScanReply(await streamToScanner(conn, content));
-    })();
-    return await Promise.race([scan, timeout]);
-  } catch (error) {
-    return { status: "unavailable", reason: error instanceof Error ? error.message : String(error) };
-  } finally {
-    clearTimeout(timer);
+  let timedOut = false;
+  const closeConnection = () => {
     try {
       conn?.close();
     } catch {
       // Already closed.
     }
+  };
+
+  // When the timeout wins, this keeps running: it stops at the next chunk,
+  // and a connection that only opens after the timeout is closed at once.
+  const scan = (async () => {
+    conn = await connect(config.host, config.port);
+    if (timedOut) {
+      closeConnection();
+      throw new Error("Scan stopped after timing out");
+    }
+    return parseScanReply(await streamToScanner(conn, content, () => timedOut));
+  })();
+  // Its rejection after a timeout (e.g. a write on the closed connection) is
+  // expected. Promise.race already handles it; this makes that explicit.
+  scan.catch(() => undefined);
+
+  const timeout = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => {
+      timedOut = true;
+      reject(new Error(`Scan timed out after ${config.timeoutMs} ms`));
+    }, config.timeoutMs);
+  });
+
+  try {
+    return await Promise.race([scan, timeout]);
+  } catch (error) {
+    return { status: "unavailable", reason: error instanceof Error ? error.message : String(error) };
+  } finally {
+    clearTimeout(timer);
+    closeConnection();
   }
 };
+
+// Scans an upload if this deployment has switched scanning on.
+export const scanResource = (content: Uint8Array): Promise<ScanResult> =>
+  isScanningEnabled() ? scanFile(content) : Promise.resolve({ status: "not-scanned" });

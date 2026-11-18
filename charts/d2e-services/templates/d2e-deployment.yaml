@@ -593,6 +593,11 @@ spec:
                 configMapKeyRef:
                   name: "{{ .Release.Name }}-{{ .Chart.Name }}"
                   key: RESOURCE_UPLOAD_ALLOWED_EXTENSIONS
+            - name: CLAMAV_ENABLED
+              valueFrom:
+                configMapKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: CLAMAV_ENABLED
             - name: CLAMAV_HOST
               valueFrom:
                 configMapKeyRef:
