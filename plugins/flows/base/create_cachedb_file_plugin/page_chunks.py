@@ -67,8 +67,9 @@ def run_page_chunk(conn, database: str, schema: str, table: str, index: int, ins
 
     Returns False when an earlier attempt already committed this chunk. Each
     statement is sent on its own: trex splits multi-statement strings and must
-    not see BEGIN and COMMIT in one. On any error the transaction is rolled
-    back before the error is raised again.
+    not see BEGIN and COMMIT in one. On any error, including a task timeout
+    (a BaseException), the transaction is rolled back before the error is
+    raised again.
     """
     try:
         conn.execute("BEGIN")
@@ -85,7 +86,7 @@ def run_page_chunk(conn, database: str, schema: str, table: str, index: int, ins
         record_chunk_progress(conn, database, schema, table, index + 1)
         conn.execute("COMMIT")
         return True
-    except Exception:
+    except BaseException:
         rollback(conn, logger)
         raise
 

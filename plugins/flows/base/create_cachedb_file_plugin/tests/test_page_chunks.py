@@ -6,6 +6,7 @@ source table in the same DuckDB: a stand-in for ``postgres_query``, which only
 trex can run. What is under test is the transaction around it.
 """
 
+import asyncio
 import logging
 import sys
 
@@ -239,6 +240,23 @@ def test_a_failure_between_insert_and_commit_discards_the_rows(conn, logger):
         run_page_chunk(failing, DATABASE, SCHEMA, TABLE, 0, _insert(0), logger)
 
     assert failing.statements[-1] == "ROLLBACK"
+    assert _target_rows(conn) == 0
+    assert _completed(conn) == 0
+
+
+def test_a_timeout_after_the_insert_rolls_back(conn, logger):
+    """A task timeout is a BaseException; it must not leave the transaction open."""
+
+    def timeout():
+        raise asyncio.CancelledError()
+
+    timed_out = RecordingConn(conn, before=("UPDATE", timeout))
+
+    with pytest.raises(asyncio.CancelledError):
+        run_page_chunk(timed_out, DATABASE, SCHEMA, TABLE, 0, _insert(0), logger)
+
+    assert timed_out.statements[-1] == "ROLLBACK"
+    assert _no_open_transaction(conn)
     assert _target_rows(conn) == 0
     assert _completed(conn) == 0
 
