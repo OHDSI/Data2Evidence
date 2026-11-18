@@ -254,7 +254,7 @@ COPY --from=staging /staged/hades-flow /var/lib/d2e-flows/hades-flow
 COPY --from=staging /staged/data-transformation-flow /var/lib/d2e-flows/data-transformation-flow
 COPY --from=staging /staged/d2e-flows /var/lib/d2e-flows/d2e-flows
 
-COPY --from=whiterabbit_base /dist /var/lib/d2e-flows/data-transformation-flow/baked/flows/white_rabbit_plugin/dist
+COPY --from=whiterabbit_base /dist ${D2E_FLOWS_CACHE}/data-transformation-flow/baked/flows/white_rabbit_plugin/dist
 
 WORKDIR /app
 ENTRYPOINT ["/entrypoint.sh"]

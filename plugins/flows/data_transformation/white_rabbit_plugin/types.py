@@ -1,9 +1,11 @@
+import os
 from enum import Enum
 from typing import Optional
 from pydantic import BaseModel, Field
 
 
-WHITERABBIT_DIR_PATH = '/var/lib/d2e-flows/data-transformation-flow/baked/flows/white_rabbit_plugin'
+D2E_FLOWS_CACHE = os.environ.get('D2E_FLOWS_CACHE', '/var/lib/d2e-flows')
+WHITERABBIT_DIR_PATH = f'{D2E_FLOWS_CACHE}/data-transformation-flow/baked/flows/white_rabbit_plugin'
 WHITERABBIT_BIN_PATH = f'{WHITERABBIT_DIR_PATH}/dist/bin'
 CSV_SUBDIR = 'csvfiles'
 SCAN_REPORT_FILENAME = 'ScanReport.xlsx'
