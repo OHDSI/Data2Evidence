@@ -62,9 +62,9 @@ def get_trex_connection(database_code: str):
 class TrexWriter:
     """The trex cursor a schema copy writes through, replaceable if it breaks.
 
-    Cursor-like (``execute``, ``fetchone``, ``fetchall``), so every caller that
-    took the bare cursor keeps working. A plain class: Prefect hands task
-    arguments through unchanged, so a retried chunk task gets this same object.
+    Cursor-like (``execute``, ``fetchone``, ``fetchall``). A plain class: Prefect
+    hands task arguments through unchanged, so a retried chunk task gets this
+    same object.
     """
 
     def __init__(self, database_code: str):
@@ -148,11 +148,9 @@ def create_schema_if_not_exists(write_conn: Any, copy_params: CopyParameters, lo
       tags=["flow-level-concurrency"],
       log_prints=True, 
       task_run_name="create_schema_tables_from_{copy_params.source_schema}",
-      # Deliberately no timeout_seconds. The copy budget now lives on
-      # copy_table_chunk, one hour per chunk, so a slow schema is bounded chunk
-      # by chunk instead of by a single envelope covering every table in it.
-      # A schema-wide 3h cap is what killed a large copy mid-table and threw
-      # away the partial target on the way out (issue 3033).
+      # Deliberately no timeout_seconds. The copy budget lives on the chunk tasks
+      # (copy_table_chunk, copy_page_chunk), one hour per chunk, so a slow schema
+      # is bounded chunk by chunk instead of by one cap over every table in it.
       cache_policy=NONE)
 def create_schema_tables_task(use_trex_conn: bool, read_conn: Any, copy_params: CopyParameters, duckdb_file_path: str):
     logger = get_run_logger()
@@ -605,13 +603,12 @@ def copy_table(write_conn: Any, read_conn: Any, copy_params: CopyParameters, que
 
     planned = None
     if dialect == SupportedDatabaseDialects.POSTGRES.value:
+        # Page ranges for large tables, one statement for small ones; None falls back to plan_table.
         planned = _plan_postgres(
             write_conn, read_conn, adapter, dialect, copy_params, query_columns, source_schema,
             config, logger,
         )
     if planned is None:
-        # Tries another chunk column when the first one is rejected or skewed,
-        # instead of failing the cache build on it (issue 3576).
         planned = plan_table(
             adapter, dialect, source_schema, table, config, logger, allowed_columns
         )
@@ -652,7 +649,7 @@ def copy_table(write_conn: Any, read_conn: Any, copy_params: CopyParameters, que
         )
 
     elif plan.strategy is ChunkStrategy.PAGE_RANGE:
-        # Postgres compares quoted names by exact case; the scanner did not.
+        # postgres_query sends quoted names to Postgres, which matches them by exact case.
         catalog_columns = read_conn.get_columns(source_schema, table)
         query_columns = QueryColumns(
             table=table,
@@ -722,7 +719,6 @@ def copy_table(write_conn: Any, read_conn: Any, copy_params: CopyParameters, que
 
 
 def _page_plan_keys(copy_params: CopyParameters, columns) -> tuple[str, str]:
-    """What a page-range chunk selects, as part of its plan_id."""
     columns_key = ",".join(sorted(str(c).lower() for c in columns))
     ids = ",".join(str(int(pid)) for pid in sorted(copy_params.patient_filter or []))
     filters = f"{ids}|{copy_params.timestamp_filter or ''}"
@@ -738,6 +734,7 @@ def _plan_postgres(write_conn, read_conn, adapter, dialect, copy_params, query_c
     """
     table = query_columns.table
 
+    # Columns and filters keys for the plan_id, which decides between resume and restart.
     def plan_keys():
         columns = query_columns.columns_to_copy
         if not columns or columns == ["*"]:
@@ -751,6 +748,7 @@ def _plan_postgres(write_conn, read_conn, adapter, dialect, copy_params, query_c
             write_conn, copy_params.target_database, copy_params.target_schema, table
         )
     stored_count = checkpoint.chunks_total if checkpoint is not None else None
+    # Try to resume from stored chunk count
     planned = plan_postgres_table(
         adapter, dialect, source_schema, table, config, logger, plan_keys, stored_count,
     )
@@ -760,6 +758,7 @@ def _plan_postgres(write_conn, read_conn, adapter, dialect, copy_params, query_c
         and planned[1].strategy is ChunkStrategy.PAGE_RANGE
         and planned[1].plan_id != checkpoint.plan_id
     ):
+        # Something else changed, unable to resume, size chunks from the current row count.
         planned = plan_postgres_table(
             adapter, dialect, source_schema, table, config, logger, plan_keys
         )

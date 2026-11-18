@@ -207,7 +207,6 @@ def test_a_chunk_already_committed_is_not_copied_again(conn, logger):
 
 
 def test_a_chunk_after_a_gap_is_refused(conn, logger):
-    """Chunk 3 must not be recorded as done while chunks 1 and 2 are not."""
     recording = RecordingConn(conn)
 
     with pytest.raises(ChunkCopyError, match="0 chunks done; chunk 3 cannot be next"):

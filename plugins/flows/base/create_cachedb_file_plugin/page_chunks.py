@@ -37,7 +37,6 @@ def build_page_chunk_select(
     timestamp_filter_col: str | None = None,
     timestamp: str | None = None,
 ) -> str:
-    """The Postgres SELECT for one chunk: its pages, plus the snapshot filters."""
     conditions = [page_predicate(lower, upper)]
     if patient_filter_col and patient_ids:
         ids = ", ".join(str(int(pid)) for pid in patient_ids)
@@ -59,7 +58,6 @@ def build_page_chunk_insert(
     table: str,
     columns: Sequence[str],
 ) -> str:
-    """INSERT the rows of ``source_select`` (Postgres SQL) through ``postgres_query``."""
     column_list = ", ".join(_ident(c) for c in columns)
     target = f"{_ident(target_database)}.{_ident(target_schema)}.{_ident(table)}"
     return (

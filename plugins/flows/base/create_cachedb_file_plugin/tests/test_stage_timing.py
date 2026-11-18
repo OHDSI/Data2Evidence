@@ -1,5 +1,3 @@
-"""Unit tests for the stage timing log lines."""
-
 import re
 import sys
 

@@ -17,8 +17,6 @@ _UNSAFE = re.compile(r"[^A-Za-z0-9_.:\-]")
 
 
 class StageName(str, Enum):
-    """Every stage the copy flow times. The value is what the log line shows."""
-
     FLOW_TOTAL = "flow_total"
     SLOT_RECONCILE = "slot_reconcile"
     SCHEMA_SETUP = "schema_setup"
@@ -38,7 +36,10 @@ class StageName(str, Enum):
 
 
 def _token(value) -> str:
-    """A value that cannot break the line format or leak SQL into the log."""
+    """A value that cannot break the line format or leak SQL into the log.
+
+    Each field stays one ``key=value`` token on one line, and the line stays greppable.
+    """
     return _UNSAFE.sub("_", str(value))[:64]
 
 

@@ -364,7 +364,7 @@ def test_a_table_that_plans_first_time_costs_one_boundary_query():
 # ---------------------------------------------------------------------------
 #
 # A page-range table must never pay for the column pick, the NULL count or the
-# percentile_disc sort: avoiding that sort is the reason PAGE_RANGE exists.
+# percentile_disc sort.
 
 from create_cachedb_file_plugin.chunk_utils import compute_page_plan_id
 from create_cachedb_file_plugin.source_stats import plan_postgres_table

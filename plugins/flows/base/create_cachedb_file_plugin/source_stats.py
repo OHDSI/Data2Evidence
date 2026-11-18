@@ -620,7 +620,6 @@ class _BaseAdapter:
     # ----------------------------------------------------------------------
 
     def confirmed_row_count(self, schema: str, table: str, config: ChunkConfig, logger) -> tuple[int, bool]:
-        """The row count the planner decides on, and whether it is exact."""
         with stage(logger, StageName.COUNT_ESTIMATE, table=table) as count_stage:
             row_count, is_exact = self.count_rows(schema, table)
             count_stage.rows = row_count

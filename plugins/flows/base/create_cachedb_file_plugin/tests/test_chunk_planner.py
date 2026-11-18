@@ -864,7 +864,6 @@ def test_page_ranges_split_every_page_evenly_and_leave_the_last_open():
     bounds = plan.page_bounds
     assert bounds[0][0] == 0
     assert bounds[-1][1] is None
-    # Contiguous: each range starts where the one before it ends.
     for (_, upper), (lower, _) in zip(bounds, bounds[1:]):
         assert upper == lower
     widths = [upper - lower for lower, upper in bounds[:-1]]
@@ -914,9 +913,9 @@ def test_resuming_with_the_stored_chunk_count_keeps_the_plan_id():
 
 
 def test_column_range_plan_ids_are_unchanged_by_page_ranges():
-    """Golden values computed from compute_plan_id at the commit before PAGE_RANGE.
+    """Golden column-range plan ids.
 
-    A changed id would make every in-progress BigQuery build restart its tables.
+    A changed id would make every in-progress column-range build restart its tables.
     """
     assert PLANNER_VERSION == 2
     chunked = compute_plan_id(

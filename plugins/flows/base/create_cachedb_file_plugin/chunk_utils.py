@@ -418,8 +418,7 @@ def compute_page_plan_id(
 
     ``relfilenode`` changes on TRUNCATE, CLUSTER and VACUUM FULL, which move
     rows to other pages; ``columns_key`` and ``filters_key`` describe what each
-    chunk selects. ``PLANNER_VERSION`` is not part of it, so column-range plan
-    ids are unaffected by this strategy.
+    chunk selects.
     """
     parts = [
         "page-range-1",
@@ -448,7 +447,7 @@ def plan_page_ranges(
     config: ChunkConfig,
     chunk_count: int | None = None,
 ) -> ChunkPlan:
-    """Split ``[0, blocks)`` into even page ranges. Pure: no database access.
+    """Split ``[0, blocks)`` into even page ranges.
 
     The chunk count comes from the row count, as for column ranges, unless a
     stored plan's count is given (resume). It never exceeds the page count.
