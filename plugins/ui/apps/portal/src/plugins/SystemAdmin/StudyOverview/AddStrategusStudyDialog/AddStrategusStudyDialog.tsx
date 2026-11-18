@@ -1,5 +1,5 @@
 import { FC, useState, useCallback } from "react";
-import { Dialog, Button, TextField, Alert } from "ui-react";
+import { Dialog, Button, TextField } from "ui-react";
 import { Feedback } from "../../../../types";
 import { api } from "../../../../axios/api";
 import { useTenant } from "../../../../hooks";
@@ -147,6 +147,7 @@ const AddStrategusStudyDialog: FC<AddStrategusStudyDialogProps> = ({ open, onClo
   return (
     <Dialog
       title={getText(i18nKeys.ADD_STRATEGUS_STUDY_DIALOG__TITLE)}
+      banner={feedback?.message && { severity: feedback.type ?? "error", message: feedback.message }}
       size="l"
       open={open}
       busy={loading}
@@ -163,11 +164,6 @@ const AddStrategusStudyDialog: FC<AddStrategusStudyDialogProps> = ({ open, onClo
       }
     >
       <div className="add-strategus-study-dialog__content">
-        {feedback?.message && (
-          <Alert severity={feedback.type ?? "error"} variant="banner">
-            {feedback.message}
-          </Alert>
-        )}
         <div style={{ fontWeight: "bold" }}>
           {getText(i18nKeys.ADD_STRATEGUS_STUDY_DIALOG__STUDY_INFORMATION)}
         </div>

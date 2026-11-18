@@ -1221,6 +1221,7 @@
   "MANAGE_METADATA_DIALOG__IMPORT_JSON": "Aus JSON importieren",
   "MANAGE_METADATA_DIALOG__IMPORTED": "Metadaten erfolgreich importiert",
   "MANAGE_METADATA_DIALOG__IMPORT_INVALID": "Die Datei konnte nicht importiert werden. Bitte stellen Sie einen gültigen JSON-Export bereit.",
+  "MANAGE_METADATA_DIALOG__ERROR": "Die Metadaten konnten nicht gespeichert werden. Bitte versuchen Sie es erneut.",
   "MANAGE_METADATA_DIALOG__IMPORT_EMPTY": "Die Datei enthält keine Metadateneinträge.",
   "MANAGE_METADATA_DIALOG__IMPORT_PREVIEW_TITLE": "Metadaten importieren – Vorschau",
   "MANAGE_METADATA_DIALOG__IMPORT_UNKNOWN_BANNER": "{0} Zeilen verwenden ein Metadatenattribut, das noch nicht existiert, und werden nicht importiert. Erstellen Sie das Attribut oder bearbeiten Sie die Zeile, um sie einzubeziehen.",
