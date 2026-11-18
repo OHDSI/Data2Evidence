@@ -12,7 +12,7 @@
     "resolveJsonModule": true,
     "isolatedModules": true,
     "noEmit": true,
-    "jsx": "react-jsx",
+    "jsx": "preserve",
 
     /* Linting */
     "strict": true,
@@ -24,9 +24,13 @@
     "declarationDir": "dist",
     "declaration": true,
     "esModuleInterop": true,
-    "allowSyntheticDefaultImports": true
+    "allowSyntheticDefaultImports": true,
+    "paths": {
+      "@d2e/ui": ["../../libs/d2e-ui/src/index.ts"],
+      "@d2e/ui/tokens.css": ["../../libs/d2e-ui/src/tokens/tokens.css"],
+    }
   },
-  "files": ["src/lifecycles.tsx"],
+  "files": ["src/lifecycles.ts"],
   "include": ["src/**/*", "vite.config.ts"],
   "exclude": ["src/**/*.test*", "dist", "node_modules"],
   "references": [{ "path": "./tsconfig.node.json" }]

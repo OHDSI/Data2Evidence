@@ -1,6 +1,8 @@
 import path from "path";
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
+import vue from "@vitejs/plugin-vue";
+import vuetify from "vite-plugin-vuetify";
 import cssInjectedByJsPlugin from "vite-plugin-css-injected-by-js";
 import basicSsl from "@vitejs/plugin-basic-ssl";
 
@@ -10,7 +12,7 @@ export default defineConfig(({ command, mode }) => {
 
   console.log("Production :", isProduction);
   console.log("Build      :", isBuild);
-  console.log("Entry      :", "lifecycles.tsx");
+  console.log("Entry      :", "lifecycles.ts");
 
   return {
     mode,
@@ -18,12 +20,26 @@ export default defineConfig(({ command, mode }) => {
     plugins: [
       cssInjectedByJsPlugin(),
       react(),
+      vue(),
+      vuetify(),
       basicSsl({
         name: "wizards-localhost",
         domains: ["localhost"],
         certDir: "./.devServer/cert",
       }),
     ],
+    resolve: {
+      alias: [
+        {
+          find: "@d2e/ui/tokens.css",
+          replacement: path.resolve(__dirname, "../../libs/d2e-ui/src/tokens/tokens.css"),
+        },
+        {
+          find: "@d2e/ui",
+          replacement: path.resolve(__dirname, "../../libs/d2e-ui/src/index.ts"),
+        },
+      ],
+    },
     optimizeDeps: {
       include: ["react", "react-dom", "single-spa", "single-spa-react"],
     },
@@ -35,7 +51,7 @@ export default defineConfig(({ command, mode }) => {
       emptyOutDir: true,
       minify: isProduction,
       lib: {
-        entry: path.resolve(__dirname, "src/lifecycles.tsx"),
+        entry: path.resolve(__dirname, "src/lifecycles.ts"),
         fileName: () => "lifecycles.js",
         formats: ["system"],
       },
