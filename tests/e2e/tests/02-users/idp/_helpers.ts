@@ -219,11 +219,14 @@ export async function loginViaConnector(
  */
 export async function resetSession(page: Page): Promise<void> {
   await page.context().clearCookies()
-  await page.goto('/d2e/portal/assets/favicon.ico')
+  const blank = '**/__e2e-reset-session'
+  await page.route(blank, route => route.fulfill({ contentType: 'text/html', body: '<!doctype html><title></title>' }))
+  await page.goto('/__e2e-reset-session')
   await page.evaluate(() => {
     sessionStorage.clear()
     localStorage.clear()
   })
+  await page.unroute(blank)
   await page.goto('/d2e/portal/login').catch(() => {})
   await page.locator('input[name="identifier"]').waitFor({ state: 'visible', timeout: MINUTE_1 })
 }
@@ -393,20 +396,17 @@ export async function tryReadAccessToken(page: Page, timeoutMs = SECOND_30): Pro
 }
 
 /**
- * Re-enter trex after prelinking so the callback takes the link branch. Opening the portal
- * auto-starts OIDC: a still-valid upstream session (Entra) silently re-auths and lands a token; a
- * stateless upstream (the physionet mock) shows the sign-in page, so fall back to a fresh login.
+ * Mint a fresh token: drop only the portal's cached OIDC token, keeping the trex/Logto session
+ * cookies, so re-entering the portal silently re-auths and picks up roles granted since sign-in.
  */
-export async function reenterAfterPrelink(
-  page: Page,
-  connector: { target: string; connectorName: RegExp; creds: UpstreamCreds }
-): Promise<void> {
+export async function refreshPortalToken(page: Page): Promise<string> {
+  await page.evaluate(() =>
+    Object.keys(sessionStorage)
+      .filter((k) => k.startsWith('oidc.default:'))
+      .forEach((k) => sessionStorage.removeItem(k))
+  )
   await page.goto('/d2e/portal').catch(() => {})
-  if (await tryReadAccessToken(page, SECOND_30)) return
-
-  console.log('[login] no silent re-auth; doing a fresh connector login')
-  await resetSession(page)
-  await loginViaConnector(page, connector)
+  return readAccessToken(page)
 }
 
 export type TokenClaims = Record<string, unknown> & {

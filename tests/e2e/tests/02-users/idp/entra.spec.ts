@@ -26,6 +26,7 @@ import {
   loginViaUI,
   missingEnv,
   readAccessToken,
+  refreshPortalToken,
   resetLogtoConnectorUser,
   resetSession,
   rolesFromToken,
@@ -77,16 +78,7 @@ test('idp:entra', async ({ page, baseURL }) => {
   for (let attempt = 1; attempt <= 3; attempt++) {
     if (rolesFromToken(downstreamToken).length > 0) break
     console.log(`[assert] attempt ${attempt}: token carries no roles yet, forcing a fresh token`)
-    // Drop ONLY the portal's cached OIDC token (keep the trex/Logto session cookies, so no re-MFA);
-    // re-entering the portal then auto-starts OIDC and mints a FRESH token reflecting the roles the
-    // sync just wrote. A plain re-enter can't be used — it returns the cached token without refreshing.
-    await page.evaluate(() =>
-      Object.keys(sessionStorage)
-        .filter((k) => k.startsWith('oidc.default:'))
-        .forEach((k) => sessionStorage.removeItem(k))
-    )
-    await page.goto('/d2e/portal').catch(() => {})
-    downstreamToken = await readAccessToken(page)
+    downstreamToken = await refreshPortalToken(page)
   }
   const tokenRoles = rolesFromToken(downstreamToken)
   console.log(`[assert] token roles: ${JSON.stringify(tokenRoles)}`)

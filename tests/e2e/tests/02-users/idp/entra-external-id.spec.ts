@@ -21,11 +21,12 @@ import {
   assertClaimContract,
   assertLinkedBySub,
   authHeaders,
+  expectContainsAll,
   loginViaConnector,
   loginViaUI,
   missingEnv,
   readAccessToken,
-  reenterAfterPrelink,
+  refreshPortalToken,
   resetLogtoConnectorUser,
   resetSession,
   rolesFromToken,
@@ -74,9 +75,15 @@ test('idp:entra-external-id', async ({ page, baseURL }) => {
   let downstreamToken = userToken
   for (let attempt = 1; attempt <= 3; attempt++) {
     if (rolesFromToken(downstreamToken).length > 0) break
-    console.log(`[assert] attempt ${attempt}: token carries no roles yet, re-authing`)
-    await reenterAfterPrelink(page, connector)
-    downstreamToken = await readAccessToken(page)
+    console.log(`[assert] attempt ${attempt}: token carries no roles yet, forcing a fresh token`)
+    downstreamToken = await refreshPortalToken(page)
+  }
+
+  const expectedRole = process.env.E2E_ENTRA_EXTID_EXPECTED_ROLE
+  if (expectedRole) {
+    const tokenRoles = rolesFromToken(downstreamToken)
+    console.log(`[assert] token roles: ${JSON.stringify(tokenRoles)}`)
+    await expectContainsAll(tokenRoles, [expectedRole], 'auto-granted researcher roles')
   }
 
   await syncWebapiRoles(api, base, downstreamToken)
