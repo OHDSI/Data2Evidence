@@ -2,17 +2,17 @@ import { ref, watch, type Ref } from 'vue'
 import { getResources, downloadResource, type DatasetResource } from '../api/systemPortal'
 import { base64ToBlob, saveBlobAs } from '../utils/downloadResource'
 
-export interface UseDatasourceResourcesResult {
+export interface UseDataSourceResourcesResult {
   resources: Ref<DatasetResource[]>
   loading: Ref<boolean>
   downloadingName: Ref<string | null>
   download: (resource: DatasetResource) => Promise<void>
 }
 
-export function useDatasourceResources(
+export function useDataSourceResources(
   getSourceKey: () => string,
   getToken: () => string | null,
-): UseDatasourceResourcesResult {
+): UseDataSourceResourcesResult {
   const resources = ref<DatasetResource[]>([])
   const loading = ref(true)
   const downloadingName = ref<string | null>(null)

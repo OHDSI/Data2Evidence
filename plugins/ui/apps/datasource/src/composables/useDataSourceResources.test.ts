@@ -1,6 +1,6 @@
 import { ref, nextTick } from 'vue'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { useDatasourceResources } from './useDatasourceResources'
+import { useDataSourceResources } from './useDataSourceResources'
 import * as systemPortal from '../api/systemPortal'
 import * as downloadUtil from '../utils/downloadResource'
 
@@ -8,7 +8,7 @@ function flushPromises() {
   return new Promise(resolve => setTimeout(resolve, 0))
 }
 
-describe('useDatasourceResources', () => {
+describe('useDataSourceResources', () => {
   beforeEach(() => vi.restoreAllMocks())
 
   it('loads the resource list for the current sourceKey', async () => {
@@ -16,7 +16,7 @@ describe('useDatasourceResources', () => {
       { name: 'cohort.csv', size: '12 KB', type: 'text/csv' },
     ])
 
-    const res = useDatasourceResources(() => 'ds-1', () => 'tok')
+    const res = useDataSourceResources(() => 'ds-1', () => 'tok')
     expect(res.loading.value).toBe(true)
     await flushPromises()
 
@@ -28,7 +28,7 @@ describe('useDatasourceResources', () => {
   it('re-fetches when the reactive sourceKey changes (switching the Data Sources selector)', async () => {
     const spy = vi.spyOn(systemPortal, 'getResources').mockResolvedValue([])
     const sourceKey = ref('ds-1')
-    useDatasourceResources(() => sourceKey.value, () => 'tok')
+    useDataSourceResources(() => sourceKey.value, () => 'tok')
     await flushPromises()
     expect(spy).toHaveBeenCalledWith('ds-1', 'tok')
 
@@ -42,7 +42,7 @@ describe('useDatasourceResources', () => {
   it('clears resources and swallows errors on failure', async () => {
     vi.spyOn(systemPortal, 'getResources').mockRejectedValue(new Error('boom'))
 
-    const res = useDatasourceResources(() => 'ds-1', () => 'tok')
+    const res = useDataSourceResources(() => 'ds-1', () => 'tok')
     await flushPromises()
 
     expect(res.loading.value).toBe(false)
@@ -54,7 +54,7 @@ describe('useDatasourceResources', () => {
     const downloadSpy = vi.spyOn(systemPortal, 'downloadResource').mockResolvedValue({ data: 'aGVsbG8=', contentType: 'text/csv' })
     const saveBlobAsSpy = vi.spyOn(downloadUtil, 'saveBlobAs').mockImplementation(() => {})
 
-    const res = useDatasourceResources(() => 'ds-1', () => 'tok')
+    const res = useDataSourceResources(() => 'ds-1', () => 'tok')
     await flushPromises()
 
     const promise = res.download(res.resources.value[0])
