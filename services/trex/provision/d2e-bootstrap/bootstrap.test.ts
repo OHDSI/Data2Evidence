@@ -57,6 +57,19 @@ Deno.test("creates each configured schema exactly once", () => {
   assertEquals(created[1], 'CREATE SCHEMA IF NOT EXISTS "usermgmt"');
 });
 
+Deno.test("grants service_role USAGE on the storage schema only", () => {
+  assertEquals(
+    buildBootstrapStatements(CFG).some((s) => s.includes("TO service_role") && s.includes('"portal"')),
+    false,
+  );
+  const cfg = structuredClone(CFG);
+  cfg.manageConfig.databases["+alp"].schemas = { "+storage": {} };
+  const stmts = buildBootstrapStatements(cfg);
+  const create = stmts.indexOf('CREATE SCHEMA IF NOT EXISTS "storage"');
+  const grant = stmts.indexOf('GRANT USAGE ON SCHEMA "storage" TO service_role');
+  assertEquals(create >= 0 && grant > create, true);
+});
+
 Deno.test("creates login roles guarded on pg_roles", () => {
   const stmts = buildBootstrapStatements(CFG).join("\n");
   for (const u of ["alp_pg_admin_user", "alp_pg_read_user", "alp_pg_write_user"]) {

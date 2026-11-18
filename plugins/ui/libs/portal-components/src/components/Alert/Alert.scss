@@ -132,7 +132,7 @@ $alp-alert-severities: (
     position: fixed;
     top: var(--alp-alert-toast-top, 68px); // 56px header + 12px gap
     right: var(--alp-alert-toast-right, 16px);
-    z-index: 5;
+    z-index: 1400; // MUI snackbar level: above modal dialogs (1300)
     width: auto;
     min-width: 380px;
     max-width: 420px;

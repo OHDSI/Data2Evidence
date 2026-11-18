@@ -139,6 +139,10 @@ between calls and a stray `bun run build` at the repo root builds the wrong thin
 - Reuse existing components over re-styling MUI (e.g. SplitButton composes two
   `Button`s). When a bare name clashes with its MUI base, alias the MUI import to
   `Mui<Name>`.
+- Icons come from `@mui/icons-material` (per-icon import). Don't add icon
+  `.svg` files or inline `<svg>` icons, even when Figma exports them. Pick the
+  closest MUI icon, or ask if none fits. Only illustrations and brand assets
+  (`Logo`, `emptyStateIllustration`, `Spinner`) are hand-drawn SVG.
 - Per-component SCSS uses `var(--d2e-*)` with doubled-class specificity
   (`.d2e-button.d2e-button`) to sit over MUI.
 - Commit messages: `feat|fix(ui-react): …`, end with the Co-Authored-By trailer.

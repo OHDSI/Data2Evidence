@@ -1,5 +1,9 @@
 export { default as D2eDialog } from "./components/D2eDialog.vue";
 export { DIALOG_SIZE_MAP, type D2eDialogSize } from "./components/dialogSizes";
+export {
+  D2E_DIALOG_ATTACH,
+  DEFAULT_DIALOG_ATTACH,
+} from "./components/dialogAttach";
 export { default as D2eButton } from "./components/D2eButton.vue";
 export { default as D2eTextField } from "./components/D2eTextField.vue";
 export { default as D2eSearchField } from "./components/D2eSearchField.vue";
@@ -12,7 +16,8 @@ export { default as D2ePageHeader } from "./components/D2ePageHeader.vue";
 export { default as D2eExplorationCard } from "./components/D2eExplorationCard.vue";
 export { default as D2eSelect } from "./components/D2eSelect.vue";
 export { default as D2eCheckbox } from "./components/D2eCheckbox.vue";
-export { default as D2eDateField } from "./components/D2eDateField.vue";
+export { default as D2eDatePicker } from "./components/D2eDatePicker.vue";
+export { default as D2eDateTimePicker } from "./components/D2eDateTimePicker.vue";
 export { default as D2eViewToggle } from "./components/D2eViewToggle.vue";
 export { default as D2eTooltip } from "./components/D2eTooltip.vue";
 export { default as D2eTruncatedText } from "./components/D2eTruncatedText.vue";
@@ -73,6 +78,11 @@ export {
   D2eExplorationCardStatus,
 } from "./components/explorationCardStatus";
 export type { D2eExplorationCardRow } from "./components/explorationCardStatus";
+export { DATE_PICKER_SIZE_MAP } from "./components/datePickerSizes";
+export type {
+  D2eDatePickerSize,
+  D2eDatePickerIconPosition,
+} from "./components/datePickerSizes";
 export { SELECT_SIZE_MAP } from "./components/selectSizes";
 export type { D2eSelectSize, D2eSelectItem } from "./components/selectSizes";
 export { tokens } from "./tokens/tokens";

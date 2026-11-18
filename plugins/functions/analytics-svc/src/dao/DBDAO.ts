@@ -127,7 +127,7 @@ export class DBDAO {
                     default:
                         // Trex is postgres-backed by default; clear that cache even for
                         // an unknown/undefined dialect so new schemas become visible.
-                        sql = "CALL pg_clear_cache();";
+                        sql = "CALL postgres_clear_cache();";
                 }
 
                 this.connection.executeQuery(

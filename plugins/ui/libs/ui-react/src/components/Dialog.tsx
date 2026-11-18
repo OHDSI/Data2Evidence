@@ -2,6 +2,7 @@ import { useEffect, useId, useState, type ReactNode } from "react";
 import MuiDialog from "@mui/material/Dialog";
 import IconButton from "@mui/material/IconButton";
 import CloseIcon from "@mui/icons-material/Close";
+import clsx from "clsx";
 import { DIALOG_SIZE_MAP, type DialogSize } from "./dialogSizes";
 import { Button } from "./Button";
 import "./Dialog.scss";
@@ -39,6 +40,7 @@ export interface DialogProps {
   actions?: ReactNode;
   /** Actions aligned to the left of the footer; the footer becomes space-between. */
   leadingActions?: ReactNode;
+  className?: string;
 }
 
 export function Dialog({
@@ -60,6 +62,7 @@ export function Dialog({
   children,
   actions,
   leadingActions,
+  className,
 }: DialogProps) {
   const titleId = useId();
   const resolvedMaxWidth = maxWidth ?? DIALOG_SIZE_MAP[size];
@@ -106,7 +109,7 @@ export function Dialog({
           backdrop: { sx: { backgroundColor: "rgba(0, 0, 0, 0.4)" } },
         }}
         PaperProps={{
-          className: `d2e-dialog d2e-dialog--${size}`,
+          className: clsx("d2e-dialog", `d2e-dialog--${size}`, className),
           sx: { maxWidth: resolvedMaxWidth, width: "100%" },
         }}
       >

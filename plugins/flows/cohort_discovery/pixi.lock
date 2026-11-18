@@ -66,7 +66,6 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/2a/a2/e90242f53f7ae41554419b1695b4820b364df87c8350aa420b60b20cab92/duckdb_engine-0.17.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/2c/96/6b80dbb95450155780c152f64dbd59352ed38cc268e7e707ce049e449f5f/snowflake_connector_python-4.7.1-cp313-cp313-manylinux2014_x86_64.manylinux_2_17_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/32/46/9cb0e58b2deb7f82b84065f37f3bffeb12413f947f9388e4cac22c4621ce/sortedcontainers-2.4.0-py2.py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/3e/c5/41bef391fb8b23dbc133c9f2ba016e7a7a8124513d2cc1b430f1897d87e4/duckdb-1.5.5-cp313-cp313-manylinux_2_26_x86_64.manylinux_2_28_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/40/7b/85eab1215f72adf0e68d3dc4a679b9bff993fa679ff34cd8dd378e2659fd/opentelemetry_instrumentation-0.65b0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/42/45/6201afe846263d775cd4fc8d6a87dc8c15eb7921cdade4dca1e1227b04b6/opentelemetry_instrumentation_requests-0.65b0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/49/9a/417b3a533e01953a7c618884df2cb05a71e7b68bdbce4fbdb62349d2a2e8/azure_identity-1.25.3-py3-none-any.whl
@@ -97,6 +96,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/bc/e7/5c595c75e9f41a44f30e526eda465ea0b4eec93470e074e4a111b253f13a/s3transfer-0.19.2-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/c9/7f/09065fd9e27da0eda08b4d6897f1c13535066174cc023af248fc2a8d5e5a/asn1crypto-1.5.1-py2.py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/ca/6f/a04e900f465ff3221ccc395522503e2d10e79fa21f2723c8e177aae1e0d1/opentelemetry_api-1.44.0-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/cc/33/01ad2535ee897db2bad70cbc800655167c53afd0b955eed84f0759c2f417/duckdb-2.0.0-cp312-abi3-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/cd/d0/fdeb1a98d8d3a6205f5f297c51b4a9bfe65126ab60339669bbe3dd54c2e2/opentelemetry_exporter_otlp_proto_http-1.44.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/d1/7c/8be563d68e93bbefa5c8affb82ddcff91b3ad858ce49957ba7b16fd3e0ab/opentelemetry_proto-1.44.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/d2/fb/ba9256c48266a09012ed1d9b0253b9aa4fe9cdff094f8febf5b26a4aa2a2/lz4-4.4.5-cp313-cp313-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl
@@ -192,6 +192,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/88/4b/8e7aa3f514273aecff30a16ab1bac09ff54cfc7e6860fdd8058c37ff2499/greenlet-3.5.5-cp313-cp313-manylinux_2_24_aarch64.manylinux_2_28_aarch64.whl
       - pypi: https://files.pythonhosted.org/packages/89/d1/f1d259352227bb1c185288dd694121ea303e43404aa77560b879c90e7073/lz4-4.4.5-cp313-cp313-manylinux2014_aarch64.manylinux_2_17_aarch64.manylinux_2_28_aarch64.whl
       - pypi: https://files.pythonhosted.org/packages/8f/1a/f672cc408d808035397c5d63a1b31a6a56ee95417a9d60d120d96349d182/botocore-1.43.91-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/92/4a/985fb9d93d7f9f8e82092ddfe05ec8c9a1d0df7bdb0f562a10ced30e3e8f/duckdb-2.0.0-cp312-abi3-manylinux_2_26_aarch64.manylinux_2_28_aarch64.whl
       - pypi: https://files.pythonhosted.org/packages/99/91/8acff4f5e50511b911bbccb72b8628a49c68ce14148cd9f6431094859a90/annotated_types-0.8.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/9e/a4/017a7a6cbe387d961a688ec31364ae60a5c4e22c96ae9921b79a947c855d/tzlocal-5.4.4-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/a0/f4/c67b0b3f1b9245e8d266f0f112c500d50e5b4e83cb6f3b71b6528104182a/requests-2.34.2-py3-none-any.whl
@@ -210,7 +211,6 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/d0/7a/7db5d585f13b1f94552c9520de6caad6001657da6fdc275d2cd10e2edb0a/pymssql-2.4.1-cp313-cp313-manylinux_2_27_aarch64.manylinux_2_28_aarch64.whl
       - pypi: https://files.pythonhosted.org/packages/d1/7c/8be563d68e93bbefa5c8affb82ddcff91b3ad858ce49957ba7b16fd3e0ab/opentelemetry_proto-1.44.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/d7/c1/eb8f9debc45d3b7918a32ab756658a0904732f75e555402972246b0b8e71/tenacity-9.1.4-py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/e4/cb/023c89f51978545b9fab318581bba0c457a58e7530d2d933e54ae7d8647c/duckdb-1.5.5-cp313-cp313-manylinux_2_26_aarch64.manylinux_2_28_aarch64.whl
       - pypi: https://files.pythonhosted.org/packages/e6/de/d3cdc2815697aae84126cbd6a030ca7b6b452e28a88b501b836bd3aa7a86/cryptography-50.0.1-cp311-abi3-manylinux_2_28_aarch64.whl
       - pypi: https://files.pythonhosted.org/packages/e7/23/ff077e61886ee020a17ce9c8b6fa11c601c8d8345b09ea24f605445df62a/opentelemetry_sdk-1.44.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/eb/47/c95ffc2009878c7aac0c5e08528022dcb885933252a88b5f170058014464/pydantic-2.13.5-py3-none-any.whl
@@ -2162,18 +2162,6 @@ packages:
   version: 0.0.5
   sha256: 117bac03a25ede5df5440e855b32d556049ca169ead221505badf432fed4b101
   requires_python: '>=3.9'
-- pypi: https://files.pythonhosted.org/packages/3e/c5/41bef391fb8b23dbc133c9f2ba016e7a7a8124513d2cc1b430f1897d87e4/duckdb-1.5.5-cp313-cp313-manylinux_2_26_x86_64.manylinux_2_28_x86_64.whl
-  name: duckdb
-  version: 1.5.5
-  sha256: 078e6a60dd8eedde5832f45422ca5c4a6b8c837aeabd8a56ca0b7d933f588053
-  requires_dist:
-  - ipython ; extra == 'all'
-  - fsspec ; extra == 'all'
-  - numpy ; extra == 'all'
-  - pandas ; extra == 'all'
-  - pyarrow ; extra == 'all'
-  - adbc-driver-manager ; extra == 'all'
-  requires_python: '>=3.10.0'
 - pypi: https://files.pythonhosted.org/packages/3f/56/83af6ef6a8bac9fdf2059de0276008e9eab40a315b8b732eba466bf6cc74/amplitude_analytics-1.2.3-py3-none-any.whl
   name: amplitude-analytics
   version: 1.2.3
@@ -3221,6 +3209,18 @@ packages:
   - boto3 ; extra == 'tests'
   - keyring ; extra == 'external-authentication-token-cache'
   requires_python: '>=3.9'
+- pypi: https://files.pythonhosted.org/packages/92/4a/985fb9d93d7f9f8e82092ddfe05ec8c9a1d0df7bdb0f562a10ced30e3e8f/duckdb-2.0.0-cp312-abi3-manylinux_2_26_aarch64.manylinux_2_28_aarch64.whl
+  name: duckdb
+  version: 2.0.0
+  sha256: e38daf0acbad9de7ce892d402b68409519291ee16af3c2cba85ace3b085c7eaa
+  requires_dist:
+  - ipython ; extra == 'all'
+  - fsspec ; extra == 'all'
+  - numpy ; extra == 'all'
+  - pandas ; extra == 'all'
+  - pyarrow ; extra == 'all'
+  - adbc-driver-manager ; extra == 'all'
+  requires_python: '>=3.11.0'
 - pypi: https://files.pythonhosted.org/packages/94/b0/d807279f4b55d16d1f120d5ac4344c6e39b56732e2a224d40bded7fd67ad/msal-1.37.0-py3-none-any.whl
   name: msal
   version: 1.37.0
@@ -3657,6 +3657,18 @@ packages:
   version: 3.32.6
   sha256: 3f16ecd0117feae0dfc147e8c62eb5daeccd8bd800378c3ddf416de9b4feb6b1
   requires_python: '>=3.10'
+- pypi: https://files.pythonhosted.org/packages/cc/33/01ad2535ee897db2bad70cbc800655167c53afd0b955eed84f0759c2f417/duckdb-2.0.0-cp312-abi3-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl
+  name: duckdb
+  version: 2.0.0
+  sha256: ab51ec57d329d6f3df37c0287b55d71c3fc07bb54b61d1afed09104f953b1431
+  requires_dist:
+  - ipython ; extra == 'all'
+  - fsspec ; extra == 'all'
+  - numpy ; extra == 'all'
+  - pandas ; extra == 'all'
+  - pyarrow ; extra == 'all'
+  - adbc-driver-manager ; extra == 'all'
+  requires_python: '>=3.11.0'
 - pypi: https://files.pythonhosted.org/packages/cd/d0/fdeb1a98d8d3a6205f5f297c51b4a9bfe65126ab60339669bbe3dd54c2e2/opentelemetry_exporter_otlp_proto_http-1.44.0-py3-none-any.whl
   name: opentelemetry-exporter-otlp-proto-http
   version: 1.44.0
@@ -3847,18 +3859,6 @@ packages:
   version: 7.35.1
   sha256: 74758715c53d7158fb76caf4f0cfdacc5329a4b1bb994f865d6cf302d413a1c4
   requires_python: '>=3.10'
-- pypi: https://files.pythonhosted.org/packages/e4/cb/023c89f51978545b9fab318581bba0c457a58e7530d2d933e54ae7d8647c/duckdb-1.5.5-cp313-cp313-manylinux_2_26_aarch64.manylinux_2_28_aarch64.whl
-  name: duckdb
-  version: 1.5.5
-  sha256: a736217825461732b5442d05a220f3da2e23a0dae114efbf08c9bf171b53098a
-  requires_dist:
-  - ipython ; extra == 'all'
-  - fsspec ; extra == 'all'
-  - numpy ; extra == 'all'
-  - pandas ; extra == 'all'
-  - pyarrow ; extra == 'all'
-  - adbc-driver-manager ; extra == 'all'
-  requires_python: '>=3.10.0'
 - pypi: https://files.pythonhosted.org/packages/e4/d3/5268aeabf2ad82658c4e2ff3a060648d0f02f3926cb53247c0e4d0dab49e/griffelib-2.1.0-py3-none-any.whl
   name: griffelib
   version: 2.1.0
