@@ -30,7 +30,6 @@ function exposeToPlugin(name: string, component: any) {
     execute() {
       _export(value);
       if (!("default" in value)) _export("default", value);
-      _export("__useDefault", value);
     },
   }));
 }
