@@ -30,6 +30,35 @@
   // Long enough for a same-origin call that normally answers in milliseconds,
   // short enough that a stalled one is never what the user waits behind.
   var USERMGMT_ME_TIMEOUT_MS = 3000;
+  var USERMGMT_SYNC_URL = "/d2e/usermgmt/api/user-group/list";
+  var USERMGMT_SYNC_TIMEOUT_MS = 5000;
+
+  // Provisions the user and reconciles their roles once per sign-in, as the portal does.
+  async function syncUserRoles(accessToken) {
+    var sub;
+    try {
+      var payload = accessToken.split(".")[1].replace(/-/g, "+").replace(/_/g, "/");
+      sub = JSON.parse(atob(payload)).sub;
+    } catch (e) {
+      return;
+    }
+    if (!sub) return;
+    var ctl = new AbortController();
+    var timer = setTimeout(function () { ctl.abort(); }, USERMGMT_SYNC_TIMEOUT_MS);
+    try {
+      var res = await fetch(USERMGMT_SYNC_URL, {
+        method: "POST",
+        headers: { Authorization: "Bearer " + accessToken, "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: sub, sync: true }),
+        signal: ctl.signal
+      });
+      if (!res.ok) console.warn("[login] usermgmt role sync returned " + res.status);
+    } catch (e) {
+      console.warn("[login] usermgmt role sync failed: " + e);
+    } finally {
+      clearTimeout(timer);
+    }
+  }
 
   function fail(msg) {
     var s = document.getElementById("spinner");
@@ -175,6 +204,7 @@
       return;
     }
     localStorage.setItem(TOKEN_KEY, data.access_token);
+    await syncUserRoles(data.access_token);
     // vue-mri matches the current user's own bookmarks and cohort definitions by
     // username, so this has to be the SAME STRING the services that store them
     // write: usermgmt's `username` column, which bookmark-svc reads from this
