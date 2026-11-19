@@ -62,6 +62,7 @@ const getters = {
   isFireRequestHeld: () => false,
   getHasAssignedConfig: () => false,
   getBookmarksData: () => ({}),
+  getSelectedDataset: () => ({ id: '1' }),
   getChartableFilterCardByInstanceId: () => () => ({ name: 'Card' }),
   sortProperty: () => ({ props: { value: null } }),
   processResponse: () => chartData => chartData,
