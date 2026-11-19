@@ -19,7 +19,7 @@
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useStore } from 'vuex'
-import { D2eTooltip, isTruncated } from '@d2e/ui'
+import { D2eTooltip, isTruncated, measureTruncation } from '@d2e/ui'
 import { usePortalContext } from '../composables/usePortalContext'
 
 const isAtlasHosted = import.meta.env.VITE_ATLAS_HOSTED === 'true'
@@ -38,7 +38,7 @@ const nameElement = (): HTMLElement | null =>
 
 const syncTruncation = (): void => {
   const element = nameElement()
-  nameTruncated.value = element ? isTruncated(element) : false
+  nameTruncated.value = element ? isTruncated(measureTruncation(element)) : false
 }
 
 let resizeObserver: ResizeObserver | null = null

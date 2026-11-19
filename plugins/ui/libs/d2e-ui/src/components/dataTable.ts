@@ -21,6 +21,15 @@ export const DATA_TABLE_STYLE_MAP = {
   },
 } as const;
 
+export const DATA_TABLE_COMPACT_STYLE_MAP = {
+  rowHeight: 40,
+  cellPaddingX: 8,
+  cellPaddingY: 10,
+  headerGap: 10,
+} as const;
+
+export type D2eDataTableDensity = "default" | "compact";
+
 export interface D2eDataTableHeader {
   key: string;
   title: string;
@@ -76,6 +85,29 @@ export function formatCell<V>(value: V, format = true): V | string {
   return format && typeof value === "number" ? formatNumber(value) : value;
 }
 
+const ROW_ACTIVATION_KEYS: readonly string[] = ["Enter", " "];
+
+export type D2eClickableRowProps = {
+  tabindex: number;
+  onClick: () => void;
+  onKeydown: (event: KeyboardEvent) => void;
+};
+
+export function clickableRowProps(
+  onActivate: () => void,
+): D2eClickableRowProps {
+  return {
+    tabindex: 0,
+    onClick: onActivate,
+    onKeydown: (event) => {
+      if (event.target !== event.currentTarget) return;
+      if (!ROW_ACTIVATION_KEYS.includes(event.key)) return;
+      event.preventDefault();
+      onActivate();
+    },
+  };
+}
+
 /** How many pages the rows fill. Never less than one, so page 1 always exists. */
 export function pageCount(itemsPerPage: number, total: number): number {
   return Math.max(1, Math.ceil(total / itemsPerPage));
@@ -107,4 +139,8 @@ export interface D2eDataTableProps<T> {
   pageLabels?: D2eDataTablePageLabels;
   /** Accessible name of each row's expand chevron. */
   expandLabel?: string;
+  density?: D2eDataTableDensity;
+  hover?: boolean;
+  hideFooter?: boolean;
+  rowClickable?: (item: T) => boolean;
 }
