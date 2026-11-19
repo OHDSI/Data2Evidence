@@ -56,7 +56,7 @@
         #[`item.${header.key}`]="slotProps"
       >
         <slot :name="`item.${header.key}`" v-bind="slotProps">{{
-          slotProps.value
+          formatCell(slotProps.value, header.format)
         }}</slot>
       </template>
 
@@ -116,8 +116,9 @@ import {
   DATA_TABLE_COMPACT_STYLE_MAP,
   DATA_TABLE_STYLE_MAP,
   clickableRowProps,
+  formatCell,
+  formatRange,
   nextSort,
-  pageRange,
   type D2eDataTableProps,
   type D2eSortItem,
 } from "./dataTable";
@@ -130,7 +131,7 @@ const props = withDefaults(defineProps<D2eDataTableProps<T>>(), {
   expanded: () => [],
   noDataText: "No data",
   rowsPerPageLabel: "Rows per page:",
-  rangeLabel: (start: number, end: number, total: number) =>
+  rangeLabel: (start: string, end: string, total: string) =>
     `${start}-${end} of ${total}`,
   pageLabels: () => ({
     first: "First page",
@@ -177,7 +178,7 @@ const vuetifyHeaders = computed(() => [
 ]);
 
 const rangeText = computed(() => {
-  const { start, end, total } = pageRange(
+  const { start, end, total } = formatRange(
     props.page,
     props.itemsPerPage,
     props.items.length,
