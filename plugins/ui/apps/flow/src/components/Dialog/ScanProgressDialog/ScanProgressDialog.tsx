@@ -1,15 +1,8 @@
 import React, { FC, useCallback, useEffect, useRef, useState } from "react";
-import { NodeProps, Position, useUpdateNodeInternals } from "reactflow";
 import { Button, Dialog, DialogTitle, LinearProgress } from "@mui/material";
-import {
-  TableSourceHandleData,
-  ScannedSchemaState,
-} from "~/features/flow/types";
 import { ScanMetadata } from "../ScanDataDialog/ScanDataDialog";
-import { ScanDataSourceTable } from "~/features/flow/types";
 import {
   useLazyGetFlowRunStatusQuery,
-  useLazyGetSourceSchemaByFlowRunIdQuery,
   useLazyGetScanReportQuery,
 } from "~/features/flow/slices";
 
@@ -43,16 +36,11 @@ export const ScanProgressDialog: FC<ScanProgressDialogProps> = ({
   onFormDataChange,
 }) => {
   const [progress, setProgress] = useState(0);
-  const [loading, setLoading] = useState(false);
   const [scanCompleted, setScanCompleted] = useState(false);
   const [scanFailed, setScanFailed] = useState(false);
   const [log, setLog] = useState<string>("");
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const updateNodeInternals = useUpdateNodeInternals();
-  // setTableSourceHandles
-  // setScannedSchema
   const [getFlowRunStatus] = useLazyGetFlowRunStatusQuery();
-  const [getSourceSchemaByFlowRunId] = useLazyGetSourceSchemaByFlowRunIdQuery();
   const [getScanReport] = useLazyGetScanReportQuery();
 
   const handleClear = useCallback(() => {
@@ -79,32 +67,6 @@ export const ScanProgressDialog: FC<ScanProgressDialogProps> = ({
       console.error("Failed to save report", error);
     }
   }, [scanId]);
-
-  const handleLinkTables = useCallback(async () => {
-    try {
-      setLoading(true);
-
-      const scannedResult: ScannedSchemaState =
-        await getSourceSchemaByFlowRunId(scanId).unwrap();
-
-      let sourceHandles: Partial<NodeProps<TableSourceHandleData>>[];
-      sourceHandles = scannedResult.source_tables.map(
-        (table: ScanDataSourceTable, index: number) => ({
-          id: `C.${index + 1}`,
-          data: { label: table.table_name, type: "input" },
-          sourcePosition: Position.Right,
-        }),
-      );
-      onFormDataChange({ sourceHandles: sourceHandles });
-      setLoading(false);
-      onFormDataChange({ scannedSchema: scannedResult });
-      onFormDataChange({ scanMetadata });
-      updateNodeInternals(nodeId);
-      handleClose("success");
-    } catch (error) {
-      console.log(`Error creating source schema: ${error}`);
-    }
-  }, [scanId, nodeId, scanMetadata]);
 
   const fetchScanProgress = useCallback(async () => {
     try {
@@ -175,7 +137,7 @@ export const ScanProgressDialog: FC<ScanProgressDialogProps> = ({
         <Button
           onClick={handleBack}
           variant="outlined"
-          disabled={!scanCompleted || loading}
+          disabled={!scanCompleted}
         >
           Back
         </Button>
@@ -186,14 +148,6 @@ export const ScanProgressDialog: FC<ScanProgressDialogProps> = ({
           disabled={!scanCompleted || scanFailed}
         >
           Save report
-        </Button>
-        <Button
-          onClick={handleLinkTables}
-          variant="contained"
-          color="primary"
-          disabled={!scanCompleted || loading || scanFailed}
-        >
-          Link tables
         </Button>
       </div>
     </Dialog>

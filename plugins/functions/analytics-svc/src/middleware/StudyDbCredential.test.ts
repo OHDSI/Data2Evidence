@@ -1,6 +1,7 @@
 import { assert, assertEquals, assertStringIncludes } from "@std/assert";
 import pako from "pako";
 import studyDbCredentialMiddleware from "./StudyDbCredential";
+import { env } from "../env";
 
 const zlibBase64 = (o: unknown) =>
     btoa(String.fromCharCode(...pako.deflate(JSON.stringify(o))));
@@ -27,13 +28,56 @@ const makeReq = (overrides: Record<string, unknown> = {}) =>
                     databaseCode: "db",
                     schemaName: "cdm",
                 },
+                {
+                    id: "other-dataset",
+                    tokenStudyCode: "other-token",
+                    databaseName: "other",
+                    databaseCode: "other",
+                    schemaName: "other_cdm",
+                },
             ],
         },
         dbCredentials: {
-            analyticsCredentials: { default: defaultCredential },
+            analyticsCredentials: {
+                default: defaultCredential,
+                db: { dialect: "postgresql", schema: "cdm", code: "db" },
+                other: { dialect: "postgresql", schema: "other_cdm", code: "other" },
+            },
         },
         ...overrides,
     }) as any;
+
+// Stubs the portal call in addConfigMetadataToReq. Records each requested URL.
+// The tests do not use the network.
+const withPortalStub = async (fn: (urls: string[]) => Promise<void>) => {
+    const urls: string[] = [];
+    const g = globalThis as any;
+    const previousTrex = g.Trex;
+    const previousRoutes = (env as any).SERVICE_ROUTES;
+    (env as any).SERVICE_ROUTES = { portalServer: "http://portal" };
+    g.Trex = {
+        tokioChannel: () => ({
+            get: async (url: string) => {
+                urls.push(url);
+                return {
+                    data: {
+                        meta: {
+                            configId: "c",
+                            configVersion: "1",
+                            dependentConfig: { configId: "d", configVersion: "1" },
+                        },
+                    },
+                };
+            },
+        }),
+    };
+    try {
+        await fn(urls);
+    } finally {
+        g.Trex = previousTrex;
+        (env as any).SERVICE_ROUTES = previousRoutes;
+    }
+};
 
 const run = async (req: any) => {
     let nextArg: unknown = "not-called";
@@ -68,24 +112,61 @@ Deno.test(
 );
 
 Deno.test(
-    "rejects an unknown dataset carried only in a zlib-encoded body mriquery",
+    "requires a top-level datasetId when a zlib-encoded body mriquery names one",
     async () => {
         const req = makeReq({
-            body: { mriquery: zlibBase64({ datasetId: "someone-elses-dataset" }) },
+            body: { mriquery: zlibBase64({ datasetId: "known-dataset" }) },
         });
-        const err = (await run(req)) as { status?: number };
+        const err = (await run(req)) as { status?: number; message?: string };
 
-        assertEquals(err?.status, 403);
+        assertEquals(err?.status, 400);
+        assertStringIncludes(err?.message ?? "", "datasetId is required");
         assertEquals(req.dbCredentials.studyAnalyticsCredential, undefined);
     }
 );
 
 Deno.test(
-    "rejects an unknown dataset carried only in a plain-JSON body mriquery",
+    "requires a top-level datasetId when a query mriquery names one",
     async () => {
         const req = makeReq({
-            body: {
-                mriquery: JSON.stringify({ datasetId: "someone-elses-dataset" }),
+            query: { mriquery: zlibBase64({ datasetId: "known-dataset" }) },
+        });
+        const err = (await run(req)) as { status?: number };
+
+        assertEquals(err?.status, 400);
+        assertEquals(req.dbCredentials.studyAnalyticsCredential, undefined);
+    }
+);
+
+Deno.test(
+    "uses the top-level datasetId when the mriquery names another known dataset",
+    async () => {
+        await withPortalStub(async (urls) => {
+            const req = makeReq({
+                query: {
+                    datasetId: "known-dataset",
+                    mriquery: zlibBase64({ datasetId: "other-dataset" }),
+                },
+            });
+            const nextArg = await run(req);
+
+            assertEquals(nextArg, undefined);
+            assertEquals(req.selectedstudyDbMetadata.id, "known-dataset");
+            assertEquals(req.dbCredentials.studyAnalyticsCredential.schema, "cdm");
+            assertEquals(urls.length, 1);
+            assertStringIncludes(urls[0], "datasetId=known-dataset");
+            assertEquals(req.paConfigId, "c");
+        });
+    }
+);
+
+Deno.test(
+    "rejects an unknown top-level datasetId with 403 when an mriquery names a known one",
+    async () => {
+        const req = makeReq({
+            query: {
+                datasetId: "someone-elses-dataset",
+                mriquery: zlibBase64({ datasetId: "known-dataset" }),
             },
         });
         const err = (await run(req)) as { status?: number };
