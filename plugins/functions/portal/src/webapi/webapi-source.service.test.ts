@@ -486,8 +486,8 @@ describe('WebApiSourceService trexsql cache sources', () => {
 
   it('points a cached postgres dataset at the trexsql cache catalog', async () => {
     const request = (await createdRequest(cachedDataset()))!
-    assertEquals(request.dialect, 'trexsql')
-    assertEquals(request.connectionString, 'jdbc:trexsql://127.0.0.1:9494?disable_ssl=true')
+    assertEquals(request.dialect, 'trexdb')
+    assertEquals(request.connectionString, 'jdbc:trexdb://127.0.0.1:9494?disable_ssl=true')
     assertEquals(request.username, '')
     assertEquals(request.password, 'quack-token')
     assertEquals(
@@ -502,7 +502,7 @@ describe('WebApiSourceService trexsql cache sources', () => {
 
   it('registers a cached duckdb dataset through trexsql', async () => {
     const request = (await createdRequest(cachedDataset({ dialect: 'duckdb' as never })))!
-    assertEquals(request.dialect, 'trexsql')
+    assertEquals(request.dialect, 'trexdb')
   })
 
   it('keeps the direct JDBC request for a dataset without a cacheId', async () => {
@@ -531,8 +531,8 @@ describe('WebApiSourceService trexsql cache sources', () => {
       vocabSchemaName: 'VOCAB',
       resultsSchemaName: 'CDM_RESULTS',
     })))!
-    assertEquals(request.dialect, 'trexsql')
-    assertEquals(request.connectionString, 'jdbc:trexsql://127.0.0.1:9494?disable_ssl=true')
+    assertEquals(request.dialect, 'trexdb')
+    assertEquals(request.connectionString, 'jdbc:trexdb://127.0.0.1:9494?disable_ssl=true')
     assertEquals(request.password, 'quack-token')
     assertEquals(
       request.daimons.map((d) => [d.daimonType, d.tableQualifier]),
@@ -602,7 +602,7 @@ describe('WebApiSourceService trexsql cache sources', () => {
     await withToken('quack-token', () => service.syncSourceForDataset(dataset, detail, credentials))
 
     assertEquals(methods().includes('createSource'), true)
-    assertEquals((calls.find((c) => c.method === 'createSource')!.args[0] as Request).dialect, 'trexsql')
+    assertEquals((calls.find((c) => c.method === 'createSource')!.args[0] as Request).dialect, 'trexdb')
     assertEquals((await service.getCacheStatus(dataset.id)).ready, false)
   })
 })

@@ -27,11 +27,11 @@ const WEBAPI_SUPPORTED_DIALECTS = new Set([
   'spark',
   'snowflake',
   'synapse',
-  'trexsql',
+  'trexdb',
 ])
 
 // trexsql's Quack endpoint inside the same container as WebAPI and the portal.
-const TREXSQL_CONNECTION_STRING = 'jdbc:trexsql://127.0.0.1:9494?disable_ssl=true'
+const TREXSQL_CONNECTION_STRING = 'jdbc:trexdb://127.0.0.1:9494?disable_ssl=true'
 
 // trex attaches a HANA database read-only as `<databaseCode>__srcdb` (TYPE hana).
 const HANA_SOURCE_CATALOG_SUFFIX = '__srcdb'
@@ -86,7 +86,7 @@ export class WebApiSourceService {
     const sourceDialect = this.mapDialect(dataset.dialect)
     const isHana = sourceDialect === 'hana'
     const usesTrexsql = this.trexsqlCatalog(dataset) !== null
-    const dialect = usesTrexsql ? 'trexsql' : sourceDialect
+    const dialect = usesTrexsql ? 'trexdb' : sourceDialect
     if (!WEBAPI_SUPPORTED_DIALECTS.has(dialect)) {
       await this.warnUnsupportedDialect(dataset.id, dialect, authToken)
       await this.startCacheBuild(dataset, isHana, authToken)
@@ -338,7 +338,7 @@ export class WebApiSourceService {
       return {
         key: dataset.id,
         name: detail.name,
-        dialect: 'trexsql',
+        dialect: 'trexdb',
         connectionString: TREXSQL_CONNECTION_STRING,
         username: '',
         password: trexsqlToken,
