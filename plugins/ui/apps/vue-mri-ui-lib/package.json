@@ -22,7 +22,6 @@
     "@d4l/web-components-library": "^3.20.2",
     "@fontsource-variable/ibm-plex-sans": "^5.2.8",
     "@mdi/font": "^7.4.47",
-    "@vuepic/vue-datepicker": "^11.0.2",
     "axios": "^1.13.4",
     "canvg": "^3.0.7",
     "core-js": "^3.8.2",

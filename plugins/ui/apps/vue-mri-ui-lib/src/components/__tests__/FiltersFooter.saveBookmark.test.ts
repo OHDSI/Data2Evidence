@@ -44,7 +44,7 @@ const createDeferred = <T>(): Deferred<T> => {
 }
 
 const createContext = (
-  loadAllResult: Promise<unknown>,
+  loadAllResult: Promise<unknown> | (() => Promise<unknown>),
   { writeSucceeds = true, activeBookmark = { bookmarkname: COHORT_NAME, isNew: true } as any } = {}
 ) => {
   // bookmark-svc answers insert with { status, bmkId } and update with the string
@@ -58,7 +58,13 @@ const createContext = (
   const listBookmark = { bookmarkname: COHORT_NAME, bmkId: 'from-the-list', user_id: USERNAME }
 
   const fireBookmarkQuery = vi.fn(({ params }) => {
-    if (params.cmd === 'loadAll') return loadAllResult
+    if (params.cmd === 'loadAll') {
+      context.getBookmarksLoading = true
+      const refresh = typeof loadAllResult === 'function' ? loadAllResult() : loadAllResult
+      return refresh.finally(() => {
+        context.getBookmarksLoading = false
+      })
+    }
     if (params.cmd === 'insert') return Promise.resolve(insertResult)
     return Promise.resolve(updateResult)
   })
@@ -67,6 +73,8 @@ const createContext = (
     canShare: false,
     shareBookmark: false,
     isSavingBookmark: false,
+    showSaveBookmark: true,
+    latestSaveId: 0,
     getText: (key: string) => key,
     cohortName: COHORT_NAME,
     cohortNameValidationState: 'valid',
@@ -75,6 +83,7 @@ const createContext = (
     isNotUserSharedBookmark: false,
     portalContext: { username: USERNAME },
     getBookmarks: [],
+    getBookmarksLoading: false,
     get getBookmarksData() {
       return liveBookmarksData
     },
@@ -82,11 +91,14 @@ const createContext = (
     getMriFrontendConfig: { getPaConfigId: () => 'pa-1' },
     getBookmarkByNameAndUsername: vi.fn(() => listBookmark),
     fireBookmarkQuery,
-    closeSaveBookmark: vi.fn(),
+    closeSaveBookmark: vi.fn(() => {
+      context.showSaveBookmark = false
+    }),
   }
 
-  context[types.SET_ACTIVE_BOOKMARK] = vi.fn(() => {
+  context[types.SET_ACTIVE_BOOKMARK] = vi.fn((bookmark: unknown) => {
     commits.push(types.SET_ACTIVE_BOOKMARK)
+    context.getActiveBookmark = bookmark
     activeBookmarkBaseline = null
   })
   context[types.SET_ACTIVE_BOOKMARK_BASELINE] = vi.fn((baseline: unknown) => {
@@ -194,6 +206,180 @@ describe('FiltersFooter saveBookmark', () => {
     await saving
   })
 
+  describe('while the cohort list refresh is still in flight (#119)', () => {
+    const existingCohort = () => ({
+      bmkId: 'bmk-9',
+      bookmarkname: COHORT_NAME,
+      bookmark: '{}',
+      user_id: USERNAME,
+      shared: false,
+    })
+    const settle = () => new Promise(resolve => setTimeout(resolve, 0))
+
+    it('releases the Save button once an update is written', async () => {
+      const loadAll = createDeferred<unknown>()
+      const { context } = createContext(loadAll.promise, { activeBookmark: existingCohort() })
+      context.cohortName = ''
+
+      const saving = saveBookmark(context)
+      await settle()
+
+      expect(context.isSavingBookmark).toBe(false)
+
+      loadAll.resolve({})
+      await saving
+    })
+
+    it('releases the Save button once a new cohort is inserted', async () => {
+      const loadAll = createDeferred<unknown>()
+      const { context } = createContext(loadAll.promise)
+
+      const saving = saveBookmark(context)
+      await settle()
+
+      expect(context.isSavingBookmark).toBe(false)
+
+      loadAll.resolve({})
+      await saving
+    })
+
+    it('adopts a new cohort from the insert response', async () => {
+      const loadAll = createDeferred<unknown>()
+      const { context, storedBaseline } = createContext(loadAll.promise)
+
+      const saving = saveBookmark(context)
+      await settle()
+
+      expect(context.getActiveBookmark).toEqual(
+        expect.objectContaining({ bmkId: 'bmk-1', bookmarkname: COHORT_NAME, user_id: USERNAME, isNew: false })
+      )
+      expect(storedBaseline()).toEqual(writtenPayload(context))
+
+      loadAll.resolve({})
+      await saving
+    })
+
+    it('saves a second time as an update, not as another insert', async () => {
+      const loadAll = createDeferred<unknown>()
+      const { context, editFilters } = createContext(loadAll.promise)
+
+      const firstSave = saveBookmark(context)
+      await settle()
+      editFilters(EDITED_FILTERS)
+      const secondSave = saveBookmark(context)
+      await settle()
+
+      const writes = context.fireBookmarkQuery.mock.calls.filter(([arg]) => arg.params.cmd !== 'loadAll')
+      expect(writes.map(([arg]) => arg.params.cmd)).toEqual(['insert', 'update'])
+      expect(writes[1][0].bookmarkId).toBe('bmk-1')
+
+      loadAll.resolve({})
+      await Promise.all([firstSave, secondSave])
+    })
+
+    it('closes the dialog and clears the name once the write succeeds', async () => {
+      const loadAll = createDeferred<unknown>()
+      const { context } = createContext(loadAll.promise)
+
+      const saving = saveBookmark(context)
+      await settle()
+
+      expect(context.showSaveBookmark).toBe(false)
+      expect(context.cohortName).toBe('')
+
+      loadAll.resolve({})
+      await saving
+    })
+
+    it('keeps a save dialog opened during the refresh open with its name', async () => {
+      const loadAll = createDeferred<unknown>()
+      const { context } = createContext(loadAll.promise)
+
+      const saving = saveBookmark(context)
+      await settle()
+
+      context.getActiveBookmark = { bookmarkname: '', isNew: true }
+      context.showSaveBookmark = true
+      context.cohortName = 'Another Cohort'
+
+      loadAll.resolve({})
+      await saving
+
+      expect(context.showSaveBookmark).toBe(true)
+      expect(context.cohortName).toBe('Another Cohort')
+    })
+
+    it('does not insert a named cohort from the Enter key while the list is loading', async () => {
+      const loadAll = createDeferred<unknown>()
+      const { context, editFilters } = createContext(loadAll.promise)
+
+      const firstSave = saveBookmark(context)
+      await settle()
+
+      context.getActiveBookmark = { bookmarkname: '', isNew: true }
+      editFilters(EDITED_FILTERS)
+      context.showSaveBookmark = true
+      context.cohortName = COHORT_NAME
+      const enterPress = saveBookmark(context)
+      await settle()
+
+      const inserts = context.fireBookmarkQuery.mock.calls.filter(([arg]) => arg.params.cmd === 'insert')
+      expect(inserts).toHaveLength(1)
+      expect(context.showSaveBookmark).toBe(true)
+      expect(context.cohortName).toBe(COHORT_NAME)
+
+      loadAll.resolve({})
+      await Promise.all([firstSave, enterPress])
+    })
+
+    it('ignores a refresh that resolves after a newer save', async () => {
+      const refreshes = [createDeferred<unknown>(), createDeferred<unknown>()]
+      let refreshCalls = 0
+      const { context, editFilters, storedBaseline } = createContext(() => refreshes[refreshCalls++].promise, {
+        activeBookmark: existingCohort(),
+      })
+      context.cohortName = ''
+      context.getBookmarkByNameAndUsername = vi.fn(() => existingCohort())
+
+      const firstSave = saveBookmark(context)
+      await settle()
+      editFilters(EDITED_FILTERS)
+      const secondSave = saveBookmark(context)
+      await settle()
+
+      refreshes[1].resolve({})
+      await secondSave
+      refreshes[0].resolve({})
+      await firstSave
+
+      expect(storedBaseline()).toEqual(EDITED_FILTERS)
+    })
+
+    it('keeps the cohort the user switched to during the refresh', async () => {
+      const loadAll = createDeferred<unknown>()
+      const { context } = createContext(loadAll.promise, { activeBookmark: existingCohort() })
+      context.cohortName = ''
+      const otherCohort = { bmkId: 'bmk-other', bookmarkname: 'Other', user_id: USERNAME }
+
+      const saving = saveBookmark(context)
+      await settle()
+      context.getActiveBookmark = otherCohort
+      loadAll.resolve({})
+      await saving
+
+      expect(context.getActiveBookmark).toBe(otherCohort)
+    })
+
+    it('keeps the adopted cohort when the refreshed list does not contain it', async () => {
+      const { context } = createContext(Promise.resolve({}))
+      context.getBookmarkByNameAndUsername = vi.fn(() => undefined)
+
+      await saveBookmark(context)
+
+      expect(context.getActiveBookmark).toEqual(expect.objectContaining({ bmkId: 'bmk-1', isNew: false }))
+    })
+  })
+
   describe('when the write did not succeed', () => {
     // fireBookmarkQuery reports the failure itself and resolves undefined for
     // insert and update, so a resolved promise is not proof the cohort was saved.
@@ -215,6 +401,15 @@ describe('FiltersFooter saveBookmark', () => {
 
       expect(context[types.SET_ACTIVE_BOOKMARK]).not.toHaveBeenCalled()
       expect(setToastMessage).not.toHaveBeenCalled()
+    })
+
+    it('closes the dialog and clears the name', async () => {
+      const { context } = createContext(Promise.resolve({}), failed)
+
+      await saveBookmark(context)
+
+      expect(context.showSaveBookmark).toBe(false)
+      expect(context.cohortName).toBe('')
     })
   })
 })
