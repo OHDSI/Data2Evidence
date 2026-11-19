@@ -102,6 +102,13 @@ for a real dataset.
     invariant below).
   - `processRequestForSelectiveInclusionReport` builds cumulative masks (`'1'`, `'11'`, `'110'`, …),
     with one `irtotalpcount` query each, plus a total patient count.
+    - Each step keeps the chart's axes. query-gen groups by an axis only when a card in the step
+      has its attribute, so an axis on a card that is not in the step yet has no effect. For a
+      Basic Data x-axis, the step adds a copy of the Basic Data card with no constraints, because
+      Basic Data is split into `basicdataN` rules. `minCohortSize` then hides small groups per axis
+      bin, as in the bar chart, so the last step ("Matches") equals the bar chart's patient count.
+    - `processRequest` (intersect view) removes all axes, so its counts hide only a whole cohort
+      below `minCohortSize`.
   - `processRequest` runs the full 2ⁿ bitmask set for the treemap.
 - `query-gen-svc` handles Basic Data specially for these queries
   (`plugins/functions/query-gen-svc/src/utils/inclusionReport.ts`).
