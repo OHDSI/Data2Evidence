@@ -21,7 +21,7 @@ The component in `index.vue` has one host:
 
 | Host | Where the user sees it | Data source | Props of note |
 |---|---|---|---|
-| [ChartToolbar.vue](../ChartToolbar.vue) | PA chart toolbar → **Attrition Plot** button → `VDialog` | analytics-svc (see [Backend](#backend)) | `fetch-attrition-report`, `filter-card-details`, `show-person-event-switch=false`, `show-intersect-view` from config |
+| [ChartToolbar.vue](../ChartToolbar.vue) | PA chart toolbar → **Attrition Plot** button → `D2eDialog` | analytics-svc (see [Backend](#backend)) | `fetch-attrition-report`, `filter-card-details`, `show-person-event-switch=false`, `show-intersect-view` from config |
 
 The PA button only shows when `getActiveBookmark && enableInclusionReport` (see
 [Configuration](#configuration)).
@@ -99,6 +99,13 @@ for a real dataset.
     invariant below).
   - `processRequestForSelectiveInclusionReport` builds cumulative masks (`'1'`, `'11'`, `'110'`, …),
     with one `irtotalpcount` query each, plus a total patient count.
+    - Each step keeps the chart's axes. query-gen groups by an axis only when a card in the step
+      has its attribute, so an axis on a card that is not in the step yet has no effect. For a
+      Basic Data x-axis, the step adds a copy of the Basic Data card with no constraints, because
+      Basic Data is split into `basicdataN` rules. `minCohortSize` then hides small groups per axis
+      bin, as in the bar chart, so the last step ("Matches") equals the bar chart's patient count.
+    - `processRequest` (intersect view) removes all axes, so its counts hide only a whole cohort
+      below `minCohortSize`.
   - `processRequest` runs the full 2ⁿ bitmask set for the treemap.
 - `query-gen-svc` handles Basic Data specially for these queries
   (`plugins/functions/query-gen-svc/src/utils/inclusionReport.ts`).
@@ -203,7 +210,7 @@ These are worth knowing before you pick up tickets. None of them is fixed on `de
   `index.vue` passes `{ cacheKey: props.cacheKey, sourceKey: props.sourceKey, … }`, which is a plain
   object snapshot, so `watch(() => options.cacheKey)` and the others never trigger. The unit tests
   build `options` with `reactive()`, so they don't catch this.
-  - **In PA this does no harm. It is dead code.** The `VDialog` in ChartToolbar has no `eager`, so
+  - **In PA this does no harm. It is dead code.** The `D2eDialog` in ChartToolbar has no `eager`, so
     Vuetify unmounts its content after it closes. Every open remounts the report and fetches again
     in `onMounted`. The dialog is modal and `persistent`, so the bookmark and dataset can't change
     while it is open. `generationStatus` is hard-coded to `"complete"`. ChartToolbar's

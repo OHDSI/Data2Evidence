@@ -124,26 +124,6 @@
         </div>
       </div>
     </div>
-    <!-- <messageBox v-if="!supportedBrowser && !clearBrowserMessage" messageType="warning" dim="true" dialogWidth="300px">
-      <template v-slot:header>{{ getText('MRI_PA_NOTIFICATION_ERROR') }}</template>
-      <template v-slot:body>
-        <div>
-          <div style="padding: 24px; max-width: 400px">
-            {{ getText('MRI_PA_BROWSER_UNSUPPORTED') }}
-            <appLink
-              href=""
-              :target="_blank"
-              :text="getText('MRI_PA_ADMIN_GUIDE_LINK')"
-              :title="getText('MRI_PA_ADMIN_GUIDE_LINK')"
-            />
-          </div>
-        </div>
-      </template>
-      <template v-slot-footer>
-        <div class="flex-spacer"></div>
-        <appButton :click="dismissBrowserMessage" :text="getText('MRI_PA_BUTTON_OK')" v-focus></appButton>
-      </template>
-    </messageBox> -->
     <messageToast />
   </div>
 </template>
@@ -160,16 +140,13 @@ import debounce from 'lodash/debounce'
 import { registerPaTools } from '@/ai/webmcpServer'
 import { publishPaTools } from '@/ai/paToolBridge'
 import icon from '../lib/ui/app-icon.vue'
-import appButton from '../lib/ui/app-button.vue'
 import appIcon from '../lib/ui/app-icon.vue'
-import appLink from '../lib/ui/app-link.vue'
 import ExplorationsPage from './ExplorationsPage.vue'
 import { isBuilderEntry, isSyntheticPopState, leaveBuilderEntry, pushBuilderEntry } from './helpers/explorationHistory'
 import { lazyComponent } from '../utils/lazyComponent'
 import ChartToolbar from './ChartToolbar.vue'
 import FilterCardSummary from './FilterCardSummary.vue'
 import filters from './Filters.vue'
-import MessageBox from './MessageBox.vue'
 import MessageToast from './MessageToast.vue'
 import SplashScreen from './SplashScreen.vue'
 import ResizeObserver from './ResizeObserver.vue'
@@ -211,8 +188,6 @@ export default {
     return {
       displayCohorts: true,
       displayFilterCardSummary: false,
-      supportedBrowser: true,
-      clearBrowserMessage: false,
       displayFilterCards: false,
       querystring: {
         bmkId: '',
@@ -477,9 +452,6 @@ export default {
         this.loadSharedBookmarkList()
       }
     },
-    dismissBrowserMessage() {
-      this.clearBrowserMessage = true
-    },
     checkCohortName(bookmarkName, suffix = '') {
       const username = this.portalContext.username
       const uniqueName = bookmarkName + (suffix ? ` ${suffix}` : '')
@@ -659,14 +631,11 @@ export default {
   },
   components: {
     icon,
-    appButton,
-    appLink,
     ExplorationsPage,
     ChartToolbar,
     ChartController,
     filters,
     FilterCardSummary,
-    MessageBox,
     MessageToast,
     SplashScreen,
     ResizeObserver,
