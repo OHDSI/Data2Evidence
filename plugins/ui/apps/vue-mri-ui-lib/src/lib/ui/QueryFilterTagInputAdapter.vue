@@ -16,7 +16,7 @@
 
 <script lang="ts">
 import BaseTagInput from './BaseTagInput.vue'
-import type { ConceptSetAction, TagInputModel } from '../../query-filter/types/ConceptSetTypes'
+import type { ConceptSetAction, TagInputModel } from '../../types/ConceptSetTypes'
 
 export default {
   name: 'QueryFilterTagInputAdapter',
