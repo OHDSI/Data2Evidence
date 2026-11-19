@@ -62,7 +62,7 @@ import { D2eButton, D2eDialog } from '@d2e/ui'
 import VProgressCircular from '../vuetify/VProgressCircular.vue'
 import QueryFilterTagInputAdapter from '@/lib/ui/QueryFilterTagInputAdapter.vue'
 import { useTable1ConceptSetPicker, type Table1ConceptSetSelection } from '@/composables/useTable1ConceptSetPicker'
-import type { TagInputModel } from '@/query-filter/types/ConceptSetTypes'
+import type { TagInputModel } from '@/types/ConceptSetTypes'
 
 const props = withDefaults(defineProps<{
   isOpen: boolean
