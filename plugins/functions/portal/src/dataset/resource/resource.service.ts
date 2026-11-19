@@ -2,7 +2,7 @@ import { HttpException, Injectable } from "@danet/core";
 import { SupabaseStorageClient } from "../../supabase-storage/supabase.storage.client.ts";
 import { RequestContextService } from "../../common/request-context.service.ts";
 import { getResourceUploadConfig } from "./resource-upload.config.ts";
-import { validateResourceFile } from "./resource-upload.validation.ts";
+import { toStorageFileName, validateResourceFile } from "./resource-upload.validation.ts";
 import {
   BLOCKED_MESSAGE,
   SCAN_UNAVAILABLE_MESSAGE,
@@ -61,7 +61,9 @@ export class ResourceService {
     const scan = await this.scanner(new Uint8Array(buffer));
     if (scan.status === "infected") {
       console.info(
-        `[Data2Evidence][AUDITLOG][${Date.now()}] Resource upload blocked: "${file.name}" for dataset ${datasetId} ` +
+        // The file name is user input: JSON.stringify quotes it and escapes
+        // quotes and line breaks, so it can't forge or split the audit line.
+        `[Data2Evidence][AUDITLOG][${Date.now()}] Resource upload blocked: ${JSON.stringify(file.name)} for dataset ${datasetId} ` +
           `matched malware signature ${scan.signature}. User: ${this.requestContextService.getAuthToken()?.sub}`,
       );
     } else if (scan.status === "unavailable") {
@@ -73,7 +75,9 @@ export class ResourceService {
   // Stores a file that passed checkUpload. With scanning on, an infected or
   // unscanned file is never stored: scanning fails closed. With it off
   // ("not-scanned"), the upload rules above are the only checks.
-  uploadResource(datasetId: string, { file, buffer, scan }: CheckedUpload) {
+  // The file is stored under toStorageFileName(file.name), since storage
+  // refuses some characters; the response says which name was used.
+  async uploadResource(datasetId: string, { file, buffer, scan }: CheckedUpload) {
     if (scan.status === "infected") {
       throw new HttpException(400, BLOCKED_MESSAGE);
     }
@@ -83,11 +87,13 @@ export class ResourceService {
     if (file.name.includes("\\") || file.name.includes("/")) {
       throw new HttpException(400, "Invalid filename");
     }
-    return this.storageClient.upload(datasetId, {
-      originalname: file.name,
+    const fileName = toStorageFileName(file.name);
+    const stored = await this.storageClient.upload(datasetId, {
+      originalname: fileName,
       buffer,
       mimetype: file.type,
     });
+    return { ...stored, fileName };
   }
 
   deleteResource(datasetId: string, fileName: string) {

@@ -249,4 +249,38 @@ describe("DatasetResourceUploadConfirmDialog", () => {
       await waitFor(() => expect(screen.getByText(ADD)).toHaveAttribute("data-loading", "true"));
     });
   });
+
+  describe("stored name", () => {
+    const uploadAndClose = async (fileName: string) => {
+      const onClose = jest.fn();
+      render(
+        <DatasetResourceUploadConfirmDialog
+          datasetId="ds-1"
+          file={new File(["content"], fileName)}
+          uploadConfig={CONFIG}
+          onClose={onClose}
+          open
+        />
+      );
+      await waitForCheck();
+      fireEvent.click(screen.getByText(ADD));
+      await waitFor(() => expect(onClose).toHaveBeenCalled());
+      return onClose.mock.calls[0];
+    };
+
+    it("reports the name the backend stored the file under", async () => {
+      mockAddResource.mockResolvedValue({ fileName: "_rzte_1.txt" });
+      const [type, resource] = await uploadAndClose("Ärzte#1.txt");
+
+      expect(type).toBe("success");
+      expect(resource.name).toBe("_rzte_1.txt");
+    });
+
+    it("falls back to the picked file's name if the backend doesn't say", async () => {
+      mockAddResource.mockResolvedValue({});
+      const [, resource] = await uploadAndClose("notes.txt");
+
+      expect(resource.name).toBe("notes.txt");
+    });
+  });
 });

@@ -8,6 +8,18 @@ export const getFileExtension = (fileName: string): string => {
   return lastDot > 0 ? fileName.slice(lastDot + 1).toLowerCase() : "";
 };
 
+// Characters the storage service accepts in an object name (its isValidKey:
+// ASCII letters, digits, "_" and these symbols). "/" is left out on purpose:
+// it would start a folder.
+const STORAGE_NAME_CHARACTER = /[A-Za-z0-9_!\-.*'()&$@=;:+,? ]/u;
+
+// The name a file is stored under. Storage refuses any other character, e.g.
+// "#", "%", "ä" or Chinese letters, so each one becomes "_": "Ärzte#1.pdf" is
+// stored as "_rzte_1.pdf". NFC first, so a letter with an accent counts as one
+// character whichever way the operating system wrote it.
+export const toStorageFileName = (fileName: string): string =>
+  Array.from(fileName.normalize("NFC"), (char) => (STORAGE_NAME_CHARACTER.test(char) ? char : "_")).join("");
+
 const formatMaxFileSize = (maxFileSizeBytes: number): string => {
   const mb = maxFileSizeBytes / (1024 * 1024);
   return `${Number.isInteger(mb) ? mb : Number(mb.toFixed(1))} MB`;

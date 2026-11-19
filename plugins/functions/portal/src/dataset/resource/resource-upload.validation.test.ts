@@ -1,7 +1,40 @@
 import { describe, it } from "@std/testing/bdd";
 import { assertEquals } from "@std/assert";
 import { parseResourceUploadConfig } from "./resource-upload.config.ts";
-import { getFileExtension, validateResourceFile } from "./resource-upload.validation.ts";
+import { getFileExtension, toStorageFileName, validateResourceFile } from "./resource-upload.validation.ts";
+
+// The characters the storage service accepts in a name (its isValidKey).
+const STORAGE_KEY = /^(\w|\/|!|-|\.|\*|'|\(|\)| |&|\$|@|=|;|:|\+|,|\?)*$/;
+
+describe("toStorageFileName", () => {
+  it("keeps names storage accepts unchanged", () => {
+    for (const name of ["Data_Dictionary-2024.csv", "notes v2 (final).txt", "a?b.txt", "R&D, Q1+Q2.pdf"]) {
+      assertEquals(toStorageFileName(name), name);
+    }
+  });
+
+  it("replaces each character storage refuses with an underscore", () => {
+    assertEquals(toStorageFileName("report#1.txt"), "report_1.txt");
+    assertEquals(toStorageFileName("100%.txt"), "100_.txt");
+    assertEquals(toStorageFileName("Ärzte.pdf"), "_rzte.pdf");
+    assertEquals(toStorageFileName("数据字典.csv"), "____.csv");
+    assertEquals(toStorageFileName("[draft] {v2}.md"), "_draft_ _v2_.md");
+  });
+
+  it("counts an accented letter as one character, however it was written", () => {
+    // "é" as one code point, and as "e" plus a combining accent (as macOS writes it)
+    assertEquals(toStorageFileName("café.txt"), "caf_.txt");
+    assertEquals(toStorageFileName("café.txt"), "caf_.txt");
+  });
+
+  it("always produces a name storage accepts, keeping the extension", () => {
+    for (const name of ["Ärzte#1.pdf", "100%.txt", "数据.csv", "a`b~c^d|e\"f<g>h.json", "emoji 😀.md"]) {
+      const stored = toStorageFileName(name);
+      assertEquals(STORAGE_KEY.test(`datasets/ds-1/${stored}`), true, stored);
+      assertEquals(getFileExtension(stored), getFileExtension(name));
+    }
+  });
+});
 
 const defaults = parseResourceUploadConfig(undefined, undefined);
 const TYPE_ERROR =

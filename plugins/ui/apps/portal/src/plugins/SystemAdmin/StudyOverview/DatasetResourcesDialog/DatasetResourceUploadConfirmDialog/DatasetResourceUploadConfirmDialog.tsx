@@ -140,9 +140,11 @@ const DatasetResourceUploadConfirmDialog: FC<DatasetResourceUploadConfirmDialogP
     }
   }, [checkMessage, fileError, uploadConfig, getText, i18nKeys]);
 
+  // `storedName` is the name the backend stored the file under, which can
+  // differ from the picked file's name (see addResource).
   const mapFileToResource = useCallback(
-    (file: File): DatasetResource => ({
-      name: file.name,
+    (file: File, storedName?: string): DatasetResource => ({
+      name: storedName || file.name,
       size: getFileSizeDisplay(file.size),
       type: getFileExtension(file.name).toUpperCase(),
     }),
@@ -161,8 +163,8 @@ const DatasetResourceUploadConfirmDialog: FC<DatasetResourceUploadConfirmDialogP
       if (type === "success") {
         try {
           setLoading(true);
-          await api.systemPortal.addResource(datasetId, file);
-          typeof onClose === "function" && onClose(type, mapFileToResource(file));
+          const stored = await api.systemPortal.addResource(datasetId, file);
+          typeof onClose === "function" && onClose(type, mapFileToResource(file, stored?.fileName));
         } catch (error: any) {
           console.error(error);
 

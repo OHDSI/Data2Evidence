@@ -66,6 +66,13 @@ export class SupabaseStorageClient {
     }
   }
 
+  // URL of one object. Each path segment is encoded, so a file name with "#",
+  // "?" or "%" reaches storage intact instead of being cut short or rejected.
+  private objectUrl(bucket: string, filePath: string): string {
+    const encodedPath = filePath.split("/").map(encodeURIComponent).join("/");
+    return `${this.baseUrl}/object/${encodeURIComponent(bucket)}/${encodedPath}`;
+  }
+
   // Pages through list-v2. With a delimiter only the direct children of
   // `prefix` are returned; without one the listing is recursive.
   private async listObjects(
@@ -212,7 +219,7 @@ export class SupabaseStorageClient {
       console.log(`Downloading file: ${filePath} from bucket: ${targetBucket}`);
 
       // Direct request to download file
-      const url = `${this.baseUrl}/object/${targetBucket}/${filePath}`;
+      const url = this.objectUrl(targetBucket, filePath);
       console.log(`Making request to: ${url}`);
 
       const response = await fetch(url, {
@@ -281,7 +288,7 @@ export class SupabaseStorageClient {
       const filePath = this.getFilePath(id, fileName, pathType);
       console.log(`Uploading file: ${filePath} to bucket: ${targetBucket}`);
 
-      const url = `${this.baseUrl}/object/${targetBucket}/${filePath}`;
+      const url = this.objectUrl(targetBucket, filePath);
       console.log(`Making request to: ${url}`);
 
       const response = await fetch(url, {
@@ -336,7 +343,7 @@ export class SupabaseStorageClient {
       const filePath = this.getFilePath(id, fileName, pathType);
       console.log(`Deleting file: ${filePath} from bucket: ${targetBucket}`);
 
-      const url = `${this.baseUrl}/object/${targetBucket}/${filePath}`;
+      const url = this.objectUrl(targetBucket, filePath);
       console.log(`Making request to: ${url}`);
 
       const response = await fetch(url, {

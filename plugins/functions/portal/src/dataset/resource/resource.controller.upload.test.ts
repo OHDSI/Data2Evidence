@@ -65,6 +65,13 @@ describe("ResourceController.uploadResource", () => {
     assertEquals(uploaded, ["data.CSV"]);
   });
 
+  it("stores a name storage would refuse with underscores, and says which name it used", async () => {
+    const { controller, uploaded } = makeController();
+    const result = await controller.uploadResource("ds-1", uploadRequest("Ärzte#1.txt"));
+    assertEquals(uploaded, ["_rzte_1.txt"]);
+    assertEquals((result as { fileName: string }).fileName, "_rzte_1.txt");
+  });
+
   it("blocks an infected file with a 400 and stores nothing", async () => {
     const { controller, uploaded } = makeController({ status: "infected", signature: "Eicar-Test-Signature" });
     const error = await assertRejects(() => controller.uploadResource("ds-1", uploadRequest("notes.txt")), HttpException);
@@ -142,6 +149,24 @@ describe("ResourceService.checkUpload memory use", () => {
     const error = await assertRejects(() => service.checkUpload("ds-1", file), HttpException);
     assertEquals(error.message, "400 - This file is too large. Files must be 25 MB or smaller.");
     assertEquals(scanned, []);
+  });
+
+  // Review: the file name is user input and went into the audit line as-is.
+  it("escapes the file name in the audit line", async () => {
+    const { service } = makeService();
+    service.scanner = () => Promise.resolve({ status: "infected", signature: "Eicar-Test-Signature" });
+    const logged: string[] = [];
+    const realInfo = console.info;
+    console.info = (message: string) => logged.push(message);
+    try {
+      await service.checkUpload("ds-1", new File(["x"], 'a" for dataset 0\nforged.txt'));
+    } finally {
+      console.info = realInfo;
+    }
+
+    assertEquals(logged.length, 1);
+    assertEquals(logged[0].includes("\n"), false);
+    assertEquals(logged[0].includes('blocked: "a\\" for dataset 0\\nforged.txt" for dataset ds-1'), true);
   });
 
   it("passes the whole file to the scanner when it is within the limit", async () => {
