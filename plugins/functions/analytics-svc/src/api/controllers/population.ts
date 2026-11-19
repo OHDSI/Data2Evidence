@@ -97,7 +97,7 @@ export async function populationQuery(req: IMRIRequest, res, next) {
                         }
 
                         try {
-                            const datasetId = body.datasetId;
+                            const datasetId = req.query.datasetId;
                             let sFilename: string =
                                 <string>req.query.name ||
                                 "MRI_CSV_" + new Date().toISOString() + ".csv";

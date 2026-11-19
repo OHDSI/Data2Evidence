@@ -5,7 +5,7 @@
       :header="getText('MRI_PA_EXPORT_UNAVAILABLE')"
       :message="popoverMessage"
     >
-      <bs-dropdown variant="link" size="sm" no-caret :disabled="isDownloadDisabled">
+      <bs-dropdown variant="link" size="sm" no-caret :disabled="isDownloadDisabled" @show="prefetchImageExport">
         <template v-slot:button-content>
           <button
             class="toolbarButton"
@@ -39,8 +39,8 @@
   </div>
 </template>
 <script lang="ts">
+import { defineAsyncComponent } from 'vue'
 import { mapActions, mapGetters } from 'vuex'
-import ImageExport from './ImageExport.vue'
 import DownloadCSVDialog from './DownloadCSVDialog.vue'
 import bsDropdown from '../lib/ui/bs-dropdown.vue'
 import bsDropdownItem from '../lib/ui/bs-dropdown-item.vue'
@@ -51,6 +51,9 @@ import Constants from '../utils/Constants'
 import { formatNumber } from '../utils/NumberUtils'
 import { generateDownloadFileName } from '../utils/generateDownloadFileName'
 import { clearPendingSaveTarget, pickSaveTarget, setPendingSaveTarget } from '../utils/saveFile'
+
+const loadImageExport = () => import('./ImageExport.vue')
+const ImageExport = defineAsyncComponent(loadImageExport)
 
 export default {
   name: 'downloadMenu',
@@ -186,6 +189,11 @@ export default {
   },
   methods: {
     ...mapActions(['setFireDownloadZIP']),
+    prefetchImageExport() {
+      if (this.list.some(item => item.key === 'image')) {
+        loadImageExport().catch(() => undefined)
+      }
+    },
     async handleMenuClick(arg) {
       if (arg) {
         // A second ZIP would abort the first mid-stream, and dismissing its picker would drop the
@@ -199,6 +207,14 @@ export default {
             this.csvShow = true
             break
           case 'image':
+            try {
+              await loadImageExport()
+            } catch (error) {
+              console.error('[DownloadMenu] ImageExport failed to load', error)
+              this.imageShow = false
+              this._showExportToast('error', this.fileTypeKeyMap['image'])
+              return
+            }
             this.imageShow = true
             break
           case 'zip': {

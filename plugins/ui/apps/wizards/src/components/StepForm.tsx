@@ -15,6 +15,7 @@ import {
   getFieldGroupCompletionHint,
   getFirstInvalidTarget,
   getFormGroupValidationErrors,
+  getYearOrderError,
   getYearRangeErrors,
   isFieldDisabledByGroupLimit,
   resolveWizardFormLayout,
@@ -298,7 +299,9 @@ export function StepForm() {
       const years = Array.from({ length: currentYear - startYear + 1 }, (_, i) => currentYear - i);
       const fromFieldName = `${field.id}_from`;
       const toFieldName = `${field.id}_to`;
-      const yearRangeErrorMessage = (fromError?.message || toError?.message) as string | undefined;
+      const orderError = getYearOrderError(formValues[fromFieldName], formValues[toFieldName]);
+      const isToInvalid = !!toError || !!orderError;
+      const yearRangeErrorMessage = (fromError?.message || toError?.message || orderError) as string | undefined;
 
       return (
         <div key={field.id} className={styles.fieldGroup}>
@@ -327,8 +330,8 @@ export function StepForm() {
             <span className={styles.groupSeparator}>-</span>
             <select
               id={`${field.id}_to`}
-              className={`${styles.input} ${toError ? styles.inputError : ""}`}
-              aria-invalid={!!toError}
+              className={`${styles.input} ${isToInvalid ? styles.inputError : ""}`}
+              aria-invalid={isToInvalid}
               aria-describedby={joinIds(!!yearRangeErrorMessage && errorId, groupErrorId)}
               {...register(toFieldName, {
                 deps: [fromFieldName],

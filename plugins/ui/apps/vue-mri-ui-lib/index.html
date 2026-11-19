@@ -17,7 +17,6 @@
     -->
     <script nonce="__NONCE__">
       window.AUTH_CONFIG = {
-        useMockServer: '%VITE_STANDALONE_ATLAS%' === 'true',
         redirectUrl: '%VITE_REDIRECT_URL%' || 'https://localhost:8081',
         clientId: '%VITE_CLIENT_ID%' || '',
         authority: '%VITE_AUTHORITY%' || 'https://localhost:41100',
@@ -66,7 +65,6 @@
 
     <script type="module">
       // Initialize portal context bootstrap with Vite environment variables
-      const isAtlas = import.meta.env.VITE_STANDALONE_ATLAS === 'true'
       const defaultDatasource = import.meta.env.VITE_DEFAULT_DATASOURCE || 'SYNPUF1K'
       const features = import.meta.env.VITE_FEATURES ? JSON.parse(import.meta.env.VITE_FEATURES) : []
 
@@ -90,41 +88,16 @@
         REACT_APP_PUBLIC_WEBAPI_DATASOURCE: defaultDatasource,
       }
 
-      // Conditionally add logout button if not in standalone mode
-      if (!isAtlas) {
-        const logoutContainer = document.getElementById('logout-container')
-        const logoutBtn = document.createElement('button')
-        logoutBtn.id = 'mriBtnLogout'
-        logoutBtn.onclick = () => window.logoutfn?.()
-        logoutBtn.style.cssText = 'float: left; position: absolute; top: 0; right: 0; z-index: 100'
-        logoutBtn.textContent = 'logout'
-        logoutContainer.appendChild(logoutBtn)
-      }
+      // Add logout button
+      const logoutContainer = document.getElementById('logout-container')
+      const logoutBtn = document.createElement('button')
+      logoutBtn.id = 'mriBtnLogout'
+      logoutBtn.onclick = () => window.logoutfn?.()
+      logoutBtn.style.cssText = 'float: left; position: absolute; top: 0; right: 0; z-index: 100'
+      logoutBtn.textContent = 'logout'
+      logoutContainer.appendChild(logoutBtn)
 
       console.log('Portal context initialized with default datasource:', defaultDatasource)
-
-      // Fetch datasource dynamically when in standalone mode and update portal context
-      if (isAtlas) {
-        ;(async function () {
-          try {
-            const token = localStorage.getItem('msaltoken')
-            const response = await fetch('/d2e-webapi/source/sources', {
-              headers: token ? { Authorization: `Bearer ${token}` } : {},
-            })
-            if (response.ok) {
-              const sources = await response.json()
-              if (sources && sources.length > 0 && sources[0].sourceKey) {
-                const datasource = sources[0].sourceKey
-                // Update the datasource in portal context
-                window.__MRI_PORTAL_CONTEXT__.REACT_APP_PUBLIC_WEBAPI_DATASOURCE = datasource
-                console.log('Portal context datasource updated to:', datasource)
-              }
-            }
-          } catch (error) {
-            console.warn('Failed to fetch datasource, using default:', error)
-          }
-        })()
-      }
     </script>
 
     <!-- Vite entry point -->
