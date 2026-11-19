@@ -55,24 +55,23 @@ export const buildXAxisTitle = (categories: any[]): string => {
 }
 
 /**
- * Returns a new canvas identical to `chartCanvas` with `title` drawn centred in
- * a band directly beneath it.
+ * Returns a band of `width` with `title` drawn centred in it, placed directly
+ * beneath the chart in an export.
  */
-const appendXAxisTitle = (chartCanvas: HTMLCanvasElement, title: string): HTMLCanvasElement => {
+const createXAxisTitleCanvas = (width: number, title: string): HTMLCanvasElement => {
   const canvas = document.createElement('canvas')
-  canvas.width = chartCanvas.width
-  canvas.height = chartCanvas.height + X_AXIS_TITLE_BAND_HEIGHT
+  canvas.width = width
+  canvas.height = X_AXIS_TITLE_BAND_HEIGHT
 
   const ctx = canvas.getContext('2d')!
   ctx.fillStyle = '#ffffff'
   ctx.fillRect(0, 0, canvas.width, canvas.height)
-  ctx.drawImage(chartCanvas, 0, 0)
 
   ctx.font = X_AXIS_TITLE_FONT
   ctx.fillStyle = X_AXIS_TITLE_COLOR
   ctx.textAlign = 'center'
   ctx.textBaseline = 'middle'
-  ctx.fillText(title, chartCanvas.width / 2, chartCanvas.height + X_AXIS_TITLE_BAND_HEIGHT / 2)
+  ctx.fillText(title, width / 2, X_AXIS_TITLE_BAND_HEIGHT / 2)
 
   return canvas
 }
@@ -342,36 +341,6 @@ const cropCanvas = (canvas, width, height, dx = 0, dy = 0) => {
   return croppedCanvas
 }
 
-const combineCanvas = (canvasA: HTMLCanvasElement, canvasB: HTMLCanvasElement, overlap = false): HTMLCanvasElement => {
-  const combinedCanvas = document.createElement('canvas')
-  combinedCanvas.height = Math.max(canvasA.height, canvasB.height)
-  combinedCanvas.width = overlap ? canvasA.width : canvasA.width + canvasB.width
-
-  const combinedContext = combinedCanvas.getContext('2d')
-  combinedContext.fillStyle = '#ffffff'
-  combinedContext.fillRect(0, 0, combinedCanvas.width, combinedCanvas.height)
-
-  const canvasList = [
-    {
-      canvas: canvasA,
-      x: 0,
-      width: canvasA.width,
-      height: canvasA.height,
-    },
-    {
-      canvas: canvasB,
-      x: overlap ? canvasA.width - canvasB.width : canvasA.width,
-      width: canvasB.width,
-      height: canvasB.height,
-    },
-  ]
-  canvasList.forEach(n => {
-    combinedContext.drawImage(n.canvas, n.x, 0, n.width, n.height)
-  })
-
-  return combinedCanvas
-}
-
 /**
  * Draws each entry of `lines` left-aligned at `x`, advancing the running y-cursor by
  * `lineHeight` before every line after the first, and returns the final cursor value.
@@ -478,15 +447,19 @@ export const stripInteractiveSVG = (root: Element): void => {
   INTERACTIVE_SELECTORS.forEach(sel => root.querySelectorAll(sel).forEach(el => el.parentNode?.removeChild(el)))
 }
 
-export const createChartCanvas = (
+interface IChartExportSvg {
+  svgStr: string
+  width: number
+  height: number
+}
+
+const buildChartExportSvg = (
   chartId: string,
   chartType: string,
   targetHeight: number,
   targetWidth: number,
-  pdfConst: any,
-  kmLegendInput?: IKmLegendInput,
-  xAxisTitle?: string
-): HTMLCanvasElement => {
+  pdfConst: any
+): IChartExportSvg => {
   const svgItem = d3.select(chartId).select('svg')[0][0] as SVGSVGElement
   const svgClone = svgItem.cloneNode(true) as SVGSVGElement
   const serializer = new XMLSerializer()
@@ -551,10 +524,6 @@ export const createChartCanvas = (
     }
   }
 
-  const chartCanvas = document.createElement('canvas')
-  chartCanvas.height = renderHeight
-  chartCanvas.width = renderWidth
-
   let svgStr = serializer.serializeToString(svgClone)
 
   if (isKm) {
@@ -564,25 +533,124 @@ export const createChartCanvas = (
     svgStr = svgStr.replace(xAxisLocation, xAxisNewLocation)
   }
 
-  // Call canvg to draw the chart on the canvas
-  const ctx = chartCanvas.getContext('2d')
-  const v = Canvg.fromString(ctx, svgStr)
-  v.start()
+  return { svgStr, width: renderWidth, height: renderHeight }
+}
 
-  let outputCanvas = chartCanvas
-  if (isKm && kmLegendInput) {
-    const legendCanvas = createKmLegendCanvas(pdfConst, kmLegendInput)
-    outputCanvas = combineCanvas(chartCanvas, legendCanvas, kmLegendInput.overlapCanvas)
-  } else if (isBarChart) {
+interface IExportLayer {
+  canvas: HTMLCanvasElement
+  x: number
+  y: number
+}
+
+interface IExportLayout {
+  width: number
+  height: number
+  layers: IExportLayer[]
+}
+
+const layoutChartExtras = (
+  chartId: string,
+  chartType: string,
+  chartWidth: number,
+  chartHeight: number,
+  pdfConst: any,
+  kmLegendInput?: IKmLegendInput,
+  xAxisTitle?: string
+): IExportLayout => {
+  let width = chartWidth
+  let height = chartHeight
+  const layers: IExportLayer[] = []
+
+  if (chartType.includes('km')) {
+    if (kmLegendInput) {
+      const legendCanvas = createKmLegendCanvas(pdfConst, kmLegendInput)
+      // An overlapping legend is drawn over the right edge of the chart instead of beside it
+      const x = kmLegendInput.overlapCanvas ? width - legendCanvas.width : width
+      layers.push({ canvas: legendCanvas, x, y: 0 })
+      width = Math.max(width, x + legendCanvas.width)
+      height = Math.max(height, legendCanvas.height)
+    }
+  } else if (chartType.includes('stacked') || chartType.includes('column')) {
     if (xAxisTitle) {
-      outputCanvas = appendXAxisTitle(outputCanvas, xAxisTitle)
+      layers.push({ canvas: createXAxisTitleCanvas(width, xAxisTitle), x: 0, y: height })
+      height += X_AXIS_TITLE_BAND_HEIGHT
     }
     const barLegendItems = readStackBarLegendFromDOM(chartId)
     if (barLegendItems.length > 0) {
       const legendCanvas = createBarLegendCanvas(barLegendItems)
-      outputCanvas = combineCanvas(outputCanvas, legendCanvas)
+      layers.push({ canvas: legendCanvas, x: width, y: 0 })
+      width += legendCanvas.width
+      height = Math.max(height, legendCanvas.height)
     }
   }
 
+  return { width, height, layers }
+}
+
+export const createChartCanvas = (
+  chartId: string,
+  chartType: string,
+  targetHeight: number,
+  targetWidth: number,
+  pdfConst: any,
+  kmLegendInput?: IKmLegendInput,
+  xAxisTitle?: string
+): HTMLCanvasElement => {
+  const chart = buildChartExportSvg(chartId, chartType, targetHeight, targetWidth, pdfConst)
+
+  const chartCanvas = document.createElement('canvas')
+  chartCanvas.height = chart.height
+  chartCanvas.width = chart.width
+
+  // Call canvg to draw the chart on the canvas
+  const ctx = chartCanvas.getContext('2d')
+  const v = Canvg.fromString(ctx, chart.svgStr)
+  v.start()
+
+  const layout = layoutChartExtras(chartId, chartType, chart.width, chart.height, pdfConst, kmLegendInput, xAxisTitle)
+  if (layout.layers.length === 0) {
+    return chartCanvas
+  }
+
+  const outputCanvas = document.createElement('canvas')
+  outputCanvas.width = layout.width
+  outputCanvas.height = layout.height
+  const outputCtx = outputCanvas.getContext('2d')
+  outputCtx.fillStyle = '#ffffff'
+  outputCtx.fillRect(0, 0, layout.width, layout.height)
+  outputCtx.drawImage(chartCanvas, 0, 0)
+  layout.layers.forEach(layer => outputCtx.drawImage(layer.canvas, layer.x, layer.y))
+
   return outputCanvas
+}
+
+export const createChartSvg = (
+  chartId: string,
+  chartType: string,
+  targetHeight: number,
+  targetWidth: number,
+  pdfConst: any,
+  kmLegendInput?: IKmLegendInput,
+  xAxisTitle?: string
+): string => {
+  const chart = buildChartExportSvg(chartId, chartType, targetHeight, targetWidth, pdfConst)
+  const layout = layoutChartExtras(chartId, chartType, chart.width, chart.height, pdfConst, kmLegendInput, xAxisTitle)
+
+  const layerImages = layout.layers
+    .map(
+      layer =>
+        `<image x="${layer.x}" y="${layer.y}" width="${layer.canvas.width}" height="${layer.canvas.height}" ` +
+        `xlink:href="${layer.canvas.toDataURL('image/png')}"/>`
+    )
+    .join('')
+
+  return (
+    '<?xml version="1.0" encoding="UTF-8"?>\n' +
+    `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" ` +
+    `width="${layout.width}" height="${layout.height}" viewBox="0 0 ${layout.width} ${layout.height}">` +
+    `<rect width="100%" height="100%" fill="#ffffff"/>` +
+    chart.svgStr +
+    layerImages +
+    '</svg>'
+  )
 }
