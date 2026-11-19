@@ -33,6 +33,7 @@ export {
   pageCount,
 } from "./components/dataTable";
 export type {
+  D2eDataTableDensity,
   D2eDataTableHeader,
   D2eDataTablePageLabels,
   D2eDataTableProps,
@@ -88,4 +89,4 @@ export type { D2eSelectSize, D2eSelectItem } from "./components/selectSizes";
 export { tokens } from "./tokens/tokens";
 export type { D2eTokens } from "./tokens/tokens";
 export { buildD2eVuetifyOptions } from "./tokens/theme";
-export { isTruncated } from "./components/truncation";
+export { isTruncated, measureTruncation } from "./components/truncation";
