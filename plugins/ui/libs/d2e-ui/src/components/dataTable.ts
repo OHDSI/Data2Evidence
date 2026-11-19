@@ -1,3 +1,5 @@
+import { formatNumber } from "./numberFormat";
+
 // Figma: the Data quality checks table — header row 2855:278875, body row
 // 2855:278884, pagination 2855:278894 and the expanded detail 1783:373766 (D2E
 // WebApp main file), built from the Table cell set 2445:7589 and Pagination
@@ -33,6 +35,7 @@ export interface D2eDataTableHeader {
   title: string;
   sortable?: boolean;
   width?: number | string;
+  format?: boolean;
 }
 
 export interface D2eSortItem {
@@ -63,6 +66,23 @@ export function pageRange(
   if (total <= 0) return { start: 0, end: 0, total: 0 };
   const start = (page - 1) * itemsPerPage + 1;
   return { start, end: Math.min(page * itemsPerPage, total), total };
+}
+
+export function formatRange(
+  page: number,
+  itemsPerPage: number,
+  total: number,
+): { start: string; end: string; total: string } {
+  const range = pageRange(page, itemsPerPage, total);
+  return {
+    start: formatNumber(range.start),
+    end: formatNumber(range.end),
+    total: formatNumber(range.total),
+  };
+}
+
+export function formatCell<V>(value: V, format = true): V | string {
+  return format && typeof value === "number" ? formatNumber(value) : value;
 }
 
 const ROW_ACTIVATION_KEYS: readonly string[] = ["Enter", " "];
@@ -114,7 +134,7 @@ export interface D2eDataTableProps<T> {
   expanded?: string[];
   noDataText?: string;
   rowsPerPageLabel?: string;
-  rangeLabel?: (start: number, end: number, total: number) => string;
+  rangeLabel?: (start: string, end: string, total: string) => string;
   /** Accessible names of the four pager buttons. */
   pageLabels?: D2eDataTablePageLabels;
   /** Accessible name of each row's expand chevron. */

@@ -169,6 +169,7 @@
 import { mapActions, mapGetters, mapMutations } from 'vuex'
 import { D2eButton, D2eDialog, D2eTextField } from '@d2e/ui'
 import { FILTERCARD_REMOVE_NEW_STATE } from '../store/mutation-types'
+import { DEFAULT_PARENT_LABEL, isParentAttrKey, parentOptionsForCard } from '../lib/parentInteractions'
 import appLabel from '../lib/ui/app-label.vue'
 import appIcon from '../lib/ui/app-icon.vue'
 import bsBadge from '../lib/ui/bs-badge.vue'
@@ -351,21 +352,17 @@ export default {
       const menu: IMenuItemType[] = []
 
       if (this.filterCardModel.props.allowParentConstraint) {
-        const parentInteractionConfig =
-          this.filterCardModel.props.filterCardConfig.oInternalConfigFilterCard.parentInteraction
-        if (
-          parentInteractionConfig &&
-          parentInteractionConfig.possibleParent &&
-          parentInteractionConfig.possibleParent.length > 0
-        ) {
-          const key = 'parentInteraction'
-          const constraintId = this.constraints.find(c => c.split('.').pop() === key)
+        parentOptionsForCard(
+          this.getMriFrontendConfig,
+          this.filterCardModel.props.key,
+          this.getText(DEFAULT_PARENT_LABEL)
+        ).forEach(option => {
           menu.push({
-            key,
-            constraintId,
-            text: parentInteractionConfig.parentLabel || this.getText('MRI_PA_FILTERCARD_CONSTRAINT_PARENT'),
+            key: option.attrKey,
+            constraintId: this.constraints.find(c => c.split('.').pop() === option.attrKey),
+            text: option.label,
           })
-        }
+        })
       }
 
       // item for Advanced Time Filter
@@ -470,13 +467,14 @@ export default {
       this[FILTERCARD_REMOVE_NEW_STATE](this.id)
     },
     isChecked({ key, icon }) {
+      if (isParentAttrKey(key)) {
+        return this.constraints.find(c => c.split('.').pop() === key) !== undefined
+      }
       switch (key) {
         case 'exclude':
           return this.filterCardModel.props.excludeFilter
         case 'advancedTime':
           return this.displayAdvanceTime
-        case 'parentInteraction':
-          return this.constraints.find(c => c.split('.').pop() === key) !== undefined
         default:
           return icon === 'checked'
       }

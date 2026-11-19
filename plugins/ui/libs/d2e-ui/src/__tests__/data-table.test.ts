@@ -3,6 +3,8 @@ import {
   DATA_TABLE_COMPACT_STYLE_MAP,
   DATA_TABLE_STYLE_MAP,
   clickableRowProps,
+  formatCell,
+  formatRange,
   nextSort,
   pageCount,
   pageRange,
@@ -88,6 +90,45 @@ describe("pageCount", () => {
   it("rounds up", () => {
     expect(pageCount(10, 123)).toBe(13);
     expect(pageCount(25, 50)).toBe(2);
+  });
+});
+
+describe("formatRange", () => {
+  it("groups the thousands of the start, end and total", () => {
+    expect(formatRange(1, 10, 2340)).toEqual({
+      start: "1",
+      end: "10",
+      total: "2,340",
+    });
+    expect(formatRange(234, 10, 2340)).toEqual({
+      start: "2,331",
+      end: "2,340",
+      total: "2,340",
+    });
+  });
+
+  it("is 0-0 of 0 when there are no rows", () => {
+    expect(formatRange(1, 10, 0)).toEqual({
+      start: "0",
+      end: "0",
+      total: "0",
+    });
+  });
+});
+
+describe("formatCell", () => {
+  it("groups the thousands of a number", () => {
+    expect(formatCell(2340)).toBe("2,340");
+  });
+
+  it("shows a number as it is when the column turns formatting off", () => {
+    expect(formatCell(4012345, false)).toBe(4012345);
+  });
+
+  it("does not change a value that is not a number", () => {
+    expect(formatCell("2340")).toBe("2340");
+    expect(formatCell(null)).toBe(null);
+    expect(formatCell(undefined)).toBe(undefined);
   });
 });
 

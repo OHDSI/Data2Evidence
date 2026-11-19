@@ -50,6 +50,7 @@ import helpPopover from './HelpPopover.vue'
 import appLabel from '../lib/ui/app-label.vue'
 import appIcon from '../lib/ui/app-icon.vue'
 import moment from 'moment'
+import { isCardOfType } from '../lib/parentInteractions'
 
 export default {
   name: 'constraint',
@@ -114,9 +115,7 @@ export default {
           filterCardList
             .filter(filterCard => {
               // checking if the filterCard is a valid parent
-              return this.model.props.parents.find(parentId => {
-                return filterCard.key.indexOf(parentId) > -1
-              })
+              return this.model.props.parents.some(parentPath => isCardOfType(filterCard.key, parentPath))
             })
             .map(f => {
               return {

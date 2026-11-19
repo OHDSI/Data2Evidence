@@ -45,6 +45,34 @@ describe('detailRows', () => {
     expect(value(undefined)).toBe('-');
   });
 
+  it('passes the row counts as numbers, so the table can group their thousands', () => {
+    const detail = Object.fromEntries(
+      detailRows(row({ numViolatedRows: 2340, numDenominatorRows: 1234567 }), t).map((d) => [d.label, d.value]),
+    );
+    expect(detail['Violated rows']).toBe(2340);
+    expect(detail['Denominator rows']).toBe(1234567);
+  });
+
+  it('shows a dash for a missing row count', () => {
+    const detail = Object.fromEntries(
+      detailRows(row({ numViolatedRows: undefined, numDenominatorRows: undefined }), t).map((d) => [d.label, d.value]),
+    );
+    expect(detail['Violated rows']).toBe('-');
+    expect(detail['Denominator rows']).toBe('-');
+  });
+
+  it('shows a row count the backend sends as a string as it is', () => {
+    const rawCount = '2340' as unknown as number;
+    const detail = Object.fromEntries(detailRows(row({ numViolatedRows: rawCount }), t).map((d) => [d.label, d.value]));
+    expect(detail['Violated rows']).toBe('2340');
+  });
+
+  it('keeps a concept ID the backend sends as a number as text, so it shows no thousands separator', () => {
+    const rawConceptId = 4012345 as unknown as string;
+    const detail = Object.fromEntries(detailRows(row({ conceptId: rawConceptId }), t).map((d) => [d.label, d.value]));
+    expect(detail['Concept ID']).toBe('4012345');
+  });
+
   it('translates labels through the host', () => {
     const [first] = detailRows(row(), (key) => `T:${key}`);
     expect(first.label).toBe('T:plugins.dataQuality.checks.detail.checkName');
