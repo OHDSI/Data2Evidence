@@ -7,7 +7,7 @@ import {
 
 export interface ShinyLiveFlowRunDto {
   datasetId: string;
-  language: "python";
+  language: "python" | "r";
   appCode: string;
   type: string;
   name: string;
@@ -22,9 +22,9 @@ export class ShinyLiveService {
 
     const { datasetId, language, appCode, type, name } = shinyLiveFlowRunDto;
 
-    if (language !== "python") {
+    if (language !== "python" && language !== "r") {
       throw new Error(
-        `Language "${language}" is not supported. Only "python" is supported.`,
+        `Language "${language}" is not supported. Use "python" or "r".`,
       );
     }
 
