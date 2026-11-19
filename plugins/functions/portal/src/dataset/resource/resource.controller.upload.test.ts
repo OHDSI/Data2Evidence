@@ -116,6 +116,44 @@ describe("ResourceController.checkResource", () => {
 });
 
 
+describe("ResourceService.checkUpload memory use", () => {
+  const LIMIT = 25 * 1024 * 1024; // the default RESOURCE_UPLOAD_MAX_FILE_SIZE_MB
+
+  const makeService = () => {
+    const scanned: Uint8Array[] = [];
+    const service = new ResourceService(
+      {} as unknown as SupabaseStorageClient,
+      { getAuthToken: () => ({ sub: "user-1" }) } as unknown as RequestContextService,
+    );
+    service.scanner = (content) => {
+      scanned.push(content);
+      return Promise.resolve({ status: "clean" });
+    };
+    return { service, scanned };
+  };
+
+  // Review: the file used to be copied in full before any check ran.
+  it("rejects an oversized file without copying all of it", async () => {
+    const { service, scanned } = makeService();
+    const file = new File([new Uint8Array(LIMIT + 1).fill(0x61)], "big.txt");
+    // Only a slice of the file may be read; reading the whole file fails the test.
+    file.arrayBuffer = () => Promise.reject(new Error("the whole file was copied"));
+
+    const error = await assertRejects(() => service.checkUpload("ds-1", file), HttpException);
+    assertEquals(error.message, "400 - This file is too large. Files must be 25 MB or smaller.");
+    assertEquals(scanned, []);
+  });
+
+  it("passes the whole file to the scanner when it is within the limit", async () => {
+    const { service, scanned } = makeService();
+    const content = new TextEncoder().encode("id,name\n1,Alice\n");
+    const checked = await service.checkUpload("ds-1", new File([content], "data.csv"));
+
+    assertEquals(scanned, [content]);
+    assertEquals(new Uint8Array(checked.buffer), content);
+  });
+});
+
 describe("ResourceController routes", () => {
   // Danet registers every method of a controller as a route, and an
   // undecorated helper method crashes the whole portal backend at startup.

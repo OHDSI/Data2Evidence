@@ -49,12 +49,11 @@ export class ResourceService {
     }
 
     const config = getResourceUploadConfig();
-    const buffer = await file.arrayBuffer();
-    const validationError = validateResourceFile(
-      file,
-      config,
-      new Uint8Array(buffer, 0, Math.min(buffer.byteLength, config.maxFileSizeBytes)),
-    );
+    // The content check looks at most at the size limit, so copy no more than
+    // that: an oversized file is rejected without copying all of it. A file
+    // that passes is within the limit, so this copy is then the whole file.
+    const buffer = await file.slice(0, config.maxFileSizeBytes).arrayBuffer();
+    const validationError = validateResourceFile(file, config, new Uint8Array(buffer));
     if (validationError) {
       throw new HttpException(400, validationError);
     }
