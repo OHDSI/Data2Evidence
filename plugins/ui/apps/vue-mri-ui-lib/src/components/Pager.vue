@@ -9,7 +9,7 @@
       </button>
       <template v-for="page in visiblePages" :key="page">
         <button @click="goPage(page)" :class="['page-button', currentPage === page ? 'current-page-button' : '']">
-          <span>{{ page }}</span>
+          <span>{{ formatNumber(page) }}</span>
         </button>
       </template>
       <button :title="getText('MRI_PA_PAGER_NEXT_PAGE')" :class="pagerNavClass('r')" @click="goPage(currentPage + 1)">
@@ -29,6 +29,7 @@
 <script lang="ts">
 import { mapGetters } from 'vuex'
 import appButton from '../lib/ui/app-button.vue'
+import { formatNumber } from '../utils/NumberUtils'
 
 export default {
   name: 'pager',
@@ -78,6 +79,7 @@ export default {
     },
   },
   methods: {
+    formatNumber,
     goPage(page) {
       let returnpage = page || 1
       returnpage = returnpage > this.totalPages ? this.totalPages : returnpage

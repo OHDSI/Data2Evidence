@@ -7,7 +7,7 @@
 <script setup lang="ts">
 import { onBeforeUnmount, onMounted, onUpdated, ref } from "vue";
 import D2eTooltip from "./D2eTooltip.vue";
-import { isTruncated } from "./truncation";
+import { isTruncated, measureTruncation } from "./truncation";
 
 interface Props {
   text: string;
@@ -23,7 +23,9 @@ const truncated = ref(false);
 let observer: ResizeObserver | undefined;
 
 function measure() {
-  truncated.value = root.value ? isTruncated(root.value) : false;
+  truncated.value = root.value
+    ? isTruncated(measureTruncation(root.value))
+    : false;
 }
 
 onMounted(() => {

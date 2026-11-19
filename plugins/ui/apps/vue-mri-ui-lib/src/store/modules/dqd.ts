@@ -7,8 +7,8 @@ const job_plugins_url = '/jobplugins/'
 
 const actions = {
   async fetchDataQualityFlowRun({ commit, dispatch, rootGetters }, { cohortDefinitionId, datasetId: requested }) {
-    // The exploration card passes the dataset it resolved itself; Bookmarks.vue
-    // relies on the store's selection.
+    // The exploration card passes the dataset it resolved itself; without one
+    // the store's selection is used.
     const datasetId = requested ?? rootGetters.getSelectedDataset.id
 
     let url = QueryString({

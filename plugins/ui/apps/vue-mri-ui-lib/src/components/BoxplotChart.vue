@@ -118,6 +118,7 @@ export default {
       'isFireRequestHeld',
       'getActiveAxes',
       'getBookmarksData',
+      'getSelectedDataset',
       'processResponse',
     ]),
     csvFileName() {
@@ -163,7 +164,7 @@ export default {
           ({ cancelToken }) =>
             this.fireQuery({
               url: '/analytics-svc/api/services/population/json/boxplot',
-              params: { mriquery: JSON.stringify(bookmark) },
+              params: { mriquery: JSON.stringify(bookmark), datasetId: this.getSelectedDataset.id },
               cancelToken,
             }),
           chartData => {
