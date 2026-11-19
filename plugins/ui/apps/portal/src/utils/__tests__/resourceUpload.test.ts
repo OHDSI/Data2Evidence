@@ -87,4 +87,24 @@ describe("validateResourceFile", () => {
     expect(check("report.pdf", 0, new Uint8Array())).toBe("empty");
     expect(check("report.pdf", 26 * MB, enc.encode("not a pdf"))).toBe("corrupted");
   });
+
+  it.each(["Data_Dictionary-2024.csv", "notes v2.final.txt", "ETL script.sql", "notes (final).txt", "abcd (1).sql"])(
+    "accepts the name %s",
+    (name) => {
+      expect(check(name)).toBeUndefined();
+    }
+  );
+
+  it.each(["Ärzte.pdf", "café.txt", "数据.csv", "report#1.txt", "100%.txt", "notes [final].txt", "R&D.pdf", "a?b.txt"])(
+    "rejects the name %s",
+    (name) => {
+      expect(check(name)).toBe("name");
+    }
+  );
+
+  it("checks the type before the name, and the name before anything else", () => {
+    expect(check("Ärzte.exe")).toBe("type");
+    expect(check("a#b.txt", 0, new Uint8Array())).toBe("name");
+    expect(check("a#b.pdf", 26 * MB, enc.encode("not a pdf"))).toBe("name");
+  });
 });

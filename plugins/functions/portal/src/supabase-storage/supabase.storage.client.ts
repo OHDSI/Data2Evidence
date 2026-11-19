@@ -24,6 +24,14 @@ interface StorageObject {
 }
 
 @Injectable()
+// Thrown by upload({ overwrite: false }) when the name is already taken.
+export class ObjectAlreadyExistsError extends Error {
+  constructor(filePath: string) {
+    super(`An object already exists at ${filePath}`);
+    this.name = "ObjectAlreadyExistsError";
+  }
+}
+
 export class SupabaseStorageClient {
   private readonly DEFAULT_BUCKET = "portal-datasets-resources";
   private readonly baseUrl: string;
@@ -274,14 +282,19 @@ export class SupabaseStorageClient {
     }
   }
 
+  // With `overwrite: false`, a name that is already taken is not replaced:
+  // the upload throws ObjectAlreadyExistsError instead. Storage decides this
+  // atomically, so two uploads at the same moment can't overwrite each other.
   async upload(
     id: string,
     file: UploadFile,
     bucketName?: string,
-    pathType: "dataset" | "data-transformation" = "dataset"
+    pathType: "dataset" | "data-transformation" = "dataset",
+    options: { overwrite?: boolean } = {}
   ) {
     const fileName = file.originalname;
     const targetBucket = bucketName || this.DEFAULT_BUCKET;
+    const overwrite = options.overwrite ?? true;
 
     try {
       await this.ensureBucket(targetBucket);
@@ -297,13 +310,18 @@ export class SupabaseStorageClient {
           Authorization: `Bearer ${this.authToken}`,
           "Content-Type": file.mimetype || "application/octet-stream",
           "Cache-Control": "3600",
-          "x-upsert": "true", // For overwriting existing files
+          "x-upsert": String(overwrite), // "true" replaces an existing file
         },
         body: file.buffer,
       });
 
       if (!response.ok) {
         const errorText = await response.text();
+        // Storage answers a taken name like a duplicate bucket (409, or 400
+        // with "Duplicate" in the body), so the same check applies.
+        if (!overwrite && isBucketAlreadyExists(response.status, errorText)) {
+          throw new ObjectAlreadyExistsError(filePath);
+        }
         console.error(
           `Error uploading file: ${response.status} - ${errorText}`
         );
@@ -319,6 +337,7 @@ export class SupabaseStorageClient {
         bucket: targetBucket,
       };
     } catch (e) {
+      if (e instanceof ObjectAlreadyExistsError) throw e; // the caller picks another name
       console.error(
         `Error in upload method: ${e instanceof Error ? e.message : String(e)}`
       );

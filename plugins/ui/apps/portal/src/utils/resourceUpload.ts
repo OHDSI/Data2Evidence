@@ -20,7 +20,14 @@ export const formatMaxFileSize = (maxFileSizeBytes: number): string => {
   return `${Number.isInteger(mb) ? mb : Number(mb.toFixed(1))} MB`;
 };
 
-export type ResourceFileError = "type" | "empty" | "corrupted" | "size";
+export type ResourceFileError = "type" | "name" | "empty" | "corrupted" | "size";
+
+// A file name may only use English letters, digits, spaces, "-", "_", "." and
+// brackets "(" ")", as on the backend (the storage service refuses many other
+// characters).
+const ALLOWED_FILE_NAME = /^[A-Za-z0-9 _.()-]+$/;
+
+export const isFileNameAllowed = (fileName: string): boolean => ALLOWED_FILE_NAME.test(fileName);
 
 type UploadRules = { allowedExtensions: string[]; maxFileSizeBytes: number };
 
@@ -40,6 +47,7 @@ export const validateResourceFile = (
 ): ResourceFileError | undefined => {
   const extension = getExtension(file.name);
   if (!config.allowedExtensions.includes(extension)) return "type";
+  if (!isFileNameAllowed(file.name)) return "name";
   if (file.size === 0) return "empty";
   if (!isContentValid(content, extension)) return "corrupted";
   if (file.size > config.maxFileSizeBytes) return "size";
@@ -58,7 +66,7 @@ const readFileStart = (file: Blob, maxBytes: number): Promise<Uint8Array> =>
 
 // Checks a picked file. Only reads the file when the cheap checks pass.
 export const checkResourceFile = async (file: File, config: UploadRules): Promise<ResourceFileError | undefined> => {
-  if (!config.allowedExtensions.includes(getExtension(file.name)) || file.size === 0) {
+  if (!config.allowedExtensions.includes(getExtension(file.name)) || !isFileNameAllowed(file.name) || file.size === 0) {
     return validateResourceFile(file, config, new Uint8Array());
   }
   return validateResourceFile(file, config, await readFileStart(file, config.maxFileSizeBytes));

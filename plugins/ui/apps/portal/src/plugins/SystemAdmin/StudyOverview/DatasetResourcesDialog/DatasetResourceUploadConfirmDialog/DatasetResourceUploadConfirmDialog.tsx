@@ -127,6 +127,8 @@ const DatasetResourceUploadConfirmDialog: FC<DatasetResourceUploadConfirmDialogP
             getText(i18nKeys.DATASET_RESOURCE_UPLOAD_CONFIRM_DIALOG__OR)
           ),
         ]);
+      case "name":
+        return getText(i18nKeys.DATASET_RESOURCE_UPLOAD_CONFIRM_DIALOG__ERROR_NAME);
       case "empty":
         return getText(i18nKeys.DATASET_RESOURCE_UPLOAD_CONFIRM_DIALOG__ERROR_EMPTY);
       case "corrupted":

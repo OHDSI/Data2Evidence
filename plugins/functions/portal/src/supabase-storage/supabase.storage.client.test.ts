@@ -1,15 +1,23 @@
 import { afterEach, beforeEach, describe, it } from "@std/testing/bdd";
-import { assert, assertEquals } from "@std/assert";
-import { SupabaseStorageClient } from "./supabase.storage.client.ts";
+import { assert, assertEquals, assertRejects } from "@std/assert";
+import { ObjectAlreadyExistsError, SupabaseStorageClient } from "./supabase.storage.client.ts";
 
-// Records every request instead of calling storage, and answers each with 200.
-let requested: { method: string; url: string }[] = [];
+// Records every request instead of calling storage. Object uploads are
+// answered with `objectUploadResponse`; everything else with 200.
+let requested: { method: string; url: string; headers: Headers }[] = [];
+let objectUploadResponse: () => Response;
 const realFetch = globalThis.fetch;
 
 beforeEach(() => {
   requested = [];
+  objectUploadResponse = () => new Response("{}", { status: 200 });
   globalThis.fetch = ((input: string | URL | Request, init?: RequestInit) => {
-    requested.push({ method: init?.method ?? "GET", url: String(input) });
+    const method = init?.method ?? "GET";
+    const url = String(input);
+    requested.push({ method, url, headers: new Headers(init?.headers) });
+    if (method === "POST" && url.includes("/object/") && !url.includes("/object/list")) {
+      return Promise.resolve(objectUploadResponse());
+    }
     return Promise.resolve(new Response("{}", { status: 200 }));
   }) as typeof fetch;
 });
@@ -61,6 +69,57 @@ describe("SupabaseStorageClient object URLs", () => {
   });
 
   it("leaves ordinary names unchanged", async () => {
+    await new SupabaseStorageClient().download("ds-1", "Data_Dictionary-2024.csv");
+    assert(objectRequest("GET").endsWith("/datasets/ds-1/Data_Dictionary-2024.csv"));
+  });
+});
+
+// Issue #3508, 19 Nov: resource uploads must never replace an existing file.
+describe("SupabaseStorageClient.upload overwrite option", () => {
+  const file = { originalname: "abcd.txt", buffer: new Uint8Array([1]).buffer, mimetype: "text/plain" };
+  const uploadHeader = () =>
+    requested.find((r) => r.method === "POST" && r.url.includes("/datasets/"))?.headers.get("x-upsert");
+
+  it("overwrites by default, as other callers expect", async () => {
+    await new SupabaseStorageClient().upload("ds-1", file);
+    assertEquals(uploadHeader(), "true");
+  });
+
+  it("asks storage not to overwrite when told so", async () => {
+    await new SupabaseStorageClient().upload("ds-1", file, undefined, "dataset", { overwrite: false });
+    assertEquals(uploadHeader(), "false");
+  });
+
+  for (const [label, response] of [
+    ["409", () => new Response('{"error":"Duplicate"}', { status: 409 })],
+    ["400 with a Duplicate body", () =>
+      new Response('{"statusCode":"409","error":"Duplicate","message":"The resource already exists"}', { status: 400 })],
+  ] as const) {
+    it(`reports a taken name (${label}) as ObjectAlreadyExistsError`, async () => {
+      objectUploadResponse = response;
+      await assertRejects(
+        () => new SupabaseStorageClient().upload("ds-1", file, undefined, "dataset", { overwrite: false }),
+        ObjectAlreadyExistsError,
+      );
+    });
+  }
+
+  it("still reports other failures as a server error", async () => {
+    objectUploadResponse = () => new Response("boom", { status: 500 });
+    const error = await assertRejects(() =>
+      new SupabaseStorageClient().upload("ds-1", file, undefined, "dataset", { overwrite: false })
+    );
+    assertEquals(error instanceof ObjectAlreadyExistsError, false);
+  });
+});
+
+describe("SupabaseStorageClient object URLs, continued", () => {
+  it("encodes the space and brackets of a numbered name", async () => {
+    await new SupabaseStorageClient().download("ds-1", "abcd (1).txt");
+    assert(objectRequest("GET").endsWith("/datasets/ds-1/abcd%20(1).txt"));
+  });
+
+  it("leaves ordinary names unchanged (download)", async () => {
     await new SupabaseStorageClient().download("ds-1", "Data_Dictionary-2024.csv");
     assert(objectRequest("GET").endsWith("/datasets/ds-1/Data_Dictionary-2024.csv"));
   });

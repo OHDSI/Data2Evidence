@@ -370,6 +370,8 @@ export const i18nDefault = {
       "We couldn’t check this file for security threats right now, so it can’t be uploaded. Please try again later.",
     DATASET_RESOURCE_UPLOAD_CONFIRM_DIALOG__ERROR_CORRUPTED:
       "This file can’t be opened. It may be damaged or saved in a different format. Check the file or choose a different one.",
+    DATASET_RESOURCE_UPLOAD_CONFIRM_DIALOG__ERROR_NAME:
+      "This file name has characters that aren’t supported. Rename the file using only letters, numbers, spaces, hyphens (-), underscores (_), periods (.) or brackets ( ), then try again.",
     DATASET_RESOURCE_UPLOAD_CONFIRM_DIALOG__ERROR_TOO_LARGE: "This file is too large. Files must be {0} or smaller.",
     DATASET_RESOURCE_UPLOAD_CONFIRM_DIALOG__UNTITLED: "Untitled",
     DATASET_SELECTOR__SELECT_STUDY: "Select study",

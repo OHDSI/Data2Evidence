@@ -340,6 +340,7 @@
   "DATASET_RESOURCE_UPLOAD_CONFIRM_DIALOG__ERROR_BLOCKED": "Diese Datei wurde blockiert. Wir haben eine mögliche Sicherheitsbedrohung gefunden, daher wurde sie nicht hochgeladen. Überprüfen Sie die Datei oder wählen Sie eine andere aus.",
   "DATASET_RESOURCE_UPLOAD_CONFIRM_DIALOG__ERROR_SCAN_UNAVAILABLE": "Wir konnten diese Datei gerade nicht auf Sicherheitsbedrohungen prüfen, daher kann sie nicht hochgeladen werden. Bitte versuchen Sie es später erneut.",
   "DATASET_RESOURCE_UPLOAD_CONFIRM_DIALOG__ERROR_CORRUPTED": "Diese Datei kann nicht geöffnet werden. Sie ist möglicherweise beschädigt oder in einem anderen Format gespeichert. Überprüfen Sie die Datei oder wählen Sie eine andere aus.",
+  "DATASET_RESOURCE_UPLOAD_CONFIRM_DIALOG__ERROR_NAME": "Der Dateiname enthält nicht unterstützte Zeichen. Benennen Sie die Datei um und verwenden Sie dabei nur Buchstaben, Zahlen, Leerzeichen, Bindestriche (-), Unterstriche (_), Punkte (.) oder Klammern ( ). Versuchen Sie es dann erneut.",
   "DATASET_RESOURCE_UPLOAD_CONFIRM_DIALOG__ERROR_TOO_LARGE": "Diese Datei ist zu groß. Dateien dürfen höchstens {0} groß sein.",
   "DATASET_RESOURCE_UPLOAD_CONFIRM_DIALOG__UNTITLED": "Ohne Titel",
   "DATASET_SELECTOR__SELECT_STUDY": "Wählen Sie Studie",

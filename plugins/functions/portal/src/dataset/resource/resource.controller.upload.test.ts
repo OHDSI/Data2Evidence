@@ -4,23 +4,59 @@ import { HttpException } from "@danet/core";
 import { ResourceController } from "./resource.controller.ts";
 import { BLOCKED_MESSAGE, SCAN_UNAVAILABLE_MESSAGE, ScanResult } from "./resource-upload.scan.ts";
 import { ResourceService } from "./resource.service.ts";
-import { SupabaseStorageClient } from "../../supabase-storage/supabase.storage.client.ts";
+import { FILE_NAME_MESSAGE } from "./resource-upload.validation.ts";
+import {
+  ObjectAlreadyExistsError,
+  SupabaseStorageClient,
+} from "../../supabase-storage/supabase.storage.client.ts";
 import { RequestContextService } from "../../common/request-context.service.ts";
 
-// The real controller and service, with storage that records what reaches
-// it (so a test can prove a rejected file never does) and a fake scanner.
-const makeController = (scan: ScanResult = { status: "clean" }) => {
+// The real controller and service, with a fake scanner and a fake storage
+// that behaves like the real one: it lists the files already there, records
+// what reaches it (so a test can prove a rejected file never does), and,
+// when asked not to overwrite, refuses a name that is exactly taken.
+// `existing` are files already in the data source; `takenMeanwhile` are names
+// another upload grabs between this upload's listing and its write.
+const makeController = (
+  scan: ScanResult = { status: "clean" },
+  existing: string[] = [],
+  takenMeanwhile: string[] = [],
+) => {
   const uploaded: string[] = [];
+  const stored = new Set(existing);
+  const deleted: string[] = [];
+  const downloaded: string[] = [];
   const storage = {
-    upload: (_datasetId: string, file: { originalname: string }) => {
-      uploaded.push(file.originalname);
-      return Promise.resolve({ ok: true });
+    list: () => Promise.resolve(existing.map((name) => ({ name }))),
+    upload: (
+      _datasetId: string,
+      file: { originalname: string },
+      _bucket?: string,
+      _pathType?: string,
+      options: { overwrite?: boolean } = {},
+    ) => {
+      const name = file.originalname;
+      if (takenMeanwhile.includes(name)) stored.add(name);
+      if (options.overwrite === false && stored.has(name)) {
+        return Promise.reject(new ObjectAlreadyExistsError(`datasets/ds-1/${name}`));
+      }
+      stored.add(name);
+      uploaded.push(name);
+      return Promise.resolve({ status: "success" });
+    },
+    download: (_datasetId: string, name: string) => {
+      downloaded.push(name);
+      return Promise.resolve({});
+    },
+    delete: (_datasetId: string, name: string) => {
+      deleted.push(name);
+      return Promise.resolve({});
     },
   } as unknown as SupabaseStorageClient;
   const requestContext = { getAuthToken: () => ({ sub: "user-1" }) } as unknown as RequestContextService;
   const service = new ResourceService(storage, requestContext);
   service.scanner = () => Promise.resolve(scan);
-  return { controller: new ResourceController(service), uploaded };
+  return { controller: new ResourceController(service), service, uploaded, deleted, downloaded };
 };
 
 const uploadRequest = (fileName?: string, content = "content") => {
@@ -65,11 +101,14 @@ describe("ResourceController.uploadResource", () => {
     assertEquals(uploaded, ["data.CSV"]);
   });
 
-  it("stores a name storage would refuse with underscores, and says which name it used", async () => {
-    const { controller, uploaded } = makeController();
-    const result = await controller.uploadResource("ds-1", uploadRequest("Ärzte#1.txt"));
-    assertEquals(uploaded, ["_rzte_1.txt"]);
-    assertEquals((result as { fileName: string }).fileName, "_rzte_1.txt");
+  it("rejects a file name with unsupported characters with a 400 and stores nothing", async () => {
+    for (const name of ["Ärzte.txt", "report#1.txt", "notes [final].txt", "数据.csv"]) {
+      const { controller, uploaded } = makeController();
+      const error = await assertRejects(() => controller.uploadResource("ds-1", uploadRequest(name)), HttpException);
+      assertEquals(error.status, 400);
+      assertEquals(error.message, `400 - ${FILE_NAME_MESSAGE}`);
+      assertEquals(uploaded, [], name);
+    }
   });
 
   it("blocks an infected file with a 400 and stores nothing", async () => {
@@ -123,6 +162,68 @@ describe("ResourceController.checkResource", () => {
 });
 
 
+// Issue #3508, 19 Nov: an upload must never silently replace an existing file.
+describe("ResourceController.uploadResource: duplicate names", () => {
+  const storedName = async (existing: string[], name: string, takenMeanwhile: string[] = []) => {
+    const { controller, uploaded } = makeController({ status: "clean" }, existing, takenMeanwhile);
+    const result = await controller.uploadResource("ds-1", uploadRequest(name));
+    assertEquals(uploaded.length, 1);
+    assertEquals((result as { fileName: string }).fileName, uploaded[0]);
+    return uploaded[0];
+  };
+
+  it("keeps a name that is free", async () => {
+    assertEquals(await storedName([], "abcd.txt"), "abcd.txt");
+  });
+
+  it("numbers a duplicate with the lowest free suffix", async () => {
+    assertEquals(await storedName(["abcd.txt"], "abcd.txt"), "abcd (1).txt");
+    assertEquals(await storedName(["abcd.txt", "abcd (1).txt"], "abcd.txt"), "abcd (2).txt");
+    assertEquals(await storedName(["abcd.txt", "abcd (2).txt"], "abcd.txt"), "abcd (1).txt");
+  });
+
+  it("accepts a numbered duplicate uploaded again as it is, numbering it if taken", async () => {
+    assertEquals(await storedName(["abcd.txt"], "abcd (1).txt"), "abcd (1).txt");
+    assertEquals(await storedName(["abcd.txt", "abcd (1).txt"], "abcd (1).txt"), "abcd (1) (1).txt");
+  });
+
+  it("treats the same base name with a different type as a different file", async () => {
+    assertEquals(await storedName(["abcd.txt"], "abcd.csv"), "abcd.csv");
+  });
+
+  it("ignores case in both the base name and the extension, keeping the uploaded spelling", async () => {
+    assertEquals(await storedName(["abcd.txt"], "abcd.TXT"), "abcd (1).TXT");
+    assertEquals(await storedName(["abcd.txt"], "ABCD.txt"), "ABCD (1).txt");
+    assertEquals(await storedName(["abcd.txt", "ABCD (1).TXT"], "Abcd.Txt"), "Abcd (2).Txt");
+  });
+
+  it("never overwrites: picks the next number when another upload takes the name first", async () => {
+    assertEquals(await storedName(["abcd.txt"], "abcd.txt", ["abcd (1).txt"]), "abcd (2).txt");
+    assertEquals(await storedName([], "abcd.txt", ["abcd.txt"]), "abcd (1).txt");
+  });
+});
+
+// Review: download and delete take the name from the URL, so ".." or "/"
+// could reach outside the data source's folder.
+describe("ResourceController download and delete: file names", () => {
+  for (const name of ["..", ".", "../other-bucket/x", "..\\x", "a/b.txt"]) {
+    it(`refuses ${JSON.stringify(name)} without touching storage`, async () => {
+      const { controller, deleted, downloaded } = makeController();
+      const deleteError = await assertRejects(() => controller.deleteResource("ds-1", name), HttpException);
+      assertEquals(deleteError.status, 400);
+      await assertRejects(() => controller.downloadResource("ds-1", name), HttpException);
+      assertEquals(deleted, []);
+      assertEquals(downloaded, []);
+    });
+  }
+
+  it("passes an ordinary name through", async () => {
+    const { controller, deleted } = makeController();
+    await controller.deleteResource("ds-1", "abcd (1).pdf");
+    assertEquals(deleted, ["abcd (1).pdf"]);
+  });
+});
+
 describe("ResourceService.checkUpload memory use", () => {
   const LIMIT = 25 * 1024 * 1024; // the default RESOURCE_UPLOAD_MAX_FILE_SIZE_MB
 
@@ -151,22 +252,22 @@ describe("ResourceService.checkUpload memory use", () => {
     assertEquals(scanned, []);
   });
 
-  // Review: the file name is user input and went into the audit line as-is.
-  it("escapes the file name in the audit line", async () => {
+  // Review: the file name is user input. The name rule now keeps quotes and
+  // line breaks out entirely; JSON.stringify still quotes it as a safeguard.
+  it("writes the file name to the audit line quoted", async () => {
     const { service } = makeService();
     service.scanner = () => Promise.resolve({ status: "infected", signature: "Eicar-Test-Signature" });
     const logged: string[] = [];
     const realInfo = console.info;
     console.info = (message: string) => logged.push(message);
     try {
-      await service.checkUpload("ds-1", new File(["x"], 'a" for dataset 0\nforged.txt'));
+      await service.checkUpload("ds-1", new File(["x"], "eicar test.txt"));
     } finally {
       console.info = realInfo;
     }
 
     assertEquals(logged.length, 1);
-    assertEquals(logged[0].includes("\n"), false);
-    assertEquals(logged[0].includes('blocked: "a\\" for dataset 0\\nforged.txt" for dataset ds-1'), true);
+    assertEquals(logged[0].includes('blocked: "eicar test.txt" for dataset ds-1'), true);
   });
 
   it("passes the whole file to the scanner when it is within the limit", async () => {

@@ -8,17 +8,34 @@ export const getFileExtension = (fileName: string): string => {
   return lastDot > 0 ? fileName.slice(lastDot + 1).toLowerCase() : "";
 };
 
-// Characters the storage service accepts in an object name (its isValidKey:
-// ASCII letters, digits, "_" and these symbols). "/" is left out on purpose:
-// it would start a folder.
-const STORAGE_NAME_CHARACTER = /[A-Za-z0-9_!\-.*'()&$@=;:+,? ]/u;
+// A file name may only use English letters, digits, spaces, "-", "_", "."
+// and brackets "(" ")". The storage service refuses many other characters
+// (e.g. "#", "%", "ä" or Chinese letters), and "/" or "\" would start a
+// folder. Brackets also let a numbered duplicate ("abcd (1).pdf") be
+// uploaded again as it is.
+const ALLOWED_FILE_NAME = /^[A-Za-z0-9 _.()-]+$/;
 
-// The name a file is stored under. Storage refuses any other character, e.g.
-// "#", "%", "ä" or Chinese letters, so each one becomes "_": "Ärzte#1.pdf" is
-// stored as "_rzte_1.pdf". NFC first, so a letter with an accent counts as one
-// character whichever way the operating system wrote it.
-export const toStorageFileName = (fileName: string): string =>
-  Array.from(fileName.normalize("NFC"), (char) => (STORAGE_NAME_CHARACTER.test(char) ? char : "_")).join("");
+export const isFileNameAllowed = (fileName: string): boolean => ALLOWED_FILE_NAME.test(fileName);
+
+export const FILE_NAME_MESSAGE =
+  "This file name has characters that aren’t supported. Rename the file using only letters, numbers, spaces, hyphens (-), underscores (_), periods (.) or brackets ( ), then try again.";
+
+// The name to store a file under so it never replaces one already there: the
+// name itself if it is free, otherwise "<name> (n).<ext>" with the lowest
+// free n from 1. Names are compared ignoring case, base name and extension
+// alike, so "ABCD.PDF" counts as taken by "abcd.pdf".
+export const nextFreeFileName = (fileName: string, existingNames: string[]): string => {
+  const taken = new Set(existingNames.map((name) => name.toLowerCase()));
+  if (!taken.has(fileName.toLowerCase())) return fileName;
+
+  const lastDot = fileName.lastIndexOf(".");
+  const base = lastDot > 0 ? fileName.slice(0, lastDot) : fileName;
+  const extension = lastDot > 0 ? fileName.slice(lastDot) : "";
+  for (let n = 1; ; n++) {
+    const candidate = `${base} (${n})${extension}`;
+    if (!taken.has(candidate.toLowerCase())) return candidate;
+  }
+};
 
 const formatMaxFileSize = (maxFileSizeBytes: number): string => {
   const mb = maxFileSizeBytes / (1024 * 1024);
@@ -32,8 +49,8 @@ const formatTypeList = (allowedExtensions: string[]): string => {
 };
 
 // Returns the error message for a file that breaks the upload rules, or
-// undefined when it is allowed. Checked in order (extension, empty, content,
-// size), so a file of the wrong type only ever gets the type error.
+// undefined when it is allowed. Checked in order (extension, name, empty,
+// content, size), so a file of the wrong type only ever gets the type error.
 // `content` is the start of the file, up to the size limit. English only,
 // like other portal API errors; the Add file dialog shows its own translated
 // message first.
@@ -45,6 +62,9 @@ export const validateResourceFile = (
   const extension = getFileExtension(file.name);
   if (!config.allowedExtensions.includes(extension)) {
     return `This file type isn't supported. Upload a ${formatTypeList(config.allowedExtensions)} file.`;
+  }
+  if (!isFileNameAllowed(file.name)) {
+    return FILE_NAME_MESSAGE;
   }
   if (file.size === 0) {
     return "This file is empty.";

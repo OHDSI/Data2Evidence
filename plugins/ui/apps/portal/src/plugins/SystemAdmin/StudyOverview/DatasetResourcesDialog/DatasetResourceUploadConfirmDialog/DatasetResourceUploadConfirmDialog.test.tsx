@@ -108,6 +108,16 @@ describe("DatasetResourceUploadConfirmDialog", () => {
     );
   });
 
+  it("rejects a file name with unsupported characters, offers only Cancel, and doesn't ask the backend", async () => {
+    renderDialog("Ärzte#1.txt");
+
+    expect(await screen.findByTestId("feedback")).toHaveTextContent(
+      "DATASET_RESOURCE_UPLOAD_CONFIRM_DIALOG__ERROR_NAME"
+    );
+    expect(screen.queryByText(ADD)).not.toBeInTheDocument();
+    expect(mockCheckResource).not.toHaveBeenCalled();
+  });
+
   it("rejects an empty file and offers only Cancel", async () => {
     renderDialog("notes.txt", CONFIG, "");
 
@@ -269,11 +279,12 @@ describe("DatasetResourceUploadConfirmDialog", () => {
     };
 
     it("reports the name the backend stored the file under", async () => {
-      mockAddResource.mockResolvedValue({ fileName: "_rzte_1.txt" });
-      const [type, resource] = await uploadAndClose("Ärzte#1.txt");
+      // e.g. a duplicate the backend stored with a numbered suffix
+      mockAddResource.mockResolvedValue({ fileName: "notes (1).txt" });
+      const [type, resource] = await uploadAndClose("notes.txt");
 
       expect(type).toBe("success");
-      expect(resource.name).toBe("_rzte_1.txt");
+      expect(resource.name).toBe("notes (1).txt");
     });
 
     it("falls back to the picked file's name if the backend doesn't say", async () => {

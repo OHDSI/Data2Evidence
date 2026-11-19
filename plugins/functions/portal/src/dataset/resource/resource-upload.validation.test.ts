@@ -1,38 +1,73 @@
 import { describe, it } from "@std/testing/bdd";
 import { assertEquals } from "@std/assert";
 import { parseResourceUploadConfig } from "./resource-upload.config.ts";
-import { getFileExtension, toStorageFileName, validateResourceFile } from "./resource-upload.validation.ts";
+import {
+  FILE_NAME_MESSAGE,
+  getFileExtension,
+  isFileNameAllowed,
+  nextFreeFileName,
+  validateResourceFile,
+} from "./resource-upload.validation.ts";
 
-// The characters the storage service accepts in a name (its isValidKey).
-const STORAGE_KEY = /^(\w|\/|!|-|\.|\*|'|\(|\)| |&|\$|@|=|;|:|\+|,|\?)*$/;
-
-describe("toStorageFileName", () => {
-  it("keeps names storage accepts unchanged", () => {
-    for (const name of ["Data_Dictionary-2024.csv", "notes v2 (final).txt", "a?b.txt", "R&D, Q1+Q2.pdf"]) {
-      assertEquals(toStorageFileName(name), name);
+describe("isFileNameAllowed", () => {
+  it("accepts English letters, digits, spaces, hyphens, underscores and periods", () => {
+    for (const name of [
+      "Data_Dictionary-2024.csv", "notes v2.final.txt", "ETL script.sql", "a.md", "notes (final).txt", "abcd (1).pdf",
+    ]) {
+      assertEquals(isFileNameAllowed(name), true, name);
     }
   });
 
-  it("replaces each character storage refuses with an underscore", () => {
-    assertEquals(toStorageFileName("report#1.txt"), "report_1.txt");
-    assertEquals(toStorageFileName("100%.txt"), "100_.txt");
-    assertEquals(toStorageFileName("Ärzte.pdf"), "_rzte.pdf");
-    assertEquals(toStorageFileName("数据字典.csv"), "____.csv");
-    assertEquals(toStorageFileName("[draft] {v2}.md"), "_draft_ _v2_.md");
-  });
-
-  it("counts an accented letter as one character, however it was written", () => {
-    // "é" as one code point, and as "e" plus a combining accent (as macOS writes it)
-    assertEquals(toStorageFileName("café.txt"), "caf_.txt");
-    assertEquals(toStorageFileName("café.txt"), "caf_.txt");
-  });
-
-  it("always produces a name storage accepts, keeping the extension", () => {
-    for (const name of ["Ärzte#1.pdf", "100%.txt", "数据.csv", "a`b~c^d|e\"f<g>h.json", "emoji 😀.md"]) {
-      const stored = toStorageFileName(name);
-      assertEquals(STORAGE_KEY.test(`datasets/ds-1/${stored}`), true, stored);
-      assertEquals(getFileExtension(stored), getFileExtension(name));
+  it("refuses anything else", () => {
+    for (const name of [
+      "Ärzte.pdf", "café.txt", "数据.csv", "report#1.txt", "100%.txt", "notes [final].txt", "notes {final}.txt",
+      "R&D.pdf", "a?b.txt", "a/b.txt", "a\\b.txt", "emoji 😀.md", "tab\tname.txt", "",
+    ]) {
+      assertEquals(isFileNameAllowed(name), false, JSON.stringify(name));
     }
+  });
+});
+
+describe("validateResourceFile: file name", () => {
+  it("rejects an unsupported name with the name message", () => {
+    assertEquals(
+      validateResourceFile({ name: "Ärzte.pdf", size: 10 }, defaults, validContent("x.pdf")),
+      FILE_NAME_MESSAGE,
+    );
+  });
+
+  it("checks the type first, so a wrong type only gets the type error", () => {
+    assertEquals(validateResourceFile({ name: "Ärzte.exe", size: 10 }, defaults, enc.encode("x")), TYPE_ERROR);
+  });
+
+  it("checks the name before the file is empty, damaged or too large", () => {
+    assertEquals(validateResourceFile({ name: "a#b.txt", size: 0 }, defaults, new Uint8Array()), FILE_NAME_MESSAGE);
+    assertEquals(
+      validateResourceFile({ name: "a#b.txt", size: defaults.maxFileSizeBytes + 1 }, defaults, enc.encode("x")),
+      FILE_NAME_MESSAGE,
+    );
+  });
+});
+
+describe("nextFreeFileName", () => {
+  it("keeps a free name and numbers a taken one with the lowest free suffix", () => {
+    assertEquals(nextFreeFileName("abcd.pdf", []), "abcd.pdf");
+    assertEquals(nextFreeFileName("abcd.pdf", ["abcd.pdf"]), "abcd (1).pdf");
+    assertEquals(nextFreeFileName("abcd.pdf", ["abcd.pdf", "abcd (1).pdf"]), "abcd (2).pdf");
+    assertEquals(nextFreeFileName("abcd.pdf", ["abcd.pdf", "abcd (2).pdf"]), "abcd (1).pdf");
+  });
+
+  it("puts the suffix before the extension, even with several dots", () => {
+    assertEquals(nextFreeFileName("report.v2.pdf", ["report.v2.pdf"]), "report.v2 (1).pdf");
+  });
+
+  it("ignores case in the base name and the extension, keeping the given spelling", () => {
+    assertEquals(nextFreeFileName("ABCD.PDF", ["abcd.pdf"]), "ABCD (1).PDF");
+    assertEquals(nextFreeFileName("abcd.pdf", ["ABCD.PDF", "Abcd (1).Pdf"]), "abcd (2).pdf");
+  });
+
+  it("treats a different extension as a different file", () => {
+    assertEquals(nextFreeFileName("abcd.csv", ["abcd.pdf"]), "abcd.csv");
   });
 });
 
