@@ -117,10 +117,10 @@ const headers = computed<D2eDataTableHeader[]>(() => [
   { key: 'status', title: getText('MRI_PA_EXPLORATIONS_COL_STATUS'), sortable: true },
   { key: 'personCount', title: getText('MRI_PA_EXPLORATIONS_COL_PERSON_COUNT'), sortable: true },
   { key: 'lastMaterialized', title: getText('MRI_PA_EXPLORATIONS_COL_LAST_MATERIALIZED'), sortable: true },
-  { key: 'cohortId', title: getText('MRI_PA_EXPLORATIONS_COL_COHORT_ID'), sortable: true },
+  { key: 'cohortId', title: getText('MRI_PA_EXPLORATIONS_COL_COHORT_ID'), sortable: true, format: false },
   { key: 'createdBy', title: getText('MRI_PA_EXPLORATIONS_COL_CREATED_BY'), sortable: true },
   { key: 'lastUpdated', title: getText('MRI_PA_EXPLORATIONS_COL_LAST_UPDATED'), sortable: true },
-  { key: 'version', title: getText('MRI_PA_EXPLORATIONS_COL_VERSION'), width: COLUMN_WIDTHS.version },
+  { key: 'version', title: getText('MRI_PA_EXPLORATIONS_COL_VERSION'), width: COLUMN_WIDTHS.version, format: false },
   { key: 'actions', title: '', width: COLUMN_WIDTHS.actions },
 ])
 </script>
