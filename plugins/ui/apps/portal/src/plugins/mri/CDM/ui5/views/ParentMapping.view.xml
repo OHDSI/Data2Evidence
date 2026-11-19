@@ -1,0 +1,82 @@
+<mvc:View controllerName="hc.hph.cdw.config.ui.views.ParentMapping"
+    width="100%"
+    height="100%"
+    xmlns="sap.m"
+    xmlns:mvc="sap.ui.core.mvc"
+    xmlns:l="sap.ui.layout"
+    xmlns:m="hc.hph.cdw.config.ui.lib"
+    xmlns:core="sap.ui.core">
+    <l:VerticalLayout width="100%">
+        <l:content>
+            <FlexBox alignItems="Center"
+                justifyContent="Center">
+                <Label class="sapMxConfigPropLabel sapMxConfigSectionTitle"
+                    tooltip="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_PARENT_DETAILS}"
+                    text="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_PARENT_DETAILS}"></Label>
+            </FlexBox>
+
+            <Label class="sapMxConfigPropLabel"
+                required="true"
+                labelFor="parentLabelInput"
+                tooltip="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_PARENT_LABEL}"
+                text="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_PARENT_LABEL}"></Label>
+            <m:ValidityVisualElement text="{configEditorModel>parentMappingInteractionLabel/validity/message}"
+                tooltip="{configEditorModel>parentMappingInteractionLabel/validity/message}"
+                status="{configEditorModel>parentMappingInteractionLabel/validity/status}"></m:ValidityVisualElement>
+            <Input id="parentLabelInput"
+                class="sapTriggerSave sapMxConfigProp"
+                value="{configEditorModel>parentMappingInteractionLabel/value}"
+                valueLiveUpdate="true"
+                enabled="{editableModel>/editable}"
+                change="onFieldChange"></Input>
+
+            <Label class="sapMxConfigPropLabel"
+                required="true"
+                labelFor="parentInteractionSelect"
+                tooltip="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_PARENT_INTERACTION}"
+                text="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_PARENT_INTERACTION}"></Label>
+            <m:ValidityVisualElement text="{configEditorModel>parentInteraction/validity/message}"
+                tooltip="{configEditorModel>parentInteraction/validity/message}"
+                status="{configEditorModel>parentInteraction/validity/status}"></m:ValidityVisualElement>
+            <Select id="parentInteractionSelect"
+                class="sapTriggerSave sapMxConfigProp"
+                width="100%"
+                forceSelection="false"
+                selectedKey="{configEditorModel>parentInteraction/value}"
+                enabled="{editableModel>/editable}"
+                change="onFieldChange"
+                items="{parentOptions>/options}">
+                <core:Item key="{parentOptions>key}"
+                    text="{parentOptions>name}"></core:Item>
+            </Select>
+
+            <Label class="sapMxConfigPropLabel"
+                required="true"
+                labelFor="parentPlaceholderInput"
+                tooltip="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_PARENT_PLACEHOLDER}"
+                text="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_PARENT_PLACEHOLDER}"></Label>
+            <m:ValidityVisualElement text="{configEditorModel>parentMappingInteraction/validity/message}"
+                tooltip="{configEditorModel>parentMappingInteraction/validity/message}"
+                status="{configEditorModel>parentMappingInteraction/validity/status}"></m:ValidityVisualElement>
+            <Input id="parentPlaceholderInput"
+                class="sapTriggerSave sapMxConfigProp"
+                value="{configEditorModel>parentMappingInteraction/value}"
+                enabled="{editableModel>/editable}"
+                change="onFieldChange"></Input>
+
+            <Label class="sapMxConfigPropLabel"
+                labelFor="parentColumnInput"
+                tooltip="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_PARENT_COLUMN}"
+                text="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_PARENT_COLUMN}"></Label>
+            <m:ValidityVisualElement text="{configEditorModel>currentMappingInteractionId/validity/message}"
+                tooltip="{configEditorModel>currentMappingInteractionId/validity/message}"
+                status="{configEditorModel>currentMappingInteractionId/validity/status}"></m:ValidityVisualElement>
+            <Input id="parentColumnInput"
+                class="sapTriggerSave sapMxConfigProp"
+                value="{configEditorModel>currentMappingInteractionId/value}"
+                placeholder="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_PARENT_COLUMN_HINT}"
+                enabled="{editableModel>/editable}"
+                change="onFieldChange"></Input>
+        </l:content>
+    </l:VerticalLayout>
+</mvc:View>

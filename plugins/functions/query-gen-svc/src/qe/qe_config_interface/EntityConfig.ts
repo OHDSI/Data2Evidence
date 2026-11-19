@@ -82,9 +82,9 @@ export class EntityConfig extends ConfigEntity {
 
             if(!parentEntity) throw new Error("Parent entity undefined!");
 
-            const parentInteraction = this.__config?.parentInteractionsMapping?.find((parentInt) => {
-                return (parentInt.parentMappingInteraction.indexOf(`${parentEntity}`) > -1)
-            });
+            const parentInteraction = this.__config?.parentInteractionsMapping?.find(
+                (parentInt) => (parentInt.parentMappingInteraction || "").trim() === parentEntity
+            );
 
             return new AttributeConfig(
                 {

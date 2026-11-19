@@ -20,6 +20,10 @@ sap.ui.define([
             this.attributeView = sap.ui.xmlview({ type: sap.ui.core.mvc.ViewType.XML, viewName: "hc.hph.cdw.config.ui.views.Attribute" });
         }
 
+        if (!this.parentMappingView) {
+            this.parentMappingView = sap.ui.xmlview({ type: sap.ui.core.mvc.ViewType.XML, viewName: "hc.hph.cdw.config.ui.views.ParentMapping" });
+        }
+
 
 
         this._filterCardItemLayout = this.getView().byId(
@@ -29,6 +33,8 @@ sap.ui.define([
 
         this._AttributeLayout = this.getView().byId("AttributeLayout");
         this._AttributeLayout.addContent(this.attributeView);
+        this._AttributeLayout.addContent(this.parentMappingView);
+        this.parentMappingView.setVisible(false);
         this._AttributeLayout.setVisible(false);
 
         this._eventBus
@@ -47,6 +53,12 @@ sap.ui.define([
             .subscribe(
                 ConfigUtils.configEvents.EVENT_CONFIG_HIDE_ATTRIBUTE,
                 this._hideAttribute,
+                this);
+
+        this._eventBus
+            .subscribe(
+                ConfigUtils.configEvents.EVENT_CONFIG_PARENT_MAPPING_CHANGED,
+                this._showParentMapping,
                 this);
 
         this._eventBus
@@ -84,6 +96,12 @@ sap.ui.define([
 
         this._eventBus
             .unsubscribe(
+                ConfigUtils.configEvents.EVENT_CONFIG_PARENT_MAPPING_CHANGED,
+                this._showParentMapping,
+                this);
+
+        this._eventBus
+            .unsubscribe(
                 ConfigUtils.configEvents.EVENT_CONFIG_HIDE_FC,
                 this._hideFilterCard,
                 this);
@@ -116,9 +134,19 @@ sap.ui.define([
 
     ConfigEditorDetailsController.prototype._showAttribute = function () {
 
+        this.parentMappingView.setVisible(false);
+        this.attributeView.setVisible(true);
+
         var layout3 = this._AttributeLayout;
         layout3.setVisible(true);
 
+    };
+
+    ConfigEditorDetailsController.prototype._showParentMapping = function (sChannelId, sEventId, oEventData) {
+        this.attributeView.setVisible(false);
+        this.parentMappingView.getController().showMapping(oEventData);
+        this.parentMappingView.setVisible(true);
+        this._AttributeLayout.setVisible(true);
     };
 
     ConfigEditorDetailsController.prototype._hideAttribute = function () {
