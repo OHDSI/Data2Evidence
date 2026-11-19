@@ -426,6 +426,7 @@
             "description": "Connect and manage the AI providers used by the AI assistant",
             "descriptionI18nKey": "UI_PLUGIN_SETUP_AI_CONFIG_DESCRIPTION",
             "visible": true,
+            "featureFlag": "aiConfigManagement",
             "name": "AI configuration",
             "nameI18nKey": "UI_PLUGIN_AI_CONFIG",
             "pluginPath": "plugins/Setup/AiConfig/module",
