@@ -3,8 +3,18 @@ import { ref } from "vue";
 import D2eViewToggle from "./D2eViewToggle.vue";
 
 const options = [
-  { value: "grid", label: "Grid view", icon: "mdi-view-grid-outline" },
-  { value: "list", label: "List view", icon: "mdi-view-list-outline" },
+  {
+    value: "grid",
+    label: "Grid view",
+    icon: "mdi-view-grid-outline",
+    iconSize: 18,
+  },
+  {
+    value: "list",
+    label: "List view",
+    icon: "mdi-view-list-outline",
+    iconSize: 21,
+  },
 ];
 
 const grid = ref("grid");

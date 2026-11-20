@@ -34,9 +34,8 @@
 <script lang="ts">
 /**
  * The rename dialog, extracted so the exploration page has a card entry point
- * for #3122. The body and every dispatch are moved verbatim from
- * `Bookmarks.vue`; only the state ownership changes — the target arrives as a
- * prop and the open/close flag is `v-model`.
+ * for #3122. The target arrives as a prop and the open/close flag is
+ * `v-model`.
  */
 import { mapActions, mapGetters, mapMutations } from 'vuex'
 import { D2eButton, D2eDialog, D2eTextField } from '@d2e/ui'

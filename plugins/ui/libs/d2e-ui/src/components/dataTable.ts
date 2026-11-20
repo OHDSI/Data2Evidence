@@ -1,3 +1,5 @@
+import { formatNumber } from "./numberFormat";
+
 // Figma: the Data quality checks table — header row 2855:278875, body row
 // 2855:278884, pagination 2855:278894 and the expanded detail 1783:373766 (D2E
 // WebApp main file), built from the Table cell set 2445:7589 and Pagination
@@ -19,11 +21,21 @@ export const DATA_TABLE_STYLE_MAP = {
   },
 } as const;
 
+export const DATA_TABLE_COMPACT_STYLE_MAP = {
+  rowHeight: 40,
+  cellPaddingX: 8,
+  cellPaddingY: 10,
+  headerGap: 10,
+} as const;
+
+export type D2eDataTableDensity = "default" | "compact";
+
 export interface D2eDataTableHeader {
   key: string;
   title: string;
   sortable?: boolean;
   width?: number | string;
+  format?: boolean;
 }
 
 export interface D2eSortItem {
@@ -56,6 +68,46 @@ export function pageRange(
   return { start, end: Math.min(page * itemsPerPage, total), total };
 }
 
+export function formatRange(
+  page: number,
+  itemsPerPage: number,
+  total: number,
+): { start: string; end: string; total: string } {
+  const range = pageRange(page, itemsPerPage, total);
+  return {
+    start: formatNumber(range.start),
+    end: formatNumber(range.end),
+    total: formatNumber(range.total),
+  };
+}
+
+export function formatCell<V>(value: V, format = true): V | string {
+  return format && typeof value === "number" ? formatNumber(value) : value;
+}
+
+const ROW_ACTIVATION_KEYS: readonly string[] = ["Enter", " "];
+
+export type D2eClickableRowProps = {
+  tabindex: number;
+  onClick: () => void;
+  onKeydown: (event: KeyboardEvent) => void;
+};
+
+export function clickableRowProps(
+  onActivate: () => void,
+): D2eClickableRowProps {
+  return {
+    tabindex: 0,
+    onClick: onActivate,
+    onKeydown: (event) => {
+      if (event.target !== event.currentTarget) return;
+      if (!ROW_ACTIVATION_KEYS.includes(event.key)) return;
+      event.preventDefault();
+      onActivate();
+    },
+  };
+}
+
 /** How many pages the rows fill. Never less than one, so page 1 always exists. */
 export function pageCount(itemsPerPage: number, total: number): number {
   return Math.max(1, Math.ceil(total / itemsPerPage));
@@ -82,9 +134,13 @@ export interface D2eDataTableProps<T> {
   expanded?: string[];
   noDataText?: string;
   rowsPerPageLabel?: string;
-  rangeLabel?: (start: number, end: number, total: number) => string;
+  rangeLabel?: (start: string, end: string, total: string) => string;
   /** Accessible names of the four pager buttons. */
   pageLabels?: D2eDataTablePageLabels;
   /** Accessible name of each row's expand chevron. */
   expandLabel?: string;
+  density?: D2eDataTableDensity;
+  hover?: boolean;
+  hideFooter?: boolean;
+  rowClickable?: (item: T) => boolean;
 }

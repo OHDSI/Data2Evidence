@@ -3,6 +3,7 @@ import BoolContainerModel from '../models/BoolContainerModel'
 import BoolFilterContainerModel from '../models/BoolFilterContainerModel'
 import FilterCardModel from '../models/FilterCardModel'
 import MriFrontendConfig from '../MriFrontEndConfig'
+import { isParentAttrKey, PARENT_ATTR_PREFIX, splitParentIds } from '../parentInteractions'
 
 /**
  * Create a new AndConstraintVisitor.
@@ -86,8 +87,13 @@ ConstraintVisitor.prototype.visitExpression = function (sOperator, vValue) {
  * Visitor to traverse the IFR of a FilterCard and create the corresponding Contraints.
  * @alias hc.mri.pa.ui.lib.ifr.ControlGenerator.AttributeVisitor
  */
-function AttributeVisitor(oFilterCard) {
+function AttributeVisitor(oFilterCard, parentValues = {}) {
   this.oFilterCard = oFilterCard
+  this.parentValues = parentValues
+}
+
+AttributeVisitor.prototype.addParentFields = function (attrKeys) {
+  attrKeys.forEach(attrKey => this.oFilterCard.addParentField(attrKey, this.parentValues[attrKey]))
 }
 
 /**
@@ -120,6 +126,15 @@ AttributeVisitor.prototype.visitOr = function (aOrContent) {
  * @param {hc.mri.pa.ui.lib.ifr.BooleanContainers.BooleanContainer} oConstraints BooleanContainer
  */
 AttributeVisitor.prototype.visitAttribute = function (sConfigPath, sInstanceID, oConstraints) {
+  const attrKey = sConfigPath.substring(sConfigPath.lastIndexOf('.') + 1)
+  if (attrKey === PARENT_ATTR_PREFIX) {
+    this.addParentFields(Object.keys(this.parentValues))
+    return
+  }
+  if (isParentAttrKey(attrKey)) {
+    this.addParentFields([attrKey])
+    return
+  }
   this.oFilterCard.addConstraintForAttribute(sConfigPath)
   oConstraints.accept(
     new ConstraintVisitor(FilterCardModel.getConstraintForAttribute(this.oFilterCard.props, sConfigPath))
@@ -144,16 +159,29 @@ export default class ControlGenerator {
    * @returns {hc.mri.pa.ui.lib.BoolContainer}                           Generated Control
    */
   public static generate(oIFR, oRootControl) {
+    return ControlGenerator.generateWithReport(oIFR, oRootControl).controls
+  }
+
+  public static generateWithReport(oIFR, oRootControl) {
     const oControlGenerator = new ControlGenerator()
     if (oRootControl) {
       oControlGenerator.oControls = oRootControl
     }
     oIFR.accept(oControlGenerator)
-    return oControlGenerator.oControls
+    const controls = oControlGenerator.oControls
+    const cards = (controls?.props?.boolfiltercontainers || []).flatMap(container => container.props.filterCards)
+    const nameOf = (cardId: string) => cards.find(card => card.props.cardId === cardId)?.props.name || cardId
+    const droppedParentLinks = oControlGenerator.droppedParentLinks.map(link => ({
+      ...link,
+      parentName: nameOf(link.parentId),
+    }))
+    return { controls, droppedParentLinks }
   }
+
   public oControls = null
   public oCurrent = null
   public bIsExcluded = false
+  public droppedParentLinks: { cardName: string; parentId: string }[] = []
 
   constructor() {
     this.oControls = null
@@ -300,6 +328,14 @@ export default class ControlGenerator {
 
     this.oCurrent.addFilterCard(oFilterCard)
 
-    oAttributes.accept(new AttributeVisitor(oFilterCard))
+    const parentOptions = oFilterCard.getParentOptions()
+    const { byAttrKey, dropped } = splitParentIds(oParentInteraction, parentOptions)
+    const attributeVisitor = new AttributeVisitor(oFilterCard, byAttrKey)
+    oAttributes.accept(attributeVisitor)
+    attributeVisitor.addParentFields(parentOptions.map(option => option.attrKey).filter(attrKey => byAttrKey[attrKey]))
+    this.droppedParentLinks = [
+      ...this.droppedParentLinks,
+      ...dropped.map(parentId => ({ cardName: oFilterCard.props.name, parentId })),
+    ]
   }
 }

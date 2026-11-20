@@ -148,6 +148,11 @@ export interface YearRangeErrors {
   to?: string;
 }
 
+export function getYearOrderError(from: unknown, to: unknown): string | undefined {
+  if (!hasValue(from) || !hasValue(to)) return undefined;
+  return Number(to) < Number(from) ? "To year must be greater than or equal to from year" : undefined;
+}
+
 export function getYearRangeErrors(from: unknown, to: unknown, required: boolean): YearRangeErrors {
   const hasFrom = hasValue(from);
   const hasTo = hasValue(to);
@@ -157,9 +162,9 @@ export function getYearRangeErrors(from: unknown, to: unknown, required: boolean
   }
   if (!hasFrom) return { from: "From year is required" };
   if (!hasTo) return { to: "To year is required" };
-  if (Number(to) < Number(from)) return { to: "To year must be greater than or equal to from year" };
 
-  return {};
+  const orderError = getYearOrderError(from, to);
+  return orderError ? { to: orderError } : {};
 }
 
 export function getFieldGroupCompletionHint(group: ResolvedWizardFieldGroup): string | null {

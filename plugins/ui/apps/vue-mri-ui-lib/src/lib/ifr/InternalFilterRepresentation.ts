@@ -129,7 +129,7 @@ class FilterCard {
       .optionalProperty('advanceTimeFilter')
       .ofTypeObject()
       .optionalProperty('parentInteraction')
-      .ofTypeString()
+      .ofTypeStringOrStringArray()
       .optionalProperty('inactive')
       .ofTypeBoolean()
       .optionalProperty('isEntry')

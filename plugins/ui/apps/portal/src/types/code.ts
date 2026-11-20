@@ -19,6 +19,7 @@ export type ViewerCodeWithQueries = {
   name: string;
   code: string;
   type: string;
+  language?: string;
   queries: {
     name: string;
     queryName: string;

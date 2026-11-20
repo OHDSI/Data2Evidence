@@ -13,6 +13,7 @@ export interface ViewerDataState {
   code: string;
   originalCode: string;
   name: string;
+  language: string;
   isNewName: boolean;
   queries: QueryEntry[];
   originalQueryNames: string[];
@@ -39,6 +40,8 @@ export function useViewerData({
   const [code, setCode] = useState("");
   const [originalCode, setOriginalCode] = useState("");
   const [name, setName] = useState("");
+  // Language saved with the loaded code ("r", "python", ...); "" for a new or legacy code.
+  const [language, setLanguage] = useState("");
   const [isNewName, setIsNewName] = useState(false);
   const [queries, setQueries] = useState<QueryEntry[]>([]);
   const [originalQueryNames, setOriginalQueryNames] = useState<string[]>([]);
@@ -86,6 +89,7 @@ export function useViewerData({
           const firstCode = codes[0];
           setIsNewName(false);
           setName(firstCode.name);
+          setLanguage(firstCode.language ?? "");
           setCode(firstCode.code);
           setOriginalCode(firstCode.code);
           setQueries(firstCode.queries.map((q) => ({ queryName: q.queryName, sql: q.sql })));
@@ -93,6 +97,7 @@ export function useViewerData({
         } else {
           setIsNewName(true);
           setName("");
+          setLanguage("");
           setCode("");
           setOriginalCode("");
           setQueries([]);
@@ -135,6 +140,7 @@ export function useViewerData({
     if (selectedName === "__new__") {
       setIsNewName(true);
       setName("");
+      setLanguage("");
       setCode("");
       setOriginalCode("");
       setQueries([]);
@@ -144,6 +150,7 @@ export function useViewerData({
       setName(selectedName);
       const selectedCode = savedCodes.find((c) => c.name === selectedName);
       if (selectedCode) {
+        setLanguage(selectedCode.language ?? "");
         setCode(selectedCode.code);
         setOriginalCode(selectedCode.code);
         setQueries(selectedCode.queries.map((q) => ({ queryName: q.queryName, sql: q.sql })));
@@ -173,6 +180,11 @@ export function useViewerData({
     setName(newName);
   }, []);
 
+  const updateLanguage = useCallback((newLanguage: string) => {
+    dirtyRef.current = true;
+    setLanguage(newLanguage);
+  }, []);
+
   const updateQueries = useCallback<Dispatch<SetStateAction<QueryEntry[]>>>((value) => {
     dirtyRef.current = true;
     setQueries(value);
@@ -191,6 +203,7 @@ export function useViewerData({
     code,
     originalCode,
     name,
+    language,
     isNewName,
     queries,
     originalQueryNames,
@@ -200,6 +213,7 @@ export function useViewerData({
     applyTemplate,
     updateCode,
     updateName,
+    updateLanguage,
   markSaved,
   };
 }
