@@ -326,9 +326,7 @@ let encryptionKeysObjDataset = {
     visibilityStatus: "DEFAULT",
     attributes: [],
     tags: [],
-    dashboards: [],
-    cacheDatasetName: "",
-    cacheDatasetType: "omop"
+    dashboards: []
 };
 
 

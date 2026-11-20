@@ -101,8 +101,6 @@ export interface NewStudyInput {
     value: string;
   }[];
   tags: string[];
-  cacheDatasetName: string;
-  cacheDatasetType: string;
   webApiManaged?: boolean;
 }
 
