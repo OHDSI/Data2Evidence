@@ -40,6 +40,10 @@ class TypeValidator {
   public ofTypeBoolean() {
     return this.parentParameterObjectValidator.throwIfPropertyIsNotOfType(this.propertyName, 'boolean')
   }
+
+  public ofTypeStringOrStringArray() {
+    return this.parentParameterObjectValidator.throwIfPropertyIsNotStringOrStringArray(this.propertyName)
+  }
 }
 
 class DummyValidator {
@@ -77,6 +81,10 @@ class DummyValidator {
   }
 
   public ofTypeBoolean() {
+    return this.parentParameterObjectValidator
+  }
+
+  public ofTypeStringOrStringArray() {
     return this.parentParameterObjectValidator
   }
 }
@@ -126,6 +134,15 @@ class ParameterObjectValidator {
       throw new InvalidArgumentException(`Expected property "${propertyName}" to have any type of "${expectedTypes}"`)
     }
 
+    return this
+  }
+
+  public throwIfPropertyIsNotStringOrStringArray(propertyName) {
+    const value = this.parameterObjectToValidate[propertyName]
+    const isValid = typeof value === 'string' || (Array.isArray(value) && value.every(item => typeof item === 'string'))
+    if (!isValid) {
+      throw new InvalidArgumentException(`Expected property "${propertyName}" to be a string or an array of strings`)
+    }
     return this
   }
 

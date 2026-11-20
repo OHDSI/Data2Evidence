@@ -6,8 +6,9 @@ sap.ui.define([
     "hc/hph/cdw/config/ui/lib/ConfigModelsData",
     "hc/hph/cdw/config/ui/lib/FilterCard",
     "sap/ui/core/mvc/Controller",
-	"sap/m/MessageBox"
-], function (jQuery, BackendLinker, ConfigUtils, ConfigModelsManager, ConfigModelsData, FilterCard, Controller, MessageBox) {
+	"sap/m/MessageBox",
+    "hc/hph/cdw/config/ui/lib/ParentMappings"
+], function (jQuery, BackendLinker, ConfigUtils, ConfigModelsManager, ConfigModelsData, FilterCard, Controller, MessageBox, ParentMappings) {
     "use strict";
 
     var FilterCardItemController = Controller.extend("hc.hph.cdw.config.ui.views.FilterCardItem");
@@ -66,6 +67,16 @@ sap.ui.define([
                     formatter: function (title, len) {
                         return title + " (" + len + ")";
                     }
+                });
+
+        this
+            .getView()
+            .byId("parentMappingSection")
+            .bindProperty(
+                "title",
+                {
+                    parts: ["hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_PARENT_MAPPINGS", "configEditorModel>parentInteractionsMapping"],
+                    formatter: this.formatParentSectionTitle
                 });
 
         this
@@ -235,7 +246,7 @@ sap.ui.define([
 
         // bind visibility of controls
         var itemsArray = ["DefaultFilter",
-            "condTypeLabelId", "condTypeDDId", "pInteractionDDId", "pInteractionLabelId", "pInteractionLabelLabelId", "pInteractionLabel", "pInteractionMappingLabelId","pInteractionMappingLabel",
+            "condTypeLabelId", "condTypeDDId", "addParentButton", "parentMappingList",
             "LangListLayout", "tableListLayout"];
 
         itemsArray
@@ -547,75 +558,13 @@ sap.ui.define([
         }
 
         this.getView().bindObject(path);
+        this.getView().byId("parentMappingList").removeSelections(true);
         
         this._updateParentInteraction();
 
         this.getView().byId("DefaultFilter").firePlaceholderChange();
 
         this._oldID = this.getView().byId("interactionIDName").getProperty("value");
-    };
-
-    FilterCardItemController.prototype._parentInteractionMappingChanged = function (sChannelId, sEventId, oEventData) {
-        var model = this.getView().getModel("configEditorModel");
-        var path = this.getView().getBindingContext("configEditorModel").getPath()+"/parentInteractionsMapping";
-        var interactions = sChannelId.oSource.mProperties.selectedKeys;
-        var value = model.getProperty(path).value;
-        if(!value || value === "" || value === []) {
-            value = []
-        } else {
-            value = JSON.parse(value);
-            if (!interactions || interactions.length == 0) {
-                value = [];
-            } else {
-                 //interaction exist, value dont exist -> add value
-                interactions.forEach((interaction) => {
-                    var index = 0;
-                    var valueExist = value.some((mapping) => {
-                        if (mapping.parentInteraction === interaction) {
-                            return true;
-                        }
-                    })
-                    
-                    if (!valueExist) {
-                        value.push({
-                            "currentMappingInteractionId":"",
-                            "parentInteraction": interaction,
-                            "parentMappingInteraction":"",
-                            "parentMappingInteractionLabel":""
-                        })
-                    }
-                })
-
-                //interaction doesnt exist, value exist -> remove value
-                if (value.length > interactions.length) {
-                    var toBeRemovedInteractions = []
-                    value.forEach((mapping) => {
-                        var interactionsExist = interactions.some((interaction) => {
-                            if (interaction === mapping.parentInteraction) {
-                                return true;
-                            }
-                        })
-                        if (!interactionsExist) {
-                            toBeRemovedInteractions.push(mapping.parentInteraction)
-                        }
-                    })
-
-                    //Prune values
-                    value = value.filter((mapping) => {
-                        return ((mapping.parentInteraction).indexOf(toBeRemovedInteractions) < 0)
-                    })
-                }
-            }
-        }
-        var frontValue = {
-            value: JSON.stringify(value),
-            validity: {
-                message: "",
-                status: "valid"
-            }
-        };
-        model.setProperty(path, frontValue);
-        this._updateParentInteraction();
     };
 
     FilterCardItemController.prototype._onAddAttributePressed = function () {
@@ -671,14 +620,14 @@ sap.ui.define([
         
         if (dimTables.length === 0) {
             this.getView().byId("DefaultFilter").setMode("BASIC");
-            this.getView().byId("parentSection").setVisible(true);
+            this.getView().byId("parentAccordion").setVisible(true);
             this.getView().byId("conditionSection").setVisible(true);
             return;
         }
 
         var dimTable = dimTables[0];
       
-        this.getView().byId("parentSection").setVisible(dimTable.hierarchy);
+        this.getView().byId("parentAccordion").setVisible(dimTable.hierarchy);
         this.getView().byId("conditionSection").setVisible(dimTable.condition);
         
         if (!dimTable.oneToN) {
@@ -833,6 +782,80 @@ sap.ui.define([
 
 
 	};
+
+    FilterCardItemController.prototype.formatParentSectionTitle = function (title, mappings) {
+        return title + " (" + (Array.isArray(mappings) ? mappings.length : 0) + ")";
+    };
+
+    FilterCardItemController.prototype._parentMappingsPath = function () {
+        return this.getView().getBindingContext("configEditorModel").getPath() + "/parentInteractionsMapping";
+    };
+
+    FilterCardItemController.prototype._currentParentMappings = function () {
+        return this.getView().getModel("configEditorModel").getProperty(this._parentMappingsPath()) || [];
+    };
+
+    FilterCardItemController.prototype._setParentMappings = function (mappings) {
+        this.getView().getModel("configEditorModel").setProperty(this._parentMappingsPath(), mappings);
+        this._updateParentInteraction();
+    };
+
+    FilterCardItemController.prototype._interactionPath = function () {
+        var card = this._CurrentFilterCard || {};
+        var conditionKey = card.conditionType && card.conditionType.key;
+        return conditionKey
+            ? "patient.conditions." + conditionKey + ".interactions." + card.idName
+            : "patient.interactions." + card.idName;
+    };
+
+    FilterCardItemController.prototype._rowIndexOf = function (oEvent) {
+        var path = oEvent.getSource().getBindingContext("configEditorModel").getPath();
+        return parseInt(path.split("/").pop(), 10);
+    };
+
+    FilterCardItemController.prototype._showParentMapping = function (index) {
+        var list = this.getView().byId("parentMappingList");
+        var row = list.getItems()[index];
+        if (!row) {
+            return;
+        }
+        list.setSelectedItem(row, true);
+        sap.ui.getCore().getEventBus().publish(
+            ConfigUtils.configEvents.EVENT_CONFIG_PARENT_MAPPING_CHANGED,
+            {
+                path: this._parentMappingsPath() + "/" + index,
+                listPath: this._parentMappingsPath(),
+                index: index,
+                selfPath: this._interactionPath(),
+                editable: this.editableModel.getData().editable
+            }
+        );
+    };
+
+    FilterCardItemController.prototype._onAddParentPressed = function () {
+        var mappings = ParentMappings.add(this._currentParentMappings());
+        this._setParentMappings(mappings);
+        this._showParentMapping(mappings.length - 1);
+    };
+
+    FilterCardItemController.prototype._onParentSelected = function (oEvent) {
+        var row = oEvent.getParameter("listItem");
+        var path = row.getBindingContext("configEditorModel").getPath();
+        this._showParentMapping(parseInt(path.split("/").pop(), 10));
+    };
+
+    FilterCardItemController.prototype._onDuplicateParentPressed = function (oEvent) {
+        var index = this._rowIndexOf(oEvent);
+        this._setParentMappings(ParentMappings.duplicate(this._currentParentMappings(), index));
+        this._showParentMapping(index + 1);
+    };
+
+    FilterCardItemController.prototype._onDeleteParentPressed = function (oEvent) {
+        var index = this._rowIndexOf(oEvent);
+        this._setParentMappings(ParentMappings.remove(this._currentParentMappings(), index));
+        this.getView().byId("parentMappingList").removeSelections(true);
+        sap.ui.getCore().getEventBus().publish(ConfigUtils.configEvents.EVENT_CONFIG_HIDE_ATTRIBUTE);
+    };
 
     FilterCardItemController.prototype._updateParentInteraction = function () {
         sap.ui.getCore().getEventBus().publish(

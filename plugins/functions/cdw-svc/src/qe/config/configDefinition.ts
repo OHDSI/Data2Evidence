@@ -213,10 +213,34 @@ export function getDefinition(tableMapping: any) {
     mandatory: false,
     type: "array",
     strict: true,
+    rules: [
+      {
+        name: "Each parent interaction can only be mapped once",
+        messageKey: "HPH_CDM_CFG_VALID_DUPLICATE_PARENT_INTERACTION",
+        rule: new rulesLib.UniqueValidation(
+          new rulesLib.ChildPropertySelector(
+            new rulesLib.BaseSelector(),
+            "parentInteraction"
+          )
+        ),
+      },
+    ],
     children: [
       {
         type: "object",
         children: [
+          {
+            name: "parentMappingInteractionLabel",
+            mandatory: false,
+            type: "string",
+          },
+          {
+            name: "parentInteraction",
+            mandatory: true,
+            type: "string",
+            regex:
+              "^patient\\.(interactions|conditions\\.[0-9a-zA-Z_]+\\.interactions)\\.[0-9a-zA-Z_]+$",
+          },
           {
             name: "currentMappingInteractionId",
             mandatory: false,
@@ -226,7 +250,7 @@ export function getDefinition(tableMapping: any) {
           },
           {
             name: "parentMappingInteraction",
-            mandatory: false,
+            mandatory: true,
             type: "string",
             isExpression: false,
             regex: "^@(" + sPlaceholders + ")$",
