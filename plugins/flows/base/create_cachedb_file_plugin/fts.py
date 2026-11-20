@@ -8,6 +8,7 @@ from prefect.tasks import exponential_backoff
 
 from .types import CopyParameters
 from .copy import get_trex_connection
+from .stage_timing import StageName, StageSummary, stage
 from .utils import (
     get_tables_for_fts,
     get_document_identifier,
@@ -78,7 +79,7 @@ def create_fts_index(write_conn: any, copy_params: CopyParameters, logger):
     tables_for_fts = get_tables_for_fts(copy_params.fts_tables, copied_tables)
     logger.info(f"Tables selected for FTS index creation: {tables_for_fts}")
 
-    for vocab_table in tables_for_fts:
+    def create_table_index(vocab_table):
         logger.info(f"Processing table '{vocab_table}' for FTS index creation.")
 
         config_document_identifier = get_document_identifier(vocab_table)
@@ -136,14 +137,20 @@ def create_fts_index(write_conn: any, copy_params: CopyParameters, logger):
             f"FTS creation SQL for '{target_schema}'.'{vocab_table}': {fts_creation_sql}"
         )
 
-        fts_creation_time = execute_statement(write_conn, fts_creation_sql)
+        execute_statement(write_conn, fts_creation_sql)
         logger.info(
-            f"DuckDB FTS index created for table '{vocab_table}' in schema '{target_schema}'. Execution took {fts_creation_time} seconds."
+            f"DuckDB FTS index created for table '{vocab_table}' in schema '{target_schema}'."
         )
 
         verify_fts_index(
             write_conn, target_database, target_schema, vocab_table, logger
         )
+
+    summary = StageSummary(target_schema, StageName.FTS)
+    for vocab_table in tables_for_fts:
+        with stage(logger, StageName.FTS, summary=summary, schema=target_schema, table=vocab_table):
+            create_table_index(vocab_table)
+    logger.info(summary.line())
 
     # The index schemas and any surrogate-key columns added above are DDL, so
     # they sit in the WAL until checkpointed and are invisible to the next
