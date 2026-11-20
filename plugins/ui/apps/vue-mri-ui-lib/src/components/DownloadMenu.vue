@@ -212,6 +212,7 @@ export default {
           case 'csv':
             this.csvShow = true
             break
+          case 'image':
           case 'svg':
             this.imageFormat = arg === 'svg' ? 'svg' : 'png'
             try {
@@ -219,7 +220,7 @@ export default {
             } catch (error) {
               console.error('[DownloadMenu] ImageExport failed to load', error)
               this.imageShow = false
-              this._showExportToast('error', this.fileTypeKeyMap['image'])
+              this.showExportErrorToast(this.fileTypeKeyMap[arg])
               return
             }
             this.imageShow = true
