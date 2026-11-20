@@ -128,7 +128,7 @@ test(TEST_NAME, async ({ page }) => {
     await page.getByTestId('pa-save-dialog-save-btn').click()
     await expect(page.getByText('Filters saved.')).toBeVisible()
 
-    await page.locator('#pane-left').getByRole('link', { name: 'Cohorts' }).click()
+    await page.locator('#pane-left').getByRole('link', { name: 'Data exploration' }).click()
     await expect(explorationBookmarkCard(page, BOOKMARK_NAME)).toBeVisible()
     await explorationBookmarkCard(page, BOOKMARK_NAME).click()
     await expect(parentField(page, VISIT_PARENT)).toContainText(VISIT_CARD)
@@ -138,7 +138,7 @@ test(TEST_NAME, async ({ page }) => {
   })
 
   await test.step('Clean up', async () => {
-    await page.locator('#pane-left').getByRole('link', { name: 'Cohorts' }).click()
+    await page.locator('#pane-left').getByRole('link', { name: 'Data exploration' }).click()
     await deleteExploration(page, BOOKMARK_NAME)
     await expect(explorationBookmarkCard(page, BOOKMARK_NAME)).not.toBeVisible()
   })
