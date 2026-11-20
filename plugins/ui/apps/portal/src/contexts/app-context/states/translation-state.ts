@@ -1274,6 +1274,7 @@ export const i18nDefault = {
     MANAGE_METADATA_DIALOG__IMPORT_JSON: "Import from JSON",
     MANAGE_METADATA_DIALOG__IMPORTED: "Metadata imported successfully",
     MANAGE_METADATA_DIALOG__IMPORT_INVALID: "Couldn't import the file. Please provide a valid JSON export.",
+    MANAGE_METADATA_DIALOG__ERROR: "Couldn't save the metadata. Please try again.",
     MANAGE_METADATA_DIALOG__IMPORT_EMPTY: "No metadata entries in the file.",
     MANAGE_METADATA_DIALOG__IMPORT_PREVIEW_TITLE: "Import metadata – preview",
     MANAGE_METADATA_DIALOG__IMPORT_UNKNOWN_BANNER:

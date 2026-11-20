@@ -1,4 +1,4 @@
-import { Alert, Button, Checkbox, Dialog, MarkdownField, Select, TextField } from "ui-react";
+import { Button, Checkbox, Dialog, MarkdownField, Select, TextField } from "ui-react";
 import React, { FC, useCallback, useEffect, useMemo, useState } from "react";
 import { api } from "../../../../axios/api";
 import { FEATURE_FHIR_SERVER } from "../../../../config";
@@ -513,6 +513,7 @@ const AddDataSourceDialog: FC<AddDataSourceDialogProps> = ({ open, onClose, load
   return (
     <Dialog
       title={getText(i18nKeys.ADD_DATA_SOURCE_DIALOG__ADD_DATA_SOURCE)}
+      banner={feedback?.message && { severity: feedback.type ?? "error", message: feedback.message }}
       size="l"
       open={open}
       busy={loading}
@@ -529,11 +530,6 @@ const AddDataSourceDialog: FC<AddDataSourceDialogProps> = ({ open, onClose, load
       }
     >
       <div className="add-data-source-dialog__content">
-        {feedback?.message && (
-          <Alert severity={feedback.type ?? "error"} variant="banner">
-            {feedback.message}
-          </Alert>
-        )}
         <div style={{ fontWeight: "bold" }}>{getText(i18nKeys.ADD_DATA_SOURCE_DIALOG__INFO_CONFIG)}</div>
         <div>
           <TextField
