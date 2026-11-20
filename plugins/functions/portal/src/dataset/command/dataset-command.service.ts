@@ -1296,6 +1296,7 @@ export class DatasetCommandService {
 
     const dataset = {
       id: datasetInfo.id,
+      databaseCode: datasetInfo.databaseCode,
       dialect: datasetInfo.dialect,
       schemaName: datasetInfo.schemaName,
       vocabSchemaName: datasetInfo.vocabSchemaName,

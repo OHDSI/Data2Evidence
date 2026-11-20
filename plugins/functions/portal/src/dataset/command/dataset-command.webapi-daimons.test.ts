@@ -172,7 +172,7 @@ describe('updateDatasetDetailMetadata — keeping WebAPI daimons in step', () =>
 })
 
 describe('syncWebApiSource — cache catalog', () => {
-  it('hands the dataset cacheId to the WebAPI source sync', async () => {
+  it('hands the dataset cacheId and databaseCode to the WebAPI source sync', async () => {
     // getDbCredentialsByCode reads the Trex runtime global once and caches it.
     ;(globalThis as any).Trex = {
       databaseManager: () => ({
@@ -194,5 +194,8 @@ describe('syncWebApiSource — cache catalog', () => {
     await real.call(harness.svc, DATASET_ID)
     delete (globalThis as any).Trex
     assertEquals(received.map((d) => d.cacheId), ['_cache_1'])
+    // A HANA source is registered against `<databaseCode>__srcdb`; without the
+    // code the sync falls back to the unsupported `hana` dialect and is skipped.
+    assertEquals(received.map((d) => d.databaseCode), ['pg_db'])
   })
 })
