@@ -9,6 +9,7 @@ from prefect.logging import get_run_logger
 
 from .utils import *
 from .concurrency_reconciliation import reconcile_stale_concurrency_slots
+from .stage_timing import StageName, stage
 from .fts import create_fts_index_task, create_fts_index
 from .versioninfo import update_dataset_metadata
 from .copy import create_schema_tables_task, create_schema_if_not_exists_task, create_schema_if_not_exists, create_schema_tables
@@ -148,7 +149,8 @@ def create_cache_flow(options: CreateCacheOptions, protect_webapi_results: bool 
             create_schema_if_not_exists(file_conn, copy_params, logger)
             if source_schema_exists:
                 attach_to_source_db(dbdao, file_conn, copy_params.source_database)
-                create_schema_tables(file_conn, dbdao, copy_params, logger)
+                with stage(logger, StageName.SCHEMA_TOTAL, schema=copy_params.target_schema):
+                    create_schema_tables(file_conn, dbdao, copy_params, logger)
                 normalize_columns_to_lowercase(file_conn, copy_params, logger)
                 create_fts_index(file_conn, copy_params, logger)
             else:
@@ -172,14 +174,17 @@ def create_cache_flow(options: CreateCacheOptions, protect_webapi_results: bool 
         # tag (limit 1). A task killed outright (OOM, SIGKILL, Docker daemon restart)
         # never transitions out of RUNNING, so nothing ever releases its slot and every
         # later run parks forever. Reconcile before touching either tag.
-        reconcile_stale_concurrency_slots(
-            ["flow-level-concurrency", "table-level-concurrency"],
-            int(Variable.get("cache_concurrency_slot_stale_after_seconds", default="21600")),
-            logger,
-        )
-        create_schema_if_not_exists_task(options.use_trex_connection, copy_params, duckdb_file_path)
-        create_schema_tables_task(options.use_trex_connection, dbdao, copy_params, duckdb_file_path)
-        create_fts_index_task(options.use_trex_connection, copy_params, duckdb_file_path)
+        with stage(logger, StageName.FLOW_TOTAL, schema=copy_params.target_schema):
+            with stage(logger, StageName.SLOT_RECONCILE):
+                reconcile_stale_concurrency_slots(
+                    ["flow-level-concurrency", "table-level-concurrency"],
+                    int(Variable.get("cache_concurrency_slot_stale_after_seconds", default="21600")),
+                    logger,
+                )
+            with stage(logger, StageName.SCHEMA_SETUP, schema=copy_params.target_schema):
+                create_schema_if_not_exists_task(options.use_trex_connection, copy_params, duckdb_file_path)
+            create_schema_tables_task(options.use_trex_connection, dbdao, copy_params, duckdb_file_path)
+            create_fts_index_task(options.use_trex_connection, copy_params, duckdb_file_path)
 
 
 @task(log_prints=True, task_run_name="copy_all_schemas_from_{read_conn.database_code}", cache_policy=NONE)
