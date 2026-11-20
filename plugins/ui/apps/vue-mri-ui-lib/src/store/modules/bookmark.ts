@@ -418,7 +418,7 @@ const actions = {
       })
       .catch(error => {
         if (isLoadAll && isCurrentLoadAll()) {
-          // Cohort list load failures surface as an in-list error state (see Bookmarks.vue).
+          // Cohort list load failures surface as an in-list error state (see ExplorationsPage.vue).
           // Keep rethrowing so awaiting callers retain their current control flow.
           commit(types.SET_BOOKMARKS_LOAD_ERROR, { loadError: true })
         }

@@ -129,16 +129,14 @@ def build_shiny_live_assets(language: str, app_dir: str) -> str:
         logger.info(f"Bundled {utils_file} into {utils_file_dest}")
 
     if language == "r":
-        raise NotImplementedError("Shiny Live app building for 'R' is not implemented yet.")
-        # r_script_path = os.path.join(
-        #     os.path.dirname(__file__), "build_shiny_live.R")
+        r_script_path = os.path.join(
+            os.path.dirname(__file__), "build_shiny_live.R")
 
-        # # TODO: Consider using rpy2 for better integration once this issuse is resolved:  https://github.com/rpy2/rpy2/issues/1121
-        # logger.info(
-        #     f"Running R script to build Shiny Live assets: {r_script_path}")
-        # logger.info(f"App directory: {app_dir}")
-        # ShellOperation(
-        #     commands=[f"Rscript {r_script_path} '{app_dir}' '{os.path.join(app_dir, 'docs')}'"], stream_output=True).run()
+        # TODO: Consider using rpy2 for better integration once this issue is resolved: https://github.com/rpy2/rpy2/issues/1121
+        logger.info(
+            f"Running R script to build Shiny Live assets: {r_script_path}")
+        ShellOperation(
+            commands=[f"Rscript '{r_script_path}' '{app_dir}' '{os.path.join(app_dir, 'docs')}'"], stream_output=True).run()
 
     elif language == "python":
         logger.info("Building Python Shiny Live app assets...")

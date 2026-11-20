@@ -162,7 +162,7 @@ function getBookmarkKey(bookmark) {
 import VButton from './vuetify/VButton.vue'
 import { D2eDialog } from '@d2e/ui'
 import { lazyComponent } from '../utils/lazyComponent'
-import type { RuleFilterCardDetails } from '../query-filter/types/InclusionReportTypes'
+import type { RuleFilterCardDetails } from '../types/InclusionReportTypes'
 import {
   getAttributeName,
   getAdvanceTimeFilterFormatted,
@@ -171,10 +171,7 @@ import {
 
 // Loaded on demand so plotly.js stays out of the single-spa entry's static
 // dependency graph. See docs: the chart chunk was blocking mount.
-const InclusionReport = lazyComponent(
-  'InclusionReport',
-  () => import('../query-filter/components/InclusionReport/index.vue')
-)
+const InclusionReport = lazyComponent('InclusionReport', () => import('./InclusionReport/index.vue'))
 
 export default {
   name: 'chartToolbar',
@@ -477,7 +474,7 @@ export default {
 
     fetchInclusionReport() {
       const mriquery = JSON.stringify(this.getBookmarksData)
-      const datasetId = this.getBookmarksData.datasetId
+      const datasetId = this.getSelectedDataset.id
 
       if (this.inclusionReportCache && this.inclusionReportCache.mriquery === mriquery) {
         return Promise.resolve(this.inclusionReportCache.result)
@@ -493,7 +490,7 @@ export default {
     },
     fetchSelectiveInclusionReport(ruleOrder?: number[]) {
       const mriquery = JSON.stringify(this.getBookmarksData)
-      const datasetId = this.getBookmarksData.datasetId
+      const datasetId = this.getSelectedDataset.id
       const params: Record<string, any> = { mriquery, datasetId }
       if (ruleOrder) {
         params.ruleOrder = JSON.stringify(ruleOrder)
