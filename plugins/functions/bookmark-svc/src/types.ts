@@ -165,28 +165,6 @@ export interface IFormattedBookmark {
   paConfigId?: string | undefined
 }
 
-export interface IAtlasCohortDefinition {
-  id: number
-  name: string
-  description: string | null
-  expressionType: string
-  expression: unknown
-  createdBy: string
-  createdDate: number
-  modifiedBy: string
-  modifiedDate: number
-  tags: string[]
-}
-
-export interface IFormattedAtlasCohortDefinition {
-  id: number
-  name: string
-  username: string
-  createdOn: string
-  updatedOn: string
-  cohortDefinitionId?: number | undefined
-}
-
 export interface IFrontendBookmark {
   schemaName: string
   bookmarks: IFormattedBookmark[]
