@@ -438,6 +438,7 @@ export const i18n = {
     MRI_PA_BUTTON_REMATERIALIZE: 'Re-materialize',
     MRI_PA_COLL_CONFIRM_MATERIALIZE: 'Materialize this cohort?',
     MRI_PA_EXPLORATIONS_TITLE: 'Data Exploration',
+    MRI_PA_EXPLORATIONS_TAB_TITLE: 'Data exploration',
     MRI_PA_EXPLORATIONS_DESCRIPTION:
       'Get quick insights about your data source, an easy way to validate whether a cohort is possible before defining it further for your study. Save your exploration filter and reuse it across the site, then materialize it against different data sources.',
     MRI_PA_EXPLORATIONS_DATASOURCE: 'Data source',
@@ -1597,6 +1598,7 @@ export const i18n = {
     MRI_PA_BUTTON_REMATERIALIZE: 'Erneut materialisieren',
     MRI_PA_COLL_CONFIRM_MATERIALIZE: 'Diese Kohorte materialisieren?',
     MRI_PA_EXPLORATIONS_TITLE: 'Datenerkundung',
+    MRI_PA_EXPLORATIONS_TAB_TITLE: 'Datenerkundung',
     MRI_PA_EXPLORATIONS_DESCRIPTION:
       'Erhalten Sie schnelle Einblicke in Ihre Datenquelle und prüfen Sie auf einfache Weise, ob eine Kohorte möglich ist, bevor Sie sie für Ihre Studie weiter definieren. Speichern Sie Ihren Explorationsfilter und verwenden Sie ihn auf der gesamten Website wieder, um ihn dann gegen verschiedene Datenquellen zu materialisieren.',
     MRI_PA_EXPLORATIONS_DATASOURCE: 'Datenquelle',
@@ -2743,6 +2745,7 @@ export const i18n = {
     MRI_PA_BUTTON_REMATERIALIZE: '重新物化',
     MRI_PA_COLL_CONFIRM_MATERIALIZE: '物化此队列？',
     MRI_PA_EXPLORATIONS_TITLE: '数据探索',
+    MRI_PA_EXPLORATIONS_TAB_TITLE: '数据探索',
     MRI_PA_EXPLORATIONS_DESCRIPTION:
       '快速了解您的数据源，轻松验证群组是否可行，然后再为您的研究进一步定义。保存您的探索过滤器并在整个站点中重复使用，然后针对不同的数据源进行物化。',
     MRI_PA_EXPLORATIONS_DATASOURCE: '数据源',
