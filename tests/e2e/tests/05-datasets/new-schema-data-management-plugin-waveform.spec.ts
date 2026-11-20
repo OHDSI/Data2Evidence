@@ -40,19 +40,22 @@ const deleteDatasetsIfPresent = async (page: Page, name: string) => {
   }
 }
 
-// Logs in as admin only if the session is not already signed in (hooks and test share the same page)
+// Hooks and the test share one page, so sign in only on its first visit. The signed-out
+// public landing page renders the same button test ids before redirecting to sign-in,
+// so the DOM cannot tell the two states apart.
+const signedInPages = new WeakSet<Page>()
+
 const openAdminPortal = async (page: Page) => {
   await page.goto('/d2e/portal')
-  const identifier = page.locator('input[name="identifier"]')
-  const accountButton = page.getByTestId('button').nth(1)
-  // Continue as soon as either the login form or the signed-in account button shows up
-  await expect(identifier.or(accountButton)).toBeVisible({ timeout: MINUTE_1 })
-  if (await identifier.isVisible()) {
+  if (!signedInPages.has(page)) {
+    const identifier = page.locator('input[name="identifier"]')
+    await expect(identifier).toBeVisible({ timeout: MINUTE_1 })
     await identifier.fill('admin')
     await page.locator('input[name="password"]').fill('Updatepassword12345')
     await page.getByRole('button', { name: 'Sign in' }).click()
+    signedInPages.add(page)
   }
-  await accountButton.click()
+  await page.getByTestId('button').nth(1).click()
   await page.getByRole('button', { name: 'Switch to Admin portal' }).click()
 }
 

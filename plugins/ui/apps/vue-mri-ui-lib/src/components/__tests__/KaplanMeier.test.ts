@@ -99,6 +99,7 @@ describe('KaplanMeier.vue overlapping analytics queries', () => {
         getFireRequest: (state: any) => state.fireCount,
         isFireRequestHeld: () => false,
         getBookmarksData: () => ({ cards: ['c1'] }),
+        getSelectedDataset: () => ({ id: '1' }),
         getText: () => (key: string) => key,
         getKMDisplayInfo: () => () => ({ censoring: true, errorlines: 1 }),
         getSplitterWidth: () => ({}),

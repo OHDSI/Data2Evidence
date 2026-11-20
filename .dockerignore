@@ -8,7 +8,6 @@ docs
 jenkinsfile
 node_modules
 tests
-plugins/ui/apps/vue-mri-ui-lib/src/query-filter/mock-server/static
 plugins/ui/apps/webr-notebook/public/kernel-assets
 plugins/ui/apps/vue-mri-ui-lib/dist-atlas
 plugins/ui/apps/vue-mri-ui-lib/dist-atlas-native

@@ -109,11 +109,11 @@ function download(kind: string): void {
   downloadText(`﻿${toCsv(shown.value)}`, exportFileName('csv'), 'text/csv;charset=utf-8');
 }
 
-const rangeLabel = (start: number, end: number, total: number) =>
+const rangeLabel = (start: string, end: string, total: string) =>
   t('plugins.dataQuality.checks.range', '{start}-{end} of {total}')
-    .replace('{start}', String(start))
-    .replace('{end}', String(end))
-    .replace('{total}', String(total));
+    .replace('{start}', start)
+    .replace('{end}', end)
+    .replace('{total}', total);
 
 const pageLabels = computed(() => ({
   first: t('plugins.dataQuality.checks.pageFirst', 'First page'),
