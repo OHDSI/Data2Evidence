@@ -4,7 +4,6 @@
 
 import * as configDefinitionLib from "./configDefinition";
 import * as mFormatter from "./formatter";
-import { stripRemovedOptions } from "./removedOptions.ts";
 import {validator as validatorlib, configTools, GetUser, FFHConfig} from "@alp/alp-config-utils";
 import { Connection as connLib } from "@alp/alp-base-utils";
 import ConnectionInterface = connLib.ConnectionInterface;
@@ -175,7 +174,6 @@ export class MRIConfig {
     }
 
     public validateConfig(config, dependentConfig, callback: connLib.CallBackInterface) {
-        stripRemovedOptions(config);
         this.ffhConfig.getCDWConfig({
             configId: dependentConfig.configId,
             configVersion: dependentConfig.configVersion + "",
@@ -781,7 +779,6 @@ export class MRIConfig {
     }
 
     private _saveConfig(configId, configVersion, configName, config, dependentConfig, lang, callback: connLib.CallBackInterface) {
-        stripRemovedOptions(config);
         this._validateWizardsConfig(config);
         config = this.formatter.trimConfigForSaving(config);
 
