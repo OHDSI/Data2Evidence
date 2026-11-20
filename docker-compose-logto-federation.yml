@@ -54,6 +54,8 @@ services:
       # to true to bring the password form back, e.g. to let a trex-native
       # admin in while Logto is unavailable.
       TREX_NATIVE_PASSWORD_LOGIN_ENABLED: ${TREX_NATIVE_PASSWORD_LOGIN_ENABLED:-false}
-      # Roles live in trex after the migration; Logto-side group mapping must not
-      # reconcile them away.
-      IDP__AUTO_PROVISION_USERS: "false"
+      # Defaults off so the migration's trex roles aren't reconciled away by
+      # Logto group mapping; a connector deployment sets it true via .env.
+      IDP__AUTO_PROVISION_USERS: ${IDP__AUTO_PROVISION_USERS:-false}
+      D2E_IDP_SCOPE: "openid profile email idp_groups offline_access"
+      IDP__GROUP_ROLE_MAPPING: '${IDP__GROUP_ROLE_MAPPING:-{"logto":{"role.systemadmin":"role.systemadmin","role.useradmin":"role.useradmin","role.dashboardviewer":"role.dashboardviewer"}}}'

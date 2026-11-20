@@ -2,7 +2,15 @@ import { defineConfig } from '@playwright/test'
 import dotenv from 'dotenv'
 import { MINUTE_1, MINUTE_3, SECOND_20, SECOND_30 } from './tests/const'
 
+// Load an optional per-provider env file (E2E_ENV_FILE) first; dotenv won't override
+// already-set vars, so the files below only fill in the rest.
+if (process.env.E2E_ENV_FILE) {
+  dotenv.config({ path: process.env.E2E_ENV_FILE, quiet: true })
+}
 dotenv.config({ quiet: true })
+// Stack secrets (trex service-role key, Logto M2M) live in the repo-root env file, not tests/e2e.
+dotenv.config({ path: '../../.env', quiet: true })
+dotenv.config({ path: '../../.env.local', quiet: true })
 
 // The HANA demo setup provisions "Demo dataset HANA" from CDMSYNPUF5PCT rather
 // than the DuckDB demo dataset, so specs that assert on demo data, cohort
@@ -23,6 +31,14 @@ const isHana = process.env.E2E_DB_DIALECT === 'hana'
 export default defineConfig({
   testDir: 'tests',
   ...(isHana ? { testMatch: HANA_SPECS.map((spec) => `**/${spec}`) } : {}),
+  testIgnore: process.env.SKIP_IDP_SPECS
+    ? [
+        '**/idp/logto-federated.spec.ts',
+        '**/idp/physionet.spec.ts',
+        '**/idp/entra-external-id.spec.ts',
+        '**/idp/entra.spec.ts'
+      ]
+    : [],
   timeout: MINUTE_3, // 3 minutes per test
   expect: {
     timeout: SECOND_30 // 30 seconds for expect conditions

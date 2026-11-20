@@ -55,6 +55,7 @@ export interface MigrationConfig {
   userDomain: string
   /** The configured initial admin, adopted into its Logto subject (see adoptSeedAdmin). */
   seedAdmin?: { username: string; usermgmtId?: string }
+  autoProvision?: boolean
 }
 
 export interface MigrationSummary {
@@ -248,9 +249,10 @@ export async function runIdpMigration(
       clientSecret: cfg.clientSecret,
       issuer: cfg.logtoIssuer,
       authorizationEndpoint: `${cfg.publicOrigin.replace(/\/+$/, '')}/oidc/auth`,
-      scopes: 'openid profile email',
-      groupsSource: 'none',
-      autoProvision: false,
+      scopes: 'openid profile email roles',
+      groupsSource: 'claim',
+      groupsClaim: 'roles',
+      autoProvision: cfg.autoProvision ?? false,
       enabled: true
     })
   } catch (err) {

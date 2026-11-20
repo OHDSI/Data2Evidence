@@ -22,6 +22,7 @@ const { UserGroupService } = await import('../services/UserGroupService.ts')
 const { B2cGroupService } = await import('../services/B2cGroupService.ts')
 const { EntitlementsSyncService } = await import('../services/EntitlementsSyncService.ts')
 const { LogtoAPI } = await import('../api/LogtoAPI.ts')
+const { AutoProvisionService } = await import('../services/AutoProvisionService.ts')
 const { grantRolesByScopes } = await import('./grant-roles-by-scopes.ts')
 
 const IDP_USER_ID = 'idp-user-1'
@@ -117,8 +118,9 @@ const withEnv = async (fn: () => Promise<void>, groupRoleMapping = '{}') => {
   }
 }
 
-const run = async (tokenOverrides: Record<string, unknown> = {}) => {
+const run = async (tokenOverrides: Record<string, unknown> = {}, extraStubs?: () => void) => {
   const stubs = installStubs()
+  extraStubs?.()
 
   const req: any = {
     body: { sync: true },
@@ -200,6 +202,57 @@ Deno.test('idp_groups from a federated session are mapped to roles and granted',
     )
     assertEquals(groupCalls.every(c => c.userId === USER_ID), true)
   }, mapping)
+})
+
+Deno.test('Logto role names federated through trex are granted via the logto identity mapping', async () => {
+  const mapping = JSON.stringify({
+    logto: { [IDP_SCOPE_ROLE.SYSTEM_ADMIN]: IDP_SCOPE_ROLE.SYSTEM_ADMIN, [IDP_SCOPE_ROLE.USER_ADMIN]: IDP_SCOPE_ROLE.USER_ADMIN }
+  })
+
+  await withEnv(async () => {
+    const { groupCalls } = await run({ roles: [], idp_groups: [IDP_SCOPE_ROLE.SYSTEM_ADMIN], idp_provider: 'logto' })
+
+    assertEquals(groupIds(groupCalls, 'register'), [groupFor(ROLES.ALP_SYSTEM_ADMIN)])
+    assertEquals(
+      groupIds(groupCalls, 'withdraw'),
+      [groupFor(ROLES.ALP_DASHBOARD_VIEWER), groupFor(ROLES.ALP_USER_ADMIN)].sort()
+    )
+  }, mapping)
+})
+
+Deno.test('a first-time federated subject unknown to Logto is created, not deleted', async () => {
+  const created: Record<string, unknown>[] = []
+  let deleted = false
+  const previousFetchType = env.IDP_FETCH_USER_INFO_TYPE
+  env.IDP_FETCH_USER_INFO_TYPE = 'logto'
+  try {
+    await withEnv(async () => {
+      const { res } = await run({ roles: [] }, () => {
+        Container.set(LogtoAPI, {
+          getUser: () => Promise.reject(Object.assign(new Error('Not Found'), { response: { status: 404 } })),
+          deleteUser: () => {
+            deleted = true
+            return Promise.resolve()
+          }
+        })
+        Container.set(UserService, {
+          getUserByIdpUserId: () => Promise.resolve(null),
+          getUserByUsername: () => Promise.resolve(null),
+          createUser: (user: Record<string, unknown>) => {
+            created.push(user)
+            return Promise.resolve()
+          }
+        })
+        Container.set(AutoProvisionService, { provision: () => Promise.resolve(null) })
+      })
+
+      assertEquals(res.statusCode, undefined)
+      assertEquals(deleted, false)
+      assertEquals(created.map(u => [u.username, u.idp_user_id]), [['researcher@d2e.local', IDP_USER_ID]])
+    })
+  } finally {
+    env.IDP_FETCH_USER_INFO_TYPE = previousFetchType
+  }
 })
 
 Deno.test('idp_groups from a provider not present in the mapping grant nothing extra', async () => {
