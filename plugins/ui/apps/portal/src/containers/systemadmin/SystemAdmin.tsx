@@ -11,6 +11,7 @@ import { SystemAdminPluginRenderer } from "../../plugins/core/SystemAdminPluginR
 import { initializeImportMap } from "../../singleSpa";
 import { useSystemFeatures } from "../../hooks/useSystemFeatures";
 import { Account } from "../shared/Account/Account";
+import { NotFoundRedirect } from "../shared/NotFound/NotFoundRedirect";
 import env from "../../env";
 import "./SystemAdmin.scss";
 
@@ -58,6 +59,8 @@ const SystemAdmin: FC = () => {
   }, [plugins]);
 
   const singleSpaApps = useMemo(() => systemAdminPluginsFlat.filter((p) => p.type === "app"), [systemAdminPluginsFlat]);
+
+  const singleSpaAppRoutes = useMemo(() => singleSpaApps.map((p) => p.route), [singleSpaApps]);
 
   const legacyPlugins = useMemo(() => systemAdminPluginsFlat.filter((p) => p.type !== "app"), [systemAdminPluginsFlat]);
 
@@ -173,6 +176,7 @@ const SystemAdmin: FC = () => {
                 />
               ));
             })}
+            <Route path="*" element={<NotFoundRedirect section="systemadmin" appRoutes={singleSpaAppRoutes} />} />
           </Route>
         </Routes>
       </main>

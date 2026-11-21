@@ -15,6 +15,7 @@
   },
   "dependencies": {
     "@data2evidence/atlas-data-quality": "file:./subplugins/data-quality",
+    "@data2evidence/atlas-not-found": "file:./subplugins/not-found",
     "@ohdsi/atlas3": "0.1.0",
     "@ohdsi/network-plugin": "file:./trex-notebook/plugins/network",
     "@ohdsi/notebook-plugin": "file:./trex-notebook/plugins/notebook-plugin",

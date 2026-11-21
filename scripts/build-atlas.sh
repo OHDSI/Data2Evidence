@@ -68,6 +68,16 @@ if [ ! -f "$DQ_DIR/dist/index.system.js" ]; then
   exit 1
 fi
 
+# not-found is a file: dep of plugins/atlas like data-quality, so it too must
+# be built before the atlas install below, whose postinstall stages its dist/.
+NF_DIR="$ATLAS_DIR/subplugins/not-found"
+echo "[build-atlas] Building sub-plugin: not-found ($NF_DIR)"
+( cd "$NF_DIR" && npm install && npm run build )
+if [ ! -f "$NF_DIR/dist/index.system.js" ]; then
+  echo "[build-atlas] ERROR: not-found did not produce dist/index.system.js" >&2
+  exit 1
+fi
+
 echo "[build-atlas] Building the Atlas plugin (assembles Atlas3 + sub-plugin dists)..."
 ( cd "$ATLAS_DIR" && npm install && npm run build )
 

@@ -6,6 +6,7 @@ import { App } from "./App";
 import { theme } from "./theme";
 import { NavigationGuardRouter } from "./components/NavigationGuardRouter/NavigationGuardRouter";
 import { extractDeepLinkParamsFromUrl, saveDeepLinkParams } from "./utils/deepLinkStorage";
+import { PORTAL_BASENAME, isUnderPortalBasename, redirectToNotFound } from "./utils/notFound";
 import "./webcomponents/registerWebComponents";
 import "ui-react/tokens.css";
 import "ui-react/style.css";
@@ -26,14 +27,20 @@ try {
   console.warn("Failed to save deep link params on initial load:", error);
 }
 
-const root = ReactDOM.createRoot(document.getElementById("root") as HTMLElement);
-root.render(
-  <StrictMode>
-    <ThemeProvider theme={theme}>
-      <CssBaseline />
-      <NavigationGuardRouter basename="/d2e/portal">
-        <App />
-      </NavigationGuardRouter>
-    </ThemeProvider>
-  </StrictMode>
-);
+// The portal is also served under /portal/*, where the router below matches
+// nothing and would leave the page empty (#2261).
+if (!isUnderPortalBasename(window.location.pathname)) {
+  redirectToNotFound();
+} else {
+  const root = ReactDOM.createRoot(document.getElementById("root") as HTMLElement);
+  root.render(
+    <StrictMode>
+      <ThemeProvider theme={theme}>
+        <CssBaseline />
+        <NavigationGuardRouter basename={PORTAL_BASENAME}>
+          <App />
+        </NavigationGuardRouter>
+      </ThemeProvider>
+    </StrictMode>
+  );
+}

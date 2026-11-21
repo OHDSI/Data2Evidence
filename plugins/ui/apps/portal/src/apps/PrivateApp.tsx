@@ -5,6 +5,7 @@ import { Researcher } from "../containers/researcher/Researcher";
 import SystemAdmin from "../containers/systemadmin/SystemAdmin";
 import Etl from "../containers/etl/Etl";
 import NoAccess from "../containers/shared/NoAccess/NoAccess";
+import { NotFoundRedirect } from "../containers/shared/NotFound/NotFoundRedirect";
 import { Logout } from "../containers/auth/Logout";
 import { LoginSilent } from "../containers/auth/LoginSilent";
 import { config } from "../config";
@@ -63,9 +64,12 @@ export const PrivateApp: FC = () => {
             <Route path={config.ROUTES.logout} element={<Logout />} />
             <Route path={config.ROUTES.noAccess} element={<NoAccess />} />
             <Route path="/" element={<Navigate to={defaultRoute} />}>
-              <Route path="public" element={<Navigate to={defaultRoute} />} />
+              {/* Every public page, not just /public: signed-in users go home rather than to "not found". */}
+              <Route path="public/*" element={<Navigate to={defaultRoute} />} />
               <Route path="login" element={<Navigate to={defaultRoute} />} />
             </Route>
+            {/* Includes a portal this user may not open, e.g. /researcher without researcher access. */}
+            <Route path="*" element={<NotFoundRedirect />} />
           </Routes>
         </>
       )}
