@@ -334,6 +334,7 @@ export const i18nDefault = {
     DATASET_FILTERS__YEAR_RANGE: "Year range:",
     DATASET_RESOURCES_DIALOG__ACTION: "Action",
     DATASET_RESOURCES_DIALOG__ADD_FILE: "Add file",
+    DATASET_RESOURCES_DIALOG__ADD_FILE_TOOLTIP: "Accepted format: {0}\nMax {1} per file",
     DATASET_RESOURCES_DIALOG__CANCEL: "Cancel",
     DATASET_RESOURCES_DIALOG__DELETE: "Delete",
     DATASET_RESOURCES_DIALOG__DONE: "Done",
@@ -344,6 +345,7 @@ export const i18nDefault = {
     DATASET_RESOURCES_DIALOG__NO_FILE_AVAILABLE: "No file available",
     DATASET_RESOURCES_DIALOG__SIZE: "Size",
     DATASET_RESOURCES_DIALOG__SUCCESS: "File deleted successfully.",
+    DATASET_RESOURCES_DIALOG__UPLOAD_SUCCESS: "“{0}” added successfully",
     DATASET_RESOURCES_DIALOG__TITLE_1: "Resources",
     DATASET_RESOURCES_DIALOG__TITLE_2: "Untitled",
     DATASET_RESOURCE_UPLOAD_CONFIRM_DIALOG__ADD: "Add",
@@ -353,6 +355,18 @@ export const i18nDefault = {
     DATASET_RESOURCE_UPLOAD_CONFIRM_DIALOG__ERROR_DESCRIPTION:
       "Please try again. To report the error, please send an email to your administrator.",
     DATASET_RESOURCE_UPLOAD_CONFIRM_DIALOG__FILE: "File",
+    DATASET_RESOURCE_UPLOAD_CONFIRM_DIALOG__ERROR_TYPE: "This file type isn't supported. Upload a {0} file.",
+    DATASET_RESOURCE_UPLOAD_CONFIRM_DIALOG__OR: "or",
+    DATASET_RESOURCE_UPLOAD_CONFIRM_DIALOG__ERROR_EMPTY: "This file is empty.",
+    DATASET_RESOURCE_UPLOAD_CONFIRM_DIALOG__ERROR_BLOCKED:
+      "This file is blocked. We found a possible security threat, so it wasn’t uploaded. Check the file or choose a different one.",
+    DATASET_RESOURCE_UPLOAD_CONFIRM_DIALOG__ERROR_SCAN_UNAVAILABLE:
+      "We couldn’t check this file for security threats right now, so it can’t be uploaded. Please try again later.",
+    DATASET_RESOURCE_UPLOAD_CONFIRM_DIALOG__ERROR_CORRUPTED:
+      "This file can’t be opened. It may be damaged or saved in a different format. Check the file or choose a different one.",
+    DATASET_RESOURCE_UPLOAD_CONFIRM_DIALOG__ERROR_NAME:
+      "This file name has characters that aren’t supported. Rename the file using only letters, numbers, spaces, hyphens (-), underscores (_), periods (.) or brackets ( ), then try again.",
+    DATASET_RESOURCE_UPLOAD_CONFIRM_DIALOG__ERROR_TOO_LARGE: "This file is too large. Files must be {0} or smaller.",
     DATASET_RESOURCE_UPLOAD_CONFIRM_DIALOG__UNTITLED: "Untitled",
     DATASET_SELECTOR__SELECT_STUDY: "Select study",
     DATA_CHARACTERIZATION_REPORTS__REPORT_SELECTOR_LABEL: "Select data characterization report",

@@ -1,4 +1,4 @@
-import React, { FC, useCallback, useState } from "react";
+import React, { FC, useCallback, useEffect, useMemo, useState } from "react";
 import { SxProps } from "@mui/system";
 import Divider from "@mui/material/Divider";
 import FormControl from "@mui/material/FormControl";
@@ -7,13 +7,22 @@ import Grid from "@mui/material/Grid";
 import { Button, Dialog, TermsOfUseIcon } from "@portal/components";
 import { api } from "../../../../../axios/api";
 import { getFileSizeDisplay, getFileExtension } from "../../../../../utils";
-import { CloseDialogType, DatasetResource, Feedback } from "../../../../../types";
+import {
+  checkResourceFile,
+  formatFileTypeList,
+  formatMaxFileSize,
+  ResourceFileError,
+} from "../../../../../utils/resourceUpload";
+import { CloseDialogType, DatasetResource, Feedback, ResourceUploadConfig } from "../../../../../types";
 import "./DatasetResourceUploadConfirmDialog.scss";
 import { useTranslation } from "../../../../../contexts";
 
 interface DatasetResourceUploadConfirmDialogProps {
   datasetId: string;
   file?: File;
+  // Upload rules from the backend. When missing, the dialog skips its own
+  // check and relies on the backend's.
+  uploadConfig?: ResourceUploadConfig;
   open: boolean;
   onClose?: (type: CloseDialogType, resource?: DatasetResource) => void;
 }
@@ -37,9 +46,16 @@ const styles: SxProps = {
   },
 };
 
+// Rule failures from the browser, plus the backend's malware scan results.
+type FileError = ResourceFileError | "blocked" | "scan-unavailable";
+
+// The API prefixes messages with the status code ("400 - ...").
+const stripStatusPrefix = (message: unknown) => String(message).replace(/^\d{3} - /, "");
+
 const DatasetResourceUploadConfirmDialog: FC<DatasetResourceUploadConfirmDialogProps> = ({
   datasetId,
   file,
+  uploadConfig,
   open,
   onClose,
 }) => {
@@ -48,9 +64,89 @@ const DatasetResourceUploadConfirmDialog: FC<DatasetResourceUploadConfirmDialogP
   const extension = getFileExtension(file?.name).toUpperCase();
   const [loading, setLoading] = useState(false);
 
+  // Checked as soon as the file is picked, before Add: first the rules in the
+  // browser, then (if they pass) the backend runs them again and scans the
+  // file for malware without storing it.
+  const [fileError, setFileError] = useState<FileError>();
+  const [checkMessage, setCheckMessage] = useState<string>();
+  const [checking, setChecking] = useState(false);
+
+  useEffect(() => {
+    setFileError(undefined);
+    setCheckMessage(undefined);
+    setChecking(false);
+    if (!file) return undefined;
+    let cancelled = false;
+    setChecking(true);
+
+    const check = async () => {
+      if (uploadConfig) {
+        const ruleError = await checkResourceFile(file, uploadConfig);
+        if (cancelled || ruleError) {
+          if (!cancelled) setFileError(ruleError);
+          return;
+        }
+      }
+      try {
+        const { result } = await api.systemPortal.checkResource(datasetId, file);
+        if (cancelled) return;
+        if (result === "infected") setFileError("blocked");
+        else if (result === "unavailable") setFileError("scan-unavailable");
+      } catch (error: any) {
+        if (cancelled) return;
+        console.error("Failed to check file", error);
+        // A rule the browser couldn't check (e.g. no config) comes back as a
+        // message; anything else means the file couldn't be checked: fail closed.
+        if (error?.data?.message) setCheckMessage(stripStatusPrefix(error.data.message));
+        else setFileError("scan-unavailable");
+      }
+    };
+
+    check().finally(() => {
+      if (!cancelled) setChecking(false);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [datasetId, file, uploadConfig]);
+
+  const validationError = useMemo(() => {
+    if (checkMessage) return checkMessage;
+    switch (fileError) {
+      case "blocked":
+        return getText(i18nKeys.DATASET_RESOURCE_UPLOAD_CONFIRM_DIALOG__ERROR_BLOCKED);
+      case "scan-unavailable":
+        return getText(i18nKeys.DATASET_RESOURCE_UPLOAD_CONFIRM_DIALOG__ERROR_SCAN_UNAVAILABLE);
+    }
+    if (!uploadConfig) return undefined;
+    switch (fileError) {
+      case "type":
+        return getText(i18nKeys.DATASET_RESOURCE_UPLOAD_CONFIRM_DIALOG__ERROR_TYPE, [
+          formatFileTypeList(
+            uploadConfig.allowedExtensions,
+            getText(i18nKeys.DATASET_RESOURCE_UPLOAD_CONFIRM_DIALOG__OR)
+          ),
+        ]);
+      case "name":
+        return getText(i18nKeys.DATASET_RESOURCE_UPLOAD_CONFIRM_DIALOG__ERROR_NAME);
+      case "empty":
+        return getText(i18nKeys.DATASET_RESOURCE_UPLOAD_CONFIRM_DIALOG__ERROR_EMPTY);
+      case "corrupted":
+        return getText(i18nKeys.DATASET_RESOURCE_UPLOAD_CONFIRM_DIALOG__ERROR_CORRUPTED);
+      case "size":
+        return getText(i18nKeys.DATASET_RESOURCE_UPLOAD_CONFIRM_DIALOG__ERROR_TOO_LARGE, [
+          formatMaxFileSize(uploadConfig.maxFileSizeBytes),
+        ]);
+      default:
+        return undefined;
+    }
+  }, [checkMessage, fileError, uploadConfig, getText, i18nKeys]);
+
+  // `storedName` is the name the backend stored the file under, which can
+  // differ from the picked file's name (see addResource).
   const mapFileToResource = useCallback(
-    (file: File): DatasetResource => ({
-      name: file.name,
+    (file: File, storedName?: string): DatasetResource => ({
+      name: storedName || file.name,
       size: getFileSizeDisplay(file.size),
       type: getFileExtension(file.name).toUpperCase(),
     }),
@@ -68,13 +164,14 @@ const DatasetResourceUploadConfirmDialog: FC<DatasetResourceUploadConfirmDialogP
 
       if (type === "success") {
         try {
-          await api.systemPortal.addResource(datasetId, file);
-          typeof onClose === "function" && onClose(type, mapFileToResource(file));
+          setLoading(true);
+          const stored = await api.systemPortal.addResource(datasetId, file);
+          typeof onClose === "function" && onClose(type, mapFileToResource(file, stored?.fileName));
         } catch (error: any) {
           console.error(error);
 
           if (error.data?.message) {
-            setFeedback({ type: "error", message: error.data.message });
+            setFeedback({ type: "error", message: stripStatusPrefix(error.data.message) });
           } else {
             setFeedback({
               type: "error",
@@ -97,13 +194,18 @@ const DatasetResourceUploadConfirmDialog: FC<DatasetResourceUploadConfirmDialogP
       closable
       open={open}
       onClose={() => handleClose("cancelled")}
-      feedback={feedback}
+      feedback={validationError ? { type: "error", message: validationError } : feedback}
     >
       <Divider />
       <div className="dataset-resource-upload-confirm-dialog__content">
         <FormControl sx={styles} className="metadata-form" variant="standard" fullWidth>
           <FormLabel>{getText(i18nKeys.DATASET_RESOURCE_UPLOAD_CONFIRM_DIALOG__FILE)}</FormLabel>
-          <Grid container className="dataset-resource-upload-confirm-dialog__file">
+          <Grid
+            container
+            className={`dataset-resource-upload-confirm-dialog__file${
+              validationError ? " dataset-resource-upload-confirm-dialog__file--error" : ""
+            }`}
+          >
             <Grid item xs={7}>
               <TermsOfUseIcon style={{ marginRight: 10 }} />
               {file?.name || getText(i18nKeys.DATASET_RESOURCE_UPLOAD_CONFIRM_DIALOG__UNTITLED)}
@@ -118,7 +220,7 @@ const DatasetResourceUploadConfirmDialog: FC<DatasetResourceUploadConfirmDialogP
         </FormControl>
       </div>
       <Divider />
-      <div className="button-group-actions">
+      <div className={`button-group-actions${validationError ? " button-group-actions--single" : ""}`}>
         <Button
           text={getText(i18nKeys.DATASET_RESOURCE_UPLOAD_CONFIRM_DIALOG__CANCEL)}
           onClick={() => handleClose("cancelled")}
@@ -126,12 +228,15 @@ const DatasetResourceUploadConfirmDialog: FC<DatasetResourceUploadConfirmDialogP
           block
           disabled={loading}
         />
-        <Button
-          text={getText(i18nKeys.DATASET_RESOURCE_UPLOAD_CONFIRM_DIALOG__ADD)}
-          onClick={() => handleClose("success")}
-          block
-          loading={loading}
-        />
+        {/* A file that fails the check can only be cancelled. */}
+        {!validationError && (
+          <Button
+            text={getText(i18nKeys.DATASET_RESOURCE_UPLOAD_CONFIRM_DIALOG__ADD)}
+            onClick={() => handleClose("success")}
+            block
+            loading={loading || checking}
+          />
+        )}
       </div>
     </Dialog>
   );

@@ -17,6 +17,24 @@
       display: flex;
       align-items: center;
     }
+
+    // Size and type in dark grey, as in the design; the filename keeps its colour.
+    .MuiGrid-item:not(:first-child) {
+      color: #333333;
+    }
+
+    &--error {
+      border: 2px solid #d32f2f;
+
+      .MuiGrid-item:first-child {
+        color: #d32f2f;
+
+        // The icon's colour is set on its path, so override it there.
+        svg path {
+          fill: #d32f2f;
+        }
+      }
+    }
   }
 
   .button-group-actions {
@@ -27,6 +45,16 @@
     .alp-button__container {
       margin: 0 0 0 8px;
       width: 247px;
+    }
+
+    // Error state: Cancel is the only button and spans the dialog, as in the design.
+    &--single {
+      padding: 0 1.5em;
+
+      .alp-button__container {
+        margin: 0;
+        width: 100%;
+      }
     }
   }
 }
