@@ -1,7 +1,8 @@
 import { Inject, Injectable } from '@danet/core'
-import { IsNull } from 'npm:typeorm'
+import { In, IsNull } from 'npm:typeorm'
 import type { PostgresService } from '../database/postgres.service.ts'
 import { Dataset } from '../dataset/entity/index.ts'
+import { WEBAPI_SOURCE_DATASET_TYPES } from '../dataset/entity/dataset.entity.ts'
 import { DatasetDetail } from '../dataset/entity/dataset-detail.entity.ts'
 import { getDbCredentialsByCode } from '../env.ts'
 import { IDbCredentials } from './types.ts'
@@ -23,7 +24,7 @@ export class WebApiDatasetLoader {
   async listSyncTargets(): Promise<WebApiSyncTarget[]> {
     const manager = this.postgresService.getDataSource().manager
     const datasets = await manager.getRepository(Dataset).find({
-      where: { type: 'webapi', fhirDatasetId: IsNull() },
+      where: { type: In([...WEBAPI_SOURCE_DATASET_TYPES]), fhirDatasetId: IsNull() },
     })
     const targets: WebApiSyncTarget[] = []
     for (const dataset of datasets) {

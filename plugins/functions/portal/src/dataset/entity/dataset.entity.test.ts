@@ -1,6 +1,6 @@
 import { describe, it } from '@std/testing/bdd'
 import { assertEquals } from '@std/assert'
-import { Dataset, resolveCacheId, sanitizeIdForCacheId } from './dataset.entity.ts'
+import { Dataset, ownsWebApiSource, resolveCacheId, sanitizeIdForCacheId } from './dataset.entity.ts'
 
 // Issue #2877: a non-HANA `source` dataset was given cache_id = sanitizeIdForCacheId(id),
 // naming a DuckDB catalog that is never built. The HANA rule (databaseCode) must survive
@@ -147,5 +147,23 @@ describe('Dataset.applyCacheIdDefault', () => {
     })
     ds.applyCacheIdDefault()
     assertEquals(ds.cacheId, 'explicit_catalog')
+  })
+})
+
+describe('ownsWebApiSource', () => {
+  it('is true for webapi and hana__omop datasets', () => {
+    assertEquals(ownsWebApiSource({ type: 'webapi' }), true)
+    assertEquals(ownsWebApiSource({ type: 'hana__omop', fhirDatasetId: null }), true)
+  })
+
+  it('is false for other dataset types', () => {
+    assertEquals(ownsWebApiSource({ type: 'omop' }), false)
+    assertEquals(ownsWebApiSource({ type: 'source' }), false)
+    assertEquals(ownsWebApiSource({}), false)
+  })
+
+  it('is false for FHIR-backed datasets', () => {
+    assertEquals(ownsWebApiSource({ type: 'webapi', fhirDatasetId: 'fhir-1' }), false)
+    assertEquals(ownsWebApiSource({ type: 'hana__omop', fhirDatasetId: 'fhir-1' }), false)
   })
 })

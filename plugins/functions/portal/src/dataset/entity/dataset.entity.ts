@@ -16,6 +16,14 @@ export function sanitizeIdForCacheId(id: string): string {
 // never on the source row itself, so the source row must not name a cache catalog.
 export const SOURCE_DATASET_TYPE = 'source'
 
+// Dataset types registered as an OHDSI WebAPI source. HANA datasets are read by WebAPI
+// through trex's `<databaseCode>__srcdb` attach, so they qualify without a webapi transform.
+export const WEBAPI_SOURCE_DATASET_TYPES: readonly string[] = ['webapi', 'hana__omop']
+
+export function ownsWebApiSource(dataset: { type?: string | null; fhirDatasetId?: string | null }): boolean {
+  return !dataset.fhirDatasetId && !!dataset.type && WEBAPI_SOURCE_DATASET_TYPES.includes(dataset.type)
+}
+
 export interface CacheIdInput {
   dialect?: string | null
   type?: string | null

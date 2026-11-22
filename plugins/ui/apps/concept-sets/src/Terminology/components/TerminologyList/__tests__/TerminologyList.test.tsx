@@ -22,6 +22,8 @@ const {
   mockGetFilterOptions,
   mockGetConceptRecordCounts,
   mockGetRecommendedConcepts,
+  mockGetNativeTerminologies,
+  mockGetDataset,
 } = vi.hoisted(() => ({
   mockSetFeedback: vi.fn(),
   mockGetText: vi.fn((key: string) => key),
@@ -30,6 +32,8 @@ const {
   mockGetFilterOptions: vi.fn(),
   mockGetConceptRecordCounts: vi.fn(),
   mockGetRecommendedConcepts: vi.fn(),
+  mockGetNativeTerminologies: vi.fn(),
+  mockGetDataset: vi.fn(),
 }));
 
 vi.mock("../../../../hooks", () => ({
@@ -78,6 +82,7 @@ vi.mock("../../../../axios/terminology", () => ({
   Terminology: class {
     getFilterOptions = mockGetFilterOptions;
     getRecommendedConcepts = mockGetRecommendedConcepts;
+    getTerminologies = mockGetNativeTerminologies;
   },
 }));
 
@@ -91,6 +96,9 @@ vi.mock("../../../../axios/api", () => ({
       getConceptRecordCounts: mockGetConceptRecordCounts,
     },
     publicWebapiProxyAPI: {},
+    portal: {
+      getDataset: mockGetDataset,
+    },
   },
 }));
 
@@ -157,6 +165,10 @@ function setupDefaultMocks() {
   mockGetConceptRecordCounts.mockResolvedValue([{ "1": [10, 20, 5, 8] }]);
   mockGetFilterOptions.mockResolvedValue(sampleFilterOptions);
   mockGetRecommendedConcepts.mockResolvedValue([]);
+  mockGetDataset.mockResolvedValue({ type: "webapi" });
+  mockGetNativeTerminologies.mockResolvedValue({
+    expansion: { total: 1, contains: [sampleMappedConcept] },
+  });
 }
 
 /** Wait for all pending promises and effects to settle */
@@ -866,6 +878,80 @@ describe("TerminologyList", () => {
         screen.queryByText("TERMINOLOGY_LIST__DESCENDANT_PERSON_COUNT"),
       ).toBeNull();
       expect(screen.queryByText("TERMINOLOGY_LIST__NAME")).toBeTruthy();
+    });
+  });
+
+  // ==========================================
+  // Search backend routing by dataset type
+  // ==========================================
+  describe("dataset routing", () => {
+    // Distinct ids: the dataset-type lookup is cached per dataset id.
+    it("routes hana__omop datasets through WebAPI search and record counts", async () => {
+      mockGetDataset.mockResolvedValue({ type: "hana__omop" });
+      const setConceptsResult = vi.fn();
+
+      await act(async () => {
+        render(
+          <TerminologyList
+            {...conceptsPageProps}
+            datasetId="hana-dataset"
+            setConceptsResult={setConceptsResult}
+          />,
+        );
+      });
+
+      await waitFor(() => {
+        expect(setConceptsResult).toHaveBeenCalled();
+      });
+      expect(mockGetNativeTerminologies).not.toHaveBeenCalled();
+      expect(mockGetTerminologies).toHaveBeenCalled();
+      expect(mockGetConceptRecordCounts).toHaveBeenCalledWith(
+        "hana-dataset",
+        [1],
+        expect.any(AbortSignal),
+      );
+      expect(setConceptsResult.mock.calls[0][0].data[0]).toMatchObject({
+        recordCount: "10",
+        descendantRecordCount: "20",
+        personCount: "5",
+        descendantPersonCount: "8",
+      });
+    });
+
+    it("uses d2e-native search without record counts for omop datasets", async () => {
+      mockGetDataset.mockResolvedValue({ type: "omop" });
+
+      await act(async () => {
+        render(
+          <TerminologyList {...conceptsPageProps} datasetId="omop-dataset" />,
+        );
+      });
+
+      await waitFor(() => {
+        expect(mockGetNativeTerminologies).toHaveBeenCalled();
+      });
+      await flushEffects();
+      expect(mockGetTerminologies).not.toHaveBeenCalled();
+      expect(mockGetConceptRecordCounts).not.toHaveBeenCalled();
+    });
+
+    it("uses d2e-native search for FHIR-backed datasets", async () => {
+      mockGetDataset.mockResolvedValue({
+        type: "webapi",
+        fhirDatasetId: "fhir-1",
+      });
+
+      await act(async () => {
+        render(
+          <TerminologyList {...conceptsPageProps} datasetId="fhir-dataset" />,
+        );
+      });
+
+      await waitFor(() => {
+        expect(mockGetNativeTerminologies).toHaveBeenCalled();
+      });
+      await flushEffects();
+      expect(mockGetTerminologies).not.toHaveBeenCalled();
     });
   });
 

@@ -18,7 +18,7 @@ import {
 } from "../../types.d.ts";
 import { UserMgmtService } from "../../user-mgmt/user-mgmt.service.ts";
 import { WebApiSourceService } from "../../webapi/webapi-source.service.ts";
-import { resolveCacheId } from "../entity/dataset.entity.ts";
+import { ownsWebApiSource, resolveCacheId } from "../entity/dataset.entity.ts";
 import {
   Dataset,
   DatasetAttribute,
@@ -239,7 +239,7 @@ export class DatasetCommandService {
     const result = await this.transactionRunner.run(deleteDatasetFn, id);
 
     const authToken = this.requestContextService.getOriginalToken();
-    if (authToken && dataset?.type === "webapi") {
+    if (authToken && dataset && ownsWebApiSource(dataset)) {
       this.webApiSourceService
         .deleteSourceForDataset(id, authToken)
         .catch((err) =>
@@ -744,7 +744,7 @@ export class DatasetCommandService {
 
     // syncDatasetToWebApi skips anything that owns no WebAPI source; report
     // that back rather than letting a no-op look like a repair.
-    const synced = dataset.type === "webapi" && !dataset.fhirDatasetId;
+    const synced = ownsWebApiSource(dataset);
 
     await this.syncDatasetToWebApi(
       {
@@ -1273,10 +1273,9 @@ export class DatasetCommandService {
     },
     detail: DatasetDetail | { name: string },
   ): Promise<void> {
-    // Only webapi-managed datasets get WebAPI records.
-    if (datasetInfo.fhirDatasetId || datasetInfo.type !== "webapi") {
+    if (!ownsWebApiSource(datasetInfo)) {
       this.logger.info(
-        `Skipping WebAPI sync for non-webapi dataset ${datasetInfo.id} (type=${datasetInfo.type})`,
+        `Skipping WebAPI sync for dataset ${datasetInfo.id} (type=${datasetInfo.type})`,
       );
       return;
     }

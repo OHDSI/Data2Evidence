@@ -40,13 +40,16 @@ export const combinedConceptAndConceptRecordCounts = (
   return concepts.map((concept) => {
     const conceptRecordCount = mappedConceptRecordCounts.find(
       (e) => e.conceptId === concept.conceptId
-    ) as ConceptRecordCount;
+    );
+    if (!conceptRecordCount) {
+      return concept;
+    }
     return {
       ...concept,
       recordCount: conceptRecordCount.recordCount.toLocaleString(),
       descendantRecordCount: conceptRecordCount.descendantRecordCount.toLocaleString(),
-      personCount: conceptRecordCount.personCount.toLocaleString(),
-      descendantPersonCount: conceptRecordCount.descendantPersonCount.toLocaleString(),
+      personCount: conceptRecordCount.personCount?.toLocaleString(),
+      descendantPersonCount: conceptRecordCount.descendantPersonCount?.toLocaleString(),
     };
   });
 };
