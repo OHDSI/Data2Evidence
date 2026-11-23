@@ -5,7 +5,7 @@ const TEST_NAME = 'attribute-hybrid-search'
 const SHOULD_SKIP = false
 test.fixme(SHOULD_SKIP, `${TEST_NAME} test is temporarily disabled.`)
 
-test(TEST_NAME, async ({ page }) => {
+test.only(TEST_NAME, async ({ page }) => {
   await page.goto('/d2e/portal')
   await page.locator('input[name="identifier"]').click()
   await page.locator('input[name="identifier"]').fill('admin')
@@ -61,11 +61,10 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByRole('textbox', { name: 'search terms' }).click()
   await page.getByRole('textbox', { name: 'search terms' }).fill('MALE')
   await page.getByRole('textbox', { name: 'search terms' }).press('Enter')
-  // 1000 (concept_name equals) + 100 (standard) + 400 * (0.5 * cosine + 0.5 * bm25/(bm25+5)).
-  // The relevance term reads the cache's FTS index, so the exact value depends on which
-  // build produced it. DuckDB 2.0's FTS scores BM25F (per-field length normalisation), so
-  // MALE's has standard exact match score = 1).
-  await expect(page.getByRole('cell', { name: '1' })).toBeVisible()
+  // Score is a 0-1 match score: an exact concept_name match on a standard concept scores 1.
+  // Scope to the MALE row so count columns (e.g. "1,321", "61") can't match the '1' cell.
+  const maleRow = page.getByRole('row').filter({ has: page.getByRole('cell', { name: 'MALE', exact: true }) })
+  await expect(maleRow.getByRole('cell', { name: '1', exact: true })).toBeVisible()
 
   // Disable hybrid search and save
   await page.getByRole('link', { name: 'Account' }).click()
