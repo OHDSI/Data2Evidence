@@ -3,7 +3,6 @@ import { test, expect, openAtlasDataExploration } from '../fixtures'
 const TEST_NAME = 'pa-filter-cards'
 const SHOULD_SKIP = false
 test.fixme(SHOULD_SKIP, `${TEST_NAME} test is temporarily disabled.`)
-test.describe.configure({ retries: 3 }) // Re-try up to 3 times for flaky tests
 
 test(TEST_NAME, async ({ browser }) => {
   // Start browser in fullscreen mode

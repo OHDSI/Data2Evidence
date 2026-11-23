@@ -4,7 +4,6 @@ import { MINUTE_10 } from '../const'
 const TEST_NAME = 'execute-data-quality'
 const SHOULD_SKIP = false
 test.fixme(SHOULD_SKIP, `${TEST_NAME} test is temporarily disabled.`)
-test.describe.configure({ retries: 3 }) // Re-try up to 3 times for flaky tests
 
 test(TEST_NAME, async ({ page }) => {
   //Increase timeout longer than default

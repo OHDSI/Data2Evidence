@@ -1113,10 +1113,6 @@ jobs:
   test_demosetup_dev:
     needs: [setup, build_images, merge_worker_image, build_trex_image, build_plugins, build_e2e_image]
     runs-on: ubuntu-24.04
-    strategy:
-      fail-fast: false
-      matrix:
-        attempt: [1, 2]
     env:
       VERSION: develop
       DOCKER_TAG_NAME: ${{ needs.setup.outputs.run_tag }}
@@ -1360,6 +1356,7 @@ jobs:
             -v "$(pwd)/ctrf:/work/ctrf" \
             -e D2E_BASE_URL=https://localhost:443 \
             -e CI=true \
+            -e E2E_SINGLE_PASS=1 \
             -e GITHUB_ACTIONS=true \
             -e SKIP_IDP_SPECS=1 \
             d2e-e2e npm test
@@ -1374,7 +1371,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: e2e-attempt-${{ matrix.attempt }}
+          name: e2e-attempt-1
           path: ./_attempt/
           overwrite: true
 
@@ -1382,7 +1379,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: error-context-attempt-${{ matrix.attempt }}
+          name: error-context-attempt-1
           path: tests/e2e/test-results/**/*
           overwrite: true
 

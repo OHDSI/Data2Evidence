@@ -5,7 +5,6 @@ import { deleteExploration, explorationBookmarkCard } from '../explorations'
 const TEST_NAME = 'multi-parent-interactions'
 const SHOULD_SKIP = false
 test.fixme(SHOULD_SKIP, `${TEST_NAME} test is temporarily disabled.`)
-test.describe.configure({ retries: 2 })
 
 const RUN_ID = Date.now().toString(36)
 const BOOKMARK_NAME = `Multi parent ${RUN_ID}`

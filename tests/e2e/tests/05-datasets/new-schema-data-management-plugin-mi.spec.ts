@@ -4,7 +4,6 @@ import { MINUTE_2 } from '../const'
 const TEST_NAME = 'dataset-new-schema-data-management-plugin-mi'
 const SHOULD_SKIP = true
 test.fixme(SHOULD_SKIP, `${TEST_NAME}: creating this dataset type is no longer supported (#3610).`)
-test.describe.configure({ retries: 3 }) // Re-try up to 3 times for flaky tests
 const randomString = 'tsdmmi' + Math.random().toString(36).substring(2, 10)
 
 test(TEST_NAME, async ({ page }) => {

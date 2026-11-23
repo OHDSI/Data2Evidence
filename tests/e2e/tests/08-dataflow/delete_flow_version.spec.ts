@@ -1,6 +1,5 @@
 import { test, expect, openAdminPortalFromAtlas, cleanupTestDataflows } from '../fixtures'
 
-test.describe.configure({ retries: 3 })
 test.afterEach(async ({ page }) => {
   await cleanupTestDataflows(page, [/^testflow(?:_|$)/])
 })
