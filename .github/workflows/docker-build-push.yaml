@@ -15,9 +15,20 @@ on:
   workflow_dispatch:
     inputs: 
       release_tag:
-        description: Enter version for release
+        description: Enter version for release (e.g., 1.0.0)
         required: true
         type: string
+      prerelease:
+        description: "Pre-release channel (none = final release)"
+        type: choice
+        required: true
+        default: "none"
+        options: ["none", "alpha", "beta"]
+      prerelease_number:
+        description: "Optional pre-release iteration for patches, e.g. 1 -> 1.0.0-alpha.1"
+        type: string
+        required: false
+        default: ""
       artifacttype:
         type: choice
         required: true
@@ -67,6 +78,12 @@ jobs:
 
 
       - id: tag
+        env:
+          # Free-text dispatch inputs reach the script via env, never via ${{ }} in the
+          # script body, so a crafted value cannot inject shell.
+          IN_RELEASE_TAG: ${{ github.event.inputs.release_tag }}
+          IN_PRERELEASE: ${{ github.event.inputs.prerelease }}
+          IN_PRERELEASE_NUMBER: ${{ github.event.inputs.prerelease_number }}
         run: |
           SHORT_SHA=$(git rev-parse --short HEAD)
           IS_PR_OR_MG=false
@@ -90,10 +107,29 @@ jobs:
             CANONICAL_TAG="${REL_SLUG}"
             PLUGINS_TAG=""
           elif [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
-            RUN_TAG="${{ github.event.inputs.release_tag }}-beta"
+            # Version = release_tag, plus -<prerelease>[.<prerelease_number>] when a
+            # pre-release channel is picked: 1.0.0 + alpha -> 1.0.0-alpha,
+            # 1.0.0 + alpha + 1 -> 1.0.0-alpha.1. With prerelease=none a full
+            # version (e.g. 0.19.6-beta) is still taken as-is.
+            VERSION="$IN_RELEASE_TAG"
+            if [[ -n "$IN_PRERELEASE" && "$IN_PRERELEASE" != "none" ]]; then
+              [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "::error::release_tag must be X.Y.Z when prerelease=$IN_PRERELEASE (got '$VERSION')"; exit 1; }
+              VERSION="${VERSION}-${IN_PRERELEASE}"
+              if [[ -n "$IN_PRERELEASE_NUMBER" ]]; then
+                [[ "$IN_PRERELEASE_NUMBER" =~ ^[0-9]+$ ]] || { echo "::error::prerelease_number must be digits (got '$IN_PRERELEASE_NUMBER')"; exit 1; }
+                VERSION="${VERSION}.${IN_PRERELEASE_NUMBER}"
+              fi
+            elif [[ -n "$IN_PRERELEASE_NUMBER" ]]; then
+              echo "::error::prerelease_number needs a prerelease channel (alpha/beta/rc)"; exit 1
+            fi
+            # Plugins are published to npm with this exact version, so it must be strict semver.
+            [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z]+(\.[0-9A-Za-z]+)*)?$ ]] || { echo "::error::'$VERSION' is not valid semver"; exit 1; }
+            echo "Release version: $VERSION"
+            # RUN_TAG is only the intermediate image tag that promote copies to CANONICAL_TAG.
+            RUN_TAG="${VERSION}-run-${SHORT_SHA}"
             IS_RELEASE_PUSH=true
-            CANONICAL_TAG="${{ github.event.inputs.release_tag }}"
-            PLUGINS_TAG="${{ github.event.inputs.release_tag }}"
+            CANONICAL_TAG="$VERSION"
+            PLUGINS_TAG="$VERSION"
           else
             RUN_TAG="dispatch-${SHORT_SHA}"
             PLUGINS_TAG=""

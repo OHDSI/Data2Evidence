@@ -9,7 +9,7 @@
 # (linux/amd64 + linux/arm64) — an older build of the same image, which is the
 # only arm64-capable base published so far. Re-point both lines at one digest
 # once the base image publishes amd64 and arm64 together.
-FROM --platform=linux/amd64 ghcr.io/data2evidence/logto-with-logto-schema@sha256:48ed3caae3d58145883266517c43bf4f5b0046969f6164cab647bd79caf89031 AS base-amd64
+FROM --platform=linux/amd64 ghcr.io/data2evidence/logto-with-logto-schema@sha256:a49c13d509332a108fdaff2255e5e7defd08dd9cd3450547818925559ea2fb40 AS base-amd64
 
 FROM --platform=linux/arm64 ghcr.io/data2evidence/logto-with-logto-schema@sha256:ff2d20ad16d27539b05a692cdca63194399831d9501ef8e7ef5485bf290d4ccd AS base-arm64
 
