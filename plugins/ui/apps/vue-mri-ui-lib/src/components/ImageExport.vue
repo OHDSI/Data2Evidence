@@ -5,13 +5,19 @@
 <script lang="ts">
 import { mapActions, mapGetters } from 'vuex'
 import Constants from '../utils/Constants'
-import { createChartCanvas, buildXAxisTitle } from '../utils/ExportUtils'
+import { createChartCanvas, createChartSvg, buildXAxisTitle } from '../utils/ExportUtils'
 import { generateDownloadFileName } from '../utils/generateDownloadFileName'
 import { pickSaveTarget, writeBlobToSaveTarget } from '../utils/saveFile'
 
 export default {
   name: 'exportImage',
-  props: ['closeEv', 'compareChartType', 'overrideResponse', 'chartBusy'],
+  props: {
+    closeEv: null,
+    compareChartType: null,
+    overrideResponse: null,
+    chartBusy: null,
+    format: { type: String, default: 'png' },
+  },
   data() {
     return {
       busy: true,
@@ -20,7 +26,7 @@ export default {
   computed: {
     ...mapGetters(['getActiveChart', 'getActiveBookmark', 'getText', 'getResponse', 'getKMSeries']),
     downloadFileName() {
-      return generateDownloadFileName(this.getActiveBookmark?.bookmarkname, this.getActiveChart, 'png')
+      return generateDownloadFileName(this.getActiveBookmark?.bookmarkname, this.getActiveChart, this.format)
     },
     response() {
       if (this.overrideResponse) {
@@ -44,27 +50,33 @@ export default {
   methods: {
     ...mapActions(['setChartCover']),
     /**
-     * Renders the chart and saves it. Resolves once the PNG is saved (or handed to the browser
-     * download where the save picker is unsupported).
+     * Renders the chart and saves it. Resolves once the PNG or SVG is saved (or handed to the
+     * browser download where the save picker is unsupported).
      * @returns 'success', 'cancelled' when the user dismissed the save picker, or 'error'
      */
     async downloadImage(): Promise<'success' | 'cancelled' | 'error'> {
       this.busy = true
       this.setChartCover({ chartCover: true })
       this.prepareImageChart()
-      const chartCanvas = this.generatePdfCharts()
-      if (!chartCanvas) {
+      const isSvg = this.format === 'svg'
+      const chartOutput = this.generatePdfCharts(isSvg ? createChartSvg : createChartCanvas)
+      if (!chartOutput) {
         return 'error'
       }
       try {
         // Opened from the menu click, so this still counts as a user gesture
-        const target = await pickSaveTarget(this.downloadFileName, 'png')
+        const target = await pickSaveTarget(this.downloadFileName, isSvg ? 'svg' : 'png')
         if (!target) {
           return 'cancelled'
         }
-        const blob = await new Promise<Blob>((resolve, reject) =>
-          chartCanvas.toBlob(b => (b ? resolve(b) : reject(new Error('Chart image could not be encoded'))), 'image/png')
-        )
+        const blob = isSvg
+          ? new Blob([chartOutput as string], { type: 'image/svg+xml;charset=utf-8' })
+          : await new Promise<Blob>((resolve, reject) =>
+              (chartOutput as HTMLCanvasElement).toBlob(
+                b => (b ? resolve(b) : reject(new Error('Chart image could not be encoded'))),
+                'image/png'
+              )
+            )
         await writeBlobToSaveTarget(target, blob)
         return 'success'
       } catch (e) {
@@ -115,8 +127,13 @@ export default {
         targetWidth,
       }
     },
-    /** @returns the rendered chart canvas, or null when there is no chart to export */
-    generatePdfCharts(): HTMLCanvasElement | null {
+    /**
+     * @param render createChartCanvas for a PNG export or createChartSvg for an SVG export
+     * @returns the rendered chart, or null when there is no chart to export
+     */
+    generatePdfCharts(
+      render: typeof createChartCanvas | typeof createChartSvg = createChartCanvas
+    ): HTMLCanvasElement | string | null {
       const pdfConst = this.calculatedConst
       let chartType = this.pdfParam.chartType
       const targetHeight = pdfConst.targetHeight
@@ -163,17 +180,7 @@ export default {
 
           const xAxisTitle = buildXAxisTitle(response?.categories)
 
-          const chartCanvas = createChartCanvas(
-            chartId,
-            chartType,
-            targetHeight,
-            targetWidth,
-            pdfConst,
-            kmLegendInput,
-            xAxisTitle
-          )
-
-          return chartCanvas
+          return render(chartId, chartType, targetHeight, targetWidth, pdfConst, kmLegendInput, xAxisTitle)
         } catch (e) {
           console.error('Image export failed:', e)
         }

@@ -86,5 +86,6 @@
     <Menu id="downloadMenu">
         <MenuItem enabled="{results>/download/enabled}" text="{i18n>MRI_PA_BUTTON_DOWNLOAD_CSV}" select=".onDownloadCsvBtnPress" visible="{results>/download/enabled}" />
         <MenuItem enabled="{results>/pdfDownload/enabled}" text="{i18n>MRI_PA_BUTTON_DOWNLOAD_PDF}" select=".onDownloadPdfBtnPress" visible="{results>/pdfDownload/enabled}" />
+        <MenuItem enabled="{results>/svgDownload/enabled}" text="{i18n>MRI_PA_BUTTON_DOWNLOAD_SVG}" select=".onDownloadSvgBtnPress" visible="{results>/svgDownload/enabled}" />
     </Menu>
 </mvc:View>
