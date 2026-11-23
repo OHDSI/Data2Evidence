@@ -32,13 +32,6 @@
           "env": "mri-pg-config"
         },
         {
-          "function": "/alp-dataflow-gen-init",
-          "imports": "/alp-dataflow-gen-init/deno.json",
-          "env": "alp-dataflow-gen-init",
-          "waitforEnvVar": "PREFECT_HEALTH_CHECK",
-          "eszip": "/alp-dataflow-gen-init/index.eszip"
-        },
-        {
           "function": "/files-manager-init",
           "imports": "/files-manager-init/deno.json",
           "env": "files-manager"
@@ -62,6 +55,14 @@
           "env": "alp-usermgmt",
           "function": "/alp-idp-migration-init",
           "imports": "/alp-idp-migration-init/deno.json",
+          "afterListen": true
+        },
+        {
+          "function": "/alp-dataflow-gen-init",
+          "imports": "/alp-dataflow-gen-init/deno.json",
+          "env": "alp-dataflow-gen-init",
+          "waitforEnvVar": "PREFECT_HEALTH_CHECK",
+          "eszip": "/alp-dataflow-gen-init/index.eszip",
           "afterListen": true
         },
         {
@@ -378,6 +379,7 @@
           "IDP__AUTO_PROVISION_USERS": "${IDP__AUTO_PROVISION_USERS:-false}",
           "AUTO_GRANT_RESEARCHER_BY_DATASET_CODES": "${AUTO_GRANT_RESEARCHER_BY_DATASET_CODES:-${AZ_AUTO_GRANT_RESEARCHER_BY_DATASET_CODES}}",
           "USER_MGMT__ROLE_SOURCE": "${USER_MGMT__ROLE_SOURCE}",
+          "IDP__ROLE_STORE": "${IDP__ROLE_STORE:-trex}",
           "USERMGMT__AUTO_PROVISION_ENABLED": "${USERMGMT__AUTO_PROVISION_ENABLED:-false}",
           "USERMGMT__AUTO_PROVISION_CONNECTORS": "${USERMGMT__AUTO_PROVISION_CONNECTORS:-}",
           "USERMGMT__AUTO_PROVISION_DEFAULT_TENANT_ID": "${USERMGMT__AUTO_PROVISION_DEFAULT_TENANT_ID:-e0348e4d-2e17-43f2-a3c6-efd752d17c23}",
@@ -518,7 +520,8 @@
           "GIT_STUDIES_REPO_URL": "${GIT_STUDIES_REPO_URL:-https://github.com/data2evidence/studies.git}",
           "GIT_STUDIES_REPO_BRANCH": "${GIT_STUDIES_REPO_BRANCH:-main}",
           "GIT_DASHBOARDS_REPO_URL": "${GIT_DASHBOARDS_REPO_URL:-https://github.com/data2evidence/study_dashboard_templates.git}",
-          "GIT_DASHBOARDS_REPO_BRANCH": "${GIT_DASHBOARDS_REPO_BRANCH:-main}"
+          "GIT_DASHBOARDS_REPO_BRANCH": "${GIT_DASHBOARDS_REPO_BRANCH:-main}",
+          "TREX__SQL_TOKEN": "${TREX__SQL_TOKEN}"
         },
         "files-manager": {
           "PG_ADMIN_PASSWORD": "${PG_ADMIN_PASSWORD}",
@@ -570,7 +573,7 @@
           "DEMO__DB_DEFAULT": "{ \"name\": \"postgres\", \"dialect\": \"postgres\", \"host\": \"demodb\", \"port\": 5432, \"extra\": { \"Internal\": { \"statementTimeout\": 60000, \"queryTimeout\": 60000, \"idleTimeoutMillis\": 300000, \"idleInTransactionSessionTimeout\": 300000, \"max\": 50 } }, \"authenticationMode\": \"Password\", \"credentials\": []}",
           "DEMO__DB_USER": "${DEMO__DB_USER:-postgres}",
           "DEMO__DB_PASSWORD": "${DEMO__DB_PASSWORD:-mypass}",
-          "DEMO__DATASET": "{ \"tokenStudyCode\": \"demo\", \"type\": \"webapi\", \"tenantId\": \"e0348e4d-2e17-43f2-a3c6-efd752d17c23\", \"schemaOption\": \"existing_cdm\", \"dialect\": \"postgres\", \"dataModel\": \"omop5-4\", \"plugin\": \"omop_cdm_plugin\", \"paConfigId\": \"4fce3cb7-32bf-4b46-8cba-32e4f77a14dd\", \"visibilityStatus\": \"DEFAULT\", \"detail\": { \"name\": \"Demo dataset\", \"summary\": \"Demo dataset\", \"description\": \"Demo dataset\", \"showRequestAccess\": false }, \"dashboards\": [], \"attributes\": [], \"tags\": [], \"cacheDatasetName\": \"Demo dataset\", \"cacheDatasetType\": \"omop\" }",
+          "DEMO__DATASET": "{ \"tokenStudyCode\": \"demo\", \"type\": \"webapi\", \"tenantId\": \"e0348e4d-2e17-43f2-a3c6-efd752d17c23\", \"schemaOption\": \"existing_cdm\", \"dialect\": \"postgres\", \"dataModel\": \"omop5-4\", \"plugin\": \"omop_cdm_plugin\", \"paConfigId\": \"4fce3cb7-32bf-4b46-8cba-32e4f77a14dd\", \"visibilityStatus\": \"DEFAULT\", \"detail\": { \"name\": \"Demo dataset\", \"summary\": \"Demo dataset\", \"description\": \"Demo dataset\", \"showRequestAccess\": false }, \"dashboards\": [], \"attributes\": [], \"tags\": [] }",
           "IDP__INITIAL_USER__NAME": "${IDP__INITIAL_USER__NAME:-admin}",
           "IDP__INITIAL_USER__DOMAIN": "${IDP__INITIAL_USER__DOMAIN:-d2e.local}"
         },
@@ -1314,6 +1317,15 @@
           ]
         },
         {
+          "path": "^/usermgmt/api/study/access-request/user/(.+)",
+          "scopes": [
+            "usermgmt.studyAccessRequest.read"
+          ],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
           "path": "^/usermgmt/api/study/access-request",
           "scopes": [
             "usermgmt.studyAccessRequest.add"
@@ -1568,6 +1580,15 @@
         },
         {
           "path": "^/system-portal/dataset/(.*)/refresh-cache$",
+          "scopes": [
+            "portal.dataset.update"
+          ],
+          "httpMethods": [
+            "POST"
+          ]
+        },
+        {
+          "path": "^/system-portal/webapi/resync-sources$",
           "scopes": [
             "portal.dataset.update"
           ],

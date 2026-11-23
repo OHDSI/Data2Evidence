@@ -2,8 +2,8 @@ import { test, expect } from '../fixtures'
 import { MINUTE_2, MINUTE_5 } from '../const'
 
 const TEST_NAME = 'dataset-new-schema-i2b2-plugin'
-const SHOULD_SKIP = false
-test.fixme(SHOULD_SKIP, `${TEST_NAME} test is temporarily disabled.`)
+const SHOULD_SKIP = true
+test.fixme(SHOULD_SKIP, `${TEST_NAME}: creating this dataset type is no longer supported (#3610).`)
 const randomString = 'tsi2b2' + Math.random().toString(36).substring(2, 10)
 
 test(TEST_NAME, async ({ page }) => {
@@ -27,15 +27,12 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByRole('option', { name: 'Create new schema', exact: true }).click()
   await page.getByRole('combobox', { name: 'Databases' }).click()
   await page.getByRole('option', { name: 'demo_database-postgres' }).click()
-  // Switch to source mode so non-OMOP data models are selectable
-  await page.getByRole('combobox', { name: 'Management mode' }).click()
-  await page.getByRole('option', { name: 'Source (with cache data source)' }).click()
   // Uncheck the "Use default result schema name" checkbox to enable custom input
   await page.getByRole('checkbox', { name: /use default result schema name/i }).uncheck()
   await page.getByRole('textbox', { name: 'Result Schema Name' }).fill(`result_schema_${randomString}`)
   await page.getByRole('combobox', { name: 'Data model option', exact: true }).click()
   await page.getByRole('option', { name: 'v1.8.1 [i2b2_plugin]' }).click()
-  await page.getByRole('combobox', { name: 'PA config' }).click()
+  await page.getByRole('combobox', { name: 'Data exploration configuration' }).click()
   await page.getByRole('option', { name: 'OMOP', exact: true }).click()
   await page.getByRole('textbox', { name: 'Token data source code' }).click()
   await page.getByRole('textbox', { name: 'Token data source code' }).fill(randomString)

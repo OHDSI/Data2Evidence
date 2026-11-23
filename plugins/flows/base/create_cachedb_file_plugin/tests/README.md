@@ -4,11 +4,15 @@ Two layers:
 
 - **Pure suite** — `test_chunk_planner.py`, `test_planner_properties.py`,
   `test_source_adapter_sql.py`, `test_source_adapters.py`, `test_checkpoint.py`,
-  `test_fresh_copy.py`, `test_options.py`. These import only `pytest`, `duckdb`
+  `test_fresh_copy.py`, `test_options.py`, `test_stage_timing.py`,
+  `test_page_chunks.py`. These import
+  only `pytest`, `duckdb`
   and `pydantic`; the modules under test never import `prefect`. Safe to run
   anywhere. `test_source_adapters.py` drives the real `collect` orchestration by
   stubbing the adapters' two statement-executing methods, so no sqlalchemy and
-  no database are needed.
+  no database are needed. `test_page_chunks.py` covers the PAGE_RANGE chunk SQL
+  and runs `run_page_chunk`'s transaction against a real DuckDB connection, with
+  a same-database `rowid` range standing in for `postgres_query`.
 - **Integration** — `test_copy_integration.py`. Uses local DuckDB as both source
   and target. Slower; still no external services.
 - **Structure** — `test_copy_structure.py`, with helpers in `copy_source.py`.
@@ -22,7 +26,7 @@ Two layers:
 
 ```sh
 python3 -m venv /tmp/cachevenv
-/tmp/cachevenv/bin/pip install pytest==9.0.3 duckdb==1.4.0 pydantic==2.10.6
+/tmp/cachevenv/bin/pip install pytest==9.0.3 duckdb==2.0.0 pydantic==2.10.6
 
 cd plugins/flows/base
 PYTHONPATH="$PWD:$PWD/.." /tmp/cachevenv/bin/pytest create_cachedb_file_plugin/tests/ -v
@@ -34,14 +38,15 @@ PYTHONPATH="$PWD:$PWD/.." /tmp/cachevenv/bin/pytest create_cachedb_file_plugin/t
 
 ## Import discipline
 
-`errors.py`, `planner_types.py`, `chunk_utils.py`, `source_stats.py` and
-`checkpoint.py` must never import `prefect`. They take a `logger` argument
+`errors.py`, `planner_types.py`, `chunk_utils.py`, `source_stats.py`, `stage_timing.py`,
+`checkpoint.py` and `page_chunks.py` must never import `prefect`. They take a `logger` argument
 instead. That is what lets this suite run without the Prefect worker image.
 `test_checkpoint.py::test_checkpoint_module_does_not_drag_in_prefect` and
 `test_chunk_planner.py::test_planner_modules_do_not_drag_in_prefect` enforce
 this at import time — for the whole `pytest` process, not just their own
 module. Never add a test here that imports `prefect` (directly or via `copy.py`
-/ `flow.py`); it will poison `sys.modules` and fail those two checks even
+/ `flow.py`); it will poison `sys.modules` and fail those checks even
 though nothing it tests actually broke the discipline. `concurrency_reconciliation.py`
-genuinely needs prefect's client/schema classes to test — see
-`../tests_prefect/` for that suite, run separately.
+genuinely needs prefect's client/schema classes to test, and `copy.TrexWriter`
+and `copy_page_chunk` need `copy.py` itself — see `../tests_prefect/` for that
+suite, run separately.

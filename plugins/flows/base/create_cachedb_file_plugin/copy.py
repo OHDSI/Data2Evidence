@@ -1,3 +1,4 @@
+import time
 import duckdb
 from typing import Any
 from psycopg2 import connect
@@ -19,10 +20,12 @@ from .chunk_utils import (
     describe_dry_run_summary,
     describe_plan,
     find_column_case_insensitive,
+    page_plan_keys,
     resolve_target_chunk_rows,
 )
 from .checkpoint import (
     COPY_STATUS_TABLE_NAME,
+    WEBAPI_RESULT_TABLES,
     apply_fresh_copy,
     clear_resume_point,
     drop_status_tables,
@@ -33,10 +36,13 @@ from .checkpoint import (
     read_checkpoint,
     record_chunk_progress,
     reset_table,
+    webapi_owned_tables_to_skip,
 )
 from .errors import ChunkCopyError, PlannerError, ReconciliationError
-from .planner_types import ChunkConfig, ChunkStrategy
-from .source_stats import build_source_adapter, plan_table
+from .page_chunks import build_page_chunk_insert, build_page_chunk_select, run_page_chunk
+from .planner_types import ChunkConfig, ChunkPlan, ChunkStrategy
+from .source_stats import build_source_adapter, plan_postgres_table, plan_table
+from .stage_timing import StageName, StageSummary, stage
 
 from _shared_flow_utils.types import SupportedDatabaseDialects
 
@@ -51,6 +57,47 @@ def get_trex_connection(database_code: str):
     )
     conn.autocommit = True
     return conn
+
+
+class TrexWriter:
+    """The trex cursor a schema copy writes through, replaceable if it breaks.
+
+    Cursor-like (``execute``, ``fetchone``, ``fetchall``). A plain class: Prefect
+    hands task arguments through unchanged, so a retried chunk task gets this
+    same object.
+    """
+
+    def __init__(self, database_code: str):
+        self.database_code = database_code
+        self._conn = None
+        self._cursor = None
+        self.reconnect()
+
+    def reconnect(self) -> None:
+        self.close()
+        self._conn = get_trex_connection(self.database_code)
+        self._cursor = self._conn.cursor()
+
+    def execute(self, statement, *args):
+        if self._cursor is None:
+            self.reconnect()
+        return self._cursor.execute(statement, *args)
+
+    def fetchone(self):
+        return self._cursor.fetchone()
+
+    def fetchall(self):
+        return self._cursor.fetchall()
+
+    def close(self) -> None:
+        for resource in (self._cursor, self._conn):
+            if resource is not None:
+                try:
+                    resource.close()
+                except Exception:
+                    pass
+        self._cursor = None
+        self._conn = None
 
 
 @task(retries=3,
@@ -71,7 +118,7 @@ def create_schema_if_not_exists_task(use_trex_conn: bool, copy_params: CopyParam
         try:
             trex_conn = get_trex_connection(copy_params.target_database)
             pg_cursor = trex_conn.cursor()
-            pg_cursor.execute("CALL pg_clear_cache();")
+            pg_cursor.execute("CALL postgres_clear_cache();")
 
             create_schema_if_not_exists(pg_cursor, copy_params, logger)
 
@@ -101,11 +148,9 @@ def create_schema_if_not_exists(write_conn: Any, copy_params: CopyParameters, lo
       tags=["flow-level-concurrency"],
       log_prints=True, 
       task_run_name="create_schema_tables_from_{copy_params.source_schema}",
-      # Deliberately no timeout_seconds. The copy budget now lives on
-      # copy_table_chunk, one hour per chunk, so a slow schema is bounded chunk
-      # by chunk instead of by a single envelope covering every table in it.
-      # A schema-wide 3h cap is what killed a large copy mid-table and threw
-      # away the partial target on the way out (issue 3033).
+      # Deliberately no timeout_seconds. The copy budget lives on the chunk tasks
+      # (copy_table_chunk, copy_page_chunk), one hour per chunk, so a slow schema
+      # is bounded chunk by chunk instead of by one cap over every table in it.
       cache_policy=NONE)
 def create_schema_tables_task(use_trex_conn: bool, read_conn: Any, copy_params: CopyParameters, duckdb_file_path: str):
     logger = get_run_logger()
@@ -114,27 +159,25 @@ def create_schema_tables_task(use_trex_conn: bool, read_conn: Any, copy_params: 
     logger.info(f"This is task run attempt: {task_run_ctx.task_run.run_count} for task '{task_run_ctx.task.name}'.")
 
     if use_trex_conn:
-        trex_conn = None
-        pg_cursor = None
-    
-        try:
-            trex_conn = get_trex_connection(copy_params.target_database)
-            pg_cursor = trex_conn.cursor()
+        writer = None
 
-            create_schema_tables(pg_cursor, read_conn, copy_params, logger)
+        try:
+            writer = TrexWriter(copy_params.target_database)
+
+            with stage(logger, StageName.SCHEMA_TOTAL, schema=copy_params.target_schema):
+                create_schema_tables(writer, read_conn, copy_params, logger)
 
         except Exception as e:
             logger.error(f"Failed to copy schema tables through Trex SQL interface: {e}")
             raise
         finally:
-            if pg_cursor:
-                pg_cursor.close()
-            if trex_conn:
-                trex_conn.close()
+            if writer:
+                writer.close()
 
     else:
         with duckdb.connect(duckdb_file_path) as file_conn:
-            create_schema_tables(file_conn, read_conn, copy_params, logger)
+            with stage(logger, StageName.SCHEMA_TOTAL, schema=copy_params.target_schema):
+                create_schema_tables(file_conn, read_conn, copy_params, logger)
 
 
 def create_schema_tables(write_conn: Any, read_conn: Any, copy_params: CopyParameters, logger):
@@ -164,6 +207,7 @@ def create_schema_tables(write_conn: Any, read_conn: Any, copy_params: CopyParam
             str(prefect_flow_run.id),
             dry_run=copy_params.dry_run,
             logger=logger,
+            protected=WEBAPI_RESULT_TABLES if copy_params.protect_webapi_results else frozenset(),
         )
 
     # Determine tables to copy
@@ -203,6 +247,14 @@ def create_schema_tables(write_conn: Any, read_conn: Any, copy_params: CopyParam
             f"Found {len(tables_to_copy)} tables/views to copy from schema '{copy_params.source_schema}': {tables_to_copy}"
         )
 
+    # WebAPI writes these into the cache itself; copy them only the first time.
+    webapi_owned = webapi_owned_tables_to_skip(
+        write_conn, copy_params.target_database, copy_params.target_schema, tables_to_copy
+    ) if copy_params.protect_webapi_results else []
+    if webapi_owned:
+        logger.info(f"Leaving WebAPI-owned tables already in the cache untouched: {webapi_owned}")
+        tables_to_copy = [t for t in tables_to_copy if t not in webapi_owned]
+
     original_count = len(tables_to_copy)
 
     # Check for already completed tables
@@ -226,6 +278,7 @@ def create_schema_tables(write_conn: Any, read_conn: Any, copy_params: CopyParam
     logger.info(msg)
 
     unplannable_tables = []
+    summary = StageSummary(copy_params.target_schema)
 
     for idx, table in enumerate(tables_left_to_copy, start=1):
         # Determine which schema this table should be copied from
@@ -249,35 +302,41 @@ def create_schema_tables(write_conn: Any, read_conn: Any, copy_params: CopyParam
             timestamp_filter_col=timestamp_col if timestamp_col in columns_to_copy else None
         )
 
-        # Call copy_table directly
-        try:
-            copy_table_task(write_conn, read_conn, copy_params, query_columns, source_schema_for_table)
-        except PlannerError as exc:
-            if not copy_params.dry_run:
-                # A real run still fails fast: an unplannable table is either
-                # copied unbounded or not copied at all, and neither may be
-                # papered over.
-                raise
-            # A dry run exists to tell the operator about every unplannable
-            # table in the schema, not just the first one it hits.
-            unplannable_tables.append(table)
-            logger.error(
-                f"[dry run] '{table}' cannot be planned and would fail a real copy: {exc}"
-            )
-            continue
+        with stage(logger, StageName.TABLE_TOTAL, summary=summary, table=table) as table_stage:
+            # Call copy_table directly
+            try:
+                table_stage.rows = copy_table_task(
+                    write_conn, read_conn, copy_params, query_columns, source_schema_for_table
+                )
+            except PlannerError as exc:
+                if not copy_params.dry_run:
+                    # A real run still fails fast: an unplannable table is either
+                    # copied unbounded or not copied at all, and neither may be
+                    # papered over.
+                    raise
+                # A dry run exists to tell the operator about every unplannable
+                # table in the schema, not just the first one it hits.
+                unplannable_tables.append(table)
+                logger.error(
+                    f"[dry run] '{table}' cannot be planned and would fail a real copy: {exc}"
+                )
+                table_stage.status, table_stage.reason = "failed", "PlannerError"
+                continue
 
-        # Call copy_indexes directly. Not under dryRun: copy_table returns
-        # before the target is created, so CREATE INDEX ... ON <target> would
-        # hit a table that does not exist. On Postgres get_indexes_for_pk
-        # always reports a real primary key, so that fired on the very first
-        # table, burnt this task's three retries and killed the flow.
-        if not copy_params.dry_run:
-            copy_indexes(write_conn, read_conn, copy_params, query_columns, source_schema_for_table, logger)
-        else:
-            logger.info(
-                f"[dry run] skipped index creation for '{table}': the target table "
-                "was not created, so there is nothing to index."
-            )
+            # Call copy_indexes directly. Not under dryRun: copy_table returns
+            # before the target is created, so CREATE INDEX ... ON <target> would
+            # hit a table that does not exist. On Postgres get_indexes_for_pk
+            # always reports a real primary key, so that fired on the very first
+            # table, burnt this task's three retries and killed the flow.
+            if not copy_params.dry_run:
+                copy_indexes(write_conn, read_conn, copy_params, query_columns, source_schema_for_table, logger)
+            else:
+                logger.info(
+                    f"[dry run] skipped index creation for '{table}': the target table "
+                    "was not created, so there is nothing to index."
+                )
+
+    logger.info(summary.line())
 
     if copy_params.dry_run:
         logger.info(
@@ -493,11 +552,15 @@ def reconcile_table(write_conn: Any, read_conn: Any, copy_params: CopyParameters
         return
 
     adapter = build_source_adapter(read_conn)
-    source_count = adapter.count_rows_exact(source_schema, table)
+    with stage(logger, StageName.RECONCILE_SOURCE, table=table) as count_stage:
+        source_count = adapter.count_rows_exact(source_schema, table)
+        count_stage.rows = source_count
 
     target = f'"{copy_params.target_database}"."{copy_params.target_schema}"."{table}"'
-    write_conn.execute(f"SELECT COUNT(*) FROM {target}")
-    target_count = int(write_conn.fetchone()[0])
+    with stage(logger, StageName.RECONCILE_TARGET, table=table) as count_stage:
+        write_conn.execute(f"SELECT COUNT(*) FROM {target}")
+        target_count = int(write_conn.fetchone()[0])
+        count_stage.rows = target_count
 
     if source_count != target_count:
         raise ReconciliationError(
@@ -538,11 +601,18 @@ def copy_table(write_conn: Any, read_conn: Any, copy_params: CopyParameters, que
         else None
     )
 
-    # Tries another chunk column when the first one is rejected or skewed,
-    # instead of failing the cache build on it (issue 3576).
-    stats, plan = plan_table(
-        adapter, dialect, source_schema, table, config, logger, allowed_columns
-    )
+    planned = None
+    if dialect == SupportedDatabaseDialects.POSTGRES.value:
+        # Page ranges for large tables, one statement for small ones; None falls back to plan_table.
+        planned = _plan_postgres(
+            write_conn, read_conn, adapter, dialect, copy_params, query_columns, source_schema,
+            config, logger,
+        )
+    if planned is None:
+        planned = plan_table(
+            adapter, dialect, source_schema, table, config, logger, allowed_columns
+        )
+    stats, plan = planned
     logger.info(describe_plan(plan, source_schema, table))
 
     if config.dry_run:
@@ -556,8 +626,9 @@ def copy_table(write_conn: Any, read_conn: Any, copy_params: CopyParameters, que
         target = f'"{database}"."{schema}"."{table}"'
         select_sql = create_select_query(copy_params, query_columns, source_schema)
         mark_in_progress(write_conn, database, schema, table, plan.plan_id, 1, stats.row_count)
-        execute_statement(write_conn, f"DROP TABLE IF EXISTS {target};")
-        execute_statement(write_conn, f"CREATE TABLE {target} AS {select_sql}")
+        with stage(logger, StageName.COPY_SINGLE, rows=stats.row_count, table=table):
+            execute_statement(write_conn, f"DROP TABLE IF EXISTS {target};")
+            execute_statement(write_conn, f"CREATE TABLE {target} AS {select_sql}")
         record_chunk_progress(write_conn, database, schema, table, 1)
         return stats.row_count
 
@@ -575,6 +646,23 @@ def copy_table(write_conn: Any, read_conn: Any, copy_params: CopyParameters, que
             timestamp_filter_col=find_column_case_insensitive(
                 actual_columns, CDM_COLUMN_FILTER_MAP.get(table, {}).get("timestamp_column")
             ),
+        )
+
+    elif plan.strategy is ChunkStrategy.PAGE_RANGE:
+        # postgres_query sends quoted names to Postgres, which matches them by exact case.
+        catalog_columns = read_conn.get_columns(source_schema, table)
+        query_columns = QueryColumns(
+            table=table,
+            columns_to_copy=[
+                find_column_case_insensitive(catalog_columns, c) or c
+                for c in query_columns.columns_to_copy
+            ],
+            patient_filter_col=find_column_case_insensitive(
+                catalog_columns, query_columns.patient_filter_col
+            ) if query_columns.patient_filter_col else None,
+            timestamp_filter_col=find_column_case_insensitive(
+                catalog_columns, query_columns.timestamp_filter_col
+            ) if query_columns.timestamp_filter_col else None,
         )
 
     checkpoint = read_checkpoint(write_conn, database, schema, table)
@@ -605,16 +693,117 @@ def copy_table(write_conn: Any, read_conn: Any, copy_params: CopyParameters, que
         # resume point has to be written back before the loop begins.
         record_chunk_progress(write_conn, database, schema, table, start_at)
 
+    if plan.strategy is ChunkStrategy.PAGE_RANGE and start_at == 0:
+        # Page-range chunks do not delete before they insert, so rows an earlier
+        # build left in the target would be copied twice. Start from an empty table.
+        execute_statement(write_conn, f'DROP TABLE IF EXISTS "{database}"."{schema}"."{table}";')
+
     create_empty_target_table_if_absent(write_conn, copy_params, query_columns, source_schema)
 
-    for index in range(start_at, len(plan.predicates)):
-        copy_table_chunk(
-            write_conn, copy_params, query_columns, source_schema,
-            plan.predicates[index], index, len(plan.predicates),
-        )
-        record_chunk_progress(write_conn, database, schema, table, index + 1)
+    with stage(
+        logger, StageName.COPY_CHUNKS, rows=stats.row_count, table=table,
+        chunks=len(plan.predicates) - start_at, start_at=start_at,
+    ):
+        for index in range(start_at, len(plan.predicates)):
+            if plan.strategy is ChunkStrategy.PAGE_RANGE:
+                # Records its own progress, in the same transaction as the rows.
+                copy_page_chunk(write_conn, copy_params, query_columns, source_schema, plan, index)
+                continue
+            copy_table_chunk(
+                write_conn, copy_params, query_columns, source_schema,
+                plan.predicates[index], index, len(plan.predicates),
+            )
+            record_chunk_progress(write_conn, database, schema, table, index + 1)
 
     return stats.row_count
+
+
+def _plan_postgres(write_conn, read_conn, adapter, dialect, copy_params, query_columns, source_schema, config, logger):
+    """Page-range plan for a Postgres table, or None to fall back to column ranges.
+
+    On resume the stored chunk count is replayed first, so a changed row
+    estimate does not discard progress; if that plan no longer matches, the
+    table is planned afresh.
+    """
+    table = query_columns.table
+
+    # Columns and filters keys for the plan_id, which decides between resume and restart.
+    def plan_keys():
+        columns = query_columns.columns_to_copy
+        if not columns or columns == ["*"]:
+            # The real columns, so a column added or dropped in the source changes the plan.
+            columns = read_conn.get_columns(source_schema, table)
+        return page_plan_keys(columns, copy_params.patient_filter, copy_params.timestamp_filter)
+
+    checkpoint = None
+    if not copy_params.dry_run:
+        checkpoint = read_checkpoint(
+            write_conn, copy_params.target_database, copy_params.target_schema, table
+        )
+    stored_count = checkpoint.chunks_total if checkpoint is not None else None
+    # Try to resume from stored chunk count
+    planned = plan_postgres_table(
+        adapter, dialect, source_schema, table, config, logger, plan_keys, stored_count,
+    )
+    if (
+        planned is not None
+        and stored_count
+        and planned[1].strategy is ChunkStrategy.PAGE_RANGE
+        and planned[1].plan_id != checkpoint.plan_id
+    ):
+        # Something else changed, unable to resume, size chunks from the current row count.
+        planned = plan_postgres_table(
+            adapter, dialect, source_schema, table, config, logger, plan_keys
+        )
+    return planned
+
+
+@task(retries=3,
+      retry_delay_seconds=exponential_backoff(backoff_factor=2),
+      log_prints=True,
+      task_run_name="copy_chunk_{query_columns.table}_{chunk_index}",
+      timeout_seconds=int(Variable.get("cache_chunk_timeout", default="3600")),
+      cache_policy=NONE)
+def copy_page_chunk(write_conn: Any, copy_params: CopyParameters, query_columns: QueryColumns,
+                    source_schema: str, plan: ChunkPlan, chunk_index: int):
+    """Copy one page range and record it, atomically.
+
+    No concurrency tag: it runs inside copy_table_task, which already holds
+    the table-level slot (limit 1). One task per chunk keeps the chunk task
+    runs that stale-slot reconciliation reads as the build's heartbeat.
+    """
+    logger = get_run_logger()
+    table = query_columns.table
+    lower, upper = plan.page_bounds[chunk_index]
+    pages = f"pages {lower}..{'end' if upper is None else upper}"
+    total = len(plan.page_bounds)
+    select_sql = build_page_chunk_select(
+        source_schema, table, query_columns.columns_to_copy, lower, upper,
+        query_columns.patient_filter_col, copy_params.patient_filter,
+        query_columns.timestamp_filter_col,
+        None if copy_params.timestamp_filter is None else str(copy_params.timestamp_filter),
+    )
+    insert_sql = build_page_chunk_insert(
+        copy_params.target_database, copy_params.target_schema, copy_params.source_database,
+        select_sql, table, query_columns.columns_to_copy,
+    )
+    started = time.perf_counter()
+    try:
+        copied = run_page_chunk(
+            write_conn, copy_params.target_database, copy_params.target_schema,
+            table, chunk_index, insert_sql, logger,
+        )
+    except Exception as exc:
+        error = ChunkCopyError(f"Chunk {chunk_index + 1}/{total} of '{table}' failed ({pages}): {type(exc).__name__}")
+        if copy_params.patient_filter:
+            # The statement text, and so the cause, can carry the patient list.
+            raise error from None
+        raise error from exc
+    logger.info(
+        f"Chunk {chunk_index + 1}/{total} of '{table}': {pages}, "
+        f"~{plan.estimated_rows_per_chunk:,} rows, {time.perf_counter() - started:.1f} s"
+        + ("" if copied else " (already copied by an earlier attempt)")
+    )
 
 
 def _fetchall_rows(conn: Any, statement: str):
@@ -715,17 +904,18 @@ def copy_indexes(write_conn: Any, read_conn: Any, copy_params: CopyParameters, q
                     f"Creating index '{index.get('name')}' on columns {index.get('column_names')} (unique={index.get('unique')}) for table '{table}'."
                 )
 
-                execute_statement(
-                    write_conn,
-                    create_index_query(
-                        target_database,
-                        target_schema,
-                        table,
-                        index.get("name"),
-                        index.get("column_names"),
-                        index.get("unique"),
-                    ),
-                )
+                with stage(logger, StageName.INDEX, table=table, index=index.get("name")):
+                    execute_statement(
+                        write_conn,
+                        create_index_query(
+                            target_database,
+                            target_schema,
+                            table,
+                            index.get("name"),
+                            index.get("column_names"),
+                            index.get("unique"),
+                        ),
+                    )
 
                 logger.info(
                     f"{'Unique' if index.get('unique') else 'Non-unique'} index '{index.get('name')}' created for table '{table}' on columns {index.get('column_names')}."
@@ -749,17 +939,18 @@ def copy_indexes(write_conn: Any, read_conn: Any, copy_params: CopyParameters, q
             logger.debug(
                 f"Creating primary key index '{pk_index_name}' on columns {pk_index_columns} for table '{table}'."
             )
-            execute_statement(
-                write_conn,
-                create_index_query(
-                    target_database,
-                    target_schema,
-                    table,
-                    pk_index_name,
-                    pk_index_columns,
-                    unique=True,
-                ),
-            )
+            with stage(logger, StageName.INDEX, table=table, index=pk_index_name):
+                execute_statement(
+                    write_conn,
+                    create_index_query(
+                        target_database,
+                        target_schema,
+                        table,
+                        pk_index_name,
+                        pk_index_columns,
+                        unique=True,
+                    ),
+                )
             logger.info(
                 f"Primary Key Index '{pk_index_name}' copied for table '{table}' in schema '{target_database}'.'{target_schema}'."
             )

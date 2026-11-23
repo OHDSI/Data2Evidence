@@ -68,7 +68,10 @@ export const grantRolesByScopes = async (req: Request, res: Response, next: Next
     if (!user) {
       if (env.IDP_FETCH_USER_INFO_TYPE === 'logto') {
         // Fetch user info as Logto's access_token does not contain username
-        const logtoUser = await logtoApi.getUser(sub)
+        const logtoUser = await logtoApi.getUser(sub).catch(err => {
+          if (err?.response?.status === 404) return null
+          throw err
+        })
         if (logtoUser != null) {
           // Use username in Logto context (fallback to email if empty)
           username = logtoUser.username ?? logtoUser.primaryEmail

@@ -138,8 +138,8 @@ Deno.test('federated mode registers Logto with the browser-facing authorize URL'
   await runIdpMigration(cfg, f.store, f.admin, () => {})
   assertEquals(f.providers, [['logto', {
     displayName: 'Logto', clientId: 'cid', clientSecret: 'sec', issuer: 'https://logto.internal:3001/oidc',
-    authorizationEndpoint: 'https://d2e.test/oidc/auth', scopes: 'openid profile email',
-    groupsSource: 'none', autoProvision: false, enabled: true
+    authorizationEndpoint: 'https://d2e.test/oidc/auth', scopes: 'openid profile email roles',
+    groupsSource: 'claim', groupsClaim: 'roles', autoProvision: false, enabled: true
   }]])
 })
 

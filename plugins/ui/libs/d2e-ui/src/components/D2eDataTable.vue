@@ -1,5 +1,9 @@
 <template>
-  <div class="d2e-data-table" v-bind="$attrs">
+  <div
+    class="d2e-data-table"
+    :class="{ 'd2e-data-table--compact': density === 'compact' }"
+    v-bind="$attrs"
+  >
     <!--
       A controlled table: rows arrive filtered and sorted, and a header click
       only emits the next sort. Vuetify's own sort is disabled, so the order on
@@ -14,6 +18,8 @@
       :items-per-page="itemsPerPage"
       :expanded="expanded"
       :show-expand="expandable"
+      :hover="hover"
+      :row-props="rowProps"
       disable-sort
       hide-default-footer
       @update:page="emit('update:page', $event)"
@@ -32,8 +38,14 @@
           :data-testid="`d2e-data-table-sort-${header.key}`"
           @click="emit('update:sortBy', nextSort(sortBy, header.key))"
         >
-          <span>{{ header.title }}</span>
-          <v-icon :icon="sortIcon(header.key)" size="16" />
+          <span class="d2e-data-table__sort-label">{{ header.title }}</span>
+          <slot
+            name="sort-icon"
+            :header="header"
+            :order="sortOrder(header.key)"
+          >
+            <v-icon :icon="sortIcon(header.key)" size="16" />
+          </slot>
         </button>
         <span v-else>{{ header.title }}</span>
       </template>
@@ -44,7 +56,7 @@
         #[`item.${header.key}`]="slotProps"
       >
         <slot :name="`item.${header.key}`" v-bind="slotProps">{{
-          slotProps.value
+          formatCell(slotProps.value, header.format)
         }}</slot>
       </template>
 
@@ -77,6 +89,7 @@
 
       <template #bottom>
         <D2ePagination
+          v-if="!hideFooter"
           class="d2e-data-table__footer"
           test-id-prefix="d2e-data-table-footer"
           :page="page"
@@ -100,9 +113,12 @@ import { VDataTable, VIcon } from "vuetify/components";
 import D2eIconButton from "./D2eIconButton.vue";
 import D2ePagination from "./D2ePagination.vue";
 import {
+  DATA_TABLE_COMPACT_STYLE_MAP,
   DATA_TABLE_STYLE_MAP,
+  clickableRowProps,
+  formatCell,
+  formatRange,
   nextSort,
-  pageRange,
   type D2eDataTableProps,
   type D2eSortItem,
 } from "./dataTable";
@@ -115,7 +131,7 @@ const props = withDefaults(defineProps<D2eDataTableProps<T>>(), {
   expanded: () => [],
   noDataText: "No data",
   rowsPerPageLabel: "Rows per page:",
-  rangeLabel: (start: number, end: number, total: number) =>
+  rangeLabel: (start: string, end: string, total: string) =>
     `${start}-${end} of ${total}`,
   pageLabels: () => ({
     first: "First page",
@@ -124,6 +140,9 @@ const props = withDefaults(defineProps<D2eDataTableProps<T>>(), {
     last: "Last page",
   }),
   expandLabel: "Show details",
+  density: "default",
+  hover: false,
+  hideFooter: false,
 });
 
 const emit = defineEmits<{
@@ -131,6 +150,7 @@ const emit = defineEmits<{
   "update:page": [value: number];
   "update:itemsPerPage": [value: number];
   "update:expanded": [value: string[]];
+  "click:row": [item: T];
 }>();
 
 defineOptions({ inheritAttrs: false });
@@ -158,7 +178,7 @@ const vuetifyHeaders = computed(() => [
 ]);
 
 const rangeText = computed(() => {
-  const { start, end, total } = pageRange(
+  const { start, end, total } = formatRange(
     props.page,
     props.itemsPerPage,
     props.items.length,
@@ -166,12 +186,23 @@ const rangeText = computed(() => {
   return props.rangeLabel(start, end, total);
 });
 
+function sortOrder(key: string): D2eSortItem["order"] | null {
+  return props.sortBy.find((item) => item.key === key)?.order ?? null;
+}
+
 function sortIcon(key: string): string {
-  const active = props.sortBy.find((item) => item.key === key);
-  return active
-    ? DATA_TABLE_STYLE_MAP.sortIcons[active.order]
+  const order = sortOrder(key);
+  return order
+    ? DATA_TABLE_STYLE_MAP.sortIcons[order]
     : DATA_TABLE_STYLE_MAP.sortIcons.none;
 }
+
+const rowProps = computed(() => {
+  const isClickable = props.rowClickable;
+  if (!isClickable) return undefined;
+  return ({ item }: { item: T }) =>
+    isClickable(item) ? clickableRowProps(() => emit("click:row", item)) : {};
+});
 </script>
 
 <style scoped lang="scss">
@@ -226,6 +257,11 @@ function sortIcon(key: string): string {
     }
   }
 
+  :deep(.v-data-table__tr--clickable:focus-visible) {
+    outline: 2px solid var(--d2e-color-primary);
+    outline-offset: -2px;
+  }
+
   :deep(.d2e-data-table__detail-cell) {
     height: auto;
     padding: 8px 12px 12px 40px;
@@ -238,6 +274,39 @@ function sortIcon(key: string): string {
   &__footer {
     padding: 8px 0;
     background: var(--d2e-color-white);
+  }
+
+  &--compact {
+    :deep(.v-table > .v-table__wrapper > table) {
+      table-layout: fixed;
+    }
+
+    :deep(.v-table > .v-table__wrapper > table > thead > tr > th) {
+      height: auto;
+      padding: v-bind("`${DATA_TABLE_COMPACT_STYLE_MAP.cellPaddingY}px`")
+        v-bind("`${DATA_TABLE_COMPACT_STYLE_MAP.cellPaddingX}px`");
+    }
+
+    :deep(.v-table > .v-table__wrapper > table > tbody > tr > td) {
+      height: v-bind("`${DATA_TABLE_COMPACT_STYLE_MAP.rowHeight}px`");
+      padding: 0 v-bind("`${DATA_TABLE_COMPACT_STYLE_MAP.cellPaddingX}px`");
+    }
+
+    .d2e-data-table__sort {
+      display: flex;
+      width: 100%;
+      gap: v-bind("`${DATA_TABLE_COMPACT_STYLE_MAP.headerGap}px`");
+      text-align: start;
+    }
+
+    .d2e-data-table__sort-label {
+      min-width: 0;
+      overflow-wrap: anywhere;
+    }
+
+    .d2e-data-table__sort > :not(.d2e-data-table__sort-label) {
+      flex-shrink: 0;
+    }
   }
 }
 </style>

@@ -20,8 +20,9 @@ export interface ProviderBody {
   issuer: string
   authorizationEndpoint: string
   scopes: string
-  groupsSource: 'none'
-  autoProvision: false
+  groupsSource: 'none' | 'claim'
+  groupsClaim?: string
+  autoProvision: boolean
   enabled: true
 }
 

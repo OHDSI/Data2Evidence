@@ -27,6 +27,9 @@ class ChunkStrategy(str, Enum):
 
     SINGLE_STATEMENT = "SINGLE_STATEMENT"
     CHUNKED = "CHUNKED"
+    #: Postgres only: chunks are physical page ranges (``ctid``), read through
+    #: ``postgres_query`` so each chunk reads only its own pages.
+    PAGE_RANGE = "PAGE_RANGE"
 
 
 @dataclass(frozen=True)
@@ -112,6 +115,8 @@ class ChunkPlan:
     estimated_largest_chunk_rows: int = 0
     #: The size above which a chunk is too large; see MAX_CHUNK_SIZE_MULTIPLE.
     max_chunk_rows: int = 0
+    #: PAGE_RANGE only: (first page, end page) per chunk; the last end is None.
+    page_bounds: tuple[tuple[int, int | None], ...] = ()
 
     @property
     def is_skewed(self) -> bool:

@@ -28,9 +28,9 @@
 <script lang="ts">
 /**
  * The delete confirmation, extracted so the exploration page has a card entry
- * point for #3124. The three-way delete branch is moved verbatim from
- * `Bookmarks.vue`: a materialized cohort, an Atlas cohort definition and a D2E
- * bookmark each take a different endpoint, and there is no batch equivalent.
+ * point for #3124. The delete branch is three-way: a materialized cohort, an
+ * Atlas cohort definition and a D2E bookmark each take a different endpoint,
+ * and there is no batch equivalent.
  */
 import { mapActions, mapGetters, mapMutations } from 'vuex'
 import { D2eButton, D2eDialog } from '@d2e/ui'

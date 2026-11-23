@@ -18,12 +18,7 @@ export default defineConfig(({ command, mode }) => {
   const isServe = command === 'serve'
   const isPreview = process.argv.includes('preview')
 
-  // Parse navigation items for client routes (matching webpack config)
-  const navigationItems = JSON.parse(env.VITE_NAVIGATION_ITEMS || '[]')
-  const clientRoutes = navigationItems
-    .map((item: { route?: string }) => item.route)
-    .filter((route: string | undefined): route is string => !!route && route.startsWith('/'))
-    .concat('/cohorts')
+  const clientRoutes = ['/cohorts']
 
   if (!isProduction) {
     console.log('Mode       :', mode)
@@ -34,10 +29,8 @@ export default defineConfig(({ command, mode }) => {
     console.log('VITE_REDIRECT_URL:', env.VITE_REDIRECT_URL)
   }
 
-  const backendTarget = env.VITE_STANDALONE_ATLAS === 'true' ? 'http://localhost:3131' : 'https://localhost:41100'
-
   const rootProxyConfig = {
-    target: backendTarget,
+    target: 'https://localhost:41100',
     changeOrigin: true,
     secure: false,
     ws: false,

@@ -1,29 +1,36 @@
 <template>
-  <messageBox @close="cancel">
-    <template v-slot:header>{{ getText('MRI_PA_FILTER_SUMMARY_CREATE_COHORT_DEFINITION') }}</template>
-    <template v-slot:body>
-      <div>
-        <div style="padding: 24px">{{ getText('MRI_PA_FILTER_SUMMARY_CREATE_COHORT_DEFINITION_WARNING') }}</div>
-      </div>
-    </template>
-    <template v-slot:footer>
-      <div class="flex-spacer"></div>
-      <appButton
-        :click="onClickCreateCohortDefinition"
-        :text="getText('MRI_PA_FILTER_SUMMARY_CREATE_COHORT_DEFINITION_DOWNLOAD')"
+  <D2eDialog
+    :model-value="true"
+    :busy="isLoading"
+    :title="getText('MRI_PA_FILTER_SUMMARY_CREATE_COHORT_DEFINITION')"
+    data-testid="pa-create-cohort-definition-dialog"
+    @close="cancel"
+  >
+    <p>{{ getText('MRI_PA_FILTER_SUMMARY_CREATE_COHORT_DEFINITION_WARNING') }}</p>
+    <template #actions>
+      <D2eButton
+        variant="secondary"
+        :disabled="isLoading"
+        data-testid="pa-create-cohort-definition-cancel-btn"
+        @click="cancel"
+      >
+        {{ getText('MRI_PA_BUTTON_CANCEL') }}
+      </D2eButton>
+      <D2eButton
         v-focus
         :disabled="isLoading"
-      ></appButton>
-      <appButton :click="cancel" :text="getText('MRI_PA_BUTTON_CANCEL')"></appButton>
+        data-testid="pa-create-cohort-definition-create-btn"
+        @click="onClickCreateCohortDefinition"
+      >
+        {{ getText('MRI_PA_FILTER_SUMMARY_CREATE_COHORT_DEFINITION_DOWNLOAD') }}
+      </D2eButton>
     </template>
-  </messageBox>
+  </D2eDialog>
 </template>
 
 <script lang="ts">
 import { mapActions, mapGetters } from 'vuex'
-import appButton from '../lib/ui/app-button.vue'
-import LoadingAnimation from './LoadingAnimation.vue'
-import messageBox from './MessageBox.vue'
+import { D2eButton, D2eDialog } from '@d2e/ui'
 import { usePortalContext } from '../composables/usePortalContext'
 import { convertIFRToExtCohort } from '../utils/IfrToExtCohort'
 
@@ -109,9 +116,8 @@ export default {
     },
   },
   components: {
-    messageBox,
-    LoadingAnimation,
-    appButton,
+    D2eDialog,
+    D2eButton,
   },
 }
 </script>

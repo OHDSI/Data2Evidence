@@ -8,7 +8,6 @@ import {
   Dialog,
   Button,
   IconButton,
-  Alert,
   Tooltip,
   TextField,
   Select,
@@ -20,6 +19,7 @@ import {
 } from "ui-react";
 import { DatasetAttributeConfig, Feedback } from "../../../../types";
 import { useTranslation } from "../../../../contexts";
+import { errorText } from "./errorText";
 import { api } from "../../../../axios/api";
 import "./ManageMetadataDialog.scss";
 
@@ -71,6 +71,7 @@ const CreateAttributeDialog: FC<CreateAttributeDialogProps> = ({
   return (
     <Dialog
       title={getText(i18nKeys.MANAGE_METADATA_DIALOG__CREATE_ATTR_TITLE)}
+      banner={errorMessage && { severity: "error", message: errorMessage }}
       size="s"
       open={open}
       busy={busy}
@@ -92,11 +93,6 @@ const CreateAttributeDialog: FC<CreateAttributeDialogProps> = ({
       }
     >
       <div className="manage-metadata__form">
-        {errorMessage && (
-          <Alert severity="error" variant="banner">
-            {errorMessage}
-          </Alert>
-        )}
         <TextField
           label={getText(i18nKeys.MANAGE_METADATA_DIALOG__CREATE_ATTR_NAME)}
           value={name}
@@ -323,7 +319,7 @@ const ImportMetadataDialog: FC<ImportMetadataDialogProps> = ({
       onAttributeCreated();
       setCreateRowId(null);
     } catch (err: any) {
-      setFeedback({ type: "error", message: err?.data?.message || err?.data || err?.message });
+      setFeedback({ type: "error", message: errorText(err, getText(i18nKeys.MANAGE_METADATA_DIALOG__ERROR)) });
     } finally {
       setBusy(false);
     }
@@ -352,6 +348,20 @@ const ImportMetadataDialog: FC<ImportMetadataDialogProps> = ({
     <>
       <Dialog
         title={getText(i18nKeys.MANAGE_METADATA_DIALOG__IMPORT_PREVIEW_TITLE)}
+        description={fileName}
+        banner={[
+          errorMessage && { severity: "error", message: errorMessage },
+          feedback?.message && { severity: feedback.type ?? "error", message: feedback.message },
+          createdBanner
+            ? { severity: "success", message: createdBanner }
+            : unknownCount > 0 && {
+                severity: "warning",
+                message:
+                  unknownCount === 1
+                    ? getText(i18nKeys.MANAGE_METADATA_DIALOG__IMPORT_UNKNOWN_BANNER_ONE)
+                    : getText(i18nKeys.MANAGE_METADATA_DIALOG__IMPORT_UNKNOWN_BANNER, [String(unknownCount)]),
+              },
+        ]}
         size="l"
         open={open}
         closeOnBackdrop
@@ -368,28 +378,6 @@ const ImportMetadataDialog: FC<ImportMetadataDialogProps> = ({
         }
       >
         <div className="manage-metadata import-metadata">
-          <div className="import-metadata__filename">{fileName}</div>
-          {errorMessage && (
-            <Alert severity="error" variant="banner">
-              {errorMessage}
-            </Alert>
-          )}
-          {feedback?.message && (
-            <Alert severity={feedback.type ?? "error"} variant="banner">
-              {feedback.message}
-            </Alert>
-          )}
-          {createdBanner ? (
-            <Alert severity="success" variant="banner">
-              {createdBanner}
-            </Alert>
-          ) : unknownCount > 0 ? (
-            <Alert severity="warning" variant="banner">
-              {unknownCount === 1
-                ? getText(i18nKeys.MANAGE_METADATA_DIALOG__IMPORT_UNKNOWN_BANNER_ONE)
-                : getText(i18nKeys.MANAGE_METADATA_DIALOG__IMPORT_UNKNOWN_BANNER, [String(unknownCount)])}
-            </Alert>
-          ) : null}
           <div className="manage-metadata__tablewrap">
             <Table>
               <TableHead>

@@ -42,6 +42,8 @@ export const Showcase: Story = {
         {trigger("one", "1 action")}
         {trigger("three", "3 actions")}
         {trigger("leading", "Leading action")}
+        {trigger("banner", "Banner")}
+        {trigger("description", "Description + banner")}
 
         <Dialog open={open === "s"} size="s" title="Small modal (540)" onClose={close} actions={cancelConfirm}>
           <p>Small dialogs split their action buttons full-width.</p>
@@ -113,6 +115,31 @@ export const Showcase: Story = {
           actions={<Button variant="primary" onClick={close}>Import</Button>}
         >
           <p>leadingActions sit on the left; the footer becomes space-between.</p>
+        </Dialog>
+        <Dialog
+          open={open === "banner"}
+          size="s"
+          title="Add metadata"
+          banner={{ severity: "error", message: "Couldn't save the metadata. Please try again." }}
+          onClose={close}
+          actions={cancelConfirm}
+        >
+          <p>The banner spans the dialog edge to edge, between the title and the content.</p>
+        </Dialog>
+        <Dialog
+          open={open === "description"}
+          size="l"
+          title="Import metadata – preview"
+          description="Metadata.csv"
+          banner={{
+            severity: "success",
+            message: "Attribute “Launch date” created and “Publisher” corrected. All 8 rows are ready to import.",
+          }}
+          onClose={close}
+          leadingActions={<Button variant="ghost" onClick={close}>Cancel</Button>}
+          actions={<Button variant="primary" onClick={close}>Import 8 metadata</Button>}
+        >
+          <p>The banner sits under the description and stays visible while the content scrolls.</p>
         </Dialog>
       </div>
     );

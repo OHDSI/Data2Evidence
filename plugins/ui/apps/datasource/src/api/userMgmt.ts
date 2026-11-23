@@ -7,12 +7,17 @@ export interface UserGroupMetadata {
   alp_role_study_researcher: string[]
 }
 
-export function getUserGroupList(idpUserId: string, token: string | null): Promise<UserGroupMetadata> {
+function fetchUserGroupList(idpUserId: string, token: string | null, sync: boolean): Promise<UserGroupMetadata> {
   return apiFetch<UserGroupMetadata>('/usermgmt/api/user-group/list', {
     method: 'POST',
-    body: { userId: idpUserId, sync: true },
+    body: { userId: idpUserId, sync },
     token,
   })
+}
+
+// Sign-in already synced; sync here only if the user isn't provisioned yet.
+export function getUserGroupList(idpUserId: string, token: string | null): Promise<UserGroupMetadata> {
+  return fetchUserGroupList(idpUserId, token, false).catch(() => fetchUserGroupList(idpUserId, token, true))
 }
 
 export interface StudyAccessRequest {

@@ -80,7 +80,7 @@ test(TEST_NAME, async ({ page }) => {
     await expect(page.locator('.loading-animation-component')).not.toBeVisible()
   })
 
-  const dialog = page.locator('.inclusion-report-dialog')
+  const dialog = page.getByTestId('pa-inclusion-report-dialog')
 
   await test.step('Open Inclusion Report dialog and wait for data', async () => {
     await expect(page.getByRole('button', { name: 'Attrition Plot' })).toBeVisible()
@@ -91,7 +91,7 @@ test(TEST_NAME, async ({ page }) => {
     await page.getByRole('button', { name: 'Attrition Plot' }).click()
     await reportResponse
     await expect(dialog).toBeVisible()
-    await expect(dialog.locator('.inclusion-report-dialog__title-text')).toHaveText('Attrition Plot')
+    await expect(dialog.getByRole('heading', { name: 'Attrition Plot' })).toBeVisible()
     await expect(dialog.locator('.status-message.loading')).not.toBeVisible()
     await expect(dialog.locator('.inclusion-report-container')).toBeVisible()
   })
@@ -185,7 +185,7 @@ test(TEST_NAME, async ({ page }) => {
   })
 
   await test.step('Close Inclusion Report dialog', async () => {
-    await dialog.locator('.inclusion-report-dialog__close-btn').click()
+    await dialog.getByTestId('d2e-dialog-close').click()
     await expect(dialog).not.toBeVisible()
     await expect(page.getByRole('button', { name: 'Attrition Plot' })).toBeVisible()
   })

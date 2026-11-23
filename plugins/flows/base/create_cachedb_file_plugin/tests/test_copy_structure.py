@@ -161,3 +161,63 @@ def test_the_bigquery_bytes_limitation_is_recorded():
     start, end = func.lineno, func.end_lineno
     body = "\n".join(source.splitlines()[start - 1 : end])
     assert "total_bytes_processed" in body
+
+
+def test_existing_webapi_results_tables_are_not_copied_again():
+    func = function_node(COPY_SOURCE_PATH, "create_schema_tables")
+    assert calls_to(func, "webapi_owned_tables_to_skip"), (
+        "a refresh must leave WebAPI-written results tables alone"
+    )
+
+
+def test_only_the_results_pass_protects_webapi_tables():
+    from .copy_source import FLOW_SOURCE_PATH
+
+    func = function_node(FLOW_SOURCE_PATH, "create_results_cache_flow")
+    call = calls_to(func, "create_cache_flow")[0]
+    assert [k.arg for k in call.keywords] == ["protect_webapi_results"]
+    assert call.keywords[0].value.value is True
+
+
+# ---------------------------------------------------------------------------
+# PAGE_RANGE chunks
+# ---------------------------------------------------------------------------
+#
+# The transaction itself is tested by running it (test_page_chunks.py); these
+# pin how copy.py wires it in.
+
+
+def _task_decorator(func):
+    for decorator in func.decorator_list:
+        if isinstance(decorator, ast.Call) and calls_to(decorator, "task"):
+            return decorator
+    return None
+
+
+def test_copy_page_chunk_is_a_task_without_a_concurrency_tag():
+    """It runs inside copy_table_task, which already holds the table slot;
+    a tag here would wait on that same slot forever."""
+    func = function_node(COPY_SOURCE_PATH, "copy_page_chunk")
+    decorator = _task_decorator(func)
+    assert decorator is not None, "copy_page_chunk must be a Prefect task"
+    assert "tags" not in [keyword.arg for keyword in decorator.keywords]
+
+
+def test_the_stored_plan_is_not_read_under_dry_run():
+    func = function_node(COPY_SOURCE_PATH, "_plan_postgres")
+    assert dry_run_guarded_branch(func, "read_checkpoint") is not None
+
+
+def test_a_page_range_table_starting_at_chunk_one_is_emptied_first():
+    """Page-range chunks never DELETE, so a rebuild into an existing cache would
+    copy every row twice unless the target starts empty."""
+    func = function_node(COPY_SOURCE_PATH, "copy_table")
+    guards = [
+        node
+        for node in ast.walk(func)
+        if isinstance(node, ast.If)
+        and "PAGE_RANGE" in ast.unparse(node.test)
+        and "start_at" in ast.unparse(node.test)
+    ]
+    assert guards, "copy_table must handle a PAGE_RANGE table that starts at chunk 1"
+    assert any("DROP TABLE IF EXISTS" in string_constants(g.body) for g in guards)

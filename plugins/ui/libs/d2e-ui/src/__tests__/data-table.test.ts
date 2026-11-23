@@ -1,6 +1,10 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import {
+  DATA_TABLE_COMPACT_STYLE_MAP,
   DATA_TABLE_STYLE_MAP,
+  clickableRowProps,
+  formatCell,
+  formatRange,
   nextSort,
   pageCount,
   pageRange,
@@ -23,6 +27,17 @@ describe("D2eDataTable style map", () => {
         asc: "mdi-arrow-up",
         desc: "mdi-arrow-down",
       },
+    });
+  });
+});
+
+describe("D2eDataTable compact style map", () => {
+  it("matches the Figma exploration table (4532:452010, 4532:452988)", () => {
+    expect(DATA_TABLE_COMPACT_STYLE_MAP).toEqual({
+      rowHeight: 40,
+      cellPaddingX: 8,
+      cellPaddingY: 10,
+      headerGap: 10,
     });
   });
 });
@@ -75,5 +90,90 @@ describe("pageCount", () => {
   it("rounds up", () => {
     expect(pageCount(10, 123)).toBe(13);
     expect(pageCount(25, 50)).toBe(2);
+  });
+});
+
+describe("formatRange", () => {
+  it("groups the thousands of the start, end and total", () => {
+    expect(formatRange(1, 10, 2340)).toEqual({
+      start: "1",
+      end: "10",
+      total: "2,340",
+    });
+    expect(formatRange(234, 10, 2340)).toEqual({
+      start: "2,331",
+      end: "2,340",
+      total: "2,340",
+    });
+  });
+
+  it("is 0-0 of 0 when there are no rows", () => {
+    expect(formatRange(1, 10, 0)).toEqual({
+      start: "0",
+      end: "0",
+      total: "0",
+    });
+  });
+});
+
+describe("formatCell", () => {
+  it("groups the thousands of a number", () => {
+    expect(formatCell(2340)).toBe("2,340");
+  });
+
+  it("shows a number as it is when the column turns formatting off", () => {
+    expect(formatCell(4012345, false)).toBe(4012345);
+  });
+
+  it("does not change a value that is not a number", () => {
+    expect(formatCell("2340")).toBe("2340");
+    expect(formatCell(null)).toBe(null);
+    expect(formatCell(undefined)).toBe(undefined);
+  });
+});
+
+describe("clickableRowProps", () => {
+  const row = {};
+  const keydown = (key: string, target: object = row) => {
+    const preventDefault = vi.fn();
+    const event = {
+      key,
+      target,
+      currentTarget: row,
+      preventDefault,
+    } as unknown as KeyboardEvent;
+    return { event, preventDefault };
+  };
+
+  it("makes the row focusable and opens it on click", () => {
+    const onActivate = vi.fn();
+    const props = clickableRowProps(onActivate);
+    expect(props.tabindex).toBe(0);
+    props.onClick();
+    expect(onActivate).toHaveBeenCalledTimes(1);
+  });
+
+  it.each(["Enter", " "])("opens the focused row on %j", (key) => {
+    const onActivate = vi.fn();
+    const { event, preventDefault } = keydown(key);
+    clickableRowProps(onActivate).onKeydown(event);
+    expect(onActivate).toHaveBeenCalledTimes(1);
+    expect(preventDefault).toHaveBeenCalled();
+  });
+
+  it("ignores other keys", () => {
+    const onActivate = vi.fn();
+    const { event, preventDefault } = keydown("a");
+    clickableRowProps(onActivate).onKeydown(event);
+    expect(onActivate).not.toHaveBeenCalled();
+    expect(preventDefault).not.toHaveBeenCalled();
+  });
+
+  it("ignores keys pressed on a control inside the row", () => {
+    const onActivate = vi.fn();
+    const { event, preventDefault } = keydown("Enter", {});
+    clickableRowProps(onActivate).onKeydown(event);
+    expect(onActivate).not.toHaveBeenCalled();
+    expect(preventDefault).not.toHaveBeenCalled();
   });
 });

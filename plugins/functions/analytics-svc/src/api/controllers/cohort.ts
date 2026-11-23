@@ -405,51 +405,6 @@ export async function createCohort(req: IMRIRequest, res: Response) {
     }
 }
 
-export async function generateCohortDefinition(
-    req: IMRIRequest,
-    res: Response
-) {
-    try {
-        const datasetId = req.body.datasetId;
-        const language = getUser(req).lang;
-        // Remap mriquery for use in createEndpointFromRequest
-        const { cohortDefinition } = await createEndpointFromRequest(req);
-        const mriConfig = await mriConfigConnection.getStudyConfig(
-            {
-                req,
-                action: "getBackendConfig",
-                configId: req.paConfigId,
-                configVersion: req.paConfigVersion,
-                lang: language,
-                datasetId,
-            },
-            true
-        );
-        const attributes = {
-            filter: {
-                configMetadata: {
-                    id: cohortDefinition.configData.configId,
-                    version: cohortDefinition.configData.configVersion,
-                },
-                cards: cohortDefinition.cards,
-                sort: "",
-            },
-        };
-        const ohdsiCohortDefinition = await convertIFRToExtCohort(
-            attributes,
-            mriConfig.config,
-            req,
-            datasetId
-        );
-
-        res.status(200).send(ohdsiCohortDefinition);
-        return;
-    } catch (err) {
-        logger.error(err);
-        res.status(500).send(MRIEndpointErrorHandler({ err, language }));
-    }
-}
-
 export async function getCohortDefinition(req: IMRIRequest, res: Response) {
     try {
         const analyticsConnection = getCohortAnalyticsConnection(req);

@@ -25,7 +25,7 @@ async function logout(page) {
 }
 
 async function createUser(page, username) {
-  await page.getByRole('button', { name: 'Add user' }).click()
+  await page.getByRole('button', { name: 'Add new user' }).click()
   await page.getByRole('textbox', { name: 'Username' }).fill(username)
   await page.getByRole('textbox', { name: 'Password' }).fill(PASSWORD)
   await page.getByRole('button', { name: 'Add' }).click()
@@ -57,7 +57,8 @@ async function deleteUser(page, username) {
   await page.getByRole('link', { name: 'Users' }).click()
   await expect(page.getByRole('heading', { name: 'Users' })).toBeVisible()
   const userRow = page.getByRole('row', { name: new RegExp(username) })
-  await userRow.getByRole('button', { name: 'Delete' }).click()
+  await userRow.getByRole('button', { name: 'Actions' }).click()
+  await page.getByRole('menuitem', { name: 'Delete user' }).click()
   await page.getByRole('button', { name: 'Yes, delete' }).click()
   await expect(userRow).not.toBeVisible()
 }
@@ -90,7 +91,7 @@ async function navigateBackToCohortList(page) {
   if (await newExplorationBtn.isVisible().catch(() => false)) {
     return
   }
-  await page.locator('#pane-left').getByRole('link', { name: 'Cohorts' }).click()
+  await page.locator('#pane-left').getByRole('link', { name: 'Data exploration' }).click()
   await dismissUnsavedChangesDialog(page)
   await page.waitForTimeout(500)
 }
@@ -214,9 +215,6 @@ test(TEST_NAME, async ({ page }) => {
   // page: a non-owner seeing a shared cohort, Rename/Delete disabled for a
   // non-owner, and materialize by a non-owner. The owner's own rename and
   // delete are still covered below.
-  //
-  // See also atlas_cohort_definition.spec.ts, where the Atlas entry point went
-  // the same way.
 
   // === TEST: Researcher 1 renames and deletes own cohort ===
   // (Only the owner can modify cohorts, so switch back to researcher_1)

@@ -451,7 +451,9 @@ def test_planner_modules_do_not_drag_in_prefect():
     import create_cachedb_file_plugin.checkpoint  # noqa: F401
     import create_cachedb_file_plugin.chunk_utils  # noqa: F401
     import create_cachedb_file_plugin.errors  # noqa: F401
+    import create_cachedb_file_plugin.page_chunks  # noqa: F401
     import create_cachedb_file_plugin.planner_types  # noqa: F401
+    import create_cachedb_file_plugin.stage_timing  # noqa: F401
 
     assert "prefect" not in sys.modules
 
@@ -817,3 +819,136 @@ def test_a_single_statement_plan_is_never_skewed():
     plan = plan_chunks("postgres", "cdm", "measurement", _stats(1_000, (1, 1, 1)), config)
     assert plan.strategy is ChunkStrategy.SINGLE_STATEMENT
     assert not plan.is_skewed
+
+
+# ---------------------------------------------------------------------------
+# PAGE_RANGE: Postgres tables split by physical page (ctid) ranges
+# ---------------------------------------------------------------------------
+
+from create_cachedb_file_plugin.chunk_utils import (
+    PLANNER_VERSION,
+    compute_page_plan_id,
+    page_plan_keys,
+    page_predicate,
+    plan_page_ranges,
+)
+
+PAGE_CONFIG = ChunkConfig(target_chunk_rows=5_000_000)
+PAGE_ARGS = dict(
+    dialect="postgres",
+    schema="cdm",
+    table="measurement",
+    relfilenode=16384,
+    columns_key="measurement_id,person_id",
+    filters_key="no-filters",
+)
+
+
+def _page_plan(row_count=900_000_000, blocks=1_000_000, chunk_count=None, **overrides):
+    args = {**PAGE_ARGS, **overrides}
+    return plan_page_ranges(
+        args["dialect"], args["schema"], args["table"], row_count, blocks,
+        args["relfilenode"], args["columns_key"], args["filters_key"], PAGE_CONFIG,
+        chunk_count,
+    )
+
+
+def test_page_predicate_is_a_half_open_tid_range():
+    assert page_predicate(0, 10) == "ctid >= '(0,0)'::tid AND ctid < '(10,0)'::tid"
+
+
+def test_page_ranges_split_every_page_evenly_and_leave_the_last_open():
+    plan = _page_plan(blocks=1_000_000)
+
+    assert plan.strategy is ChunkStrategy.PAGE_RANGE
+    assert plan.column_name is None
+    assert plan.includes_null_chunk is False
+    bounds = plan.page_bounds
+    assert bounds[0][0] == 0
+    assert bounds[-1][1] is None
+    for (_, upper), (lower, _) in zip(bounds, bounds[1:]):
+        assert upper == lower
+    widths = [upper - lower for lower, upper in bounds[:-1]]
+    widths.append(1_000_000 - bounds[-1][0])
+    assert max(widths) - min(widths) <= 1
+    assert plan.predicates == tuple(page_predicate(lower, upper) for lower, upper in bounds)
+
+
+def test_page_range_chunk_count_comes_from_the_row_count():
+    plan = _page_plan(row_count=900_000_000)
+    assert len(plan.predicates) == resolve_chunk_count(900_000_000, PAGE_CONFIG) == 180
+    assert plan.estimated_rows_per_chunk == 5_000_000
+
+
+def test_page_range_chunk_count_is_clamped_to_the_page_count():
+    plan = _page_plan(row_count=900_000_000, blocks=3)
+    assert plan.page_bounds == ((0, 1), (1, 2), (2, None))
+
+
+@pytest.mark.parametrize(
+    "change",
+    [
+        {"relfilenode": 16385},
+        {"blocks": 1_000_001},
+        {"chunk_count": 181},
+        {"columns_key": "measurement_id"},
+        {"filters_key": "other-filters"},
+    ],
+)
+def test_page_plan_id_changes_with_what_the_chunks_read(change):
+    base = dict(
+        dialect="postgres", schema="cdm", table="measurement", relfilenode=16384,
+        blocks=1_000_000, chunk_count=180, columns_key="a,b", filters_key="f",
+    )
+    changed = {**base, **change}
+    assert compute_page_plan_id(**base) != compute_page_plan_id(**changed)
+
+
+def test_the_columns_key_ignores_order_and_case():
+    columns_key, _ = page_plan_keys(["Person_ID", "measurement_id"], None, None)
+    assert columns_key == "measurement_id,person_id"
+    assert page_plan_keys(["measurement_id", "person_id"], None, None)[0] == columns_key
+
+
+@pytest.mark.parametrize(
+    "change",
+    [{"patient_filter": [1, 2, 4]}, {"patient_filter": None}, {"timestamp_filter": "2010-01-01"}],
+)
+def test_the_filters_key_changes_with_the_filters(change):
+    base = {"patient_filter": [1, 2, 3], "timestamp_filter": "2009-08-03"}
+    _, before = page_plan_keys(["a"], **base)
+    _, after = page_plan_keys(["a"], **{**base, **change})
+    assert before != after
+
+
+def test_the_filters_key_does_not_carry_the_patient_ids():
+    _, filters_key = page_plan_keys(["a"], [123456789], None)
+    assert "123456789" not in filters_key
+    assert len(filters_key) == 64
+
+
+def test_resuming_with_the_stored_chunk_count_keeps_the_plan_id():
+    """A new reltuples alone must not discard a partial page-range copy."""
+    first = _page_plan(row_count=900_000_000)
+    resumed = _page_plan(row_count=1_100_000_000, chunk_count=len(first.predicates))
+    replanned = _page_plan(row_count=1_100_000_000)
+
+    assert resumed.plan_id == first.plan_id
+    assert replanned.plan_id != first.plan_id
+
+
+def test_column_range_plan_ids_are_unchanged_by_page_ranges():
+    """Golden column-range plan ids.
+
+    A changed id would make every in-progress column-range build restart its tables.
+    """
+    assert PLANNER_VERSION == 2
+    chunked = compute_plan_id(
+        "bigquery", "cdm", "measurement", "measurement_id", ChunkStrategy.CHUNKED,
+        ('"measurement_id" < 10', '"measurement_id" >= 10'),
+    )
+    single = compute_plan_id(
+        "postgres", "cdm", "person", None, ChunkStrategy.SINGLE_STATEMENT, ()
+    )
+    assert chunked == "77aec8ba75b676ca2f4fd109461740e72a88ebbb9d034b65c3229bfc21de8cf6"
+    assert single == "d7c586c309111760ba133849591801b9f1e1771eb56159867504b52db529edfd"

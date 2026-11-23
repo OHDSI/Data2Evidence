@@ -2,14 +2,29 @@ import { useEffect, useId, useState, type ReactNode } from "react";
 import MuiDialog from "@mui/material/Dialog";
 import IconButton from "@mui/material/IconButton";
 import CloseIcon from "@mui/icons-material/Close";
+import clsx from "clsx";
 import { DIALOG_SIZE_MAP, type DialogSize } from "./dialogSizes";
 import { Button } from "./Button";
+import { AlertBanner } from "./AlertBanner";
+import type { AlertSeverity } from "./Alert";
 import "./Dialog.scss";
+
+export interface DialogBanner {
+  severity?: AlertSeverity;
+  title?: ReactNode;
+  message: ReactNode;
+  action?: ReactNode;
+  onClose?: () => void;
+}
+
+type MaybeBanner = DialogBanner | false | "" | null | undefined;
 
 export interface DialogProps {
   open: boolean;
   onClose?: () => void;
   title?: string;
+  description?: ReactNode;
+  banner?: MaybeBanner | MaybeBanner[];
   size?: DialogSize;
   maxWidth?: number | string;
   closeOnEscape?: boolean;
@@ -39,12 +54,15 @@ export interface DialogProps {
   actions?: ReactNode;
   /** Actions aligned to the left of the footer; the footer becomes space-between. */
   leadingActions?: ReactNode;
+  className?: string;
 }
 
 export function Dialog({
   open,
   onClose,
   title,
+  description,
+  banner,
   size = "s",
   maxWidth,
   closeOnEscape = true,
@@ -60,10 +78,14 @@ export function Dialog({
   children,
   actions,
   leadingActions,
+  className,
 }: DialogProps) {
   const titleId = useId();
   const resolvedMaxWidth = maxWidth ?? DIALOG_SIZE_MAP[size];
   const [confirming, setConfirming] = useState(false);
+  const banners = (Array.isArray(banner) ? banner : [banner]).filter(
+    (b): b is DialogBanner => !!b,
+  );
 
   // When the parent dialog is closed externally, drop any pending confirm so the
   // discard dialog can't linger or carry stale state into the next open.
@@ -106,7 +128,7 @@ export function Dialog({
           backdrop: { sx: { backgroundColor: "rgba(0, 0, 0, 0.4)" } },
         }}
         PaperProps={{
-          className: `d2e-dialog d2e-dialog--${size}`,
+          className: clsx("d2e-dialog", `d2e-dialog--${size}`, className),
           sx: { maxWidth: resolvedMaxWidth, width: "100%" },
         }}
       >
@@ -128,6 +150,18 @@ export function Dialog({
             </IconButton>
           ) : null}
         </header>
+
+        {description ? <div className="d2e-dialog__description">{description}</div> : null}
+
+        {banners.length ? (
+          <div className="d2e-dialog__banners">
+            {banners.map((b, i) => (
+              <AlertBanner key={i} severity={b.severity} title={b.title} action={b.action} onClose={b.onClose}>
+                {b.message}
+              </AlertBanner>
+            ))}
+          </div>
+        ) : null}
 
         <div className="d2e-dialog__body">{children}</div>
 
