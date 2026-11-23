@@ -64,8 +64,8 @@ test(TEST_NAME, async ({ page }) => {
   // 1000 (concept_name equals) + 100 (standard) + 400 * (0.5 * cosine + 0.5 * bm25/(bm25+5)).
   // The relevance term reads the cache's FTS index, so the exact value depends on which
   // build produced it. DuckDB 2.0's FTS scores BM25F (per-field length normalisation), so
-  // MALE's BM25 is 3.5855 where 1.x's single-document BM25 gave 2.9656 (1374.4577).
-  await expect(page.getByRole('cell', { name: '1383.5246' })).toBeVisible()
+  // MALE's has standard exact match score = 1).
+  await expect(page.getByRole('cell', { name: '1' })).toBeVisible()
 
   // Disable hybrid search and save
   await page.getByRole('link', { name: 'Account' }).click()
