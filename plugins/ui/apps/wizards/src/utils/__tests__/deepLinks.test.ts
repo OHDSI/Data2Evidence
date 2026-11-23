@@ -322,7 +322,7 @@ describe("deepLinks", () => {
       const formData = { age: "[40-100]" };
       const directPayload = buildWizardSubmitPayload(defaultFields, formData, defaultMeta, "dataset-123");
       const deepLink = generateFormSubmitDeepLink(defaultFields, formData, defaultMeta, "dataset-123");
-      const linkedBookmark = decompress<any>(new URL(deepLink, "https://example.com").searchParams.get("query")!);
+      const linkedBookmark = decompress<any>(getHashParams(deepLink).get("query")!);
 
       for (const bookmark of [directPayload.bookmark as any, linkedBookmark]) {
         expect(bookmark.filter.cards.content[0].content[0].attributes.content[0].constraints).toEqual({
