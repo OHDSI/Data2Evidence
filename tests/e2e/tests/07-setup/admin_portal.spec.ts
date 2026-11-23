@@ -9,5 +9,5 @@ test('Switch to admin portal', async ({ page }) => {
   await openAdminPortalFromAtlas(page)
 
   await expect(page.getByRole('heading')).toContainText('Users')
-  await expect(page.getByTestId('button')).toContainText('Add user')
+  await expect(page.getByRole('button', { name: 'Add new user' })).toBeVisible()
 })

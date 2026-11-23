@@ -17,6 +17,6 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByRole('button', { name: 'Sign in' }).click()
   await openAdminPortalFromAtlas(page)
   await expect(page.getByRole('heading', { name: 'Users' })).toBeVisible()
-  await expect(page.getByTestId('button')).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Add new user' })).toBeVisible()
   await expect(page.getByRole('cell', { name: 'admin', exact: true })).toBeVisible()
 })

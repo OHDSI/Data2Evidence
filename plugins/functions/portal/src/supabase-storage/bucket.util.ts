@@ -11,3 +11,15 @@ export function isBucketAlreadyExists(status: number, body: string): boolean {
     return false;
   }
 }
+
+// storage-api answers a missing bucket with HTTP 400 and {"statusCode":"404"}.
+export function isBucketNotFound(status: number, body: string): boolean {
+  if (status === 404) {
+    return true;
+  }
+  try {
+    return String(JSON.parse(body)?.statusCode) === "404";
+  } catch {
+    return false;
+  }
+}

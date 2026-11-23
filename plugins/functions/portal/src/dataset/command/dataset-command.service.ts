@@ -147,6 +147,17 @@ export class DatasetCommandService {
       datasetDto,
     );
 
+    // Best-effort: notify trex to (re)attach the new dataset's cache file and source DB
+    // so a freshly-set cache_id becomes available without a trex restart. Resolved through
+    // the same helper the insert path uses, so the attached value cannot drift from the
+    // value persisted to cache_id. Runs before the WebAPI sync because a HANA dataset's
+    // WebAPI source reads the `<databaseCode>__srcdb` catalog this attach creates.
+    const cacheId = datasetDto.cacheId ?? resolveCacheId(datasetDto);
+    await this.trexApiService.attach({
+      cacheIds: cacheId ? [cacheId] : [],
+      connectionIds: datasetDto.databaseCode ? [datasetDto.databaseCode] : [],
+    });
+
     // Then register the source and kick off the TrexSQL cache build. The cache build
     // is fire-and-forget inside syncDatasetToWebApi — downstream consumers (DQD, DC)
     // must poll cache readiness via GET /system-portal/dataset/:id/cache-status
@@ -159,21 +170,12 @@ export class DatasetCommandService {
         schemaName: datasetDto.schemaName,
         vocabSchemaName: datasetDto.vocabSchemaName,
         resultsSchemaName: datasetDto.resultsSchemaName,
+        cacheId: datasetDto.cacheId ?? resolveCacheId(datasetDto),
         type: datasetDto.type,
         fhirDatasetId: datasetDto.fhirDatasetId ?? null,
       },
       datasetDto.detail,
     );
-
-    // Best-effort: notify trex to (re)attach the new dataset's cache file and source DB
-    // so a freshly-set cache_id becomes available without a trex restart. Resolved through
-    // the same helper the insert path uses, so the attached value cannot drift from the
-    // value persisted to cache_id.
-    const cacheId = datasetDto.cacheId ?? resolveCacheId(datasetDto);
-    await this.trexApiService.attach({
-      cacheIds: cacheId ? [cacheId] : [],
-      connectionIds: datasetDto.databaseCode ? [datasetDto.databaseCode] : [],
-    });
 
     // Sync of the per-dataset Logto role + scopes; lazy-recreated on first researcher assignment if it fails.
     if (datasetDto.tokenDatasetCode) {
@@ -420,6 +422,7 @@ export class DatasetCommandService {
             schemaName: source.schemaName,
             vocabSchemaName: source.vocabSchemaName,
             resultsSchemaName: source.resultsSchemaName,
+            cacheId: source.cacheId ?? null,
             type: "webapi",
             fhirDatasetId: source.fhirDatasetId ?? null,
           },
@@ -751,6 +754,7 @@ export class DatasetCommandService {
         schemaName: dataset.schemaName,
         vocabSchemaName: dataset.vocabSchemaName,
         resultsSchemaName: dataset.resultsSchemaName,
+        cacheId: dataset.cacheId ?? null,
         type: dataset.type,
         fhirDatasetId: dataset.fhirDatasetId ?? null,
       },
@@ -1263,6 +1267,7 @@ export class DatasetCommandService {
       schemaName?: string;
       vocabSchemaName?: string;
       resultsSchemaName?: string;
+      cacheId: string | null;
       type?: string;
       fhirDatasetId: string | null;
     },
@@ -1291,10 +1296,12 @@ export class DatasetCommandService {
 
     const dataset = {
       id: datasetInfo.id,
+      databaseCode: datasetInfo.databaseCode,
       dialect: datasetInfo.dialect,
       schemaName: datasetInfo.schemaName,
       vocabSchemaName: datasetInfo.vocabSchemaName,
       resultsSchemaName: datasetInfo.resultsSchemaName,
+      cacheId: datasetInfo.cacheId,
     } as Dataset;
 
     const detailEntity =

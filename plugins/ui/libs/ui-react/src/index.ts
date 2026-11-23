@@ -1,7 +1,7 @@
 // Public API. Component/symbol names are product-neutral; CSS stays .d2e-* /
 // --d2e-* (the shared design-token namespace).
 export { Dialog } from "./components/Dialog";
-export type { DialogProps } from "./components/Dialog";
+export type { DialogProps, DialogBanner } from "./components/Dialog";
 export { DIALOG_SIZE_MAP, type DialogSize } from "./components/dialogSizes";
 export { Button } from "./components/Button";
 export type { ButtonProps } from "./components/Button";

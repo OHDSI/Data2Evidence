@@ -17,5 +17,6 @@ RUN npx playwright install chromium --with-deps
 # Copy test files and config
 COPY playwright.config.ts ./
 COPY tests ./tests
+COPY mock ./mock
 
 CMD ["npm", "test"]

@@ -264,9 +264,6 @@ jobs:
             DOCKER_BUILD_CONTEXT_PATH: .
             cache_enabled: "true"
             needs_github_pat_secret: "true"
-          - AZ_REG_REPOSITORY: d2e-supabase-storage
-            DOCKER_BUILD_FILE_PATH: ./services/supabase-storage/Dockerfile
-            DOCKER_BUILD_CONTEXT_PATH: ./services/supabase-storage
           - AZ_REG_REPOSITORY: d2e-materialize-cohorts
             DOCKER_BUILD_FILE_PATH: ./services/materialize-cohorts/Dockerfile
             DOCKER_BUILD_CONTEXT_PATH: .
@@ -313,12 +310,13 @@ jobs:
           context: ${{ matrix.DOCKER_BUILD_CONTEXT_PATH }}
           file: ${{ matrix.DOCKER_BUILD_FILE_PATH }}
           platforms: ${{ matrix.PLATFORMS || 'linux/amd64,linux/arm64' }}
-          # push_by_digest entries push an untagged image via `outputs`;
-          # merge_worker_image tags the combined manifest list.
-          push: ${{ matrix.push_by_digest != 'true' }}
-          outputs: ${{ matrix.push_by_digest == 'true' && 'type=image,push-by-digest=true,name-canonical=true,push=true' || '' }}
+          # push_by_digest entries push a per-arch <RUN_TAG>-<ARCH> image that
+          # merge_worker_image joins by digest. It must be tagged: the builds are
+          # reproducible, so the digest can match a version pushed days ago, and
+          # another run's untagged-version cleanup would delete it before merge.
+          push: true
           pull: ${{ matrix.pull_base == 'true' || false }}
-          tags: ${{ env.REG_URL }}/${{ matrix.AZ_REG_REPOSITORY }}${{ matrix.push_by_digest != 'true' && format(':{0}', env.RUN_TAG) || '' }}
+          tags: ${{ env.REG_URL }}/${{ matrix.AZ_REG_REPOSITORY }}:${{ env.RUN_TAG }}${{ matrix.push_by_digest == 'true' && format('-{0}', matrix.ARCH) || '' }}
           provenance: false
           sbom: false
           cache-from: |
@@ -852,7 +850,7 @@ jobs:
             BUILD_TYPE=OSS
             PLUGINS_FEED=${{ needs.setup.outputs.is_release_push == 'true' && 'stable' || 'd2e' }}
             PLUGINS_FROM_REGISTRY=@ohdsi/pythia-agent@0.1.0-develop.21.g24eb709
-            TREXSQL_REF=sha-043f3efb7ea0351a346530d0c76156bbc3994666@sha256:6df5527702ad165cbc486f042dadded8710f73dbac38ee307d8de31c05b39bf5
+            TREXSQL_REF=sha-974c584da03f996441dfe07549f94b4005066784@sha256:38041ff0d775185ee9a0e87e7a1d23a5e9b616edacca4f0c2a7412c68c304c9e
           secrets: |
             "PLUGINS_REGISTRY=${{ secrets.PLUGINS_REGISTRY }}"
             "github_token=${{ secrets.GITHUB_TOKEN }}"
@@ -1363,6 +1361,7 @@ jobs:
             -e D2E_BASE_URL=https://localhost:443 \
             -e CI=true \
             -e GITHUB_ACTIONS=true \
+            -e SKIP_IDP_SPECS=1 \
             d2e-e2e npm test
 
       - name: Mark e2e attempt success
@@ -1543,10 +1542,24 @@ jobs:
           # yarn.lock at this commit, so `yarn install --frozen-lockfile` would
           # simply fail here.
           npm install
-          init_choice=y ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v develop init
-          ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v develop -c ./docker-compose-ci.yml start
-          ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v develop setupdemo
-          ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v develop -c ./docker-compose-ci.yml stop
+          cli() { ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v develop "$@"; }
+          # set -e does not apply inside a function run as a condition, so chain explicitly.
+          seed() {
+            init_choice=y cli init &&
+            cli -c ./docker-compose-ci.yml start &&
+            cli setupdemo
+          }
+          # The 0.18.12 release's setupdemo is flaky: its WebAPI cache build can lose
+          # the cache-file ATTACH race, leaving an empty cache that DQD then fails on.
+          # Retry once from a clean stack; the state lives only in named volumes.
+          if ! seed; then
+            echo "::warning title=Logto-era seed::first attempt failed, resetting the stack and retrying once"
+            cli -c ./docker-compose-ci.yml stop || true
+            docker ps -aq --filter "label=com.docker.compose.project=$COMPOSE_PROJECT_NAME" | xargs -r docker rm -f
+            docker volume ls -q --filter "label=com.docker.compose.project=$COMPOSE_PROJECT_NAME" | xargs -r docker volume rm
+            seed
+          fi
+          cli -c ./docker-compose-ci.yml stop
 
       - name: Upgrade it to this build
         env:
@@ -1749,6 +1762,49 @@ jobs:
             DC_EXIT_CODE=$?
             [ $DC_EXIT_CODE = 0 ] || { echo EXIT DC_EXIT_CODE=$DC_EXIT_CODE && exit $DC_EXIT_CODE; }
 
+      - name: Wait for trex healthy
+        run: |
+          status=missing
+          for i in $(seq 1 60); do
+            name=$(docker ps -a --filter 'name=-trex$' --format '{{.Names}}' | head -1)
+            status=$(docker inspect -f '{{.State.Health.Status}}' "$name" 2>/dev/null || echo missing)
+            echo "[$i] ${name:-trex}: $status"
+            [ "$status" = "healthy" ] && exit 0
+            sleep 5
+          done
+          echo "::error::trex did not become healthy (last status: $status)"
+          [ -n "$name" ] && docker logs "$name" || true
+          exit 1
+
+      # build_e2e_image only runs when e2e or plugin sources change, and d2e-e2e
+      # has no canonical tag to fall back on, so build it here when this run did
+      # not publish one.
+      - name: Get e2e Docker image
+        run: |
+          if docker pull ${REG_URL}/d2e-e2e:${DOCKER_TAG_NAME}; then
+            docker tag ${REG_URL}/d2e-e2e:${DOCKER_TAG_NAME} d2e-e2e
+          else
+            docker build -t d2e-e2e ./tests/e2e
+          fi
+
+      - name: Disable IPv6 to prevent ERR_NETWORK_CHANGED
+        run: sudo sysctl -w net.ipv6.conf.all.disable_ipv6=1
+
+      - name: e2e tests
+        run: |
+          cd ./tests/e2e
+          docker run --rm \
+            --network=host \
+            --ipc=host \
+            -v "$(pwd)/test-results:/work/test-results" \
+            -v "$(pwd)/ctrf:/work/ctrf" \
+            -e D2E_BASE_URL=https://localhost:443 \
+            -e E2E_DB_DIALECT=hana \
+            -e SKIP_IDP_SPECS=1 \
+            -e CI=true \
+            -e GITHUB_ACTIONS=true \
+            d2e-e2e npm test
+
       - name: Mark demo hana attempt success
         if: success()
         run: |
@@ -1762,6 +1818,21 @@ jobs:
           name: demo-hana-attempt-${{ matrix.attempt }}
           path: ./_attempt/
           overwrite: true
+
+      - name: Upload Error Context
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: error-context-hana-attempt-${{ matrix.attempt }}
+          path: tests/e2e/test-results/**/*
+          overwrite: true
+
+      - name: Publish Test Report
+        if: always()
+        uses: ctrf-io/github-test-reporter@v1
+        with:
+          report-path: "./tests/e2e/ctrf/*.json"
+          file-report: true
 
       - name: Stop d2e services
         if: success() || failure()
@@ -1808,6 +1879,22 @@ jobs:
       changes_ui: ${{ needs.setup.outputs.changes_ui }}
       reg_url: ghcr.io/ohdsi
       prepull_flow_images: ""
+    secrets: inherit
+
+  # IDP auth e2e (logto-federated / physionet-mock / entra-external-id). Reuses this run's
+  # freshly-built run_tag images + ui-tgz. Runs on develop merges, manual dispatch, and
+  # PRs that touch the e2e harness (changes_e2e) — never on unrelated PRs.
+  test_e2e_idp:
+    needs: [setup, build_images, build_trex_image, build_plugins]
+    if: |
+      needs.setup.outputs.is_develop_push == 'true' ||
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'pull_request' && needs.setup.outputs.changes_e2e == 'true')
+    uses: ./.github/workflows/test-e2e-idp.yml
+    with:
+      runner: ${{ needs.setup.outputs.random_runner }}
+      run_tag: ${{ needs.setup.outputs.run_tag }}
+      reg_url: ghcr.io/ohdsi
     secrets: inherit
 
   test_http_hana:
@@ -1995,7 +2082,6 @@ jobs:
           - d2e-trex
           - d2e-dataflow-gen
           - d2e-dataflow-gen-worker
-          - d2e-supabase-storage
           - d2e-materialize-cohorts
     steps:
       - name: Login to GitHub Container Registry

@@ -5,8 +5,20 @@ const SHOULD_SKIP = false
 test.fixme(SHOULD_SKIP, `${TEST_NAME} test is temporarily disabled.`)
 
 /**
- * Smoke test: the Atlas Data Exploration screen loads and shows its primary
- * controls for the selected Demo dataset.
+ * Smoke test: the Cohorts screen loads and shows its primary controls.
+ *
+ * This asserted the old Bookmarks header - the 'Create Cohort:' title and a
+ * D2E / Import / Shared / Compare button group. The Data Exploration redesign
+ * replaced that page, so every one of those is gone:
+ *
+ * - 'Create Cohort:' and the button group are replaced by the toolbar below.
+ * - 'Shared' (the show-shared-cohorts toggle) has no equivalent; the list shows
+ *   what the user owns.
+ * - 'Import' (import an Atlas cohort definition) has no entry point on the new
+ *   page. That is an open question for the redesign, not something this test
+ *   can assert around.
+ * - 'Compare' moved into the bulk-actions bar, which only appears once a card
+ *   is selected, so it is not part of a page-load assertion any more.
  */
 test(TEST_NAME, async ({ page }) => {
   await page.goto('/d2e/portal')

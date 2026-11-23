@@ -3,6 +3,9 @@ import { applyPageSelection, retainIds } from '../components/helpers/exploration
 import { emptyFilters, type ExplorationFilters } from '../components/helpers/explorationFilters'
 import type { ExplorationSortKey } from '../components/helpers/explorationList'
 import { PAGE_SIZES } from '../components/helpers/explorationPaging'
+import type { ExplorationColumnSort } from '../components/helpers/explorationTableSort'
+
+export type ExplorationViewMode = 'grid' | 'list'
 
 export interface ExplorationListView {
   searchQuery: string
@@ -10,6 +13,8 @@ export interface ExplorationListView {
   filters: ExplorationFilters
   page: number
   pageSize: number
+  viewMode: ExplorationViewMode
+  columnSort: ExplorationColumnSort[]
 }
 
 const copyFilters = (filters: ExplorationFilters): ExplorationFilters => ({
@@ -38,6 +43,8 @@ export const useExplorationsStore = defineStore('explorations', {
       filters: emptyFilters(),
       page: 1,
       pageSize: PAGE_SIZES[0],
+      viewMode: 'grid',
+      columnSort: [],
     } as ExplorationListView,
   }),
   getters: {
@@ -67,7 +74,11 @@ export const useExplorationsStore = defineStore('explorations', {
       this.selectedBookmarkIds = retainIds(this.selectedBookmarkIds, visibleIds)
     },
     saveListView(view: ExplorationListView) {
-      this.listView = { ...view, filters: copyFilters(view.filters) }
+      this.listView = {
+        ...view,
+        filters: copyFilters(view.filters),
+        columnSort: view.columnSort.map(sort => ({ ...sort })),
+      }
     },
   },
 })

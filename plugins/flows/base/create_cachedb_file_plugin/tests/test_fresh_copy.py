@@ -7,6 +7,7 @@ import pytest
 
 from create_cachedb_file_plugin.checkpoint import (
     COPY_RUN_TABLE_NAME,
+    WEBAPI_RESULT_TABLES,
     apply_fresh_copy,
     ensure_status_tables,
     mark_complete,
@@ -14,6 +15,7 @@ from create_cachedb_file_plugin.checkpoint import (
     read_checkpoint,
     record_chunk_progress,
     reset_table,
+    webapi_owned_tables_to_skip,
 )
 from create_cachedb_file_plugin.errors import FreshCopyResetError
 
@@ -191,3 +193,66 @@ def test_a_failure_mid_reset_raises_fresh_copy_reset_error(conn, logger):
 
     with pytest.raises(FreshCopyResetError):
         apply_fresh_copy(conn, DATABASE, SCHEMA, RUN_ID, False, logger)
+
+
+# --------------------------------------------------------------------------
+# WebAPI-owned results tables
+# --------------------------------------------------------------------------
+
+
+def _seed_cohort(conn, schema):
+    conn.execute(
+        f'CREATE TABLE "{DATABASE}"."{schema}"."cohort" '
+        "(cohort_definition_id BIGINT, subject_id BIGINT)"
+    )
+    conn.execute(f'INSERT INTO "{DATABASE}"."{schema}"."cohort" VALUES (1001, 1)')
+
+
+def _cohort_rows(conn, schema):
+    conn.execute(f'SELECT cohort_definition_id, subject_id FROM "{DATABASE}"."{schema}"."cohort"')
+    return conn.fetchall()
+
+
+def test_webapi_cohort_survives_fresh_copy_when_complete(conn, logger):
+    ensure_status_tables(conn, DATABASE, OTHER_SCHEMA, logger)
+    _seed_cohort(conn, OTHER_SCHEMA)
+    mark_in_progress(conn, DATABASE, OTHER_SCHEMA, "cohort", "plan-a", 1, 1)
+    mark_complete(conn, DATABASE, OTHER_SCHEMA, "cohort")
+
+    apply_fresh_copy(
+        conn, DATABASE, OTHER_SCHEMA, RUN_ID, False, logger, protected=WEBAPI_RESULT_TABLES
+    )
+
+    assert _cohort_rows(conn, OTHER_SCHEMA) == [(1001, 1)]
+
+
+def test_webapi_cohort_survives_fresh_copy_when_not_complete(conn, logger):
+    ensure_status_tables(conn, DATABASE, OTHER_SCHEMA, logger)
+    _seed_cohort(conn, OTHER_SCHEMA)
+    mark_in_progress(conn, DATABASE, OTHER_SCHEMA, "cohort", "plan-a", 4, 100)
+
+    discarded = apply_fresh_copy(
+        conn, DATABASE, OTHER_SCHEMA, RUN_ID, False, logger, protected=WEBAPI_RESULT_TABLES
+    )
+
+    assert "cohort" not in discarded
+    assert _cohort_rows(conn, OTHER_SCHEMA) == [(1001, 1)]
+
+
+def test_cdm_pass_still_resets_an_incomplete_cohort_table(conn, logger):
+    ensure_status_tables(conn, DATABASE, SCHEMA, logger)
+    _seed_cohort(conn, SCHEMA)
+    mark_in_progress(conn, DATABASE, SCHEMA, "cohort", "plan-a", 4, 100)
+
+    discarded = apply_fresh_copy(conn, DATABASE, SCHEMA, RUN_ID, False, logger)
+
+    assert discarded == ["cohort"]
+    assert not _table_exists(conn, SCHEMA, "cohort")
+
+
+def test_webapi_owned_tables_are_skipped_only_when_the_cache_has_them(conn):
+    _seed_cohort(conn, OTHER_SCHEMA)
+    tables = ["achilles_results", "cohort", "cc_results", "person"]
+
+    assert webapi_owned_tables_to_skip(conn, DATABASE, OTHER_SCHEMA, tables) == ["cohort"]
+    assert webapi_owned_tables_to_skip(conn, DATABASE, SCHEMA, tables) == []

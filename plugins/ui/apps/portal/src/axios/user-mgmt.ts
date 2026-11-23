@@ -295,6 +295,33 @@ export class UserMgmt {
     });
   }
 
+  public getUserStudyAccessRequests(userId: string): Promise<
+    {
+      id: string;
+      userId: string;
+      groupId: string;
+      username: string;
+      role: string;
+      studyId: string;
+      tenantId: string;
+    }[]
+  > {
+    return request({
+      baseURL: USER_MGMT_BASE_URL,
+      url: `study/access-request/user/${userId}`,
+      method: "GET",
+    });
+  }
+
+  public getUserStudyRoles(username: string): Promise<UserGroup[]> {
+    return request({
+      baseURL: USER_MGMT_BASE_URL,
+      url: "user-group",
+      params: { username },
+      method: "GET",
+    });
+  }
+
   public handleStudyAccessRequest(
     action: "approve" | "reject",
     id: string,

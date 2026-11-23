@@ -117,6 +117,37 @@ describe("render smoke", () => {
     expect(closed).toBe(0);
   });
 
+  it("renders description and full-width banners between header and body", () => {
+    mount(
+      <Dialog
+        open
+        title="Import metadata"
+        description="Metadata.csv"
+        banner={[{ severity: "error", message: "Save failed" }, false, { severity: "warning", message: "2 unknown" }]}
+      >
+        <p>Body</p>
+      </Dialog>,
+    );
+    const description = screen.getByText("Metadata.csv");
+    const banners = document.querySelector(".d2e-dialog__banners")!;
+    const body = document.querySelector(".d2e-dialog__body")!;
+    expect(description.classList.contains("d2e-dialog__description")).toBe(true);
+    expect(banners.querySelectorAll(".d2e-alert--banner").length).toBe(2);
+    expect(banners.querySelector(".d2e-alert--error")?.textContent).toContain("Save failed");
+    expect(description.compareDocumentPosition(banners) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(banners.compareDocumentPosition(body) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(body.querySelector(".d2e-alert")).toBeNull();
+  });
+
+  it("renders no banner container when every banner is falsy", () => {
+    mount(
+      <Dialog open title="Add metadata" banner={[false, null]}>
+        <p>Body</p>
+      </Dialog>,
+    );
+    expect(document.querySelector(".d2e-dialog__banners")).toBeNull();
+  });
+
   it("confirms before closing when confirmOnClose is set", () => {
     let closed = 0;
     mount(
@@ -197,8 +228,8 @@ describe("render smoke", () => {
         onChange={(s) => (state = s)}
       />,
     );
-    // The two selected values surface as "(2)" on the trigger.
-    const trigger = screen.getByRole("button", { name: /Filters \(2\)/ });
+    // One active field counts once, even with two selected values.
+    const trigger = screen.getByRole("button", { name: /Filters \(1\)/ });
     fireEvent.click(trigger);
     // A range field renders an uppercase group heading (raw text "Created").
     expect(screen.getByText("Created")).toBeTruthy();

@@ -1,5 +1,5 @@
 import { FC, useCallback, useEffect, useState } from "react";
-import { Alert, Button, Checkbox, Dialog, MarkdownField, RadioGroup, Select, TextField } from "ui-react";
+import { Button, Checkbox, Dialog, MarkdownField, RadioGroup, Select, TextField } from "ui-react";
 import { api } from "../../../../axios/api";
 import {
   NewStudyMetadataInput,
@@ -254,6 +254,7 @@ const UpdateDataSourceDialog: FC<UpdateDataSourceDialogProps> = ({ dataset, open
   return (
     <Dialog
       title={getText(i18nKeys.UPDATE_DATA_SOURCE_DIALOG__UPDATE_DATA_SOURCE)}
+      banner={feedback?.message && { severity: feedback.type ?? "error", message: feedback.message }}
       size="l"
       open={open}
       busy={updating}
@@ -270,11 +271,6 @@ const UpdateDataSourceDialog: FC<UpdateDataSourceDialogProps> = ({ dataset, open
       }
     >
       <div className="update-data-source-dialog__content">
-        {feedback?.message && (
-          <Alert severity={feedback.type ?? "error"} variant="banner">
-            {feedback.message}
-          </Alert>
-        )}
         {!DATASET_SOURCE_TYPES.has(dataset.type) && (
           <>
             <div style={{ fontWeight: "bold" }}>

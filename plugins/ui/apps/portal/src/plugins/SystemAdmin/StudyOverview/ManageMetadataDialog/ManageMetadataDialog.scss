@@ -121,16 +121,6 @@
   }
 }
 
-.import-metadata__filename {
-  font-size: var(--d2e-font-body2-size, 14px);
-  color: var(--d2e-color-neutral);
-}
-
-.import-metadata .d2e-alert--banner {
-  width: calc(100% + 48px);
-  margin-left: -24px;
-}
-
 .import-metadata .d2e-table .import-metadata__row--unknown .MuiTableCell-root {
   background: var(--d2e-color-alarm-light);
 }

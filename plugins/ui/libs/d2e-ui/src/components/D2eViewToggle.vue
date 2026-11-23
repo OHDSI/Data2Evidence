@@ -13,18 +13,23 @@
       :data-testid="option.testId"
       @click="select(option.value)"
     >
-      <v-icon :icon="option.icon" size="20" />
+      <v-icon
+        :icon="option.icon"
+        :size="option.iconSize ?? VIEW_TOGGLE_STYLE_MAP.defaultIconSize"
+      />
     </button>
   </div>
 </template>
 
 <script setup lang="ts">
 import { VIcon } from "vuetify/components";
+import { VIEW_TOGGLE_STYLE_MAP } from "./viewToggle";
 
 export interface D2eViewToggleOption {
   value: string;
   label: string;
   icon: string;
+  iconSize?: number;
   testId?: string;
 }
 
@@ -48,26 +53,25 @@ function select(value: string) {
 <style scoped lang="scss">
 .d2e-view-toggle {
   display: inline-flex;
-  height: 48px;
+  width: v-bind("`${VIEW_TOGGLE_STYLE_MAP.width}px`");
+  height: v-bind("`${VIEW_TOGGLE_STYLE_MAP.height}px`");
   box-sizing: border-box;
   overflow: hidden;
-  border: var(--d2e-border-width-sm) solid rgba(0, 0, 0, 0.12);
-  border-radius: var(--d2e-radius-sm);
+  border: var(--d2e-border-width-sm) solid
+    v-bind("VIEW_TOGGLE_STYLE_MAP.borderColor");
+  border-radius: var(--d2e-radius-md);
   background: var(--d2e-color-white);
 
   &__option {
     display: grid;
+    flex: 1 1 0;
     place-items: center;
-    width: 50px;
+    min-width: 0;
     padding: 0;
     border: 0;
     background: transparent;
-    color: rgba(0, 0, 0, 0.6);
+    color: var(--d2e-color-neutral-black);
     cursor: pointer;
-
-    & + & {
-      border-left: var(--d2e-border-width-sm) solid rgba(0, 0, 0, 0.12);
-    }
 
     &:hover {
       background: rgba(0, 0, 0, 0.04);
@@ -83,11 +87,10 @@ function select(value: string) {
     }
 
     &--selected {
-      background: rgba(0, 0, 0, 0.12);
-      color: rgba(0, 0, 0, 0.87);
+      background: v-bind("VIEW_TOGGLE_STYLE_MAP.selectedBackground");
 
       &:hover {
-        background: rgba(0, 0, 0, 0.16);
+        background: v-bind("VIEW_TOGGLE_STYLE_MAP.selectedBackground");
       }
     }
   }

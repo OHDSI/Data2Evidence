@@ -1,4 +1,6 @@
 .app-date-range {
-  align-items: center;
-  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: var(--d2e-spacing-s);
+  padding-top: var(--d2e-spacing-xs);
 }

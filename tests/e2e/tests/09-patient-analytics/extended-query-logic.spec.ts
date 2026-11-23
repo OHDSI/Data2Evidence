@@ -101,10 +101,10 @@ test(TEST_NAME, async ({ page }) => {
   // await expect(page).toHaveScreenshot()
 
   // Reload saved filter
-  await page.locator('#pane-left').getByRole('link', { name: 'Cohorts' }).click()
-  await page.getByTestId('explorations-new-btn').click()
+  await page.locator('#pane-left').getByRole('link', { name: 'Data exploration' }).click()
   await page.getByRole('button', { name: 'Leave without saving' }).click()
-  await page.locator('#pane-left').getByRole('link', { name: 'Cohorts' }).click()
+  await page.getByTestId('explorations-new-btn').click()
+  await page.locator('#pane-left').getByRole('link', { name: 'Data exploration' }).click()
   await page.getByText('Extended Logic Filter').click()
   // The active cohort here is a fresh (clean) new cohort, so loading a saved filter no
   // longer prompts the unsaved-changes dialog (#2636). Dismiss it only if it appears.
@@ -116,7 +116,7 @@ test(TEST_NAME, async ({ page }) => {
   // await expect(page).toHaveScreenshot()
 
   // Delete saved filter
-  await page.locator('#pane-left').getByRole('link', { name: 'Cohorts' }).click()
+  await page.locator('#pane-left').getByRole('link', { name: 'Data exploration' }).click()
   await deleteExploration(page, 'Extended Logic Filter')
   // Wait for delete dialog to disappear
   await expect(page.getByText('Delete Saved Filter')).not.toBeVisible()

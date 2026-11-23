@@ -3,8 +3,8 @@ import { Page } from '@playwright/test'
 import { MINUTE_1, MINUTE_2, MINUTE_3, MINUTE_5, MINUTE_10 } from '../const'
 
 const TEST_NAME = 'dataset-new-schema-data-management-plugin-waveform'
-const SHOULD_SKIP = false
-test.fixme(SHOULD_SKIP, `${TEST_NAME} test is temporarily disabled.`)
+const SHOULD_SKIP = true
+test.fixme(SHOULD_SKIP, `${TEST_NAME}: creating this dataset type is no longer supported (#3610).`)
 test.describe.configure({ retries: 3 }) // Re-try up to 3 times for flaky tests
 const DATASET_NAME = 'Test Waveform Dataset'
 const CACHE_DATASET_NAME = 'Test Waveform Cache'
@@ -40,7 +40,11 @@ const deleteDatasetsIfPresent = async (page: Page, name: string) => {
   }
 }
 
-// Logs in as admin only if the session is not already signed in (hooks and test share the same page)
+// Hooks and the test share one page, so sign in only on its first visit. The signed-out
+// public landing page renders the same button test ids before redirecting to sign-in,
+// so the DOM cannot tell the two states apart.
+const signedInPages = new WeakSet<Page>()
+
 const openAdminPortal = async (page: Page) => {
   await page.goto('/d2e/portal')
   const identifier = page.getByRole('textbox', { name: 'Username or email' })
@@ -105,7 +109,7 @@ test(TEST_NAME, async ({ page }) => {
     await page.getByRole('textbox', { name: 'Result Schema Name' }).fill(`result_schema_${randomString}`)
     await page.getByRole('combobox', { name: 'Data model option', exact: true }).click()
     await page.getByRole('option', { name: 'waveform [data_management_plugin]' }).click()
-    await page.getByRole('combobox', { name: 'PA config' }).click()
+    await page.getByRole('combobox', { name: 'Data exploration configuration' }).click()
     await page.getByRole('option', { name: PA_CONFIG_NAME, exact: true }).click()
     await page.getByRole('textbox', { name: 'Token data source code' }).click()
     await page.getByRole('textbox', { name: 'Token data source code' }).fill(randomString)

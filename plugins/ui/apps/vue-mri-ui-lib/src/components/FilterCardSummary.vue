@@ -119,7 +119,6 @@ import { D2eButton, D2eIconButton } from '@d2e/ui'
 import appButton from '../lib/ui/app-button.vue'
 import appLabel from '../lib/ui/app-label.vue'
 import bsBadge from '../lib/ui/bs-badge.vue'
-import messageBox from './MessageBox.vue'
 import CreateCohortDefinitionDialog from './CreateCohortDefinitionDialog.vue'
 import { getAttributeName, getAdvanceTimeFilterFormatted } from '../utils/filterCardUtils'
 
@@ -290,7 +289,7 @@ export default {
       // 0-byte .sql file that looks like a successful export, so refuse and
       // say why instead.
       if (!content) {
-        this.notificationStore.setToastMessage({ text: this.getText('MRI_PA_FILTER_SUMMARY_SQL_UNAVAILABLE') })
+        this.notificationStore.setToastMessage({ text: this.getText('MRI_PA_FILTER_SUMMARY_SQL_DOWNLOAD_FAILED') })
         return
       }
       const blob = new Blob([content], { type: 'text/sql' })
@@ -300,6 +299,7 @@ export default {
       document.body.appendChild(link)
       link.click()
       document.body.removeChild(link)
+      this.notificationStore.setToastMessage({ text: this.getText('MRI_PA_FILTER_SUMMARY_SQL_DOWNLOADED') })
     },
     async onClickCopySql() {
       const content = this.getResponse()?.data?.sql || ''
@@ -330,7 +330,6 @@ export default {
   components: {
     D2eButton,
     D2eIconButton,
-    messageBox,
     appButton,
     appLabel,
     bsBadge,

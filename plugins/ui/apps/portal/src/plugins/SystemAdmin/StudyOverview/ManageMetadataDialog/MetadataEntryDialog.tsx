@@ -1,5 +1,5 @@
 import { FC, useEffect, useMemo, useState } from "react";
-import { Dialog, Button, Select, TextField, Alert } from "ui-react";
+import { Dialog, Button, Select, TextField } from "ui-react";
 import { DatasetAttributeConfig } from "../../../../types";
 import { useTranslation } from "../../../../contexts";
 import "./ManageMetadataDialog.scss";
@@ -67,6 +67,7 @@ const MetadataEntryDialog: FC<MetadataEntryDialogProps> = ({
           ? getText(i18nKeys.MANAGE_METADATA_DIALOG__ADD_TITLE)
           : getText(i18nKeys.MANAGE_METADATA_DIALOG__UPDATE_TITLE)
       }
+      banner={errorMessage && { severity: "error", message: errorMessage }}
       size="s"
       open={open}
       busy={busy}
@@ -85,11 +86,6 @@ const MetadataEntryDialog: FC<MetadataEntryDialogProps> = ({
       }
     >
       <div className="manage-metadata__form">
-        {errorMessage && (
-          <Alert severity="error" variant="banner">
-            {errorMessage}
-          </Alert>
-        )}
         <Select
           label={getText(i18nKeys.MANAGE_METADATA_DIALOG__METADATA_NAME)}
           value={attributeId}

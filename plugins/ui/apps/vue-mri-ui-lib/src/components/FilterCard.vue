@@ -4,25 +4,29 @@
     @click="onFiltercardClick"
     :data-testid="testId"
   >
-    <!--Filtercard rename messageBox-->
-    <messageBox messageType="custom" @close="cancel" :busy="busy" v-if="renameModal.show">
-      <template v-slot:header>{{ getText('MRI_PA_FILTERCARD_RENAME_DIALOG_TITLE') }}</template>
-      <template v-slot:body>
-        <div>
-          <div>{{ getText('MRI_PA_FILTERCARD_RENAME_DIALOG_TEXT') }}</div>
-          <input class="form-control" type="text" v-model="renameModal.text" />
-        </div>
+    <D2eDialog
+      :model-value="renameModal.show"
+      :title="getText('MRI_PA_FILTERCARD_RENAME_DIALOG_TITLE')"
+      :subtitle="getText('MRI_PA_FILTERCARD_RENAME_DIALOG_TEXT')"
+      data-testid="pa-filtercard-rename-dialog"
+      @close="closeRenameDialog"
+    >
+      <D2eTextField
+        v-model="renameModal.text"
+        :label="getText('MRI_PA_COLL_ENTER_NAME')"
+        autofocus
+        data-testid="pa-filtercard-rename-input"
+        @keydown.enter="onRenameSubmit"
+      />
+      <template #actions>
+        <D2eButton variant="secondary" data-testid="pa-filtercard-rename-cancel-btn" @click="closeRenameDialog">
+          {{ getText('MRI_PA_FILTERCARD_RENAME_DIALOG_CANCEL_BUTTON') }}
+        </D2eButton>
+        <D2eButton data-testid="pa-filtercard-rename-submit-btn" @click="onRenameSubmit">
+          {{ getText('MRI_PA_FILTERCARD_RENAME_DIALOG_BUTTON') }}
+        </D2eButton>
       </template>
-      <template v-slot:footer>
-        <div class="flex-spacer"></div>
-        <appButton
-          :click="openRenameDialog"
-          :text="getText('MRI_PA_FILTERCARD_RENAME_DIALOG_CANCEL_BUTTON')"
-          v-focus
-        ></appButton>
-        <appButton :click="onRenameSubmit" :text="getText('MRI_PA_FILTERCARD_RENAME_DIALOG_BUTTON')"></appButton>
-      </template>
-    </messageBox>
+    </D2eDialog>
     <bs-card v-bind:class="getClasses()">
       <template v-slot:header>
         <div class="d-flex" role="tab">
@@ -163,8 +167,9 @@
 </template>
 <script lang="ts">
 import { mapActions, mapGetters, mapMutations } from 'vuex'
+import { D2eButton, D2eDialog, D2eTextField } from '@d2e/ui'
 import { FILTERCARD_REMOVE_NEW_STATE } from '../store/mutation-types'
-import appButton from '../lib/ui/app-button.vue'
+import { DEFAULT_PARENT_LABEL, isParentAttrKey, parentOptionsForCard } from '../lib/parentInteractions'
 import appLabel from '../lib/ui/app-label.vue'
 import appIcon from '../lib/ui/app-icon.vue'
 import bsBadge from '../lib/ui/bs-badge.vue'
@@ -175,7 +180,6 @@ import bsCheckboxGroup from '../lib/ui/bs-checkbox-group.vue'
 import bsDropdown from '../lib/ui/bs-dropdown.vue'
 import bsDropdownItem from '../lib/ui/bs-dropdown-item.vue'
 import bsDropdownDivider from '../lib/ui/bs-dropdown-divider.vue'
-import messageBox from './MessageBox.vue'
 import constraint from './Constraint.vue'
 import advancedtime from './AdvancedTime.vue'
 import dialogBox from './DialogBox.vue'
@@ -348,21 +352,17 @@ export default {
       const menu: IMenuItemType[] = []
 
       if (this.filterCardModel.props.allowParentConstraint) {
-        const parentInteractionConfig =
-          this.filterCardModel.props.filterCardConfig.oInternalConfigFilterCard.parentInteraction
-        if (
-          parentInteractionConfig &&
-          parentInteractionConfig.possibleParent &&
-          parentInteractionConfig.possibleParent.length > 0
-        ) {
-          const key = 'parentInteraction'
-          const constraintId = this.constraints.find(c => c.split('.').pop() === key)
+        parentOptionsForCard(
+          this.getMriFrontendConfig,
+          this.filterCardModel.props.key,
+          this.getText(DEFAULT_PARENT_LABEL)
+        ).forEach(option => {
           menu.push({
-            key,
-            constraintId,
-            text: parentInteractionConfig.parentLabel || this.getText('MRI_PA_FILTERCARD_CONSTRAINT_PARENT'),
+            key: option.attrKey,
+            constraintId: this.constraints.find(c => c.split('.').pop() === option.attrKey),
+            text: option.label,
           })
-        }
+        })
       }
 
       // item for Advanced Time Filter
@@ -467,13 +467,14 @@ export default {
       this[FILTERCARD_REMOVE_NEW_STATE](this.id)
     },
     isChecked({ key, icon }) {
+      if (isParentAttrKey(key)) {
+        return this.constraints.find(c => c.split('.').pop() === key) !== undefined
+      }
       switch (key) {
         case 'exclude':
           return this.filterCardModel.props.excludeFilter
         case 'advancedTime':
           return this.displayAdvanceTime
-        case 'parentInteraction':
-          return this.constraints.find(c => c.split('.').pop() === key) !== undefined
         default:
           return icon === 'checked'
       }
@@ -490,9 +491,12 @@ export default {
         this.renameModal.text = this.name
         this.renameModal.show = true
       } else {
-        this.renameModal.text = ''
-        this.renameModal.show = false
+        this.closeRenameDialog()
       }
+    },
+    closeRenameDialog() {
+      this.renameModal.text = ''
+      this.renameModal.show = false
     },
     onMoreMenuItemSelected({ key, constraintId }) {
       // if there already is a constraint for this attribute, we remove it otherwise we add it
@@ -611,8 +615,9 @@ export default {
     },
   },
   components: {
-    messageBox,
-    appButton,
+    D2eDialog,
+    D2eButton,
+    D2eTextField,
     appLabel,
     appIcon,
     bsBadge,

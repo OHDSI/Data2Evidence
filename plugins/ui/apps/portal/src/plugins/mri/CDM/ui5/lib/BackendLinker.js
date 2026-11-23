@@ -1,8 +1,9 @@
 sap.ui.define([
 	"jquery.sap.global",
 	"hc/hph/cdw/config/ui/lib/ConfigUtils",
-	"hc/hph/config/global/ui/lib/BackendLinker"
-], function (jQuery, ConfigUtils, GlobalBackendLinker) {
+	"hc/hph/config/global/ui/lib/BackendLinker",
+	"hc/hph/cdw/config/ui/lib/ParentMappings"
+], function (jQuery, ConfigUtils, GlobalBackendLinker, ParentMappings) {
 	"use strict";
 
 	var BackendLinker = {};
@@ -305,7 +306,7 @@ sap.ui.define([
 				order: 0,
 				from: {},
 				parentInteraction: [],
-				parentInteractionsMapping: "[]",
+				parentInteractionsMapping: [],
 				parentInteractionLabel: "",
 				allowSameInteraction: "false",
 				cohortDefinitionKey: "",
@@ -755,17 +756,16 @@ sap.ui.define([
 		},
 
 		parentInteraction: function (frontValue, originalContainer, destination) {
-			if (!frontValue && frontValue.length <= 0) {
-				return;
-			}
-
-			destination.parentInteraction = frontValue;
+			destination.parentInteraction = ParentMappings.toBackend(originalContainer.parentInteractionsMapping).parentInteraction;
 		},
 		parentInteractionsMapping: function (frontValue, originalContainer, destination) {
-			if (frontValue.value && frontValue.value.toString() === "") {
+			var converted = ParentMappings.toBackend(frontValue);
+			destination.parentInteraction = converted.parentInteraction;
+			if (converted.parentInteractionsMapping.length === 0) {
+				delete destination.parentInteractionsMapping;
 				return;
 			}
-			destination.parentInteractionsMapping = JSON.parse(frontValue.value)
+			destination.parentInteractionsMapping = converted.parentInteractionsMapping;
 		},
 		parentInteractionLabel: function (frontValue, originalContainer, destination) {
 			if (frontValue.value === "") {
@@ -1294,15 +1294,7 @@ sap.ui.define([
 
 			destination.parentInteraction = backValue;
 		},
-		parentInteractionsMapping: function (backValue, destination) {
-			var frontValue = {
-				value: JSON.stringify(backValue),
-				validity: {
-					message: "",
-					status: "valid"
-				}
-			};
-			destination.parentInteractionsMapping = frontValue;
+		parentInteractionsMapping: function () {
 		},
 
 		parentInteractionLabel: function (backValue, destination) {

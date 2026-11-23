@@ -9,9 +9,9 @@ import { FhirGatewayAPI } from "./api/FhirGatewayAPI.ts";
 import { JobPluginsAPI } from "./api/JobpluginsAPI.ts";
 import { PortalAPI } from "./api/PortalAPI.ts";
 import {
-  CacheDatasetType,
   CDMSchemaTypes,
   DbDialect,
+  NON_WEBAPI_DATASET_TYPES,
   SourceDatasetType,
 } from "./const.ts";
 import { env } from "./env.ts";
@@ -167,6 +167,20 @@ export class DatasetRouter {
           return res
             .status(400)
             .send("WebAPI-managed datasets require an OMOP data model");
+        }
+
+        if (cacheDatasetName || cacheDatasetType) {
+          return res
+            .status(400)
+            .send("Creating cache datasets is no longer supported");
+        }
+
+        if (!isWebApiManaged && !NON_WEBAPI_DATASET_TYPES.includes(type)) {
+          return res
+            .status(400)
+            .send(
+              `Dataset type '${type}' is not supported; create a WebAPI-managed dataset instead`,
+            );
         }
 
         // Incoming dataset type is either SourceDatasetType.FHIR or SourceDatasetType.SOURCE
@@ -343,57 +357,8 @@ export class DatasetRouter {
             }
           }
 
-          let newCacheDataset: any = {};
-          if (!isWebApiManaged && !isFhirDataset) {
-            this.logger.info("Creating cache dataset in Portal");
-
-            if (cacheDatasetName && cacheDatasetType) {
-              const snapshotRequest = {
-                id: uuidv4(),
-                sourceDatasetId: id,
-                newDatasetName: cacheDatasetName,
-                schemaName: schemaName,
-                timestamp: new Date(),
-                type: cacheDatasetType,
-              };
-              newCacheDataset = await portalAPI.copyDataset(snapshotRequest);
-
-              if (
-                schemaOption === CDMSchemaTypes.ExistingCDM &&
-                cacheDatasetType === CacheDatasetType.OMOP
-              ) {
-                try {
-                  this.logger.info(
-                    `Creating cache for existing schema ${schemaName}. Cache schema name is ${schemaName}`,
-                  );
-                  const dataModels = await jobpluginsAPI.getDatamodels();
-                  const dataModelInfo = dataModels.find(
-                    (model) => model.datamodel === dataModel,
-                  );
-                  const datamartCacheResult =
-                    await jobpluginsAPI.createDatamartCacheFlowRun(
-                      id,
-                      newCacheDataset.id,
-                      {},
-                      dataModelInfo?.flowId,
-                      `datamart-cache-${schemaName}`,
-                    );
-                  flowRunId = datamartCacheResult?.flowRunId;
-                } catch (error) {
-                  this.logger.error(
-                    `Error while creating cache for existing schema! ${error}`,
-                  );
-                  return res
-                    .status(500)
-                    .send("Error while creating cache for existing schema");
-                }
-              }
-            }
-          }
-
           return res.status(200).json({
             id: newDataset.id,
-            cacheId: newCacheDataset.id,
             flowRunId,
           });
         } catch (error) {
@@ -423,6 +388,7 @@ export class DatasetRouter {
         resultsSchemaValue,
       } = req.body;
       const {
+        type: sourceDatasetType,
         dialect,
         databaseCode,
         schemaName,
@@ -430,6 +396,12 @@ export class DatasetRouter {
         resultsSchemaName,
         tokenStudyCode,
       } = await portalAPI.getDataset(sourceStudyId);
+
+      if (sourceDatasetType === SourceDatasetType.SOURCE) {
+        return res
+          .status(400)
+          .send("Creating new versions of source datasets is no longer supported");
+      }
 
       const sourceHasSchema = schemaName.trim() !== "";
       const id = uuidv4();

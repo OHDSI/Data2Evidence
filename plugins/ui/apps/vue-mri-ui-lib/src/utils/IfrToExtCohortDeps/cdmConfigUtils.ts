@@ -1,4 +1,4 @@
-import _ from 'lodash'
+import get from 'lodash/get'
 import {
   CdmAttributeType,
   CdmConfig,
@@ -18,7 +18,7 @@ export const getExtCohortKeyForEvent = (cdmConfig: CdmConfig, path?: string) => 
     return null
   }
   const cohortDefinitionKey = `${path}.cohortDefinitionKey`
-  const key: string | null = _.get(cdmConfig, cohortDefinitionKey) || null
+  const key: string | null = get(cdmConfig, cohortDefinitionKey) || null
   return key
 }
 
@@ -28,8 +28,8 @@ export const getExtCohortInfoForAttribute = (cdmConfig: CdmConfig, path?: string
   }
   const keyPath = `${path}.cohortDefinitionKey`
   const typePath = `${path}.type`
-  const type: CdmAttributeType | null = _.get(cdmConfig, typePath) || null
-  const key: string | null = _.get(cdmConfig, keyPath) || null
+  const type: CdmAttributeType | null = get(cdmConfig, typePath) || null
+  const key: string | null = get(cdmConfig, keyPath) || null
   if (!key) {
     return null
   }
@@ -113,13 +113,12 @@ const extractConceptSets = async (filter: IFRFilterCardContent, cdmConfig: CdmCo
       const conceptValue = constraintContent && 'value' in constraintContent ? constraintContent.value : undefined
 
       const cohortDefinitionKey: string | null =
-        _.get(cdmConfig, `${filter.attributes?.content?.[attributesContentIndex].configPath}.cohortDefinitionKey`) ||
-        null
+        get(cdmConfig, `${filter.attributes?.content?.[attributesContentIndex].configPath}.cohortDefinitionKey`) || null
       const conceptIdentifierType: 'name' | 'code' | 'id' | null =
-        _.get(cdmConfig, `${filter.attributes?.content?.[attributesContentIndex].configPath}.conceptIdentifierType`) ||
+        get(cdmConfig, `${filter.attributes?.content?.[attributesContentIndex].configPath}.conceptIdentifierType`) ||
         null
       const type: 'text' | 'time' | 'datetime' | 'conceptSet' | 'num' | null =
-        _.get(cdmConfig, `${filter.attributes?.content?.[attributesContentIndex].configPath}.type`) || null
+        get(cdmConfig, `${filter.attributes?.content?.[attributesContentIndex].configPath}.type`) || null
 
       if (!conceptValue || cohortDefinitionKey !== 'CodesetId') {
         continue
@@ -238,7 +237,7 @@ export const createDemographicCriteriaList = async (
     }
 
     const conceptIdentifierType: 'name' | 'code' | 'id' | null =
-      _.get(cdmConfig, `${filterCard.configPath}.conceptIdentifierType`) || null
+      get(cdmConfig, `${filterCard.configPath}.conceptIdentifierType`) || null
     const constraintContent = filterCard.constraints.content[0]
     if (constraintContent && 'operator' in constraintContent) {
       const valueOrConceptName = constraintContent && 'value' in constraintContent ? constraintContent.value : undefined
@@ -381,7 +380,7 @@ export const createCriteriaList = async (
                 attributesForFilter[attributeInfo.key] = conceptSet.id
               } else {
                 const conceptIdentifierType: 'name' | 'code' | 'id' | null =
-                  _.get(cdmConfig, `${attribute.configPath}.conceptIdentifierType`) || null
+                  get(cdmConfig, `${attribute.configPath}.conceptIdentifierType`) || null
                 const concept = await getConcept(constraintContent.value, datasetId, conceptIdentifierType)
                 attributesForFilter[attributeInfo.key] = attributesForFilter[attributeInfo.key] || []
                 attributesForFilter[attributeInfo.key].push({
