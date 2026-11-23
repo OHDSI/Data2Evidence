@@ -28,7 +28,7 @@ export const FeedbackToast: FC = () => {
         onAction={feedback.onAction}
         dismissible={!feedback.autoClose}
         autoHideDuration={feedback.autoClose}
-        visible={feedback.message != null}
+        visible={(feedback.richMessage ?? feedback.message) != null}
         onClose={clearFeedback}
       />
     );
