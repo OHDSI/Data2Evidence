@@ -29,7 +29,7 @@
 <script setup lang="ts">
 const PRODUCT_NAME = 'Data2Evidence'
 
-withDefaults(defineProps<{ version?: string }>(), { version: 'v0.19' })
+const version = __D2E_VERSION__
 
 const LINKS = [
   { label: 'Documentation', url: 'https://data2evidence.org/docs/getting_started/' },

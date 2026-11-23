@@ -4,6 +4,7 @@ import vuetify from "vite-plugin-vuetify";
 import cssInjectedByJsPlugin from "vite-plugin-css-injected-by-js";
 import path from "path";
 import { vuetifyDir } from "./vite.resolve-deps";
+import { d2eVersionDefine } from "./vite.d2e-version";
 
 // vue is externalized (Atlas3's host shims it); CSS stays JS-injected rather
 // than split into style.css, which 404s on parcel mounts when absent.
@@ -60,6 +61,7 @@ export default defineConfig(({ mode }) => {
       "process.env.NODE_ENV": JSON.stringify(
         process.env.NODE_ENV || "production",
       ),
+      ...d2eVersionDefine,
     },
   };
 });

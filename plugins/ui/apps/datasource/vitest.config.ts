@@ -2,9 +2,11 @@ import { defineConfig } from "vitest/config";
 import vue from "@vitejs/plugin-vue";
 import path from "path";
 import { vuetifyDir } from "./vite.resolve-deps";
+import { d2eVersionDefine } from "./vite.d2e-version";
 
 export default defineConfig({
   plugins: [vue()],
+  define: d2eVersionDefine,
   resolve: {
     alias: [
       {
