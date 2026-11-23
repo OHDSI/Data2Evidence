@@ -1,4 +1,5 @@
 import { test, expect, openAdminPortalFromAtlas, openAtlasAccount, resetPortalSession } from '../fixtures'
+import { randomInt } from 'crypto'
 
 test('test', async ({ page }) => {
   await page.goto('/d2e/portal')
@@ -12,7 +13,7 @@ test('test', async ({ page }) => {
   await page.getByTestId('button').click()
   await page.getByRole('textbox', { name: 'Username' }).click()
   // Generate a random number for the role name to avoid conflicts
-  const roleName = `grant_admin_role_${Math.floor(Math.random() * 10000)}`
+  const roleName = `grant_admin_role_${randomInt(10000)}`
   await page.getByRole('textbox', { name: 'Username' }).fill(roleName)
   await page
     .locator('div')
