@@ -22,6 +22,7 @@ export interface SelectProps {
   label?: string;
   placeholder?: string;
   size?: SelectSize;
+  /** Marks the field required for assistive tech (aria-required); no asterisk is drawn. */
   required?: boolean;
   disabled?: boolean;
   multiple?: boolean;
@@ -192,6 +193,7 @@ export function Select({
             error={error}
             helperText={helperText}
             InputLabelProps={{ ...params.InputLabelProps, shrink: placeholder ? true : undefined }}
+            inputProps={{ ...params.inputProps, ...(required ? { "aria-required": true } : {}) }}
             InputProps={{
               ...params.InputProps,
               startAdornment: (
@@ -225,6 +227,7 @@ export function Select({
       helperText={helperText}
       SelectProps={{
         multiple,
+        SelectDisplayProps: required ? { "aria-required": true } : undefined,
         displayEmpty: Boolean(placeholder),
         renderValue: (selected) => {
           const arr = Array.isArray(selected)

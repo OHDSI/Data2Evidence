@@ -56,6 +56,9 @@ export const Showcase: Story = {
       <Row label="Required">
         <Field label="Label" required />
       </Row>
+      <Row label="Hint">
+        <Field label="Label" hint="Helper text" />
+      </Row>
       <Row label="Error">
         <Field label="Label" value="Value" errorMessages="Helper text" />
       </Row>
