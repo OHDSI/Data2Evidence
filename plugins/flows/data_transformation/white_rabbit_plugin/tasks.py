@@ -10,7 +10,7 @@ from prefect.logging import get_run_logger
 from prefect.artifacts import create_markdown_artifact
 
 from .types import INISettings, FileSaveResponse, WhiteRabbitRunType
-from .types import WHITERABBIT_BIN_PATH, WHITERABBIT_CSV_DIR, WHITERABBIT_DIR_PATH  
+from .types import WHITERABBIT_BIN_PATH, CSV_SUBDIR
 
 from _shared_flow_utils.dao.DBDao import DBDao
 from _shared_flow_utils.api.WhiteRabbitAPI import WhiteRabbitAPI
@@ -20,7 +20,7 @@ from _shared_flow_utils.api.SupabaseStorageAPI import SupabaseStorageAPI
 
 
 @task(log_prints=True)
-def create_white_rabbit_settings(scan_type: WhiteRabbitRunType, scan_settings: dict) -> tuple[str, str]:
+def create_white_rabbit_settings(scan_type: WhiteRabbitRunType, scan_settings: dict, work_dir: str) -> tuple[str, str]:
     '''
     Create a config.ini file for White Rabbit based on the provided scan type and options.
     Returns a tuple of (config_path, scan_report_path).
@@ -36,6 +36,7 @@ def create_white_rabbit_settings(scan_type: WhiteRabbitRunType, scan_settings: d
             database_credentials = DBDao(database_code=scan_settings.databaseCode).tenant_configs
             
             ini_content = INISettings(scan_type=WhiteRabbitRunType.SCAN_REPORT_DB,
+                                      work_dir=work_dir,
                                       server_location=f"{database_credentials.host}:{database_credentials.port}/{database_credentials.databaseName}",
                                       user_name=database_credentials.readUser,
                                       password=database_credentials.readPassword.get_secret_value(),
@@ -45,15 +46,15 @@ def create_white_rabbit_settings(scan_type: WhiteRabbitRunType, scan_settings: d
                                       )
         
         case WhiteRabbitRunType.SCAN_REPORT_FILES:
-            table_names = scan_settings.files
             ini_content = INISettings(scan_type=WhiteRabbitRunType.SCAN_REPORT_FILES,
+                                      work_dir=work_dir,
                                       delimiter=scan_settings.settings.delimiter,
-                                      tables_to_scan="*" # Scan all csv files in the working directory
+                                      tables_to_scan="*"
                                       )
 
     config["settings"] = ini_content.dump_settings_json()
 
-    config_path = f"{WHITERABBIT_DIR_PATH}/config.ini"
+    config_path = f"{work_dir}/config.ini"
 
     logger.debug(f"Writing file config.ini to {config_path}...")
     
@@ -68,24 +69,22 @@ def create_white_rabbit_settings(scan_type: WhiteRabbitRunType, scan_settings: d
     logger.info(f"Successfully created file config.ini")
     logger.debug(f"File config.ini can be found at {config_path}")
 
-    scan_report_path = ini_content.working_folder + "/ScanReport.xlsx"
-    
-    return config_path, scan_report_path
-        
+    return config_path, ini_content.scan_report_path
+
 
 @task(log_prints=True)
-def create_scan_report(config_ini_path: str, scan_report_path: str) -> str:
+def create_scan_report(config_ini_path: str, scan_report_path: str, work_dir: str) -> str:
     '''
     Runs White Rabbit to create a ScanReport.xlsx file based on the provided config.ini file.
     A ScanReport.xlsx file will be generated at the specified working folder in the config.ini file.
     '''
     logger = get_run_logger()
 
-    command = f"{WHITERABBIT_BIN_PATH}/whiteRabbit -ini {config_ini_path} 2>&1 | tee /tmp/java_log.txt"
+    command = f"{WHITERABBIT_BIN_PATH}/whiteRabbit -ini {config_ini_path} 2>&1 | tee {work_dir}/java_log.txt"
     logger.info(f"Running command: {command}")
 
     ShellOperation(
-        commands=[command]).run()
+        commands=[command], working_dir=work_dir).run()
 
     if not Path(scan_report_path).is_file():
         logger.error(f"File {scan_report_path} does not exist.")
@@ -95,21 +94,20 @@ def create_scan_report(config_ini_path: str, scan_report_path: str) -> str:
 
 
 @task(log_prints=True)
-def generate_data_json(data: dict, output_path: str) -> str:
+def generate_data_json(data: dict, output_path: str, work_dir: str) -> str:
     '''
     Create a json file for White Rabbit data mapping based on the provided data dictionary.
     '''
-    data_mapping_file_path = f"{WHITERABBIT_DIR_PATH}/{output_path}"
+    data_mapping_file_path = f"{work_dir}/{output_path}"
     with open(data_mapping_file_path, 'w') as f:
         json.dump(data, f)
     return data_mapping_file_path
 
 
 @task(log_prints=True)
-def generate_etl_word_document(input_file: str = "data.json", output_file: str = "report.docx") -> None:
+def generate_etl_word_document(input_file: str, work_dir: str, output_file: str = "report.docx") -> None:
     '''
     Generates an ETL Word document from the provided data JSON file using White Rabbit's rabbitInAHat tool.
-    rabbitInAHat writes the output relative to its CWD, so working_dir must be set to WHITERABBIT_DIR_PATH.
     '''
     logger = get_run_logger()
 
@@ -120,9 +118,9 @@ def generate_etl_word_document(input_file: str = "data.json", output_file: str =
 
     ShellOperation(
         commands=[f"{WHITERABBIT_BIN_PATH}/rabbitInAHat --generateWordReport {str(input_path)} {output_file}"],
-        working_dir=WHITERABBIT_DIR_PATH).run()
+        working_dir=work_dir).run()
 
-    output_path = Path(f"{WHITERABBIT_DIR_PATH}/{output_file}")
+    output_path = Path(f"{work_dir}/{output_file}")
 
     if not output_path.exists():
         raise FileNotFoundError(f"file {output_path} does not exist.")
@@ -146,12 +144,14 @@ def generate_etl_word_document(input_file: str = "data.json", output_file: str =
 
 
 @task(log_prints=True)
-def download_files_from_supabase_storage(node_id: str, supabase_api: SupabaseStorageAPI) -> bool:
+def download_files_from_supabase_storage(node_id: str, supabase_api: SupabaseStorageAPI, work_dir: str) -> bool:
     '''
     Lists files in Supabase Storage for the provided node ID, filters them to CSV files,
-    and downloads all matching CSV files to the WHITERABBIT_CSV_DIR directory.
+    and downloads all matching CSV files to the CSV folder inside the run's private work_dir.
+    Returns True if at least one CSV file was downloaded.
     '''
     logger = get_run_logger()
+    csv_dir = f"{work_dir}/{CSV_SUBDIR}"
     files_uploaded = supabase_api.list_files(node_id)
     csv_files = [file for file in files_uploaded if file.get('type') == 'CSV']
     
@@ -162,12 +162,14 @@ def download_files_from_supabase_storage(node_id: str, supabase_api: SupabaseSto
     for file in csv_files:
         filename = file["name"]
         logger.info(f"Downloading file: {filename}")
-        supabase_api.download_file_to_path(node_id, filename, WHITERABBIT_CSV_DIR)
+        supabase_api.download_file_to_path(node_id, filename, csv_dir)
         downloaded_files.append(filename)
         logger.info(f"Successfully downloaded and saved file: {filename}")
 
     logger.info(f"Successfully downloaded {len(downloaded_files)} files")
-    return True
+    if not downloaded_files:
+        logger.warning(f"No CSV files found in Supabase Storage for node ID: {node_id}, skipping scan")
+    return bool(downloaded_files)
         
 
 @task(log_prints=True)
