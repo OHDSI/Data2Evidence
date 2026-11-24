@@ -146,12 +146,7 @@ test(TEST_NAME, async ({ browser }) => {
   expect(conditionOccuErrorBgcolor).toBe('rgb(226, 49, 1)')
 
   // Step 8 - Entering month of birth with correct input
-  const basicData = page.getByRole('tab', { name: /Basic Data/ })
-  const attributeMenu = basicData.getByTitle('Select Filter Attributes')
-  await attributeMenu.click()
-  await page.getByRole('menu').getByText('Month of Birth', { exact: true }).click()
-  await attributeMenu.click()
-  const monthOfBirthFilter = page.getByTitle('Basic Data - Month of Birth')
+  const monthOfBirthFilter = page.getByTestId('pa-filter-card-patient').getByTitle('Basic Data - Month of Birth')
   await monthOfBirthFilter.click()
   await monthOfBirthFilter.getByRole('textbox').fill('[1-10]')
   await monthOfBirthFilter.getByRole('textbox').press('Enter')

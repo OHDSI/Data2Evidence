@@ -1354,7 +1354,7 @@ jobs:
             -e E2E_SINGLE_PASS=1 \
             -e GITHUB_ACTIONS=true \
             -e SKIP_IDP_SPECS=1 \
-            d2e-e2e npm test -- tests/05-datasets tests/06-cohort tests/07-setup tests/08-dataflow tests/09-patient-analytics  # TEMP (PR 3648). REVERT: d2e-e2e npm test
+            d2e-e2e npm test -- tests/09-patient-analytics tests/10-jobs tests/11-admin tests/12-concepts tests/13-data-characterization tests/14-data-quality-dashboard tests/14-notebooks tests/15-clinical-research tests/16-concept-mapping tests/17-configurations tests/17-new-user-full-config tests/18-flows tests/99-federation  # TEMP (PR 3648). REVERT: d2e-e2e npm test
 
       - name: Mark e2e attempt success
         if: success()

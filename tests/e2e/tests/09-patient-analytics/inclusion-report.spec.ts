@@ -53,8 +53,8 @@ test(TEST_NAME, async ({ page }) => {
       .check()
     await page.getByTestId('add-selected').click()
     await page.getByRole('button', { name: 'Create' }).click()
-    await expect(page.getByRole('button', { name: 'Update' })).toBeVisible()
-    await page.getByRole('button', { name: 'Close', exact: true }).click()
+    // The concept set dialog closes itself after Create; the new set shows as a chip on the card.
+    await expect(page.getByTitle('Condition Occurrence A -').getByText(conceptSetName)).toBeVisible()
     await expect(page.locator('.loading-animation-component')).not.toBeVisible()
   })
 

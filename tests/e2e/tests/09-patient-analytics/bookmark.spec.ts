@@ -65,13 +65,7 @@ test(TEST_NAME, async ({ page }) => {
   })
   // Add Month of Birth filter from the Basic Data attribute menu.
   await test.step('Add Month of Birth filter', async () => {
-    const basicData = page.getByRole('tab', { name: /Basic Data/ })
-    const attributeMenu = basicData.getByTitle('Select Filter Attributes')
-    await attributeMenu.click()
-    await page.getByRole('menu').getByText('Month of Birth', { exact: true }).click()
-    await attributeMenu.click()
-
-    const monthOfBirthFilter = page.getByTitle('Basic Data - Month of Birth')
+    const monthOfBirthFilter = page.getByTestId('pa-filter-card-patient').getByTitle('Basic Data - Month of Birth')
     await monthOfBirthFilter.click()
     await monthOfBirthFilter.getByRole('textbox').fill('>2')
     await monthOfBirthFilter.getByRole('textbox').press('Enter')

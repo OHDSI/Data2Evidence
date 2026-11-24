@@ -81,6 +81,29 @@ export const test = base.extend<{
       logs.push(logEntry)
     })
 
+    // Patient-analytics calls: log every request sent and every response with its body.
+    // A 200 can still carry an error payload, and a request that is never answered (or
+    // never sent) only shows up when both sides are logged.
+    const isAnalyticsCall = (url: string) => url.includes('/analytics-svc/')
+    const shortUrl = (url: string) => (url.length > 300 ? `${url.slice(0, 300)}…` : url)
+    page.on('request', request => {
+      if (!isAnalyticsCall(request.url())) return
+      logs.push(`[${new Date().toISOString()}] [ANALYTICS REQUEST] ${request.method()} ${shortUrl(request.url())}`)
+    })
+    page.on('response', async response => {
+      if (!isAnalyticsCall(response.url())) return
+      const timestamp = new Date().toISOString()
+      let body: string
+      try {
+        body = (await response.text()).slice(0, 2000)
+      } catch (error) {
+        body = `<body unavailable: ${error instanceof Error ? error.message : error}>`
+      }
+      logs.push(
+        `[${timestamp}] [ANALYTICS RESPONSE] ${response.status()} ${response.request().method()} ${shortUrl(response.url())}\n${body}`
+      )
+    })
+
     await use(page)
 
     // Skip saving logs if test passed on first try
