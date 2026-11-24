@@ -56,12 +56,12 @@ test(TEST_NAME, async ({ page }) => {
   await page.locator('#pane-right').getByRole('list').getByText('Condition Occurrence A').click()
   await expect(page.locator('.loading-animation-component')).not.toBeVisible()
   await page.waitForTimeout(2000) // Wait 2 seconds for "A filter card has been added..." popup in previous action to disappear
-  await expect(page).toHaveScreenshot()
+  await expect.soft(page).toHaveScreenshot()
 
   // Change AND to OR, CEE should be removed from filtercards
   await page.getByRole('button', { name: 'AND ' }).click()
   await expect(page.locator('.loading-animation-component')).not.toBeVisible()
-  await expect(page).toHaveScreenshot()
+  await expect.soft(page).toHaveScreenshot()
 
   // Go to PA config and uncheck CEE
   // The cohort has unsaved changes (filter cards + Entry/Exit + AND→OR), so navigating

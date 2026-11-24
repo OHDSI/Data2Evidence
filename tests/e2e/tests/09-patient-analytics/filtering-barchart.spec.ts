@@ -21,7 +21,7 @@ test(TEST_NAME, async ({ page }) => {
   await expect(page.locator('.loading-animation-component')).not.toBeVisible()
   // Wait for chart animations to settle
   await page.waitForTimeout(500)
-  await expect(page).toHaveScreenshot()
+  await expect.soft(page).toHaveScreenshot()
 
   // Add filter card
   await page.getByTitle('Add Filter Card').getByRole('button').click()
@@ -71,7 +71,7 @@ test(TEST_NAME, async ({ page }) => {
 
   // Wait for notification to fade away
   await page.waitForTimeout(500)
-  await expect(page).toHaveScreenshot()
+  await expect.soft(page).toHaveScreenshot()
 
   // reset x2-axis
   await page.locator('div.axis-menu-button-wrapper').getByRole('button', { name: 'Basic Data Age ◢' }).click()
@@ -91,7 +91,7 @@ test(TEST_NAME, async ({ page }) => {
     .click()
   await page.locator('div.dropdownmenu-container .menuWrapper:not(.closed)').getByText('Condition concept Name').click()
   await expect(page.locator('.loading-animation-component')).not.toBeVisible()
-  await expect(page).toHaveScreenshot()
+  await expect.soft(page).toHaveScreenshot()
 
   // Filter condition concept name to chronic sinusitis
   await page.getByText('All').nth(2).click()
@@ -103,7 +103,7 @@ test(TEST_NAME, async ({ page }) => {
   await expect(page.getByText('812 / 2,694')).toBeVisible()
   // Wait for dropdown to populate properly
   await page.waitForTimeout(500)
-  await expect(page).toHaveScreenshot()
+  await expect.soft(page).toHaveScreenshot()
 
   // Set X1-axis to gender
   await page.locator('.axis-group--bottom .axis-subgroup').last().locator('button.axisMenuButton').nth(1).click()
@@ -115,14 +115,14 @@ test(TEST_NAME, async ({ page }) => {
   await page.locator('div.dropdownmenu-container .menuWrapper:not(.closed)').getByText('Gender').nth(2).click()
   await expect(page.locator('.loading-animation-component')).not.toBeVisible()
   // TODO: requires debugging of screenshot hence using maxDiffPixelRatio
-  await expect(page).toHaveScreenshot()
+  await expect.soft(page).toHaveScreenshot()
 
   // Set Y-axis to month of birth
   await page.locator('.axis-group--top').getByRole('button', { name: 'Basic Data Patient Count ◢' }).click()
   await page.locator('div.dropdownmenu-container .menuWrapper:not(.closed)').getByText('Basic Data').click()
   await page.locator('div.dropdownmenu-container .menuWrapper:not(.closed)').getByText('Month of Birth').click()
   await expect(page.locator('.loading-animation-component')).not.toBeVisible()
-  await expect(page).toHaveScreenshot()
+  await expect.soft(page).toHaveScreenshot()
 
   // Set Y-axis to patient count
   await page.locator('.axis-group--top').getByRole('button', { name: 'Basic Data Month of Birth ◢' }).click()
@@ -151,7 +151,7 @@ test(TEST_NAME, async ({ page }) => {
     .click()
   await page.locator('div.dropdownmenu-container .menuWrapper:not(.closed)').getByText('Race concept id').click()
   await expect(page.locator('.loading-animation-component')).not.toBeVisible()
-  await expect(page).toHaveScreenshot()
+  await expect.soft(page).toHaveScreenshot()
 
   // Set X2-axis to year of birth with bin size of 50
   await page.locator('.axis-group--bottom .axis-subgroup').last().locator('button.axisMenuButton').first().click()
@@ -167,13 +167,13 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByRole('textbox', { name: 'Size of the Bins' }).press('Enter')
   await page.locator('.modal-wrapper').click()
   await expect(page.locator('.loading-animation-component')).not.toBeVisible()
-  await expect(page).toHaveScreenshot()
+  await expect.soft(page).toHaveScreenshot()
 
   // Reset X2-axis
   await page.locator('.axis-group--bottom .axis-subgroup').last().locator('button.axisMenuButton').first().click()
   await page.locator('div.dropdownmenu-container .menuWrapper:not(.closed)').getByText('Reset Selection').click()
   await expect(page.locator('.loading-animation-component')).not.toBeVisible()
-  await expect(page).toHaveScreenshot()
+  await expect.soft(page).toHaveScreenshot()
 
   // Set X3-axis attribute (was rendered as last bottom axis; originally captioned "stacked chart")
   await page.locator('.axis-group--bottom .axis-subgroup').last().locator('button.axisMenuButton').last().click()
@@ -185,7 +185,7 @@ test(TEST_NAME, async ({ page }) => {
     .click()
   await page.locator('div.dropdownmenu-container .menuWrapper:not(.closed)').getByText('Month of Birth').click()
   await expect(page.locator('.loading-animation-component')).not.toBeVisible()
-  await expect(page).toHaveScreenshot()
+  await expect.soft(page).toHaveScreenshot()
 
   // Set month of birth to 11 in filter card
   const monthOfBirthFilter = page.getByTestId('pa-filter-card-patient').getByTitle('Basic Data - Month of Birth')
@@ -194,13 +194,13 @@ test(TEST_NAME, async ({ page }) => {
   await monthOfBirthFilter.getByRole('textbox').fill('11')
   await monthOfBirthFilter.getByRole('textbox').press('Enter')
   await expect(page.getByText('247 / 2,694')).toBeVisible()
-  await expect(page).toHaveScreenshot()
+  await expect.soft(page).toHaveScreenshot()
 
   // Remove condition occurrence filter card
   await page.locator('span[title="Select Filter Attributes"]').nth(1).click()
   await page.getByRole('menuitem').getByText('Remove Filter Card').click()
   await expect(page.getByText('247 / 2,694')).toBeVisible()
-  await expect(page).toHaveScreenshot()
+  await expect.soft(page).toHaveScreenshot()
 
   // Switch to list view
   await page.locator('button.chartButton').nth(1).click()
@@ -210,7 +210,7 @@ test(TEST_NAME, async ({ page }) => {
   // Sorting re-fetches the patient list; wait for the loader to clear before the
   // screenshot, otherwise it captures the faded, still-loading (unsorted) table.
   await expect(page.locator('.loading-animation-component')).not.toBeVisible()
-  await expect(page).toHaveScreenshot()
+  await expect.soft(page).toHaveScreenshot()
 
   // Export to ZIP file
   await page.locator('.download-menu-container').getByTitle('Export to File').click()
@@ -221,7 +221,7 @@ test(TEST_NAME, async ({ page }) => {
   // Switch to chart view
   await page.locator('button.chartButton').first().click()
   await expect(page.locator('.loading-animation-component')).not.toBeVisible()
-  await expect(page).toHaveScreenshot()
+  await expect.soft(page).toHaveScreenshot()
 
   // Reset filter card
   await page.getByRole('button', { name: '↺' }).click()
@@ -229,5 +229,5 @@ test(TEST_NAME, async ({ page }) => {
   // test id, not a title attribute - :title moved onto the dialog itself.
   await page.getByTestId('pa-reset-dialog-confirm-btn').click()
   await expect(page.locator('.loading-animation-component')).not.toBeVisible()
-  await expect(page).toHaveScreenshot()
+  await expect.soft(page).toHaveScreenshot()
 })

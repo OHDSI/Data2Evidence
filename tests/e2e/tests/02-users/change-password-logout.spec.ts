@@ -55,7 +55,7 @@ test(TEST_NAME, async ({ page }) => {
     await changeOwnPassword(page, TEMP_PASSWORD, ORIGINAL_PASSWORD)
     passwordChanged = false
     await page.getByRole('button', { name: 'Logout' }).click()
-    await expect(page).toHaveScreenshot({ maxDiffPixelRatio: 0.05 })
+    await expect.soft(page).toHaveScreenshot({ maxDiffPixelRatio: 0.05 })
   } finally {
     if (passwordChanged) {
       // Restore so one failure here does not fail every later admin sign-in.
