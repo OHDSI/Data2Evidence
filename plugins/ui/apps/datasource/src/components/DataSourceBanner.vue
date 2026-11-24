@@ -1,12 +1,20 @@
 <template>
-  <div class="ds-banner">
-    <img
-      v-if="logoUrl"
-      :src="logoUrl"
-      alt=""
-      class="ds-banner__logo"
-      data-testid="ds-banner-logo"
-    >
+  <div
+    class="ds-banner"
+    :class="{ 'ds-banner--pending': !ready }"
+    data-testid="ds-banner"
+  >
+    <div class="ds-banner__logo">
+      <img
+        v-if="logoUrl"
+        :key="logoUrl"
+        :src="logoUrl"
+        alt=""
+        data-testid="ds-banner-logo"
+        @load="onLogoDone"
+        @error="onLogoDone"
+      >
+    </div>
     <div class="ds-banner__text">
       <h1 class="ds-banner__title">
         {{ title }}
@@ -18,8 +26,24 @@
   </div>
 </template>
 
+<script lang="ts">
+const settledLogos = new Set<string>()
+</script>
+
 <script setup lang="ts">
-defineProps<{ title: string; description: string; logoUrl?: string }>()
+import { computed, ref, watch } from 'vue'
+
+const props = defineProps<{ title?: string; description?: string; logoUrl?: string }>()
+
+const logoSettled = ref(!props.logoUrl || settledLogos.has(props.logoUrl))
+watch(() => props.logoUrl, url => { logoSettled.value = !url || settledLogos.has(url) })
+
+const ready = computed(() => !!props.title && logoSettled.value)
+
+function onLogoDone(): void {
+  if (props.logoUrl) settledLogos.add(props.logoUrl)
+  logoSettled.value = true
+}
 </script>
 
 <style scoped>
@@ -27,16 +51,25 @@ defineProps<{ title: string; description: string; logoUrl?: string }>()
   display: flex;
   align-items: center;
   gap: 40px;
+  min-height: 240px;
   padding: 40px 100px;
-  background: var(--ds-hero-bg, #fafafd);
+  box-sizing: border-box;
+}
+.ds-banner--pending > * {
+  visibility: hidden;
 }
 .ds-banner__logo {
-  width: auto;
-  height: auto;
-  max-width: 320px;
-  max-height: 160px;
-  object-fit: contain;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 320px;
+  height: 160px;
   flex: none;
+}
+.ds-banner__logo img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
 }
 .ds-banner__text {
   display: flex;
@@ -62,14 +95,14 @@ defineProps<{ title: string; description: string; logoUrl?: string }>()
   color: var(--ds-text, #595757);
 }
 @media (max-width: 1100px) {
-  .ds-banner { padding: 32px 40px; gap: 28px; }
-  .ds-banner__logo { max-width: 224px; max-height: 112px; }
+  .ds-banner { min-height: 176px; padding: 32px 40px; gap: 28px; }
+  .ds-banner__logo { width: 224px; height: 112px; }
   .ds-banner__title { font-size: 32px; }
   .ds-banner__desc { font-size: 16px; }
 }
 @media (max-width: 640px) {
-  .ds-banner { flex-direction: column; align-items: flex-start; padding: 24px; gap: 20px; }
-  .ds-banner__logo { max-width: 160px; max-height: 80px; }
+  .ds-banner { flex-direction: column; align-items: flex-start; min-height: 0; padding: 24px; gap: 20px; }
+  .ds-banner__logo { width: 160px; height: 80px; justify-content: flex-start; }
   .ds-banner__title { font-size: 26px; }
 }
 </style>

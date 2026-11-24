@@ -1,9 +1,9 @@
 <template>
   <div class="ds-page">
     <DataSourceBanner
-      :title="cat.banner.value.title"
-      :description="cat.banner.value.description"
-      :logo-url="cat.banner.value.logoUrl"
+      :title="cat.banner.value?.title"
+      :description="cat.banner.value?.description"
+      :logo-url="cat.banner.value?.logoUrl"
     />
 
     <div class="ds-content">
@@ -90,7 +90,6 @@ const cat = useDataSourceCatalog(() => props.token)
   --ds-lightest: #f2f0f1;
   --ds-meta-bg: #faf8f8;
   --ds-card-border: #e5e6f2;
-  --ds-hero-bg: #fafafd;
   --ds-font-heading: 'GT America', 'GT-America', 'IBM Plex Sans', 'IBM Plex Sans Variable',
     -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 

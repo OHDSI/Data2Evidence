@@ -113,4 +113,23 @@ describe('useDataSourceCatalog', () => {
     expect(cat.sortMode.value).toBe('name-asc')
     expect(cat.sources.value[0].access).toBe('no-access')
   })
+
+  it('never exposes the default banner before the admin config arrives, and reuses it on remount', async () => {
+    vi.resetModules()
+    const sp = await import('../api/systemPortal')
+    const j = await import('../utils/jwt')
+    const { useDataSourceCatalog: fresh } = await import('./useDataSourceCatalog')
+    vi.spyOn(j, 'getIdpUserId').mockReturnValue(null)
+    vi.spyOn(sp, 'getPublicDatasetList').mockResolvedValue([])
+    vi.spyOn(sp, 'getPublicHeaderImage').mockResolvedValue({ type: 'header-image', value: '/custom.svg' })
+    vi.spyOn(sp, 'getPublicOverviewDescription').mockResolvedValue({ type: 'overview-description', value: 'Full tagline' })
+
+    const first = fresh(() => null)
+    expect(first.banner.value).toBeNull()
+    await flushPromises()
+    expect(first.banner.value).toEqual({ title: 'Data2Evidence', description: 'Full tagline', logoUrl: '/custom.svg' })
+
+    const second = fresh(() => null)
+    expect(second.banner.value).toEqual(first.banner.value)
+  })
 })
