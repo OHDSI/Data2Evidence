@@ -30,7 +30,10 @@ async function setCohortEntryExit(page: Page, enabled: boolean) {
   await openPaConfigAppTab(page)
   const checkbox = page.getByRole('checkbox', { name: 'Enable Cohort Entry & Exit :' })
   await expect(async () => {
-    if ((await checkbox.isChecked()) !== enabled) await checkbox.click()
+    if ((await checkbox.isChecked()) !== enabled) {
+      await checkbox.click()
+      await page.waitForTimeout(500) // Wait is required for pa config UI to change slider value
+    }
     await expect(checkbox).toBeChecked({ checked: enabled, timeout: 2000 })
   }).toPass({ timeout: 30000 })
   await page.getByRole('button', { name: 'Save' }).click()

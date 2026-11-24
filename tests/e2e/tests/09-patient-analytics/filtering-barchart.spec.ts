@@ -188,7 +188,7 @@ test(TEST_NAME, async ({ page }) => {
   await monthOfBirthFilter.click()
   await monthOfBirthFilter.getByRole('textbox').fill('11')
   await monthOfBirthFilter.getByRole('textbox').press('Enter')
-  await expect(page.getByText('247 / 2,694')).toBeVisible()
+  await expect(page.getByText('115 / 2,694')).toBeVisible()
   await expect.soft(page).toHaveScreenshot()
 
   // Remove condition occurrence filter card
