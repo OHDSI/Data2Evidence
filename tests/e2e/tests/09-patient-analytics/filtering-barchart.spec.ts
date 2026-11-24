@@ -33,19 +33,20 @@ test(TEST_NAME, async ({ page }) => {
   // Create concept set
   await page.getByRole('button', { name: '+' }).click()
   await page.getByRole('textbox', { name: 'Search', exact: true }).fill('Sinusitis')
+  // After the search, a record-count request re-renders the results table. Wait for it, or a
+  // checkbox click can land on a shifted row.
+  const recordCounts = page
+    .waitForResponse(r => r.url().includes('/conceptRecordCount'), { timeout: 30000 })
+    .catch(() => null)
   await page.getByRole('button', { name: 'Search', exact: true }).click()
+  await recordCounts
 
-  // The results table can re-render right after the rows show, which drops or shifts a
-  // click. Check each row by its own locator and retry until both stay checked.
   const chronicBox = page.getByRole('row', { name: /40055000.*Chronic/ }).getByRole('checkbox')
   const acuteBox = page.getByRole('row', { name: /75498004.*Acute/ }).getByRole('checkbox')
-  await expect(async () => {
-    for (const box of [chronicBox, acuteBox]) {
-      if (!(await box.isChecked())) await box.click()
-    }
-    await expect(chronicBox).toBeChecked({ timeout: 2000 })
-    await expect(acuteBox).toBeChecked({ timeout: 2000 })
-  }).toPass({ timeout: 30000 })
+  await chronicBox.check()
+  await acuteBox.check()
+  await expect(chronicBox).toBeChecked()
+  await expect(acuteBox).toBeChecked()
   await page.getByTestId('add-selected').click()
   await expect(page.getByRole('tablist').filter({ hasText: 'Selected' })).toContainText('2')
   await page.getByRole('tab', { name: /Selected/ }).click()

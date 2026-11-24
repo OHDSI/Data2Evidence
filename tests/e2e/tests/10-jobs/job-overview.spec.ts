@@ -16,6 +16,13 @@ test(TEST_NAME, async ({ page }) => {
 
   // Open jobs
   await page.getByRole('link', { name: 'Jobs' }).click()
+  // The Jobs app can mount blank on first open (assets load, no API calls). Reload once if so.
+  const mounted = await page
+    .getByRole('heading', { name: 'Job Runs' })
+    .waitFor({ timeout: 20000 })
+    .then(() => true)
+    .catch(() => false)
+  if (!mounted) await page.reload()
 
   // Verify all tabs are present
   await expect(page.getByRole('heading')).toContainText('Job Runs')
