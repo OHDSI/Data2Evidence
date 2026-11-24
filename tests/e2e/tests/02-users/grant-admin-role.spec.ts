@@ -10,17 +10,11 @@ test('test', async ({ page }) => {
   await page.getByRole('button', { name: 'Sign in' }).click()
   await openAdminPortalFromAtlas(page)
   await page.getByRole('button', { name: 'Add new user' }).click()
-  await page.getByTestId('button').click()
   await page.getByRole('textbox', { name: 'Username' }).click()
   // Generate a random number for the role name to avoid conflicts
   const roleName = `grant_admin_role_${randomInt(10000)}`
   await page.getByRole('textbox', { name: 'Username' }).fill(roleName)
-  await page
-    .locator('div')
-    .filter({ hasText: /^Password$/ })
-    .click()
   await page.getByRole('textbox', { name: 'Password' }).fill('Updatepassword12345')
-  await page.waitForTimeout(2000)
   await page.getByRole('button', { name: 'Add' }).click()
   await page.getByRole('row').filter({ hasText: roleName }).getByRole('button', { name: 'Edit' }).click()
   await page.getByTestId('dialog').getByText('Admin', { exact: true }).click()

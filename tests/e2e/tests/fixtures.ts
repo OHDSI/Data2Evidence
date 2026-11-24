@@ -136,12 +136,14 @@ export async function acceptAtlasLicense(page: Page) {
   const acceptDisclaimer = licenseDialog.getByRole('button', { name: 'Accept', exact: true })
   try {
     await acceptDisclaimer.waitFor({ state: 'visible', timeout: 10000 })
-    await acceptDisclaimer.scrollIntoViewIfNeeded()
-    await acceptDisclaimer.click()
-    await licenseDialog.waitFor({ state: 'hidden' })
-  } catch {
+  } catch (error) {
+    if (!(error instanceof Error) || error.name !== 'TimeoutError') throw error
     // The license dialog is only shown on first use.
+    return
   }
+  await acceptDisclaimer.scrollIntoViewIfNeeded()
+  await acceptDisclaimer.click()
+  await licenseDialog.waitFor({ state: 'hidden' })
 }
 
 export async function openAtlasAccount(page: Page, username: string | RegExp = /admin/i) {
@@ -212,11 +214,16 @@ export async function openAtlasDataset(page: Page, datasetName = 'Demo dataset')
 }
 
 export async function openAtlasDataExploration(page: Page, datasetName = 'Demo dataset') {
+  await acceptAtlasLicense(page)
   await page.getByRole('link', { name: 'Data Exploration' }).click()
   await page.getByTestId('explorations-page').waitFor({ state: 'visible' })
   const dataSource = page.getByTestId('explorations-datasource')
-  await dataSource.click()
-  await page.getByRole('option', { name: datasetName, exact: true }).click()
+  await dataSource.waitFor({ state: 'visible' })
+  // Atlas disables the switcher when only one datasource is available.
+  if (!(await dataSource.getByText(datasetName, { exact: true }).isVisible())) {
+    await dataSource.click()
+    await page.getByRole('option', { name: datasetName, exact: true }).click()
+  }
   await expect(dataSource).toContainText(datasetName)
 }
 

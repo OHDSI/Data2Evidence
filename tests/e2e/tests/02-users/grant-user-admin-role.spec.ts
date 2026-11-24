@@ -33,7 +33,7 @@ test(TEST_NAME, async ({ page }) => {
   await expect(page.getByTestId('dialog').getByText('User Admin')).toBeChecked()
   await page.getByRole('button', { name: 'Update' }).click()
   await page.reload()
-  await expect(page.getByRole('row', { name: 'researcher_1' })).toContainText('User Admin')
+  await expect(userRow).toContainText('User Admin')
 
   await page.getByRole('link', { name: 'Account' }).click()
   await page.getByRole('button', { name: 'Logout' }).click()
@@ -44,11 +44,11 @@ test(TEST_NAME, async ({ page }) => {
   await page.locator('input[name="password"]').fill('Updatepassword12345')
   await page.getByRole('button', { name: 'Sign in' }).click()
   await expect(page.getByRole('heading', { name: 'Users' })).toBeVisible()
-  await expect(page.getByRole('button', { name: 'Edit' }).first()).toBeVisible()
+  await expect(userRow.getByRole('button', { name: 'Edit' })).toBeVisible()
   await expect(page).toHaveScreenshot({ maxDiffPixelRatio: 0.05 })
 
   // Delete the user
-  await page.getByRole('row', { name: 'researcher_1' }).getByRole('button', { name: 'Actions' }).click()
+  await userRow.getByRole('button', { name: 'Actions' }).click()
   await page.getByRole('menuitem', { name: 'Delete user' }).click()
   await page.getByRole('button', { name: 'Yes, delete' }).click()
   await expect(page.getByText('Delete userAre you sure you')).toBeHidden()

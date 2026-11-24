@@ -1,4 +1,4 @@
-import { expect, openAdminPortalFromAtlas, openAtlasPortalFromAdmin, test } from '../fixtures'
+import { expect, openAdminPortalFromAtlas, openAtlasPortalFromAdmin, openAtlasDataset, test } from '../fixtures'
 
 const TEST_NAME = 'execute-data-characterization'
 
@@ -36,9 +36,7 @@ test(TEST_NAME, async ({ page }) => {
   // Switch through Account → Switch to ATLAS, then use visible Atlas navigation.
   await openAtlasPortalFromAdmin(page)
   await page.getByRole('link', { name: 'Data Sources' }).click()
-  
-  await page.getByTestId('ds-card').click();
-  await page.getByTestId('datasource-sidebar-dashboard').getByText('Dashboard').click();
-  await expect(page.getByRole('cell', { name: 'Number of People' })).toBeVisible();
-  await page.getByRole('cell', { name: '2,694' }).click();
+  await openAtlasDataset(page)
+  await page.getByRole('complementary').getByText('Dashboard', { exact: true }).click()
+  await expect(page.getByRole('row', { name: /Number of People/ })).toContainText('2,694')
 })

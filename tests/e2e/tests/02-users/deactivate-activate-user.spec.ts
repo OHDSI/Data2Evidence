@@ -1,7 +1,7 @@
 import { test, expect, openAdminPortalFromAtlas, openAtlasAccount, resetPortalSession } from '../fixtures'
 
 const TEST_NAME = 'deactivate-activate-user'
-const USERNAME = `e2euser${Date.now().toString().slice(-8)}`
+const USERNAME = 'testuser'
 const SHOULD_SKIP = false
 test.fixme(SHOULD_SKIP, `${TEST_NAME} test is temporarily disabled.`)
 
@@ -34,14 +34,11 @@ test(TEST_NAME, async ({ page }) => {
     page.getByRole('row').filter({ hasText: USERNAME }).getByRole('cell', { name: 'Viewer', exact: true })
   ).toBeVisible()
 
-  await page
-    .getByRole('row', { name: USERNAME })
-    .getByRole('button', { name: 'Actions' })
-    .click()
+  await page.getByRole('row', { name: USERNAME }).getByRole('button', { name: 'Actions' }).click()
   await page.getByRole('menuitem', { name: 'Deactivate' }).click()
   await page.waitForTimeout(2000)
   await page.reload()
-  await expect(page.getByRole('row', { name: /^testuser / })).toContainText('Inactive')
+  await expect(page.getByRole('row', { name: USERNAME })).toContainText('Inactive')
 
   await page.getByRole('link', { name: 'Account' }).click()
   await page.getByRole('button', { name: 'Logout' }).click()
@@ -61,10 +58,7 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByRole('button', { name: 'Sign in' }).click()
   await openAdminPortalFromAtlas(page)
 
-  await page
-    .getByRole('row', { name: USERNAME })
-    .getByRole('button', { name: 'Actions' })
-    .click()
+  await page.getByRole('row', { name: USERNAME }).getByRole('button', { name: 'Actions' }).click()
   await page.getByRole('menuitem', { name: 'Activate' }).click()
   await page.waitForTimeout(2000)
   await page.reload()
@@ -90,10 +84,7 @@ test(TEST_NAME, async ({ page }) => {
   await page.locator('input[name="password"]').fill('Updatepassword12345')
   await page.getByRole('button', { name: 'Sign in' }).click()
   await openAdminPortalFromAtlas(page)
-  await page
-    .getByRole('row', { name: /^testuser / })
-    .getByRole('button', { name: 'Actions' })
-    .click()
+  await page.getByRole('row', { name: USERNAME }).getByRole('button', { name: 'Actions' }).click()
   await page.getByRole('menuitem', { name: 'Delete user' }).click()
   await page.getByRole('button', { name: 'Yes, delete' }).click()
   await expect(page.getByText('Delete userAre you sure you')).toBeHidden()

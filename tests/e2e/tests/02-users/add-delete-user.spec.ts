@@ -13,16 +13,6 @@ test(TEST_NAME, async ({ page }) => {
   await page.locator('input[name="password"]').click()
   await page.locator('input[name="password"]').fill('Updatepassword12345')
   await page.getByRole('button', { name: 'Sign in' }).click()
-  const acceptDisclaimer = page
-    .locator('.v-overlay-container')
-    .getByRole('button', { name: 'Accept', exact: true })
-  try {
-    await acceptDisclaimer.waitFor({ state: 'visible', timeout: 5000 })
-    await acceptDisclaimer.scrollIntoViewIfNeeded()
-    await acceptDisclaimer.click()
-  } catch {
-    // The license dialog is only shown on first use.
-  }
 
   // Switch to Admin portal
   await openAdminPortalFromAtlas(page)
@@ -40,8 +30,6 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByRole('button', { name: 'Show password' }).click()
   await page.getByRole('button', { name: 'Add' }).click()
   // Check if user is added
-  await page.waitForTimeout(5000)
-  await page.reload()
   await expect(page.getByRole('cell', { name: USERNAME })).toBeVisible()
 
   // Delete user
@@ -49,7 +37,5 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByRole('menuitem', { name: 'Delete user' }).click()
   await page.getByRole('button', { name: 'Yes, delete' }).click()
   // Check if user is deleted
-  await page.waitForTimeout(500)
-  await page.reload()
   await expect(page.getByRole('cell', { name: USERNAME })).not.toBeVisible()
 })

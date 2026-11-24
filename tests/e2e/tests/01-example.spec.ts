@@ -1,4 +1,4 @@
-import { test, expect } from './fixtures'
+import { test, expect, openAtlasDataExploration } from './fixtures'
 
 const TEST_NAME = 'example'
 const SHOULD_SKIP = false
@@ -11,18 +11,7 @@ test(TEST_NAME, async ({ page }) => {
   await page.locator('input[name="password"]').click()
   await page.locator('input[name="password"]').fill('Updatepassword12345')
   await page.getByRole('button', { name: 'Sign in' }).click()
-  const acceptDisclaimer = page
-    .locator('.v-overlay-container')
-    .getByRole('button', { name: 'Accept', exact: true })
-  try {
-    await acceptDisclaimer.waitFor({ state: 'visible', timeout: 5000 })
-    await acceptDisclaimer.scrollIntoViewIfNeeded()
-    await acceptDisclaimer.click()
-  } catch {
-    // The license dialog is only shown on first use.
-  }
-  await page.getByRole('button', { name: /Demo dataset.*Have access.*Subject: 2,694/ }).click()
-  await page.getByRole('link', { name: 'Data Exploration' }).click()
+  await openAtlasDataExploration(page)
   await page.getByTestId('explorations-new-btn').click()
   await page.getByTitle('Basic Data - Gender', { exact: true }).locator('div').nth(1).click()
   await page.getByRole('textbox', { name: 'multiselect-searchbox' }).fill('MALE')

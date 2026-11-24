@@ -8,7 +8,7 @@ test('Researcher portal, data quality stats', async ({ page }) => {
   await acceptAtlasLicense(page)
 
   await page.getByRole('button', { name: /Demo dataset.*Have access/ }).click()
-  await page.getByTestId('datasource-sidebar-plugin:data-quality:dashboard').click()
+  await page.getByRole('complementary').getByText('Data quality dashboard', { exact: true }).click()
   await expect(page.getByText('Overall pass rate')).toBeVisible()
   await expect(page.getByText(/Corrected pass rate 9[45]%/)).toBeVisible()
   await expect(page.getByText(/[\d,]+ of [\d,]+ checks/)).toBeVisible()
