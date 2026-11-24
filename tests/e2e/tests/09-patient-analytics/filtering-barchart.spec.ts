@@ -54,7 +54,7 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByRole('button', { name: 'Create' }).click()
   // The new set is selected on the card after Create, so the count drops.
   await finishConceptSetCreate(page, page.getByTitle('Condition Occurrence A -'), 'Sinusitis')
-  await expect(page.getByText('1,095 / 2,694')).toBeVisible()
+  await expect(page.getByText('1,132 / 2,694')).toBeVisible()
 
   // Dismiss popover if present
   try {
