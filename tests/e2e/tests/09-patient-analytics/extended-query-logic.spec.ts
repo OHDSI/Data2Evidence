@@ -56,8 +56,8 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByRole('button', { name: 'AND ' }).first().click()
   await expect(page.locator('.loading-animation-component')).not.toBeVisible()
 
-  // Click x2 and ensure only the filtercards that do not associate with any OR condition should be available to select
-  await page.getByRole('button', { name: 'Basic Data Age ◢' }).click()
+  // Click x1 and ensure only the filtercards that do not associate with any OR condition should be available to select
+  await page.getByRole('button', { name: 'Basic Data Month of Birth ◢' }).first().click()
   await expect(page.locator('#pane-right').getByText('Condition Occurrence B')).toBeVisible()
   // await page.getByRole('button', { name: 'Select an Attribute ◢' }).first().click()
   await expect(page.locator('#pane-right').getByText('Condition Occurrence A')).not.toBeVisible()

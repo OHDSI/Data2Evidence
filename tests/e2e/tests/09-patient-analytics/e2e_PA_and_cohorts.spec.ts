@@ -1,4 +1,4 @@
-import { test, expect, openAdminPortalFromAtlas, openAtlasDataExploration } from '../fixtures'
+import { test, expect, openAdminPortalFromAtlas, openAtlasDataExploration, resetPortalSession } from '../fixtures'
 import { confirmExplorationDialog, explorationCard, explorationMenuAction } from '../explorations'
 
 const TEST_NAME = 'e2e PA and Cohorts'
@@ -19,9 +19,12 @@ async function loginAs(page, username) {
   await page.getByRole('button', { name: 'Sign in' }).click()
 }
 
+// After Logout, Atlas keeps the previous user's tokens in localStorage, and the next
+// sign-in can land on a logged-out Atlas page. Start the next sign-in from a clean session.
 async function logout(page) {
   await page.getByRole('button', { name: RESEARCHER_1, exact: true }).click()
   await page.getByRole('button', { name: 'Logout' }).click()
+  await resetPortalSession(page)
 }
 
 async function createUser(page, username) {
@@ -114,6 +117,7 @@ test(TEST_NAME, async ({ page }) => {
   // Logout admin
   await page.getByRole('link', { name: 'Account' }).click()
   await page.getByRole('button', { name: 'Logout' }).click()
+  await resetPortalSession(page)
 
   // === TEST: Researcher 1 creates cohorts ===
   await loginAs(page, RESEARCHER_1)

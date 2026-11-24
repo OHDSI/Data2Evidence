@@ -62,7 +62,7 @@ test(TEST_NAME, async ({ page }) => {
     }
     await expect(page.locator('.loading-animation-component')).not.toBeVisible()
     await expect(page.getByText('682 / 2,694')).toBeVisible()
-    await page.getByRole('button', { name: 'Basic Data Age ◢' }).click()
+    await page.getByRole('button', { name: 'Basic Data Month of Birth ◢' }).click()
     await page.getByText('Reset Selection').click()
     await expect(page.locator('g.xaxislayer-above text', { hasText: 'Current Patient Group' })).toBeVisible()
   })

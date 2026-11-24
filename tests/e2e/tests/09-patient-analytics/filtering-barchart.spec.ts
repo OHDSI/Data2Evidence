@@ -1,4 +1,4 @@
-import { test, expect, openAtlasDataExploration } from '../fixtures'
+import { test, expect, finishConceptSetCreate, openAtlasDataExploration } from '../fixtures'
 
 const TEST_NAME = 'filtering-barchart'
 const SHOULD_SKIP = false
@@ -52,14 +52,9 @@ test(TEST_NAME, async ({ page }) => {
   // Save concept set
   await page.getByRole('textbox', { name: 'Name' }).fill('Sinusitis')
   await page.getByRole('button', { name: 'Create' }).click()
-  // Wait for concept set to be succesfully created
-  const updateConceptSet = page.getByRole('button', { name: 'Update' })
-  await expect(updateConceptSet).toBeEnabled()
-  await updateConceptSet.scrollIntoViewIfNeeded()
-  await updateConceptSet.evaluate((element: HTMLElement) => element.click())
-  await page.getByRole('button', { name: 'Close', exact: true }).click()
-  await page.getByRole('button', { name: 'Discard changes' }).click()
-  await expect(page.getByText('2,694 / 2,694')).toBeVisible()
+  // The new set is selected on the card after Create, so the count drops.
+  await finishConceptSetCreate(page, page.getByTitle('Condition Occurrence A -'), 'Sinusitis')
+  await expect(page.getByText('1,095 / 2,694')).toBeVisible()
 
   // Dismiss popover if present
   try {
@@ -74,7 +69,7 @@ test(TEST_NAME, async ({ page }) => {
   await expect.soft(page).toHaveScreenshot()
 
   // reset x2-axis
-  await page.locator('div.axis-menu-button-wrapper').getByRole('button', { name: 'Basic Data Age ◢' }).click()
+  await page.locator('div.axis-menu-button-wrapper').getByRole('button', { name: 'Basic Data Month of Birth ◢' }).click()
   await page.locator('div.dropdownmenu-container .menuWrapper:not(.closed)').getByText('Reset Selection').click()
   await expect(page.locator('.loading-animation-component')).not.toBeVisible()
 

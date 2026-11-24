@@ -1,4 +1,11 @@
-import { test, expect, openAdminPortalFromAtlas, openAtlasAccount, openAtlasDataExploration } from '../fixtures'
+import {
+  test,
+  expect,
+  finishConceptSetCreate,
+  openAdminPortalFromAtlas,
+  openAtlasAccount,
+  openAtlasDataExploration
+} from '../fixtures'
 import {
   cardMenuAction,
   confirmExplorationDialog,
@@ -23,18 +30,6 @@ const NAME = {
 
 async function openDatasetCohorts(page) {
   await openAtlasDataExploration(page)
-}
-
-async function discardUnsavedChanges(page) {
-  const dialog = page.getByRole('dialog', { name: 'Unsaved changes' })
-  await expect(dialog).toBeVisible()
-  await dialog
-    .getByRole('button', { name: 'Discard changes' })
-    .click({ timeout: 3000 })
-    .catch(async error => {
-      if (await dialog.isVisible()) throw error
-    })
-  await expect(dialog).not.toBeVisible()
 }
 
 async function deleteConceptSet(page, name) {
@@ -104,15 +99,9 @@ test(TEST_NAME, async ({ page }) => {
         .check()
       await page.getByTestId('add-selected').click()
       await page.getByRole('button', { name: 'Create' }).click()
-      await expect(page.getByRole('button', { name: 'Update' })).toBeVisible() // Ensure concept set is successfully created
-      await page.getByRole('button', { name: 'Close', exact: true }).click()
-      await discardUnsavedChanges(page)
-      const conditionCard = page.getByTitle('Condition Occurrence A -')
-      await conditionCard.getByText('All', { exact: true }).click()
-      await conditionCard.getByPlaceholder('Enter search term').fill('Chronic sinusitis')
-      await conditionCard.getByRole('option', { name: /^Chronic sinusitis - webapi:\d+$/ }).click()
+      // The new set is selected on the card after Create.
+      await finishConceptSetCreate(page, page.getByTitle('Condition Occurrence A -'), 'Chronic sinusitis')
       await expect(page.locator('.loading-animation-component')).not.toBeVisible()
-      await expect(conditionCard.getByText('Chronic sinusitis', { exact: true })).toBeVisible()
 
       // Dismiss popover if present
       try {
@@ -195,7 +184,7 @@ test(TEST_NAME, async ({ page }) => {
     // 'Reset Selection' item. Scope to the x1 menu.
     await page.getByTestId('pa-dropdown-menu-x1').getByText('Reset Selection').click()
     await expect(page.locator('.loading-animation-component')).not.toBeVisible()
-    await page.getByRole('button', { name: 'Basic Data Age ◢' }).click()
+    await page.getByRole('button', { name: 'Basic Data Month of Birth ◢' }).click()
     await page.getByTestId('pa-dropdown-menu-x2').getByText('Reset Selection').click()
     await expect(page.locator('g.xaxislayer-above text', { hasText: 'Current Patient Group' })).toBeVisible()
   })
@@ -323,15 +312,9 @@ test(TEST_NAME, async ({ page }) => {
           .check()
         await page.getByTestId('add-selected').click()
         await page.getByRole('button', { name: 'Create' }).click()
-        await expect(page.getByRole('button', { name: 'Update' })).toBeVisible() // Ensure concept set is successfully created
-        await page.getByRole('button', { name: 'Close', exact: true }).click()
-        await discardUnsavedChanges(page)
-        const conditionCard = page.getByTitle('Condition Occurrence A -')
-        await conditionCard.getByText('All', { exact: true }).click()
-        await conditionCard.getByPlaceholder('Enter search term').fill('Viral sinusitis')
-        await conditionCard.getByRole('option', { name: /^Viral sinusitis - webapi:\d+$/ }).click()
+        // The new set is selected on the card after Create.
+        await finishConceptSetCreate(page, page.getByTitle('Condition Occurrence A -'), 'Viral sinusitis')
         await expect(page.locator('.loading-animation-component')).not.toBeVisible()
-        await expect(conditionCard.getByText('Viral sinusitis', { exact: true })).toBeVisible()
 
         // Dismiss popover if present
         try {

@@ -940,7 +940,9 @@ test(TEST_NAME, async ({ page }) => {
   await test.step('Open dashboard and verify charts render', async () => {
     await openAtlasPortalFromAdmin(page)
     await openAtlasDataExploration(page, 'wizardE2E')
-    await expect(page.getByTestId('explorations-new-btn')).toBeVisible({ timeout: MINUTE_1 })
+    // The button stays disabled until the saved-exploration list loads; on a fresh
+    // dataset the WebAPI cohort list call can take ~25s.
+    await expect(page.getByTestId('explorations-new-btn')).toBeEnabled({ timeout: MINUTE_2 })
     await page.getByTestId('explorations-new-btn').click()
     await page.getByRole('button', { name: 'Analyze' }).click()
     await page.getByRole('button', { name: 'Cross sectional Demographics' }).click()

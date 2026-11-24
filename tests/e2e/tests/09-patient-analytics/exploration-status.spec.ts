@@ -98,11 +98,11 @@ async function removeMaleFilter(page: Page) {
   await expectPatientCount(page, COUNT.monthOfBirth)
 }
 
-// Change only the chart: remove the default Age axis.
+// Change only the chart: remove the Month of Birth axis.
 async function changeChartOnly(page: Page) {
   await page
     .locator('div.axis-menu-button-wrapper')
-    .getByRole('button', { name: 'Basic Data Age ◢' })
+    .getByRole('button', { name: 'Basic Data Month of Birth ◢' })
     .click()
   await page.locator('div.dropdownmenu-container .menuWrapper:not(.closed)').getByText('Reset Selection').click()
   await expect(page.locator('.loading-animation-component')).not.toBeVisible()

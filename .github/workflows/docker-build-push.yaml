@@ -3,6 +3,7 @@ name: d2e Docker Build
 permissions:
   contents: read
   packages: write
+  actions: read  # TEMP (PR 3648): cross-run artifact download. REVERT before merge.
 
 on:
   pull_request:
@@ -98,6 +99,8 @@ jobs:
             RUN_TAG="dispatch-${SHORT_SHA}"
             PLUGINS_TAG=""
           fi
+          # TEMP (PR 3648): reuse images built by run 45379655861. REVERT before merge.
+          RUN_TAG="pr-3648-7106933"
           IS_PUBLISH_PUSH=false
           if [[ "$IS_DEVELOP_PUSH" == "true" || "$IS_RELEASE_PUSH" == "true" ]]; then
             IS_PUBLISH_PUSH=true
@@ -194,12 +197,7 @@ jobs:
 
   build_images:
     needs: [setup]
-    if: |
-      needs.setup.outputs.is_publish_push == 'true' ||
-      contains(github.base_ref, 'release/') ||
-      github.event_name == 'workflow_dispatch' ||
-      github.event_name == 'merge_group' ||
-      (github.event_name == 'pull_request' && (needs.setup.outputs.changes_src == 'true' || needs.setup.outputs.changes_plugins == 'true' || needs.setup.outputs.changes_e2e == 'true'))
+    if: false  # TEMP (PR 3648): reuse run 45379655861. REVERT before merge.
     runs-on: ${{ needs.setup.outputs.random_runner }}
     env:
       RUN_TAG: ${{ needs.setup.outputs.run_tag }}
@@ -379,12 +377,7 @@ jobs:
   # from an existing image so the tag set stays complete.
   merge_worker_image:
     needs: [setup, build_images]
-    if: |
-      needs.setup.outputs.is_publish_push == 'true' ||
-      contains(github.base_ref, 'release/') ||
-      github.event_name == 'workflow_dispatch' ||
-      github.event_name == 'merge_group' ||
-      (github.event_name == 'pull_request' && (needs.setup.outputs.changes_src == 'true' || needs.setup.outputs.changes_plugins == 'true' || needs.setup.outputs.changes_e2e == 'true'))
+    if: false  # TEMP (PR 3648): reuse run 45379655861. REVERT before merge.
     runs-on: ubuntu-latest
     env:
       RUN_TAG: ${{ needs.setup.outputs.run_tag }}
@@ -445,12 +438,7 @@ jobs:
 
   build_plugins:
     needs: [setup]
-    if: |
-      needs.setup.outputs.is_publish_push == 'true' ||
-      contains(github.base_ref, 'release/') ||
-      github.event_name == 'workflow_dispatch' ||
-      github.event_name == 'merge_group' ||
-      (github.event_name == 'pull_request' && (needs.setup.outputs.changes_plugins == 'true' || needs.setup.outputs.changes_e2e == 'true'))
+    if: false  # TEMP (PR 3648): reuse run 45379655861. REVERT before merge.
     strategy:
       fail-fast: false
       matrix:
@@ -751,12 +739,7 @@ jobs:
 
   build_trex_image:
     needs: [setup, build_plugins]
-    if: |
-      needs.setup.outputs.is_publish_push == 'true' ||
-      contains(github.base_ref, 'release/') ||
-      github.event_name == 'workflow_dispatch' ||
-      github.event_name == 'merge_group' ||
-      (github.event_name == 'pull_request' && (needs.setup.outputs.changes_src == 'true' || needs.setup.outputs.changes_plugins == 'true' || needs.setup.outputs.changes_e2e == 'true'))
+    if: false  # TEMP (PR 3648): reuse run 45379655861. REVERT before merge.
     runs-on: ${{ needs.setup.outputs.random_runner }}
     env:
       RUN_TAG: ${{ needs.setup.outputs.run_tag }}
@@ -883,22 +866,32 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
-        with:
-          platforms: arm64
-
+      # TEMP (PR 3648): overlay fresh tests onto the image run 45379655861 built
+      # (deps + chromium already installed), amd64 only. REVERT before merge to
+      # the QEMU + full ./tests/e2e/Dockerfile multi-arch build.
       - uses: docker/setup-buildx-action@v3
         id: builder
+
+      - name: Write overlay Dockerfile
+        run: |
+          cat > ./tests/e2e/Dockerfile.overlay <<EOF
+          FROM ${REG_URL}/d2e-e2e:${RUN_TAG}
+          RUN rm -rf tests mock
+          COPY playwright.config.ts ./
+          COPY tests ./tests
+          COPY mock ./mock
+          EOF
+          cat ./tests/e2e/Dockerfile.overlay
 
       - name: Build and Push e2e image
         uses: docker/build-push-action@v6
         with:
           builder: ${{ steps.builder.outputs.name }}
           context: ./tests/e2e
-          file: ./tests/e2e/Dockerfile
-          platforms: linux/amd64,linux/arm64
+          file: ./tests/e2e/Dockerfile.overlay
+          platforms: linux/amd64
           push: true
+          pull: true
           tags: ${{ env.REG_URL }}/d2e-e2e:${{ env.RUN_TAG }}
           provenance: false
           sbom: false
@@ -1111,7 +1104,7 @@ jobs:
         run: helm uninstall "$RELEASE" -n "$NAMESPACE" || true
 
   test_demosetup_dev:
-    needs: [setup, build_images, merge_worker_image, build_trex_image, build_plugins, build_e2e_image]
+    needs: [setup, build_e2e_image]  # TEMP (PR 3648). REVERT: [setup, build_images, merge_worker_image, build_trex_image, build_plugins, build_e2e_image]
     runs-on: ubuntu-24.04
     env:
       VERSION: develop
@@ -1177,6 +1170,8 @@ jobs:
         with:
           name: ui-tgz
           path: ./plugins/ui
+          run-id: 45379655861  # TEMP (PR 3648). REVERT before merge.
+          github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Extract UI package
         run: |
@@ -1413,7 +1408,7 @@ jobs:
     # build-args -- the last of which is the one CI actually builds from, so a
     # bump that misses it changes nothing here. Not in docker-success's needs yet — promote it once it has
     # passed on three consecutive runs.
-    needs: [setup, build_images, build_trex_image, build_plugins, build_e2e_image]
+    needs: [setup, build_e2e_image]  # TEMP (PR 3648). REVERT: [setup, build_images, build_trex_image, build_plugins, build_e2e_image]
     runs-on: ubuntu-24.04
     env:
       VERSION: develop
@@ -1496,6 +1491,8 @@ jobs:
         with:
           name: ui-tgz
           path: ./plugins/ui
+          run-id: 45379655861  # TEMP (PR 3648). REVERT before merge.
+          github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Extract UI package
         run: |
@@ -1620,7 +1617,7 @@ jobs:
         run: ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v develop logs
 
   test_demosetup_hana:
-    needs: [setup, build_images, merge_worker_image, build_trex_image, build_plugins]
+    needs: [setup, build_e2e_image]  # TEMP (PR 3648). REVERT: [setup, build_images, merge_worker_image, build_trex_image, build_plugins]
     runs-on: ${{ needs.setup.outputs.random_runner }}
     env:
       VERSION: develop

@@ -1,4 +1,4 @@
-import { test as base, expect, Page, BrowserContext } from '@playwright/test'
+import { test as base, expect, Page, BrowserContext, Locator } from '@playwright/test'
 import * as fs from 'fs'
 import * as path from 'path'
 
@@ -248,6 +248,26 @@ export async function openAtlasDataExploration(page: Page, datasetName = 'Demo d
     await page.getByRole('option', { name: datasetName, exact: true }).click()
   }
   await expect(dataSource).toContainText(datasetName)
+}
+
+/**
+ * Call right after clicking Create in the concept set dialog. The dialog either closes by
+ * itself or switches to Update mode; either way the new set ends up selected on the card.
+ */
+export async function finishConceptSetCreate(page: Page, card: Locator, conceptSetName: string) {
+  const update = page.getByRole('button', { name: 'Update' })
+  const chip = card.getByText(conceptSetName, { exact: true })
+  await expect(update.or(chip).first()).toBeVisible()
+  if (await update.isVisible()) {
+    await page.getByRole('button', { name: 'Close', exact: true }).click()
+    // Closing in Update mode may ask about unsaved changes.
+    await page
+      .getByRole('dialog', { name: 'Unsaved changes' })
+      .getByRole('button', { name: 'Discard changes' })
+      .click({ timeout: 5000 })
+      .catch(() => {})
+  }
+  await expect(chip).toBeVisible()
 }
 
 export async function cleanupTestDataflows(page: Page, namePatterns: RegExp[]) {
