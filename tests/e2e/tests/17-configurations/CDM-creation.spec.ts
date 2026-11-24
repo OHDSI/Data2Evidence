@@ -457,6 +457,10 @@ test(TEST_NAME, async ({ page }, testInfo) => {
   })
 
   await test.step('Update dataset', async () => {
+    const configLoadError = page.getByText('There was a problem with loading the configurations.')
+    await page.addLocatorHandler(configLoadError, async () => {
+      await page.getByRole('button', { name: 'Close', exact: true }).click()
+    })
     await page.reload()
     await page.getByRole('link', { name: 'Data sources' }).click()
     await page.getByRole('row').filter({ hasText: 'Demo dataset' }).getByRole('button', { name: 'Actions' }).click()
