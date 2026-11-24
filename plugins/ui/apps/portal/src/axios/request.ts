@@ -86,14 +86,19 @@ client.interceptors.response.use(
   }
 );
 
-const requestNoCache = async <T = any>(options: AxiosRequestConfig): Promise<T> => {
+export const requestNoCache = async <T = any>(options: AxiosRequestConfig): Promise<T> => {
   const onSuccess = function (response: any) {
-    console.debug("Request Successful!", response);
+    // Only status and URL: the config and response carry the request body, which can hold credentials.
+    console.debug("Request Successful!", response?.status, response?.config?.baseURL, response?.config?.url);
     return response.data;
   };
 
   const onError = function (error: any) {
-    console.error("Request Failed:", error.config);
+    console.error("Request Failed:", {
+      method: error.config?.method,
+      baseURL: error.config?.baseURL,
+      url: error.config?.url,
+    });
 
     if (error.response) {
       // Server response error

@@ -54,6 +54,7 @@ jobs:
           filters: |
             portal_fe_changed:
               - './plugins/ui/apps/portal/**'
+              - './plugins/ui/libs/ui-react/**'
               - '.github/workflows/ui-alp-portal-test-fe.yml'
 
       - name: Setup bun if files have changed
