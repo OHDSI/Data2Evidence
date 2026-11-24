@@ -1263,6 +1263,13 @@ spec:
               value: "/usr/src/plugins-dev:/usr/src/bundled-plugins"
             - name: D2E_COMPAT
               value: "true"
+            # atlas-db-init reads only regular files (Deno readDir isFile), but
+            # a ConfigMap volume exposes each key as a symlink into ..data/, so
+            # pointed at the mount root it logs "no .sql files" and seeds
+            # nothing. ..data is kubelet's atomic-update dir holding the real
+            # files. Drop this once trex also accepts symlinks.
+            - name: D2E_ATLAS_DB_INIT_DIR
+              value: /usr/src/atlas-db-init/..data
             - name: TREX_OTEL_ENABLED
               value: {{ (.Values.global.otel).enabled | default "" | quote }}
             - name: OTEL_EXPORTER_OTLP_ENDPOINT
