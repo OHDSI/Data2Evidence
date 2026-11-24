@@ -218,7 +218,7 @@ export const i18nDefault = {
     AI_CONFIG__SWITCH_FAILED_BODY: "{0} is still active. No changes were applied for your organization.",
     AI_CONFIG__SWITCH_FAILED: "The switch failed. Try again, or cancel to keep the current configuration.",
     AI_CONFIG__WORKSPACE_ID_HINT: "Optional. Find it in the Claude Console where you created your API key.",
-    AI_CONFIG__WORKSPACE_ID_LABEL: "Anthropic Workspace ID",
+    AI_CONFIG__WORKSPACE_ID_LABEL: "Anthropic Workspace ID (optional)",
     ANALYSIS_DIALOG__CANCEL: "Cancel",
     ANALYSIS_DIALOG__COMMENT: "Comment",
     ANALYSIS_DIALOG__DATA_CHARACTERIZATION: "Data characterization",

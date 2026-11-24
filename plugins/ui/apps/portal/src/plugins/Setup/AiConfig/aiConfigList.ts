@@ -28,11 +28,8 @@ export const connectionSummary = (config: AiConfig, labels: { apiKey: string; wo
       case "anthropic":
         return config.workspaceId ? `${labels.workspace} ${config.workspaceId}` : null;
       default:
-        try {
-          return config.baseUrl ? new URL(config.baseUrl).hostname : null;
-        } catch {
-          return config.baseUrl;
-        }
+        // Drop http(s) prefix
+        return config.baseUrl?.replace(/^https?:\/\//i, "") || null;
     }
   })();
   return detail ? `${labels.apiKey} · ${detail}` : labels.apiKey;

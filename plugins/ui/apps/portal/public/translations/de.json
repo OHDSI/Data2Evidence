@@ -203,7 +203,7 @@
   "AI_CONFIG__SWITCH_FAILED_BODY": "{0} ist weiterhin aktiv. Für Ihre Organisation wurden keine Änderungen vorgenommen.",
   "AI_CONFIG__SWITCH_FAILED": "Der Wechsel ist fehlgeschlagen. Versuchen Sie es erneut oder brechen Sie ab, um die aktuelle Konfiguration beizubehalten.",
   "AI_CONFIG__WORKSPACE_ID_HINT": "Optional. Sie finden sie in der Claude Console, in der Sie Ihren API-Schlüssel erstellt haben.",
-  "AI_CONFIG__WORKSPACE_ID_LABEL": "Anthropic-Workspace-ID",
+  "AI_CONFIG__WORKSPACE_ID_LABEL": "Anthropic-Workspace-ID (optional)",
   "ANALYSIS_DIALOG__CANCEL": "Abbrechen",
   "ANALYSIS_DIALOG__COMMENT": "Kommentar",
   "ANALYSIS_DIALOG__DATA_CHARACTERIZATION": "Datencharakterisierung",

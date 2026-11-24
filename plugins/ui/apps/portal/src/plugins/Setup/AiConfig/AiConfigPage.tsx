@@ -163,9 +163,7 @@ export const AiConfigPage: FC = () => {
           return pick ? sortAiConfigs(rest.map((r) => ({ ...r, isActive: r.id === pick.id }))) : rest;
         });
         const toastKey =
-          variant === "active"
-            ? i18nKeys.AI_CONFIG__DELETED_REPLACED_TOAST
-            : i18nKeys.AI_CONFIG__DELETED_TOAST;
+          variant === "active" ? i18nKeys.AI_CONFIG__DELETED_REPLACED_TOAST : i18nKeys.AI_CONFIG__DELETED_TOAST;
         return {
           toast: withNames(getText(toastKey), [{ bold: config.name }, ...(pick ? [{ bold: pick.name }] : [])]),
         };
@@ -233,7 +231,11 @@ export const AiConfigPage: FC = () => {
                 ? getText(i18nKeys.AI_CONFIG__DELETING_BUTTON)
                 : failed
                 ? getText(i18nKeys.AI_CONFIG__TRY_AGAIN)
-                : getText(variant === "active" ? i18nKeys.AI_CONFIG__DELETE_SWITCH_CONFIRM : i18nKeys.AI_CONFIG__DELETE_CONFIRM)}
+                : getText(
+                    variant === "active"
+                      ? i18nKeys.AI_CONFIG__DELETE_SWITCH_CONFIRM
+                      : i18nKeys.AI_CONFIG__DELETE_CONFIRM
+                  )}
             </Button>
           </>
         }
@@ -281,6 +283,8 @@ export const AiConfigPage: FC = () => {
   return (
     <ThemeProvider theme={d2eTheme}>
       <div className="ai-config">
+        {/* TODO: after PR #3730 merges, refactor to use ui-react <PageCard className="ai-config__card">
+        and drop background/border-radius/box-shadow from .ai-config__card in AiConfigPage.scss. */}
         <div className="ai-config__card">
           <PageHeader
             overline={getText(i18nKeys.AI_CONFIG__EYEBROW)}
