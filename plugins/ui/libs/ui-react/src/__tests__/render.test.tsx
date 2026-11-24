@@ -9,6 +9,7 @@ import { Spinner } from "../components/Spinner";
 import { Skeleton } from "../components/Skeleton";
 import { Pagination } from "../components/Pagination";
 import { EmptyState } from "../components/EmptyState";
+import { PageCard } from "../components/PageCard";
 import { Dialog } from "../components/Dialog";
 import { Menu } from "../components/Menu";
 import { Select } from "../components/Select";
@@ -77,6 +78,13 @@ describe("render smoke", () => {
   it("renders a skeleton with the d2e class", () => {
     const { container } = mount(<Skeleton width={120} height={12} />);
     expect(container.querySelector(".d2e-skeleton")).toBeTruthy();
+  });
+
+  it("renders a page card with its children and extra class", () => {
+    const { container } = mount(<PageCard className="extra">Body</PageCard>);
+    const card = container.querySelector(".d2e-page-card");
+    expect(card?.classList.contains("extra")).toBe(true);
+    expect(card?.textContent).toBe("Body");
   });
 
   it("renders pagination with range and disables nav at bounds", () => {

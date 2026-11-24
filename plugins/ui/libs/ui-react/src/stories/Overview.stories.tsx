@@ -29,6 +29,7 @@ import { Menu } from "../components/Menu";
 import { Toolbar } from "../components/Toolbar";
 import { Dialog } from "../components/Dialog";
 import { PageHeader } from "../components/PageHeader";
+import { PageCard } from "../components/PageCard";
 import { Navbar, NavItem, NavUser } from "../components/Navbar";
 import {
   Table,
@@ -339,6 +340,21 @@ export const Overview: Story = {
                   <IconButton category="no-stroke" ariaLabel="Edit"><EditOutlinedIcon /></IconButton>
                   <IconButton category="no-stroke" ariaLabel="Delete"><DeleteOutlineIcon /></IconButton>
                 </Toolbar>
+              </Tile>
+
+              <Tile name="Page card">
+                <div
+                  style={{
+                    width: "100%",
+                    padding: 16,
+                    boxSizing: "border-box",
+                    background: "var(--d2e-color-neutral-lightest)",
+                  }}
+                >
+                  <PageCard>
+                    <PageHeader overline="Admin" title="Users" />
+                  </PageCard>
+                </div>
               </Tile>
             </Group>
           </div>

@@ -29,6 +29,8 @@ export { Toolbar } from "./components/Toolbar";
 export type { ToolbarProps } from "./components/Toolbar";
 export { PageHeader } from "./components/PageHeader";
 export type { PageHeaderProps } from "./components/PageHeader";
+export { PageCard } from "./components/PageCard";
+export type { PageCardProps } from "./components/PageCard";
 export { Navbar, NavItem, NavUser } from "./components/Navbar";
 export type {
   NavbarProps,
