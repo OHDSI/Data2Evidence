@@ -35,14 +35,16 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByRole('textbox', { name: 'Search', exact: true }).fill('Sinusitis')
   await page.getByRole('button', { name: 'Search', exact: true }).click()
 
-  await page
-    .getByRole('row', { name: /40055000.*Chronic/ })
-    .getByRole('checkbox')
-    .check()
-  await page
-    .getByRole('row', { name: /75498004.*Acute/ })
-    .getByRole('checkbox')
-    .check()
+  // The results table can re-render after the first rows show, which shifts rows under a
+  // click. Wait for both rows, then confirm both are still checked before adding them.
+  const chronicRow = page.getByRole('row', { name: /40055000.*Chronic/ })
+  const acuteRow = page.getByRole('row', { name: /75498004.*Acute/ })
+  await expect(chronicRow).toBeVisible()
+  await expect(acuteRow).toBeVisible()
+  await chronicRow.getByRole('checkbox').check()
+  await acuteRow.getByRole('checkbox').check()
+  await expect(chronicRow.getByRole('checkbox')).toBeChecked()
+  await expect(acuteRow.getByRole('checkbox')).toBeChecked()
   await page.getByTestId('add-selected').click()
   await expect(page.getByRole('tablist').filter({ hasText: 'Selected' })).toContainText('2')
   await page.getByRole('tab', { name: /Selected/ }).click()

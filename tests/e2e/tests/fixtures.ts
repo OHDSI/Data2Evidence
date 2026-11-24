@@ -271,6 +271,20 @@ export async function finishConceptSetCreate(page: Page, card: Locator, conceptS
       .click({ timeout: 5000 })
       .catch(() => {})
   }
+  // Closing in Update mode sometimes drops the auto-selection; then pick the set from the card.
+  const selected = await chip
+    .waitFor({ state: 'visible', timeout: 10000 })
+    .then(() => true)
+    .catch(() => false)
+  if (!selected) {
+    const escapedName = conceptSetName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+    await card.getByText('All', { exact: true }).click()
+    await card.getByPlaceholder('Enter search term').fill(conceptSetName)
+    await card
+      .getByRole('option', { name: new RegExp(`^${escapedName} - webapi:\\d+$`) })
+      .first()
+      .click()
+  }
   await expect(chip).toBeVisible()
 }
 
