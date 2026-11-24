@@ -25,7 +25,7 @@
                 <ul class="nav nav-justified">
                   <li class="nav-item" @click="showExplorationList">
                     <a class="nav-link" :class="{ active: displayCohorts }" href="javascript:void(0)">{{
-                      getText('MRI_PA_VIEW_COHORT_TITLE')
+                      getText('MRI_PA_EXPLORATIONS_TAB_TITLE')
                     }}</a>
                   </li>
                   <li class="nav-item" @click="toggleCohorts(false)" v-show="hasActiveBookmark">
@@ -508,7 +508,10 @@ export default {
       this.displayCohorts = isDisplayCohort
     },
     showExplorationList() {
+      this.unsavedChanges.guard(() => {
+        if (this.unsavedChanges.isDirty.value) this[types.SET_ACTIVE_BOOKMARK](null)
       if (!leaveBuilderEntry(window.history)) this.toggleCohorts(true)
+      })
     },
     onHistoryPop(event) {
       if (isSyntheticPopState(event)) return

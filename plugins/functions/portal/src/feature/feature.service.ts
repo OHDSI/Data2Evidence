@@ -64,6 +64,12 @@ export class FeatureService {
       defaultEnabled: false
     },
     {
+      featureFlag: 'aiConfigManagement',
+      name: 'AI Configuration Management (experimental)',
+      nameI18nKey: 'FEATURE__AI_CONFIG_MANAGEMENT',
+      defaultEnabled: false
+    },
+    {
       featureFlag: 'sibyl',
       name: 'Sibyl (experimental)',
       nameI18nKey: 'FEATURE__SIBYL',

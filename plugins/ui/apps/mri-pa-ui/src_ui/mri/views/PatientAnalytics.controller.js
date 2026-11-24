@@ -157,6 +157,10 @@ sap.ui.define([
                         enabled: false,
                         visible: true
                     },
+                    svgDownload: {
+                        enabled: false,
+                        visible: true
+                    },
                     collection: {
                         enabled: true,
                         visible: true
@@ -1208,6 +1212,10 @@ sap.ui.define([
             },
 
             onDownloadBtnPress: function (oEvent) {
+                var oResultsModel = this.getView().getModel("results");
+                var bPdfEnabled = oResultsModel.getProperty("/pdfDownload/enabled");
+                oResultsModel.setProperty("/svgDownload/enabled", !!(bPdfEnabled && this._getCurrentChartSvg()));
+
                 this._downloadMenu = this.getView().byId("downloadMenu");
                 this._downloadMenu.open(true, oEvent.getSource(), sap.ui.core.Popup.Dock.BeginTop, sap.ui.core.Popup.Dock.BeginBottom, oEvent.getSource());
             },
@@ -1253,6 +1261,88 @@ sap.ui.define([
                 }
 
                 this._pdfExportDialog.open();
+            },
+
+            /**
+             * Returns the SVG element of the currently displayed chart, or null if the chart is not rendered as SVG
+             * (e.g. the patient list or an empty result).
+             * @returns {SVGElement|null} chart SVG element
+             */
+            _getCurrentChartSvg: function () {
+                var sChartType = this.getCurrentChartType();
+                var oChartWrapper = this.oChartCache && this.oChartCache[sChartType];
+                if (!oChartWrapper || sChartType === "list") {
+                    return null;
+                }
+                var oChart;
+                if (sChartType === "km") {
+                    oChart = oChartWrapper.getAggregation("layout").getAggregation("items")[0].getAggregation("items")[0];
+                } else {
+                    oChart = oChartWrapper.getAggregation("chart");
+                }
+                var oDomRef = oChart && oChart.getDomRef();
+                return oDomRef ? oDomRef.querySelector("svg") : null;
+            },
+
+            onDownloadSvgBtnPress: function () {
+                var oSvg = this._getCurrentChartSvg();
+                if (!oSvg) {
+                    return;
+                }
+
+                var aStyleProps = ["fill", "fill-opacity", "stroke", "stroke-width", "stroke-opacity", "stroke-dasharray",
+                    "opacity", "display", "visibility", "font-family", "font-size", "font-weight", "font-style",
+                    "text-anchor", "dominant-baseline", "shape-rendering"];
+
+                // Inline the computed styles so the exported file renders the same outside the application
+                var inlineStyles = function (oSource, oTarget) {
+                    if (oSource.nodeType !== 1) {
+                        return;
+                    }
+                    var oComputed = window.getComputedStyle(oSource);
+                    aStyleProps.forEach(function (sProp) {
+                        var sValue = oComputed.getPropertyValue(sProp);
+                        if (sValue) {
+                            oTarget.style.setProperty(sProp, sValue);
+                        }
+                    });
+                    for (var i = 0; i < oSource.childNodes.length; i++) {
+                        inlineStyles(oSource.childNodes[i], oTarget.childNodes[i]);
+                    }
+                };
+
+                var oClone = oSvg.cloneNode(true);
+                inlineStyles(oSvg, oClone);
+
+                var oBBox = oSvg.getBoundingClientRect();
+                var iWidth = Math.ceil(oBBox.width);
+                var iHeight = Math.ceil(oBBox.height);
+                var sSvgNs = "http://www.w3.org/2000/svg";
+                oClone.setAttribute("xmlns", sSvgNs);
+                oClone.setAttribute("xmlns:xlink", "http://www.w3.org/1999/xlink");
+                oClone.setAttribute("width", iWidth);
+                oClone.setAttribute("height", iHeight);
+                if (!oClone.getAttribute("viewBox")) {
+                    oClone.setAttribute("viewBox", "0 0 " + iWidth + " " + iHeight);
+                }
+
+                // White background, as the chart is otherwise transparent
+                var oBackground = document.createElementNS(sSvgNs, "rect");
+                oBackground.setAttribute("x", 0);
+                oBackground.setAttribute("y", 0);
+                oBackground.setAttribute("width", "100%");
+                oBackground.setAttribute("height", "100%");
+                oBackground.setAttribute("fill", "#ffffff");
+                oClone.insertBefore(oBackground, oClone.firstChild);
+
+                var sSvg = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" + new XMLSerializer().serializeToString(oClone);
+                var oBlob = new Blob([sSvg], { type: "image/svg+xml;charset=utf-8" });
+
+                var oChartButton = this.chartButtonsMap && this.chartButtonsMap[this.getCurrentChartType()];
+                var sChartName = (oChartButton && oChartButton.getTooltip_AsString()) || this.getCurrentChartType();
+                var sFileName = sChartName.replace(/[\\/:*?"<>|]+/g, "_") + "_" + Date.now() + ".svg";
+
+                window.saveAs(oBlob, sFileName);
             },
 
             onPdfExportConfirmed: function () {

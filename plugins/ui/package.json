@@ -421,6 +421,16 @@
             "notes": "",
             "pluginPath": "plugins/Setup/MigrateUserArtifacts/module",
             "route": "migrate-user-artifacts"
+          },
+          {
+            "description": "Connect and manage the AI providers used by the AI assistant",
+            "descriptionI18nKey": "UI_PLUGIN_SETUP_AI_CONFIG_DESCRIPTION",
+            "visible": true,
+            "featureFlag": "aiConfigManagement",
+            "name": "AI configuration",
+            "nameI18nKey": "UI_PLUGIN_AI_CONFIG",
+            "pluginPath": "plugins/Setup/AiConfig/module",
+            "route": "ai-config"
           }
         ],
         "systemadmin": [
@@ -437,13 +447,6 @@
             "visible": true,
             "pluginPath": "plugins/SystemAdmin/StudyOverview/module",
             "route": "dataset-overview"
-          },
-          {
-            "name": "Studies",
-            "nameI18nKey": "UI_PLUGIN_STUDIES",
-            "visible": true,
-            "pluginPath": "plugins/SystemAdmin/StudyPage/module",
-            "route": "study-page"
           },
           {
             "name": "Jobs",

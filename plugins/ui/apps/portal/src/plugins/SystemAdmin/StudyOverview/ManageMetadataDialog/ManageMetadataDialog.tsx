@@ -30,7 +30,6 @@ import {
   TextField,
   IconButton,
   Menu,
-  Alert,
   AlertToast,
   EmptyState,
   Table,
@@ -46,6 +45,7 @@ import { api } from "../../../../axios/api";
 import { useTranslation } from "../../../../contexts";
 import MetadataEntryDialog, { MetadataEntryMode } from "./MetadataEntryDialog";
 import ImportMetadataDialog, { ImportEntry } from "./ImportMetadataDialog";
+import { errorText } from "./errorText";
 import "./ManageMetadataDialog.scss";
 
 const PROTECTED_ATTRIBUTE_IDS = new Set<string>(["source_dataset_id"]);
@@ -240,7 +240,7 @@ const ManageMetadataDialog: FC<ManageMetadataDialogProps> = ({ dataset, open, on
       setToast({ open: true, message });
       done?.();
     } catch (err: any) {
-      setFeedback({ type: "error", message: err?.data?.message || err?.data || err?.message });
+      setFeedback({ type: "error", message: errorText(err, getText(i18nKeys.MANAGE_METADATA_DIALOG__ERROR)) });
     } finally {
       setBusy(false);
     }
@@ -354,7 +354,7 @@ const ManageMetadataDialog: FC<ManageMetadataDialogProps> = ({ dataset, open, on
       setToast({ open: true, message: getText(i18nKeys.MANAGE_METADATA_DIALOG__REORDERED) });
     } catch (err: any) {
       setAttributes(prev);
-      setFeedback({ type: "error", message: err?.data?.message || err?.data || err?.message });
+      setFeedback({ type: "error", message: errorText(err, getText(i18nKeys.MANAGE_METADATA_DIALOG__ERROR)) });
     } finally {
       setBusy(false);
     }
@@ -426,6 +426,13 @@ const ManageMetadataDialog: FC<ManageMetadataDialogProps> = ({ dataset, open, on
     <>
       <Dialog
         title={getText(i18nKeys.MANAGE_METADATA_DIALOG__TITLE)}
+        banner={[
+          !!feedback?.message &&
+            !entry &&
+            !deleteTarget &&
+            !importState && { severity: feedback.type ?? "error", message: feedback.message },
+          addableConfigs.length === 0 && { severity: "info", message: getText(i18nKeys.MANAGE_METADATA_DIALOG__NO_ATTRIBUTES) },
+        ]}
         size="l"
         open={open}
         busy={busy}
@@ -433,11 +440,6 @@ const ManageMetadataDialog: FC<ManageMetadataDialogProps> = ({ dataset, open, on
         onClose={handleClose}
       >
         <div className="manage-metadata">
-          {feedback?.message && (
-            <Alert severity={feedback.type ?? "error"} variant="banner">
-              {feedback.message}
-            </Alert>
-          )}
           <div className="manage-metadata__toolbar">
             <TextField
               className="manage-metadata__search"
@@ -487,11 +489,6 @@ const ManageMetadataDialog: FC<ManageMetadataDialogProps> = ({ dataset, open, on
               />
             </div>
           </div>
-          {addableConfigs.length === 0 && (
-            <Alert severity="info" variant="banner">
-              {getText(i18nKeys.MANAGE_METADATA_DIALOG__NO_ATTRIBUTES)}
-            </Alert>
-          )}
           {content()}
         </div>
       </Dialog>
@@ -515,6 +512,7 @@ const ManageMetadataDialog: FC<ManageMetadataDialogProps> = ({ dataset, open, on
 
       <Dialog
         title={getText(i18nKeys.MANAGE_METADATA_DIALOG__DELETE_TITLE)}
+        banner={feedback?.type === "error" && feedback.message && { severity: "error", message: feedback.message }}
         size="s"
         open={!!deleteTarget}
         busy={busy}
@@ -546,11 +544,6 @@ const ManageMetadataDialog: FC<ManageMetadataDialogProps> = ({ dataset, open, on
         }
       >
         <div className="manage-metadata__form">
-          {feedback?.type === "error" && feedback.message && (
-            <Alert severity="error" variant="banner">
-              {feedback.message}
-            </Alert>
-          )}
           {deleteTarget && (
             <div>{getText(i18nKeys.MANAGE_METADATA_DIALOG__DELETE_BODY, [nameOf(deleteTarget.attributeId)])}</div>
           )}

@@ -14,6 +14,7 @@ import { Menu } from "../components/Menu";
 import { Select } from "../components/Select";
 import { FilterPanel } from "../components/FilterPanel";
 import type { FilterDef } from "../components/filterTypes";
+import { TextField } from "../components/TextField";
 import { Tabs, Tab } from "../components/Tab";
 import { Alert } from "../components/Alert";
 import { Tooltip } from "../components/Tooltip";
@@ -37,6 +38,18 @@ function mount(ui: React.ReactNode) {
 }
 
 afterEach(cleanup);
+
+describe("Select required", () => {
+  const items = [{ label: "A", value: "a" }];
+
+  it.each([
+    ["plain", false],
+    ["searchable", true],
+  ])("sets aria-required on the %s combobox", (_name, searchable) => {
+    mount(<Select label="Provider" items={items} required searchable={searchable} />);
+    expect(screen.getByRole("combobox").getAttribute("aria-required")).toBe("true");
+  });
+});
 
 describe("render smoke", () => {
   it("renders a button and fires onClick", () => {
@@ -115,6 +128,37 @@ describe("render smoke", () => {
     const close = screen.getByRole("button", { name: "Close dialog" });
     fireEvent.click(close);
     expect(closed).toBe(0);
+  });
+
+  it("renders description and full-width banners between header and body", () => {
+    mount(
+      <Dialog
+        open
+        title="Import metadata"
+        description="Metadata.csv"
+        banner={[{ severity: "error", message: "Save failed" }, false, { severity: "warning", message: "2 unknown" }]}
+      >
+        <p>Body</p>
+      </Dialog>,
+    );
+    const description = screen.getByText("Metadata.csv");
+    const banners = document.querySelector(".d2e-dialog__banners")!;
+    const body = document.querySelector(".d2e-dialog__body")!;
+    expect(description.classList.contains("d2e-dialog__description")).toBe(true);
+    expect(banners.querySelectorAll(".d2e-alert--banner").length).toBe(2);
+    expect(banners.querySelector(".d2e-alert--error")?.textContent).toContain("Save failed");
+    expect(description.compareDocumentPosition(banners) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(banners.compareDocumentPosition(body) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(body.querySelector(".d2e-alert")).toBeNull();
+  });
+
+  it("renders no banner container when every banner is falsy", () => {
+    mount(
+      <Dialog open title="Add metadata" banner={[false, null]}>
+        <p>Body</p>
+      </Dialog>,
+    );
+    expect(document.querySelector(".d2e-dialog__banners")).toBeNull();
   });
 
   it("confirms before closing when confirmOnClose is set", () => {
@@ -205,6 +249,19 @@ describe("render smoke", () => {
     // Clear empties the state.
     fireEvent.click(screen.getByRole("button", { name: "Clear all selections" }));
     expect(state).toEqual({});
+  });
+
+  it("shows a text field's hint, and an error message in its place", () => {
+    const { rerender } = mount(<TextField label="Key" hint="Stored encrypted" />);
+    expect(screen.getByText("Stored encrypted")).toBeTruthy();
+    expect(screen.getByRole("textbox", { description: "Stored encrypted" })).toBeTruthy();
+    rerender(
+      <ThemeProvider theme={theme}>
+        <TextField label="Key" hint="Stored encrypted" errorMessages="Required" />
+      </ThemeProvider>,
+    );
+    expect(screen.getByText("Required")).toBeTruthy();
+    expect(screen.queryByText("Stored encrypted")).toBeNull();
   });
 
   it("renders tabs, marks the selected one and fires onChange", () => {
