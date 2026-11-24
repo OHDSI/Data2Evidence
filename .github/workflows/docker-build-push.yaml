@@ -3,6 +3,7 @@ name: d2e Docker Build
 permissions:
   contents: read
   packages: write
+  actions: read  # TEMP (PR 3648): cross-run artifact download. REVERT before merge.
 
 on:
   pull_request:
@@ -98,6 +99,8 @@ jobs:
             RUN_TAG="dispatch-${SHORT_SHA}"
             PLUGINS_TAG=""
           fi
+          # TEMP (PR 3648): reuse images built by run 45347789412. REVERT before merge.
+          RUN_TAG="pr-3648-3882fe9"
           IS_PUBLISH_PUSH=false
           if [[ "$IS_DEVELOP_PUSH" == "true" || "$IS_RELEASE_PUSH" == "true" ]]; then
             IS_PUBLISH_PUSH=true
@@ -194,12 +197,7 @@ jobs:
 
   build_images:
     needs: [setup]
-    if: |
-      needs.setup.outputs.is_publish_push == 'true' ||
-      contains(github.base_ref, 'release/') ||
-      github.event_name == 'workflow_dispatch' ||
-      github.event_name == 'merge_group' ||
-      (github.event_name == 'pull_request' && (needs.setup.outputs.changes_src == 'true' || needs.setup.outputs.changes_plugins == 'true' || needs.setup.outputs.changes_e2e == 'true'))
+    if: false  # TEMP (PR 3648): reuse run 45347789412. REVERT before merge.
     runs-on: ${{ needs.setup.outputs.random_runner }}
     env:
       RUN_TAG: ${{ needs.setup.outputs.run_tag }}
@@ -379,12 +377,7 @@ jobs:
   # from an existing image so the tag set stays complete.
   merge_worker_image:
     needs: [setup, build_images]
-    if: |
-      needs.setup.outputs.is_publish_push == 'true' ||
-      contains(github.base_ref, 'release/') ||
-      github.event_name == 'workflow_dispatch' ||
-      github.event_name == 'merge_group' ||
-      (github.event_name == 'pull_request' && (needs.setup.outputs.changes_src == 'true' || needs.setup.outputs.changes_plugins == 'true' || needs.setup.outputs.changes_e2e == 'true'))
+    if: false  # TEMP (PR 3648): reuse run 45347789412. REVERT before merge.
     runs-on: ubuntu-latest
     env:
       RUN_TAG: ${{ needs.setup.outputs.run_tag }}
@@ -445,12 +438,7 @@ jobs:
 
   build_plugins:
     needs: [setup]
-    if: |
-      needs.setup.outputs.is_publish_push == 'true' ||
-      contains(github.base_ref, 'release/') ||
-      github.event_name == 'workflow_dispatch' ||
-      github.event_name == 'merge_group' ||
-      (github.event_name == 'pull_request' && (needs.setup.outputs.changes_plugins == 'true' || needs.setup.outputs.changes_e2e == 'true'))
+    if: false  # TEMP (PR 3648): reuse run 45347789412. REVERT before merge.
     strategy:
       fail-fast: false
       matrix:
@@ -751,12 +739,7 @@ jobs:
 
   build_trex_image:
     needs: [setup, build_plugins]
-    if: |
-      needs.setup.outputs.is_publish_push == 'true' ||
-      contains(github.base_ref, 'release/') ||
-      github.event_name == 'workflow_dispatch' ||
-      github.event_name == 'merge_group' ||
-      (github.event_name == 'pull_request' && (needs.setup.outputs.changes_src == 'true' || needs.setup.outputs.changes_plugins == 'true' || needs.setup.outputs.changes_e2e == 'true'))
+    if: false  # TEMP (PR 3648): reuse run 45347789412. REVERT before merge.
     runs-on: ${{ needs.setup.outputs.random_runner }}
     env:
       RUN_TAG: ${{ needs.setup.outputs.run_tag }}
@@ -1111,7 +1094,7 @@ jobs:
         run: helm uninstall "$RELEASE" -n "$NAMESPACE" || true
 
   test_demosetup_dev:
-    needs: [setup, build_images, merge_worker_image, build_trex_image, build_plugins, build_e2e_image]
+    needs: [setup, build_e2e_image]  # TEMP (PR 3648). REVERT: [setup, build_images, merge_worker_image, build_trex_image, build_plugins, build_e2e_image]
     runs-on: ubuntu-24.04
     env:
       VERSION: develop
@@ -1177,6 +1160,8 @@ jobs:
         with:
           name: ui-tgz
           path: ./plugins/ui
+          run-id: 45347789412  # TEMP (PR 3648). REVERT before merge.
+          github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Extract UI package
         run: |
@@ -1359,7 +1344,7 @@ jobs:
             -e E2E_SINGLE_PASS=1 \
             -e GITHUB_ACTIONS=true \
             -e SKIP_IDP_SPECS=1 \
-            d2e-e2e npm test
+            d2e-e2e npm test -- tests/02-users tests/03-researcher tests/04-attribute  # TEMP (PR 3648). REVERT: d2e-e2e npm test
 
       - name: Mark e2e attempt success
         if: success()
@@ -1413,7 +1398,7 @@ jobs:
     # build-args -- the last of which is the one CI actually builds from, so a
     # bump that misses it changes nothing here. Not in docker-success's needs yet — promote it once it has
     # passed on three consecutive runs.
-    needs: [setup, build_images, build_trex_image, build_plugins, build_e2e_image]
+    needs: [setup, build_e2e_image]  # TEMP (PR 3648). REVERT: [setup, build_images, build_trex_image, build_plugins, build_e2e_image]
     runs-on: ubuntu-24.04
     env:
       VERSION: develop
@@ -1496,6 +1481,8 @@ jobs:
         with:
           name: ui-tgz
           path: ./plugins/ui
+          run-id: 45347789412  # TEMP (PR 3648). REVERT before merge.
+          github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Extract UI package
         run: |
@@ -1620,12 +1607,8 @@ jobs:
         run: ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v develop logs
 
   test_demosetup_hana:
-    needs: [setup, build_images, merge_worker_image, build_trex_image, build_plugins]
+    needs: [setup, build_e2e_image]  # TEMP (PR 3648). REVERT: [setup, build_images, merge_worker_image, build_trex_image, build_plugins]
     runs-on: ${{ needs.setup.outputs.random_runner }}
-    strategy:
-      fail-fast: false
-      matrix:
-        attempt: [1, 2]
     env:
       VERSION: develop
       DOCKER_TAG_NAME: ${{ needs.setup.outputs.run_tag }}
@@ -1799,6 +1782,7 @@ jobs:
             -e E2E_DB_DIALECT=hana \
             -e SKIP_IDP_SPECS=1 \
             -e CI=true \
+            -e E2E_SINGLE_PASS=1 \
             -e GITHUB_ACTIONS=true \
             d2e-e2e npm test
 
@@ -1812,7 +1796,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: demo-hana-attempt-${{ matrix.attempt }}
+          name: demo-hana-attempt-1
           path: ./_attempt/
           overwrite: true
 
@@ -1820,7 +1804,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: error-context-hana-attempt-${{ matrix.attempt }}
+          name: error-context-hana-attempt-1
           path: tests/e2e/test-results/**/*
           overwrite: true
 
