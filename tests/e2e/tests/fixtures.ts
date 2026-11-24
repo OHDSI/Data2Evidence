@@ -259,7 +259,11 @@ export async function finishConceptSetCreate(page: Page, card: Locator, conceptS
   const chip = card.getByText(conceptSetName, { exact: true })
   await expect(update.or(chip).first()).toBeVisible()
   if (await update.isVisible()) {
-    await page.getByRole('button', { name: 'Close', exact: true }).click()
+    // Update can show for a moment before the dialog closes by itself, so Close may be gone.
+    await page
+      .getByRole('button', { name: 'Close', exact: true })
+      .click({ timeout: 5000 })
+      .catch(() => {})
     // Closing in Update mode may ask about unsaved changes.
     await page
       .getByRole('dialog', { name: 'Unsaved changes' })
