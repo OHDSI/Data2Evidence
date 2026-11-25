@@ -26,7 +26,8 @@ test.afterEach(async ({ page }) => {
 
   const userRow = page.getByRole('row').filter({ hasText: USERNAME })
   if ((await userRow.count()) > 0) {
-    await userRow.getByRole('button', { name: 'Delete' }).click()
+    await userRow.getByRole('button', { name: 'Actions' }).click()
+    await page.getByRole('menuitem', { name: 'Delete user' }).click()
     await page.getByRole('button', { name: 'Yes, delete' }).click()
     await expect(userRow).toHaveCount(0)
   }
