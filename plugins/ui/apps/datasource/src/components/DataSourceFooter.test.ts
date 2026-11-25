@@ -3,14 +3,9 @@ import { mount } from '@vue/test-utils'
 import DataSourceFooter from './DataSourceFooter.vue'
 
 describe('DataSourceFooter', () => {
-  it('shows the D2E version (default)', () => {
+  it('shows the D2E release version from the root package.json', () => {
     const w = mount(DataSourceFooter)
-    expect(w.get('[data-testid="footer-version"]').text()).toBe('Data2Evidence v0.19')
-  })
-
-  it('accepts a version prop', () => {
-    const w = mount(DataSourceFooter, { props: { version: 'v1.0' } })
-    expect(w.get('[data-testid="footer-version"]').text()).toBe('Data2Evidence v1.0')
+    expect(w.get('[data-testid="footer-version"]').text()).toBe(`Data2Evidence ${__D2E_VERSION__}`)
   })
 
   it('renders Documentation/Slack/Github links to the correct URLs, opening in a new tab', () => {
