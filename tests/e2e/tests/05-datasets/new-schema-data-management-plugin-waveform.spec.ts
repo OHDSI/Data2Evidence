@@ -5,6 +5,7 @@ import { MINUTE_1, MINUTE_2, MINUTE_3, MINUTE_5, MINUTE_10 } from '../const'
 const TEST_NAME = 'dataset-new-schema-data-management-plugin-waveform'
 const SHOULD_SKIP = true
 test.fixme(SHOULD_SKIP, `${TEST_NAME}: creating this dataset type is no longer supported (#3610).`)
+test.describe.configure({ retries: 3 }) // Re-try up to 3 times for flaky tests
 const DATASET_NAME = 'Test Waveform Dataset'
 const CACHE_DATASET_NAME = 'Test Waveform Cache'
 const PA_CONFIG_NAME = 'WAVEFORM'

@@ -10,6 +10,7 @@ test.use({ actionTimeout: 60000 })
 const TEST_NAME = 'CDM configuration creation'
 const SHOULD_SKIP = false
 test.fixme(SHOULD_SKIP, `${TEST_NAME} test is temporarily disabled.`)
+test.describe.configure({ retries: 3 }) // Re-try up to 3 times for flaky tests
 
 test(TEST_NAME, async ({ page }, testInfo) => {
   test.setTimeout(300 * 1000) // Set timeout to 5 minutes

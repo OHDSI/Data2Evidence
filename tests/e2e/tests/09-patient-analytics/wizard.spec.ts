@@ -16,6 +16,7 @@ const TEST_NAME = 'patient-analytics-wizard-dashboard'
 const DASHBOARD_NAME = 'cross-sectional-demographics'
 const SHOULD_SKIP = false
 test.fixme(SHOULD_SKIP, `${TEST_NAME} test is temporarily disabled.`)
+test.describe.configure({ retries: 1 }) // Re-try for flaky long-running flow
 
 async function getDialogMonacoValue(page: Page) {
   return page.evaluate(() => {

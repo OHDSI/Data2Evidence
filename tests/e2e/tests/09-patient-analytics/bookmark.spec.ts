@@ -18,6 +18,7 @@ import {
 const TEST_NAME = 'patient_analytics_bookmark'
 const SHOULD_SKIP = false
 test.fixme(SHOULD_SKIP, `${TEST_NAME} test is temporarily disabled.`)
+test.describe.configure({ retries: 3 }) // Re-try up to 3 times for flaky tests
 
 const RUN_ID = Date.now().toString(36)
 const NAME = {

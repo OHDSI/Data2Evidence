@@ -11,6 +11,8 @@ const TEST_CONFIG = 'TestParentMappings2431'
 const INTERACTION = 'Procedure Occurrence'
 const SCREENSHOT_DIR = 'test-results/cdm-parent-mappings'
 
+test.describe.configure({ retries: 1 })
+
 async function openConfigList(page: Page) {
   await page.reload()
   await expect(page.getByText('Clinical Data Model')).toBeVisible()

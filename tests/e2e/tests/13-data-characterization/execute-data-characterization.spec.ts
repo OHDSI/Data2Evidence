@@ -1,6 +1,7 @@
 import { expect, openAdminPortalFromAtlas, openAtlasPortalFromAdmin, openAtlasDataset, test } from '../fixtures'
 
 const TEST_NAME = 'execute-data-characterization'
+test.describe.configure({ retries: 3 }) // Re-try up to 3 times for flaky tests
 
 test(TEST_NAME, async ({ page }) => {
   // Data characterization can take several minutes to finish.

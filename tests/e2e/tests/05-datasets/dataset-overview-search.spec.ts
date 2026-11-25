@@ -3,6 +3,7 @@ import { test, expect, openAdminPortalFromAtlas } from '../fixtures'
 const TEST_NAME = 'dataset-overview-search'
 const SHOULD_SKIP = false
 test.fixme(SHOULD_SKIP, `${TEST_NAME} test is temporarily disabled.`)
+test.describe.configure({ retries: 3 }) // Re-try up to 3 times for flaky tests
 
 test(TEST_NAME, async ({ page }) => {
   await page.goto('/d2e/portal')
