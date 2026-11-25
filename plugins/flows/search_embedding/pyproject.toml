@@ -28,7 +28,8 @@ dependencies = [
     # torch, none of which any deployment can use - no chart or compose file
     # requests a GPU, so flow.py always resolves device to cpu. Same form as
     # data_transformation's ner feature.
-    "torch @ https://download.pytorch.org/whl/cpu/torch-2.6.0%2Bcpu-cp312-cp312-linux_x86_64.whl",
+    "torch @ https://download.pytorch.org/whl/cpu/torch-2.6.0%2Bcpu-cp312-cp312-linux_x86_64.whl ; platform_machine == 'x86_64'",
+    "torch @ https://download.pytorch.org/whl/cpu/torch-2.6.0%2Bcpu-cp312-cp312-manylinux_2_28_aarch64.whl ; platform_machine == 'aarch64'",
     "tqdm==4.66.4",
     # ==4.57.6: develop's uv.lock resolution — transformers v5 changes embedding
 # outputs, breaking score-exact e2e assertions (hybrid search)
