@@ -3,9 +3,9 @@
  * If there's no usable token — or we've landed on Atlas3's broken WebAPI
  * "/#/welcome&token=<HS256>" fallback (which trex rejects) — redirect through the
  * Logto bridge (/atlas-login/) for silent SSO. Also enforces the admin feature
- * flags: blocks /atlas when "atlas" is off, hides the Pythia FAB when "pythia" is off,
- * and drops flag-gated plugins from the Atlas3 plugin manifest. Users without a
- * researcher role (dataset researcher / tenant viewer) are sent to the portal.
+ * flags: hides the Pythia FAB when "pythia" is off, and drops flag-gated plugins
+ * from the Atlas3 plugin manifest. Users without a researcher role (dataset
+ * researcher / tenant viewer) are sent to the portal.
  */
 (function () {
   "use strict";
@@ -136,8 +136,6 @@
     flags.then(function (list) {
       // Fail open: an unreadable flag list must not bounce users out of Atlas.
       if (!Array.isArray(list)) return;
-      // "atlas" disabled -> block direct /atlas access, bounce to the portal.
-      if (isDisabled(list, "atlas")) { location.replace("/d2e/portal"); return; }
       // "pythia" disabled -> hide the Pythia FAB via a global style.
       if (isDisabled(list, "pythia")) {
         var s = document.createElement("style");

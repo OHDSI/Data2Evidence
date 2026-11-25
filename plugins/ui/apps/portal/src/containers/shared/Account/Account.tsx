@@ -5,8 +5,7 @@ import { PortalType, User } from "../../../types";
 import { useDialogHelper, useMe } from "../../../hooks";
 import { useToken, useTranslation, useUser } from "../../../contexts";
 import env from "../../../env";
-import { config, FEATURE_ATLAS } from "../../../config";
-import { FeatureGate } from "../../../config/FeatureGate";
+import { config } from "../../../config";
 import { api } from "../../../axios/api";
 import { ChangeMyPasswordDialog } from "./ChangeMyPasswordDialog/ChangeMyPasswordDialog";
 import DeleteAccountDialog from "./DeleteAccountDialog/DeleteAccountDialog";
@@ -114,9 +113,7 @@ export const Account: FC<AccountProps> = ({ portalType }) => {
                     />
                   )}
                   {user.canAccessResearcherPortal && (
-                    <FeatureGate featureFlags={[FEATURE_ATLAS]}>
-                      <Button block text={getText(i18nKeys.ACCOUNT__SWITCH_TO_ATLAS)} onClick={handleSwitchToAtlas} />
-                    </FeatureGate>
+                    <Button block text={getText(i18nKeys.ACCOUNT__SWITCH_TO_ATLAS)} onClick={handleSwitchToAtlas} />
                   )}
                   <Button block text={getText(i18nKeys.ACCOUNT__LOGOUT)} onClick={handleLogout} />
                   <Button

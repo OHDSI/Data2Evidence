@@ -722,7 +722,6 @@ export const i18nDefault = {
     FEATURE__CONCEPTS: "Concepts",
     FEATURE__DASHBOARD: "Dashboard",
     FEATURE__DATAFLOW: "Dataflow",
-    FEATURE__ATLAS: "Atlas (experimental)",
     FEATURE__PYTHIA: "Pythia (Atlas AI assistant) (experimental)",
     FEATURE__DATASET_FILTER: "Dataset filter",
     FEATURE__DATASET_SEARCH: "Dataset search",

@@ -677,7 +677,6 @@
   "FEATURE__CONCEPTS": "Konzepte",
   "FEATURE__DASHBOARD": "Dashboard",
   "FEATURE__DATAFLOW": "Datenfluss",
-  "FEATURE__ATLAS": "Atlas (experimentell)",
   "FEATURE__PYTHIA": "Pythia (Atlas-KI-Assistent) (experimentell)",
   "FEATURE__SIBYL": "Sibyl (experimentell)",
   "FEATURE__DATA_EXPLORATION": "Datenexploration (experimentell)",

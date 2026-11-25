@@ -10,12 +10,6 @@ import { FeatureRepository } from './repository/feature.repository.ts'
 export class FeatureService {
   private readonly NON_PLUGIN_FEATURES = [
     {
-      featureFlag: 'atlas',
-      name: 'Atlas (experimental)',
-      nameI18nKey: 'FEATURE__ATLAS',
-      defaultEnabled: true
-    },
-    {
       featureFlag: 'pythia',
       name: 'Pythia (Atlas AI assistant) (experimental)',
       nameI18nKey: 'FEATURE__PYTHIA',
