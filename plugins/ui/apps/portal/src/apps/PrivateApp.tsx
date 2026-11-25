@@ -97,7 +97,9 @@ export const PrivateApp: FC = () => {
                 never the researcher UI, regardless of role. */}
             <Route path={`${config.ROUTES.researcher}/*`} element={<PortalUnavailable />} />
             {user?.canAccessEtlPortal && <Route path={`${config.ROUTES.etl}/*`} element={<Etl />} />}
-            {user?.canAccessResearcherPortal && <Route path={config.ROUTES.atlasAccount} element={<AtlasAccount />} />}
+            {/* Any signed-in user: Atlas links here from its user menu, and a
+                non-researcher can still be in Atlas if its role check fails. */}
+            <Route path={config.ROUTES.atlasAccount} element={<AtlasAccount />} />
             <Route path={config.ROUTES.logout} element={<Logout />} />
             <Route path={config.ROUTES.noAccess} element={<NoAccess />} />
             <Route path="/atlas" element={<RedirectToAtlas />} />
@@ -105,6 +107,8 @@ export const PrivateApp: FC = () => {
               <Route path="public" element={<Navigate to={defaultRoute} />} />
               <Route path="login" element={<Navigate to={defaultRoute} />} />
             </Route>
+            {/* Unknown or role-gated path: never a blank page. */}
+            <Route path="*" element={<Navigate to={config.ROUTES.noAccess} replace />} />
           </Routes>
         </>
       )}

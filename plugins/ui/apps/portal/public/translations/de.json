@@ -11,7 +11,6 @@
   "ACCESS_PANEL__ROLE": "Rolle",
   "ACCESS_PANEL__SUCCESS": "Benutzer {0} wurde die Berechtigung zum Zugriff auf den Datensatz erteilt.",
   "ACCESS_PANEL__SUCCESS_REVOKE": "Benutzer {0} wurde die Berechtigung entzogen.",
-  "ACCOUNT_BUTTON__ACCOUNT": "Konto",
   "ACCOUNT_BUTTON__LOGIN": "Login",
   "ACCOUNT_TAB__LINK": "Konto",
   "ACCOUNT__ACCOUNT": "Konto",

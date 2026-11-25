@@ -1,5 +1,8 @@
 import pako from 'pako'
 
+/** Atlas Patient Analytics route (Atlas is served at /atlas and routes by hash). */
+export const ATLAS_PA_ROUTE = '/atlas/#/plugins/patient-analytics/'
+
 /**
  * Result type for safe decompression operations
  */
@@ -181,23 +184,12 @@ class CohortUrlCodec {
       // Compress the bookmark data
       const compressed = this.compress(bookmarkData)
 
-      // Get current URL origin and base path
-      const origin = window.location.origin
-      // Extract prefix before /portal from current pathname (e.g., /d2e)
-      // and append /portal/researcher
-      const pathname = window.location.pathname
-      const portalIndex = pathname.indexOf('/portal')
-      const prefix = pathname.substring(0, portalIndex)
-      const basePath = `${prefix}/portal/researcher`
-
-      // Build deep link URL - validate datasetId exists
-      const datasetId = bookmarkData.datasetId || store.getters.getSelectedDataset?.id
-      if (!datasetId) {
-        console.error('No dataset ID found. Cannot generate deep link without a dataset.')
-        return null
-      }
-
-      const url = `${origin}${basePath}/cohort?datasetId=${datasetId}&linkType=cohort-definition&query=${compressed}`
+      // Open in the Atlas Patient Analytics plugin. Atlas routes by hash, so the
+      // params go in the hash query, which useDeepLink reads. No datasetId:
+      // Atlas passes PA the dataset picked in its own selector, and the cohort
+      // is applied to that one (same contract as the mcp-server deep link).
+      const params = new URLSearchParams({ linkType: 'cohort-definition' })
+      const url = `${window.location.origin}${ATLAS_PA_ROUTE}?${params.toString()}&query=${compressed}`
 
       // Check URL length
       const lengthWarning = this.checkUrlLength(url)

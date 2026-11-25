@@ -11,7 +11,6 @@
   "ACCESS_PANEL__ROLE": "角色",
   "ACCESS_PANEL__SUCCESS": "已授予用户 {0} 访问数据集的权限。",
   "ACCESS_PANEL__SUCCESS_REVOKE": "已撤销用户 {0} 的权限。",
-  "ACCOUNT_BUTTON__ACCOUNT": "账户",
   "ACCOUNT_BUTTON__LOGIN": "登录",
   "ACCOUNT_TAB__LINK": "帐户",
   "ACCOUNT__ACCOUNT": "帐户",

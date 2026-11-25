@@ -13,7 +13,6 @@ export const i18nDefault = {
     ACCESS_PANEL__ROLE: "Role",
     ACCESS_PANEL__SUCCESS: "User {0} has been granted permission to access the dataset.",
     ACCESS_PANEL__SUCCESS_REVOKE: "User {0} has had their permission revoked.",
-    ACCOUNT_BUTTON__ACCOUNT: "Account",
     ACCOUNT_BUTTON__LOGIN: "Login",
     ACCOUNT_TAB__LINK: "Account",
     ACCOUNT__ACCOUNT: "Account",

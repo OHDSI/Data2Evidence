@@ -234,9 +234,10 @@ describe('CohortUrlCodec', () => {
       delete (window as any).location
       ;(window as any).location = {
         origin: 'http://localhost:3000',
-        pathname: '/portal/researcher/cohort',
+        pathname: '/atlas/',
         search: '',
-        href: 'http://localhost:3000/portal/researcher/cohort',
+        hash: '#/plugins/patient-analytics/',
+        href: 'http://localhost:3000/atlas/#/plugins/patient-analytics/',
       }
 
       // Mock clipboard API
@@ -286,17 +287,16 @@ describe('CohortUrlCodec', () => {
       expect(console.error).toHaveBeenCalledWith('No cohort definition loaded. Please load a cohort definition first.')
     })
 
-    it('builds correct URL with dataset from bookmark', () => {
-      const bookmarkData = {
-        datasetId: 'bookmark-dataset',
-        filter: {
-          name: 'Test Cohort',
-        },
-      }
+    // Same parsing as useDeepLink.readDeepLinkParams for Atlas hash links.
+    const hashParams = (url: string): URLSearchParams => {
+      const hash = new URL(url).hash
+      return new URLSearchParams(hash.slice(hash.indexOf('?') + 1))
+    }
 
+    it('builds an Atlas Patient Analytics hash link', () => {
       mockStore = {
         getters: {
-          getBookmarksData: bookmarkData,
+          getBookmarksData: { datasetId: 'bookmark-dataset', filter: { name: 'Test Cohort' } },
           getSelectedDataset: { id: 'store-dataset' },
         },
       }
@@ -304,72 +304,38 @@ describe('CohortUrlCodec', () => {
       const result = CohortUrlCodec.shareCohortDefinition(mockStore)
 
       expect(result).not.toBeNull()
-      expect(result).toContain('http://localhost:3000/portal/researcher/cohort')
-      expect(result).toContain('datasetId=bookmark-dataset')
-      expect(result).toContain('linkType=cohort-definition')
-      expect(result).toContain('query=')
+      expect(result!.startsWith('http://localhost:3000/atlas/#/plugins/patient-analytics/?')).toBe(true)
+      expect(result).not.toContain('/portal/researcher')
+      // Params live in the hash, not location.search (Atlas routes by hash).
+      expect(new URL(result!).search).toBe('')
+      expect(hashParams(result!).get('linkType')).toBe('cohort-definition')
+      // Atlas supplies the dataset from its own selector.
+      expect(hashParams(result!).has('datasetId')).toBe(false)
     })
 
-    it('falls back to store dataset when bookmark has no datasetId', () => {
-      const bookmarkData = {
-        filter: {
-          name: 'Test Cohort',
-        },
+    it('uses the current origin, not a hardcoded host', () => {
+      ;(window as any).location.origin = 'https://d2e.example.org'
+      mockStore = {
+        getters: { getBookmarksData: { filter: { name: 'Test Cohort' } }, getSelectedDataset: null },
       }
 
+      const result = CohortUrlCodec.shareCohortDefinition(mockStore)
+
+      expect(result!.startsWith('https://d2e.example.org/atlas/#/plugins/patient-analytics/?')).toBe(true)
+    })
+
+    it('does not require a selected dataset', () => {
       mockStore = {
-        getters: {
-          getBookmarksData: bookmarkData,
-          getSelectedDataset: { id: 'store-dataset' },
-        },
+        getters: { getBookmarksData: { filter: { name: 'Test Cohort' } }, getSelectedDataset: undefined },
       }
 
       const result = CohortUrlCodec.shareCohortDefinition(mockStore)
 
       expect(result).not.toBeNull()
-      expect(result).toContain('datasetId=store-dataset')
+      expect(console.error).not.toHaveBeenCalled()
     })
 
-    it('returns null when no dataset available', () => {
-      const bookmarkData = {
-        filter: {
-          name: 'Test Cohort',
-        },
-      }
-
-      mockStore = {
-        getters: {
-          getBookmarksData: bookmarkData,
-          getSelectedDataset: null,
-        },
-      }
-
-      const result = CohortUrlCodec.shareCohortDefinition(mockStore)
-
-      expect(result).toBeNull()
-      expect(console.error).toHaveBeenCalledWith('No dataset ID found. Cannot generate deep link without a dataset.')
-    })
-
-    it('returns null when store dataset is undefined', () => {
-      const bookmarkData = {
-        filter: {
-          name: 'Test Cohort',
-        },
-      }
-
-      mockStore = {
-        getters: {
-          getBookmarksData: bookmarkData,
-          getSelectedDataset: undefined,
-        },
-      }
-
-      const result = CohortUrlCodec.shareCohortDefinition(mockStore)
-
-      expect(result).toBeNull()
-    })
-
-    it('generates valid compressed query parameter', () => {
+    it('hash query param decompresses back to the bookmark', () => {
       const bookmarkData = {
         datasetId: 'dataset1',
         filter: {
@@ -389,18 +355,9 @@ describe('CohortUrlCodec', () => {
 
       const result = CohortUrlCodec.shareCohortDefinition(mockStore)
 
-      expect(result).not.toBeNull()
-
-      // Extract query parameter and verify it can be decompressed
-      const url = new URL(result!)
-      const queryParam = url.searchParams.get('query')
-
-      expect(queryParam).not.toBeNull()
-      expect(queryParam!.length).toBeGreaterThan(0)
-
-      // Verify query param can be decompressed back to original data
-      const decompressed = CohortUrlCodec.decompress(queryParam!)
-      expect(decompressed).toEqual(bookmarkData)
+      const queryParam = hashParams(result!).get('query')
+      expect(queryParam).toBeTruthy()
+      expect(CohortUrlCodec.decompress(queryParam!)).toEqual(bookmarkData)
     })
 
     it('warns about long URLs', () => {
