@@ -350,15 +350,9 @@ describe("deepLinks", () => {
 
       expect(result).toBeTruthy();
       expect(result).toContain("/atlas/#/plugins/patient-analytics/");
-      expect(result).toContain("datasetId=dataset-123");
+      expect(result).not.toContain("datasetId=");
       expect(result).toContain("linkType=cohort-definition");
       expect(result).toContain("query=");
-    });
-
-    it("should use default datasetId when not provided", () => {
-      const result = generateFormSubmitDeepLink(defaultFields, {}, defaultMeta);
-
-      expect(result).toContain("datasetId=default");
     });
 
     it("should produce a pako-compressed MRI bookmark", () => {
@@ -381,13 +375,6 @@ describe("deepLinks", () => {
       expect(filterCard.attributes.content).toHaveLength(1);
       expect(filterCard.attributes.content[0].configPath).toBe("patient.attributes.Age");
       expect(filterCard.attributes.content[0].constraints.content[0].value).toBe(65);
-    });
-
-    it("should URL-encode special characters in datasetId", () => {
-      const datasetId = "dataset/with/slash";
-      const result = generateFormSubmitDeepLink([], {}, defaultMeta, datasetId);
-
-      expect(result).toContain("datasetId=dataset%2Fwith%2Fslash");
     });
 
     it("should handle empty formData and fields", () => {

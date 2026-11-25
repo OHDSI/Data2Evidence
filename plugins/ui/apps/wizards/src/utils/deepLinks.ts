@@ -11,8 +11,9 @@ export interface WizardSubmitPayload {
 /**
  * Generate deep link URL for wizard result action.
  *
- * Expected URL format (from PRD, now targeting Atlas):
- * https://[d2e-url]/atlas/#/plugins/patient-analytics/?datasetId=[datasetId]&linkType=cohort-definition&query=[base64-json]
+ * The URL comes from action.urlTemplate; {datasetId} and {encodedConfig}
+ * placeholders in it are filled in. Cohort links to Patient Analytics are built
+ * by generateFormSubmitDeepLink instead.
  *
  * @param action - Result action configuration
  * @param formData - Wizard form data to encode in URL
@@ -74,14 +75,16 @@ export function decodeWizardConfig(encoded: string): Record<string, any> {
  * Builds an MRI bookmark JSON from wizard fields and form data, compresses it
  * with pako (compatible with vue-mri CohortUrlCodec), and encodes it in the URL.
  *
- * URL format: /atlas/#/plugins/patient-analytics/?datasetId={datasetId}&linkType=cohort-definition&query={compressed}
+ * URL format: /atlas/#/plugins/patient-analytics/?linkType=cohort-definition&query={compressed}&wizards={compressed}
  * The params live in the hash query: the native PA plugin in Atlas reads them
  * from there (useDeepLink), and location.search is empty under /atlas/#/….
+ * No datasetId in the URL: PA applies the cohort to the dataset currently
+ * selected on the page. datasetId is still used to build the bookmark.
  *
  * @param fields - Wizard field definitions (needed for configPath mapping)
  * @param formData - Wizard form data values
  * @param configMeta - CDW config metadata (configId, configVersion)
- * @param datasetId - Dataset ID from portal context (optional, defaults to "default")
+ * @param datasetId - Dataset ID from portal context, used for the bookmark (optional, defaults to "default")
  * @returns Deep link URL string
  */
 export function generateFormSubmitDeepLink(
@@ -112,7 +115,6 @@ export function generateFormSubmitDeepLink(
   const wizards = compress(wizardConfig);
 
   const params = new URLSearchParams({
-    datasetId: resolvedDatasetId,
     linkType: "cohort-definition",
     query: compressed,
     wizards,

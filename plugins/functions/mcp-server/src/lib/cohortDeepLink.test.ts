@@ -21,7 +21,7 @@ function eq(actual: unknown, expected: unknown, msg: string) {
 
 Deno.test("buildDeepLinkUrl targets the Atlas PA hash route", () => {
   const bookmark = { hello: "world", n: 1 };
-  const { url, tooLong } = buildDeepLinkUrl(bookmark, "dataset-B");
+  const { url, tooLong } = buildDeepLinkUrl(bookmark);
 
   eq(tooLong, false, "short link must not warn");
 
@@ -38,7 +38,8 @@ Deno.test("buildDeepLinkUrl targets the Atlas PA hash route", () => {
   // Params live inside the hash query.
   const hashQuery = url.slice(prefix.length);
   const params = new URLSearchParams(hashQuery);
-  eq(params.get("datasetId"), "dataset-B", "datasetId param");
+  // PA uses the dataset selected on the page, so the link carries none.
+  eq(params.has("datasetId"), false, "no datasetId param");
   eq(params.get("linkType"), "cohort-definition", "linkType param");
   const query = params.get("query");
   assert(query && query.length > 0, "query param must be present");
@@ -49,17 +50,11 @@ Deno.test("buildDeepLinkUrl targets the Atlas PA hash route", () => {
   eq(decoded.n, 1, "round-trip n");
 });
 
-Deno.test("buildDeepLinkUrl encodes datasetId and flags long URLs", () => {
-  const { url } = buildDeepLinkUrl({ a: 1 }, "ds/with spaces&=");
-  const params = new URLSearchParams(
-    url.slice("/atlas/#/plugins/patient-analytics/?".length),
-  );
-  eq(params.get("datasetId"), "ds/with spaces&=", "datasetId must be encoded");
-
+Deno.test("buildDeepLinkUrl flags long URLs", () => {
   // Incompressible data: random bytes deflate to ~their own size.
   const randomBytes = new Uint8Array(4000);
   crypto.getRandomValues(randomBytes);
   const huge = { pad: Array.from(randomBytes).join(",") };
-  const long = buildDeepLinkUrl(huge, "ds");
+  const long = buildDeepLinkUrl(huge);
   eq(long.tooLong, true, "huge bookmark must set tooLong");
 });

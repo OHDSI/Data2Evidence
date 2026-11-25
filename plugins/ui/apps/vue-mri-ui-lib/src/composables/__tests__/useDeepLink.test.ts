@@ -267,6 +267,26 @@ describe('useDeepLink', () => {
       })
     })
 
+    it('loads a link without datasetId and cleans the hash back to the bare route', async () => {
+      // Current link shape: no datasetId, PA applies the cohort to the selected dataset.
+      mockLocation('', `${HASH_ROUTE}?linkType=cohort-definition&query=hashQuery123&wizards=wiz123`)
+      const mockBookmark = { filter: { some: 'filter' }, chartType: 'stacked' }
+      ;(CohortUrlCodec.safeDecompress as Mock).mockReturnValue({ success: true, data: mockBookmark })
+      const replaceStateSpy = vi.spyOn(window.history, 'replaceState')
+
+      const { processDeepLink } = useDeepLink(mockDispatch)
+      await processDeepLink()
+
+      expect(CohortUrlCodec.safeDecompress).toHaveBeenCalledWith('hashQuery123')
+      expect(mockDispatch).toHaveBeenCalledWith('loadBookmarkDataToState', {
+        bookmark: mockBookmark,
+        chartType: 'stacked',
+      })
+      const rewritten = new URL(replaceStateSpy.mock.calls.at(-1)![2] as string)
+      expect(rewritten.hash).toBe(HASH_ROUTE)
+      replaceStateSpy.mockRestore()
+    })
+
     it('prefers the legacy search payload when both search and hash carry one', async () => {
       mockLocation('?linkType=cohort-definition&query=searchQuery', `${HASH_ROUTE}?linkType=cohort-definition&query=hashQuery`)
       ;(CohortUrlCodec.safeDecompress as Mock).mockReturnValue({

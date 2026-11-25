@@ -164,7 +164,7 @@ export function registerCohortBuilderTools(server: McpServer) {
 
       // 3. Serialize the bookmark tree (+ NOT for exclusions) and assemble the link.
       const bookmark = buildCohortBookmarkTree(constraints, fe.meta);
-      const { url, tooLong } = buildDeepLinkUrl(bookmark, datasetId);
+      const { url, tooLong } = buildDeepLinkUrl(bookmark);
       const warning = tooLong
         ? "The generated link is unusually long and may not work in all browsers."
         : undefined;
