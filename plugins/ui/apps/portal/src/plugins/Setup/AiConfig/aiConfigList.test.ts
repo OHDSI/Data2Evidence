@@ -86,7 +86,16 @@ describe("connectionSummary", () => {
         cfg(1, "a", false, { provider: "openai-compatible", baseUrl: "https://llm.example.com:8443/v1" }),
         labels
       )
-    ).toBe("API key · llm.example.com");
+    ).toBe("API key · llm.example.com:8443/v1");
+    expect(
+      connectionSummary(
+        cfg(1, "a", false, {
+          provider: "openai-compatible",
+          baseUrl: "http://generativelanguage.googleapis.com/v1beta/openai/",
+        }),
+        labels
+      )
+    ).toBe("API key · generativelanguage.googleapis.com/v1beta/openai/");
   });
 });
 
