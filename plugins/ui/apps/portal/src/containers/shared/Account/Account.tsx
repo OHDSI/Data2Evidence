@@ -113,9 +113,11 @@ export const Account: FC<AccountProps> = ({ portalType }) => {
                       onClick={handleSwitchToAdmin}
                     />
                   )}
-                  <FeatureGate featureFlags={[FEATURE_ATLAS]}>
-                    <Button block text={getText(i18nKeys.ACCOUNT__SWITCH_TO_ATLAS)} onClick={handleSwitchToAtlas} />
-                  </FeatureGate>
+                  {user.canAccessResearcherPortal && (
+                    <FeatureGate featureFlags={[FEATURE_ATLAS]}>
+                      <Button block text={getText(i18nKeys.ACCOUNT__SWITCH_TO_ATLAS)} onClick={handleSwitchToAtlas} />
+                    </FeatureGate>
+                  )}
                   <Button block text={getText(i18nKeys.ACCOUNT__LOGOUT)} onClick={handleLogout} />
                   <Button
                     block
