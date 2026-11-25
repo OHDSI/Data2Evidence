@@ -1,6 +1,7 @@
 import React, { FC, useEffect } from "react";
 import { Account } from "./Account";
 import { Header } from "../../../components/Header/Header";
+import { FeedbackToast } from "../FeedbackToast/FeedbackToast";
 
 /**
  * Standalone account page served at /atlas/account for the Atlas user-menu link.
@@ -32,6 +33,7 @@ export const AtlasAccount: FC = () => {
     <div className="atlas-account" style={{ height: "100%", display: "flex", flexDirection: "column" }}>
       <Header portalType="atlas" />
       <main style={{ flex: "1 1 auto", minHeight: 0 }}>
+        <FeedbackToast />
         <Account portalType="researcher" />
       </main>
     </div>
