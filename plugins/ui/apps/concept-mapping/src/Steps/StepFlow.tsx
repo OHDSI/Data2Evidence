@@ -92,6 +92,7 @@ export const StepFlow: FC<StepFlowProps> = ({
     { header: getText(i18nKeys.OVERVIEW__CONCEPT_ID), accessor: "conceptId" },
     { header: getText(i18nKeys.OVERVIEW__CONCEPT_NAME), accessor: "conceptName" },
     { header: getText(i18nKeys.OVERVIEW__DOMAIN), accessor: "domainId" },
+    { header: getText(i18nKeys.MAPPING_TABLE__MATCH_SCORE), accessor: "score" },
   ];
   // Approved/flagged status is now derived from the backend suggestions list (see
   // MappingTable), not the local reducer's status/flagged fields - merge the two here so

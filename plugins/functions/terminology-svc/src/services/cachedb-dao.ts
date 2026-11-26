@@ -34,7 +34,7 @@ function buildOrderByClause(
   hasSearchTerm: boolean,
 ): string {
   const defaultOrder = hasSearchTerm
-    ? "ORDER BY score DESC"
+    ? "ORDER BY score DESC, name_equals DESC"
     : "ORDER BY concept_name ASC";
   if (!sortBy) return defaultOrder;
   if (!(ALLOWED_SORT_COLUMNS as readonly string[]).includes(sortBy))
@@ -42,6 +42,9 @@ function buildOrderByClause(
   if (sortBy === "score" && !hasSearchTerm) return "ORDER BY concept_name ASC";
 
   const direction = sortOrder === "asc" || sortOrder === "ASC" ? "ASC" : "DESC";
+  // name_equals is used to rank exact name matches before other matches
+  if (sortBy === "score")
+    return `ORDER BY score ${direction}, name_equals ${direction}`;
   return `ORDER BY ${sortBy} ${direction}`;
 }
 
@@ -55,35 +58,22 @@ export class CachedbDAO {
   private readonly fts_concept_synonym_identifier: string;
 
   // bm25SaturationK: BM25 normalization x/(x+k); smaller k saturates faster.
-  // hybridBoostScale: caps the [0,1] hybrid score below the discrete boosts
   private readonly bm25SaturationK = 5;
-  private readonly hybridBoostScale = 400;
 
   private readonly avgDlConcept = 104.1; // measured average document length over all fts index colums in omop concept table (June 2025)
   private readonly avgDlSynonym = 65.1; // measured average document length over concept_synonym_name in omop concept_synonym table (June 2025)
   private readonly synonymBm25Scale = this.avgDlSynonym / this.avgDlConcept; // rescale synonym BM25 scores to be comparable with concept BM25 scores, based on average document lengths
 
   // ---------------------------------------------------------------------------
-  // Scoring constants
+  // Scoring constants (see getOptimizedSearchQuery for the formula)
   //
-  // Concept-name exact-match tiers (mutually exclusive, highest priority).
-  // Keep gaps of ≥ 200 so (standard_boost + syn_exact_score) cannot bridge tiers;
-  // relevance (BM25 / hybrid_score) is still additive and may reorder tiers.
-  // Allowed range: any positive integers with consecutive gaps ≥ 200.
-  private readonly scoreConceptNameEquals = 1000;
-  private readonly scoreConceptNamePrefix = 800;
-  private readonly scoreConceptNameContains = 600;
+  // Multiplier for non-standard concepts: an exact non-standard match scores
+  // 0.8, below an exact standard one. Allowed range: (0, 1].
+  private readonly nonStandardFactor = 0.8;
 
-  // Standard-concept tiebreaker (additive within a tier).
-  // Must be < inter-tier gap (200) so it never bumps a row into the next tier.
-  // Allowed range: (0, 200)
-  private readonly scoreStandardBoost = 100;
-
-  // Synonym exact-match boosts (additive, applied on top of the concept-name tier).
-  // Must be < (inter-tier gap (200) - scoreStandardBoost (100)) (= 100) so that
-  // (standard_boost + syn_exact_score) cannot bridge name-match tiers.
-  // This ensures a lower-tier name match cannot outrank a higher-tier one due to boosts.
-  // Allowed range: scoreSynonymPrefix < scoreSynonymEquals < 100
+  // syn_exact_score markers from synonym_scores. Only "equals" feeds the score
+  // (a query identical to a declared synonym counts as an exact match); the
+  // prefix marker is not used in scoring. Any distinct values work.
   private readonly scoreSynonymEquals = 80;
   private readonly scoreSynonymPrefix = 40;
   // ---------------------------------------------------------------------------
@@ -155,6 +145,21 @@ export class CachedbDAO {
         COALESCE(${synonymBm25Expression}, 0) * ${this.synonymBm25Scale}
       ),
       0
+    )
+  `;
+
+  private readonly getMatchScore = (
+    continuousExpression: string,
+    synExactExpression: string,
+  ): string => `
+    (
+      CASE
+        WHEN c.name_equals
+          OR COALESCE(${synExactExpression}, 0) = ${this.scoreSynonymEquals}
+        THEN 1.0
+        ELSE ${continuousExpression}
+      END
+      * CASE WHEN c.standard_concept = 'S' THEN 1.0 ELSE ${this.nonStandardFactor} END
     )
   `;
 
@@ -534,19 +539,22 @@ export class CachedbDAO {
   /**
    * Build the SQL used by the /concept search endpoint.
    *
-   *   score = relevance + exact_match_score + syn_exact_score + standard_boost
-   *   exact_match_score (concept_name): scoreConceptNameEquals / scoreConceptNamePrefix / scoreConceptNameContains
-   *   syn_exact_score   (concept_synonym, max over rows): scoreSynonymEquals / scoreSynonymPrefix
-   *   standard_boost                                    : scoreStandardBoost if standard_concept = 'S'
+   * score is a 0-1 match score, used both for ranking and in the API response:
    *
-   * Relevance term:
-   *   fts_score = GREATEST(concept_bm25, syn_bm25)
-   *   FTS-only       : relevance = COALESCE(fts_score, 0)
-   *   hybrid (>0)    : relevance =
-   *                     hybridBoostScale                                    -- 400
-   *                     * (semanticRatio * MAX(embd_cos_sim, 0)
-   *                     + (1 - semanticRatio) * fts_score / (fts_score + K) -- in [0, 1)
-   *   - x/(x+K) is a Michaelis-Menten saturation curve; smaller K saturates faster.
+   *   continuous = hybrid path : hybrid_score
+   *                              = semanticRatio * MAX(embd_cos_sim, 0)
+   *                              + (1 - semanticRatio) * fts_score / (fts_score + K)
+   *                FTS-only    : fts_score / (fts_score + K)
+   *                (fts_score = GREATEST(concept_bm25, syn_bm25 * synonymBm25Scale))
+   *   relevance  = 1 if concept_name or a synonym equals the query (case-insensitive),
+   *                else continuous
+   *   score      = relevance * (standard_concept = 'S' ? 1 : nonStandardFactor)
+   *   ORDER BY score, name_equals -- among exact-match ties, name before synonym
+   *
+   * - x/(x+K) is a Michaelis-Menten saturation curve; smaller K saturates faster.
+   * - Multiplicative standard factor: a weak match stays weak (no floor); an
+   *   uncomputable relevance (no embedding row, no exact hit) scores 0.
+   * - Identifier queries (concept_id / concept_code) score 1.
    */
   private getOptimizedSearchQuery = (
     searchText: string,
@@ -587,7 +595,8 @@ export class CachedbDAO {
       with fts as (
         select
           ${columnsToSelect},
-          1 as score
+          1 as score,
+          false as name_equals
         from
           ${this.vocabSchemaName}.concept c
         where (c.concept_id::VARCHAR = $1 OR LOWER(c.concept_code) = LOWER($1))${filterAnd}
@@ -617,18 +626,7 @@ export class CachedbDAO {
           select
             ${columnsToSelect}${columns.length === 0 ? ", " : ""}
             c.concept_bm25,
-            -- Exact match scoring (highest priority)
-            CASE
-              WHEN c.concept_name_lower = LOWER($1) THEN ${this.scoreConceptNameEquals}
-              WHEN starts_with(c.concept_name_lower, LOWER($2)) THEN ${this.scoreConceptNamePrefix}
-              WHEN contains(c.concept_name_lower, LOWER($2)) THEN ${this.scoreConceptNameContains}
-              ELSE 0
-            END as exact_match_score,
-            -- Standard concept boost
-            CASE
-              WHEN standard_concept = 'S' THEN ${this.scoreStandardBoost}
-              ELSE 0
-            END as standard_boost
+            c.concept_name_lower = LOWER($1) as name_equals
           from (
             select
               ${columnsToSelect}${columns.length === 0 ? ", " : ""}
@@ -692,24 +690,26 @@ export class CachedbDAO {
         queryParams = [searchText, escapedSearchText];
       }
 
+      // FTS-only continuous relevance: saturated best BM25 across name + synonyms.
+      const ftsBm25 = this.getBestBm25Score("c.concept_bm25", "sy.syn_bm25");
+      const ftsContinuous = `COALESCE(${ftsBm25} / (${ftsBm25} + ${this.bm25SaturationK}), 0)`;
+
       const finalScores =
         semanticRatio > 0
           ? `
         select
           *,
-          (
-            COALESCE(ss.hybrid_score, 0) * ${this.hybridBoostScale}
-            + c.exact_match_score
-            + COALESCE(ss.syn_exact_score, 0)
-            + c.standard_boost
-          ) as score
+          ${this.getMatchScore(
+            "COALESCE(ss.hybrid_score, 0)",
+            "ss.syn_exact_score",
+          )} as score
         from
           concept_with_scores c
         left join search_scores ss
           on ss.concept_id = c.concept_id
         WHERE (
           ss.hybrid_score IS NOT NULL
-          OR c.exact_match_score > 0
+          OR c.name_equals
           OR ss.syn_exact_score > 0
         )
         ${filterWhereClause ? ` AND ${filterWhereClause.substring(7)}` : ""}
@@ -718,15 +718,7 @@ export class CachedbDAO {
           : `
         select
           *,
-          (
-            COALESCE(${this.getBestBm25Score(
-              "c.concept_bm25",
-              "sy.syn_bm25",
-            )}, 0)
-            + c.exact_match_score
-            + COALESCE(sy.syn_exact_score, 0)
-            + c.standard_boost
-          ) as score
+          ${this.getMatchScore(ftsContinuous, "sy.syn_exact_score")} as score
         from
           concept_with_scores c
         left join synonym_scores sy
@@ -734,7 +726,7 @@ export class CachedbDAO {
         WHERE (
           c.concept_bm25 IS NOT NULL
           OR sy.syn_bm25 IS NOT NULL
-          OR c.exact_match_score > 0
+          OR c.name_equals
           OR sy.syn_exact_score > 0
         )
         ${filterWhereClause ? ` AND ${filterWhereClause.substring(7)}` : ""}

@@ -48,6 +48,10 @@ const SUGGESTION_LINE_HEIGHT = 36;
 // i.e. one written before those names were stored.
 const UNKNOWN_USER = "\u2014";
 
+function formatScore(score: number | null | undefined): string {
+  return typeof score === "number" && Number.isFinite(score) ? score.toFixed(2) : "\u2014";
+}
+
 interface ConceptLine {
   key: string;
   // Present when this line is a persisted backend suggestion; absent for a client-only
@@ -59,6 +63,7 @@ interface ConceptLine {
   conceptCode: any;
   domainId: any;
   vocabularyId: any;
+  score?: number | null;
   // Who last acted on this line: its approver once approved, otherwise whoever suggested it.
   // Empty for a client-only Recommend concept, which nobody has acted on yet.
   checkedBy: string;
@@ -81,6 +86,7 @@ function conceptLines(original: { [key: string]: any }): ConceptLine[] {
       conceptCode: s.conceptCode,
       domainId: s.domainId,
       vocabularyId: s.vocabularyId,
+      score: s.score,
       checkedBy: (s.isApproved ? s.approvedByName : s.suggestedByName) ?? UNKNOWN_USER,
     }));
   }
@@ -94,6 +100,7 @@ function conceptLines(original: { [key: string]: any }): ConceptLine[] {
         conceptCode: original.conceptCode,
         domainId: original.domainId,
         vocabularyId: original.vocabularyId,
+        score: original.score,
         checkedBy: "",
       },
     ];
@@ -169,6 +176,7 @@ export const MappingTable: FC<MappingTableProps> = ({
                 conceptCode: chosen.conceptCode,
                 domainId: chosen.domainId,
                 vocabularyId: chosen.vocabularyId,
+                score: chosen.score ?? undefined,
               }
             : {}),
           status: derived.status,
@@ -201,6 +209,7 @@ export const MappingTable: FC<MappingTableProps> = ({
           conceptCode: row.conceptCode,
           domainId: row.domainId,
           vocabularyId: row.vocabularyId,
+          score: row.score,
         };
         const dto = await api.conceptMappingSuggestions.addSuggestion(dataflowId, nodeId, row.sourceRowId, concept);
         suggestionId = dto.id;
@@ -351,7 +360,7 @@ export const MappingTable: FC<MappingTableProps> = ({
             key={line.key}
             sx={{ height: `${SUGGESTION_LINE_HEIGHT}px`, display: "flex", alignItems: "center" }}
           >
-            {line[field] as React.ReactNode}
+            {field === "score" ? formatScore(line.score) : (line[field] as React.ReactNode)}
           </Box>
         ))}
       </Box>
@@ -517,6 +526,15 @@ export const MappingTable: FC<MappingTableProps> = ({
         header: getText(i18nKeys.MAPPING_TABLE__VOCABULARY),
         size: 150,
         Cell: ({ row }) => renderConceptCell(row.original, "vocabularyId"),
+      },
+      {
+        id: "score",
+        accessorKey: "score",
+        header: getText(i18nKeys.MAPPING_TABLE__MATCH_SCORE),
+        size: 120,
+        sortingFn: "basic",
+        sortUndefined: "last",
+        Cell: ({ row }) => renderConceptCell(row.original, "score"),
       },
       {
         id: "10",

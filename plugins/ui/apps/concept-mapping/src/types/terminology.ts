@@ -5,6 +5,7 @@ export interface StandardConcepts {
   conceptCode: string;
   domainId: string;
   vocabularyId: string;
+  score?: number;
 }
 
 type ConceptSetConcept = {
