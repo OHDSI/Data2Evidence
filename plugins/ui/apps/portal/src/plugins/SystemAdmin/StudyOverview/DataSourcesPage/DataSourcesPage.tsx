@@ -8,6 +8,7 @@ import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import CheckIcon from "@mui/icons-material/Check";
 import {
   buildMuiTheme,
+  PageCard,
   PageHeader,
   Button,
   Tabs,
@@ -356,7 +357,7 @@ export function DataSourcesPage() {
   return (
     <ThemeProvider theme={theme}>
       <div className="d2e-ds">
-        <div className="d2e-ds__card">
+        <PageCard className="d2e-ds__card">
         <PageHeader
           overline={getText(i18nKeys.STUDY_OVERVIEW__ADMIN)}
           title={getText(i18nKeys.STUDY_OVERVIEW__TITLE)}
@@ -414,7 +415,7 @@ export function DataSourcesPage() {
         </div>
 
         {content()}
-        </div>
+        </PageCard>
 
         <DataSourceDialogs ctrl={ctrl} />
       </div>

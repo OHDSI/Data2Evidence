@@ -54,6 +54,7 @@ jest.mock(
       Chip: (props: any) => MockReact.createElement("span", null, props.label),
       EmptyState: (props: any) => MockReact.createElement("div", null, props.title),
       PageHeader: (props: any) => MockReact.createElement("div", null, props.title, props.actions),
+      PageCard: passthrough("div"),
       Pagination: () => null,
       Spinner: () => MockReact.createElement("div", null, "loading"),
       Table: passthrough("table"),

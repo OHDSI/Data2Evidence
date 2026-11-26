@@ -13,6 +13,7 @@ import {
   Chip,
   EmptyState,
   FilterPanel,
+  PageCard,
   PageHeader,
   Pagination,
   Spinner,
@@ -428,7 +429,7 @@ export const UserOverview: FC<UserOverviewProps> = () => {
   return (
     <ThemeProvider theme={theme}>
       <div className="d2e-users">
-        <div className="d2e-users__card">
+        <PageCard className="d2e-users__card">
           <PageHeader
             overline={getText(i18nKeys.USER_OVERVIEW__ADMIN)}
             title={getText(i18nKeys.USER_OVERVIEW__USERS)}
@@ -473,7 +474,7 @@ export const UserOverview: FC<UserOverviewProps> = () => {
           </div>
 
           {content()}
-        </div>
+        </PageCard>
 
         <AddUserDialog open={showAddUser} onClose={closeAddUser} />
         <EditTenantRoleDialog
