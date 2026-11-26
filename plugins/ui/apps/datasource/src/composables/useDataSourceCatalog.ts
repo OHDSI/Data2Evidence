@@ -32,6 +32,8 @@ const DEFAULT_BANNER: BannerConfig = {
   logoUrl: '/atlas/config/landing-page-illustration.svg',
 }
 
+let cachedBanner: BannerConfig | null = null
+
 const ACCESS_ORDER: Record<AccessState, number> = { approved: 0, pending: 1, 'no-access': 2, restricted: 3 }
 
 const attr = (d: DatasetListItem, id: string): string =>
@@ -103,7 +105,7 @@ export async function fetchResearcherSources(token: string, idpUserId: string): 
 
 export function useDataSourceCatalog(getToken: () => string | null) {
   const sources: Ref<DataSourceCardVM[]> = ref([])
-  const banner = ref<BannerConfig>({ ...DEFAULT_BANNER })
+  const banner = ref<BannerConfig | null>(cachedBanner)
   const loading = ref(true)
   const error = ref<string | null>(null)
   const query = ref('')
@@ -119,14 +121,15 @@ export function useDataSourceCatalog(getToken: () => string | null) {
         getPublicHeaderImage().catch(() => null),
         getPublicOverviewDescription().catch(() => null),
       ])
-      banner.value = {
+      cachedBanner = {
         title: DEFAULT_BANNER.title,
         description: desc?.value || DEFAULT_BANNER.description,
         logoUrl: img?.value || DEFAULT_BANNER.logoUrl,
       }
     } catch {
-      banner.value = { ...DEFAULT_BANNER }
+      cachedBanner = { ...DEFAULT_BANNER }
     }
+    banner.value = cachedBanner
   }
 
   async function load(): Promise<void> {
@@ -136,8 +139,8 @@ export function useDataSourceCatalog(getToken: () => string | null) {
     const idpUserId = getIdpUserId(token)
     isLoggedIn.value = !!idpUserId
     sortMode.value = idpUserId ? 'access' : 'name-asc'
+    void loadBanner()
     try {
-      await loadBanner()
       if (idpUserId && token) {
         sources.value = await fetchResearcherSources(token, idpUserId)
       } else {
