@@ -1,4 +1,4 @@
-import { test, expect } from '../fixtures'
+import { test, expect, openAtlasDataExploration } from '../fixtures'
 
 const TEST_NAME = 'parent-interaction'
 const SHOULD_SKIP = true
@@ -13,8 +13,7 @@ test(TEST_NAME, async ({ page }) => {
   await page.locator('input[name="password"]').fill('Updatepassword12345')
   await page.getByRole('button', { name: 'Sign in' }).click()
 
-  await page.getByText('Demo dataset').first().click()
-  await page.getByRole('link', { name: 'Cohorts' }).click()
+  await openAtlasDataExploration(page)
   await expect(page.getByRole('status')).toBeVisible()
   await expect(page.getByRole('status')).toBeHidden()
   await page.getByTestId('explorations-new-btn').click()
@@ -82,10 +81,10 @@ test(TEST_NAME, async ({ page }) => {
   // await page.getByRole('button', { name: 'Save' }).click()
   // await expect(page.getByText('Configuration saved.')).toBeVisible()
   // await page.getByRole('link', { name: 'Account' }).click()
-  // await page.getByRole('button', { name: 'Switch to Researcher portal' }).click()
+  // Return to Atlas after changing the admin configuration.
 
   // await page.getByTestId('card').first().click()
-  // await page.getByRole('link', { name: 'Cohorts' }).click()
+  // await page.getByRole('link', { name: 'Data Exploration' }).click()
   // await expect(page.getByRole('status')).toBeVisible()
   // await expect(page.getByRole('status')).toBeHidden()
   // await page.getByTitle('Add Filter Card').getByRole('button').click()

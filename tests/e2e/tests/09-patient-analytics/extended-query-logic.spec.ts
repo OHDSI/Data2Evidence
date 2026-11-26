@@ -1,4 +1,4 @@
-import { test, expect } from '../fixtures'
+import { test, expect, openAtlasDataExploration } from '../fixtures'
 import { deleteExploration } from '../explorations'
 const TEST_NAME = 'patient-analytics-extended-query-logic'
 const SHOULD_SKIP = false
@@ -13,8 +13,7 @@ test(TEST_NAME, async ({ page }) => {
   await page.locator('input[name="password"]').fill('Updatepassword12345')
   await page.getByRole('button', { name: 'Sign in' }).click()
 
-  await page.getByText('Demo dataset').first().click()
-  await page.getByRole('link', { name: 'Cohorts' }).click()
+  await openAtlasDataExploration(page)
   await page.getByTestId('explorations-new-btn').click()
   await expect(page.getByText('2,694 / 2,694')).toBeVisible()
   await expect(page.locator('.loading-animation-component')).not.toBeVisible()
@@ -29,9 +28,10 @@ test(TEST_NAME, async ({ page }) => {
   await expect(page.locator('.loading-animation-component')).not.toBeVisible()
   await expect(page.getByText('2,694 / 2,694')).toBeVisible()
   // Add basic data - month of birth
-  await page.locator('div[title="Basic Data - Month of Birth"]').click()
-  await page.locator('div[title="Basic Data - Month of Birth"]').getByRole('textbox').fill('6')
-  await page.locator('div[title="Basic Data - Month of Birth"]').getByRole('textbox').press('Enter')
+  const monthOfBirthFilter = page.getByTestId('pa-filter-card-patient').getByTitle('Basic Data - Month of Birth')
+  await monthOfBirthFilter.click()
+  await monthOfBirthFilter.getByRole('textbox').fill('6')
+  await monthOfBirthFilter.getByRole('textbox').press('Enter')
   // Add basic data - gender === MALE
   await page.getByTitle('Basic Data - Gender', { exact: true }).locator('div').nth(1).click()
   await page.getByPlaceholder('Enter search term').fill('MALE')
@@ -46,12 +46,12 @@ test(TEST_NAME, async ({ page }) => {
   // This one does the actual change to AND
   await page.getByRole('button', { name: 'AND ' }).first().click()
   await expect(page.locator('.loading-animation-component')).not.toBeVisible()
-  await expect(page).toHaveScreenshot()
+  await expect.soft(page).toHaveScreenshot()
 
   // Click OR to change into AND
   await page.getByRole('button', { name: 'OR ' }).first().click()
   await expect(page.locator('.loading-animation-component')).not.toBeVisible()
-  await expect(page).toHaveScreenshot()
+  await expect.soft(page).toHaveScreenshot()
 
   // Click AND to change into OR
   await page.getByRole('button', { name: 'AND ' }).first().click()
@@ -69,7 +69,7 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByText('Condition Occurrence B').nth(1).hover()
   await page.locator('#pane-right').getByText('Condition Start Date').click()
   await expect(page.locator('.loading-animation-component')).not.toBeVisible()
-  await expect(page).toHaveScreenshot()
+  await expect.soft(page).toHaveScreenshot()
 
   // Click and Drag and press drilldown
   await page.mouse.move(800, 200)

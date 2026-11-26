@@ -14,28 +14,25 @@ Run the command:
 ./d2e setupdemo
 ```
 
-- Upon completion, switch to the Researcher Portal by going to *Account > Switch to Researcher Portal*
+- Upon completion, open Atlas at `/atlas` (researchers are taken there automatically after login)
 
 > **The expected display is:**
 >
-> ![AdminPortal](../../images/portal/ResearcherPortalDemoDataset.png)
+> ![Atlas demo dataset](../../images/portal/AtlasHomeDatasets.png)
 
 ## Setting up demo dataset via UI
 
-- Open the Researcher Portal and click **Switch to the Admin Portal**.
-
-- In the Admin Portal click **Setup**
+- Open the Admin Portal at `/d2e/portal/systemadmin/setup`.
 - Click the **Demo Setup** - **Configure** button.
 
 > **The expected display is:**
->
 > ![DemoSetup](../../images/adminportal-setup/DemoSetup.png)
 
 - **Setup demo database and dataset** - Click the **Run** Button
 - Go to **Datasets > Demo Dataset > Permissions** and add access to the dataset to your user e.g. admin.
 - **Log out** and **Log in** again to the **account** page
 - Go to **Jobs** and wait until all jobs are completed
-- Switch to the Researcher Portal by going to *Account > Switch to Researcher Portal*
+- Open Atlas at `/atlas` (researchers are taken there automatically after login)
 
 > **The expected display is:**
-> ![AdminPortal](../../images/portal/ResearcherPortalDemoDataset.png)
+> ![Atlas demo dataset](../../images/portal/AtlasHomeDatasets.png)

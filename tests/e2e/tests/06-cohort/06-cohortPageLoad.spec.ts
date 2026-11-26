@@ -1,4 +1,4 @@
-import { test, expect } from '../fixtures'
+import { test, expect, acceptAtlasLicense } from '../fixtures'
 
 const TEST_NAME = 'cohortPageLoad'
 const SHOULD_SKIP = false
@@ -27,13 +27,20 @@ test(TEST_NAME, async ({ page }) => {
   await page.locator('input[name="password"]').click()
   await page.locator('input[name="password"]').fill('Updatepassword12345')
   await page.getByRole('button', { name: 'Sign in' }).click()
-  await page.getByText('Demo dataset').nth(1).click()
-  await page.getByRole('link', { name: 'Cohorts' }).click()
+  await acceptAtlasLicense(page)
+
+  const demoDataset = page
+    .getByRole('button')
+    .filter({ has: page.getByRole('heading', { name: 'Demo dataset', exact: true }) })
+    .filter({ hasText: 'Data source type: omop5-4' })
+  await expect(demoDataset).toHaveCount(1)
+  await demoDataset.click()
+  await page.getByRole('link', { name: 'Data Exploration' }).click()
 
   await expect(page.getByTestId('explorations-page')).toBeVisible()
   await expect(page.getByTestId('explorations-search')).toBeVisible()
   await expect(page.getByTestId('explorations-filters-btn')).toBeVisible()
   await expect(page.getByTestId('explorations-sort-btn')).toBeVisible()
   await expect(page.getByTestId('explorations-new-btn')).toBeVisible()
-  await expect(page.getByTestId('explorations-datasource')).toHaveCount(0)
+  await expect(page.getByTestId('explorations-datasource')).toContainText('Demo dataset')
 })

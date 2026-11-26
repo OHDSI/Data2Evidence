@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test'
+import { test, expect, openAdminPortalFromAtlas, openAtlasDataExploration, resetPortalSession } from '../fixtures'
 import { confirmExplorationDialog, explorationCard, explorationMenuAction } from '../explorations'
 
 const TEST_NAME = 'e2e PA and Cohorts'
@@ -19,9 +19,12 @@ async function loginAs(page, username) {
   await page.getByRole('button', { name: 'Sign in' }).click()
 }
 
+// After Logout, Atlas keeps the previous user's tokens in localStorage, and the next
+// sign-in can land on a logged-out Atlas page. Start the next sign-in from a clean session.
 async function logout(page) {
-  await page.getByRole('link', { name: 'Account' }).click()
+  await page.getByRole('button', { name: RESEARCHER_1, exact: true }).click()
   await page.getByRole('button', { name: 'Logout' }).click()
+  await resetPortalSession(page)
 }
 
 async function createUser(page, username) {
@@ -37,7 +40,10 @@ async function createUser(page, username) {
 
 async function grantDatasetAccess(page, username) {
   await page.getByRole('link', { name: 'Data sources' }).click()
-  const demoRow = page.locator('tr', { hasText: 'Demo dataset' }).first()
+  const demoRow = page
+    .locator('tbody tr')
+    .filter({ hasText: /Demo dataset/i })
+    .filter({ hasText: /webapi/i })
   await demoRow.getByRole('button', { name: 'Actions' }).click()
   await page.getByRole('menuitem', { name: 'Update permissions' }).click()
   await page.getByRole('tab', { name: 'Access' }).click()
@@ -63,11 +69,6 @@ async function deleteUser(page, username) {
   await expect(userRow).not.toBeVisible()
 }
 
-async function navigateToCohorts(page) {
-  await page.getByRole('link', { name: 'Cohorts' }).click()
-  await expect(page.getByTestId('explorations-page')).toBeVisible()
-}
-
 async function dismissUnsavedChangesDialog(page) {
   try {
     await page.getByRole('button', { name: 'Leave without saving' }).click({ timeout: 3000 })
@@ -81,8 +82,8 @@ async function navigateBackToCohortList(page) {
   // rendered on the list itself, so this helper timed out whenever it was
   // called with the list already open.
   //
-  // The top-nav Cohorts link cannot stand in for the breadcrumb: the list and
-  // the builder share the /researcher/cohort route, so clicking it while the
+  // The top-nav Data Exploration link cannot stand in for the breadcrumb: the
+  // list and the builder share the plugin route, so clicking it while the
   // builder is open leaves the builder exactly where it is.
   //
   // Return early when the list is already showing, and use the breadcrumb
@@ -101,12 +102,7 @@ test(TEST_NAME, async ({ page }) => {
   await page.goto('/d2e/portal')
   await loginAs(page, 'admin')
 
-  // Wait for the portal to fully load after OIDC redirect
-  await expect(page.getByText('Demo dataset').first()).toBeVisible()
-
-  // Switch to admin portal (use nth(1) - first Account button is behind the banner overlay)
-  await page.getByRole('button', { name: 'Account' }).nth(1).click()
-  await page.getByRole('button', { name: 'Switch to Admin portal' }).click()
+  await openAdminPortalFromAtlas(page)
 
   // Create researcher users
   await createUser(page, RESEARCHER_1)
@@ -121,17 +117,12 @@ test(TEST_NAME, async ({ page }) => {
   // Logout admin
   await page.getByRole('link', { name: 'Account' }).click()
   await page.getByRole('button', { name: 'Logout' }).click()
+  await resetPortalSession(page)
 
   // === TEST: Researcher 1 creates cohorts ===
   await loginAs(page, RESEARCHER_1)
 
-  // Select dataset
-  await page.getByText('Demo dataset').first().click()
-  await expect(page.getByTestId('card-content')).toContainText('Demo dataset')
-  await expect(page.getByRole('tab', { name: 'Dataset Info' })).toBeVisible()
-
-  // Navigate to Cohorts
-  await navigateToCohorts(page)
+  await openAtlasDataExploration(page)
   await expect(page.getByTestId('explorations-new-btn')).toBeVisible()
 
   // Create first cohort with MALE filter
@@ -194,7 +185,7 @@ test(TEST_NAME, async ({ page }) => {
   await expect(page.getByRole('button', { name: 'Compare' })).toBeEnabled()
   await page.getByRole('button', { name: 'Compare' }).click()
   await expect(page.getByText('Group Comparison')).toBeVisible()
-  await page.getByRole('button', { name: 'Close' }).click()
+  await page.getByRole('button', { name: 'Close', exact: true }).click()
 
   // === REMOVED: Researcher 2 can see shared cohorts ===
   //
@@ -220,8 +211,7 @@ test(TEST_NAME, async ({ page }) => {
   // (Only the owner can modify cohorts, so switch back to researcher_1)
   await logout(page)
   await loginAs(page, RESEARCHER_1)
-  await page.getByText('Demo dataset').first().click()
-  await navigateToCohorts(page)
+  await openAtlasDataExploration(page)
 
   await expect(page.getByRole('status').filter({ hasText: 'Content is loading' })).not.toBeVisible({ timeout: 60000 })
 
@@ -242,14 +232,12 @@ test(TEST_NAME, async ({ page }) => {
   // Reskinned: titled "Delete filter?", confirmed with "Yes, delete".
   await expect(page.getByRole('dialog')).toContainText('Delete filter?')
   await confirmExplorationDialog(page)
-  await expect(page.locator('#app')).toContainText('Saved filter deleted')
+  await expect(page.getByRole('status').filter({ hasText: 'Saved filter deleted.' })).toBeVisible()
 
   // Cleanup: delete users as admin
   await logout(page)
   await loginAs(page, 'admin')
-  await expect(page.getByText('Demo dataset').first()).toBeVisible()
-  await page.getByRole('button', { name: 'Account' }).nth(1).click()
-  await page.getByRole('button', { name: 'Switch to Admin portal' }).click()
+  await openAdminPortalFromAtlas(page)
   await deleteUser(page, RESEARCHER_1)
   await deleteUser(page, RESEARCHER_2)
 })

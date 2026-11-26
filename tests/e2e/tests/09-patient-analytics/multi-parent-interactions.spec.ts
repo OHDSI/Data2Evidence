@@ -1,5 +1,5 @@
 import { Locator, Page } from 'playwright/test'
-import { test, expect } from '../fixtures'
+import { test, expect, openAtlasDataExploration } from '../fixtures'
 import { deleteExploration, explorationBookmarkCard } from '../explorations'
 
 const TEST_NAME = 'multi-parent-interactions'
@@ -14,24 +14,6 @@ const VISIT_CARD = 'Visit A'
 const VISIT_PARENT = 'Visit parent'
 const EPISODE_PARENT = 'Episode parent'
 const SCREENSHOT_DIR = 'test-results/multi-parent-interactions'
-
-async function openDatasetCohorts(page: Page) {
-  const cohortsLink = page.getByRole('link', { name: 'Cohorts' })
-  for (let attempt = 0; attempt < 6; attempt++) {
-    await page.getByText('Demo dataset').first().click()
-    try {
-      await cohortsLink.waitFor({ state: 'visible', timeout: 10_000 })
-      await cohortsLink.click()
-      return
-    } catch {
-      await page
-        .getByRole('link', { name: 'Dataset' })
-        .click()
-        .catch(() => {})
-    }
-  }
-  throw new Error('Cohorts link did not appear for selected dataset within ~60s')
-}
 
 async function patientCount(page: Page): Promise<string> {
   await expect(page.locator('.loading-animation-component')).not.toBeVisible()
@@ -66,7 +48,7 @@ test(TEST_NAME, async ({ page }) => {
   await page.locator('input[name="identifier"]').fill('admin')
   await page.locator('input[name="password"]').fill('Updatepassword12345')
   await page.getByRole('button', { name: 'Sign in' }).click()
-  await openDatasetCohorts(page)
+  await openAtlasDataExploration(page)
   await page.getByTestId('explorations-new-btn').click()
   await patientCount(page)
 

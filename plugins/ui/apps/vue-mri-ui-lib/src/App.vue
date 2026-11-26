@@ -26,7 +26,7 @@
 // Self-hosted IBM Plex Sans webfont. Imported here (the root component rendered
 // by both the standalone and single-spa entries) so it loads in every context.
 import '@fontsource-variable/ibm-plex-sans'
-import { computed, onMounted, onBeforeUnmount } from 'vue'
+import { computed, onMounted, onBeforeUnmount, watch } from 'vue'
 import { useStore } from 'vuex'
 import patientanalytics from './components/PatientAnalytics.vue'
 import SplashScreen from './components/SplashScreen.vue'
@@ -40,7 +40,7 @@ import CohortUrlCodec from './utils/CohortUrlCodec'
 const store = useStore()
 const unsavedChanges = useUnsavedChanges()
 
-usePortalContext()
+const portalContext = usePortalContext()
 
 const getInitialLoad = computed<boolean>(() => store.getters.getInitialLoad)
 const getDatasetReloadInProgress = computed<boolean>(() => store.getters.getDatasetReloadInProgress)
@@ -62,8 +62,21 @@ const bindShareCohortDefinition = (): void => {
   }
 }
 
+const waitForDataset = (): Promise<void> => {
+  const ready = () => !!portalContext.datasetId && !getDatasetReloadInProgress.value
+  if (ready()) return Promise.resolve()
+  return new Promise(resolve => {
+    const stop = watch(ready, ok => {
+      if (!ok) return
+      stop()
+      resolve()
+    }, { flush: 'post' })
+  })
+}
+
 const processDeepLinkIfPresent = async (): Promise<void> => {
   try {
+    await waitForDataset()
     await store.dispatch('requestMriConfig')
     const { processDeepLink } = useDeepLink(store.dispatch, { guard: unsavedChanges.guard })
     await processDeepLink()

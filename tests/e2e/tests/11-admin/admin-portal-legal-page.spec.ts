@@ -1,4 +1,4 @@
-import { test, expect } from '../fixtures'
+import { test, expect, openAdminPortalFromAtlas, openAtlasAccount, openAtlasPortalFromAdmin } from '../fixtures'
 
 test('test', async ({ page }) => {
   await page.goto('/d2e/portal')
@@ -7,8 +7,7 @@ test('test', async ({ page }) => {
   await page.locator('input[name="password"]').click()
   await page.locator('input[name="password"]').fill('Updatepassword12345')
   await page.getByRole('button', { name: 'Sign in' }).click()
-  await page.getByTestId('button').nth(1).click()
-  await page.getByRole('button', { name: 'Switch to Admin portal' }).click()
+  await openAdminPortalFromAtlas(page)
   await page.getByRole('link', { name: 'Setup' }).click()
   await page
     .locator('div')
@@ -27,14 +26,12 @@ test('test', async ({ page }) => {
   await expect(page.getByText('Display Imprint')).toBeChecked()
   await expect(page.getByText('Display Terms Of Use')).toBeChecked()
   await expect(page.getByText('Display Privacy Policy')).toBeChecked()
-  await page.waitForTimeout(1000)
-  if ((await page.getByRole('button', { name: 'Save' }).isEnabled()) === true) {
-    await page.getByRole('button', { name: 'Save' }).click()
+  const saveButton = page.getByRole('button', { name: 'Save' })
+  if ((await saveButton.count()) > 0 && (await saveButton.isEnabled())) {
+    await saveButton.click()
   }
-  await page.waitForTimeout(1000)
-  await page.getByRole('link', { name: 'Account' }).click()
-  await page.getByRole('button', { name: 'Switch to Researcher portal' }).click()
-  await page.getByTestId('button').nth(1).click()
+  await openAtlasPortalFromAdmin(page)
+  await openAtlasAccount(page)
   await expect(page.getByRole('tab', { name: 'Terms of use' })).toBeVisible()
   await page.getByRole('tab', { name: 'Privacy policy' }).click()
   await expect(page.getByRole('tab', { name: 'Privacy policy' })).toBeVisible()

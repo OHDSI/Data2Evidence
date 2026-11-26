@@ -3,8 +3,9 @@
  * If there's no usable token — or we've landed on Atlas3's broken WebAPI
  * "/#/welcome&token=<HS256>" fallback (which trex rejects) — redirect through the
  * Logto bridge (/atlas-login/) for silent SSO. Also enforces the admin feature
- * flags: blocks /atlas when "atlas" is off, hides the Pythia FAB when "pythia" is off,
- * and drops flag-gated plugins from the Atlas3 plugin manifest.
+ * flags: hides the Pythia FAB when "pythia" is off, and drops flag-gated plugins
+ * from the Atlas3 plugin manifest. Users without a researcher role (dataset
+ * researcher / tenant viewer) are sent to the portal.
  */
 (function () {
   "use strict";
@@ -77,6 +78,34 @@
   } else {
     // Logged in: enforce the admin feature flags (Setup -> Feature flags).
     enforceFeatures(flags);
+    // Atlas is the researcher portal: same roles as the retired one.
+    enforceResearcherRole(token);
+  }
+
+  // Only dataset researchers and tenant viewers may use Atlas (the portal's
+  // canAccessResearcherPortal). Everyone else goes to the portal, which routes
+  // them to the admin/ETL portal or "no access" and never back to /atlas.
+  function enforceResearcherRole(token) {
+    var sub;
+    try {
+      sub = JSON.parse(atob(token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/"))).sub;
+    } catch (e) {
+      return;
+    }
+    if (!sub) return;
+    fetch("/d2e/usermgmt/api/user-group/list", {
+      method: "POST",
+      headers: { Authorization: "Bearer " + token, "Content-Type": "application/json" },
+      body: JSON.stringify({ userId: sub })
+    })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (g) {
+        if (!g) return;
+        var isResearcher = (g.alp_role_study_researcher || []).length > 0;
+        var isTenantViewer = (g.alp_role_tenant_viewer || []).length > 0;
+        if (!isResearcher && !isTenantViewer) location.replace("/d2e/portal");
+      })
+      .catch(function () { /* no answer: leave the user where they are */ });
   }
 
   function isDisabled(list, name) {
@@ -107,8 +136,6 @@
     flags.then(function (list) {
       // Fail open: an unreadable flag list must not bounce users out of Atlas.
       if (!Array.isArray(list)) return;
-      // "atlas" disabled -> block direct /atlas access, bounce to the portal.
-      if (isDisabled(list, "atlas")) { location.replace("/d2e/portal"); return; }
       // "pythia" disabled -> hide the Pythia FAB via a global style.
       if (isDisabled(list, "pythia")) {
         var s = document.createElement("style");

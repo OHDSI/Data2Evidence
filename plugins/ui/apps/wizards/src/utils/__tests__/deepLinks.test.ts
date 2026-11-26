@@ -299,24 +299,30 @@ describe("deepLinks", () => {
       isWizardField: true,
       ...overrides,
     });
-    const getWizardConfig = (url: string) =>
-      decompress<any>(new URL(url, "https://example.com").searchParams.get("wizards")!);
+    const getWizardConfig = (url: string) => decompress<any>(getHashParams(url).get("wizards")!);
+
+    // Params live in the hash query (`#/plugins/patient-analytics/?…`), which
+    // URL.searchParams does not see.
+    function getHashParams(url: string): URLSearchParams {
+      const hash = new URL(url, "https://example.com").hash;
+      return new URLSearchParams(hash.slice(hash.indexOf("?") + 1));
+    }
 
     it("uses the same payload builder for direct and Cohort Builder flows", () => {
       const formData = { age: 65 };
       const directPayload = buildWizardSubmitPayload(defaultFields, formData, defaultMeta, "dataset-123");
       const deepLink = generateFormSubmitDeepLink(defaultFields, formData, defaultMeta, "dataset-123");
-      const url = new URL(deepLink, "https://example.com");
+      const hashParams = getHashParams(deepLink);
 
-      expect(decompress(url.searchParams.get("query")!)).toEqual(directPayload.bookmark);
-      expect(decompress(url.searchParams.get("wizards")!)).toEqual(directPayload.wizardConfig);
+      expect(decompress(hashParams.get("query")!)).toEqual(directPayload.bookmark);
+      expect(decompress(hashParams.get("wizards")!)).toEqual(directPayload.wizardConfig);
     });
 
     it("carries a closed age range as one AND group in the payload and the deep link", () => {
       const formData = { age: "[40-100]" };
       const directPayload = buildWizardSubmitPayload(defaultFields, formData, defaultMeta, "dataset-123");
       const deepLink = generateFormSubmitDeepLink(defaultFields, formData, defaultMeta, "dataset-123");
-      const linkedBookmark = decompress<any>(new URL(deepLink, "https://example.com").searchParams.get("query")!);
+      const linkedBookmark = decompress<any>(getHashParams(deepLink).get("query")!);
 
       for (const bookmark of [directPayload.bookmark as any, linkedBookmark]) {
         expect(bookmark.filter.cards.content[0].content[0].attributes.content[0].constraints).toEqual({
@@ -343,16 +349,10 @@ describe("deepLinks", () => {
       const result = generateFormSubmitDeepLink(defaultFields, formData, defaultMeta, datasetId);
 
       expect(result).toBeTruthy();
-      expect(result).toContain("/d2e/portal/researcher/cohort");
-      expect(result).toContain("datasetId=dataset-123");
+      expect(result).toContain("/atlas/#/plugins/patient-analytics/");
+      expect(result).not.toContain("datasetId=");
       expect(result).toContain("linkType=cohort-definition");
       expect(result).toContain("query=");
-    });
-
-    it("should use default datasetId when not provided", () => {
-      const result = generateFormSubmitDeepLink(defaultFields, {}, defaultMeta);
-
-      expect(result).toContain("datasetId=default");
     });
 
     it("should produce a pako-compressed MRI bookmark", () => {
@@ -375,13 +375,6 @@ describe("deepLinks", () => {
       expect(filterCard.attributes.content).toHaveLength(1);
       expect(filterCard.attributes.content[0].configPath).toBe("patient.attributes.Age");
       expect(filterCard.attributes.content[0].constraints.content[0].value).toBe(65);
-    });
-
-    it("should URL-encode special characters in datasetId", () => {
-      const datasetId = "dataset/with/slash";
-      const result = generateFormSubmitDeepLink([], {}, defaultMeta, datasetId);
-
-      expect(result).toContain("datasetId=dataset%2Fwith%2Fslash");
     });
 
     it("should handle empty formData and fields", () => {

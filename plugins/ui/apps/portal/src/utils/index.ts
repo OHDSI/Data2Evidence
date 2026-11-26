@@ -6,6 +6,4 @@ export * from "./sortPluginsByType";
 export * from "./getPluginChildPath";
 export * from "./isValidRedirectUrl";
 export * from "./prefectParams";
-export * from "./deepLinkHandler";
-export * from "./deepLinkStorage";
 export * from "./password";

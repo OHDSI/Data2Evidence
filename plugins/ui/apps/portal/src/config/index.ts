@@ -7,6 +7,7 @@ interface Config {
     login: string;
     logout: string;
     noAccess: string;
+    atlasAccount: string;
   };
 }
 
@@ -14,6 +15,7 @@ const RESEARCHER_PATH = "/researcher";
 const PUBLIC_PATH = "/public";
 const SYSTEM_ADMIN_PATH = "/systemadmin";
 const ETL_PATH = "/etl";
+const ATLAS_ACCOUNT_PATH = "/atlas/account";
 
 export const config: Config = {
   ROUTES: {
@@ -24,6 +26,7 @@ export const config: Config = {
     login: "/login",
     logout: "/logout",
     noAccess: "/no-access",
+    atlasAccount: ATLAS_ACCOUNT_PATH,
   },
 };
 
@@ -60,7 +63,6 @@ export const DATA_ADMIN_ROLES: { [key: string]: string } = {
   [ALP_SYSTEM_ADMIN]: "Admin",
 };
 
-export const FEATURE_ATLAS = "atlas";
 export const FEATURE_PYTHIA = "pythia";
 export const FEATURE_DATASET_FILTER = "datasetFilter";
 export const FEATURE_DATASET_SEARCH = "datasetSearch";

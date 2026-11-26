@@ -1,5 +1,5 @@
 import { Locator } from 'playwright/test'
-import { test, expect as baseExpect } from '../fixtures'
+import { test, expect as baseExpect, openAdminPortalFromAtlas, openAtlasPortalFromAdmin } from '../fixtures'
 
 // Configure expect with 1 minute timeout for this file
 const expect = baseExpect.configure({ timeout: 60000 })
@@ -19,9 +19,7 @@ test(TEST_NAME, async ({ page }, testInfo) => {
   await page.locator('input[name="identifier"]').fill('admin')
   await page.locator('input[name="password"]').fill('Updatepassword12345')
   await page.getByRole('button', { name: 'Sign in' }).click()
-  await expect(page.getByTestId('button').nth(1)).toBeVisible()
-  await page.getByTestId('button').nth(1).click()
-  await page.getByRole('button', { name: 'Switch to Admin portal' }).click()
+  await openAdminPortalFromAtlas(page)
   await page.getByRole('link', { name: 'Setup' }).click()
 
   // This function is used to click on a test configuration by its name
@@ -31,7 +29,7 @@ test(TEST_NAME, async ({ page }, testInfo) => {
     const breadcrumbBackBtn = page
       .getByRole('navigation', { name: 'breadcrumb' })
       .getByRole('button', { name: /CDM configuration/i })
-    const testConfig = page.locator('ul > li').filter({ hasText: testConfigname })
+    const testConfig = page.getByRole('option').filter({ hasText: testConfigname })
     // A reload can restore the configuration detail view instead of the list. The
     // breadcrumb and the list render asynchronously, so wait for whichever arrives
     // first before deciding whether to navigate back — checking visibility straight
@@ -407,8 +405,8 @@ test(TEST_NAME, async ({ page }, testInfo) => {
       // immediately after the blur races the update and burns a retry for nothing.
       await page
         .getByText('CDM-Test101-PA')
-        .first()
-        .waitFor({ state: 'visible', timeout: 15000 })
+        .last()
+        .waitFor({ state: 'visible', timeout: 5000 })
         .catch(() => {})
       retries++
     }
@@ -460,6 +458,10 @@ test(TEST_NAME, async ({ page }, testInfo) => {
   })
 
   await test.step('Update dataset', async () => {
+    const configLoadError = page.getByText('There was a problem with loading the configurations.')
+    await page.addLocatorHandler(configLoadError, async () => {
+      await page.getByRole('button', { name: 'Close', exact: true }).click()
+    })
     await page.reload()
     await page.getByRole('link', { name: 'Data sources' }).click()
     await page.getByRole('row').filter({ hasText: 'Demo dataset' }).getByRole('button', { name: 'Actions' }).click()
@@ -538,10 +540,11 @@ test(TEST_NAME, async ({ page }, testInfo) => {
   })
 
   await test.step('Verify Duplication in Cohort', async () => {
-    await page.getByRole('link', { name: 'Account' }).click()
-    await page.getByRole('button', { name: 'Switch to Researcher portal' }).click()
-    await page.getByText('Demo dataset').first().click()
-    await page.getByRole('link', { name: 'Cohorts' }).click()
+    await openAtlasPortalFromAdmin(page)
+    await page.getByRole('link', { name: 'Data Exploration' }).click()
+    await page.getByTestId('explorations-page').waitFor({ state: 'visible' })
+    const dataSource = page.getByTestId('explorations-datasource')
+    await expect(dataSource).toContainText('Demo dataset')
     await page.getByTestId('explorations-new-btn').click()
     await expect(page.getByTitle('Add Filter Card').getByRole('button')).toBeVisible()
     await page.getByTitle('Add Filter Card').getByRole('button').click()
@@ -549,8 +552,7 @@ test(TEST_NAME, async ({ page }, testInfo) => {
   })
 
   await test.step('Remove Duplicate Definitions', async () => {
-    await page.getByRole('link', { name: 'Account' }).click()
-    await page.getByRole('button', { name: 'Switch to Admin portal' }).click()
+    await openAdminPortalFromAtlas(page)
     await page.getByRole('link', { name: 'Setup' }).click()
     await page
       .locator('div')

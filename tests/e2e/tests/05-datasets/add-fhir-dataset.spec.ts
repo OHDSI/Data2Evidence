@@ -1,4 +1,4 @@
-import { expect, test } from '../fixtures'
+import { expect, openAdminPortalFromAtlas, test } from '../fixtures'
 import { MINUTE_2 } from '../const'
 const TEST_NAME = 'add-fhir-dataset'
 const SHOULD_SKIP = false
@@ -22,8 +22,7 @@ test(TEST_NAME, async ({ page }) => {
   // const vocabSchemaName = 'demo_cdm'
 
   // // Switch to admin portal
-  await page.getByTestId('button').nth(1).click()
-  await page.getByRole('button', { name: 'Switch to Admin portal' }).click()
+  await openAdminPortalFromAtlas(page)
 
   //Enable feature flag
   await page.getByRole('link', { name: 'Setup' }).click()

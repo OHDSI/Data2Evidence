@@ -1,4 +1,4 @@
-import { test, expect } from './fixtures'
+import { test, expect, openAtlasDataExploration } from './fixtures'
 
 const TEST_NAME = 'example'
 const SHOULD_SKIP = false
@@ -11,13 +11,12 @@ test(TEST_NAME, async ({ page }) => {
   await page.locator('input[name="password"]').click()
   await page.locator('input[name="password"]').fill('Updatepassword12345')
   await page.getByRole('button', { name: 'Sign in' }).click()
-  await page.getByText('Demo dataset').first().click()
-  await page.getByRole('link', { name: 'Cohorts' }).click()
+  await openAtlasDataExploration(page)
   await page.getByTestId('explorations-new-btn').click()
   await page.getByTitle('Basic Data - Gender', { exact: true }).locator('div').nth(1).click()
   await page.getByRole('textbox', { name: 'multiselect-searchbox' }).fill('MALE')
   await page.locator('#patient').getByText('MALE - MALE').waitFor({ state: 'visible' })
   await page.locator('#patient').getByText('MALE - MALE').click()
   await expect(page.getByText('1,321 / 2,694')).toBeVisible()
-  await expect(page).toHaveScreenshot()
+  await expect.soft(page).toHaveScreenshot()
 })

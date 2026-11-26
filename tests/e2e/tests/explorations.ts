@@ -64,7 +64,7 @@ export async function explorationMenuAction(
 
 /** As `explorationMenuAction`, but on a card you have already narrowed down. */
 export async function cardMenuAction(page: Page, card: Locator, action: CardMenuAction): Promise<void> {
-  await card.getByRole('button', { name: 'More actions' }).click()
+  await card.getByTestId(/^explorations-more-btn-/).click()
   await page.getByRole('menuitem', { name: action }).click()
 }
 

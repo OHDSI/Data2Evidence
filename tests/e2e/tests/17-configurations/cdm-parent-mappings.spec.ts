@@ -1,5 +1,5 @@
 import { Locator, Page } from 'playwright/test'
-import { test, expect as baseExpect } from '../fixtures'
+import { test, expect as baseExpect, openAdminPortalFromAtlas } from '../fixtures'
 
 const expect = baseExpect.configure({ timeout: 60000 })
 
@@ -76,9 +76,7 @@ test(TEST_NAME, async ({ page }) => {
   await page.locator('input[name="identifier"]').fill('admin')
   await page.locator('input[name="password"]').fill('Updatepassword12345')
   await page.getByRole('button', { name: 'Sign in' }).click()
-  await expect(page.getByTestId('button').nth(1)).toBeVisible()
-  await page.getByTestId('button').nth(1).click()
-  await page.getByRole('button', { name: 'Switch to Admin portal' }).click()
+  await openAdminPortalFromAtlas(page)
   await page.getByRole('link', { name: 'Setup' }).click()
   await page
     .locator('div')

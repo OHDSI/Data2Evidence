@@ -1,21 +1,17 @@
-import { test, expect } from '@playwright/test'
+import { test, expect, openAtlasDataset } from '../fixtures'
 
 const TEST_NAME = 'Concepts page'
-const SHOULD_SKIP = true
-test.fixme(SHOULD_SKIP, `${TEST_NAME} test is temporarily disabled.`)
 
 test(TEST_NAME, async ({ page }) => {
   await page.goto('/d2e/portal')
-  await page.locator('input[name="identifier"]').click()
-  await page.locator('input[name="identifier"]').fill('admin')
-  await page.locator('input[name="password"]').click()
-  await page.locator('input[name="password"]').fill('Updatepassword12345')
+  await page.getByLabel('Username').fill('admin')
+  await page.getByLabel('Password').fill('Updatepassword12345')
   await page.getByRole('button', { name: 'Sign in' }).click()
-  await page.getByText('Demo dataset').first().click()
+  await openAtlasDataset(page)
   await page.getByRole('link', { name: 'Concepts' }).click()
-  await expect(page.getByRole('main')).toMatchAriaSnapshot(`
-    - tablist:
-      - tab "Concept Search" [selected]
-      - tab "Concept Sets"
-    `)
+
+  await expect(page.getByRole('heading', { name: 'Concepts' })).toBeVisible()
+  await expect(page.getByRole('tab', { name: 'Concept Sets' })).toHaveAttribute('aria-selected', 'true')
+  await expect(page.getByRole('tab', { name: 'Search' })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'New Concept Set' })).toBeVisible()
 })

@@ -5,8 +5,7 @@ import { PortalType, User } from "../../../types";
 import { useDialogHelper, useMe } from "../../../hooks";
 import { useToken, useTranslation, useUser } from "../../../contexts";
 import env from "../../../env";
-import { config, FEATURE_ATLAS } from "../../../config";
-import { FeatureGate } from "../../../config/FeatureGate";
+import { config } from "../../../config";
 import { api } from "../../../axios/api";
 import { ChangeMyPasswordDialog } from "./ChangeMyPasswordDialog/ChangeMyPasswordDialog";
 import DeleteAccountDialog from "./DeleteAccountDialog/DeleteAccountDialog";
@@ -57,10 +56,6 @@ export const Account: FC<AccountProps> = ({ portalType }) => {
     });
   }, [idTokenClaims, username]);
 
-  const handleSwitchToResearcher = useCallback(() => {
-    navigate(config.ROUTES.researcher);
-  }, [navigate]);
-
   const handleSwitchToAdmin = useCallback(() => {
     navigate(config.ROUTES.systemadmin);
   }, [navigate]);
@@ -100,15 +95,12 @@ export const Account: FC<AccountProps> = ({ portalType }) => {
                 <Loader />
               ) : (
                 <>
-                  {portalType === "system_admin" && user.canAccessResearcherPortal && (
+                  {portalType === "researcher" && user.canAccessSystemAdminPortal && (
                     <Button
                       block
-                      text={getText(i18nKeys.ACCOUNT__SWITCH_TO_RESEARCHER_PORTAL)}
-                      onClick={handleSwitchToResearcher}
+                      text={getText(i18nKeys.ACCOUNT__SWITCH_TO_ADMIN_PORTAL)}
+                      onClick={handleSwitchToAdmin}
                     />
-                  )}
-                  {portalType === "researcher" && user.canAccessSystemAdminPortal && (
-                    <Button block text={getText(i18nKeys.ACCOUNT__SWITCH_TO_ADMIN_PORTAL)} onClick={handleSwitchToAdmin} />
                   )}
                   {(portalType === "system_admin" || portalType === "researcher") && user.canAccessEtlPortal && (
                     <Button block text={getText(i18nKeys.ACCOUNT__SWITCH_TO_ETL_PORTAL)} onClick={handleSwitchToEtl} />
@@ -120,16 +112,9 @@ export const Account: FC<AccountProps> = ({ portalType }) => {
                       onClick={handleSwitchToAdmin}
                     />
                   )}
-                  {portalType === "etl" && user.canAccessResearcherPortal && (
-                    <Button
-                      block
-                      text={getText(i18nKeys.ACCOUNT__SWITCH_TO_RESEARCHER_PORTAL)}
-                      onClick={handleSwitchToResearcher}
-                    />
-                  )}
-                  <FeatureGate featureFlags={[FEATURE_ATLAS]}>
+                  {user.canAccessResearcherPortal && (
                     <Button block text={getText(i18nKeys.ACCOUNT__SWITCH_TO_ATLAS)} onClick={handleSwitchToAtlas} />
-                  </FeatureGate>
+                  )}
                   <Button block text={getText(i18nKeys.ACCOUNT__LOGOUT)} onClick={handleLogout} />
                   <Button
                     block

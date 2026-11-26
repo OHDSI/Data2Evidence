@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test'
+import { test, expect, openAtlasDataExploration } from '../fixtures'
 import { confirmExplorationDialog, explorationCard, explorationMenuAction } from '../explorations'
 
 const TEST_NAME = 'patient_analytics_mri'
@@ -6,15 +6,13 @@ const SHOULD_SKIP = true
 test.fixme(SHOULD_SKIP, `${TEST_NAME} test is temporarily disabled.`)
 
 test(TEST_NAME, async ({ page }) => {
-  await page.goto('/portal')
-  await page.getByTestId('button').nth(1).click()
+  await page.goto('/d2e/portal')
   await page.locator('input[name="identifier"]').click()
   await page.locator('input[name="identifier"]').fill('test_researcher_1')
   await page.locator('input[name="password"]').click()
   await page.locator('input[name="password"]').fill('Updatepassword12345')
   await page.getByRole('button', { name: 'Sign in' }).click()
-  await page.getByText('Demo dataset').first().click()
-  await page.getByRole('link', { name: 'Cohorts' }).click()
+  await openAtlasDataExploration(page)
   // The old header - "Create Cohort:" with a D2E / Atlas / Import / Compare
   // group and a Shared toggle - was replaced by the Data Exploration toolbar.
   // Assert the controls by test id rather than re-snapshotting the aria tree:
@@ -68,7 +66,7 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByRole('textbox', { name: 'Concept set name' }).click()
   await page.getByRole('textbox', { name: 'Concept set name' }).fill('Type 2 diabetes Mellitus')
   await page.getByRole('button', { name: 'Create' }).click()
-  await page.getByRole('button', { name: 'Close' }).click()
+  await page.getByRole('button', { name: 'Close', exact: true }).click()
   await expect(page.locator('[id="patient.interactions.conditionoccurrence.1"]')).toMatchAriaSnapshot(
     `- text: Type 2 diabetes Mellitus`
   )

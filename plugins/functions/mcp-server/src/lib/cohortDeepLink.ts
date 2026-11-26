@@ -5,7 +5,7 @@ export interface ConfigStamp {
   configVersion: string;
 }
 
-const COHORT_ROUTE = "/d2e/portal/researcher/cohort";
+const COHORT_ROUTE = "/atlas/#/plugins/patient-analytics/";
 const LINK_TYPE = "cohort-definition";
 const URL_WARN_THRESHOLD = 2048;
 
@@ -68,13 +68,16 @@ export function decompress<T = unknown>(str: string): T {
   return JSON.parse(jsonString) as T;
 }
 
-/** Compress a bookmark and assemble the Patient Analytics cohort deep link. */
+/**
+ * Compress a bookmark and assemble the Patient Analytics cohort deep link.
+ * The link carries no datasetId: PA applies the cohort to the dataset currently
+ * selected on the page.
+ */
 export function buildDeepLinkUrl(
   bookmark: unknown,
-  datasetId: string,
 ): { url: string; tooLong: boolean } {
   const query = compress(bookmark);
-  const params = new URLSearchParams({ datasetId, linkType: LINK_TYPE });
+  const params = new URLSearchParams({ linkType: LINK_TYPE });
   const url = `${COHORT_ROUTE}?${params.toString()}&query=${query}`;
   return { url, tooLong: url.length > URL_WARN_THRESHOLD };
 }

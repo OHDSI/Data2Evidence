@@ -1,4 +1,4 @@
-import { test as base, Page, BrowserContext } from '@playwright/test'
+import { test as base, expect, Page, BrowserContext, Locator } from '@playwright/test'
 import * as fs from 'fs'
 import * as path from 'path'
 
@@ -81,6 +81,29 @@ export const test = base.extend<{
       logs.push(logEntry)
     })
 
+    // Patient-analytics calls: log every request sent and every response with its body.
+    // A 200 can still carry an error payload, and a request that is never answered (or
+    // never sent) only shows up when both sides are logged.
+    const isAnalyticsCall = (url: string) => url.includes('/analytics-svc/')
+    const shortUrl = (url: string) => (url.length > 300 ? `${url.slice(0, 300)}…` : url)
+    page.on('request', request => {
+      if (!isAnalyticsCall(request.url())) return
+      logs.push(`[${new Date().toISOString()}] [ANALYTICS REQUEST] ${request.method()} ${shortUrl(request.url())}`)
+    })
+    page.on('response', async response => {
+      if (!isAnalyticsCall(response.url())) return
+      const timestamp = new Date().toISOString()
+      let body: string
+      try {
+        body = (await response.text()).slice(0, 2000)
+      } catch (error) {
+        body = `<body unavailable: ${error instanceof Error ? error.message : error}>`
+      }
+      logs.push(
+        `[${timestamp}] [ANALYTICS RESPONSE] ${response.status()} ${response.request().method()} ${shortUrl(response.url())}\n${body}`
+      )
+    })
+
     await use(page)
 
     // Skip saving logs if test passed on first try
@@ -103,4 +126,184 @@ export const test = base.extend<{
   }
 })
 
-export { expect } from '@playwright/test'
+export { expect }
+
+export async function resetPortalSession(page: Page) {
+  await page.context().clearCookies()
+  await page
+    .evaluate(() => {
+      localStorage.clear()
+      sessionStorage.clear()
+    })
+    .catch(() => {})
+
+  try {
+    await page.goto('/d2e/portal', { waitUntil: 'commit' })
+  } catch (error) {
+    if (!(error instanceof Error) || !error.message.includes('ERR_ABORTED')) {
+      throw error
+    }
+  }
+
+  const identifier = page.locator('input[name="identifier"]')
+  try {
+    await identifier.waitFor({ state: 'visible', timeout: 10000 })
+  } catch {
+    await page.reload()
+    await identifier.waitFor({ state: 'visible' })
+  }
+}
+
+export async function acceptAtlasLicense(page: Page) {
+  const licenseDialog = page.getByRole('dialog', { name: 'License Agreement' })
+  const acceptDisclaimer = licenseDialog.getByRole('button', { name: 'Accept', exact: true })
+  try {
+    await acceptDisclaimer.waitFor({ state: 'visible', timeout: 10000 })
+  } catch (error) {
+    if (!(error instanceof Error) || error.name !== 'TimeoutError') throw error
+    // The license dialog is only shown on first use.
+    return
+  }
+  await acceptDisclaimer.scrollIntoViewIfNeeded()
+  await acceptDisclaimer.click()
+  await licenseDialog.waitFor({ state: 'hidden' })
+}
+
+export async function openAtlasAccount(page: Page, username: string | RegExp = /admin/i) {
+  await acceptAtlasLicense(page)
+
+  const atlasUser = page.getByRole('button', { name: username })
+  try {
+    await atlasUser.waitFor({ state: 'visible', timeout: 15000 })
+    await atlasUser.click()
+  } catch {
+    // Admin users may land directly in the portal shell after login.
+    await page.getByRole('link', { name: 'Account' }).click()
+  }
+}
+
+export async function openAdminPortalFromAtlas(page: Page) {
+  if (
+    await page
+      .getByRole('heading', { name: 'Users' })
+      .isVisible()
+      .catch(() => false)
+  ) {
+    // Admin users may land directly in the Admin portal after login.
+    return
+  }
+
+  await openAtlasAccount(page)
+  await page.getByRole('button', { name: 'Switch to Admin portal' }).click()
+  await page.getByRole('heading', { name: 'Users' }).waitFor({ state: 'visible' })
+}
+
+export async function openAtlasPortalFromAdmin(page: Page) {
+  await page.getByRole('link', { name: 'Account' }).click()
+  await page.getByRole('button', { name: 'Switch to ATLAS' }).click()
+  await acceptAtlasLicense(page)
+  await page.getByRole('link', { name: 'Data Exploration' }).waitFor({ state: 'visible' })
+}
+
+export async function openAtlasDataset(page: Page, datasetName = 'Demo dataset') {
+  await acceptAtlasLicense(page)
+
+  const escapedName = datasetName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  const dataset = page.getByRole('button', {
+    name: new RegExp(`^${escapedName}\\s+Have access.*Data source type:\\s+omop5-4`, 'i')
+  })
+
+  await dataset.waitFor({ state: 'visible' })
+
+  for (const panelName of ['Close jobs panel', 'Close configuration panel']) {
+    const closePanel = page.getByRole('button', { name: panelName })
+    const box = await closePanel.boundingBox().catch(() => null)
+    const viewport = page.viewportSize()
+    const isInViewport =
+      box &&
+      viewport &&
+      box.x < viewport.width &&
+      box.x + box.width > 0 &&
+      box.y < viewport.height &&
+      box.y + box.height > 0
+    if (isInViewport) {
+      await closePanel.click()
+      await expect(closePanel).not.toBeInViewport()
+    }
+  }
+
+  await dataset.click()
+  await page.getByRole('heading', { name: datasetName, exact: true }).waitFor({ state: 'visible' })
+}
+
+export async function openAtlasDataExploration(page: Page, datasetName = 'Demo dataset') {
+  await acceptAtlasLicense(page)
+  await page.getByRole('link', { name: 'Data Exploration' }).click()
+  await page.getByTestId('explorations-page').waitFor({ state: 'visible' })
+  const dataSource = page.getByTestId('explorations-datasource')
+  await dataSource.waitFor({ state: 'visible' })
+  // Atlas disables the switcher when only one datasource is available.
+  if (!(await dataSource.getByText(datasetName, { exact: true }).isVisible())) {
+    await dataSource.click()
+    await page.getByRole('option', { name: datasetName, exact: true }).click()
+  }
+  await expect(dataSource).toContainText(datasetName)
+}
+
+/**
+ * Call right after clicking Create in the concept set dialog. The dialog either closes by
+ * itself or switches to Update mode; either way the new set ends up selected on the card.
+ */
+export async function finishConceptSetCreate(page: Page, card: Locator, conceptSetName: string) {
+  const update = page.getByRole('button', { name: 'Update' })
+  const chip = card.getByText(conceptSetName, { exact: true })
+  await expect(update.or(chip).first()).toBeVisible()
+  if (await update.isVisible()) {
+    // Update can show for a moment before the dialog closes by itself, so Close may be gone.
+    await page
+      .getByRole('button', { name: 'Close', exact: true })
+      .click({ timeout: 5000 })
+      .catch(() => {})
+    // Closing in Update mode may ask about unsaved changes.
+    await page
+      .getByRole('dialog', { name: 'Unsaved changes' })
+      .getByRole('button', { name: 'Discard changes' })
+      .click({ timeout: 5000 })
+      .catch(() => {})
+  }
+  // Closing in Update mode sometimes drops the auto-selection; then pick the set from the card.
+  const selected = await chip
+    .waitFor({ state: 'visible', timeout: 10000 })
+    .then(() => true)
+    .catch(() => false)
+  if (!selected) {
+    const escapedName = conceptSetName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+    await card.getByText('All', { exact: true }).click()
+    await card.getByPlaceholder('Enter search term').fill(conceptSetName)
+    await card
+      .getByRole('option', { name: new RegExp(`^${escapedName} - webapi:\\d+$`) })
+      .first()
+      .click()
+  }
+  await expect(chip).toBeVisible()
+}
+
+export async function cleanupTestDataflows(page: Page, namePatterns: RegExp[]) {
+  const bearerToken = (await page.context().cookies()).find(cookie => cookie.name === 'bearerToken')?.value
+  if (!bearerToken) throw new Error('Cannot clean up dataflows: bearerToken cookie is missing')
+
+  const headers = { authorization: `Bearer ${bearerToken}` }
+  const response = await page.request.get('/d2e/jobplugins/dataflow/list', { headers })
+  if (!response.ok()) {
+    throw new Error(`Cannot clean up dataflows: list request returned ${response.status()}`)
+  }
+
+  const dataflows = (await response.json()) as { id: string; name: string }[]
+  for (const dataflow of dataflows) {
+    if (!namePatterns.some(pattern => pattern.test(dataflow.name))) continue
+    const deleteResponse = await page.request.delete(`/d2e/jobplugins/dataflow/${dataflow.id}`, { headers })
+    if (!deleteResponse.ok()) {
+      throw new Error(`Cannot clean up dataflow "${dataflow.name}": delete returned ${deleteResponse.status()}`)
+    }
+  }
+}
