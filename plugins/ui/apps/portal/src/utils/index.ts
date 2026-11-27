@@ -9,3 +9,4 @@ export * from "./prefectParams";
 export * from "./deepLinkHandler";
 export * from "./deepLinkStorage";
 export * from "./password";
+export * from "./resourceUpload";

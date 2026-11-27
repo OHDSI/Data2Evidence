@@ -24,6 +24,14 @@ interface StorageObject {
 }
 
 @Injectable()
+// Thrown by upload({ overwrite: false }) when the name is already taken.
+export class ObjectAlreadyExistsError extends Error {
+  constructor(filePath: string) {
+    super(`An object already exists at ${filePath}`);
+    this.name = "ObjectAlreadyExistsError";
+  }
+}
+
 export class SupabaseStorageClient {
   private readonly DEFAULT_BUCKET = "portal-datasets-resources";
   private readonly baseUrl: string;
@@ -64,6 +72,13 @@ export class SupabaseStorageClient {
         );
       }
     }
+  }
+
+  // URL of one object. Each path segment is encoded, so a file name with "#",
+  // "?" or "%" reaches storage intact instead of being cut short or rejected.
+  private objectUrl(bucket: string, filePath: string): string {
+    const encodedPath = filePath.split("/").map(encodeURIComponent).join("/");
+    return `${this.baseUrl}/object/${encodeURIComponent(bucket)}/${encodedPath}`;
   }
 
   // Pages through list-v2. With a delimiter only the direct children of
@@ -212,7 +227,7 @@ export class SupabaseStorageClient {
       console.log(`Downloading file: ${filePath} from bucket: ${targetBucket}`);
 
       // Direct request to download file
-      const url = `${this.baseUrl}/object/${targetBucket}/${filePath}`;
+      const url = this.objectUrl(targetBucket, filePath);
       console.log(`Making request to: ${url}`);
 
       const response = await fetch(url, {
@@ -267,21 +282,26 @@ export class SupabaseStorageClient {
     }
   }
 
+  // With `overwrite: false`, a name that is already taken is not replaced:
+  // the upload throws ObjectAlreadyExistsError instead. Storage decides this
+  // atomically, so two uploads at the same moment can't overwrite each other.
   async upload(
     id: string,
     file: UploadFile,
     bucketName?: string,
-    pathType: "dataset" | "data-transformation" = "dataset"
+    pathType: "dataset" | "data-transformation" = "dataset",
+    options: { overwrite?: boolean } = {}
   ) {
     const fileName = file.originalname;
     const targetBucket = bucketName || this.DEFAULT_BUCKET;
+    const overwrite = options.overwrite ?? true;
 
     try {
       await this.ensureBucket(targetBucket);
       const filePath = this.getFilePath(id, fileName, pathType);
       console.log(`Uploading file: ${filePath} to bucket: ${targetBucket}`);
 
-      const url = `${this.baseUrl}/object/${targetBucket}/${filePath}`;
+      const url = this.objectUrl(targetBucket, filePath);
       console.log(`Making request to: ${url}`);
 
       const response = await fetch(url, {
@@ -290,13 +310,18 @@ export class SupabaseStorageClient {
           Authorization: `Bearer ${this.authToken}`,
           "Content-Type": file.mimetype || "application/octet-stream",
           "Cache-Control": "3600",
-          "x-upsert": "true", // For overwriting existing files
+          "x-upsert": String(overwrite), // "true" replaces an existing file
         },
         body: file.buffer,
       });
 
       if (!response.ok) {
         const errorText = await response.text();
+        // Storage answers a taken name like a duplicate bucket (409, or 400
+        // with "Duplicate" in the body), so the same check applies.
+        if (!overwrite && isBucketAlreadyExists(response.status, errorText)) {
+          throw new ObjectAlreadyExistsError(filePath);
+        }
         console.error(
           `Error uploading file: ${response.status} - ${errorText}`
         );
@@ -312,6 +337,7 @@ export class SupabaseStorageClient {
         bucket: targetBucket,
       };
     } catch (e) {
+      if (e instanceof ObjectAlreadyExistsError) throw e; // the caller picks another name
       console.error(
         `Error in upload method: ${e instanceof Error ? e.message : String(e)}`
       );
@@ -336,7 +362,7 @@ export class SupabaseStorageClient {
       const filePath = this.getFilePath(id, fileName, pathType);
       console.log(`Deleting file: ${filePath} from bucket: ${targetBucket}`);
 
-      const url = `${this.baseUrl}/object/${targetBucket}/${filePath}`;
+      const url = this.objectUrl(targetBucket, filePath);
       console.log(`Making request to: ${url}`);
 
       const response = await fetch(url, {
@@ -396,11 +422,11 @@ export class SupabaseStorageClient {
   }
 
   private formatBytes(bytes, decimals = 1) {
-    if (!+bytes) return "0 Byte";
+    if (!+bytes) return "0 B";
 
     const k = 1024;
     const dm = decimals < 0 ? 0 : decimals;
-    const sizes = ["Bytes", "KB", "MB", "GB"];
+    const sizes = ["B", "KB", "MB", "GB"];
 
     const i = Math.floor(Math.log(bytes) / Math.log(k));
 

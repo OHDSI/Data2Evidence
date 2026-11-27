@@ -18,6 +18,7 @@ import {
   ViewerCode,
   ViewerCodeQuery,
   ViewerCodeWithQueries,
+  ResourceUploadConfig,
 } from "../types";
 import { AiConfig, AiConfigInput, AiConfigUpdateInput } from "../types/aiConfig";
 import { ConfigTypes, LogResponseType } from "../constant";
@@ -171,11 +172,36 @@ export class SystemPortal {
     });
   }
 
+  public getResourceUploadConfig() {
+    return request<ResourceUploadConfig>({
+      baseURL: SYSTEM_PORTAL_URL,
+      url: `dataset/resource/config`,
+      method: "GET",
+    });
+  }
+
+  // Runs every upload rule, and the malware scan if the deployment has it on,
+  // without storing the file. "not-scanned" means scanning is off.
+  public checkResource(datasetId: string, file: File) {
+    const formData = new FormData();
+    formData.append("file", file, file.name);
+
+    return request<{ result: "clean" | "infected" | "unavailable" | "not-scanned" }>({
+      baseURL: SYSTEM_PORTAL_URL,
+      url: `dataset/resource/check`,
+      method: "POST",
+      params: { datasetId: datasetId },
+      data: formData,
+    });
+  }
+
+  // `fileName` is the name the file was stored under: characters storage
+  // doesn't accept are replaced with "_".
   public addResource(datasetId: string, file: File) {
     const formData = new FormData();
     formData.append("file", file, file.name);
 
-    return request({
+    return request<{ fileName?: string }>({
       baseURL: SYSTEM_PORTAL_URL,
       url: `dataset/resource`,
       method: "POST",
@@ -187,7 +213,8 @@ export class SystemPortal {
   public deleteResource(datasetId: string, filename: string) {
     return request({
       baseURL: SYSTEM_PORTAL_URL,
-      url: `dataset/resource/${filename}`,
+      // Encoded, so a name with "#", "?" or "%" isn't cut short in the URL.
+      url: `dataset/resource/${encodeURIComponent(filename)}`,
       method: "DELETE",
       params: { datasetId: datasetId },
     });
@@ -196,7 +223,7 @@ export class SystemPortal {
   public downloadResource(datasetId: string, filename: string) {
     return request({
       baseURL: SYSTEM_PORTAL_URL,
-      url: `dataset/resource/${filename}/download`,
+      url: `dataset/resource/${encodeURIComponent(filename)}/download`,
       method: "GET",
       responseType: "blob",
       params: { datasetId: datasetId },

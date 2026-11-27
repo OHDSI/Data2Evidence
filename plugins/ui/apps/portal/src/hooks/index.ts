@@ -4,6 +4,7 @@ export * from "./useDataset";
 export * from "./useDeepLinkSync";
 export * from "./useDatasetFilterScopes";
 export * from "./useDatasetResources";
+export * from "./useResourceUploadConfig";
 export * from "./useDatasetTagConfigs";
 export * from "./useDatasetAttributeConfigs";
 export * from "./useDbs";

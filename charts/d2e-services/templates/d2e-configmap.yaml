@@ -32,6 +32,14 @@ data:
   EXCLUDE_ANALYSIS_IDS: {{ .Values.config.EXCLUDE_ANALYSIS_IDS | quote }}
   COHORT_CACHE_TTL_HOURS: {{ .Values.config.COHORT_CACHE_TTL_HOURS | default 24 | quote }}
   COHORT_CACHE_MAX_AGE_DAYS: {{ .Values.config.COHORT_CACHE_MAX_AGE_DAYS | default 30 | quote }}
+  RESOURCE_UPLOAD_MAX_FILE_SIZE_MB: {{ .Values.config.RESOURCE_UPLOAD_MAX_FILE_SIZE_MB | default 25 | quote }}
+  RESOURCE_UPLOAD_ALLOWED_EXTENSIONS: {{ .Values.config.RESOURCE_UPLOAD_ALLOWED_EXTENSIONS | default "pdf,csv,json,xlsx,docx,sql,md,txt" | quote }}
+  # Optional malware scanning, off by default. The chart doesn't deploy ClamAV:
+  # set CLAMAV_ENABLED to "true" and CLAMAV_HOST to a ClamAV you run yourself.
+  CLAMAV_ENABLED: {{ .Values.config.CLAMAV_ENABLED | default "false" | quote }}
+  CLAMAV_HOST: {{ .Values.config.CLAMAV_HOST | default "" | quote }}
+  CLAMAV_PORT: {{ .Values.config.CLAMAV_PORT | default 3310 | quote }}
+  CLAMAV_TIMEOUT_MS: {{ .Values.config.CLAMAV_TIMEOUT_MS | default 60000 | quote }}
   AZ_AUTO_GRANT_RESEARCHER_BY_DATASET_CODES: {{ .Values.config.AZ_AUTO_GRANT_RESEARCHER_BY_DATASET_CODES | quote }}
   LOGTO__TERM_OF_USE_URL: {{ .Values.idp.LOGTO__TERM_OF_USE_URL | quote }}
   LOGTO__PRIVACY_POLICY_URL: {{ .Values.idp.LOGTO__PRIVACY_POLICY_URL | quote }}
