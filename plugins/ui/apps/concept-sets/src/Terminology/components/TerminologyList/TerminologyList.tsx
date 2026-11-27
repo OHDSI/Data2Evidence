@@ -239,11 +239,11 @@ const TerminologyList: FC<TerminologyListProps> = ({
     setPage(0);
   }, []);
 
-// Only `webapi` datasets are registered as an OHDSI WebAPI source, so only they
-// can answer /d2e-webapi/vocabulary/:datasetId/search. Other dataset types
-// (omop, hana__omop, ...) have no source row, so the request never resolves and
-// the search silently returns nothing -- those fall back to d2e-native search.
+// Mirrors the portal's ownsWebApiSource: only these dataset types are registered
+// as an OHDSI WebAPI source. Any other dataset has no source row, so WebAPI
+// search and record counts cannot resolve it and it uses d2e-native search.
 // Cached per dataset id: a dataset's type cannot change within a session.
+const WEBAPI_SOURCE_DATASET_TYPES = new Set(["webapi", "hana__omop"]);
 const webapiDatasetCache = new Map<string, boolean>();
 
 const isWebapiDataset = async (datasetId: string): Promise<boolean> => {
@@ -253,7 +253,9 @@ const isWebapiDataset = async (datasetId: string): Promise<boolean> => {
   }
   try {
     const dataset = await api.portal.getDataset(datasetId);
-    const isWebapi = dataset?.type === "webapi";
+    const isWebapi =
+      !dataset?.fhirDatasetId &&
+      WEBAPI_SOURCE_DATASET_TYPES.has(dataset?.type ?? "");
     webapiDatasetCache.set(datasetId, isWebapi);
     return isWebapi;
   } catch (e) {
@@ -396,8 +398,8 @@ const isWebapiDataset = async (datasetId: string): Promise<boolean> => {
         // Transform concepts and fetch record counts only when enabled.
         let mappedConcepts;
         if (nativeConcepts) {
-          // Record counts come from WebAPI, which this dataset has no source
-          // for, so the count columns stay empty on the native path.
+          // Record counts come from WebAPI, which has no source for this
+          // dataset, so the count columns stay empty on the native path.
           mappedConcepts = nativeConcepts.map(mapTerminologyConcept);
         } else {
           const shouldFetchConceptRecordCounts =

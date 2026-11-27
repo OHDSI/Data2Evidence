@@ -12,6 +12,7 @@ import { getPortalAPI } from "../utils/PortalUtils";
 import { getInvalidReasonFilter } from "./concept-search-filter";
 
 const D2E_WEBAPI_BASE_URL = "d2e-webapi";
+const WEBAPI_BASE_URL = "/WebAPI";
 
 export class D2eWebapi {
   public getTerminologies(
@@ -63,11 +64,10 @@ export class D2eWebapi {
     signal?: AbortSignal,
   ) {
     return request<IWebapiConceptRecordCount[]>({
-      baseURL: D2E_WEBAPI_BASE_URL,
+      baseURL: WEBAPI_BASE_URL,
       url: `/cdmresults/${datasetId}/conceptRecordCount`,
       method: "POST",
       data: conceptIds,
-      headers: { datasetid: datasetId },
       signal,
     });
   }
