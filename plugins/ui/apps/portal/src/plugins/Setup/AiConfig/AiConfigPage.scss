@@ -4,19 +4,20 @@
   box-sizing: border-box;
   min-height: 100%;
   padding: var(--d2e-spacing-m);
-  background: var(--d2e-color-neutral-xtra-lightest);
+  background: var(--d2e-color-neutral-lightest);
 }
 
 .ai-config__card {
   box-sizing: border-box;
   padding-bottom: var(--d2e-spacing-m);
-  border-radius: var(--d2e-radius-l);
+  border-radius: var(--d2e-radius-lg);
   background: var(--d2e-color-white);
+  box-shadow: var(--d2e-elevation-card);
 }
 
 .ai-config__list,
 .ai-config__empty {
-  margin: 0 var(--d2e-spacing-m);
+  margin: var(--d2e-spacing-s) var(--d2e-spacing-m) 0;
 }
 
 .ai-config__list {
@@ -33,7 +34,7 @@
   align-items: center;
   justify-content: space-between;
   gap: var(--d2e-spacing-s);
-  padding: var(--d2e-spacing-s) var(--d2e-spacing-m);
+  padding: var(--d2e-spacing-xs-s) var(--d2e-spacing-xs) var(--d2e-spacing-xs-s) var(--d2e-spacing-s);
   border: 1px solid var(--d2e-color-neutral-lighter);
   border-radius: var(--d2e-radius-sm);
   background: var(--d2e-color-neutral-xtra-lightest);
@@ -53,17 +54,22 @@
   font-weight: 600;
 }
 
-// Three captioned columns; they stack on narrow widths.
+// Three captioned columns; they wrap on narrow widths.
 .ai-config__fields {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(10em, 14em));
+  display: flex;
+  flex-wrap: wrap;
   gap: var(--d2e-spacing-xs) var(--d2e-spacing-m);
   margin: 0;
 }
 
 .ai-config__field {
-  min-width: 0;
+  flex: 0 1 14em;
+  min-width: 10em;
   font-size: 14px;
+
+  &:last-child {
+    flex-grow: 1;
+  }
 
   dt {
     font-size: 12px;

@@ -91,7 +91,7 @@ describe("AiConfigDialog add", () => {
 
   it.each([
     ["OpenAI-compatible", ["Base URL", "API key", "Model"]],
-    ["Anthropic API", ["Anthropic API key", "Model", "Anthropic Workspace ID"]],
+    ["Anthropic API", ["Anthropic API key", "Model", "Anthropic Workspace ID (optional)"]],
     ["AWS Bedrock", ["Bedrock API key", "Region", "Model"]],
   ])("%s shows its fields in order with one Model field", async (provider, labels) => {
     open();
@@ -137,7 +137,7 @@ describe("AiConfigDialog add", () => {
     await chooseProvider("Anthropic API");
     await fill("Anthropic API key", "k");
     await fill("Model", "m");
-    await fill("Anthropic Workspace ID", "wrkspc_1");
+    await fill("Anthropic Workspace ID (optional)", "wrkspc_1");
     await chooseProvider("AWS Bedrock");
     await fill("Region", "us-east-2");
 
@@ -501,7 +501,7 @@ describe("AiConfigDialog required messages", () => {
   it("gives Anthropic's optional Workspace ID no message", async () => {
     open();
     await chooseProvider("Anthropic API");
-    await userEvent.click(field("Anthropic Workspace ID"));
+    await userEvent.click(field("Anthropic Workspace ID (optional)"));
     await userEvent.tab();
 
     expect(screen.queryByText(/^Enter /)).not.toBeInTheDocument();
