@@ -9,6 +9,7 @@ import { SystemAdminPluginRenderer } from "../../plugins/core/SystemAdminPluginR
 import { initializeImportMap } from "../../singleSpa";
 import { Account } from "../shared/Account/Account";
 import { FeedbackToast } from "../shared/FeedbackToast/FeedbackToast";
+import { NotFoundRedirect } from "../shared/NotFound/NotFoundRedirect";
 import env from "../../env";
 import "./Etl.scss";
 
@@ -38,6 +39,8 @@ export const Etl: FC = () => {
   }, [etlPluginsFlat]);
 
   const singleSpaApps = useMemo(() => etlPluginsFlat.filter((plugin) => plugin.type === "app"), [etlPluginsFlat]);
+
+  const singleSpaAppRoutes = useMemo(() => singleSpaApps.map((plugin) => plugin.route), [singleSpaApps]);
 
   const legacyPlugins = useMemo(() => etlPluginsFlat.filter((plugin) => plugin.type !== "app"), [etlPluginsFlat]);
 
@@ -90,6 +93,7 @@ export const Etl: FC = () => {
                 }
               />
             ))}
+            <Route path="*" element={<NotFoundRedirect section="etl" appRoutes={singleSpaAppRoutes} />} />
           </Route>
         </Routes>
       </main>

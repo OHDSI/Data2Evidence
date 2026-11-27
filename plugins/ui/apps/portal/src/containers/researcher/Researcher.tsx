@@ -14,6 +14,7 @@ import { initializeImportMap } from "../../singleSpa";
 import { Overview } from "./Overview/Overview";
 import { Information } from "./Information/Information";
 import { Account } from "../shared/Account/Account";
+import { NotFoundRedirect } from "../shared/NotFound/NotFoundRedirect";
 import { ResearcherFeatureMap, ResearcherFeatures } from "../../constant";
 import "./Researcher.scss";
 import { AiAssistantButton } from "../../components/AiAssistant/AiAssistantButton";
@@ -104,6 +105,8 @@ export const Researcher: FC = () => {
   const singleSpaApps = useMemo(() => {
     return researcherPluginsFlat.filter((plugin) => plugin.type === "app");
   }, [researcherPluginsFlat]);
+
+  const singleSpaAppRoutes = useMemo(() => singleSpaApps.map((plugin) => plugin.route), [singleSpaApps]);
 
   const legacyPlugins = useMemo(() => {
     return researcherPluginsFlat.filter((plugin) => plugin.type !== "app");
@@ -205,6 +208,7 @@ export const Researcher: FC = () => {
                 />
               );
             })}
+            <Route path="*" element={<NotFoundRedirect section="researcher" appRoutes={singleSpaAppRoutes} />} />
           </Route>
         </Routes>
       </main>

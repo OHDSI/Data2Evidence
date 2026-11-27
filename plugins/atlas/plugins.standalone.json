@@ -131,6 +131,17 @@
       }
     },
     {
+      "id": "not-found",
+      "name": "Page not found",
+      "version": "0.1.0",
+      "entryPoint": "not-found/index.system.js",
+      "menuItems": [],
+      "metadata": {
+        "author": "D2E",
+        "description": "\"Page not found\" page at #/plugins/not-found/, where the portal sends routes it does not have"
+      }
+    },
+    {
       "id": "patient-analytics",
       "name": "Data Exploration",
       "version": "2.0.0",

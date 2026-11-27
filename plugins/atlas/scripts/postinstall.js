@@ -194,6 +194,7 @@ const PLUGINS = [
   { pkg: '@ohdsi/network-plugin', id: 'network-plugin', repoints: [] },
   { pkg: '@ohdsi/studies-plugin', id: 'studies-plugin', repoints: [] },
   { pkg: '@data2evidence/atlas-data-quality', id: 'data-quality', repoints: [] },
+  { pkg: '@data2evidence/atlas-not-found', id: 'not-found', repoints: [] },
 ];
 
 for (const { pkg, id, repoints } of PLUGINS) {
